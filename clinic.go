@@ -1,7 +1,7 @@
 package main
 
 import (
-	"api"
+	"github.com/tidepool-org/clinic/api"
 )
 
 func main() {

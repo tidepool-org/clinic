@@ -28,11 +28,6 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
-github.com/tidepool-org/clinic v0.0.0-20200410001135-b856dc221421 h1:d/MaMrlUbyWxOjtr5dvihnMyGTFT1ZvL/kStcdCHqRI=
-github.com/tidepool-org/go-common v0.5.0 h1:Atycq5m1l0P8YBRTz0NZGs8PKAx7cr8iRQzzdyRXFCo=
-github.com/tidepool-org/go-common v0.5.0/go.mod h1:tZr3DhGKfB4CbgwaeItEW7sulUXZTBUJ1vi4SVgdYxE=
-github.com/tidepool-org/tide-whisperer v0.13.2 h1:oj9KYyjMXyeTDg9VCTkur4XsBFe4ST0qhJzXAq6oQlM=
-github.com/tidepool-org/tide-whisperer v0.13.2/go.mod h1:8kabqqgeu1/c5oMfYpDohM6V/pNXHTXbIBcNT374GzQ=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 h1:YR8cESwS4TdDjEe65xsg0ogRM/Nc3DYOhEAlW+xobZo=
