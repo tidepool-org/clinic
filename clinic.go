@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-    api.mainLoop()
+    api.MainLoop()
 }
