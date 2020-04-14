@@ -17,42 +17,7 @@ paths:
               schema:
                 type: array
                 items:
-                  title: Clinic
-                  type: object
-                  x-examples:
-                    example:
-                      id: '5445'
-                      name: John Muir
-                      address: 3000 Main drive
-                      phoneNumbers:
-                        type: main
-                        number: 555-555-5555
-                      location: Walnut Creek
-                      metadata: {}
-                  description: Object describing a clinic
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                      minLength: 1
-                    address:
-                      type: string
-                      enum:
-                        - test
-                    phoneNumbers:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          type:
-                            type: string
-                          number:
-                            type: string
-                    location:
-                      type: string
-                    metadata:
-                      type: object
+                  $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
       operationId: get-clinics
       description: Retrieve list of clinics.  Requires admin app authorization
     parameters: []
@@ -66,42 +31,7 @@ paths:
           content:
             application/json:
               schema:
-                title: Clinic
-                type: object
-                x-examples:
-                  example:
-                    id: '5445'
-                    name: John Muir
-                    address: 3000 Main drive
-                    phoneNumbers:
-                      type: main
-                      number: 555-555-5555
-                    location: Walnut Creek
-                    metadata: {}
-                description: Object describing a clinic
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
-                    minLength: 1
-                  address:
-                    type: string
-                    enum:
-                      - test
-                  phoneNumbers:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        type:
-                          type: string
-                        number:
-                          type: string
-                  location:
-                    type: string
-                  metadata:
-                    type: object
+                $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
       operationId: get-clinic
       description: ''
     post:
@@ -168,42 +98,7 @@ paths:
           content:
             application/json:
               schema:
-                title: Clinic
-                type: object
-                x-examples:
-                  example:
-                    id: '5445'
-                    name: John Muir
-                    address: 3000 Main drive
-                    phoneNumbers:
-                      type: main
-                      number: 555-555-5555
-                    location: Walnut Creek
-                    metadata: {}
-                description: Object describing a clinic
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
-                    minLength: 1
-                  address:
-                    type: string
-                    enum:
-                      - test
-                  phoneNumbers:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        type:
-                          type: string
-                        number:
-                          type: string
-                  location:
-                    type: string
-                  metadata:
-                    type: object
+                $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
       operationId: get-clinic-clinicid
     patch:
       summary: ''
@@ -216,42 +111,7 @@ paths:
         content:
           application/json:
             schema:
-              title: Clinic
-              type: object
-              x-examples:
-                example:
-                  id: '5445'
-                  name: John Muir
-                  address: 3000 Main drive
-                  phoneNumbers:
-                    type: main
-                    number: 555-555-5555
-                  location: Walnut Creek
-                  metadata: {}
-              description: Object describing a clinic
-              properties:
-                id:
-                  type: string
-                name:
-                  type: string
-                  minLength: 1
-                address:
-                  type: string
-                  enum:
-                    - test
-                phoneNumbers:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      type:
-                        type: string
-                      number:
-                        type: string
-                location:
-                  type: string
-                metadata:
-                  type: object
+              $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
     delete:
       summary: ''
       operationId: delete-clinic-clinicid
@@ -277,19 +137,7 @@ paths:
               schema:
                 type: array
                 items:
-                  title: ClinicianClinicRelationship
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    clinicianId:
-                      type: string
-                    clinicId:
-                      type: string
-                    permisions:
-                      type: array
-                      items:
-                        type: string
+                  $ref: '#/paths/~1clinic~1%7Bclinicid%7D~1clinician~1%7Bclinicianid%7D/patch/requestBody/content/application~1json/schema'
       operationId: get-clinics-clinicid-clinicians
       description: ''
   '/clinic/{clinicid}/clinician/{clinicianid}':
@@ -354,19 +202,7 @@ paths:
               schema:
                 type: array
                 items:
-                  title: PatientClinicRelationship
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    patientId:
-                      type: string
-                    clinicId:
-                      type: string
-                    permissions:
-                      type: array
-                      items:
-                        type: string
+                  $ref: '#/paths/~1clinic~1%7Bclinicid%7D~1patient~1%7Bpatientid%7D/post/requestBody/content/application~1json/schema'
       operationId: get-clinic-clinicid-patients
       description: Get list of patients associated with clinic
   '/clinic/{clinicid}/patient/{patientid}':
@@ -393,19 +229,7 @@ paths:
         content:
           application/json:
             schema:
-              title: PatientClinicRelationship
-              type: object
-              properties:
-                id:
-                  type: string
-                patientId:
-                  type: string
-                clinicId:
-                  type: string
-                permissions:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/paths/~1clinic~1%7Bclinicid%7D~1patient~1%7Bpatientid%7D/post/requestBody/content/application~1json/schema'
     delete:
       summary: deletePatientFromClinic
       tags: []
@@ -443,5 +267,4 @@ paths:
                   items:
                     type: string
 components:
-    schemas: {}
-
+  schemas: {}

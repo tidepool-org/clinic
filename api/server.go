@@ -6,6 +6,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -50,6 +51,9 @@ func (c *ClinicServer) GetClinicClinicid(ctx echo.Context, clinicid string) erro
 		os.Exit(1)
 	}
 	log.Printf("Get Clinic by id - name: %s", *clinic.Name)
+
+	ctx.JSON(http.StatusOK, &clinic)
+
 	return nil
 }
 
