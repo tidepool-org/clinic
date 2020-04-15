@@ -24,13 +24,11 @@ func (c *ClinicServer) GetClinic(ctx echo.Context) error {
 // createClinic
 // (POST /clinic)
 func (c *ClinicServer) PostClinic(ctx echo.Context) error {
-	var clinic PostClinicJSONBody
+	var clinic Clinic
 	err := ctx.Bind(&clinic)
 	if err != nil {
 		log.Printf("Format failed for clinic body")
-		//return sendPetstoreError(ctx, http.StatusBadRequest, "Invalid format for NewPet")
 	}
-	// We now have a pet, let's add it to our "database".
 
 	log.Printf("Clinic address: %s", *clinic.Address)
 	c.store.InsertOne(clinic)
@@ -44,7 +42,7 @@ func (c *ClinicServer) DeleteClinicClinicid(ctx echo.Context, clinicid string) e
 // getClinic
 // (GET /clinic/{clinicid})
 func (c *ClinicServer) GetClinicClinicid(ctx echo.Context, clinicid string) error {
-	var clinic PostClinicJSONBody
+	var clinic Clinic
 	log.Printf("Get Clinic by id - id: %s", clinicid)
 	if err := c.store.FindOne(bson.M{"_id": clinicid}).Decode(&clinic); err != nil {
 		fmt.Println("Find One error ", err)

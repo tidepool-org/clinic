@@ -27,7 +27,7 @@ type MongoStoreClient struct {
 }
 func NewMongoStoreClient() *MongoStoreClient {
 
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
 	if err != nil {
 		fmt.Println("mongo.NewClient() ERROR:", err)
 		os.Exit(1)
