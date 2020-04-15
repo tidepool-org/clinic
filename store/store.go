@@ -17,6 +17,7 @@ import (
 var (
 	DatabaseName = "user"
 	CollectionName = "clinic"
+	MongoHost = "mongodb://127.0.0.1:27017"
 )
 
 //Mongo Storage Client
@@ -27,7 +28,7 @@ type MongoStoreClient struct {
 }
 func NewMongoStoreClient() *MongoStoreClient {
 
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI(MongoHost))
 	if err != nil {
 		fmt.Println("mongo.NewClient() ERROR:", err)
 		os.Exit(1)
