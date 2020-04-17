@@ -17,7 +17,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
+                  $ref: '#/paths/~1clinic/get/responses/200/content/application~1json/schema'
       operationId: get-clinics
       description: Retrieve list of clinics.  Requires admin app authorization
     parameters: []
@@ -31,7 +31,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
+                allOf:
+                  - type: object
+                    properties:
+                      _id:
+                        type: string
+                    required:
+                      - _id
+                  - $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
+                title: Clinic
       operationId: get-clinic
       description: ''
     post:
@@ -46,7 +54,7 @@ paths:
         content:
           application/json:
             schema:
-              title: Clinic
+              title: NewClinic
               type: object
               x-examples:
                 example:
@@ -60,8 +68,6 @@ paths:
                   metadata: {}
               description: Object describing a clinic
               properties:
-                id:
-                  type: string
                 name:
                   type: string
                   minLength: 1
@@ -98,7 +104,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
+                $ref: '#/paths/~1clinic/get/responses/200/content/application~1json/schema'
       operationId: get-clinic-clinicid
     patch:
       summary: ''

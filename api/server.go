@@ -24,14 +24,14 @@ func (c *ClinicServer) GetClinic(ctx echo.Context) error {
 // createClinic
 // (POST /clinic)
 func (c *ClinicServer) PostClinic(ctx echo.Context) error {
-	var clinic Clinic
-	err := ctx.Bind(&clinic)
+	var newClinic NewClinic
+	err := ctx.Bind(&newClinic)
 	if err != nil {
 		log.Printf("Format failed for clinic body")
 	}
 
-	log.Printf("Clinic address: %s", *clinic.Address)
-	c.store.InsertOne(clinic)
+	log.Printf("Clinic address: %s", *newClinic.Address)
+	c.store.InsertOne(newClinic)
 	return nil
 }
 
@@ -48,7 +48,9 @@ func (c *ClinicServer) GetClinicClinicid(ctx echo.Context, clinicid string) erro
 		fmt.Println("Find One error ", err)
 		os.Exit(1)
 	}
-	log.Printf("Get Clinic by id - name: %s", *clinic.Name)
+	log.Printf("test")
+	//log.Printf("Get Clinic by id - name: %s, id: %s", *newClinic.Name, *newClinic.Id)
+	log.Printf("Get Clinic by id - name: %s", clinic)
 
 	ctx.JSON(http.StatusOK, &clinic)
 

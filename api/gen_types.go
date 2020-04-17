@@ -5,38 +5,45 @@ package api
 
 // Clinic defines model for Clinic.
 type Clinic struct {
-	Address      *string                 `json:"address,omitempty"`
-	Id           *string                 `json:"id,omitempty"`
-	Location     *string                 `json:"location,omitempty"`
-	Metadata     *map[string]interface{} `json:"metadata,omitempty"`
-	Name         *string                 `json:"name,omitempty"`
-	PhoneNumbers *[]struct {
-		Number *string `json:"number,omitempty"`
-		Type   *string `json:"type,omitempty"`
-	} `json:"phoneNumbers,omitempty"`
+	// Embedded fields due to inline allOf schema
+	Id string `json:"_id" bson:"_id"`
+	// Embedded struct due to allOf(#/components/schemas/NewClinic)
+	NewClinic `bson:",inline"`
 }
 
 // ClinicianClinicRelationship defines model for ClinicianClinicRelationship.
 type ClinicianClinicRelationship struct {
-	ClinicId    *string   `json:"clinicId,omitempty"`
-	ClinicianId *string   `json:"clinicianId,omitempty"`
-	Id          *string   `json:"id,omitempty"`
-	Permisions  *[]string `json:"permisions,omitempty"`
+	ClinicId    *string   `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+	ClinicianId *string   `json:"clinicianId,omitempty" bson:"clinicianId,omitempty"`
+	Id          *string   `json:"id,omitempty" bson:"id,omitempty"`
+	Permisions  *[]string `json:"permisions,omitempty" bson:"permisions,omitempty"`
+}
+
+// NewClinic defines model for NewClinic.
+type NewClinic struct {
+	Address      *string                 `json:"address,omitempty" bson:"address,omitempty"`
+	Location     *string                 `json:"location,omitempty" bson:"location,omitempty"`
+	Metadata     *map[string]interface{} `json:"metadata,omitempty" bson:"metadata,omitempty"`
+	Name         *string                 `json:"name,omitempty" bson:"name,omitempty"`
+	PhoneNumbers *[]struct {
+		Number *string `json:"number,omitempty" bson:"number,omitempty"`
+		Type   *string `json:"type,omitempty" bson:"type,omitempty"`
+	} `json:"phoneNumbers,omitempty" bson:"phoneNumbers,omitempty"`
 }
 
 // PatientClinicRelationship defines model for PatientClinicRelationship.
 type PatientClinicRelationship struct {
-	ClinicId    *string   `json:"clinicId,omitempty"`
-	Id          *string   `json:"id,omitempty"`
-	PatientId   *string   `json:"patientId,omitempty"`
-	Permissions *[]string `json:"permissions,omitempty"`
+	ClinicId    *string   `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+	Id          *string   `json:"id,omitempty" bson:"id,omitempty"`
+	PatientId   *string   `json:"patientId,omitempty" bson:"patientId,omitempty"`
+	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
 }
 
 // PostClinicJSONBody defines parameters for PostClinic.
-type PostClinicJSONBody Clinic
+type PostClinicJSONBody NewClinic
 
 // PatchClinicClinicidJSONBody defines parameters for PatchClinicClinicid.
-type PatchClinicClinicidJSONBody Clinic
+type PatchClinicClinicidJSONBody NewClinic
 
 // PatchClinicClinicidClinicianClinicianidJSONBody defines parameters for PatchClinicClinicidClinicianClinicianid.
 type PatchClinicClinicidClinicianClinicianidJSONBody ClinicianClinicRelationship

@@ -1,13 +1,35 @@
 components:
   schemas:
     Clinic:
+      allOf:
+      - properties:
+          _id:
+            type: string
+        required:
+        - _id
+        type: object
+      - $ref: '#/components/schemas/NewClinic'
+      title: Clinic
+    ClinicianClinicRelationship:
+      properties:
+        clinicId:
+          type: string
+        clinicianId:
+          type: string
+        id:
+          type: string
+        permisions:
+          items:
+            type: string
+          type: array
+      title: ClinicianClinicRelationship
+      type: object
+    NewClinic:
       description: Object describing a clinic
       properties:
         address:
           enum:
           - test
-          type: string
-        id:
           type: string
         location:
           type: string
@@ -25,7 +47,7 @@ components:
                 type: string
             type: object
           type: array
-      title: Clinic
+      title: NewClinic
       type: object
       x-examples:
         example:
@@ -37,20 +59,6 @@ components:
           phoneNumbers:
             number: 555-555-5555
             type: main
-    ClinicianClinicRelationship:
-      properties:
-        clinicId:
-          type: string
-        clinicianId:
-          type: string
-        id:
-          type: string
-        permisions:
-          items:
-            type: string
-          type: array
-      title: ClinicianClinicRelationship
-      type: object
     PatientClinicRelationship:
       properties:
         clinicId:
@@ -90,7 +98,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Clinic'
+              $ref: '#/components/schemas/NewClinic'
       responses:
         '200':
           description: OK
@@ -128,7 +136,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Clinic'
+              $ref: '#/components/schemas/NewClinic'
       responses:
         '200':
           description: OK

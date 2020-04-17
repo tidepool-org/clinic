@@ -75,5 +75,8 @@ func (d MongoStoreClient) InsertOne(document interface{}) error {
 }
 
 func (d MongoStoreClient) FindOne(filter interface{}) *mongo.SingleResult {
-	return d.Col.FindOne(d.Ctx, bson.D{})
+	fmt.Println("FindOne")
+	ret := d.Col.FindOne(d.Ctx, bson.D{})
+	fmt.Println("Found")
+	return ret
 }
