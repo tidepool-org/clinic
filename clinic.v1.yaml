@@ -7,7 +7,7 @@ servers:
 paths:
   /clinics:
     get:
-      summary: getClinic
+      summary: GetClinic
       tags: []
       responses:
         '200':
@@ -17,33 +17,29 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1clinic/get/responses/200/content/application~1json/schema'
+                  $ref: '#/paths/~1clinic~1%7Bclinicid%7D/get/responses/200/content/application~1json/schema'
       operationId: get-clinics
       description: Retrieve list of clinics.  Requires admin app authorization
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: offset
+          description: ''
+        - schema:
+            type: integer
+          in: query
+          name: limit
+        - schema:
+            type: string
+          in: query
+          name: sortOrder
+      requestBody:
+        description: ''
     parameters: []
   /clinic:
-    get:
-      summary: getClinic
-      tags: []
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - type: object
-                    properties:
-                      _id:
-                        type: string
-                    required:
-                      - _id
-                  - $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
-                title: Clinic
-      operationId: get-clinic
-      description: ''
     post:
-      summary: createClinic
+      summary: CreateClinic
       tags: []
       responses:
         '200':
@@ -96,7 +92,7 @@ paths:
         in: path
         required: true
     get:
-      summary: getClinic
+      summary: GetClinic
       tags: []
       responses:
         '200':
@@ -104,22 +100,35 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1clinic/get/responses/200/content/application~1json/schema'
+                allOf:
+                  - type: object
+                    properties:
+                      _id:
+                        type: string
+                    required:
+                      - _id
+                  - $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
+                title: Clinic
       operationId: get-clinic-clinicid
     patch:
-      summary: ''
+      summary: ModifyClinic
       operationId: patch-clinic-clinicid
       responses:
         '200':
           description: OK
-      description: Modify clinic
+      description: Modify Clinic
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/paths/~1clinic/post/requestBody/content/application~1json/schema'
+          application/xml:
+            schema:
+              type: object
+              properties: {}
+        description: Modify Clinic object
     delete:
-      summary: ''
+      summary: DeleteClinic
       operationId: delete-clinic-clinicid
       responses:
         '200':
@@ -133,7 +142,7 @@ paths:
         in: path
         required: true
     get:
-      summary: getCliniciansForClinic
+      summary: GetCliniciansForClinic
       tags: []
       responses:
         '200':
@@ -143,9 +152,35 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1clinic~1%7Bclinicid%7D~1clinician~1%7Bclinicianid%7D/patch/requestBody/content/application~1json/schema'
+                  title: Clinician
+                  type: object
+                  description: Object describing a doctor
+                  properties:
+                    id:
+                      type: string
+                    username:
+                      type: string
+                    email:
+                      type: string
+                    userid:
+                      type: string
+                    pwhash:
+                      type: string
       operationId: get-clinics-clinicid-clinicians
-      description: ''
+      description: Retrieve a list of clinicians for a clinic
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: offset
+        - schema:
+            type: integer
+          in: query
+          name: limit
+        - schema:
+            type: string
+          in: query
+          name: sortOrder
   '/clinic/{clinicid}/clinician/{clinicianid}':
     parameters:
       - schema:
@@ -166,30 +201,13 @@ paths:
           description: OK
       operationId: delete-clinic-clinicid-clinician-clinicianid
       description: Remove association with clinic and clinician
-    patch:
-      summary: ''
-      operationId: patch-clinic-clinicid-clinician-clinicianid
+    post:
+      summary: AddClinicianToClinic
+      operationId: post-clinic-clinicid-clinician-clinicianid
       responses:
         '200':
           description: OK
-      description: Associate clinician with clinic
-      requestBody:
-        content:
-          application/json:
-            schema:
-              title: ClinicianClinicRelationship
-              type: object
-              properties:
-                id:
-                  type: string
-                clinicianId:
-                  type: string
-                clinicId:
-                  type: string
-                permisions:
-                  type: array
-                  items:
-                    type: string
+      description: Add a Clinician to a Clinic
   '/clinic/{clinicid}/patients':
     parameters:
       - schema:
@@ -198,7 +216,7 @@ paths:
         in: path
         required: true
     get:
-      summary: getCliniciansForClinic
+      summary: GetCliniciansForClinic
       tags: []
       responses:
         '200':
@@ -208,9 +226,34 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1clinic~1%7Bclinicid%7D~1patient~1%7Bpatientid%7D/post/requestBody/content/application~1json/schema'
+                  title: Patient
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    username:
+                      type: string
+                    email:
+                      type: string
+                    userid:
+                      type: string
+                    pwhas:
+                      type: string
       operationId: get-clinic-clinicid-patients
       description: Get list of patients associated with clinic
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: offset
+        - schema:
+            type: integer
+          in: query
+          name: limit
+        - schema:
+            type: string
+          in: query
+          name: sortOrder
   '/clinic/{clinicid}/patient/{patientid}':
     parameters:
       - schema:
@@ -223,21 +266,8 @@ paths:
         name: patientid
         in: path
         required: true
-    patch:
-      summary: addPatientToClinic
-      tags: []
-      responses:
-        '200':
-          description: OK
-      operationId: patch-clinic-clinicid-patient-patientid
-      description: Modify patient/clinic relationship
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/paths/~1clinic~1%7Bclinicid%7D~1patient~1%7Bpatientid%7D/post/requestBody/content/application~1json/schema'
     delete:
-      summary: deletePatientFromClinic
+      summary: DeletePatientFromClinic
       tags: []
       operationId: delete-clinic-clinicid-patient-patientid
       description: delete patient from clinic
@@ -249,7 +279,7 @@ paths:
         '500':
           description: Internal Server Error
     post:
-      summary: ''
+      summary: AddPatientToClinic
       operationId: post-clinic-clinicid-patient-patientid
       responses:
         '200':

@@ -11,14 +11,6 @@ type Clinic struct {
 	NewClinic `bson:",inline"`
 }
 
-// ClinicianClinicRelationship defines model for ClinicianClinicRelationship.
-type ClinicianClinicRelationship struct {
-	ClinicId    *string   `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
-	ClinicianId *string   `json:"clinicianId,omitempty" bson:"clinicianId,omitempty"`
-	Id          *string   `json:"id,omitempty" bson:"id,omitempty"`
-	Permisions  *[]string `json:"permisions,omitempty" bson:"permisions,omitempty"`
-}
-
 // NewClinic defines model for NewClinic.
 type NewClinic struct {
 	Address      *string                 `json:"address,omitempty" bson:"address,omitempty"`
@@ -31,40 +23,46 @@ type NewClinic struct {
 	} `json:"phoneNumbers,omitempty" bson:"phoneNumbers,omitempty"`
 }
 
-// PatientClinicRelationship defines model for PatientClinicRelationship.
-type PatientClinicRelationship struct {
-	ClinicId    *string   `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
-	Id          *string   `json:"id,omitempty" bson:"id,omitempty"`
-	PatientId   *string   `json:"patientId,omitempty" bson:"patientId,omitempty"`
-	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
-}
-
 // PostClinicJSONBody defines parameters for PostClinic.
 type PostClinicJSONBody NewClinic
 
 // PatchClinicClinicidJSONBody defines parameters for PatchClinicClinicid.
 type PatchClinicClinicidJSONBody NewClinic
 
-// PatchClinicClinicidClinicianClinicianidJSONBody defines parameters for PatchClinicClinicidClinicianClinicianid.
-type PatchClinicClinicidClinicianClinicianidJSONBody ClinicianClinicRelationship
-
-// PatchClinicClinicidPatientPatientidJSONBody defines parameters for PatchClinicClinicidPatientPatientid.
-type PatchClinicClinicidPatientPatientidJSONBody PatientClinicRelationship
-
 // PostClinicClinicidPatientPatientidJSONBody defines parameters for PostClinicClinicidPatientPatientid.
-type PostClinicClinicidPatientPatientidJSONBody PatientClinicRelationship
+type PostClinicClinicidPatientPatientidJSONBody struct {
+	ClinicId    *string   `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+	Id          *string   `json:"id,omitempty" bson:"id,omitempty"`
+	PatientId   *string   `json:"patientId,omitempty" bson:"patientId,omitempty"`
+	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
+}
+
+// GetClinicClinicidPatientsParams defines parameters for GetClinicClinicidPatients.
+type GetClinicClinicidPatientsParams struct {
+	Offset    *int    `json:"offset,omitempty" bson:"offset,omitempty"`
+	Limit     *int    `json:"limit,omitempty" bson:"limit,omitempty"`
+	SortOrder *string `json:"sortOrder,omitempty" bson:"sortOrder,omitempty"`
+}
+
+// GetClinicsParams defines parameters for GetClinics.
+type GetClinicsParams struct {
+	Offset    *int    `json:"offset,omitempty" bson:"offset,omitempty"`
+	Limit     *int    `json:"limit,omitempty" bson:"limit,omitempty"`
+	SortOrder *string `json:"sortOrder,omitempty" bson:"sortOrder,omitempty"`
+}
+
+// GetClinicsClinicidCliniciansParams defines parameters for GetClinicsClinicidClinicians.
+type GetClinicsClinicidCliniciansParams struct {
+	Offset    *int    `json:"offset,omitempty" bson:"offset,omitempty"`
+	Limit     *int    `json:"limit,omitempty" bson:"limit,omitempty"`
+	SortOrder *string `json:"sortOrder,omitempty" bson:"sortOrder,omitempty"`
+}
 
 // PostClinicRequestBody defines body for PostClinic for application/json ContentType.
 type PostClinicJSONRequestBody PostClinicJSONBody
 
 // PatchClinicClinicidRequestBody defines body for PatchClinicClinicid for application/json ContentType.
 type PatchClinicClinicidJSONRequestBody PatchClinicClinicidJSONBody
-
-// PatchClinicClinicidClinicianClinicianidRequestBody defines body for PatchClinicClinicidClinicianClinicianid for application/json ContentType.
-type PatchClinicClinicidClinicianClinicianidJSONRequestBody PatchClinicClinicidClinicianClinicianidJSONBody
-
-// PatchClinicClinicidPatientPatientidRequestBody defines body for PatchClinicClinicidPatientPatientid for application/json ContentType.
-type PatchClinicClinicidPatientPatientidJSONRequestBody PatchClinicClinicidPatientPatientidJSONBody
 
 // PostClinicClinicidPatientPatientidRequestBody defines body for PostClinicClinicidPatientPatientid for application/json ContentType.
 type PostClinicClinicidPatientPatientidJSONRequestBody PostClinicClinicidPatientPatientidJSONBody

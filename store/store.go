@@ -4,7 +4,6 @@ import (
 	// Built-in Golang packages
 	"context" // manage multiple requests
 	"fmt" // Println() function
-	"go.mongodb.org/mongo-driver/bson"
 	"os"      // os.Exit(1) on Error
 	"reflect" // get an object type
 	"time"
@@ -18,13 +17,17 @@ var (
 	DatabaseName = "user"
 	CollectionName = "clinic"
 	MongoHost = "mongodb://127.0.0.1:27017"
+	DefaultPagingParams = MongoPagingParams{Offset: 0 ,Limit: 10}
 )
 
 //Mongo Storage Client
 type MongoStoreClient struct {
 	Client *mongo.Client
-	Ctx context.Context
-	Col *mongo.Collection
+}
+
+type MongoPagingParams struct {
+	Offset int64
+	Limit int64
 }
 func NewMongoStoreClient() *MongoStoreClient {
 
@@ -40,25 +43,24 @@ func NewMongoStoreClient() *MongoStoreClient {
 		os.Exit(1)
 	}
 
-	// Access a MongoDB collection through a database
-	col := client.Database(DatabaseName).Collection(CollectionName)
-	fmt.Println("Collection type:", reflect.TypeOf(col), "\n")
-
 
 	return &MongoStoreClient{
 		Client: client,
-		Ctx: ctx,
-		Col: col,
 	}
 }
 
 func (d MongoStoreClient) Ping() error {
-	return d.Client.Ping(d.Ctx, nil)
+	ctx := context.TODO()
+	return d.Client.Ping(ctx, nil)
 }
 
 func (d MongoStoreClient) InsertOne(document interface{}) error {
 	// InsertOne() method Returns mongo.InsertOneResult
-	result, insertErr := d.Col.InsertOne(d.Ctx, document)
+	// Access a MongoDB collection through a database
+	ctx := context.TODO()
+	col := d.Client.Database(DatabaseName).Collection(CollectionName)
+
+	result, insertErr := col.InsertOne(ctx, document)
 	if insertErr != nil {
 		fmt.Println("InsertOne ERROR:", insertErr)
 		os.Exit(1) // safely exit script on error
@@ -75,8 +77,45 @@ func (d MongoStoreClient) InsertOne(document interface{}) error {
 }
 
 func (d MongoStoreClient) FindOne(filter interface{}) *mongo.SingleResult {
+	ctx := context.TODO()
 	fmt.Println("FindOne")
-	ret := d.Col.FindOne(d.Ctx, bson.D{})
+
+	col := d.Client.Database(DatabaseName).Collection(CollectionName)
+
+	ret := col.FindOne(ctx, filter)
 	fmt.Println("Found")
+	return ret
+}
+
+func (d MongoStoreClient) Find(filter interface{}, pagingParams *MongoPagingParams) (*mongo.Cursor, error) {
+	ctx := context.TODO()
+	fmt.Println("FindMany")
+	findOptions := options.Find()
+	findOptions.SetLimit(pagingParams.Limit)
+	findOptions.SetSkip(pagingParams.Offset)
+
+	if pagingParams == nil {
+		pagingParams = &DefaultPagingParams
+	}
+
+
+	col := d.Client.Database(DatabaseName).Collection(CollectionName)
+
+	cursor, err := col.Find(ctx, filter, findOptions)
+	fmt.Println("FoundMany")
+	return cursor, err
+}
+
+func (d MongoStoreClient) UpdateOne(filter interface{}, update interface {}) *mongo.UpdateResult {
+	ctx := context.TODO()
+	fmt.Println("UpdateOne")
+
+	col := d.Client.Database(DatabaseName).Collection(CollectionName)
+
+	ret, err := col.UpdateOne(ctx, filter, update)
+	if err != nil {
+		fmt.Println("error on update", err)
+	}
+	fmt.Println("Updated")
 	return ret
 }

@@ -12,59 +12,44 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// getClinic
-	// (GET /clinic)
-	GetClinic(ctx echo.Context) error
-	// createClinic
+	// CreateClinic
 	// (POST /clinic)
 	PostClinic(ctx echo.Context) error
-
+	// DeleteClinic
 	// (DELETE /clinic/{clinicid})
 	DeleteClinicClinicid(ctx echo.Context, clinicid string) error
-	// getClinic
+	// GetClinic
 	// (GET /clinic/{clinicid})
 	GetClinicClinicid(ctx echo.Context, clinicid string) error
-
+	// ModifyClinic
 	// (PATCH /clinic/{clinicid})
 	PatchClinicClinicid(ctx echo.Context, clinicid string) error
 	// DeleteClinicianForClinic
 	// (DELETE /clinic/{clinicid}/clinician/{clinicianid})
 	DeleteClinicClinicidClinicianClinicianid(ctx echo.Context, clinicid string, clinicianid string) error
-
-	// (PATCH /clinic/{clinicid}/clinician/{clinicianid})
-	PatchClinicClinicidClinicianClinicianid(ctx echo.Context, clinicid string, clinicianid string) error
-	// deletePatientFromClinic
+	// AddClinicianToClinic
+	// (POST /clinic/{clinicid}/clinician/{clinicianid})
+	PostClinicClinicidClinicianClinicianid(ctx echo.Context, clinicid string, clinicianid string) error
+	// DeletePatientFromClinic
 	// (DELETE /clinic/{clinicid}/patient/{patientid})
 	DeleteClinicClinicidPatientPatientid(ctx echo.Context, clinicid string, patientid string) error
-	// addPatientToClinic
-	// (PATCH /clinic/{clinicid}/patient/{patientid})
-	PatchClinicClinicidPatientPatientid(ctx echo.Context, clinicid string, patientid string) error
-
+	// AddPatientToClinic
 	// (POST /clinic/{clinicid}/patient/{patientid})
 	PostClinicClinicidPatientPatientid(ctx echo.Context, clinicid string, patientid string) error
-	// getCliniciansForClinic
+	// GetCliniciansForClinic
 	// (GET /clinic/{clinicid}/patients)
-	GetClinicClinicidPatients(ctx echo.Context, clinicid string) error
-	// getClinic
+	GetClinicClinicidPatients(ctx echo.Context, clinicid string, params GetClinicClinicidPatientsParams) error
+	// GetClinic
 	// (GET /clinics)
-	GetClinics(ctx echo.Context) error
-	// getCliniciansForClinic
+	GetClinics(ctx echo.Context, params GetClinicsParams) error
+	// GetCliniciansForClinic
 	// (GET /clinics/{clinicid}/clinicians)
-	GetClinicsClinicidClinicians(ctx echo.Context, clinicid string) error
+	GetClinicsClinicidClinicians(ctx echo.Context, clinicid string, params GetClinicsClinicidCliniciansParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
-}
-
-// GetClinic converts echo context to params.
-func (w *ServerInterfaceWrapper) GetClinic(ctx echo.Context) error {
-	var err error
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetClinic(ctx)
-	return err
 }
 
 // PostClinic converts echo context to params.
@@ -148,8 +133,8 @@ func (w *ServerInterfaceWrapper) DeleteClinicClinicidClinicianClinicianid(ctx ec
 	return err
 }
 
-// PatchClinicClinicidClinicianClinicianid converts echo context to params.
-func (w *ServerInterfaceWrapper) PatchClinicClinicidClinicianClinicianid(ctx echo.Context) error {
+// PostClinicClinicidClinicianClinicianid converts echo context to params.
+func (w *ServerInterfaceWrapper) PostClinicClinicidClinicianClinicianid(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicid" -------------
 	var clinicid string
@@ -168,7 +153,7 @@ func (w *ServerInterfaceWrapper) PatchClinicClinicidClinicianClinicianid(ctx ech
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PatchClinicClinicidClinicianClinicianid(ctx, clinicid, clinicianid)
+	err = w.Handler.PostClinicClinicidClinicianClinicianid(ctx, clinicid, clinicianid)
 	return err
 }
 
@@ -193,30 +178,6 @@ func (w *ServerInterfaceWrapper) DeleteClinicClinicidPatientPatientid(ctx echo.C
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.DeleteClinicClinicidPatientPatientid(ctx, clinicid, patientid)
-	return err
-}
-
-// PatchClinicClinicidPatientPatientid converts echo context to params.
-func (w *ServerInterfaceWrapper) PatchClinicClinicidPatientPatientid(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "clinicid" -------------
-	var clinicid string
-
-	err = runtime.BindStyledParameter("simple", false, "clinicid", ctx.Param("clinicid"), &clinicid)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
-	}
-
-	// ------------- Path parameter "patientid" -------------
-	var patientid string
-
-	err = runtime.BindStyledParameter("simple", false, "patientid", ctx.Param("patientid"), &patientid)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientid: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PatchClinicClinicidPatientPatientid(ctx, clinicid, patientid)
 	return err
 }
 
@@ -255,8 +216,31 @@ func (w *ServerInterfaceWrapper) GetClinicClinicidPatients(ctx echo.Context) err
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetClinicClinicidPatientsParams
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "sortOrder" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "sortOrder", ctx.QueryParams(), &params.SortOrder)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sortOrder: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetClinicClinicidPatients(ctx, clinicid)
+	err = w.Handler.GetClinicClinicidPatients(ctx, clinicid, params)
 	return err
 }
 
@@ -264,8 +248,31 @@ func (w *ServerInterfaceWrapper) GetClinicClinicidPatients(ctx echo.Context) err
 func (w *ServerInterfaceWrapper) GetClinics(ctx echo.Context) error {
 	var err error
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetClinicsParams
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "sortOrder" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "sortOrder", ctx.QueryParams(), &params.SortOrder)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sortOrder: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetClinics(ctx)
+	err = w.Handler.GetClinics(ctx, params)
 	return err
 }
 
@@ -280,8 +287,31 @@ func (w *ServerInterfaceWrapper) GetClinicsClinicidClinicians(ctx echo.Context) 
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetClinicsClinicidCliniciansParams
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "sortOrder" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "sortOrder", ctx.QueryParams(), &params.SortOrder)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sortOrder: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetClinicsClinicidClinicians(ctx, clinicid)
+	err = w.Handler.GetClinicsClinicidClinicians(ctx, clinicid, params)
 	return err
 }
 
@@ -307,15 +337,13 @@ func RegisterHandlers(router EchoRouter, si ServerInterface) {
 		Handler: si,
 	}
 
-	router.GET("/clinic", wrapper.GetClinic)
 	router.POST("/clinic", wrapper.PostClinic)
 	router.DELETE("/clinic/:clinicid", wrapper.DeleteClinicClinicid)
 	router.GET("/clinic/:clinicid", wrapper.GetClinicClinicid)
 	router.PATCH("/clinic/:clinicid", wrapper.PatchClinicClinicid)
 	router.DELETE("/clinic/:clinicid/clinician/:clinicianid", wrapper.DeleteClinicClinicidClinicianClinicianid)
-	router.PATCH("/clinic/:clinicid/clinician/:clinicianid", wrapper.PatchClinicClinicidClinicianClinicianid)
+	router.POST("/clinic/:clinicid/clinician/:clinicianid", wrapper.PostClinicClinicidClinicianClinicianid)
 	router.DELETE("/clinic/:clinicid/patient/:patientid", wrapper.DeleteClinicClinicidPatientPatientid)
-	router.PATCH("/clinic/:clinicid/patient/:patientid", wrapper.PatchClinicClinicidPatientPatientid)
 	router.POST("/clinic/:clinicid/patient/:patientid", wrapper.PostClinicClinicidPatientPatientid)
 	router.GET("/clinic/:clinicid/patients", wrapper.GetClinicClinicidPatients)
 	router.GET("/clinics", wrapper.GetClinics)
