@@ -6,10 +6,10 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/net/context"
 	"log"
 	"net/http"
 	"os"
+	"context"
 )
 
 type ClinicServer struct {
@@ -29,67 +29,6 @@ type FullNewClinic struct {
 	NewClinic `bson:",inline"`
 	ClinicExtraFields `bson:",inline"`
 }
-// createClinic
-// (POST /clinic)
-func (c *ClinicServer) PostClinic(ctx echo.Context) error {
-	var newClinic FullNewClinic
-	err := ctx.Bind(&newClinic)
-	newClinic.Active = true
-	if err != nil {
-		log.Printf("Format failed for post clinic body")
-	}
-
-	log.Printf("Clinic address: %s", *newClinic.Address)
-	c.store.InsertOne(newClinic)
-	return nil
-}
-
-// (DELETE /clinic/{clinicid})
-func (c *ClinicServer) DeleteClinicClinicid(ctx echo.Context, clinicid string) error {
-	objID, _ := primitive.ObjectIDFromHex(clinicid)
-	filter := bson.D{{"_id", objID}}
-	activeObj := bson.D{
-		{"$set", bson.D{{"active", false}}},
-	}
-	c.store.UpdateOne(filter, activeObj)
-	return nil
-}
-// getClinic
-// (GET /clinic/{clinicid})
-func (c *ClinicServer) GetClinicClinicid(ctx echo.Context, clinicid string) error {
-	var clinic Clinic
-	log.Printf("Get Clinic by id - id: %s", clinicid)
-	objID, _ := primitive.ObjectIDFromHex(clinicid)
-	filter := bson.M{"_id": objID, "active": true}
-	if err := c.store.FindOne(filter).Decode(&clinic); err != nil {
-		fmt.Println("Find One error ", err)
-		os.Exit(1)
-	}
-	log.Printf("test")
-	//log.Printf("Get Clinic by id - name: %s, id: %s", *newClinic.Name, *newClinic.Id)
-	log.Printf("Get Clinic by id - name: %s", clinic)
-
-	ctx.JSON(http.StatusOK, &clinic)
-
-	return nil
-}
-
-// (PATCH /clinic/{clinicid})
-func (c *ClinicServer) PatchClinicClinicid(ctx echo.Context, clinicid string) error {
-	var newClinic NewClinic
-	err := ctx.Bind(&newClinic)
-	if err != nil {
-		log.Printf("Format failed for patch clinic body")
-	}
-	objID, _ := primitive.ObjectIDFromHex(clinicid)
-	filter := bson.D{{"_id", objID}}
-	patchObj := bson.D{
-		{"$set", newClinic },
-	}
-	c.store.UpdateOne(filter, patchObj)
-	return nil
-}
-
 // getClinic
 // (GET /clinics)
 func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) error {
@@ -103,7 +42,7 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 		pagingParams.Offset = int64(*params.Offset)
 	}
 
-	cursor, err := c.store.Find(filter, &pagingParams)
+	cursor, err := c.store.Find(store.ClinicsCollection, filter, &pagingParams)
 	var clinics []Clinic
 
 	// Probably want to abstract this away in driver
@@ -116,3 +55,66 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 
 	return nil
 }
+
+// createClinic
+// (POST /clinics)
+func (c *ClinicServer) PostClinics(ctx echo.Context) error {
+	var newClinic FullNewClinic
+	err := ctx.Bind(&newClinic)
+	newClinic.Active = true
+	if err != nil {
+		log.Printf("Format failed for post clinic body")
+	}
+
+	log.Printf("Clinic address: %s", *newClinic.Address)
+	c.store.InsertOne(store.ClinicsCollection, newClinic)
+	return nil
+}
+
+// (DELETE /clinic/{clinicid})
+func (c *ClinicServer) DeleteClinicsClinicid(ctx echo.Context, clinicid string) error {
+	objID, _ := primitive.ObjectIDFromHex(clinicid)
+	filter := bson.D{{"_id", objID}}
+	activeObj := bson.D{
+		{"$set", bson.D{{"active", false}}},
+	}
+	c.store.UpdateOne(store.ClinicsCollection, filter, activeObj)
+	return nil
+}
+
+// getClinic
+// (GET /clinic/{clinicid})
+func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string) error {
+	var clinic Clinic
+	log.Printf("Get Clinic by id - id: %s", clinicid)
+	objID, _ := primitive.ObjectIDFromHex(clinicid)
+	filter := bson.M{"_id": objID, "active": true}
+	if err := c.store.FindOne(store.ClinicsCollection, filter).Decode(&clinic); err != nil {
+		fmt.Println("Find One error ", err)
+		os.Exit(1)
+	}
+	log.Printf("test")
+	//log.Printf("Get Clinic by id - name: %s, id: %s", *newClinic.Name, *newClinic.Id)
+	log.Printf("Get Clinic by id - name: %s", clinic)
+
+	ctx.JSON(http.StatusOK, &clinic)
+
+	return nil
+}
+
+// (PATCH /clinic/{clinicid})
+func (c *ClinicServer) PatchClinicsClinicid(ctx echo.Context, clinicid string) error {
+	var newClinic NewClinic
+	err := ctx.Bind(&newClinic)
+	if err != nil {
+		log.Printf("Format failed for patch clinic body")
+	}
+	objID, _ := primitive.ObjectIDFromHex(clinicid)
+	filter := bson.D{{"_id", objID}}
+	patchObj := bson.D{
+		{"$set", newClinic },
+	}
+	c.store.UpdateOne(store.ClinicsCollection, filter, patchObj)
+	return nil
+}
+

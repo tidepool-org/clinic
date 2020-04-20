@@ -14,9 +14,11 @@ import (
 )
 
 var (
-	DatabaseName = "user"
-	CollectionName = "clinic"
-	MongoHost = "mongodb://127.0.0.1:27017"
+	DatabaseName        = "user"
+	ClinicsCollection   = "clinic"
+	ClinicsCliniciansCollection   = "clinicsClinicians"
+	ClinicsPatientsCollection   = "clinicsPatients"
+	MongoHost           = "mongodb://127.0.0.1:27017"
 	DefaultPagingParams = MongoPagingParams{Offset: 0 ,Limit: 10}
 )
 
@@ -54,11 +56,11 @@ func (d MongoStoreClient) Ping() error {
 	return d.Client.Ping(ctx, nil)
 }
 
-func (d MongoStoreClient) InsertOne(document interface{}) error {
+func (d MongoStoreClient) InsertOne(collection string, document interface{}) error {
 	// InsertOne() method Returns mongo.InsertOneResult
 	// Access a MongoDB collection through a database
 	ctx := context.TODO()
-	col := d.Client.Database(DatabaseName).Collection(CollectionName)
+	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	result, insertErr := col.InsertOne(ctx, document)
 	if insertErr != nil {
@@ -76,18 +78,18 @@ func (d MongoStoreClient) InsertOne(document interface{}) error {
 	return nil
 }
 
-func (d MongoStoreClient) FindOne(filter interface{}) *mongo.SingleResult {
+func (d MongoStoreClient) FindOne(collection string, filter interface{}) *mongo.SingleResult {
 	ctx := context.TODO()
 	fmt.Println("FindOne")
 
-	col := d.Client.Database(DatabaseName).Collection(CollectionName)
+	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	ret := col.FindOne(ctx, filter)
 	fmt.Println("Found")
 	return ret
 }
 
-func (d MongoStoreClient) Find(filter interface{}, pagingParams *MongoPagingParams) (*mongo.Cursor, error) {
+func (d MongoStoreClient) Find(collection string, filter interface{}, pagingParams *MongoPagingParams) (*mongo.Cursor, error) {
 	ctx := context.TODO()
 	fmt.Println("FindMany")
 	findOptions := options.Find()
@@ -99,18 +101,18 @@ func (d MongoStoreClient) Find(filter interface{}, pagingParams *MongoPagingPara
 	}
 
 
-	col := d.Client.Database(DatabaseName).Collection(CollectionName)
+	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	cursor, err := col.Find(ctx, filter, findOptions)
 	fmt.Println("FoundMany")
 	return cursor, err
 }
 
-func (d MongoStoreClient) UpdateOne(filter interface{}, update interface {}) *mongo.UpdateResult {
+func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, update interface {}) *mongo.UpdateResult {
 	ctx := context.TODO()
 	fmt.Println("UpdateOne")
 
-	col := d.Client.Database(DatabaseName).Collection(CollectionName)
+	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	ret, err := col.UpdateOne(ctx, filter, update)
 	if err != nil {

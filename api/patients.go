@@ -4,18 +4,33 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// deletePatientFromClinic
-// (DELETE /clinic/{clinicid}/patient/{patientid})
+// GetPatientsForClinic
+// (GET /clinics/{clinicid}/patients)
+func (c *ClinicServer) GetClinicsClinicidPatients(ctx echo.Context, clinicid string, params GetClinicsClinicidPatientsParams) error {
+	return nil
+}
+
+// AddPatientToClinic
+// (POST /clinics/{clinicid}/patients)
+func (c *ClinicServer) PostClinicsClinicidPatients(ctx echo.Context, clinicid string) error {
+	return nil
+}
+
+// DeletePatientFromClinic
+// (DELETE /clinics/{clinicid}/patients/{patientid})
 func (c *ClinicServer) DeleteClinicClinicidPatientPatientid(ctx echo.Context, clinicid string, patientid string) error {
 	return nil
 }
-// addPatientToClinic
-// (POST /clinic/{clinicid}/patient/{patientid})
-func (c *ClinicServer) PostClinicClinicidPatientPatientid(ctx echo.Context, clinicid string, patientid string) error {
+
+
+// GetPatientFromClinic
+// (GET /clinics/{clinicid}/patients/{patientid})
+func (c *ClinicServer) GetClinicsClinicidPatientPatientid(ctx echo.Context, clinicid string, patientid string) error {
 	return nil
 }
-// getCliniciansForClinic
-// (GET /clinic/{clinicid}/patients)
-func (c *ClinicServer) GetClinicClinicidPatients(ctx echo.Context, clinicid string, params GetClinicClinicidPatientsParams) error {
+
+// ModifyClinicPatient
+// (PATCH /clinics/{clinicid}/patients/{patientid})
+func (c *ClinicServer) PatchClinicsClinicidPatientsPatientid(ctx echo.Context, clinicid string, patientid string) error {
 	return nil
 }

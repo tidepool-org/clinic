@@ -10,6 +10,42 @@ components:
         type: object
       - $ref: '#/components/schemas/NewClinic'
       title: Clinic
+    ClinicianPermissions:
+      properties:
+        permissions:
+          enum:
+          - Prescriber
+          - Admin
+          - Clinician
+          items:
+            type: string
+          type: array
+      title: ClinicianPermissions
+      type: object
+    ClinicsClinicians:
+      allOf:
+      - properties:
+          clinicId:
+            type: string
+          clinicianId:
+            type: string
+        type: object
+      - $ref: '#/components/schemas/ClinicianPermissions'
+      title: ClinicsClinicians
+    ClinicsPatients:
+      properties:
+        clinicId:
+          type: string
+        id:
+          type: string
+        patientId:
+          type: string
+        permissions:
+          items:
+            type: string
+          type: array
+      title: ClinicsPatients
+      type: object
     NewClinic:
       description: Object describing a clinic
       properties:
@@ -50,183 +86,6 @@ info:
   version: '1.0'
 openapi: 3.0.0
 paths:
-  /clinic:
-    post:
-      description: Creates a Clinic
-      operationId: post-clinic
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NewClinic'
-      responses:
-        '200':
-          description: OK
-      summary: CreateClinic
-      tags: []
-  /clinic/{clinicid}:
-    delete:
-      description: Delete Clinic
-      operationId: delete-clinic-clinicid
-      responses:
-        '200':
-          description: OK
-      summary: DeleteClinic
-    get:
-      operationId: get-clinic-clinicid
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Clinic'
-          description: OK
-      summary: GetClinic
-      tags: []
-    parameters:
-    - in: path
-      name: clinicid
-      required: true
-      schema:
-        type: string
-    patch:
-      description: Modify Clinic
-      operationId: patch-clinic-clinicid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NewClinic'
-          application/xml:
-            schema:
-              properties: {}
-              type: object
-        description: Modify Clinic object
-      responses:
-        '200':
-          description: OK
-      summary: ModifyClinic
-  /clinic/{clinicid}/clinician/{clinicianid}:
-    delete:
-      description: Remove association with clinic and clinician
-      operationId: delete-clinic-clinicid-clinician-clinicianid
-      responses:
-        '200':
-          description: OK
-      summary: DeleteClinicianForClinic
-      tags: []
-    parameters:
-    - in: path
-      name: clinicid
-      required: true
-      schema:
-        type: string
-    - in: path
-      name: clinicianid
-      required: true
-      schema:
-        type: string
-    post:
-      description: Add a Clinician to a Clinic
-      operationId: post-clinic-clinicid-clinician-clinicianid
-      responses:
-        '200':
-          description: OK
-      summary: AddClinicianToClinic
-  /clinic/{clinicid}/patient/{patientid}:
-    delete:
-      description: delete patient from clinic
-      operationId: delete-clinic-clinicid-patient-patientid
-      responses:
-        '200':
-          description: OK
-        '400':
-          description: Bad Request
-        '500':
-          description: Internal Server Error
-      summary: DeletePatientFromClinic
-      tags: []
-    parameters:
-    - in: path
-      name: clinicid
-      required: true
-      schema:
-        type: string
-    - in: path
-      name: patientid
-      required: true
-      schema:
-        type: string
-    post:
-      description: Add patient to clinic
-      operationId: post-clinic-clinicid-patient-patientid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                clinicId:
-                  type: string
-                id:
-                  type: string
-                patientId:
-                  type: string
-                permissions:
-                  items:
-                    type: string
-                  type: array
-              title: PatientClinicRelationship
-              type: object
-      responses:
-        '200':
-          description: OK
-      summary: AddPatientToClinic
-  /clinic/{clinicid}/patients:
-    get:
-      description: Get list of patients associated with clinic
-      operationId: get-clinic-clinicid-patients
-      parameters:
-      - in: query
-        name: offset
-        schema:
-          type: integer
-      - in: query
-        name: limit
-        schema:
-          type: integer
-      - in: query
-        name: sortOrder
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  properties:
-                    email:
-                      type: string
-                    id:
-                      type: string
-                    pwhas:
-                      type: string
-                    userid:
-                      type: string
-                    username:
-                      type: string
-                  title: Patient
-                  type: object
-                type: array
-          description: OK
-      summary: GetCliniciansForClinic
-      tags: []
-    parameters:
-    - in: path
-      name: clinicid
-      required: true
-      schema:
-        type: string
   /clinics:
     get:
       description: Retrieve list of clinics.  Requires admin app authorization
@@ -245,8 +104,6 @@ paths:
         name: sortOrder
         schema:
           type: string
-      requestBody:
-        description: ''
       responses:
         '200':
           content:
@@ -256,9 +113,64 @@ paths:
                   $ref: '#/components/schemas/Clinic'
                 type: array
           description: OK
-      summary: GetClinic
+      summary: GetClinics
       tags: []
     parameters: []
+    post:
+      description: Add a new clinic
+      operationId: post-clinics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewClinic'
+      responses:
+        '200':
+          description: OK
+      summary: AddClinic
+  /clinics/{clinicid}:
+    delete:
+      description: Delete Clinic
+      operationId: delete-clinics-clinicid
+      responses:
+        '200':
+          description: OK
+      summary: DeleteClinic
+    get:
+      description: Get Clinic
+      operationId: get-clinics-clinicid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Clinic'
+          description: OK
+      summary: GetClinic
+      tags: []
+    parameters:
+    - in: path
+      name: clinicid
+      required: true
+      schema:
+        type: string
+    patch:
+      description: Modify Clinic
+      operationId: patch-clinics-clinicid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewClinic'
+          application/xml:
+            schema:
+              properties: {}
+              type: object
+        description: Modify Clinic object
+      responses:
+        '200':
+          description: OK
+      summary: ModifyClinic
   /clinics/{clinicid}/clinicians:
     get:
       description: Retrieve a list of clinicians for a clinic
@@ -282,23 +194,10 @@ paths:
             application/json:
               schema:
                 items:
-                  description: Object describing a doctor
-                  properties:
-                    email:
-                      type: string
-                    id:
-                      type: string
-                    pwhash:
-                      type: string
-                    userid:
-                      type: string
-                    username:
-                      type: string
-                  title: Clinician
-                  type: object
+                  $ref: '#/components/schemas/ClinicsClinicians'
                 type: array
           description: OK
-      summary: GetCliniciansForClinic
+      summary: GetCliniciansFromClinic
       tags: []
     parameters:
     - in: path
@@ -306,5 +205,143 @@ paths:
       required: true
       schema:
         type: string
+    post:
+      description: Add a clinician to clinic
+      operationId: post-clinics-clinicid-clinicians
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClinicsClinicians'
+      responses:
+        '200':
+          description: OK
+      summary: AddClinicianToClinic
+  /clinics/{clinicid}/clinicians/{clinicianid}:
+    delete:
+      description: Remove association with clinic and clinician
+      operationId: delete-clinics-clinicid-clinicians-clinicianid
+      responses:
+        '200':
+          description: OK
+      summary: DeleteClinicianFromClinic
+      tags: []
+    get:
+      description: Get a clinician object
+      operationId: get-clinics-clinicid-clinicians-clinicianid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicsClinicians'
+          description: OK
+      summary: GetClinician
+    parameters:
+    - in: path
+      name: clinicid
+      required: true
+      schema:
+        type: string
+    - in: path
+      name: clinicianid
+      required: true
+      schema:
+        type: string
+    patch:
+      operationId: patch-clinics-clinicid-clinicians-clinicianid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClinicianPermissions'
+      responses:
+        '200':
+          description: OK
+      summary: ModifyClinicClinician
+  /clinics/{clinicid}/patients:
+    get:
+      description: Get list of patients associated with clinic
+      operationId: get-clinics-clinicid-patients
+      parameters:
+      - in: query
+        name: offset
+        schema:
+          type: integer
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: sortOrder
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ClinicsPatients'
+                type: array
+          description: OK
+      summary: GetPatientsForClinic
+      tags: []
+    parameters:
+    - in: path
+      name: clinicid
+      required: true
+      schema:
+        type: string
+    post:
+      description: Add patient to clinic
+      operationId: post-clinics-clinicid-patients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClinicsPatients'
+      responses:
+        '200':
+          description: OK
+      summary: AddPatientToClinic
+  /clinics/{clinicid}/patients/{patientid}:
+    delete:
+      description: delete patient from clinic
+      operationId: delete-clinic-clinicid-patient-patientid
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      summary: DeletePatientFromClinic
+      tags: []
+    get:
+      description: Get a patient from clinic
+      operationId: get-clinics-clinicid-patient-patientid
+      responses:
+        '200':
+          description: OK
+      summary: GetPatientFromClinic
+    parameters:
+    - in: path
+      name: clinicid
+      required: true
+      schema:
+        type: string
+    - in: path
+      name: patientid
+      required: true
+      schema:
+        type: string
+    patch:
+      description: Modify a patient from clinic
+      operationId: patch-clinics-clinicid-patients-patientid
+      responses:
+        '200':
+          description: OK
+      summary: ModifyClinicPatient
 servers:
 - url: http://localhost:3000
