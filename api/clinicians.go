@@ -4,7 +4,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"fmt"
@@ -25,9 +24,12 @@ type FullClinicsClinicians struct {
 // GetCliniciansFromClinic
 // (GET /clinics/{clinicid}/clinicians)
 func (c *ClinicServer) GetClinicsClinicidClinicians(ctx echo.Context, clinicid string, params GetClinicsClinicidCliniciansParams) error {
-	clinicsClinician := ClinicsClinicians{ClinicId: &clinicid}
-	filter := FullClinicsClinicians{ClinicsCliniciansExtraFields: ClinicsCliniciansExtraFields{Active: true}, 
-		                            ClinicsClinicians: clinicsClinician}
+	//clinicsClinician := ClinicsClinicians{ClinicId: &clinicid}
+	//clinicsClinician := ClinicsClinicians{}
+	//filter := FullClinicsClinicians{ClinicsCliniciansExtraFields: ClinicsCliniciansExtraFields{Active: true},
+	//	                            ClinicsClinicians: clinicsClinician}
+	filter := bson.M{"clinicId": clinicid, "active": true}
+
 	pagingParams := store.DefaultPagingParams
 	if params.Limit != nil {
 		pagingParams.Limit = int64(*params.Limit)
@@ -44,6 +46,7 @@ func (c *ClinicServer) GetClinicsClinicidClinicians(ctx echo.Context, clinicid s
 	if err = cursor.All(goctx, &clinicsClinicians); err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("ret: ", clinicsClinicians)
 
 	ctx.JSON(http.StatusOK, &clinicsClinicians)
 	return nil
@@ -55,6 +58,7 @@ func (c *ClinicServer) PostClinicsClinicidClinicians(ctx echo.Context, clinicid 
 	var clinicsClinicians FullClinicsClinicians
 	err := ctx.Bind(&clinicsClinicians)
 	clinicsClinicians.Active = true
+	clinicsClinicians.ClinicId = &clinicid
 	if err != nil {
 		log.Printf("Format failed for post clinicsClinicians body")
 	}
@@ -66,9 +70,7 @@ func (c *ClinicServer) PostClinicsClinicidClinicians(ctx echo.Context, clinicid 
 // DeleteClinicianFromClinic
 // (DELETE /clinics/{clinicid}/clinicians/{clinicianid})
 func (c *ClinicServer) DeleteClinicsClinicidCliniciansClinicianid(ctx echo.Context, clinicid string, clinicianid string) error {
-	clinicObjID, _ := primitive.ObjectIDFromHex(clinicid)
-	clinicianObjID, _ := primitive.ObjectIDFromHex(clinicid)
-	filter := bson.M{"ClinicId": clinicObjID, "ClinicianId": clinicianObjID}
+	filter := bson.M{"clinicId": clinicid, "clinicianId": clinicianid}
 	activeObj := bson.D{
 		{"$set", bson.D{{"active", false}}},
 	}
@@ -81,15 +83,11 @@ func (c *ClinicServer) DeleteClinicsClinicidCliniciansClinicianid(ctx echo.Conte
 func (c *ClinicServer) GetClinicsClinicidCliniciansClinicianid(ctx echo.Context, clinicid string, clinicianid string) error {
 	var clinicsClinicians ClinicsClinicians
 	log.Printf("Get Clinic by id - id: %s", clinicid)
-	clinicObjID, _ := primitive.ObjectIDFromHex(clinicid)
-	clinicianObjID, _ := primitive.ObjectIDFromHex(clinicid)
-	filter := bson.M{"ClinicId": clinicObjID, "ClinicianId": clinicianObjID, "active": true}
+	filter := bson.M{"clinicId": clinicid, "clinicianId": clinicianid, "active": true}
 	if err := c.store.FindOne(store.ClinicsCliniciansCollection, filter).Decode(&clinicsClinicians); err != nil {
 		fmt.Println("Find One error ", err)
 		os.Exit(1)
 	}
-	log.Printf("test")
-	//log.Printf("Get Clinic by id - name: %s, id: %s", *newClinic.Name, *newClinic.Id)
 	log.Printf("Get Clinic by id - name: %s", clinicsClinicians)
 
 	ctx.JSON(http.StatusOK, &clinicsClinicians)
@@ -105,9 +103,7 @@ func (c *ClinicServer) PatchClinicsClinicidCliniciansClinicianid(ctx echo.Contex
 	if err != nil {
 		log.Printf("Format failed for patch clinic body")
 	}
-	clinicObjID, _ := primitive.ObjectIDFromHex(clinicid)
-	clinicianObjID, _ := primitive.ObjectIDFromHex(clinicid)
-	filter := bson.M{"ClinicId": clinicObjID, "ClinicianId": clinicianObjID}
+	filter := bson.M{"clinicId": clinicid, "clinicianId": clinicianid}
 
 	patchObj := bson.D{
 		{"$set", newClinic },

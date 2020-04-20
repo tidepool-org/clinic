@@ -20,7 +20,7 @@ type ClinicianPermissions struct {
 type ClinicsClinicians struct {
 	// Embedded fields due to inline allOf schema
 	ClinicId    *string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
-	ClinicianId *string `json:"clinicianId,omitempty" bson:"clinicianId,omitempty"`
+	ClinicianId string  `json:"clinicianId" bson:"clinicianId"`
 	// Embedded struct due to allOf(#/components/schemas/ClinicianPermissions)
 	ClinicianPermissions `bson:",inline"`
 }

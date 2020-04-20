@@ -166,12 +166,10 @@ paths:
               properties:
                 permissions:
                   type: array
-                  enum:
-                    - Prescriber
-                    - Admin
-                    - Clinician
+                  uniqueItems: true
                   items:
                     type: string
+                    pattern: 'Admin|Prescriber|Clinician'
     get:
       summary: GetClinician
       operationId: get-clinics-clinicid-clinicians-clinicianid
@@ -332,6 +330,8 @@ paths:
                       type: string
                     clinicId:
                       type: string
+                  required:
+                    - clinicianId
                 - $ref: '#/paths/~1clinics~1%7Bclinicid%7D~1clinicians~1%7Bclinicianid%7D/patch/requestBody/content/application~1json/schema'
 components:
   schemas: {}

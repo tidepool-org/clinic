@@ -13,13 +13,11 @@ components:
     ClinicianPermissions:
       properties:
         permissions:
-          enum:
-          - Prescriber
-          - Admin
-          - Clinician
           items:
+            pattern: Admin|Prescriber|Clinician
             type: string
           type: array
+          uniqueItems: true
       title: ClinicianPermissions
       type: object
     ClinicsClinicians:
@@ -29,6 +27,8 @@ components:
             type: string
           clinicianId:
             type: string
+        required:
+        - clinicianId
         type: object
       - $ref: '#/components/schemas/ClinicianPermissions'
       title: ClinicsClinicians
