@@ -1,8 +1,8 @@
-FROM tidepool/tpctl-base:latest
-WORKDIR /root/workdir
-ENV TERM xterm-256color
-ENV TZ America/Los_Angeles
-ENV DEBIAN_FRONTEND noninteractive
-COPY cmd pkgs lib eksctl /root/tpctl/
-RUN cd /root/workdir
-CMD [ "/root/tpctl/cmd/tpctl.sh"  ]
+# Development
+FROM golang:1.13.10-alpine AS development
+WORKDIR /go/src/github.com/tidepool-org/clinic
+RUN adduser -D tidepool && \
+    chown -R tidepool /go/src/github.com/tidepool-org/clinic
+USER tidepool
+COPY --chown=tidepool . .
+CMD ["go", "run", "clinic.go"]
