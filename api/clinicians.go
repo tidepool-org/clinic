@@ -24,10 +24,6 @@ type FullClinicsClinicians struct {
 // GetCliniciansFromClinic
 // (GET /clinics/{clinicid}/clinicians)
 func (c *ClinicServer) GetClinicsClinicidClinicians(ctx echo.Context, clinicid string, params GetClinicsClinicidCliniciansParams) error {
-	//clinicsClinician := ClinicsClinicians{ClinicId: &clinicid}
-	//clinicsClinician := ClinicsClinicians{}
-	//filter := FullClinicsClinicians{ClinicsCliniciansExtraFields: ClinicsCliniciansExtraFields{Active: true},
-	//	                            ClinicsClinicians: clinicsClinician}
 	filter := bson.M{"clinicId": clinicid, "active": true}
 
 	pagingParams := store.DefaultPagingParams

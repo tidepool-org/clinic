@@ -11,6 +11,7 @@ components:
       - $ref: '#/components/schemas/NewClinic'
       title: Clinic
     ClinicianPermissions:
+      description: Permisions for relationship between Clinics and Clinicians
       properties:
         permissions:
           items:
@@ -31,21 +32,21 @@ components:
         - clinicianId
         type: object
       - $ref: '#/components/schemas/ClinicianPermissions'
+      description: Relationship between Clinics and Clinicians
       title: ClinicsClinicians
     ClinicsPatients:
-      properties:
-        clinicId:
-          type: string
-        id:
-          type: string
-        patientId:
-          type: string
-        permissions:
-          items:
+      allOf:
+      - properties:
+          clinicId:
             type: string
-          type: array
+          id:
+            type: string
+          patientId:
+            type: string
+        type: object
+      - $ref: '#/components/schemas/PatientPermissions'
+      description: Clinics Patients Relationship
       title: ClinicsPatients
-      type: object
     NewClinic:
       description: Object describing a clinic
       properties:
@@ -81,6 +82,15 @@ components:
           phoneNumbers:
             number: 555-555-5555
             type: main
+    PatientPermissions:
+      description: Permissions for Clinic Patient Relationship
+      properties:
+        permissions:
+          items:
+            type: string
+          type: array
+      title: PatientPermissions
+      type: object
 info:
   title: clinic
   version: '1.0'
@@ -301,6 +311,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ClinicsPatients'
+        description: ''
       responses:
         '200':
           description: OK
@@ -308,7 +319,7 @@ paths:
   /clinics/{clinicid}/patients/{patientid}:
     delete:
       description: delete patient from clinic
-      operationId: delete-clinic-clinicid-patient-patientid
+      operationId: delete-clinic-clinicid-patients-patientid
       responses:
         '200':
           description: OK
@@ -320,9 +331,13 @@ paths:
       tags: []
     get:
       description: Get a patient from clinic
-      operationId: get-clinics-clinicid-patient-patientid
+      operationId: get-clinics-clinicid-patients-patientid
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicsPatients'
           description: OK
       summary: GetPatientFromClinic
     parameters:
@@ -339,6 +354,11 @@ paths:
     patch:
       description: Modify a patient from clinic
       operationId: patch-clinics-clinicid-patients-patientid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientPermissions'
       responses:
         '200':
           description: OK

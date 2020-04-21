@@ -50,10 +50,10 @@ type ServerInterface interface {
 	PostClinicsClinicidPatients(ctx echo.Context, clinicid string) error
 	// DeletePatientFromClinic
 	// (DELETE /clinics/{clinicid}/patients/{patientid})
-	DeleteClinicClinicidPatientPatientid(ctx echo.Context, clinicid string, patientid string) error
+	DeleteClinicClinicidPatientsPatientid(ctx echo.Context, clinicid string, patientid string) error
 	// GetPatientFromClinic
 	// (GET /clinics/{clinicid}/patients/{patientid})
-	GetClinicsClinicidPatientPatientid(ctx echo.Context, clinicid string, patientid string) error
+	GetClinicsClinicidPatientsPatientid(ctx echo.Context, clinicid string, patientid string) error
 	// ModifyClinicPatient
 	// (PATCH /clinics/{clinicid}/patients/{patientid})
 	PatchClinicsClinicidPatientsPatientid(ctx echo.Context, clinicid string, patientid string) error
@@ -335,8 +335,8 @@ func (w *ServerInterfaceWrapper) PostClinicsClinicidPatients(ctx echo.Context) e
 	return err
 }
 
-// DeleteClinicClinicidPatientPatientid converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteClinicClinicidPatientPatientid(ctx echo.Context) error {
+// DeleteClinicClinicidPatientsPatientid converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteClinicClinicidPatientsPatientid(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicid" -------------
 	var clinicid string
@@ -355,12 +355,12 @@ func (w *ServerInterfaceWrapper) DeleteClinicClinicidPatientPatientid(ctx echo.C
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeleteClinicClinicidPatientPatientid(ctx, clinicid, patientid)
+	err = w.Handler.DeleteClinicClinicidPatientsPatientid(ctx, clinicid, patientid)
 	return err
 }
 
-// GetClinicsClinicidPatientPatientid converts echo context to params.
-func (w *ServerInterfaceWrapper) GetClinicsClinicidPatientPatientid(ctx echo.Context) error {
+// GetClinicsClinicidPatientsPatientid converts echo context to params.
+func (w *ServerInterfaceWrapper) GetClinicsClinicidPatientsPatientid(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicid" -------------
 	var clinicid string
@@ -379,7 +379,7 @@ func (w *ServerInterfaceWrapper) GetClinicsClinicidPatientPatientid(ctx echo.Con
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetClinicsClinicidPatientPatientid(ctx, clinicid, patientid)
+	err = w.Handler.GetClinicsClinicidPatientsPatientid(ctx, clinicid, patientid)
 	return err
 }
 
@@ -441,8 +441,8 @@ func RegisterHandlers(router EchoRouter, si ServerInterface) {
 	router.PATCH("/clinics/:clinicid/clinicians/:clinicianid", wrapper.PatchClinicsClinicidCliniciansClinicianid)
 	router.GET("/clinics/:clinicid/patients", wrapper.GetClinicsClinicidPatients)
 	router.POST("/clinics/:clinicid/patients", wrapper.PostClinicsClinicidPatients)
-	router.DELETE("/clinics/:clinicid/patients/:patientid", wrapper.DeleteClinicClinicidPatientPatientid)
-	router.GET("/clinics/:clinicid/patients/:patientid", wrapper.GetClinicsClinicidPatientPatientid)
+	router.DELETE("/clinics/:clinicid/patients/:patientid", wrapper.DeleteClinicClinicidPatientsPatientid)
+	router.GET("/clinics/:clinicid/patients/:patientid", wrapper.GetClinicsClinicidPatientsPatientid)
 	router.PATCH("/clinics/:clinicid/patients/:patientid", wrapper.PatchClinicsClinicidPatientsPatientid)
 
 }

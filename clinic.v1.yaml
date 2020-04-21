@@ -170,6 +170,7 @@ paths:
                   items:
                     type: string
                     pattern: 'Admin|Prescriber|Clinician'
+              description: Permisions for relationship between Clinics and Clinicians
     get:
       summary: GetClinician
       operationId: get-clinics-clinicid-clinicians-clinicianid
@@ -227,18 +228,18 @@ paths:
           application/json:
             schema:
               title: ClinicsPatients
-              type: object
-              properties:
-                id:
-                  type: string
-                patientId:
-                  type: string
-                clinicId:
-                  type: string
-                permissions:
-                  type: array
-                  items:
-                    type: string
+              allOf:
+                - type: object
+                  properties:
+                    id:
+                      type: string
+                    patientId:
+                      type: string
+                    clinicId:
+                      type: string
+                - $ref: '#/paths/~1clinics~1%7Bclinicid%7D~1patients~1%7Bpatientid%7D/patch/requestBody/content/application~1json/schema'
+              description: Clinics Patients Relationship
+        description: ''
   '/clinics/{clinicid}/patients/{patientid}':
     parameters:
       - schema:
@@ -254,7 +255,7 @@ paths:
     delete:
       summary: DeletePatientFromClinic
       tags: []
-      operationId: delete-clinic-clinicid-patient-patientid
+      operationId: delete-clinic-clinicid-patients-patientid
       description: delete patient from clinic
       responses:
         '200':
@@ -265,10 +266,14 @@ paths:
           description: Internal Server Error
     get:
       summary: GetPatientFromClinic
-      operationId: get-clinics-clinicid-patient-patientid
+      operationId: get-clinics-clinicid-patients-patientid
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1clinics~1%7Bclinicid%7D~1patients/post/requestBody/content/application~1json/schema'
       description: Get a patient from clinic
     patch:
       summary: ModifyClinicPatient
@@ -277,6 +282,18 @@ paths:
         '200':
           description: OK
       description: Modify a patient from clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: PatientPermissions
+              type: object
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: string
+              description: Permissions for Clinic Patient Relationship
   '/clinics/{clinicid}/clinicians':
     parameters:
       - schema:
@@ -333,5 +350,6 @@ paths:
                   required:
                     - clinicianId
                 - $ref: '#/paths/~1clinics~1%7Bclinicid%7D~1clinicians~1%7Bclinicianid%7D/patch/requestBody/content/application~1json/schema'
+              description: Relationship between Clinics and Clinicians
 components:
   schemas: {}

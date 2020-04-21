@@ -27,10 +27,12 @@ type ClinicsClinicians struct {
 
 // ClinicsPatients defines model for ClinicsPatients.
 type ClinicsPatients struct {
-	ClinicId    *string   `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
-	Id          *string   `json:"id,omitempty" bson:"id,omitempty"`
-	PatientId   *string   `json:"patientId,omitempty" bson:"patientId,omitempty"`
-	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
+	// Embedded fields due to inline allOf schema
+	ClinicId  *string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+	Id        *string `json:"id,omitempty" bson:"id,omitempty"`
+	PatientId *string `json:"patientId,omitempty" bson:"patientId,omitempty"`
+	// Embedded struct due to allOf(#/components/schemas/PatientPermissions)
+	PatientPermissions `bson:",inline"`
 }
 
 // NewClinic defines model for NewClinic.
@@ -43,6 +45,11 @@ type NewClinic struct {
 		Number *string `json:"number,omitempty" bson:"number,omitempty"`
 		Type   *string `json:"type,omitempty" bson:"type,omitempty"`
 	} `json:"phoneNumbers,omitempty" bson:"phoneNumbers,omitempty"`
+}
+
+// PatientPermissions defines model for PatientPermissions.
+type PatientPermissions struct {
+	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
 }
 
 // GetClinicsParams defines parameters for GetClinics.
@@ -81,6 +88,9 @@ type GetClinicsClinicidPatientsParams struct {
 // PostClinicsClinicidPatientsJSONBody defines parameters for PostClinicsClinicidPatients.
 type PostClinicsClinicidPatientsJSONBody ClinicsPatients
 
+// PatchClinicsClinicidPatientsPatientidJSONBody defines parameters for PatchClinicsClinicidPatientsPatientid.
+type PatchClinicsClinicidPatientsPatientidJSONBody PatientPermissions
+
 // PostClinicsRequestBody defines body for PostClinics for application/json ContentType.
 type PostClinicsJSONRequestBody PostClinicsJSONBody
 
@@ -95,4 +105,7 @@ type PatchClinicsClinicidCliniciansClinicianidJSONRequestBody PatchClinicsClinic
 
 // PostClinicsClinicidPatientsRequestBody defines body for PostClinicsClinicidPatients for application/json ContentType.
 type PostClinicsClinicidPatientsJSONRequestBody PostClinicsClinicidPatientsJSONBody
+
+// PatchClinicsClinicidPatientsPatientidRequestBody defines body for PatchClinicsClinicidPatientsPatientid for application/json ContentType.
+type PatchClinicsClinicidPatientsPatientidJSONRequestBody PatchClinicsClinicidPatientsPatientidJSONBody
 
