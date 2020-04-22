@@ -12,4 +12,3 @@ require (
 	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 // indirect
 )
 
-replace github.com/deepmap/oapi-codegen => ../../opensource/oapi-codegen
