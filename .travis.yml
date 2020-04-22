@@ -1,9 +1,22 @@
 sudo: false
 
+env:
+  - GO111MODULE=on
+
 language: go
 
 go:
   - 1.13.10
 
+addons:
+  artifacts:
+    paths:
+      - $(git ls-files -o deploy/*/*-*.tar.gz | tr "\n" ":")
+    target_paths:
+      - /
+
 script:
   - ./artifact.sh
+
+services:
+  - docker
