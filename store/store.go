@@ -33,6 +33,7 @@ type MongoPagingParams struct {
 }
 func NewMongoStoreClient() *MongoStoreClient {
 
+	fmt.Println("Creating Mongo Store")
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoHost))
 	if err != nil {
 		fmt.Println("mongo.NewClient() ERROR:", err)
@@ -44,6 +45,7 @@ func NewMongoStoreClient() *MongoStoreClient {
 		fmt.Println("mongo.Connect ERROR:", err)
 		os.Exit(1)
 	}
+	fmt.Println("Created Mongo Store Successfully")
 
 
 	return &MongoStoreClient{

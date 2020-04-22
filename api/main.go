@@ -20,6 +20,7 @@ var (
 func MainLoop() {
 	// Echo instance
 	e := echo.New()
+	e.Logger.Print("Starrting Main Loop")
 	swagger, err := GetSwagger()
 	if err != nil {
 		e.Logger.Fatal("Cound not get spec")
@@ -34,12 +35,14 @@ func MainLoop() {
 	e.GET("/", hello)
 
 	// Create Store
+	e.Logger.Print("Getting Mongog Store")
 	store := store.NewMongoStoreClient()
 
 	// Register Handler
 	RegisterHandlers(e, &ClinicServer{store: store})
 
 	// Start server
+	e.Logger.Print("Starting Server")
 	fmt.Printf(ServerString)
 	e.Logger.Fatal(e.Start(ServerString))
 }
