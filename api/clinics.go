@@ -61,10 +61,10 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	var newClinic FullNewClinic
 	err := ctx.Bind(&newClinic)
-	newClinic.Active = true
 	if err != nil {
 		log.Printf("Format failed for post clinic body")
 	}
+	newClinic.Active = true
 
 	log.Printf("Clinic address: %s", *newClinic.Address)
 	c.store.InsertOne(store.ClinicsCollection, newClinic)
