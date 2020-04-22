@@ -1,4 +1,9 @@
 sudo: false
 
+language: go
+
+go:
+  - 1.13.10
+
 script:
   - ./artifact.sh
