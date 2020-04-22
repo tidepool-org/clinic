@@ -16,6 +16,7 @@ addons:
       - /
 
 script:
+  - ./build.sh
   - ./artifact.sh
 
 services:
