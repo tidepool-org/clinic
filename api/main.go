@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	Host = "localhost"
+	Host = ""
 	Port = 3200
 	ServerString = fmt.Sprintf("%s:%d", Host, Port)
 
