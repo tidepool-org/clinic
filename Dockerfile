@@ -5,4 +5,4 @@ RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic
 USER tidepool
 COPY --chown=tidepool . .
-CMD ["ls", "-lR"]
+CMD ["./dist/clinic"]
