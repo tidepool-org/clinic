@@ -11,7 +11,7 @@ import (
 
 var (
 	Host = "localhost"
-	Port = 3000
+	Port = 3200
 	ServerString = fmt.Sprintf("%s:%d", Host, Port)
 
 )
@@ -31,7 +31,6 @@ func MainLoop() {
 	if err != nil {
 		e.Logger.Fatal("Cound not connect to database: ", err)
 	}
-	e.Logger.Print("Connection String: ", mongoHost)
 
 	// Middleware
 	e.Use(middleware.Logger())
