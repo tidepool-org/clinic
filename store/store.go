@@ -14,13 +14,24 @@ import (
 )
 
 var (
-	DatabaseName        = "user"
+
+	DatabaseName        = ""
+	DefaultClinicDatabaseName = "clinic"
 	ClinicsCollection   = "clinic"
 	ClinicsCliniciansCollection   = "clinicsClinicians"
 	ClinicsPatientsCollection   = "clinicsPatients"
 	MongoHost           = "mongodb://127.0.0.1:27017"
 	DefaultPagingParams = MongoPagingParams{Offset: 0 ,Limit: 10}
 )
+
+func init() {
+	databaseName, ok := os.LookupEnv("TIDEPOOL_STORE_DATABASE")
+	if ok {
+		DatabaseName = databaseName
+	} else {
+		DatabaseName = DefaultClinicDatabaseName
+	}
+}
 
 //Mongo Storage Client
 type MongoStoreClient struct {
@@ -31,10 +42,10 @@ type MongoPagingParams struct {
 	Offset int64
 	Limit int64
 }
-func NewMongoStoreClient() *MongoStoreClient {
+func NewMongoStoreClient(mongoHost string) *MongoStoreClient {
 
 	fmt.Println("Creating Mongo Store")
-	client, err := mongo.NewClient(options.Client().ApplyURI(MongoHost))
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoHost))
 	if err != nil {
 		fmt.Println("mongo.NewClient() ERROR:", err)
 		os.Exit(1)
@@ -124,4 +135,50 @@ func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, updat
 	}
 	fmt.Println("Updated")
 	return ret
+}
+
+// XXX We should use go.common
+func GetConnectionString() (string, error) {
+	scheme, _ := os.LookupEnv("TIDEPOOL_STORE_SCHEME")
+	hosts, _ := os.LookupEnv("TIDEPOOL_STORE_ADDRESSES")
+	user, _ := os.LookupEnv("TIDEPOOL_STORE_USERNAME")
+	password, _ := os.LookupEnv("TIDEPOOL_STORE_PASSWORD")
+	optParams, _ := os.LookupEnv("TIDEPOOL_STORE_OPT_PARAMS")
+	ssl, _ := os.LookupEnv("TIDEPOOL_STORE_TLS")
+
+
+	var cs string
+	if scheme != "" {
+		cs = scheme + "://"
+	} else {
+		cs = "mongodb://"
+	}
+
+	if user != "" {
+		cs += user
+		if password != "" {
+			cs += ":"
+			cs += password
+		}
+		cs += "@"
+	}
+
+	if hosts != "" {
+		cs += hosts
+		cs += "/"
+	} else {
+		cs += "localhost/"
+	}
+
+	if ssl == "true" {
+		cs += "?ssl=true"
+	} else {
+		cs += "?ssl=false"
+	}
+
+	if optParams != "" {
+		cs += "&"
+		cs += optParams
+	}
+	return cs, nil
 }

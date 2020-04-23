@@ -20,11 +20,18 @@ var (
 func MainLoop() {
 	// Echo instance
 	e := echo.New()
-	e.Logger.Print("Starrting Main Loop")
+	e.Logger.Print("Starting Main Loop")
 	swagger, err := GetSwagger()
 	if err != nil {
 		e.Logger.Fatal("Cound not get spec")
 	}
+
+	// Connection string
+	mongoHost, err := store.GetConnectionString()
+	if err != nil {
+		e.Logger.Fatal("Cound not connect to database: ", err)
+	}
+	e.Logger.Print("Connection String: ", mongoHost)
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -36,10 +43,10 @@ func MainLoop() {
 
 	// Create Store
 	e.Logger.Print("Getting Mongog Store")
-	store := store.NewMongoStoreClient()
+	dbstore := store.NewMongoStoreClient(mongoHost)
 
 	// Register Handler
-	RegisterHandlers(e, &ClinicServer{store: store})
+	RegisterHandlers(e, &ClinicServer{store: dbstore})
 
 	// Start server
 	e.Logger.Print("Starting Server")
@@ -51,3 +58,5 @@ func MainLoop() {
 func hello(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello, World!")
 }
+
+
