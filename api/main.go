@@ -11,7 +11,7 @@ import (
 
 var (
 	Host = ""
-	Port = 3200
+	Port = 8080
 	ServerString = fmt.Sprintf("%s:%d", Host, Port)
 
 )
