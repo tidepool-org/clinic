@@ -6,57 +6,57 @@ package api
 // Clinic defines model for Clinic.
 type Clinic struct {
 	// Embedded fields due to inline allOf schema
-	Id string `json:"_id" bson:"_id"`
+	Id string `json:"_id"`
 	// Embedded struct due to allOf(#/components/schemas/NewClinic)
-	NewClinic `bson:",inline"`
+	NewClinic
 }
 
 // ClinicianPermissions defines model for ClinicianPermissions.
 type ClinicianPermissions struct {
-	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
+	Permissions *[]string `json:"permissions,omitempty"`
 }
 
 // ClinicsClinicians defines model for ClinicsClinicians.
 type ClinicsClinicians struct {
 	// Embedded fields due to inline allOf schema
-	ClinicId    *string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
-	ClinicianId string  `json:"clinicianId" bson:"clinicianId"`
+	ClinicId    *string `json:"clinicId,omitempty"`
+	ClinicianId string  `json:"clinicianId"`
 	// Embedded struct due to allOf(#/components/schemas/ClinicianPermissions)
-	ClinicianPermissions `bson:",inline"`
+	ClinicianPermissions
 }
 
 // ClinicsPatients defines model for ClinicsPatients.
 type ClinicsPatients struct {
 	// Embedded fields due to inline allOf schema
-	ClinicId  *string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
-	Id        *string `json:"id,omitempty" bson:"id,omitempty"`
-	PatientId *string `json:"patientId,omitempty" bson:"patientId,omitempty"`
+	ClinicId  *string `json:"clinicId,omitempty"`
+	Id        *string `json:"id,omitempty"`
+	PatientId *string `json:"patientId,omitempty"`
 	// Embedded struct due to allOf(#/components/schemas/PatientPermissions)
-	PatientPermissions `bson:",inline"`
+	PatientPermissions
 }
 
 // NewClinic defines model for NewClinic.
 type NewClinic struct {
-	Address      *string                 `json:"address,omitempty" bson:"address,omitempty"`
-	Location     *string                 `json:"location,omitempty" bson:"location,omitempty"`
-	Metadata     *map[string]interface{} `json:"metadata,omitempty" bson:"metadata,omitempty"`
-	Name         *string                 `json:"name,omitempty" bson:"name,omitempty"`
+	Address      *string                 `json:"address,omitempty"`
+	Location     *string                 `json:"location,omitempty"`
+	Metadata     *map[string]interface{} `json:"metadata,omitempty"`
+	Name         *string                 `json:"name,omitempty"`
 	PhoneNumbers *[]struct {
-		Number *string `json:"number,omitempty" bson:"number,omitempty"`
-		Type   *string `json:"type,omitempty" bson:"type,omitempty"`
-	} `json:"phoneNumbers,omitempty" bson:"phoneNumbers,omitempty"`
+		Number *string `json:"number,omitempty"`
+		Type   *string `json:"type,omitempty"`
+	} `json:"phoneNumbers,omitempty"`
 }
 
 // PatientPermissions defines model for PatientPermissions.
 type PatientPermissions struct {
-	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
+	Permissions *[]string `json:"permissions,omitempty"`
 }
 
 // GetClinicsParams defines parameters for GetClinics.
 type GetClinicsParams struct {
-	Offset    *int    `json:"offset,omitempty" bson:"offset,omitempty"`
-	Limit     *int    `json:"limit,omitempty" bson:"limit,omitempty"`
-	SortOrder *string `json:"sortOrder,omitempty" bson:"sortOrder,omitempty"`
+	Offset    *int    `json:"offset,omitempty"`
+	Limit     *int    `json:"limit,omitempty"`
+	SortOrder *string `json:"sortOrder,omitempty"`
 }
 
 // PostClinicsJSONBody defines parameters for PostClinics.
@@ -67,9 +67,9 @@ type PatchClinicsClinicidJSONBody NewClinic
 
 // GetClinicsClinicidCliniciansParams defines parameters for GetClinicsClinicidClinicians.
 type GetClinicsClinicidCliniciansParams struct {
-	Offset    *int    `json:"offset,omitempty" bson:"offset,omitempty"`
-	Limit     *int    `json:"limit,omitempty" bson:"limit,omitempty"`
-	SortOrder *string `json:"sortOrder,omitempty" bson:"sortOrder,omitempty"`
+	Offset    *int    `json:"offset,omitempty"`
+	Limit     *int    `json:"limit,omitempty"`
+	SortOrder *string `json:"sortOrder,omitempty"`
 }
 
 // PostClinicsClinicidCliniciansJSONBody defines parameters for PostClinicsClinicidClinicians.
@@ -80,9 +80,9 @@ type PatchClinicsClinicidCliniciansClinicianidJSONBody ClinicianPermissions
 
 // GetClinicsClinicidPatientsParams defines parameters for GetClinicsClinicidPatients.
 type GetClinicsClinicidPatientsParams struct {
-	Offset    *int    `json:"offset,omitempty" bson:"offset,omitempty"`
-	Limit     *int    `json:"limit,omitempty" bson:"limit,omitempty"`
-	SortOrder *string `json:"sortOrder,omitempty" bson:"sortOrder,omitempty"`
+	Offset    *int    `json:"offset,omitempty"`
+	Limit     *int    `json:"limit,omitempty"`
+	SortOrder *string `json:"sortOrder,omitempty"`
 }
 
 // PostClinicsClinicidPatientsJSONBody defines parameters for PostClinicsClinicidPatients.

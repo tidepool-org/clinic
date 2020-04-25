@@ -31,12 +31,12 @@ func OapiValidatorFromYamlFile(path string) (echo.MiddlewareFunc, error) {
 		return nil, fmt.Errorf("error parsing %s as Swagger YAML: %s",
 			path, err)
 	}
-	return OapiRequestValidator(swagger), nil
+	return OapiRequestValidator(swagger, nil), nil
 }
 
 // Create a validator from a swagger object.
-func OapiRequestValidator(swagger *openapi3.Swagger) echo.MiddlewareFunc {
-	return OapiRequestValidatorWithOptions(swagger, nil)
+func OapiRequestValidator(swagger *openapi3.Swagger, options *Options) echo.MiddlewareFunc {
+	return OapiRequestValidatorWithOptions(swagger, options)
 }
 
 // Options to customize request validation. These are passed through to

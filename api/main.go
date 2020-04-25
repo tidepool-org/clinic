@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/getkin/kin-openapi/openapi3filter"
 )
 
 var (
-	Host = ""
+	Host = "localhost"
 	Port = 8080
 	ServerString = fmt.Sprintf("%s:%d", Host, Port)
 
@@ -33,9 +34,11 @@ func MainLoop() {
 	}
 
 	// Middleware
+	filterOptions := openapi3filter.Options{AuthenticationFunc: AuthenticationFunc}
+	options := Options{Options: filterOptions}
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(OapiRequestValidator(swagger))
+	e.Use(OapiRequestValidator(swagger, &options))
 
 	// Routes
 	e.GET("/", hello)
