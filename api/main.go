@@ -33,8 +33,14 @@ func MainLoop() {
 		e.Logger.Fatal("Cound not connect to database: ", err)
 	}
 
+	// Create Store
+	e.Logger.Print("Getting Mongog Store")
+	dbstore := store.NewMongoStoreClient(mongoHost)
+
+
 	// Middleware
-	filterOptions := openapi3filter.Options{AuthenticationFunc: AuthenticationFunc}
+	authClient := AuthClient{store: dbstore}
+	filterOptions := openapi3filter.Options{AuthenticationFunc: authClient.AuthenticationFunc}
 	options := Options{Options: filterOptions}
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -42,10 +48,6 @@ func MainLoop() {
 
 	// Routes
 	e.GET("/", hello)
-
-	// Create Store
-	e.Logger.Print("Getting Mongog Store")
-	dbstore := store.NewMongoStoreClient(mongoHost)
 
 	// Register Handler
 	RegisterHandlers(e, &ClinicServer{store: dbstore})

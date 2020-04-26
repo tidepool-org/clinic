@@ -1,14 +1,13 @@
 package api
 
 import (
+	"context"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"net/http"
-	"fmt"
-	"os"
-	"context"
 )
 
 type ClinicsCliniciansExtraFields struct {
@@ -82,7 +81,7 @@ func (c *ClinicServer) GetClinicsClinicidCliniciansClinicianid(ctx echo.Context,
 	filter := bson.M{"clinicId": clinicid, "clinicianId": clinicianid, "active": true}
 	if err := c.store.FindOne(store.ClinicsCliniciansCollection, filter).Decode(&clinicsClinicians); err != nil {
 		fmt.Println("Find One error ", err)
-		os.Exit(1)
+		return nil
 	}
 	log.Printf("Get Clinic by id - name: %s", clinicsClinicians)
 

@@ -15,7 +15,7 @@ components:
       properties:
         permissions:
           items:
-            pattern: Admin|Prescriber|Clinician
+            pattern: CLINIC_ADMIN|CLINIC_CLINICIAN|CLINIC_PRESCRIBER
             type: string
           type: array
           uniqueItems: true
