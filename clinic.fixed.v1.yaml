@@ -141,6 +141,8 @@ paths:
         - TIDEPOOL_ADMIN
       summary: GetClinics
       tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
     parameters: []
     post:
       description: Add a new clinic
@@ -158,6 +160,9 @@ paths:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
       summary: AddClinic
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
   /clinics/{clinicid}:
     delete:
       description: Delete Clinic
@@ -170,6 +175,10 @@ paths:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
       summary: DeleteClinic
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
     get:
       description: Get Clinic
       operationId: get-clinics-clinicid
@@ -187,6 +196,10 @@ paths:
         - TIDEPOOL_ADMIN
       summary: GetClinic
       tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
     parameters:
     - in: path
       name: clinicid
@@ -214,6 +227,10 @@ paths:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
       summary: ModifyClinic
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
   /clinics/{clinicid}/clinicians:
     get:
       description: Retrieve a list of clinicians for a clinic
@@ -247,6 +264,10 @@ paths:
         - CLINIC_CLINICIAN
       summary: GetCliniciansFromClinic
       tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIANS
     parameters:
     - in: path
       name: clinicid
@@ -269,6 +290,10 @@ paths:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
       summary: AddClinicianToClinic
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
   /clinics/{clinicid}/clinicians/{clinicianid}:
     delete:
       description: Remove association with clinic and clinician
@@ -282,6 +307,9 @@ paths:
         - CLINIC_ADMIN
       summary: DeleteClinicianFromClinic
       tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
     get:
       description: Get a clinician object
       operationId: get-clinics-clinicid-clinicians-clinicianid
@@ -297,6 +325,11 @@ paths:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
       summary: GetClinician
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
     parameters:
     - in: path
       name: clinicid
@@ -323,6 +356,10 @@ paths:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
       summary: ModifyClinicClinician
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
   /clinics/{clinicid}/patients:
     get:
       description: Get list of patients associated with clinic
@@ -356,6 +393,10 @@ paths:
         - CLINIC_CLINICIAN
       summary: GetPatientsForClinic
       tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
     parameters:
     - in: path
       name: clinicid
@@ -380,6 +421,11 @@ paths:
         - CLINIC_ADMIN
         - CLINIC_CLINICIAN
       summary: AddPatientToClinic
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
   /clinics/{clinicid}/patients/{patientid}:
     delete:
       description: delete patient from clinic
@@ -398,6 +444,10 @@ paths:
         - CLINIC_CLINICIAN
       summary: DeletePatientFromClinic
       tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
     get:
       description: Get a patient from clinic
       operationId: get-clinics-clinicid-patients-patientid
@@ -414,6 +464,11 @@ paths:
         - CLINIC_ADMIN
         - CLINIC_CLINICIAN
       summary: GetPatientFromClinic
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
     parameters:
     - in: path
       name: clinicid
@@ -442,5 +497,10 @@ paths:
         - CLINIC_ADMIN
         - CLINIC_CLINICIAN
       summary: ModifyClinicPatient
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
 servers:
 - url: http://localhost:8080

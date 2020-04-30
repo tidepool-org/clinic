@@ -95,7 +95,7 @@ func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string) err
 	}
 	log.Printf("test")
 	//log.Printf("Get Clinic by id - name: %s, id: %s", *newClinic.Name, *newClinic.Id)
-	log.Printf("Get Clinic by id - name: %s", clinic)
+	//log.Printf("Get Clinic by id - name: %s", clinic)
 
 	ctx.JSON(http.StatusOK, &clinic)
 

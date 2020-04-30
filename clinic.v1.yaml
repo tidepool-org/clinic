@@ -8,6 +8,8 @@ paths:
   /clinics:
     get:
       summary: GetClinics
+      x-roles:
+        - TIDEPOOL_ADMIN
       tags: []
       responses:
         '200':
@@ -40,6 +42,9 @@ paths:
     parameters: []
     post:
       summary: AddClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+      tags: []
       operationId: post-clinics
       responses:
         '200':
@@ -96,6 +101,10 @@ paths:
         required: true
     get:
       summary: GetClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
       tags: []
       responses:
         '200':
@@ -121,6 +130,10 @@ paths:
             - TIDEPOOL_ADMIN
     patch:
       summary: ModifyClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+      tags: []
       operationId: patch-clinics-clinicid
       responses:
         '200':
@@ -142,6 +155,10 @@ paths:
             - CLINIC_ADMIN
     delete:
       summary: DeleteClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+      tags: []
       operationId: delete-clinics-clinicid
       responses:
         '200':
@@ -165,6 +182,9 @@ paths:
         required: true
     delete:
       summary: DeleteClinicianFromClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
       tags: []
       responses:
         '200':
@@ -177,6 +197,10 @@ paths:
             - CLINIC_ADMIN
     patch:
       summary: ModifyClinicClinician
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+      tags: []
       operationId: patch-clinics-clinicid-clinicians-clinicianid
       responses:
         '200':
@@ -201,6 +225,11 @@ paths:
             - CLINIC_ADMIN
     get:
       summary: GetClinician
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
+      tags: []
       operationId: get-clinics-clinicid-clinicians-clinicianid
       responses:
         '200':
@@ -223,6 +252,10 @@ paths:
         required: true
     get:
       summary: GetPatientsForClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
       tags: []
       responses:
         '200':
@@ -255,6 +288,11 @@ paths:
             - CLINIC_CLINICIAN
     post:
       summary: AddPatientToClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
+      tags: []
       operationId: post-clinics-clinicid-patients
       responses:
         '200':
@@ -296,6 +334,10 @@ paths:
         required: true
     delete:
       summary: DeletePatientFromClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
       tags: []
       operationId: delete-clinic-clinicid-patients-patientid
       description: delete patient from clinic
@@ -313,6 +355,11 @@ paths:
             - CLINIC_CLINICIAN
     get:
       summary: GetPatientFromClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
+      tags: []
       operationId: get-clinics-clinicid-patients-patientid
       responses:
         '200':
@@ -329,6 +376,11 @@ paths:
             - CLINIC_CLINICIAN
     patch:
       summary: ModifyClinicPatient
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
+      tags: []
       operationId: patch-clinics-clinicid-patients-patientid
       responses:
         '200':
@@ -360,6 +412,10 @@ paths:
         required: true
     get:
       summary: GetCliniciansFromClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIANS
       tags: []
       responses:
         '200':
@@ -392,6 +448,10 @@ paths:
             - CLINIC_CLINICIAN
     post:
       summary: AddClinicianToClinic
+      x-roles:
+        - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+      tags: []
       operationId: post-clinics-clinicid-clinicians
       responses:
         '200':

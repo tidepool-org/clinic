@@ -83,7 +83,7 @@ func (c *ClinicServer) GetClinicsClinicidCliniciansClinicianid(ctx echo.Context,
 		fmt.Println("Find One error ", err)
 		return nil
 	}
-	log.Printf("Get Clinic by id - name: %s", clinicsClinicians)
+	//log.Printf("Get Clinic by id - name: %s", clinicsClinicians)
 
 	ctx.JSON(http.StatusOK, &clinicsClinicians)
 
