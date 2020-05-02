@@ -1,0 +1,229 @@
+[
+    {
+        "id": "get_post_clinics",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics"
+        ],
+        "actions": [
+            "get",
+            "post"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "TIDEPOOL_ADMIN"
+                }
+            }
+        }
+    },
+    {
+        "id": "get_clinics",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics"
+        ],
+        "actions": [
+            "get"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIAN}"
+                }
+            },
+            "clinics": {
+                "type": "StringPairsEqualCondition",
+                "options": {}
+            }
+        }
+    },
+    {
+        "id": "patch_delete_clinics",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics"
+        ],
+        "actions": [
+            "patch",
+            "delete"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN}"
+                }
+            },
+            "clinics": {
+                "type": "StringPairsEqualCondition",
+                "options": {}
+            }
+        }
+    },
+    {
+        "id": "delete_patch_clinics_clinicians",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:clinicians"
+        ],
+        "actions": [
+            "delete",
+            "patch"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN}"
+                }
+            },
+            "clinics": {
+                "type": "StringPairsEqualCondition",
+                "options": {}
+            }
+        }
+    },
+    {
+        "id": "get_clinics_clinicians",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:clinicians"
+        ],
+        "actions": [
+            "get"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIAN}"
+                }
+            },
+            "clinics": {
+                "type": "StringPairsEqualCondition",
+                "options": {}
+            }
+        }
+    },
+    {
+        "id": "get_post_clinics_patients",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:patients"
+        ],
+        "actions": [
+            "get",
+            "post"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIAN}"
+                }
+            },
+            "clinics": {
+                "type": "StringPairsEqualCondition",
+                "options": {}
+            }
+        }
+    },
+    {
+        "id": "delete_get_patch_clinics_patients",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:patients"
+        ],
+        "actions": [
+            "delete",
+            "get",
+            "patch"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIAN}"
+                }
+            },
+            "clinics": {
+                "type": "StringPairsEqualCondition",
+                "options": {}
+            }
+        }
+    },
+    {
+        "id": "get_clinics_clinicians",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:clinicians"
+        ],
+        "actions": [
+            "get"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIANS}"
+                }
+            },
+            "clinics": {
+                "type": "StringPairsEqualCondition",
+                "options": {}
+            }
+        }
+    },
+    {
+        "id": "post_clinics_clinicians",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:clinicians"
+        ],
+        "actions": [
+            "post"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN}"
+                }
+            },
+            "clinics": {
+                "type": "StringPairsEqualCondition",
+                "options": {}
+            }
+        }
+    }
+]

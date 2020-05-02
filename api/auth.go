@@ -11,6 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 )
 
@@ -23,10 +25,28 @@ var (
 	TidepoolUserIdHeaderKey = "X_TIDEPOOL_USERID"
 	TidepoolRolesHeaderKey = "X_TIDEPOOL_ROLES"
 
-	KetoMachine = "localhost"
-	KetoPort = 4456
+	KetoMachine = ""
+	KetoPort = 0
+	DefaultKetoMachine = "localhost"
+	DefaultKetoPort = 4456
 	KetoUrl = "/engines/acp/ory/glob/allowed"
 )
+
+func init() {
+	ketoMachine, ok := os.LookupEnv("TIDEPOOL_KETO_HOST")
+	if ok {
+		KetoMachine = ketoMachine
+	} else {
+		KetoMachine = DefaultKetoMachine
+	}
+
+	ketoPort, ok := os.LookupEnv("TIDEPOOL_KETO_PORT")
+	if ok {
+		KetoPort, _ = strconv.Atoi(ketoPort)
+	} else {
+		KetoPort = DefaultKetoPort
+	}
+}
 
 type ContextRec struct {
 	Role string `json:"role"`
@@ -128,34 +148,28 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 		fmt.Printf("error marcshalling json: ", err)
 		return err
 	}
-	fmt.Printf("req body; %s", b)
+	fmt.Printf("req body; %s\n", b)
 	hostStr := fmt.Sprintf("http://%s:%d%s", KetoMachine, KetoPort, KetoUrl)
+	fmt.Printf("host str; %s\n", hostStr)
 	req, err := http.NewRequest("POST", hostStr, bytes.NewBuffer(b))
 	if err != nil {
 		fmt.Printf("error creating http request: ", err)
 		return err
 	}
+	fmt.Printf("Finished post creation\n")
 	req.Header = headers
 
 	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("error contacting keto: ", err)
+		fmt.Printf("ERROR contacting keto: ", err)
 		return err
 	}
-	resp, err := client.Do(req)
+	fmt.Printf("Finished keto - status code: %s\n", resp.StatusCode)
 	if resp.StatusCode == 200 {
 		return nil
 	}
-	// If user has the required scope - return
-	//for _, scope := range input.Scopes {
-	//	for _, role := range roles {
-	//		if scope == role {
-	//			fmt.Printf("Matched on %s scope-role", scope)
-	//			return nil
-	//		}
-	//		fmt.Printf("Scope: %s did not match role: %s\n", scope, role)
-	//	}
-	//}
+	fmt.Printf("Response: ", resp.StatusCode)
 
 	// No scopes found
 	return errors.New("User not authorized for this endpoint")
