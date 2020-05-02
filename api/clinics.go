@@ -67,7 +67,17 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	newClinic.Active = true
 
 	log.Printf("Clinic address: %s", *newClinic.Address)
-	c.store.InsertOne(store.ClinicsCollection, newClinic)
+	result, _ := c.store.InsertOne(store.ClinicsCollection, newClinic)
+
+	// We also have to add an initial admin - the user
+	userId := ctx.Request().Header.Get(TidepoolUserIdHeaderKey)
+	var clinicsClinicians FullClinicsClinicians
+	clinicsClinicians.Active = true
+	newID :=fmt.Sprintf("%v", result.InsertedID)
+	clinicsClinicians.ClinicId = &newID
+	clinicsClinicians.ClinicianId = userId
+	c.store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians)
+
 	return nil
 }
 

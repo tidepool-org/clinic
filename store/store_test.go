@@ -37,7 +37,7 @@ var _ = Describe("Store Test", func() {
 			It("should populate write data", func() {
 				name := "test"
 				testDoc := NewTestDoc{Name: &name}
-				err := mongoClient.InsertOne(store.ClinicsCollection, &testDoc)
+				_, err := mongoClient.InsertOne(store.ClinicsCollection, &testDoc)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			})
 		})

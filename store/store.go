@@ -77,7 +77,7 @@ func (d MongoStoreClient) Ping() error {
 	return d.Client.Ping(ctx, nil)
 }
 
-func (d MongoStoreClient) InsertOne(collection string, document interface{}) error {
+func (d MongoStoreClient) InsertOne(collection string, document interface{}) (*mongo.InsertOneResult, error) {
 	// InsertOne() method Returns mongo.InsertOneResult
 	// Access a MongoDB collection through a database
 	col := d.Client.Database(DatabaseName).Collection(collection)
@@ -86,7 +86,7 @@ func (d MongoStoreClient) InsertOne(collection string, document interface{}) err
 	result, insertErr := col.InsertOne(ctx, document)
 	if insertErr != nil {
 		fmt.Println("InsertOne ERROR:", insertErr)
-		os.Exit(1) // safely exit script on error
+		return nil, nil
 	} else {
 		fmt.Println("InsertOne() result type: ", reflect.TypeOf(result))
 		fmt.Println("InsertOne() API result:", result)
@@ -96,7 +96,7 @@ func (d MongoStoreClient) InsertOne(collection string, document interface{}) err
 		fmt.Println("InsertOne() newID:", newID)
 		fmt.Println("InsertOne() newID type:", reflect.TypeOf(newID))
 	}
-	return nil
+	return result, nil
 }
 
 func (d MongoStoreClient) FindOne(collection string, filter interface{}) *mongo.SingleResult {
