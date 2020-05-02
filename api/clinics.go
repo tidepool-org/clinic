@@ -76,6 +76,7 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	newID :=fmt.Sprintf("%v", result.InsertedID)
 	clinicsClinicians.ClinicId = &newID
 	clinicsClinicians.ClinicianId = userId
+	clinicsClinicians.Permissions = &[]string{"CLINIC_ADMIN"}
 	c.store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians)
 
 	return nil
