@@ -73,8 +73,10 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	userId := ctx.Request().Header.Get(TidepoolUserIdHeaderKey)
 	var clinicsClinicians FullClinicsClinicians
 	clinicsClinicians.Active = true
-	newID :=fmt.Sprintf("%v", result.InsertedID)
-	clinicsClinicians.ClinicId = &newID
+	if oid, ok := result.InsertedID.(primitive.ObjectID); ok {
+		newID := oid.Hex()
+		clinicsClinicians.ClinicId = &newID
+	}
 	clinicsClinicians.ClinicianId = userId
 	clinicsClinicians.Permissions = &[]string{"CLINIC_ADMIN"}
 	c.store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians)
