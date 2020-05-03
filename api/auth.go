@@ -179,7 +179,7 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 
 func (a *AuthClient) getUserRoles(userId *string) (*ClinicsClinicians, error) {
 	var clinicsClinicians ClinicsClinicians
-	filter := bson.M{"clinicianid": userId, "active": true}
+	filter := bson.M{"clinicianId": userId, "active": true}
 	if err := a.store.FindOne(store.ClinicsCliniciansCollection, filter).Decode(&clinicsClinicians); err != nil {
 		// XXX somewhat hacky
 		if err == mongo.ErrNoDocuments {
