@@ -22,12 +22,12 @@
         }
     },
     {
-        "id": "get_clinics",
+        "id": "get_clinics_id",
         "subjects": [
             "users:*"
         ],
         "resources": [
-            "resources:clinics"
+            "resources:clinics:*"
         ],
         "actions": [
             "get"
@@ -37,7 +37,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIAN}"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN|CLINIC_CLINICIAN"
                 }
             },
             "clinics": {
@@ -47,12 +47,12 @@
         }
     },
     {
-        "id": "patch_delete_clinics",
+        "id": "patch_delete_clinics_id",
         "subjects": [
             "users:*"
         ],
         "resources": [
-            "resources:clinics"
+            "resources:clinics:*"
         ],
         "actions": [
             "patch",
@@ -63,7 +63,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN}"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN"
                 }
             },
             "clinics": {
@@ -73,12 +73,12 @@
         }
     },
     {
-        "id": "delete_patch_clinics_clinicians",
+        "id": "delete_patch_clinics_id_clinicians_id",
         "subjects": [
             "users:*"
         ],
         "resources": [
-            "resources:clinics:clinicians"
+            "resources:clinics:*:clinicians:*"
         ],
         "actions": [
             "delete",
@@ -89,7 +89,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN}"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN"
                 }
             },
             "clinics": {
@@ -99,12 +99,12 @@
         }
     },
     {
-        "id": "get_clinics_clinicians",
+        "id": "get_clinics_id_clinicians_id",
         "subjects": [
             "users:*"
         ],
         "resources": [
-            "resources:clinics:clinicians"
+            "resources:clinics:*:clinicians:*"
         ],
         "actions": [
             "get"
@@ -114,7 +114,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIAN}"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN|CLINIC_CLINICIAN"
                 }
             },
             "clinics": {
@@ -124,12 +124,12 @@
         }
     },
     {
-        "id": "get_post_clinics_patients",
+        "id": "get_post_clinics_id_patients",
         "subjects": [
             "users:*"
         ],
         "resources": [
-            "resources:clinics:patients"
+            "resources:clinics:*:patients"
         ],
         "actions": [
             "get",
@@ -140,7 +140,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIAN}"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN|CLINIC_CLINICIAN"
                 }
             },
             "clinics": {
@@ -150,12 +150,12 @@
         }
     },
     {
-        "id": "delete_get_patch_clinics_patients",
+        "id": "delete_get_patch_clinics_id_patients_id",
         "subjects": [
             "users:*"
         ],
         "resources": [
-            "resources:clinics:patients"
+            "resources:clinics:*:patients:*"
         ],
         "actions": [
             "delete",
@@ -167,7 +167,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIAN}"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN|CLINIC_CLINICIAN"
                 }
             },
             "clinics": {
@@ -177,12 +177,12 @@
         }
     },
     {
-        "id": "get_clinics_clinicians",
+        "id": "get_clinics_id_clinicians",
         "subjects": [
             "users:*"
         ],
         "resources": [
-            "resources:clinics:clinicians"
+            "resources:clinics:*:clinicians"
         ],
         "actions": [
             "get"
@@ -192,7 +192,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN},{CLINIC_CLINICIANS}"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN|CLINIC_CLINICIANS"
                 }
             },
             "clinics": {
@@ -202,12 +202,12 @@
         }
     },
     {
-        "id": "post_clinics_clinicians",
+        "id": "post_clinics_id_clinicians",
         "subjects": [
             "users:*"
         ],
         "resources": [
-            "resources:clinics:clinicians"
+            "resources:clinics:*:clinicians"
         ],
         "actions": [
             "post"
@@ -217,7 +217,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "{TIDEPOOL_ADMIN},{CLINIC_ADMIN}"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN"
                 }
             },
             "clinics": {

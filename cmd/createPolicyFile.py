@@ -2,14 +2,15 @@ import json
 import yaml
 
 inFilename = "clinic.v1.yaml"
-outFilename = "clinic_policy.json"
+outFilename = "keto/clinic_policy.json"
 
 def createPolicy(operations, path, roles):
     resourceNames = []
     segments = []
     for segment in path[1:].split("/"):
         if segment.startswith("{"):
-            pass
+            segments.append('id')
+            resourceNames.append('*')
         else:
             segments.append(segment)
             resourceNames.append(segment)
@@ -17,7 +18,8 @@ def createPolicy(operations, path, roles):
     id = "_".join(operations + segments)
     resourceName = ":".join(resourceNames)
     if len(roles) > 1:
-        rolesStr = ",".join(["{%s}" % role for role in roles])
+        #rolesStr = ",".join(["{%s}" % role for role in roles])
+        rolesStr = "|".join(roles)
     else:
         rolesStr = "".join(roles)
 

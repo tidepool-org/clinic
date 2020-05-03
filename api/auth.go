@@ -68,6 +68,8 @@ func getResourceFromPath(path *string) string {
 		for _, path := range pathArray {
 			if strings.HasPrefix(path, "{") != true {
 				segments = append(segments, path)
+			} else {
+				segments = append(segments, "id")
 			}
 		}
 	}
