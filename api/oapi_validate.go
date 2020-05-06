@@ -66,8 +66,13 @@ func OapiRequestValidatorWithOptions(swagger *openapi3.Swagger, options *Options
 func ValidateRequestFromContext(ctx echo.Context, router *openapi3filter.Router, options *Options) error {
 	req := ctx.Request()
 	// XXX hack to make localhost work
-	req.URL.Scheme = "http"
-	req.URL.Host = req.Host
+	if req.URL.Scheme == "" {
+		req.URL.Scheme = "http"
+	}
+	if req.URL.Host == "" {
+		req.URL.Host = req.Host
+	}
+	fmt. Printf("Scheme: %s,  Host: %s", req.URL.Scheme, req.URL.Host)
 	route, pathParams, err := router.FindRoute(req.Method, req.URL)
 
 	// We failed to find a matching route for the request.
