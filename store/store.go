@@ -4,9 +4,11 @@ import (
 	// Built-in Golang packages
 	"context" // manage multiple requests
 	"fmt" // Println() function
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"os"      // os.Exit(1) on Error
 	"reflect" // get an object type
 	"time"
+	"errors"
 
 	// Official 'mongo-go-driver' packages
 	"go.mongodb.org/mongo-driver/mongo"
@@ -77,7 +79,7 @@ func (d MongoStoreClient) Ping() error {
 	return d.Client.Ping(ctx, nil)
 }
 
-func (d MongoStoreClient) InsertOne(collection string, document interface{}) (*mongo.InsertOneResult, error) {
+func (d MongoStoreClient) InsertOne(collection string, document interface{}) (*string, error) {
 	// InsertOne() method Returns mongo.InsertOneResult
 	// Access a MongoDB collection through a database
 	col := d.Client.Database(DatabaseName).Collection(collection)
@@ -86,17 +88,24 @@ func (d MongoStoreClient) InsertOne(collection string, document interface{}) (*m
 	result, insertErr := col.InsertOne(ctx, document)
 	if insertErr != nil {
 		fmt.Println("InsertOne ERROR:", insertErr)
-		return nil, nil
-	} else {
-		fmt.Println("InsertOne() result type: ", reflect.TypeOf(result))
-		fmt.Println("InsertOne() API result:", result)
-
-		// get the inserted ID string
-		newID := result.InsertedID
-		fmt.Println("InsertOne() newID:", newID)
-		fmt.Println("InsertOne() newID type:", reflect.TypeOf(newID))
+		return nil, insertErr
 	}
-	return result, nil
+
+	fmt.Println("InsertOne() result type: ", reflect.TypeOf(result))
+	fmt.Println("InsertOne() API result:", result)
+
+	// get the inserted ID string
+	newID := result.InsertedID
+	fmt.Println("InsertOne() newID:", newID)
+	fmt.Println("InsertOne() newID type:", reflect.TypeOf(newID))
+
+	if oid, ok := result.InsertedID.(primitive.ObjectID); ok {
+		newID := oid.Hex()
+		return &newID, nil
+	} else {
+		return nil, errors.New("Can not decode database ID")
+
+	}
 }
 
 func (d MongoStoreClient) FindOne(collection string, filter interface{}, data interface{}) error {
@@ -138,18 +147,19 @@ func (d MongoStoreClient) Find(collection string, filter interface{}, pagingPara
 	return nil
 }
 
-func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, update interface {}) *mongo.UpdateResult {
+func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, update interface {}) error {
 	fmt.Println("UpdateOne")
 
 	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	ctx := NewDbContext()
-	ret, err := col.UpdateOne(ctx, filter, update)
+	_, err := col.UpdateOne(ctx, filter, update)
 	if err != nil {
 		fmt.Println("error on update", err)
+		return err
 	}
 	fmt.Println("Updated")
-	return ret
+	return nil
 }
 
 // XXX We should use go.common

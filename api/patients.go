@@ -44,16 +44,19 @@ func (c *ClinicServer) GetClinicsClinicidPatients(ctx echo.Context, clinicid str
 // (POST /clinics/{clinicid}/patients)
 func (c *ClinicServer) PostClinicsClinicidPatients(ctx echo.Context, clinicid string) error {
 	var clinicsPatients FullClinicsPatients
-	err := ctx.Bind(&clinicsPatients)
-	if err != nil {
+
+	if err := ctx.Bind(&clinicsPatients); err != nil {
 		log.Printf("Format failed for post clinicsPatients body")
 		return echo.NewHTTPError(http.StatusBadRequest, "error parsing parameters")
 	}
 	clinicsPatients.Active = true
 	clinicsPatients.ClinicId = &clinicid
 
-	c.store.InsertOne(store.ClinicsPatientsCollection, clinicsPatients)
-	return ctx.JSON(http.StatusOK, nil)
+	if newID, err := c.store.InsertOne(store.ClinicsPatientsCollection, clinicsPatients); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error inserting patient ")
+	} else {
+		return ctx.JSON(http.StatusOK, map[string]string{"id": *newID})
+	}
 }
 
 // DeletePatientFromClinic
@@ -63,7 +66,9 @@ func (c *ClinicServer) DeleteClinicClinicidPatientsPatientid(ctx echo.Context, c
 	activeObj := bson.D{
 		{"$set", bson.D{{"active", false}}},
 	}
-	c.store.UpdateOne(store.ClinicsPatientsCollection, filter, activeObj)
+	if err := c.store.UpdateOne(store.ClinicsPatientsCollection, filter, activeObj); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error deleting patient from clinic")
+	}
 	return ctx.JSON(http.StatusOK, nil)
 }
 
@@ -76,7 +81,7 @@ func (c *ClinicServer) GetClinicsClinicidPatientsPatientid(ctx echo.Context, cli
 	filter := bson.M{"clinicId": clinicid, "patientId": patientid, "active": true}
 	if err := c.store.FindOne(store.ClinicsPatientsCollection, filter, &clinicsPatients); err != nil {
 		fmt.Println("Find One error ", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
+		return echo.NewHTTPError(http.StatusInternalServerError, "error finding patient")
 	}
 
 	return ctx.JSON(http.StatusOK, &clinicsPatients)
@@ -96,6 +101,8 @@ func (c *ClinicServer) PatchClinicsClinicidPatientsPatientid(ctx echo.Context, c
 	patchObj := bson.D{
 		{"$set", newPatient },
 	}
-	c.store.UpdateOne(store.ClinicsPatientsCollection, filter, patchObj)
+	if err := c.store.UpdateOne(store.ClinicsPatientsCollection, filter, patchObj); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error updating patient")
+	}
 	return ctx.JSON(http.StatusOK, nil)
 }

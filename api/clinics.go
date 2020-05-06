@@ -42,7 +42,7 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 
 	var clinics []Clinic
 	if err := c.store.Find(store.ClinicsCollection, filter, &pagingParams, &clinics); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
+		return echo.NewHTTPError(http.StatusInternalServerError, "error finding clinic")
 	}
 
 	return ctx.JSON(http.StatusOK, &clinics)
@@ -52,29 +52,32 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 // (POST /clinics)
 func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	var newClinic FullNewClinic
-	err := ctx.Bind(&newClinic)
-	if err != nil {
+
+	if err := ctx.Bind(&newClinic); err != nil {
 		log.Printf("Format failed for post clinic body")
 		return echo.NewHTTPError(http.StatusBadRequest, "error parsing parameters")
 	}
 	newClinic.Active = true
 
 	log.Printf("Clinic address: %s", *newClinic.Address)
-	result, _ := c.store.InsertOne(store.ClinicsCollection, newClinic)
+
+	var clinicsClinicians FullClinicsClinicians
+	if newID, err := c.store.InsertOne(store.ClinicsCollection, newClinic); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error inserting clinic")
+	} else {
+		clinicsClinicians.ClinicId = newID
+	}
 
 	// We also have to add an initial admin - the user
 	userId := ctx.Request().Header.Get(TidepoolUserIdHeaderKey)
-	var clinicsClinicians FullClinicsClinicians
 	clinicsClinicians.Active = true
-	if oid, ok := result.InsertedID.(primitive.ObjectID); ok {
-		newID := oid.Hex()
-		clinicsClinicians.ClinicId = &newID
-	}
 	clinicsClinicians.ClinicianId = userId
 	clinicsClinicians.Permissions = &[]string{"CLINIC_ADMIN"}
-	c.store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians)
-
-	return ctx.JSON(http.StatusOK, nil)
+	if newID, err := c.store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error inserting to clinician")
+	} else {
+		return ctx.JSON(http.StatusOK, map[string]string{"id": *newID})
+	}
 }
 
 // (DELETE /clinic/{clinicid})
@@ -84,7 +87,9 @@ func (c *ClinicServer) DeleteClinicsClinicid(ctx echo.Context, clinicid string) 
 	activeObj := bson.D{
 		{"$set", bson.D{{"active", false}}},
 	}
-	c.store.UpdateOne(store.ClinicsCollection, filter, activeObj)
+	if err := c.store.UpdateOne(store.ClinicsCollection, filter, activeObj); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error deleting clinic from database")
+	}
 	return ctx.JSON(http.StatusOK, nil)
 }
 
@@ -97,7 +102,7 @@ func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string) err
 	filter := bson.M{"_id": objID, "active": true}
 	if err := c.store.FindOne(store.ClinicsCollection, filter, &clinic); err != nil {
 		fmt.Println("Find One error ", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
+		return echo.NewHTTPError(http.StatusInternalServerError, "error finding clinic")
 	}
 
 	return ctx.JSON(http.StatusOK, &clinic)
@@ -106,8 +111,8 @@ func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string) err
 // (PATCH /clinic/{clinicid})
 func (c *ClinicServer) PatchClinicsClinicid(ctx echo.Context, clinicid string) error {
 	var newClinic NewClinic
-	err := ctx.Bind(&newClinic)
-	if err != nil {
+
+	if err := ctx.Bind(&newClinic); err != nil {
 		log.Printf("Format failed for patch clinic body")
 		return echo.NewHTTPError(http.StatusBadRequest, "error parsing parameters")
 	}
@@ -116,7 +121,9 @@ func (c *ClinicServer) PatchClinicsClinicid(ctx echo.Context, clinicid string) e
 	patchObj := bson.D{
 		{"$set", newClinic },
 	}
-	c.store.UpdateOne(store.ClinicsCollection, filter, patchObj)
+	if err := c.store.UpdateOne(store.ClinicsCollection, filter, patchObj); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error updating clinic")
+	}
 	return ctx.JSON(http.StatusOK, nil)
 }
 
