@@ -9,7 +9,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"os"
 	"strconv"
@@ -180,12 +179,7 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 func (a *AuthClient) getUserRoles(userId *string) (*ClinicsClinicians, error) {
 	var clinicsClinicians ClinicsClinicians
 	filter := bson.M{"clinicianId": userId, "active": true}
-	if err := a.store.FindOne(store.ClinicsCliniciansCollection, filter).Decode(&clinicsClinicians); err != nil {
-		// XXX somewhat hacky
-		if err == mongo.ErrNoDocuments {
-			fmt.Printf("No documents found\n")
-			return nil,nil
-		}
+	if err := a.store.FindOne(store.ClinicsCliniciansCollection, filter, &clinicsClinicians); err != nil {
 		return nil, err
 	}
 	return &clinicsClinicians, nil

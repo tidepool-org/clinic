@@ -99,18 +99,21 @@ func (d MongoStoreClient) InsertOne(collection string, document interface{}) (*m
 	return result, nil
 }
 
-func (d MongoStoreClient) FindOne(collection string, filter interface{}) *mongo.SingleResult {
+func (d MongoStoreClient) FindOne(collection string, filter interface{}, data interface{}) error {
 	fmt.Println("FindOne")
 
 	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	ctx := NewDbContext()
-	ret := col.FindOne(ctx, filter)
+	if err := col.FindOne(ctx, filter).Decode(&data); err != nil {
+		fmt.Println("Find One error ", err)
+		return err
+	}
 	fmt.Println("Found")
-	return ret
+	return nil
 }
 
-func (d MongoStoreClient) Find(collection string, filter interface{}, pagingParams *MongoPagingParams) (*mongo.Cursor, error) {
+func (d MongoStoreClient) Find(collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{})  error {
 	fmt.Println("FindMany")
 	findOptions := options.Find()
 	findOptions.SetLimit(pagingParams.Limit)
@@ -128,7 +131,11 @@ func (d MongoStoreClient) Find(collection string, filter interface{}, pagingPara
 	ctx := NewDbContext()
 	cursor, err := col.Find(ctx, filter, findOptions)
 	fmt.Println("FoundMany")
-	return cursor, err
+	if err = cursor.All(ctx, &data); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, update interface {}) *mongo.UpdateResult {

@@ -8,8 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
-	"os"
-	"context"
 )
 
 type ClinicServer struct {
@@ -42,18 +40,12 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 		pagingParams.Offset = int64(*params.Offset)
 	}
 
-	cursor, err := c.store.Find(store.ClinicsCollection, filter, &pagingParams)
 	var clinics []Clinic
-
-	// Probably want to abstract this away in driver
-	goctx := context.TODO()
-	if err = cursor.All(goctx, &clinics); err != nil {
-		log.Fatal(err)
+	if err := c.store.Find(store.ClinicsCollection, filter, &pagingParams, &clinics); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
 	}
 
-	ctx.JSON(http.StatusOK, &clinics)
-
-	return nil
+	return ctx.JSON(http.StatusOK, &clinics)
 }
 
 // createClinic
@@ -63,6 +55,7 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	err := ctx.Bind(&newClinic)
 	if err != nil {
 		log.Printf("Format failed for post clinic body")
+		return echo.NewHTTPError(http.StatusBadRequest, "error parsing parameters")
 	}
 	newClinic.Active = true
 
@@ -81,7 +74,7 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	clinicsClinicians.Permissions = &[]string{"CLINIC_ADMIN"}
 	c.store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians)
 
-	return nil
+	return ctx.JSON(http.StatusOK, nil)
 }
 
 // (DELETE /clinic/{clinicid})
@@ -92,7 +85,7 @@ func (c *ClinicServer) DeleteClinicsClinicid(ctx echo.Context, clinicid string) 
 		{"$set", bson.D{{"active", false}}},
 	}
 	c.store.UpdateOne(store.ClinicsCollection, filter, activeObj)
-	return nil
+	return ctx.JSON(http.StatusOK, nil)
 }
 
 // getClinic
@@ -102,17 +95,12 @@ func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string) err
 	log.Printf("Get Clinic by id - id: %s", clinicid)
 	objID, _ := primitive.ObjectIDFromHex(clinicid)
 	filter := bson.M{"_id": objID, "active": true}
-	if err := c.store.FindOne(store.ClinicsCollection, filter).Decode(&clinic); err != nil {
+	if err := c.store.FindOne(store.ClinicsCollection, filter, &clinic); err != nil {
 		fmt.Println("Find One error ", err)
-		os.Exit(1)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
 	}
-	log.Printf("test")
-	//log.Printf("Get Clinic by id - name: %s, id: %s", *newClinic.Name, *newClinic.Id)
-	//log.Printf("Get Clinic by id - name: %s", clinic)
 
-	ctx.JSON(http.StatusOK, &clinic)
-
-	return nil
+	return ctx.JSON(http.StatusOK, &clinic)
 }
 
 // (PATCH /clinic/{clinicid})
@@ -121,6 +109,7 @@ func (c *ClinicServer) PatchClinicsClinicid(ctx echo.Context, clinicid string) e
 	err := ctx.Bind(&newClinic)
 	if err != nil {
 		log.Printf("Format failed for patch clinic body")
+		return echo.NewHTTPError(http.StatusBadRequest, "error parsing parameters")
 	}
 	objID, _ := primitive.ObjectIDFromHex(clinicid)
 	filter := bson.D{{"_id", objID}}
@@ -128,6 +117,6 @@ func (c *ClinicServer) PatchClinicsClinicid(ctx echo.Context, clinicid string) e
 		{"$set", newClinic },
 	}
 	c.store.UpdateOne(store.ClinicsCollection, filter, patchObj)
-	return nil
+	return ctx.JSON(http.StatusOK, nil)
 }
 

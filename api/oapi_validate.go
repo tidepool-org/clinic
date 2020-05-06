@@ -72,7 +72,6 @@ func ValidateRequestFromContext(ctx echo.Context, router *openapi3filter.Router,
 	if req.URL.Host == "" {
 		req.URL.Host = req.Host
 	}
-	fmt. Printf("Scheme: %s,  Host: %s", req.URL.Scheme, req.URL.Host)
 	route, pathParams, err := router.FindRoute(req.Method, req.URL)
 
 	// We failed to find a matching route for the request.

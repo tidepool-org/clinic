@@ -8,12 +8,18 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+	"context"
 )
 
 var (
 	Host = "localhost"
 	Port = 8080
 	ServerString = fmt.Sprintf("%s:%d", Host, Port)
+	ServerTimeoutAmount = 20
 
 )
 
@@ -53,9 +59,24 @@ func MainLoop() {
 	RegisterHandlers(e, &ClinicServer{store: dbstore})
 
 	// Start server
-	e.Logger.Print("Starting Server")
-	fmt.Printf(ServerString)
-	e.Logger.Fatal(e.Start(ServerString))
+	e.Logger.Printf("Starting Server at: %s\n", ServerString)
+	go func() {
+		if err := e.Start(ServerString); err != nil {
+			e.Logger.Info("shutting down the server")
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 10 seconds.
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(ServerTimeoutAmount) * time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
 
 // Handler

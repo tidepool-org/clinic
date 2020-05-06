@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/store"
@@ -33,18 +32,12 @@ func (c *ClinicServer) GetClinicsClinicidClinicians(ctx echo.Context, clinicid s
 		pagingParams.Offset = int64(*params.Offset)
 	}
 
-	cursor, err := c.store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams)
 	var clinicsClinicians []ClinicsClinicians
-
-	// Probably want to abstract this away in driver
-	goctx := context.TODO()
-	if err = cursor.All(goctx, &clinicsClinicians); err != nil {
-		log.Fatal(err)
+	if err := c.store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams, &clinicsClinicians); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
 	}
-	fmt.Println("ret: ", clinicsClinicians)
 
-	ctx.JSON(http.StatusOK, &clinicsClinicians)
-	return nil
+	return ctx.JSON(http.StatusOK, &clinicsClinicians)
 }
 
 // AddClinicianToClinic
@@ -56,10 +49,11 @@ func (c *ClinicServer) PostClinicsClinicidClinicians(ctx echo.Context, clinicid 
 	clinicsClinicians.ClinicId = &clinicid
 	if err != nil {
 		log.Printf("Format failed for post clinicsClinicians body")
+		return echo.NewHTTPError(http.StatusBadRequest, "error parsing parameters")
 	}
 
 	c.store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians)
-	return nil
+	return ctx.JSON(http.StatusOK, nil)
 }
 
 // DeleteClinicianFromClinic
@@ -70,7 +64,7 @@ func (c *ClinicServer) DeleteClinicsClinicidCliniciansClinicianid(ctx echo.Conte
 		{"$set", bson.D{{"active", false}}},
 	}
 	c.store.UpdateOne(store.ClinicsCliniciansCollection, filter, activeObj)
-	return nil
+	return ctx.JSON(http.StatusOK, nil)
 }
 
 // GetClinician
@@ -79,15 +73,13 @@ func (c *ClinicServer) GetClinicsClinicidCliniciansClinicianid(ctx echo.Context,
 	var clinicsClinicians ClinicsClinicians
 	log.Printf("Get Clinic by id - id: %s", clinicid)
 	filter := bson.M{"clinicId": clinicid, "clinicianId": clinicianid, "active": true}
-	if err := c.store.FindOne(store.ClinicsCliniciansCollection, filter).Decode(&clinicsClinicians); err != nil {
+	if err := c.store.FindOne(store.ClinicsCliniciansCollection, filter, &clinicsClinicians); err != nil {
 		fmt.Println("Find One error ", err)
-		return nil
+		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
 	}
 	//log.Printf("Get Clinic by id - name: %s", clinicsClinicians)
 
-	ctx.JSON(http.StatusOK, &clinicsClinicians)
-
-	return nil
+	return ctx.JSON(http.StatusOK, &clinicsClinicians)
 }
 
 // ModifyClinicClinician
@@ -97,6 +89,7 @@ func (c *ClinicServer) PatchClinicsClinicidCliniciansClinicianid(ctx echo.Contex
 	err := ctx.Bind(&newClinic)
 	if err != nil {
 		log.Printf("Format failed for patch clinic body")
+		return echo.NewHTTPError(http.StatusBadRequest, "error parsing parameters")
 	}
 	filter := bson.M{"clinicId": clinicid, "clinicianId": clinicianid}
 
@@ -104,5 +97,5 @@ func (c *ClinicServer) PatchClinicsClinicidCliniciansClinicianid(ctx echo.Contex
 		{"$set", newClinic },
 	}
 	c.store.UpdateOne(store.ClinicsCliniciansCollection, filter, patchObj)
-	return nil
+	return ctx.JSON(http.StatusOK, nil)
 }
