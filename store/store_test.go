@@ -100,6 +100,47 @@ var _ = Describe("Store Test", func() {
 		})
 
 		Context("Multiple documents/Paging", func() {
+			It("Insert multiple documents", func() {
+				for i := 1; i<= 25; i++ {
+					name := fmt.Sprintf("%s%d", testName, i)
+					testDoc := FullTestDoc{NewTestDoc: NewTestDoc{Name: &name, Address: &testAddress},
+						TestDocExtraFields: TestDocExtraFields{Active: true}}
+					_, err := mongoClient.InsertOne(store.ClinicsCollection, &testDoc)
+					gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				}
+			})
+			It("Check Getting middle 10 records", func() {
+				var clinic []FullTestDoc
+				limit := int64(10)
+				offset := int64(10)
+				pagingParams := store.MongoPagingParams{Offset: offset ,Limit: limit}
+				filter := bson.M{"active": true}
+				err := mongoClient.Find(store.ClinicsCollection, &filter, &pagingParams, &clinic)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				gomega.Expect(len(clinic)).To(gomega.Equal(int(limit)))
+			})
+			It("Check Getting last 5 records", func() {
+				var clinic []FullTestDoc
+				limit := int64(10)
+				offset := int64(20)
+				pagingParams := store.MongoPagingParams{Offset: offset ,Limit: limit}
+				filter := bson.M{"active": true}
+				err := mongoClient.Find(store.ClinicsCollection, &filter, &pagingParams, &clinic)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				gomega.Expect(len(clinic)).To(gomega.Equal(5))
+			})
+			It("Check last record is correct", func() {
+				var clinic []FullTestDoc
+				limit := int64(1)
+				offset := int64(24)
+				pagingParams := store.MongoPagingParams{Offset: offset ,Limit: limit}
+				filter := bson.M{"active": true}
+				err := mongoClient.Find(store.ClinicsCollection, &filter, &pagingParams, &clinic)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				gomega.Expect(len(clinic)).To(gomega.Equal(1))
+				name := fmt.Sprintf("%s%d", testName, int(offset+1))
+				gomega.Expect(*clinic[0].Name).To(gomega.Equal(name))
+			})
 		})
 	})
 })
