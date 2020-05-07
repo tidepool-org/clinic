@@ -5,10 +5,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	"go.mongodb.org/mongo-driver/bson"
 
+	"fmt"
 	//. "github.com/onsi/ginkgo/extensions/table"
 	"github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/store"
-
 	//. "github.com/onsi/gomega"
 )
 
@@ -28,10 +28,10 @@ type TestDocExtraFields struct {
 }
 type FullTestDoc struct {
 	// Embedded fields due to inline allOf schema
-	Id    *string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+	Id    string `json:"_id,omitempty" bson:"_id,omitempty"`
 	// Embedded struct due to allOf(#/components/schemas/ClinicianPermissions)
-	NewTestDoc
-	TestDocExtraFields
+	NewTestDoc `bson:",inline"`
+	TestDocExtraFields `bson:",inline"`
 }
 
 var (
@@ -59,6 +59,7 @@ var _ = Describe("Store Test", func() {
 				filter := bson.M{"name": testName}
 				err := mongoClient.FindOne(store.ClinicsCollection, &filter, &clinic)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				fmt.Printf("Clinic: %v\n", clinic)
 				gomega.Expect(clinic.Address).To(gomega.Equal(&testAddress))
 			})
 			It("Find After Insert", func() {
@@ -89,7 +90,7 @@ var _ = Describe("Store Test", func() {
 				patchObj := bson.D{
 					{"$set", bson.D{{"active", false}} },
 				}
-				err := mongoClient.UpdateOne(store.ClinicsCliniciansCollection, &filter, &patchObj)
+				err := mongoClient.UpdateOne(store.ClinicsCollection, &filter, &patchObj)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 				filter["active"] = false
 				err = mongoClient.FindOne(store.ClinicsCollection, &filter, &clinic)

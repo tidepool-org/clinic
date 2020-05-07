@@ -2,17 +2,17 @@ package api
 
 
 import (
+	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/store"
-	"net/http"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/tidepool-org/clinic/store"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	"context"
 )
 
 var (

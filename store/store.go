@@ -3,12 +3,12 @@ package store
 import (
 	// Built-in Golang packages
 	"context" // manage multiple requests
+	"errors"
 	"fmt" // Println() function
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"os"      // os.Exit(1) on Error
 	"reflect" // get an object type
 	"time"
-	"errors"
 
 	// Official 'mongo-go-driver' packages
 	"go.mongodb.org/mongo-driver/mongo"
@@ -114,11 +114,11 @@ func (d MongoStoreClient) FindOne(collection string, filter interface{}, data in
 	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	ctx := NewDbContext()
-	if err := col.FindOne(ctx, filter).Decode(&data); err != nil {
+	if err := col.FindOne(ctx, filter).Decode(data); err != nil {
 		fmt.Println("Find One error ", err)
 		return err
 	}
-	fmt.Println("Found")
+	fmt.Printf("Found: %v\n", data)
 	return nil
 }
 
@@ -140,7 +140,7 @@ func (d MongoStoreClient) Find(collection string, filter interface{}, pagingPara
 	ctx := NewDbContext()
 	cursor, err := col.Find(ctx, filter, findOptions)
 	fmt.Println("FoundMany")
-	if err = cursor.All(ctx, &data); err != nil {
+	if err = cursor.All(ctx, data); err != nil {
 		return err
 	}
 

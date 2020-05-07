@@ -1,10 +1,10 @@
 package store_test
 
 import (
-	"github.com/tidepool-org/clinic/store"
-	"testing"
 	"context"
 	"fmt"
+	"github.com/tidepool-org/clinic/store"
+	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -37,6 +37,6 @@ func teardownDatabase(name string) {
 	mongoClient.Client.Database(name).Collection(store.ClinicsCollection).Drop(ctx)
 	mongoClient.Client.Database(name).Collection(store.ClinicsCliniciansCollection).Drop(ctx)
 	mongoClient.Client.Database(name).Collection(store.ClinicsPatientsCollection).Drop(ctx)
-	fmt.Println("Finish Database setup")
+	fmt.Println("Finish Database teardown")
 
 }
