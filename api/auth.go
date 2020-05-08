@@ -79,7 +79,7 @@ func getResourceFromPath(path *string) string {
 // Auth function
 func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter.AuthenticationInput) error {
 
-	fmt.Printf("%s\n", input.RequestValidationInput.ParamDecoder)
+	//fmt.Printf("%s\n", input.RequestValidationInput.ParamDecoder)
 	// Find Roles of user
 	// Lookup X_TIDEPOOL_USERID in clinic db
 	userId := input.RequestValidationInput.Request.Header.Get(TidepoolUserIdHeaderKey)
@@ -146,7 +146,7 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 
 	b, err := json.Marshal(ketoReq)
 	if err != nil {
-		fmt.Printf("error marcshalling json: ", err)
+		fmt.Printf("error marcshalling json: %s", err)
 		return err
 	}
 	fmt.Printf("req body; %s\n", b)
@@ -154,7 +154,7 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 	fmt.Printf("host str; %s\n", hostStr)
 	req, err := http.NewRequest("POST", hostStr, bytes.NewBuffer(b))
 	if err != nil {
-		fmt.Printf("error creating http request: ", err)
+		fmt.Printf("error creating http request: %s", err)
 		return err
 	}
 	fmt.Printf("Finished post creation\n")
@@ -163,14 +163,14 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("ERROR contacting keto: ", err)
+		fmt.Printf("ERROR contacting keto: %s", err)
 		return err
 	}
-	fmt.Printf("Finished keto - status code: %s\n", resp.StatusCode)
+	fmt.Printf("Finished keto - status code: %d\n", resp.StatusCode)
 	if resp.StatusCode == 200 {
 		return nil
 	}
-	fmt.Printf("Response: ", resp.StatusCode)
+	fmt.Printf("Response: %d", resp.StatusCode)
 
 	// No scopes found
 	return errors.New("User not authorized for this endpoint")

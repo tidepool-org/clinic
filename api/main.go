@@ -56,7 +56,7 @@ func MainLoop() {
 	e.GET("/", hello)
 
 	// Register Handler
-	RegisterHandlers(e, &ClinicServer{store: dbstore})
+	RegisterHandlers(e, &ClinicServer{Store: dbstore})
 
 	// Start server
 	e.Logger.Printf("Starting Server at: %s\n", ServerString)

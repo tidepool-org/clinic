@@ -11,7 +11,7 @@ import (
 )
 
 type ClinicServer struct {
-	store *store.MongoStoreClient
+	Store store.StorageInterface
 }
 
 type ClinicExtraFields struct {
@@ -41,7 +41,7 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 	}
 
 	var clinics []Clinic
-	if err := c.store.Find(store.ClinicsCollection, filter, &pagingParams, &clinics); err != nil {
+	if err := c.Store.Find(store.ClinicsCollection, filter, &pagingParams, &clinics); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error finding clinic")
 	}
 
@@ -59,10 +59,8 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	}
 	newClinic.Active = true
 
-	log.Printf("Clinic address: %s", *newClinic.Address)
-
 	var clinicsClinicians FullClinicsClinicians
-	if newID, err := c.store.InsertOne(store.ClinicsCollection, newClinic); err != nil {
+	if newID, err := c.Store.InsertOne(store.ClinicsCollection, newClinic); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error inserting clinic")
 	} else {
 		clinicsClinicians.ClinicId = newID
@@ -73,7 +71,7 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	clinicsClinicians.Active = true
 	clinicsClinicians.ClinicianId = userId
 	clinicsClinicians.Permissions = &[]string{"CLINIC_ADMIN"}
-	if newID, err := c.store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians); err != nil {
+	if newID, err := c.Store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error inserting to clinician")
 	} else {
 		return ctx.JSON(http.StatusOK, map[string]string{"id": *newID})
@@ -87,7 +85,7 @@ func (c *ClinicServer) DeleteClinicsClinicid(ctx echo.Context, clinicid string) 
 	activeObj := bson.D{
 		{"$set", bson.D{{"active", false}}},
 	}
-	if err := c.store.UpdateOne(store.ClinicsCollection, filter, activeObj); err != nil {
+	if err := c.Store.UpdateOne(store.ClinicsCollection, filter, activeObj); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error deleting clinic from database")
 	}
 	return ctx.JSON(http.StatusOK, nil)
@@ -100,7 +98,7 @@ func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string) err
 	log.Printf("Get Clinic by id - id: %s", clinicid)
 	objID, _ := primitive.ObjectIDFromHex(clinicid)
 	filter := bson.M{"_id": objID, "active": true}
-	if err := c.store.FindOne(store.ClinicsCollection, filter, &clinic); err != nil {
+	if err := c.Store.FindOne(store.ClinicsCollection, filter, &clinic); err != nil {
 		fmt.Println("Find One error ", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error finding clinic")
 	}
@@ -121,7 +119,7 @@ func (c *ClinicServer) PatchClinicsClinicid(ctx echo.Context, clinicid string) e
 	patchObj := bson.D{
 		{"$set", newClinic },
 	}
-	if err := c.store.UpdateOne(store.ClinicsCollection, filter, patchObj); err != nil {
+	if err := c.Store.UpdateOne(store.ClinicsCollection, filter, patchObj); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error updating clinic")
 	}
 	return ctx.JSON(http.StatusOK, nil)

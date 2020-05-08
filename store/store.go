@@ -36,6 +36,14 @@ func init() {
 	}
 }
 
+// Overall storage interface
+type StorageInterface interface {
+	InsertOne(collection string, document interface{}) (*string, error)
+	FindOne(collection string, filter interface{}, data interface{}) error
+	Find(collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{}) error
+	UpdateOne(collection string, filter interface{}, update interface {}) error
+}
+
 //Mongo Storage Client
 type MongoStoreClient struct {
 	Client *mongo.Client
@@ -103,7 +111,7 @@ func (d MongoStoreClient) InsertOne(collection string, document interface{}) (*s
 		newID := oid.Hex()
 		return &newID, nil
 	} else {
-		return nil, errors.New("Can not decode database ID")
+		return nil, errors.New("can not decode database ID")
 
 	}
 }
@@ -139,6 +147,9 @@ func (d MongoStoreClient) Find(collection string, filter interface{}, pagingPara
 
 	ctx := NewDbContext()
 	cursor, err := col.Find(ctx, filter, findOptions)
+	if err != nil {
+		return err
+	}
 	fmt.Println("FoundMany")
 	if err = cursor.All(ctx, data); err != nil {
 		return err

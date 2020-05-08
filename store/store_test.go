@@ -42,9 +42,6 @@ var (
 
 var _ = Describe("Store Test", func() {
 	Context("Database Operations", func() {
-		Context("Parse", func() {
-			// TODO
-		})
 
 		Context("Basic Ops", func() {
 
