@@ -16,7 +16,7 @@ addons:
       - /
 
 script:
-  - go test -v ./...
+  - ./test.sh
   - ./artifact.sh
 
 services:
