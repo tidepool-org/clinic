@@ -1,10 +1,10 @@
 package api_test
 
 import (
+	"errors"
+	"fmt"
 	"github.com/tidepool-org/clinic/store"
 	"testing"
-	"fmt"
-	"errors"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

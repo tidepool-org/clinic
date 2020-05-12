@@ -72,8 +72,6 @@ paths:
                   minLength: 1
                 address:
                   type: string
-                  enum:
-                    - test
                 phoneNumbers:
                   type: array
                   items:
@@ -415,7 +413,7 @@ paths:
       x-roles:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
-        - CLINIC_CLINICIANS
+        - CLINIC_CLINICIAN
       tags: []
       responses:
         '200':

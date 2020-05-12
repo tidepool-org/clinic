@@ -192,7 +192,7 @@
             "role": {
                 "type": "StringMatchCondition",
                 "options": {
-                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN|CLINIC_CLINICIANS"
+                    "matches": "TIDEPOOL_ADMIN|CLINIC_ADMIN|CLINIC_CLINICIAN"
                 }
             },
             "clinics": {

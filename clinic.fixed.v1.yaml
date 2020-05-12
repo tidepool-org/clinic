@@ -51,8 +51,6 @@ components:
       description: Object describing a clinic
       properties:
         address:
-          enum:
-          - test
           type: string
         location:
           type: string
@@ -267,7 +265,7 @@ paths:
       x-roles:
       - TIDEPOOL_ADMIN
       - CLINIC_ADMIN
-      - CLINIC_CLINICIANS
+      - CLINIC_CLINICIAN
     parameters:
     - in: path
       name: clinicid

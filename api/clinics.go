@@ -53,10 +53,12 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	var newClinic FullNewClinic
 
+	log.Printf("Entering post clincs")
 	if err := ctx.Bind(&newClinic); err != nil {
 		log.Printf("Format failed for post clinic body")
 		return echo.NewHTTPError(http.StatusBadRequest, "error parsing parameters")
 	}
+	log.Printf("Middle of post clinics")
 	newClinic.Active = true
 
 	var clinicsClinicians FullClinicsClinicians
@@ -71,10 +73,17 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	clinicsClinicians.Active = true
 	clinicsClinicians.ClinicianId = userId
 	clinicsClinicians.Permissions = &[]string{"CLINIC_ADMIN"}
+	log.Printf("End of post clinics")
 	if newID, err := c.Store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians); err != nil {
+		log.Printf("Wrong way of post clinics")
 		return echo.NewHTTPError(http.StatusInternalServerError, "error inserting to clinician")
 	} else {
-		return ctx.JSON(http.StatusOK, map[string]string{"id": *newID})
+		var ret struct {
+			id  string    `json:"id"`
+		}
+		ret.id = *newID
+		log.Printf("Returning from /clinics")
+		return ctx.JSON(http.StatusOK, &ret)
 	}
 }
 

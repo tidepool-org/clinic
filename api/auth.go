@@ -9,6 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"os"
 	"strconv"
@@ -90,9 +91,14 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 	fmt.Printf("UserId: %s\n", userId)
 	clinicsClinicians, err := a.getUserRoles(&userId)
 	if  err != nil {
-		fmt.Printf("error getting roles: %s\n", err)
+		if err == mongo.ErrNoDocuments {
+			fmt.Printf("No Documents: %s\n", err)
 
-		return err
+		} else {
+			fmt.Printf("error getting roles: %s\n", err)
+			return err
+
+		}
 	}
 
 	// Get the clinic Id
