@@ -2,6 +2,8 @@ import random
 import faker
 import json
 import requests
+from enum import Enum
+import copy
 
 ClinicNames = [
     "Patient’s Choice Medical Clinic",
@@ -52,6 +54,12 @@ fake = faker.Faker()
 
 LocalPort = 8080
 
+class Strategy(Enum):
+    RandomStrategy = 1
+    FixedStrategy = 2
+OperationStrategy = Strategy.FixedStrategy
+OperationStrategy = Strategy.RandomStrategy
+
 envs = {
     'int': 'https://external.integration.tidepool.org',
     'prd': 'https://api.tidepool.org',
@@ -64,7 +72,7 @@ environment = 'local'
 
 def createRandomClinicAddBody():
     name = random.choice(ClinicNames)
-    location = name in UsedClinics if random.choice(Locations) else ""
+    location = random.choice(Locations) if name in UsedClinics else ""
     UsedClinics.append(name)
     clinic = {
         "address": fake.address(),
@@ -86,14 +94,14 @@ def createRandomClinicModifyBody():
 
 Operations = {
     "Add Clinic": {"op": "POST", "path": "/clinics", "body": createRandomClinicAddBody, "roles": "TIDEPOOL_ADMIN"},
-    "Get Clinics": {"op": "GET", "path": "/clinics"},
+    "Get Clinics": {"op": "GET", "path": "/clinics", "roles": "TIDEPOOL_ADMIN"},
     "Get Clinic": {"op": "GET", "path": "/clinics/{clinicid}", "params": ["clinicid"]},
-    "Modify Clinic": {"op": "PATCH", "path": "/clinics/{clinicid}", "params": ["clinicid"], "body": createRandomClinicModifyBody()},
+    "Modify Clinic": {"op": "PATCH", "path": "/clinics/{clinicid}", "params": ["clinicid"], "body": createRandomClinicModifyBody},
     "Remove Clinic": {"op": "DELETE", "path": "/clinics/{clinicid}", "params": ["clinicid"]},
 }
 
 MinRemoveCount = 4
-NumberOps = 30
+NumberOps = 100
 
 def validOperation(rec, paramMap):
     if "params" in rec:
@@ -128,13 +136,16 @@ def updateParamMap(rec, paramMap, paramValues, clinicianMap):
             paramMap["clinicianid"].append(rec["id"])
         else:
             paramMap["clinicid"].append(rec["id"])
-            clinicianMap.append(rec["userid"])
+            if rec["id"] not in clinicianMap:
+                clinicianMap[rec["id"]] = []
+            clinicianMap[rec["id"]].append(rec["userid"])
 
     if rec["op"] == 'DELETE':
         if "clinicianid" in paramValues:
             paramMap["clinicianid"].remove(paramValues["clinicianid"])
         else:
             paramMap["clinicid"].remove(paramValues["clinicid"])
+            del clinicianMap[paramValues["clinicid"]]
 
 def getFullPath(path):
     return "{prefix}{path}".format(prefix=envs[environment], path=path)
@@ -156,25 +167,40 @@ def executeOperation(rec, paramValues, clinicianMap):
     if "body" in rec:
         data = rec["body"]()
     if rec["op"] == "GET":
-        r = requests.post(getFullPath(rec["path"]),data=data, headers=headers)
+        r = requests.get(getFullPath(rec["path"]),data=data, headers=headers)
     elif rec["op"] == "POST":
-        userid = randomId()
         r = requests.post(getFullPath(rec["path"]),data=data, headers=headers)
         ret = r.json()
         if "id" in ret:
             rec["id"] = ret["id"]
     elif rec["op"] == "PATCH":
-        r = requests.post(getFullPath(rec["path"]),data=data, headers=headers)
+        r = requests.patch(getFullPath(rec["path"]),data=data, headers=headers)
     elif rec["op"] == "DELETE":
-        r = requests.post(getFullPath(rec["path"]),data=data, headers=headers)
+        r = requests.delete(getFullPath(rec["path"]),data=data, headers=headers)
     else:
         print("Unkown op:, {}", rec["op"])
         return False
 
-    print("Called: {path}  -- return code: {status_code}".format(path=rec["path"], status_code=r.status_code))
-    if r.status_code != '200':
+    print("Called: {path}  -- userid: {userid}  return code: {status_code}".format(path=rec["path"], userid=rec["userid"], status_code=r.status_code))
+    if "id" in rec:
+        print("Rec id: {id}".format(id=rec["id"]))
+
+    if r.status_code != 200:
         return False
     return True
+
+FixedStrategySequence = [0,0,0,0,1,2,3,2,0,4,1,2,3,0,4]
+
+def getNextOp():
+    getNextOp.CurOperationIndex += 1
+    if OperationStrategy == Strategy.RandomStrategy:
+        return random.choice(list(Operations))
+    if OperationStrategy == Strategy.FixedStrategy:
+        if getNextOp.CurOperationIndex < len(FixedStrategySequence):
+            return list(Operations.keys())[FixedStrategySequence[getNextOp.CurOperationIndex]]
+        else:
+            return list(Operations.keys())[getNextOp.CurOperationIndex % len(Operations)]
+getNextOp.CurOperationIndex = -1
 
 def main():
     # Just loop through doing operations
@@ -187,15 +213,15 @@ def main():
     for opCount in range(1,NumberOps):
         # Pick an operation
         while True:
-            op = random.choice(list(Operations))
-            rec = Operations[op]
+            op = getNextOp()
+            rec = copy.deepcopy(Operations[op])
             if validOperation(rec, paramMap):
                 break
 
         # complete it
         paramValues = getParamValues(rec, paramMap)
-        path = rec["path"].format(**paramValues)
-        print("Op: {op}, Path: {path}".format(op=rec["op"], path=path))
+        rec["path"] = rec["path"].format(**paramValues)
+        print("Op: {op}, Path: {path}".format(op=rec["op"], path=rec["path"]))
 
         # execute operation
         if not executeOperation(rec, paramValues, clinicianMap):
