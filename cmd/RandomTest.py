@@ -58,7 +58,29 @@ class Strategy(Enum):
     RandomStrategy = 1
     FixedStrategy = 2
 OperationStrategy = Strategy.FixedStrategy
-OperationStrategy = Strategy.RandomStrategy
+
+PopulateSequence = [0,0,0,0,5,5,5,5,5,5,5,5,5,5,5,5,5,10,10,10,10,10,10,10,10,10,10,10,10,10]
+FixedStrategySequence = [1,2,3,2,0,4,5,5,5,5,6,7,5,5,8,9,11,11,12,14,13,13,14]
+
+def getNextOp():
+    getNextOp.CurOperationIndex += 1
+
+    # First populate with populationSequence
+    if getNextOp.CurOperationIndex < len(PopulateSequence):
+        return Operations[PopulateSequence[getNextOp.CurOperationIndex]]
+
+    # Use random strategy if user specified
+    if OperationStrategy == Strategy.RandomStrategy:
+        return random.choice(Operations)
+
+    # Use fixed strategy - account for initial sequence
+    if OperationStrategy == Strategy.FixedStrategy:
+        index = getNextOp.CurOperationIndex - len(PopulateSequence)
+        if index < len(FixedStrategySequence):
+            return Operations[FixedStrategySequence[index]]
+        else:
+            return Operations[index % len(Operations)]
+getNextOp.CurOperationIndex = -1
 
 envs = {
     'int': 'https://external.integration.tidepool.org',
@@ -70,7 +92,7 @@ envs = {
 environment = 'local'
 
 
-def createRandomClinicAddBody():
+def createRandomClinicAddBody(paramValues):
     name = random.choice(ClinicNames)
     location = random.choice(Locations) if name in UsedClinics else ""
     UsedClinics.append(name)
@@ -84,79 +106,125 @@ def createRandomClinicAddBody():
 
 
 
-def createRandomClinicModifyBody():
+def createRandomClinicModifyBody(paramValues):
     clinic = {
         "Address": fake.address(),
     }
     return json.dumps(clinic)
 
+Permissions = ["CLINIC_ADMIN", "CLINIC_CLINICIAN", "CLINIC_PRESCRIBER"]
+PatientPermissions = ["READ", "WRITE"]
+def createRandomClinicianAddBody(paramValues):
+    clinicsClinians = {
+        "clinicId": paramValues["clinicid"],
+        "clinicianId": paramValues["clinicianid"],
+        "permissions": [random.choice(Permissions)],
+    }
+    return json.dumps(clinicsClinians)
+
+def createRandomClinicianModifyBody(paramValues):
+    return createRandomClinicianAddBody(paramValues)
+
+def createRandomPatientAddBody(paramValues):
+    clinicsClinians = {
+        "clinicId": paramValues["clinicid"],
+        "patientId": paramValues["patientid"],
+        "permissions": [random.choice(PatientPermissions)],
+    }
+    return json.dumps(clinicsClinians)
+
+def createRandomPatientModifyBody(paramValues):
+    return createRandomPatientAddBody(paramValues)
 
 
-Operations = {
-    "Add Clinic": {"op": "POST", "path": "/clinics", "body": createRandomClinicAddBody, "roles": "TIDEPOOL_ADMIN"},
-    "Get Clinics": {"op": "GET", "path": "/clinics", "roles": "TIDEPOOL_ADMIN"},
-    "Get Clinic": {"op": "GET", "path": "/clinics/{clinicid}", "params": ["clinicid"]},
-    "Modify Clinic": {"op": "PATCH", "path": "/clinics/{clinicid}", "params": ["clinicid"], "body": createRandomClinicModifyBody},
-    "Remove Clinic": {"op": "DELETE", "path": "/clinics/{clinicid}", "params": ["clinicid"]},
-}
+Operations = [
+    {"name": "Add Clinic", "op": "POST", "path": "/clinics", "body": createRandomClinicAddBody, "roles": "TIDEPOOL_ADMIN"},
+    {"name": "Get Clinics", "op": "GET", "path": "/clinics", "roles": "TIDEPOOL_ADMIN"},
+    {"name": "Get Clinic", "op": "GET", "path": "/clinics/{clinicid}", "params": ["clinicid"]},
+    {"name": "Modify Clinic", "op": "PATCH", "path": "/clinics/{clinicid}", "params": ["clinicid"], "body": createRandomClinicModifyBody},
+    {"name": "Remove Clinic", "op": "DELETE", "path": "/clinics/{clinicid}", "params": ["clinicid"]},
+
+    {"name": "Add Clinician", "op": "POST", "path": "/clinics/{clinicid}/clinicians", "body": createRandomClinicianAddBody, "params": ["clinicid"], "randomid": "clinicianid"},
+    {"name": "Get Clinicians", "op": "GET", "path": "/clinics/{clinicid}/clinicians", "params": ["clinicid"]},
+    {"name": "Get Clinician", "op": "GET", "path": "/clinics/{clinicid}/clinicians/{clinicianid}", "params": ["clinicid", "clinicianid"]},
+    {"name": "Modify Clinician", "op": "PATCH", "path": "/clinics/{clinicid}/clinicians/{clinicianid}", "params": ["clinicid", "clinicianid"], "body": createRandomClinicianModifyBody},
+    {"name": "Remove Clinician", "op": "DELETE", "path": "/clinics/{clinicid}/clinicians/{clinicianid}", "params": ["clinicid", "clinicianid"]},
+
+    {"name": "Add Patient", "op": "POST", "path": "/clinics/{clinicid}/patients", "body": createRandomPatientAddBody, "params": ["clinicid"], "randomid": "patientid"},
+    {"name": "Get Patients", "op": "GET", "path": "/clinics/{clinicid}/patients", "params": ["clinicid"]},
+    {"name": "Get Patient", "op": "GET", "path": "/clinics/{clinicid}/patients/{patientid}", "params": ["clinicid", "patientid"]},
+    {"name": "Modify Patient", "op": "PATCH", "path": "/clinics/{clinicid}/patients/{patientid}", "params": ["clinicid", "patientid"], "body": createRandomPatientModifyBody},
+    {"name": "Remove Patient", "op": "DELETE", "path": "/clinics/{clinicid}/patients/{patientid}", "params": ["clinicid", "patientid"]},
+]
 
 MinRemoveCount = 4
-NumberOps = 100
+NumberOps = 40
 
-def validOperation(rec, paramMap):
-    if "params" in rec:
-        for param in rec["params"]:
-            ids = paramMap[param]
-
-            # No Parameter
-            if len(ids) == 0:
-                return False
-
-            # Special remove case
-            if rec["op"] == "DELETE" and len(ids) < MinRemoveCount:
-                return False
+def validOperation(rec, clinicList):
+    if rec["name"] == "Add Clinic":
+        # Special remove case
+        if rec["op"] == "DELETE" and len(clinicList) < MinRemoveCount:
+            return False
 
     return True
-
-def getParamValues(rec, paramMap):
-    params = {}
-    if "params" in rec:
-        for param in rec["params"]:
-            ids = paramMap[param]
-            params[param] = random.choice(ids)
-    return params
 
 def randomId():
     return ''.join(random.choice('0123456789abcdef') for x in range(0,16))
 
-def updateParamMap(rec, paramMap, paramValues, clinicianMap):
-    # if add - place in correct record
-    if rec["op"] == 'POST':
-        if "clinicid" in paramValues:
-            paramMap["clinicianid"].append(rec["id"])
-        else:
-            paramMap["clinicid"].append(rec["id"])
-            if rec["id"] not in clinicianMap:
-                clinicianMap[rec["id"]] = []
-            clinicianMap[rec["id"]].append(rec["userid"])
-
-    if rec["op"] == 'DELETE':
-        if "clinicianid" in paramValues:
-            paramMap["clinicianid"].remove(paramValues["clinicianid"])
-        else:
-            paramMap["clinicid"].remove(paramValues["clinicid"])
-            del clinicianMap[paramValues["clinicid"]]
-
 def getFullPath(path):
     return "{prefix}{path}".format(prefix=envs[environment], path=path)
 
-def executeOperation(rec, paramValues, clinicianMap):
+def getParamValues(rec, clinicList, clinicianMap, patientMap):
+    params = {}
+    if "params" in rec:
+        if "clinicid" in rec["params"]:
+            if len(clinicList) > 0:
+                clinicId = random.choice(clinicList)
+            else:
+                return None
+
+            params["clinicid"] = clinicId
+
+            if "clinicianid" in rec["params"]:
+                if clinicId in clinicianMap and len(clinicianMap[clinicId]) > 1:
+                    params["clinicianid"] = random.choice(clinicianMap[clinicId][1:])
+                else:
+                    return None
+
+            if "patientid" in rec["params"]:
+                if clinicId in patientMap and len(patientMap[clinicId]) > 0:
+                    params["patientid"] = random.choice(patientMap[clinicId])
+                else:
+                    return None
+
+    # fill out ids used for posts patient and clinician
+    if "randomid"  in rec:
+        params[rec["randomid"]] = randomId()
+    return params
+
+
+def executeOperation(rec, paramValues, clinicianMap, patientMap):
     data = None
-    if "params" in rec and "clinicid" in rec["params"]:
-        clinicid = paramValues["clinicid"]
-        rec["userid"] = random.choice(clinicianMap[clinicid])
-    else:
+    # If adding clinic - use random id
+    if rec["name"] == "Add Clinic" or rec["name"] == "Get Clinics":
         rec["userid"] = randomId()
+
+    # If a clinician - use admin
+    elif "Clinician" in rec["name"]:
+        clinicid = paramValues["clinicid"]
+        rec["userid"] = clinicianMap[clinicid][0]
+
+    # If a parient - use any doc
+    elif "Clinician" in rec["name"]:
+        clinicid = paramValues["clinicid"]
+        rec["userid"] = clinicianMap[clinicid].randomChoice()
+
+    # Else - it is a clinic - use admin
+    else:
+        clinicid = paramValues["clinicid"]
+        rec["userid"] = clinicianMap[clinicid][0]
+
+
     headers = {
         "X_TIDEPOOL_USERID": rec["userid"],
         "content-type" :"application/json"
@@ -165,7 +233,7 @@ def executeOperation(rec, paramValues, clinicianMap):
         headers["X_TIDEPOOL_ROLES"] = rec["roles"]
 
     if "body" in rec:
-        data = rec["body"]()
+        data = rec["body"](paramValues)
     if rec["op"] == "GET":
         r = requests.get(getFullPath(rec["path"]),data=data, headers=headers)
     elif rec["op"] == "POST":
@@ -181,7 +249,7 @@ def executeOperation(rec, paramValues, clinicianMap):
         print("Unkown op:, {}", rec["op"])
         return False
 
-    print("Called: {path}  -- userid: {userid}  return code: {status_code}".format(path=rec["path"], userid=rec["userid"], status_code=r.status_code))
+    print("Called: {path}  -- userid: {userid}  return code: {status_code}, pvs: {pvs}".format(path=rec["path"], userid=rec["userid"], status_code=r.status_code, pvs=paramValues))
     if "id" in rec:
         print("Rec id: {id}".format(id=rec["id"]))
 
@@ -189,47 +257,70 @@ def executeOperation(rec, paramValues, clinicianMap):
         return False
     return True
 
-FixedStrategySequence = [0,0,0,0,1,2,3,2,0,4,1,2,3,0,4]
+def updateInternalTables(rec, clinicList, paramValues, clinicianMap, patientMap):
+    # if add - place in correct record
+    if rec["name"] == "Add Clinic":
+        clinicList.append(rec["id"])
+        if rec["id"] not in clinicianMap:
+            clinicianMap[rec["id"]] = []
+        clinicianMap[rec["id"]].append(rec["userid"])
 
-def getNextOp():
-    getNextOp.CurOperationIndex += 1
-    if OperationStrategy == Strategy.RandomStrategy:
-        return random.choice(list(Operations))
-    if OperationStrategy == Strategy.FixedStrategy:
-        if getNextOp.CurOperationIndex < len(FixedStrategySequence):
-            return list(Operations.keys())[FixedStrategySequence[getNextOp.CurOperationIndex]]
-        else:
-            return list(Operations.keys())[getNextOp.CurOperationIndex % len(Operations)]
-getNextOp.CurOperationIndex = -1
+    if rec["name"] == "Remove Clinic":
+        clinicList.remove(paramValues["clinicid"])
+        del clinicianMap[paramValues["clinicid"]]
+
+    if rec["name"] == "Add Clinician":
+        # For a clinician - we must add new clinician to
+        clinicianMap[paramValues["clinicid"]].append(paramValues["clinicianid"])
+
+    if rec["name"] == "Remove Clinician":
+        clinicianMap[paramValues["clinicid"]].remove(paramValues["clinicianid"])
+
+    if rec["name"] == "Add Patient":
+        # For a clinician - we must add new clinician to
+        if paramValues["clinicid"] not in patientMap:
+            patientMap[paramValues["clinicid"]] = []
+        patientMap[paramValues["clinicid"]].append(paramValues["patientid"])
+
+    if rec["name"] == "Remove Patient":
+        patientMap[paramValues["clinicid"]].remove(paramValues["patientid"])
+
+
+
 
 def main():
     # Just loop through doing operations
 
-    paramMap = {
-        "clinicid": [],
-        "clinicianid": []
-    }
+    clinicList = []
     clinicianMap = {}
+    patientMap = {}
     for opCount in range(1,NumberOps):
-        # Pick an operation
-        while True:
-            op = getNextOp()
-            rec = copy.deepcopy(Operations[op])
-            if validOperation(rec, paramMap):
-                break
+        # First - get an operation
+        op = getNextOp()
+        rec = copy.deepcopy(op)
 
-        # complete it
-        paramValues = getParamValues(rec, paramMap)
+        # Get all parameters for the operation
+        paramValues = getParamValues(rec, clinicList, clinicianMap, patientMap)
+        if paramValues == None:
+            print("Could not find parameters for this operation")
+            continue
+
+        # Fill out path
         rec["path"] = rec["path"].format(**paramValues)
         print("Op: {op}, Path: {path}".format(op=rec["op"], path=rec["path"]))
 
+        # Make sure it is a valid operation
+        if not validOperation(rec, clinicList):
+            print("Not a valid operation")
+            continue
+
         # execute operation
-        if not executeOperation(rec, paramValues, clinicianMap):
+        if not executeOperation(rec, paramValues, clinicianMap, patientMap):
             print("Operation Failed - quitting")
             continue
 
-        # update info
-        updateParamMap(rec, paramMap, paramValues, clinicianMap)
+        # update our internal Tables
+        updateInternalTables(rec, clinicList, paramValues, clinicianMap, patientMap)
 
 if __name__ == "__main__":
     main()
