@@ -35,6 +35,12 @@ type ClinicsPatients struct {
 	PatientPermissions `bson:",inline"`
 }
 
+// Error defines model for Error.
+type Error struct {
+	Code    int     `json:"code" bson:"code"`
+	Message *string `json:"message,omitempty" bson:"message,omitempty"`
+}
+
 // NewClinic defines model for NewClinic.
 type NewClinic struct {
 	Address      *string                 `json:"address,omitempty" bson:"address,omitempty"`

@@ -47,6 +47,16 @@ components:
       - $ref: '#/components/schemas/PatientPermissions'
       description: Clinics Patients Relationship
       title: ClinicsPatients
+    Error:
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+      required:
+      - code
+      title: Error
+      type: object
     NewClinic:
       description: Object describing a clinic
       properties:
@@ -134,6 +144,24 @@ paths:
                   $ref: '#/components/schemas/Clinic'
                 type: array
           description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -153,6 +181,12 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -168,6 +202,12 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -187,6 +227,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Clinic'
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - CLINIC_ADMIN
@@ -220,6 +266,12 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -255,6 +307,12 @@ paths:
                   $ref: '#/components/schemas/ClinicsClinicians'
                 type: array
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -283,6 +341,12 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -299,6 +363,12 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -318,6 +388,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClinicsClinicians'
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -349,6 +425,12 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -384,6 +466,12 @@ paths:
                   $ref: '#/components/schemas/ClinicsPatients'
                 type: array
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -413,6 +501,12 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -433,6 +527,8 @@ paths:
           description: OK
         '400':
           description: Bad Request
+        '403':
+          description: Forbidden
         '500':
           description: Internal Server Error
       security:
@@ -456,6 +552,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClinicsPatients'
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -489,6 +591,12 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
@@ -502,3 +610,13 @@ paths:
       - CLINIC_CLINICIAN
 servers:
 - url: http://localhost:8080
+- description: ''
+  url: https://dev1.dev.tidepool.org
+- description: ''
+  url: https://qa1.development.tidepool.org
+- description: ''
+  url: https://qa2.development.tidepool.org
+- description: ''
+  url: https://external.integration.tidepool.org
+- description: ''
+  url: https://api.tidepool.org
