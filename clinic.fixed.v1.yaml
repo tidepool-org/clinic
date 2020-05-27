@@ -193,8 +193,7 @@ paths:
         - CLINIC_ADMIN
       summary: AddClinic
       tags: []
-      x-roles:
-      - TIDEPOOL_ADMIN
+      x-roles: []
   /clinics/{clinicid}:
     delete:
       description: Delete Clinic

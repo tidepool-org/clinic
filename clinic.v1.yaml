@@ -131,8 +131,7 @@ paths:
         - ClinicAuth:
             - TIDEPOOL_ADMIN
             - CLINIC_ADMIN
-      x-roles:
-        - TIDEPOOL_ADMIN
+      x-roles: []
       tags: []
   '/clinics/{clinicid}':
     parameters:

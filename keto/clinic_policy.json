@@ -1,6 +1,6 @@
 [
     {
-        "id": "get_post_clinics",
+        "id": "get_clinics",
         "subjects": [
             "users:*"
         ],
@@ -8,8 +8,7 @@
             "resources:clinics"
         ],
         "actions": [
-            "get",
-            "post"
+            "get"
         ],
         "effect": "allow",
         "conditions": {
@@ -17,6 +16,27 @@
                 "type": "StringMatchCondition",
                 "options": {
                     "matches": "TIDEPOOL_ADMIN"
+                }
+            }
+        }
+    },
+    {
+        "id": "post_clinics",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics"
+        ],
+        "actions": [
+            "post"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": ""
                 }
             }
         }
