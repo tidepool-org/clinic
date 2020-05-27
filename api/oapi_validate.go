@@ -66,7 +66,7 @@ func OapiRequestValidatorWithOptions(swagger *openapi3.Swagger, options *Options
 func ValidateRequestFromContext(ctx echo.Context, router *openapi3filter.Router, options *Options) error {
 	req := ctx.Request()
 	// XXX hack to make localhost work
-	fmt.Sprintf("Scheme: %s, Host: %s", req.URL.Scheme, req.URL.Host)
+	fmt.Printf("Scheme: %s, Host: %s", req.URL.Scheme, req.URL.Host)
 	if req.URL.Scheme == "" {
 		req.URL.Scheme = "http"
 	}

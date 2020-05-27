@@ -93,7 +93,7 @@ envs = {
     'local': 'http://localhost:{}'.format(LocalPort)
 }
 environment = 'local'
-environment = 'dev'
+#environment = 'dev'
 AuthUrl = '/auth/login'
 
 
@@ -186,19 +186,22 @@ def randomId():
             for row in reader:
                 CredentialTable.append({"username": row["username"], "password": row["password"]})
     authRec = CredentialTable[randomId.index]
-    req = requests.post(getFullPath(AuthUrl), auth=(authRec["username"], authRec["password"]))
-    if req.status_code == 200:
-        authRec['token'] = req.headers['x-tidepool-session-token']
-        userid = req.json()['userid']
-        authRec['userid'] = userid
-        CredentialMap[userid] = authRec
+    if environment != "local":
+        req = requests.post(getFullPath(AuthUrl), auth=(authRec["username"], authRec["password"]))
+        if req.status_code == 200:
+            authRec['token'] = req.headers['x-tidepool-session-token']
+            userid = req.json()['userid']
+            authRec['userid'] = userid
+            CredentialMap[userid] = authRec
+        else:
+            print("Could not log user: {user} in - status: {status}".format(user=authRec["username"], status=req.status_code))
+            sys.exit()
     else:
-        print("Could not log user: {user} in - status: {status".format(user=authRec["username"], status=req.status_code))
-        sys.exit()
+        userid = ''.join(random.choice('0123456789abcdef') for x in range(0,16))
+        authRec['userid'] = userid
     randomId.index += 1
     return userid
 
-    #return ''.join(random.choice('0123456789abcdef') for x in range(0,16))
 randomId.index = 0
 
 def getFullPath(path):
