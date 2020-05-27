@@ -34,3 +34,20 @@ regenerate the server, types and swagger files.  If minor changes were made (suc
 just adding more validation) - this service will continue to work.  If more major changes
 are made (such as changing the data structures) - the service will also have to be 
 modified.
+
+### Keto
+
+We are using Keto to do authorization.  For any access to our API - we first make a call
+to Keto to verify that the user is authorized for that endpoint.  We generate a keto request
+in our auth.go file.
+
+We generate a policy file for keto directly from the swagger specification.  For 
+right now - this file needs to be copied over to the keto repository
+as the basis of its policy file.
+
+### Integration Testing
+
+There is a python script that will do integration testing on a working environment.  It will
+create a random (or preprogrammed) load to create/delete/patch clinic objects.  Currently,
+it is manually run and the output is printed on stdout.
+
