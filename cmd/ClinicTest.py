@@ -4,6 +4,8 @@ import json
 import requests
 from enum import Enum
 import copy
+import csv
+import sys
 
 ClinicNames = [
     "Patient’s Choice Medical Clinic",
@@ -87,9 +89,12 @@ envs = {
     'prd': 'https://api.tidepool.org',
     'qa1': 'https://qa1.development.tidepool.org',
     'qa2': 'https://qa2.development.tidepool.org',
+    'dev': 'https://dev1.dev.tidepool.org',
     'local': 'http://localhost:{}'.format(LocalPort)
 }
 environment = 'local'
+environment = 'dev'
+AuthUrl = '/auth/login'
 
 
 def createRandomClinicAddBody(paramValues):
@@ -157,8 +162,13 @@ Operations = [
     {"name": "Remove Patient", "op": "DELETE", "path": "/clinics/{clinicid}/patients/{patientid}", "params": ["clinicid", "patientid"]},
 ]
 
+
+
 MinRemoveCount = 4
 NumberOps = 40
+CredentialFile = "ClinicTest-Credentials.csv"
+CredentialTable = []
+CredentialMap = {}
 
 def validOperation(rec, clinicList):
     if rec["name"] == "Add Clinic":
@@ -169,7 +179,27 @@ def validOperation(rec, clinicList):
     return True
 
 def randomId():
-    return ''.join(random.choice('0123456789abcdef') for x in range(0,16))
+    if randomId.index == 0:
+        # Read credential file
+        with open(CredentialFile) as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=["name", "url", "username", "password", "recname"])
+            for row in reader:
+                CredentialTable.append({"username": row["username"], "password": row["password"]})
+    authRec = CredentialTable[randomId.index]
+    req = requests.post(getFullPath(AuthUrl), auth=(authRec["username"], authRec["password"]))
+    if req.status_code == 200:
+        authRec['token'] = req.headers['x-tidepool-session-token']
+        userid = req.json()['userid']
+        authRec['userid'] = userid
+        CredentialMap[userid] = authRec
+    else:
+        print("Could not log user: {user} in - status: {status".format(user=authRec["username"], status=req.status_code))
+        sys.exit()
+    randomId.index += 1
+    return userid
+
+    #return ''.join(random.choice('0123456789abcdef') for x in range(0,16))
+randomId.index = 0
 
 def getFullPath(path):
     return "{prefix}{path}".format(prefix=envs[environment], path=path)
@@ -225,19 +255,30 @@ def executeOperation(rec, paramValues, clinicianMap, patientMap):
         rec["userid"] = clinicianMap[clinicid][0]
 
 
-    headers = {
-        "X_TIDEPOOL_USERID": rec["userid"],
-        "content-type" :"application/json"
-    }
-    if "roles" in rec:
-        headers["X_TIDEPOOL_ROLES"] = rec["roles"]
+
+
+    if environment != "local":
+        headers = {
+            "x-tidepool-session-token": CredentialMap[rec["userid"]]["token"],
+            "content-type" :"application/json"
+        }
+
+    else:
+        headers = {
+            "X_TIDEPOOL_USERID": rec["userid"],
+            "content-type" :"application/json"
+        }
+        if "roles" in rec:
+            headers["X_TIDEPOOL_ROLES"] = rec["roles"]
 
     if "body" in rec:
         data = rec["body"](paramValues)
     if rec["op"] == "GET":
         r = requests.get(getFullPath(rec["path"]),data=data, headers=headers)
     elif rec["op"] == "POST":
+        print("Calling: {path}  -- pvs: {pvs}".format(path=getFullPath(rec["path"]),  pvs=paramValues))
         r = requests.post(getFullPath(rec["path"]),data=data, headers=headers)
+        print("Received status code: " + str(r.headers))
         ret = r.json()
         if "id" in ret:
             rec["id"] = ret["id"]
