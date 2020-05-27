@@ -93,7 +93,7 @@ envs = {
     'local': 'http://localhost:{}'.format(LocalPort)
 }
 environment = 'local'
-environment = 'dev'
+#environment = 'dev'
 AuthUrl = '/auth/login'
 
 
@@ -143,7 +143,7 @@ def createRandomPatientModifyBody(paramValues):
 
 
 Operations = [
-    {"name": "Add Clinic", "op": "POST", "path": "/clinics", "body": createRandomClinicAddBody, "roles": "TIDEPOOL_ADMIN"},
+    {"name": "Add Clinic", "op": "POST", "path": "/clinics", "body": createRandomClinicAddBody},
     {"name": "Get Clinics", "op": "GET", "path": "/clinics", "roles": "TIDEPOOL_ADMIN"},
     {"name": "Get Clinic", "op": "GET", "path": "/clinics/{clinicid}", "params": ["clinicid"]},
     {"name": "Modify Clinic", "op": "PATCH", "path": "/clinics/{clinicid}", "params": ["clinicid"], "body": createRandomClinicModifyBody},
@@ -268,11 +268,11 @@ def executeOperation(rec, paramValues, clinicianMap, patientMap):
 
     else:
         headers = {
-            "X_TIDEPOOL_USERID": rec["userid"],
+            "X-TIDEPOOL-USERID": rec["userid"],
             "content-type" :"application/json"
         }
         if "roles" in rec:
-            headers["X_TIDEPOOL_ROLES"] = rec["roles"]
+            headers["X-TIDEPOOL-ROLES"] = rec["roles"]
 
     if "body" in rec:
         data = rec["body"](paramValues)

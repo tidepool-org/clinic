@@ -22,8 +22,8 @@ type AuthClient struct {
 
 var (
 	ClinicIdParamName = "clinicid"
-	TidepoolUserIdHeaderKey = "X_TIDEPOOL_USERID"
-	TidepoolRolesHeaderKey = "X_TIDEPOOL_ROLES"
+	TidepoolUserIdHeaderKey = "X-TIDEPOOL-USERID"
+	TidepoolRolesHeaderKey = "X-TIDEPOOL-ROLES"
 
 	KetoMachine = ""
 	KetoPort = 0
