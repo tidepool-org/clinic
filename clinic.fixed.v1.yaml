@@ -620,3 +620,5 @@ servers:
   url: https://external.integration.tidepool.org
 - description: ''
   url: https://api.tidepool.org
+- description: ''
+  url: http://dev1.dev.tidepool.org
