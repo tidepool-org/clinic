@@ -93,7 +93,7 @@ envs = {
     'local': 'http://localhost:{}'.format(LocalPort)
 }
 environment = 'local'
-#environment = 'dev'
+environment = 'dev'
 AuthUrl = '/auth/login'
 
 

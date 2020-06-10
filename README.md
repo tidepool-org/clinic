@@ -11,7 +11,7 @@ as yaml files.
 
 The main open source software packages that we use are:
 
-* https://github.com/deepmap/oapi-codegen for code generation.  This takes the yaml file 
+* https://github.com/tidepool-org/oapi-codegen for code generation.  This takes the yaml file 
 the API repo and generates a server implementation, a set of data types and a swagger 
 specification
 * https://github.com/getkin/kin-openapi for validating that input (and responses) into 
