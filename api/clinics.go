@@ -10,6 +10,10 @@ import (
 	"net/http"
 )
 
+var (
+	CLINIC_ADMIN = "CLINIC_ADMIN"
+)
+
 type ClinicServer struct {
 	Store store.StorageInterface
 }
@@ -73,7 +77,7 @@ func (c *ClinicServer) PostClinics(ctx echo.Context) error {
 	userId := ctx.Request().Header.Get(TidepoolUserIdHeaderKey)
 	clinicsClinicians.Active = true
 	clinicsClinicians.ClinicianId = userId
-	clinicsClinicians.Permissions = &[]string{"CLINIC_ADMIN"}
+	clinicsClinicians.Permissions = &[]string{CLINIC_ADMIN}
 	if _, err := c.Store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error inserting to clinician")
 	} else {
