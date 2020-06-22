@@ -75,8 +75,6 @@ func (c *ClinicServer) DeleteClinicsClinicidCliniciansClinicianid(ctx echo.Conte
 	}
 	if len(clinicsClinicians) == 1 && clinicsClinicians[0].ClinicianId == clinicianid {
 		return echo.NewHTTPError(http.StatusBadRequest, "Can not delete last clinic administrator")
-
-
 	}
 
 	// Passed check - Now delete clinician
