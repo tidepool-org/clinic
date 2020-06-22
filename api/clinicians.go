@@ -62,7 +62,25 @@ func (c *ClinicServer) PostClinicsClinicidClinicians(ctx echo.Context, clinicid 
 // DeleteClinicianFromClinic
 // (DELETE /clinics/{clinicid}/clinicians/{clinicianid})
 func (c *ClinicServer) DeleteClinicsClinicidCliniciansClinicianid(ctx echo.Context, clinicid string, clinicianid string) error {
-	filter := bson.M{"clinicId": clinicid, "clinicianId": clinicianid}
+	// If a clinic administrator - we must ensure that we have one clinic admin object
+
+	// We are a bit clever in determining this - we first try to find 2 admins.  If only one and that one is the
+	// one that we are attempting to delete - return an error
+	var clinicsClinicians []ClinicsClinicians
+	filter := bson.M{"clinicId": clinicid, "active": true, "permissions": CLINIC_ADMIN}
+	pagingParams := store.DefaultPagingParams
+	pagingParams.Limit = 2
+	if err := c.Store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams, &clinicsClinicians); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing clinic database")
+	}
+	if len(clinicsClinicians) == 1 && clinicsClinicians[0].ClinicianId == clinicianid {
+		return echo.NewHTTPError(http.StatusBadRequest, "Can not delete last clinic administrator")
+
+
+	}
+
+	// Passed check - Now delete clinician
+	filter = bson.M{"clinicId": clinicid, "clinicianId": clinicianid}
 	activeObj := bson.D{
 		{"$set", bson.D{{"active", false}}},
 	}
