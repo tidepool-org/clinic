@@ -72,11 +72,23 @@ paths:
             type: string
           in: query
           name: sortOrder
+        - schema:
+            type: string
+          in: query
+          name: clinicianId
+        - schema:
+            type: string
+          in: query
+          name: patientId
       security:
         - ClinicAuth:
             - TIDEPOOL_ADMIN
+            - CLINIC_ADMIN
+            - CLINIC_CLINICIAN
       x-roles:
         - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
     parameters: []
     post:
       summary: AddClinic
