@@ -135,6 +135,14 @@ paths:
         name: sortOrder
         schema:
           type: string
+      - in: query
+        name: clinicianId
+        schema:
+          type: string
+      - in: query
+        name: patientId
+        schema:
+          type: string
       responses:
         '200':
           content:
@@ -165,10 +173,14 @@ paths:
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
       summary: GetClinics
       tags: []
       x-roles:
       - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
     parameters: []
     post:
       description: Add a new clinic

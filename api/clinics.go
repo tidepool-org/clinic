@@ -39,7 +39,45 @@ type PostID struct {
 // (GET /clinics)
 func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) error {
 	newClinic := NewClinic{}
-	filter := FullNewClinic{ClinicExtraFields: ClinicExtraFields{Active: true}, NewClinic: newClinic}
+	if params.ClinicianId != nil  && params.PatientId != nil {
+		// This is an error - can not search by clinician and patient
+		return echo.NewHTTPError(http.StatusBadRequest, "Can not filter by both clinicianId and patientId ")
+	}
+
+	// XXX Auth on this one needs to be thought through
+	// XXX Empty result returns an error
+	// This part is a little funky - we are going to search in the specific collection for patient or clinician
+	// vs doing a join.  Main reason is that joins are not supported in mongo between strings and objectIds.  Should probably
+	// store clinics as objectIds
+	var filter interface{}
+	if params.ClinicianId != nil {
+		clinicianFilter := bson.M{"clinicianId": params.ClinicianId, "active": true}
+		var clinicsClinicians ClinicsClinicians
+		if err := c.Store.FindOne(store.ClinicsCliniciansCollection, clinicianFilter, &clinicsClinicians); err != nil {
+			fmt.Println("Find One error ", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
+		}
+		objID, _ := primitive.ObjectIDFromHex(*clinicsClinicians.ClinicId)
+		filter = bson.M{"_id": objID}
+
+	} else if params.PatientId != nil {
+		patientFilter := bson.M{"clinicianId": params.PatientId, "active": true}
+		var clinicsPatients ClinicsPatients
+		if err := c.Store.FindOne(store.ClinicsPatientsCollection, patientFilter, &clinicsPatients); err != nil {
+			fmt.Println("Find One error ", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
+		}
+		objID, _ := primitive.ObjectIDFromHex(*clinicsPatients.ClinicId)
+		filter = bson.M{"_id": objID}
+
+	} else {
+
+		filter = FullNewClinic{ClinicExtraFields: ClinicExtraFields{Active: true}, NewClinic: newClinic}
+	}
+
+
+
+	// Get Paging params
 	pagingParams := store.DefaultPagingParams
 	if params.Limit != nil {
 		pagingParams.Limit = int64(*params.Limit)
