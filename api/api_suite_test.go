@@ -73,6 +73,7 @@ func (d MockDB) Update(collection string, filter interface{}, update interface {
 
 
 
+
 func (d MockDB) Aggregate(collection string, pipeline []bson.D, data interface {}) error {
 	if (d.error != "") {
 		return errors.New(d.error)
