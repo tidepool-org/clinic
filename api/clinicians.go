@@ -122,3 +122,32 @@ func (c *ClinicServer) PatchClinicsClinicidCliniciansClinicianid(ctx echo.Contex
 	}
 	return ctx.JSON(http.StatusOK, nil)
 }
+
+
+// Your GET endpoint
+// (GET /clinics/clinicians/{clinicianid})
+func (c *ClinicServer) GetClinicsCliniciansClinicianid(ctx echo.Context, clinicianid string) error {
+	var clinicsClinicians []ClinicsClinicians
+	log.Printf("Get patient by id - id: %s", clinicianid)
+	filter := bson.M{"clinicianId": clinicianid, "active": true}
+	pagingParams := store.DefaultPagingParams
+	if err := c.Store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams, &clinicsClinicians); err != nil {
+		fmt.Println("Find error ", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error finding clinician")
+	}
+
+	return ctx.JSON(http.StatusOK, &clinicsClinicians)
+}
+
+// (DELETE /clinics/clinicians/{clinicianid})
+func (c *ClinicServer) DeleteClinicsCliniciansClinicianid(ctx echo.Context, clinicianid string) error {
+	filter := bson.M{ "clinicianId": clinicianid}
+	activeObj := bson.D{
+		{"$set", bson.D{{"active", false}}},
+	}
+	if err := c.Store.Update(store.ClinicsCliniciansCollection, filter, activeObj); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error deleting clinician from clinic")
+	}
+	return ctx.JSON(http.StatusOK, nil)
+
+}

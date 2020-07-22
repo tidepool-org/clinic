@@ -245,5 +245,49 @@
                 "options": {}
             }
         }
+    },
+    {
+        "id": "get_delete_clinics_patients_id",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:patients:*"
+        ],
+        "actions": [
+            "get",
+            "delete"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "TIDEPOOL_ADMIN"
+                }
+            }
+        }
+    },
+    {
+        "id": "get_delete_clinics_clinicians_id",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:clinicians:*"
+        ],
+        "actions": [
+            "get",
+            "delete"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "TIDEPOOL_ADMIN"
+                }
+            }
+        }
     }
 ]

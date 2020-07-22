@@ -6,6 +6,7 @@ from enum import Enum
 import copy
 import csv
 import sys
+import clinicTestData
 
 ClinicNames = [
     "Patient’s Choice Medical Clinic",
@@ -131,12 +132,12 @@ def createRandomClinicianModifyBody(paramValues):
     return createRandomClinicianAddBody(paramValues)
 
 def createRandomPatientAddBody(paramValues):
-    clinicsClinians = {
+    clinicsPatients = {
         "clinicId": paramValues["clinicid"],
         "patientId": paramValues["patientid"],
         "permissions": [random.choice(PatientPermissions)],
     }
-    return json.dumps(clinicsClinians)
+    return json.dumps(clinicsPatients)
 
 def createRandomPatientModifyBody(paramValues):
     return createRandomPatientAddBody(paramValues)
@@ -366,5 +367,34 @@ def main():
         # update our internal Tables
         updateInternalTables(rec, clinicList, paramValues, clinicianMap, patientMap)
 
+
+def createRandomClinics():
+    paramValues = {}
+    names = []
+    for i in range(1,20):
+        clinic = json.loads(createRandomClinicAddBody(paramValues))
+        if clinic["name"] in names:
+            continue
+        names.append(clinic["name"])
+        print (clinic)
+
+
+def createRandomPatients():
+    index = 0
+    for id in clinicTestData.clinics:
+        numPatients = random.randint(1,50)
+        for patientid in clinicTestData.patients[index:index+numPatients]:
+            print(createRandomPatientAddBody({"clinicid": id, "patientid": patientid}))
+        index += numPatients
+
+def createRandomClinicians():
+    index = 0
+    for id in clinicTestData.clinics:
+        numClinicians = random.randint(2,9)
+        for clinicianid in clinicTestData.clinicians[index:index+numClinicians]:
+            print(createRandomClinicianAddBody({"clinicid": id, "clinicianid": clinicianid}))
+
 if __name__ == "__main__":
     main()
+    #createRandomClinicians()
+
