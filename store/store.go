@@ -5,6 +5,7 @@ import (
 	"context" // manage multiple requests
 	"errors"
 	"fmt" // Println() function
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"os"      // os.Exit(1) on Error
 	"reflect" // get an object type
@@ -42,6 +43,8 @@ type StorageInterface interface {
 	FindOne(collection string, filter interface{}, data interface{}) error
 	Find(collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{}) error
 	UpdateOne(collection string, filter interface{}, update interface {}) error
+	Update(collection string, filter interface{}, update interface {}) error
+	Aggregate(collection string, pipeline []bson.D, data interface {}) error
 }
 
 //Mongo Storage Client
@@ -158,6 +161,21 @@ func (d MongoStoreClient) Find(collection string, filter interface{}, pagingPara
 	return nil
 }
 
+func (d MongoStoreClient) Update(collection string, filter interface{}, update interface {}) error {
+	fmt.Println("UpdateOne")
+
+	col := d.Client.Database(DatabaseName).Collection(collection)
+
+	ctx := NewDbContext()
+	_, err := col.UpdateMany(ctx, filter, update)
+	if err != nil {
+		fmt.Println("error on update many", err)
+		return err
+	}
+	fmt.Println("Updated")
+	return nil
+}
+
 func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, update interface {}) error {
 	fmt.Println("UpdateOne")
 
@@ -166,10 +184,25 @@ func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, updat
 	ctx := NewDbContext()
 	_, err := col.UpdateOne(ctx, filter, update)
 	if err != nil {
-		fmt.Println("error on update", err)
+		fmt.Println("error on update one", err)
 		return err
 	}
 	fmt.Println("Updated")
+	return nil
+}
+
+func (d MongoStoreClient) Aggregate(collection string, pipeline []bson.D , data interface {}) error {
+	col := d.Client.Database(DatabaseName).Collection(collection)
+
+	ctx := NewDbContext()
+	cursor, err := col.Aggregate(ctx, pipeline)
+	if err != nil {
+		return err
+	}
+	if err = cursor.All(ctx, data); err != nil {
+		return err
+	}
+	fmt.Println("Aggregate:", data)
 	return nil
 }
 
