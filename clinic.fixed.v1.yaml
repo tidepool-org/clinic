@@ -135,6 +135,14 @@ paths:
         name: sortOrder
         schema:
           type: string
+      - in: query
+        name: clinicianId
+        schema:
+          type: string
+      - in: query
+        name: patientId
+        schema:
+          type: string
       responses:
         '200':
           content:
@@ -165,10 +173,14 @@ paths:
       security:
       - ClinicAuth:
         - TIDEPOOL_ADMIN
+        - CLINIC_ADMIN
+        - CLINIC_CLINICIAN
       summary: GetClinics
       tags: []
       x-roles:
       - TIDEPOOL_ADMIN
+      - CLINIC_ADMIN
+      - CLINIC_CLINICIAN
     parameters: []
     post:
       description: Add a new clinic
@@ -194,6 +206,96 @@ paths:
       summary: AddClinic
       tags: []
       x-roles: []
+  /clinics/clinicians/{clinicianid}:
+    delete:
+      description: Deletes clinician from all clinics
+      operationId: delete-clinics-clinicians-clinicianid
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      summary: ''
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+    get:
+      description: Gets Clinicians from all clinics
+      operationId: get-clinics-clinicians-clinicianid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ClinicsClinicians'
+                type: array
+          description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      summary: Your GET endpoint
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+    parameters:
+    - in: path
+      name: clinicianid
+      required: true
+      schema:
+        type: string
+  /clinics/patients/{patientid}:
+    delete:
+      description: Delete patient from all clinics
+      operationId: delete-clinics-patients-patientid
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      summary: ''
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+    get:
+      description: Retrieves information on patients in any of the clinics
+      operationId: get-clinics-patients-patientid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ClinicsPatients'
+                type: array
+          description: OK
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+      summary: Your GET endpoint
+      tags: []
+      x-roles:
+      - TIDEPOOL_ADMIN
+    parameters:
+    - in: path
+      name: patientid
+      required: true
+      schema:
+        type: string
   /clinics/{clinicid}:
     delete:
       description: Delete Clinic
@@ -415,6 +517,7 @@ paths:
       schema:
         type: string
     patch:
+      description: update clinic clinician relationship
       operationId: patch-clinics-clinicid-clinicians-clinicianid
       requestBody:
         content:
