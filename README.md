@@ -34,3 +34,12 @@ regenerate the server, types and swagger files.  If minor changes were made (suc
 just adding more validation) - this service will continue to work.  If more major changes
 are made (such as changing the data structures) - the service will also have to be 
 modified.
+
+### Makefile
+
+The makefile has three targets:
+* generate - code generation for server stubs, types and specification.  Runs intermediate 
+scripts to match output of studio to oapigen
+* test - runs test scripts
+* build - builds package
+

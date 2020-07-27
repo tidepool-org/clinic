@@ -46,7 +46,6 @@ var swaggerSpec = []string{
 	"KdjnnV/TxUE7x/WdEfyuu/8E5vs+/kXnMPfAkIHz40nMqKz3YH05Lb4u7ne7EZ+QaMal6r/vve+Zf9CQ",
 	"Vr4+DuHudSeEu8onyB65W2LEIOJJDEw1i7/ZRhzurTE65hhgvbdpDEnoJpH1e7ta/hMAAP//6j325Gs1",
 	"AAA=",
-
 }
 
 // GetSwagger returns the Swagger specification corresponding to the generated code
