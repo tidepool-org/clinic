@@ -65,6 +65,9 @@ components:
         location:
           type: string
         metadata:
+          properties:
+            data:
+              type: string
           type: object
         name:
           minLength: 1
@@ -78,6 +81,8 @@ components:
                 type: string
             type: object
           type: array
+        userId:
+          type: string
       title: NewClinic
       type: object
       x-examples:
@@ -192,6 +197,14 @@ paths:
               $ref: '#/components/schemas/NewClinic'
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    type: string
+                title: ClinicPostId
+                type: object
           description: OK
         '400':
           description: Bad Request
@@ -441,6 +454,15 @@ paths:
               $ref: '#/components/schemas/ClinicsClinicians'
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                description: Id of newly created clinician/clinic relationship
+                properties:
+                  id:
+                    type: string
+                title: CliniciansPostId
+                type: object
           description: OK
         '400':
           description: Bad Request
@@ -602,6 +624,15 @@ paths:
         description: ''
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                description: Id of newly create patient/clinic relationship
+                properties:
+                  id:
+                    type: string
+                title: PatientPostId
+                type: object
           description: OK
         '400':
           description: Bad Request

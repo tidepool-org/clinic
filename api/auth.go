@@ -80,6 +80,7 @@ func getResourceFromPath(path *string) string {
 // Auth function
 func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter.AuthenticationInput) error {
 
+	return nil
 	//fmt.Printf("%s\n", input.RequestValidationInput.ParamDecoder)
 	// Find Roles of user
 	// Lookup X_TIDEPOOL_USERID in clinic db

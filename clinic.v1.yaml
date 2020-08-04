@@ -96,6 +96,14 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                title: ClinicPostId
+                type: object
+                properties:
+                  id:
+                    type: string
         '400':
           description: Bad Request
         '403':
@@ -138,6 +146,11 @@ paths:
                   type: string
                 metadata:
                   type: object
+                  properties:
+                    data:
+                      type: string
+                userId:
+                  type: string
       description: Add a new clinic
       security:
         - ClinicAuth:
@@ -388,6 +401,15 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                title: PatientPostId
+                type: object
+                properties:
+                  id:
+                    type: string
+                description: Id of newly create patient/clinic relationship
         '400':
           description: Bad Request
         '403':
@@ -574,6 +596,15 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                title: CliniciansPostId
+                type: object
+                properties:
+                  id:
+                    type: string
+                description: Id of newly created clinician/clinic relationship
         '400':
           description: Bad Request
         '403':
