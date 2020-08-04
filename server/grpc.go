@@ -3,7 +3,6 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/generated/services"
 	"github.com/tidepool-org/clinic/store"
@@ -11,11 +10,9 @@ import (
 	"context"
 	"fmt"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
 	grpcHealth "google.golang.org/grpc/health/grpc_health_v1"
 	grpcReflection "google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 	"log"
 	"net"
 	"sync"
@@ -43,11 +40,11 @@ func NewGrpcServer() *GrpcServer {
 	// Connection string
 	mongoHost, err := store.GetConnectionString()
 	if err != nil {
-		e.Logger.Fatal("Cound not connect to database: ", err)
+		log.Fatal("Cound not connect to database: ", err)
 	}
 
 	// Create Store
-	e.Logger.Print("Getting Mongog Store")
+	log.Println("Getting Mongog Store")
 	dbstore := store.NewMongoStoreClient(mongoHost)
 
 	srvr := &GrpcServer{
