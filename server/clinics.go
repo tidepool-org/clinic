@@ -28,7 +28,7 @@ type ClinicServer struct {
 func (g *GrpcServer) GetClinics(context context.Context, getClinicsRequest *clinic.GetClinicsRequest) (*clinic.GetClinicsResponse, error) {
 //func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) error {
 
-	filter :=  bson.M{"filter": true}
+	filter :=  bson.M{"active": true}
 
 	// Get Paging params
 	pagingParams := store.DefaultPagingParams
@@ -45,10 +45,12 @@ func (g *GrpcServer) GetClinics(context context.Context, getClinicsRequest *clin
 		return nil, status.Errorf(codes.Internal, "error finding clinic")
 	}
 
+	log.Printf("Clinics found: %v\n", clinics)
 	var pClinics []*models.Clinic
 	for i := 0; i < len(clinics); i++ {
 		pClinics = append(pClinics, &clinics[i])
 	}
+	log.Printf("Clinics pointers : %v\n", pClinics)
 
 	return &clinic.GetClinicsResponse{
 		Data: pClinics,
@@ -63,12 +65,11 @@ func (g *GrpcServer) PostClinics(context context.Context, postClinicRequest *cli
 	if postClinicRequest == nil {
 		return nil, status.Errorf(codes.Internal, "error no clinic passed in")
 	}
-	if err := mapModels(postClinicRequest, &newClinic); err != nil {
+	if err := mapModels(postClinicRequest.NewClinic, &newClinic); err != nil {
 		return nil, status.Errorf(codes.Internal, "could not read clinic passed in")
 	}
-	userId := newClinic.UserId
+	userId := postClinicRequest.XTIDEPOOLUSERID
 	newClinic.Active = true
-	newClinic.UserId = nil
 
 	var clinicsClinicians api.FullClinicsClinicians
 	if newID, err := g.Store.InsertOne(store.ClinicsCollection, newClinic); err != nil {
@@ -80,7 +81,7 @@ func (g *GrpcServer) PostClinics(context context.Context, postClinicRequest *cli
 	// We also have to add an initial admin - the user
 	//userId := context.Request().Header.Get(TidepoolUserIdHeaderKey)
 	clinicsClinicians.Active = true
-	clinicsClinicians.ClinicianId = *userId
+	clinicsClinicians.ClinicianId = userId
 	clinicsClinicians.Permissions = &[]string{CLINIC_ADMIN}
 	if _, err := g.Store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians); err != nil {
 		return nil, status.Errorf(codes.Internal, "Error inserting into clinic/clinician table")
@@ -103,7 +104,7 @@ func (g *GrpcServer) DeleteClinicsClinicid(context context.Context, deleteClinic
 	if err := g.Store.UpdateOne(store.ClinicsCollection, filter, activeObj); err != nil {
 		return nil, status.Errorf(codes.Internal, "Error deleting clinic from database")
 	}
-	return nil, nil
+	return new(empty.Empty), nil
 }
 
 // getClinic
@@ -143,5 +144,5 @@ func (g *GrpcServer) PatchClinicsClinicid(context context.Context, patchClinicsR
 	if err := g.Store.UpdateOne(store.ClinicsCollection, filter, patchObj); err != nil {
 		return nil, status.Errorf(codes.Internal, "could not update database")
 	}
-	return nil, nil
+	return new(empty.Empty), nil
 }

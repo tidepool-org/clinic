@@ -265,7 +265,9 @@ message PatchClinicsClinicidPatientsPatientidRequest {
 }
 
 message PostClinicsRequest {
-  NewClinic newClinic = 1;
+  // Userid for endpoint
+  string xTIDEPOOLUSERID = 1;
+  NewClinic newClinic = 2;
 
 }
 

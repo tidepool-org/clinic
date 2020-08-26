@@ -81,8 +81,6 @@ components:
                 type: string
             type: object
           type: array
-        userId:
-          type: string
       title: NewClinic
       type: object
       x-examples:
@@ -190,6 +188,12 @@ paths:
     post:
       description: Add a new clinic
       operationId: post-clinics
+      parameters:
+      - description: Userid for endpoint
+        in: header
+        name: X-TIDEPOOL-USERID
+        schema:
+          type: string
       requestBody:
         content:
           application/json:

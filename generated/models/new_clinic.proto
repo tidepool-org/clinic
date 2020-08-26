@@ -27,6 +27,4 @@ message NewClinic {
 
   repeated NewClinicPhoneNumbers phoneNumbers = 5;
 
-  string userId = 6;
-
 }

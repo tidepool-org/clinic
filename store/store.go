@@ -142,7 +142,7 @@ func (d MongoStoreClient) Find(collection string, filter interface{}, pagingPara
 	if pagingParams == nil {
 		pagingParams = &DefaultPagingParams
 	}
-	fmt.Println("print options: ", *findOptions.Limit, *findOptions.Skip)
+	fmt.Println("paging options: ", *findOptions.Limit, *findOptions.Skip)
 	fmt.Println("filter: ", filter)
 
 

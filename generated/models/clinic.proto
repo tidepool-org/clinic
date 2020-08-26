@@ -31,6 +31,4 @@ message Clinic {
 
   repeated NewClinicPhoneNumbers phoneNumbers = 6;
 
-  string userId = 7;
-
 }

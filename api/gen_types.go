@@ -53,7 +53,6 @@ type NewClinic struct {
 		Number *string `json:"number,omitempty" bson:"number,omitempty"`
 		Type   *string `json:"type,omitempty" bson:"type,omitempty"`
 	} `json:"phoneNumbers,omitempty" bson:"phoneNumbers,omitempty"`
-	UserId *string `json:"userId,omitempty" bson:"userId,omitempty"`
 }
 
 // PatientPermissions defines model for PatientPermissions.
@@ -72,6 +71,13 @@ type GetClinicsParams struct {
 
 // PostClinicsJSONBody defines parameters for PostClinics.
 type PostClinicsJSONBody NewClinic
+
+// PostClinicsParams defines parameters for PostClinics.
+type PostClinicsParams struct {
+
+	// Userid for endpoint
+	XTIDEPOOLUSERID *string `json:"X-TIDEPOOL-USERID,omitempty" bson:"X-TIDEPOOL-USERID,omitempty"`
+}
 
 // PatchClinicsClinicidJSONBody defines parameters for PatchClinicsClinicid.
 type PatchClinicsClinicidJSONBody NewClinic

@@ -95,7 +95,7 @@ func (g *GrpcServer) DeleteClinicsClinicidCliniciansClinicianid(context context.
 	if err := g.Store.UpdateOne(store.ClinicsCliniciansCollection, filter, activeObj); err != nil {
 		return nil, status.Errorf(codes.Internal, "error deleting clinician from database")
 	}
-	return nil, nil
+	return new(empty.Empty), nil
 }
 
 // GetClinician
@@ -133,7 +133,7 @@ func (g *GrpcServer) PatchClinicsClinicidCliniciansClinicianid(context context.C
 	if err := g.Store.UpdateOne(store.ClinicsCliniciansCollection, filter, patchObj); err != nil {
 		return nil, status.Errorf(codes.Internal,"error updating clinician")
 	}
-	return nil, nil
+	return new(empty.Empty), nil
 }
 
 
@@ -171,6 +171,6 @@ func (g *GrpcServer) DeleteClinicsCliniciansClinicianid(context context.Context,
 	if err := g.Store.Update(store.ClinicsCliniciansCollection, filter, activeObj); err != nil {
 		return nil, status.Errorf(codes.Internal, "error deleting clinician from clinic")
 	}
-	return nil, nil
+	return new(empty.Empty), nil
 
 }

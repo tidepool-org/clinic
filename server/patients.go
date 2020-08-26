@@ -2,16 +2,16 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/tidepool-org/clinic/api"
-	clinic "github.com/tidepool-org/clinic/generated/services"
 	models "github.com/tidepool-org/clinic/generated/models"
+	clinic "github.com/tidepool-org/clinic/generated/services"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log"
-	"fmt"
 )
 
 
@@ -87,7 +87,7 @@ func (g *GrpcServer) DeleteClinicClinicidPatientsPatientid(context context.Conte
 	if err := g.Store.UpdateOne(store.ClinicsPatientsCollection, filter, activeObj); err != nil {
 		return nil, status.Errorf(codes.Internal, "error deleting patient from clinic")
 	}
-	return nil, nil
+	return new(empty.Empty), nil
 }
 
 
@@ -126,7 +126,7 @@ func (g *GrpcServer) PatchClinicsClinicidPatientsPatientid(context context.Conte
 	if err := g.Store.UpdateOne(store.ClinicsPatientsCollection, filter, patchObj); err != nil {
 		return  nil, status.Errorf(codes.Internal, "error updating patient")
 	}
-	return nil, nil
+	return new(empty.Empty), nil
 }
 
 // Your GET endpoint
@@ -165,5 +165,5 @@ func (g *GrpcServer) DeleteClinicsPatientsPatientid(context context.Context, del
 	if err := g.Store.Update(store.ClinicsPatientsCollection, filter, activeObj); err != nil {
 		return nil, status.Errorf(codes.Internal, "error deleting patient from clinic")
 	}
-	return nil, nil
+	return new(empty.Empty), nil
 }
