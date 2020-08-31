@@ -17,7 +17,6 @@ import "google/api/annotations.proto";
 
 import "google/protobuf/empty.proto";
 import public "models/clinic.proto";
-import public "models/clinic_post_id.proto";
 import public "models/clinician_permissions.proto";
 import public "models/clinicians_post_id.proto";
 import public "models/clinics_clinicians.proto";
@@ -26,6 +25,7 @@ import public "models/error.proto";
 import public "models/new_clinic.proto";
 import public "models/patient_permissions.proto";
 import public "models/patient_post_id.proto";
+import public "models/post_clinic_response.proto";
 
 service DefaultService {
 
@@ -125,7 +125,7 @@ service DefaultService {
         };
     }
 
-    rpc PostClinics (PostClinicsRequest) returns (ClinicPostId) {
+    rpc PostClinics (PostClinicsRequest) returns (PostClinicResponse) {
             option (google.api.http) = {
                 post: "/clinics"
         };

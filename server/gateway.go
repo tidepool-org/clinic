@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/tidepool-org/clinic/store"
+
+	//"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/config"
@@ -21,10 +24,23 @@ type GatewayProxy struct {
 	cfg        *config.Config
 }
 
+type middleware func(http.HandlerFunc) http.HandlerFunc
+
+
 func NewGatewayProxy(cfg *config.Config) *GatewayProxy {
 	return &GatewayProxy{
 		cfg: cfg,
 	}
+}
+
+// buildChain builds the middlware chain recursively, functions are first class
+func buildChain(f http.HandlerFunc, m ...middleware) http.HandlerFunc {
+	// if our chain is done, use the original handlerfunc
+	if len(m) == 0 {
+		return f
+	}
+	// otherwise nest the handlerfuncs
+	return m[0](buildChain(f, m[1:cap(m)]...))
 }
 
 func (g *GatewayProxy) Initialize(ctx context.Context, endpoint string) error {
@@ -35,12 +51,26 @@ func (g *GatewayProxy) Initialize(ctx context.Context, endpoint string) error {
 	}
 	g.mux = mux
 	swagger, err := api.GetSwagger()
-	authClient := api.AuthClient{}
+
+	// Connection string
+	mongoHost, err := store.GetConnectionString()
+	if err != nil {
+		fmt.Printf("Fatal error connecting to database: %v\n", err)
+		panic("Cound not connect to database: ")
+	}
+	dbstore := store.NewMongoStoreClient(mongoHost)
+
+
+	authClient := api.AuthClient{Store: dbstore}
+
 	filterOptions := openapi3filter.Options{AuthenticationFunc: authClient.AuthenticationFunc}
 	options := Options{Options: filterOptions}
+	validatorFunc := OapiRequestValidator2(swagger, &options)
+	middlewareChain := []middleware {
+		validatorFunc,
+	}
 	g.httpServer = &http.Server{
-		//Handler: http.HandlerFunc(OapiRequestValidator2(mux.ServeHTTP)),
-		Handler: OapiRequestValidator2(swagger, &options, http.HandlerFunc(mux.ServeHTTP)),
+		Handler:  buildChain(mux.ServeHTTP, middlewareChain...),
 	}
 	return nil
 }

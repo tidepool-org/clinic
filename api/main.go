@@ -4,7 +4,7 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3filter"
+	//"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/tidepool-org/clinic/store"
@@ -28,10 +28,10 @@ func MainLoop() {
 	// Echo instance
 	e := echo.New()
 	e.Logger.Print("Starting Main Loop")
-	swagger, err := GetSwagger()
-	if err != nil {
-		e.Logger.Fatal("Cound not get spec")
-	}
+	//swagger, err := GetSwagger()
+	//if err != nil {
+	//	e.Logger.Fatal("Cound not get spec")
+	//}
 
 	// Connection string
 	mongoHost, err := store.GetConnectionString()
@@ -45,12 +45,12 @@ func MainLoop() {
 
 
 	// Middleware
-	authClient := AuthClient{store: dbstore}
-	filterOptions := openapi3filter.Options{AuthenticationFunc: authClient.AuthenticationFunc}
-	options := Options{Options: filterOptions}
+	//authClient := AuthClient{store: dbstore}
+	//filterOptions := openapi3filter.Options{AuthenticationFunc: authClient.AuthenticationFunc}
+	//options := Options{Options: filterOptions}
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(OapiRequestValidator(swagger, &options))
+	//e.Use(OapiRequestValidator(swagger, &options))
 
 	// Routes
 	e.GET("/", hello)

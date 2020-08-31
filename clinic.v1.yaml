@@ -95,11 +95,11 @@ paths:
           content:
             application/json:
               schema:
+                title: PostClinicResponse
                 type: object
+                description: Response from a call to post clinic endpoint
                 properties:
-                  clientId:
-                    type: string
-                  userId:
+                  clinicId:
                     type: string
             application/xml:
               schema:
@@ -115,12 +115,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                clinic:
-                  $ref: '#/paths/~1clinics~1%7Bclinicid%7D/patch/requestBody/content/application~1json/schema'
-                email:
-                  type: string
+              $ref: '#/paths/~1clinics~1%7Bclinicid%7D/patch/requestBody/content/application~1json/schema'
       description: Add a new clinic
       security: []
       x-roles: []

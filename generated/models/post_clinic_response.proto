@@ -13,8 +13,8 @@ syntax = "proto3";
 package clinic;
 
 
-message ClinicPostId {
+message PostClinicResponse {
 
-  string id = 1;
+  string clinicId = 1;
 
 }

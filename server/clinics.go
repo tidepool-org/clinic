@@ -59,7 +59,7 @@ func (g *GrpcServer) GetClinics(context context.Context, getClinicsRequest *clin
 
 // createClinic
 // (POST /clinics)
-func (g *GrpcServer) PostClinics(context context.Context, postClinicRequest *clinic.PostClinicsRequest) (*models.ClinicPostId, error) {
+func (g *GrpcServer) PostClinics(context context.Context, postClinicRequest *clinic.PostClinicsRequest) (*models.PostClinicResponse, error) {
 	var newClinic api.FullNewClinic
 
 	if postClinicRequest == nil {
@@ -69,7 +69,12 @@ func (g *GrpcServer) PostClinics(context context.Context, postClinicRequest *cli
 		return nil, status.Errorf(codes.Internal, "could not read clinic passed in")
 	}
 	userId := postClinicRequest.XTIDEPOOLUSERID
-	newClinic.Active = true
+	if userId == "" {
+		return nil, status.Errorf(codes.Internal, "No user passed in")
+	}
+	newClinic.Active = false
+
+	// Must reach out to shoreline to verfiy that this will work
 
 	var clinicsClinicians api.FullClinicsClinicians
 	if newID, err := g.Store.InsertOne(store.ClinicsCollection, newClinic); err != nil {
@@ -86,10 +91,10 @@ func (g *GrpcServer) PostClinics(context context.Context, postClinicRequest *cli
 	if _, err := g.Store.InsertOne(store.ClinicsCliniciansCollection, clinicsClinicians); err != nil {
 		return nil, status.Errorf(codes.Internal, "Error inserting into clinic/clinician table")
 	} else {
-		postID := models.ClinicPostId{Id: *clinicsClinicians.ClinicId}
+		postClinicsResponse := models.PostClinicResponse{ClinicId: *clinicsClinicians.ClinicId}
 		//postID := PostID{newid: *newID, test: "test"}
-		log.Printf("Returning from newer /clinics, %s, %s", postID.Id, *clinicsClinicians.ClinicId)
-		return &postID, nil
+		log.Printf("Returning from newer /clinics, %s", *clinicsClinicians.ClinicId)
+		return &postClinicsResponse, nil
 	}
 }
 

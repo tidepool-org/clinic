@@ -17,7 +17,7 @@ import (
 )
 
 type AuthClient struct {
-	store *store.MongoStoreClient
+	Store *store.MongoStoreClient
 }
 
 var (
@@ -80,17 +80,19 @@ func getResourceFromPath(path *string) string {
 // Auth function
 func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter.AuthenticationInput) error {
 
-	return nil
-	//fmt.Printf("%s\n", input.RequestValidationInput.ParamDecoder)
 	// Find Roles of user
-	// Lookup X_TIDEPOOL_USERID in clinic db
+	// Lookup X-TIDEPOOL-USERID in clinic db
 	userId := input.RequestValidationInput.Request.Header.Get(TidepoolUserIdHeaderKey)
 	path := input.RequestValidationInput.Route.Path
 	method := strings.ToLower(input.RequestValidationInput.Request.Method)
-	fmt.Printf("Path: %s\n", getResourceFromPath(&path))
+
+	// Get the clinic Id
+	clinicId := input.RequestValidationInput.PathParams[ClinicIdParamName]
+
+	fmt.Printf("\nPath: %s -- %s\n", path, getResourceFromPath(&path))
 	fmt.Printf("Method: %s\n", method)
 	fmt.Printf("UserId: %s\n", userId)
-	clinicsClinicians, err := a.getUserRoles(&userId)
+	clinicsClinicians, err := a.getUserRoles(&clinicId, &userId)
 	if  err != nil {
 		if err == mongo.ErrNoDocuments {
 			fmt.Printf("No Documents: %s\n", err)
@@ -98,12 +100,8 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 		} else {
 			fmt.Printf("error getting roles: %s\n", err)
 			return err
-
 		}
 	}
-
-	// Get the clinic Id
-	clinicId := input.RequestValidationInput.PathParams[ClinicIdParamName]
 
 
 	// Add tidepool_admin to user roles if exist in header
@@ -118,12 +116,7 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 
 		fmt.Printf("Could not retrieve ClinicsClinicians\n")
 	} else {
-		//fmt.Printf("clinicsClinicians: %s\n", *clinicsClinicians)
 
-		// Must belong to clinic
-		//if clinicId != "" && clinicId != *clinicsClinicians.ClinicId {
-		//	return errors.New("User can not access clinic")
-		//}
 		dbClinicId = *clinicsClinicians.ClinicId
 		roles = append(*clinicsClinicians.ClinicianPermissions.Permissions, tidepoolRoles...)
 	}
@@ -177,16 +170,16 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 	if resp.StatusCode == 200 {
 		return nil
 	}
-	fmt.Printf("Response: %d", resp.StatusCode)
+	fmt.Printf("Response: %d\n", resp.StatusCode)
 
 	// No scopes found
 	return errors.New("User not authorized for this endpoint")
 }
 
-func (a *AuthClient) getUserRoles(userId *string) (*ClinicsClinicians, error) {
+func (a *AuthClient) getUserRoles(clinicId *string, userId *string) (*ClinicsClinicians, error) {
 	var clinicsClinicians ClinicsClinicians
-	filter := bson.M{"clinicianId": userId, "active": true}
-	if err := a.store.FindOne(store.ClinicsCliniciansCollection, filter, &clinicsClinicians); err != nil {
+	filter := bson.M{"clinicId": clinicId, "clinicianId": userId, "active": true}
+	if err := a.Store.FindOne(store.ClinicsCliniciansCollection, filter, &clinicsClinicians); err != nil {
 		return nil, err
 	}
 	return &clinicsClinicians, nil

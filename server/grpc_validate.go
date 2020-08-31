@@ -35,18 +35,20 @@ func OapiRequestValidator(swagger *openapi3.Swagger, options *Options) grpc.Unar
 
 }
 
-func OapiRequestValidator2(swagger *openapi3.Swagger, options *Options, next http.Handler) http.Handler {
+func OapiRequestValidator2(swagger *openapi3.Swagger, options *Options) (func(f http.HandlerFunc) http.HandlerFunc) {
 	router := openapi3filter.NewRouter().WithSwagger(swagger)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Our middleware logic goes here...
-		fmt.Printf("In http validator\n")
-		err := ValidateRequestFromContext(r, router, options)
-		if err != nil {
-			fmt.Printf("Error In http validator %s\n", err)
-		    return
-		}
-		next.ServeHTTP(w, r)
-	})
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Our middleware logic goes here...
+			fmt.Printf("In http validator\n")
+			err := ValidateRequestFromContext(r, router, options)
+			if err != nil {
+				fmt.Printf("Error In http validator %s\n", err)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // This is an Echo middleware function which validates incoming HTTP requests
@@ -121,6 +123,14 @@ func ValidateRequestFromContext(req *http.Request, router *openapi3filter.Router
 		validationInput.Options = &options.Options
 		validationInput.ParamDecoder = options.ParamDecoder
 		requestContext = context.WithValue(requestContext, UserDataKey, options.UserData)
+
+		if options.Options.AuthenticationFunc != nil {
+			if err := options.Options.AuthenticationFunc(requestContext, &openapi3filter.AuthenticationInput{
+				RequestValidationInput: validationInput,
+			}); err != nil {
+				return err
+			}
+		}
 	}
 
 	err = openapi3filter.ValidateRequest(requestContext, validationInput)
