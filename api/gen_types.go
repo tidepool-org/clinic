@@ -43,10 +43,12 @@ type Error struct {
 
 // NewClinic defines model for NewClinic.
 type NewClinic struct {
-	Address      *string                 `json:"address,omitempty" bson:"address,omitempty"`
-	Location     *string                 `json:"location,omitempty" bson:"location,omitempty"`
-	Metadata     *map[string]interface{} `json:"metadata,omitempty" bson:"metadata,omitempty"`
-	Name         *string                 `json:"name,omitempty" bson:"name,omitempty"`
+	Address  *string `json:"address,omitempty" bson:"address,omitempty"`
+	Location *string `json:"location,omitempty" bson:"location,omitempty"`
+	Metadata *struct {
+		Data *string `json:"data,omitempty" bson:"data,omitempty"`
+	} `json:"metadata,omitempty" bson:"metadata,omitempty"`
+	Name         *string `json:"name,omitempty" bson:"name,omitempty"`
 	PhoneNumbers *[]struct {
 		Number *string `json:"number,omitempty" bson:"number,omitempty"`
 		Type   *string `json:"type,omitempty" bson:"type,omitempty"`
@@ -69,6 +71,13 @@ type GetClinicsParams struct {
 
 // PostClinicsJSONBody defines parameters for PostClinics.
 type PostClinicsJSONBody NewClinic
+
+// PostClinicsParams defines parameters for PostClinics.
+type PostClinicsParams struct {
+
+	// Userid for endpoint
+	XTIDEPOOLUSERID *string `json:"X-TIDEPOOL-USERID,omitempty" bson:"X-TIDEPOOL-USERID,omitempty"`
+}
 
 // PatchClinicsClinicidJSONBody defines parameters for PatchClinicsClinicid.
 type PatchClinicsClinicidJSONBody NewClinic
