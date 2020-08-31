@@ -33,7 +33,7 @@ func createClinics(c clinic.DefaultServiceClient, ctx context.Context) string  {
 	fmt.Printf("Post: %v E:%v\n", ret, err)
 	clinics, err  := c.GetClinics(ctx, &clinic.GetClinicsRequest{})
 	fmt.Printf("Get: %v E:%v\n", clinics, err)
-	return ret.Id
+	return ret.ClinicId
 }
 
 func patchClinics(c clinic.DefaultServiceClient, ctx context.Context, clinicId string)  {
