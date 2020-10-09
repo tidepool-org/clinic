@@ -68,11 +68,14 @@ func ValidateRequestFromContext(ctx echo.Context, router *openapi3filter.Router,
 	// XXX hack to make localhost work
 	fmt.Printf("Scheme: %s, Host: %s\n", req.URL.Scheme, req.URL.Host)
 	fmt.Printf("Headers: %s\n", req.Header)
-	if req.URL.Scheme == "" {
-		req.URL.Scheme = "http"
-	}
 	if req.URL.Host == "" {
 		req.URL.Host = req.Host
+	}
+	if req.URL.Scheme == "" {
+		req.URL.Scheme = "https"
+		if strings.HasPrefix(req.URL.Host, "localhost") {
+			req.URL.Scheme = "http"
+		}
 	}
 	fmt.Printf("Fixed Scheme: %s, Host: %s\n", req.URL.Scheme, req.URL.Host)
 	route, pathParams, err := router.FindRoute(req.Method, req.URL)

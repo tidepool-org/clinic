@@ -96,7 +96,8 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 
 // createClinic
 // (POST /clinics)
-func (c *ClinicServer) PostClinics(ctx echo.Context) error {
+func (c *ClinicServer) PostClinics(ctx echo.Context, params PostClinicsParams) error {
+
 	var newClinic FullNewClinic
 
 	if err := ctx.Bind(&newClinic); err != nil {

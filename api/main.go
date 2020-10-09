@@ -45,7 +45,7 @@ func MainLoop() {
 
 
 	// Middleware
-	authClient := AuthClient{store: dbstore}
+	authClient := AuthClient{Store: dbstore}
 	filterOptions := openapi3filter.Options{AuthenticationFunc: authClient.AuthenticationFunc}
 	options := Options{Options: filterOptions}
 	e.Use(middleware.Logger())
