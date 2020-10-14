@@ -44,7 +44,8 @@ type Error struct {
 // NewClinic defines model for NewClinic.
 type NewClinic struct {
 	Address  *string `json:"address,omitempty" bson:"address,omitempty"`
-	Location *string `json:"location,omitempty" bson:"location,omitempty"`
+	City     *string `json:"city,omitempty" bson:"city,omitempty"`
+	Country  *string `json:"country,omitempty" bson:"country,omitempty"`
 	Metadata *struct {
 		Data *string `json:"data,omitempty" bson:"data,omitempty"`
 	} `json:"metadata,omitempty" bson:"metadata,omitempty"`
@@ -53,6 +54,8 @@ type NewClinic struct {
 		Number *string `json:"number,omitempty" bson:"number,omitempty"`
 		Type   *string `json:"type,omitempty" bson:"type,omitempty"`
 	} `json:"phoneNumbers,omitempty" bson:"phoneNumbers,omitempty"`
+	PostalCode *string `json:"postalCode,omitempty" bson:"postalCode,omitempty"`
+	State      *string `json:"state,omitempty" bson:"state,omitempty"`
 }
 
 // PatientPermissions defines model for PatientPermissions.

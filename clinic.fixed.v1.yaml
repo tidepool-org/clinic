@@ -62,7 +62,9 @@ components:
       properties:
         address:
           type: string
-        location:
+        city:
+          type: string
+        country:
           type: string
         metadata:
           properties:
@@ -81,6 +83,10 @@ components:
                 type: string
             type: object
           type: array
+        postalCode:
+          type: string
+        state:
+          type: string
       title: NewClinic
       type: object
       x-examples:
