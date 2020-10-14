@@ -43,10 +43,12 @@ type Error struct {
 
 // NewClinic defines model for NewClinic.
 type NewClinic struct {
-	Address  *string `json:"address,omitempty" bson:"address,omitempty"`
-	City     *string `json:"city,omitempty" bson:"city,omitempty"`
-	Country  *string `json:"country,omitempty" bson:"country,omitempty"`
-	Metadata *struct {
+	Address    *string `json:"address,omitempty" bson:"address,omitempty"`
+	City       *string `json:"city,omitempty" bson:"city,omitempty"`
+	ClinicSize *int    `json:"clinicSize,omitempty" bson:"clinicSize,omitempty"`
+	ClinicType *string `json:"clinicType,omitempty" bson:"clinicType,omitempty"`
+	Country    *string `json:"country,omitempty" bson:"country,omitempty"`
+	Metadata   *struct {
 		Data *string `json:"data,omitempty" bson:"data,omitempty"`
 	} `json:"metadata,omitempty" bson:"metadata,omitempty"`
 	Name         *string `json:"name,omitempty" bson:"name,omitempty"`

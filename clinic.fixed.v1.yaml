@@ -64,6 +64,10 @@ components:
           type: string
         city:
           type: string
+        clinicSize:
+          type: integer
+        clinicType:
+          type: string
         country:
           type: string
         metadata:
