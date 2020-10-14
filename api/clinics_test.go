@@ -40,7 +40,9 @@ var _ = Describe("Store Test", func() {
 			})
 			It("Post Clinics returns ok", func() {
 				c, rec := getContext("/clinics")
-				gomega.Expect(TestClinicServer.PostClinics(c)).NotTo(gomega.HaveOccurred())
+				postClinicsParams := api.PostClinicsParams{}
+
+				gomega.Expect(TestClinicServer.PostClinics(c, postClinicsParams)).NotTo(gomega.HaveOccurred())
 				gomega.Expect(rec.Code, http.StatusOK)
 			})
 			It("Delete Clinics returns ok", func() {
@@ -129,7 +131,8 @@ var _ = Describe("Store Test", func() {
 			})
 			It("Post Clinics returns ok", func() {
 				c, rec := getContext("/clinics")
-				gomega.Expect(TestClinicServer.PostClinics(c)).To(gomega.HaveOccurred())
+				postClinicsParams := api.PostClinicsParams{}
+				gomega.Expect(TestClinicServer.PostClinics(c, postClinicsParams)).To(gomega.HaveOccurred())
 				gomega.Expect(rec.Code, http.StatusInternalServerError)
 			})
 			It("Delete Clinics returns ok", func() {
