@@ -222,6 +222,10 @@ paths:
                   properties:
                     data:
                       type: string
+                clinicType:
+                  type: string
+                clinicSize:
+                  type: integer
           application/xml:
             schema:
               type: object
