@@ -151,6 +151,11 @@ paths:
                       - _id
                   - $ref: '#/paths/~1clinics~1%7Bclinicid%7D/patch/requestBody/content/application~1json/schema'
                 title: Clinic
+          links:
+            get-clinicians:
+              operationId: get-clinics-clinicid-clinicians
+              parameters:
+                clinicid: $request.query.clinicid
         '400':
           description: Bad Request
         '403':
