@@ -338,6 +338,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Clinic'
           description: OK
+          links:
+            get-clinicians:
+              operationId: get-clinics-clinicid-clinicians
+              parameters:
+                clinicid: $request.query.clinicid
         '400':
           description: Bad Request
         '403':
