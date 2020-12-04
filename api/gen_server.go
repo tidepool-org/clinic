@@ -35,7 +35,7 @@ type ServerInterface interface {
 	DeleteClinicsClinicid(ctx echo.Context, clinicid string) error
 	// GetClinic
 	// (GET /clinics/{clinicid})
-	GetClinicsClinicid(ctx echo.Context, clinicid string) error
+	GetClinicsClinicid(ctx echo.Context, clinicid string, params GetClinicsClinicidParams) error
 	// ModifyClinic
 	// (PATCH /clinics/{clinicid})
 	PatchClinicsClinicid(ctx echo.Context, clinicid string) error
@@ -242,8 +242,38 @@ func (w *ServerInterfaceWrapper) GetClinicsClinicid(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetClinicsClinicidParams
+	// ------------- Optional query parameter "clinicians" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "clinicians", ctx.QueryParams(), &params.Clinicians)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicians: %s", err))
+	}
+
+	// ------------- Optional query parameter "patients" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "patients", ctx.QueryParams(), &params.Patients)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patients: %s", err))
+	}
+
+	// ------------- Optional query parameter "includeClinicians" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "includeClinicians", ctx.QueryParams(), &params.IncludeClinicians)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter includeClinicians: %s", err))
+	}
+
+	// ------------- Optional query parameter "includePatients" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "includePatients", ctx.QueryParams(), &params.IncludePatients)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter includePatients: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetClinicsClinicid(ctx, clinicid)
+	err = w.Handler.GetClinicsClinicid(ctx, clinicid, params)
 	return err
 }
 

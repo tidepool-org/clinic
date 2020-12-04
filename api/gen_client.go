@@ -112,7 +112,7 @@ type ClientInterface interface {
 	DeleteClinicsClinicid(ctx context.Context, clinicid string) (*http.Response, error)
 
 	// GetClinicsClinicid request
-	GetClinicsClinicid(ctx context.Context, clinicid string) (*http.Response, error)
+	GetClinicsClinicid(ctx context.Context, clinicid string, params *GetClinicsClinicidParams) (*http.Response, error)
 
 	// PatchClinicsClinicid request  with any body
 	PatchClinicsClinicidWithBody(ctx context.Context, clinicid string, contentType string, body io.Reader) (*http.Response, error)
@@ -278,8 +278,8 @@ func (c *Client) DeleteClinicsClinicid(ctx context.Context, clinicid string) (*h
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClinicsClinicid(ctx context.Context, clinicid string) (*http.Response, error) {
-	req, err := NewGetClinicsClinicidRequest(c.Server, clinicid)
+func (c *Client) GetClinicsClinicid(ctx context.Context, clinicid string, params *GetClinicsClinicidParams) (*http.Response, error) {
+	req, err := NewGetClinicsClinicidRequest(c.Server, clinicid, params)
 	if err != nil {
 		return nil, err
 	}
@@ -865,7 +865,7 @@ func NewDeleteClinicsClinicidRequest(server string, clinicid string) (*http.Requ
 }
 
 // NewGetClinicsClinicidRequest generates requests for GetClinicsClinicid
-func NewGetClinicsClinicidRequest(server string, clinicid string) (*http.Request, error) {
+func NewGetClinicsClinicidRequest(server string, clinicid string, params *GetClinicsClinicidParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -889,6 +889,74 @@ func NewGetClinicsClinicidRequest(server string, clinicid string) (*http.Request
 	if err != nil {
 		return nil, err
 	}
+
+	queryValues := queryUrl.Query()
+
+	if params.Clinicians != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "clinicians", *params.Clinicians); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Patients != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "patients", *params.Patients); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.IncludeClinicians != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "includeClinicians", *params.IncludeClinicians); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.IncludePatients != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "includePatients", *params.IncludePatients); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryUrl.RawQuery = queryValues.Encode()
 
 	req, err := http.NewRequest("GET", queryUrl.String(), nil)
 	if err != nil {
@@ -1531,7 +1599,7 @@ type ClientWithResponsesInterface interface {
 	DeleteClinicsClinicidWithResponse(ctx context.Context, clinicid string) (*DeleteClinicsClinicidResponse, error)
 
 	// GetClinicsClinicid request
-	GetClinicsClinicidWithResponse(ctx context.Context, clinicid string) (*GetClinicsClinicidResponse, error)
+	GetClinicsClinicidWithResponse(ctx context.Context, clinicid string, params *GetClinicsClinicidParams) (*GetClinicsClinicidResponse, error)
 
 	// PatchClinicsClinicid request  with any body
 	PatchClinicsClinicidWithBodyWithResponse(ctx context.Context, clinicid string, contentType string, body io.Reader) (*PatchClinicsClinicidResponse, error)
@@ -1605,10 +1673,8 @@ func (r GetClinicsResponse) StatusCode() int {
 type PostClinicsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		ClinicId *string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
-	}
-	XML200 *map[string]interface{}
+	JSON200      *PostClinicResponse
+	XML200       *map[string]interface{}
 }
 
 // Status returns HTTPResponse.Status
@@ -1737,7 +1803,7 @@ func (r DeleteClinicsClinicidResponse) StatusCode() int {
 type GetClinicsClinicidResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinic
+	JSON200      *ClinicsPatientClinician
 }
 
 // Status returns HTTPResponse.Status
@@ -1802,9 +1868,7 @@ func (r GetClinicsClinicidCliniciansResponse) StatusCode() int {
 type PostClinicsClinicidCliniciansResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		Id *string `json:"id,omitempty" bson:"id,omitempty"`
-	}
+	JSON200      *CliniciansPostid
 }
 
 // Status returns HTTPResponse.Status
@@ -1912,9 +1976,7 @@ func (r GetClinicsClinicidPatientsResponse) StatusCode() int {
 type PostClinicsClinicidPatientsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		Id *string `json:"id,omitempty" bson:"id,omitempty"`
-	}
+	JSON200      *PatientPostid
 }
 
 // Status returns HTTPResponse.Status
@@ -2069,8 +2131,8 @@ func (c *ClientWithResponses) DeleteClinicsClinicidWithResponse(ctx context.Cont
 }
 
 // GetClinicsClinicidWithResponse request returning *GetClinicsClinicidResponse
-func (c *ClientWithResponses) GetClinicsClinicidWithResponse(ctx context.Context, clinicid string) (*GetClinicsClinicidResponse, error) {
-	rsp, err := c.GetClinicsClinicid(ctx, clinicid)
+func (c *ClientWithResponses) GetClinicsClinicidWithResponse(ctx context.Context, clinicid string, params *GetClinicsClinicidParams) (*GetClinicsClinicidResponse, error) {
+	rsp, err := c.GetClinicsClinicid(ctx, clinicid, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2420,7 +2482,7 @@ func ParseGetClinicsClinicidResponse(rsp *http.Response) (*GetClinicsClinicidRes
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinic
+		var dest ClinicsPatientClinician
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2491,9 +2553,7 @@ func ParsePostClinicsClinicidCliniciansResponse(rsp *http.Response) (*PostClinic
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Id *string `json:"id,omitempty" bson:"id,omitempty"`
-		}
+		var dest CliniciansPostid
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2609,9 +2669,7 @@ func ParsePostClinicsClinicidPatientsResponse(rsp *http.Response) (*PostClinicsC
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Id *string `json:"id,omitempty" bson:"id,omitempty"`
-		}
+		var dest PatientPostid
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

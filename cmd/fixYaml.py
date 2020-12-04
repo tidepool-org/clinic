@@ -38,6 +38,7 @@ if __name__ == "__main__":
         # Move ref to components section
         for path in schemaPaths:
             schemaSection = findSchema(schema, path)
+            print("schema section, path", schemaSection, path, "\n")
             title = schemaSection["schema"]['title']
             schema["components"]["schemas"][title] = schemaSection["schema"]
             newPath = "#/components/schemas/%s" % title

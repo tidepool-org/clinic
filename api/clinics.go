@@ -12,6 +12,8 @@ import (
 
 var (
 	CLINIC_ADMIN = "CLINIC_ADMIN"
+	PATIENT_ALL_PAGING_LIMIT int64 = 100000
+	CLINICIAN_ALL_PAGING_LIMIT int64 = 100000
 )
 
 type ClinicServer struct {
@@ -142,7 +144,7 @@ func (c *ClinicServer) DeleteClinicsClinicid(ctx echo.Context, clinicid string) 
 
 // getClinic
 // (GET /clinic/{clinicid})
-func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string) error {
+func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string, params GetClinicsClinicidParams) error {
 	var clinic Clinic
 	log.Printf("Get Clinic by id - id: %s", clinicid)
 	objID, _ := primitive.ObjectIDFromHex(clinicid)
@@ -151,8 +153,28 @@ func (c *ClinicServer) GetClinicsClinicid(ctx echo.Context, clinicid string) err
 		fmt.Println("Find One error ", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error finding clinic")
 	}
+	clinicsPatientClinician := ClinicsPatientClinician{Clinic: &clinic}
 
-	return ctx.JSON(http.StatusOK, &clinic)
+	if params.Clinicians != nil && *params.Clinicians == true {
+		pagingParams := store.DefaultPagingParams
+		pagingParams.Limit = PATIENT_ALL_PAGING_LIMIT
+		clinicsClinicians, err := c.InternalGetClinicsClinicidCliniciansAsUsers(clinicid, pagingParams)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "error accessing clinicians for clinic")
+		}
+		clinicsPatientClinician.Clinicians = &clinicsClinicians
+	}
+	if params.Patients != nil && *params.Patients == true {
+		pagingParams := store.DefaultPagingParams
+		pagingParams.Limit = CLINICIAN_ALL_PAGING_LIMIT
+		clinicsPatients, err := c.InternalGetClinicsClinicidPatientsAsUsers(clinicid, pagingParams)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "error accessing patients for clinic")
+		}
+		clinicsPatientClinician.Patients = &clinicsPatients
+	}
+
+	return ctx.JSON(http.StatusOK, &clinicsPatientClinician)
 }
 
 // (PATCH /clinic/{clinicid})

@@ -6,7 +6,7 @@ package api
 // Clinic defines model for Clinic.
 type Clinic struct {
 	// Embedded fields due to inline allOf schema
-	Id string `json:"_id" bson:"_id"`
+	Id *string `json:"id,omitempty" bson:"id,omitempty"`
 	// Embedded struct due to allOf(#/components/schemas/NewClinic)
 	NewClinic `bson:",inline"`
 }
@@ -16,6 +16,11 @@ type ClinicianPermissions struct {
 	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
 }
 
+// CliniciansPostid defines model for CliniciansPostid.
+type CliniciansPostid struct {
+	Id *string `json:"id,omitempty" bson:"id,omitempty"`
+}
+
 // ClinicsClinicians defines model for ClinicsClinicians.
 type ClinicsClinicians struct {
 	// Embedded fields due to inline allOf schema
@@ -23,6 +28,15 @@ type ClinicsClinicians struct {
 	ClinicianId string  `json:"clinicianId" bson:"clinicianId"`
 	// Embedded struct due to allOf(#/components/schemas/ClinicianPermissions)
 	ClinicianPermissions `bson:",inline"`
+}
+
+// ClinicsPatientClinician defines model for ClinicsPatientClinician.
+type ClinicsPatientClinician struct {
+
+	// Clinic Object
+	Clinic     *Clinic `json:"clinic,omitempty" bson:"clinic,omitempty"`
+	Clinicians *[]User `json:"clinicians,omitempty" bson:"clinicians,omitempty"`
+	Patients   *[]User `json:"patients,omitempty" bson:"patients,omitempty"`
 }
 
 // ClinicsPatients defines model for ClinicsPatients.
@@ -65,6 +79,28 @@ type PatientPermissions struct {
 	Permissions *[]string `json:"permissions,omitempty" bson:"permissions,omitempty"`
 }
 
+// PatientPostid defines model for PatientPostid.
+type PatientPostid struct {
+	Id *string `json:"id,omitempty" bson:"id,omitempty"`
+}
+
+// PostClinicBody defines model for PostClinicBody.
+type PostClinicBody struct {
+	Id *string `json:"id,omitempty" bson:"id,omitempty"`
+}
+
+// PostClinicResponse defines model for PostClinicResponse.
+type PostClinicResponse struct {
+	ClinicId *string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+}
+
+// User defines model for User.
+type User struct {
+	Fullname string `json:"fullname" bson:"fullname"`
+	Userid   string `json:"userid" bson:"userid"`
+	Username string `json:"username" bson:"username"`
+}
+
 // GetClinicsParams defines parameters for GetClinics.
 type GetClinicsParams struct {
 	Offset      *int    `json:"offset,omitempty" bson:"offset,omitempty"`
@@ -75,13 +111,21 @@ type GetClinicsParams struct {
 }
 
 // PostClinicsJSONBody defines parameters for PostClinics.
-type PostClinicsJSONBody NewClinic
+type PostClinicsJSONBody PostClinicBody
 
 // PostClinicsParams defines parameters for PostClinics.
 type PostClinicsParams struct {
 
 	// Userid for endpoint
 	XTIDEPOOLUSERID *string `json:"X-TIDEPOOL-USERID,omitempty" bson:"X-TIDEPOOL-USERID,omitempty"`
+}
+
+// GetClinicsClinicidParams defines parameters for GetClinicsClinicid.
+type GetClinicsClinicidParams struct {
+	Clinicians        *bool   `json:"clinicians,omitempty" bson:"clinicians,omitempty"`
+	Patients          *bool   `json:"patients,omitempty" bson:"patients,omitempty"`
+	IncludeClinicians *bool   `json:"includeClinicians,omitempty" bson:"includeClinicians,omitempty"`
+	IncludePatients   *string `json:"includePatients,omitempty" bson:"includePatients,omitempty"`
 }
 
 // PatchClinicsClinicidJSONBody defines parameters for PatchClinicsClinicid.

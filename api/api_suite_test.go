@@ -57,6 +57,12 @@ func (d MockDB) Find(collection string, filter interface{}, pagingParams *store.
 	}
 	return nil
 }
+func (d MockDB) FindWithDatabase(database string, collection string, filter interface{}, pagingParams *store.MongoPagingParams, data interface{})  error {
+	if (d.error != "") {
+		return errors.New(d.error)
+	}
+	return nil
+}
 func (d MockDB) UpdateOne(collection string, filter interface{}, update interface {}) error {
 	if (d.error != "") {
 		return errors.New(d.error)

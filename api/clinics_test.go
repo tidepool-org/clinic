@@ -52,7 +52,8 @@ var _ = Describe("Store Test", func() {
 			})
 			It("Get Clinics with id returns ok", func() {
 				c, rec := getContext("/clinics")
-				gomega.Expect(TestClinicServer.GetClinicsClinicid(c, clinicId)).NotTo(gomega.HaveOccurred())
+				params := api.GetClinicsClinicidParams{}
+				gomega.Expect(TestClinicServer.GetClinicsClinicid(c, clinicId, params)).NotTo(gomega.HaveOccurred())
 				gomega.Expect(rec.Code, http.StatusOK)
 			})
 			It("Patch Clinics returns ok", func() {
@@ -142,7 +143,8 @@ var _ = Describe("Store Test", func() {
 			})
 			It("Get Clinics with id returns ok", func() {
 				c, rec := getContext("/clinics")
-				gomega.Expect(TestClinicServer.GetClinicsClinicid(c, clinicId)).To(gomega.HaveOccurred())
+				params := api.GetClinicsClinicidParams{}
+				gomega.Expect(TestClinicServer.GetClinicsClinicid(c, clinicId, params)).To(gomega.HaveOccurred())
 				gomega.Expect(rec.Code, http.StatusInternalServerError)
 			})
 			It("Patch Clinics returns ok", func() {
