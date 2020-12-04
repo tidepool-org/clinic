@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/store"
@@ -22,7 +23,6 @@ type FullClinicsClinicians struct {
 // GetCliniciansFromClinic
 // (GET /clinics/{clinicid}/clinicians)
 func (c *ClinicServer) GetClinicsClinicidClinicians(ctx echo.Context, clinicid string, params GetClinicsClinicidCliniciansParams) error {
-	filter := bson.M{"clinicId": clinicid, "active": true}
 
 	pagingParams := store.DefaultPagingParams
 	if params.Limit != nil {
@@ -32,12 +32,92 @@ func (c *ClinicServer) GetClinicsClinicidClinicians(ctx echo.Context, clinicid s
 		pagingParams.Offset = int64(*params.Offset)
 	}
 
-	var clinicsClinicians []ClinicsClinicians
-	if err := c.Store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams, &clinicsClinicians); err != nil {
+	clinicsClinicians, err := c.InternalGetClinicsClinicidClinicians(clinicid, pagingParams)
+
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error finding clinician")
 	}
 
 	return ctx.JSON(http.StatusOK, &clinicsClinicians)
+}
+
+func (c *ClinicServer) InternalGetClinicsClinicidClinicians(clinicid string, pagingParams store.MongoPagingParams) ([]ClinicsClinicians, error) {
+
+	filter := bson.M{"clinicId": clinicid, "active": true}
+	clinicsClinicians := []ClinicsClinicians{}
+	if err := c.Store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams, &clinicsClinicians); err != nil {
+		return clinicsClinicians, err
+	}
+	return clinicsClinicians, nil
+}
+
+func (c *ClinicServer) InternalGetClinicsClinicidCliniciansAsUsers(clinicid string, pagingParams store.MongoPagingParams) ([]User, error) {
+	var userids []string
+
+	// First get all clinicians from db
+	clinicsClinicians, err := c.InternalGetClinicsClinicidClinicians(clinicid, pagingParams)
+	if err != nil {
+		return nil, err
+	}
+
+	// Place userids in array
+	for _, clinician := range(clinicsClinicians) {
+		userids = append(userids, clinician.ClinicianId)
+	}
+
+	users, err := c.InternalGetUsers(userids, pagingParams)
+
+	// Pass back users
+	return users, nil
+}
+
+type Profile struct {
+	UserId   string `json:"userId" bson:"userId"`
+	Value string `json:"value" bson:"value"`
+}
+
+func (c *ClinicServer) InternalGetUsers(userids []string, pagingParams store.MongoPagingParams) ([]User, error) {
+	var users []User
+	var profiles []Profile
+
+	// Get user information
+	userFilter := bson.M{"userid": bson.M{"$in": userids}}
+	if err := c.Store.FindWithDatabase(store.UserDatabase, store.UsersCollection, userFilter, &pagingParams, &users); err != nil {
+		return users, err
+	}
+
+	// Get profile information
+	profileFilter := bson.M{"userId": bson.M{"$in": userids}}
+	if err := c.Store.FindWithDatabase(store.ProfileDatabase, store.ProfileCollection, profileFilter, &pagingParams, &profiles); err != nil {
+		return users, err
+	}
+
+	// Make profile map
+	fullNameMap := map[string]string{}
+	for _, profile := range(profiles) {
+		value := make(map[string]interface{})
+		err := json.Unmarshal([]byte(profile.Value), &value)
+		if err == nil {
+			p, ok := value["profile"]
+			if ok {
+				rec, ok := p.(map[string]interface{})
+				if ok {
+					s, ok := rec["fullName"]
+					if ok {
+						fullNameMap[profile.UserId] = fmt.Sprintf("%v", s)
+					}
+				}
+			}
+
+		}
+	}
+
+	for i, user := range(users) {
+		users[i].Fullname, _ = fullNameMap[user.Userid]
+
+	}
+
+	return users, nil
 }
 
 // AddClinicianToClinic

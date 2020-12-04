@@ -1,15 +1,5 @@
 components:
   schemas:
-    Clinic:
-      allOf:
-      - properties:
-          _id:
-            type: string
-        required:
-        - _id
-        type: object
-      - $ref: '#/components/schemas/NewClinic'
-      title: Clinic
     ClinicianPermissions:
       description: Permisions for relationship between Clinics and Clinicians
       properties:
@@ -150,7 +140,15 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Clinic'
+                  allOf:
+                  - properties:
+                      _id:
+                        type: string
+                    required:
+                    - _id
+                    type: object
+                  - $ref: '#/components/schemas/NewClinic'
+                  title: Clinic
                 type: array
           description: OK
         '400':
@@ -331,12 +329,29 @@ paths:
     get:
       description: Get Clinic
       operationId: get-clinics-clinicid
+      parameters:
+      - in: query
+        name: clinicians
+        schema:
+          type: boolean
+      - in: query
+        name: patients
+        schema:
+          type: boolean
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinic'
+                allOf:
+                - $ref: '#/components/schemas/NewClinic'
+                - items:
+                    $ref: '#/components/schemas/ClinicsPatients'
+                  type: array
+                - items:
+                    $ref: '#/components/schemas/ClinicsClinicians'
+                  type: array
+                title: ClinicsPatientClinician
           description: OK
           links:
             get-clinicians:

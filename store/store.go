@@ -17,12 +17,17 @@ import (
 )
 
 var (
-
 	DatabaseName        = ""
 	DefaultClinicDatabaseName = "clinic"
+	UserDatabase = "user"
+	ProfileDatabase = "seagull"
+
 	ClinicsCollection   = "clinic"
 	ClinicsCliniciansCollection   = "clinicsClinicians"
 	ClinicsPatientsCollection   = "clinicsPatients"
+	UsersCollection   = "users"
+	ProfileCollection   = "seagull"
+
 	MongoHost           = "mongodb://127.0.0.1:27017"
 	DefaultPagingParams = MongoPagingParams{Offset: 0 ,Limit: 10}
 	ContextTimeout = time.Duration(20)*time.Second
@@ -42,6 +47,7 @@ type StorageInterface interface {
 	InsertOne(collection string, document interface{}) (*string, error)
 	FindOne(collection string, filter interface{}, data interface{}) error
 	Find(collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{}) error
+	FindWithDatabase(database string, collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{}) error
 	UpdateOne(collection string, filter interface{}, update interface {}) error
 	Update(collection string, filter interface{}, update interface {}) error
 	Aggregate(collection string, pipeline []bson.D, data interface {}) error
@@ -129,12 +135,16 @@ func (d MongoStoreClient) FindOne(collection string, filter interface{}, data in
 		fmt.Println("Find One error ", err)
 		return err
 	}
-	fmt.Printf("Found: %v\n", data)
+	//fmt.Printf("Found: %v\n", data)
 	return nil
 }
 
 func (d MongoStoreClient) Find(collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{})  error {
-	fmt.Println("FindMany")
+	return d.FindWithDatabase(DatabaseName, collection, filter, pagingParams, data)
+
+}
+func (d MongoStoreClient) FindWithDatabase(database string, collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{})  error {
+	//fmt.Println("FindMany")
 	findOptions := options.Find()
 	findOptions.SetLimit(pagingParams.Limit)
 	findOptions.SetSkip(pagingParams.Offset)
@@ -142,18 +152,18 @@ func (d MongoStoreClient) Find(collection string, filter interface{}, pagingPara
 	if pagingParams == nil {
 		pagingParams = &DefaultPagingParams
 	}
-	fmt.Println("print options: ", *findOptions.Limit, *findOptions.Skip)
-	fmt.Println("filter: ", filter)
+	//fmt.Println("print options: ", *findOptions.Limit, *findOptions.Skip)
+	//fmt.Println("filter: ", filter)
 
 
-	col := d.Client.Database(DatabaseName).Collection(collection)
+	col := d.Client.Database(database).Collection(collection)
 
 	ctx := NewDbContext()
 	cursor, err := col.Find(ctx, filter, findOptions)
 	if err != nil {
 		return err
 	}
-	fmt.Println("FoundMany")
+	//fmt.Println("FoundMany")
 	if err = cursor.All(ctx, data); err != nil {
 		return err
 	}

@@ -22,7 +22,6 @@ type FullClinicsPatients struct {
 // GetPatientsForClinic
 // (GET /clinics/{clinicid}/patients)
 func (c *ClinicServer) GetClinicsClinicidPatients(ctx echo.Context, clinicid string, params GetClinicsClinicidPatientsParams) error {
-	filter := bson.M{"clinicId": clinicid, "active": true}
 
 	pagingParams := store.DefaultPagingParams
 	if params.Limit != nil {
@@ -32,12 +31,43 @@ func (c *ClinicServer) GetClinicsClinicidPatients(ctx echo.Context, clinicid str
 		pagingParams.Offset = int64(*params.Offset)
 	}
 
-	var clinicsPatients []ClinicsPatients
-	if err := c.Store.Find(store.ClinicsPatientsCollection, filter, &pagingParams, &clinicsPatients); err != nil {
+	clinicsPatients, err := c.InternalGetClinicsClinicidPatients(clinicid, pagingParams)
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
 	}
 
 	return ctx.JSON(http.StatusOK, &clinicsPatients)
+}
+
+func (c *ClinicServer) InternalGetClinicsClinicidPatients(clinicid string, pagingParams store.MongoPagingParams) ([]ClinicsPatients, error) {
+
+	filter := bson.M{"clinicId": clinicid, "active": true}
+	clinicsPatients := []ClinicsPatients{}
+	if err := c.Store.Find(store.ClinicsPatientsCollection, filter, &pagingParams, &clinicsPatients); err != nil {
+		return clinicsPatients, err
+	}
+	return clinicsPatients, nil
+}
+
+func (c *ClinicServer) InternalGetClinicsClinicidPatientsAsUsers(clinicid string, pagingParams store.MongoPagingParams) ([]User, error) {
+	userids := []string{}
+
+	// First get all clinicians from db
+	clinicsPatients, err := c.InternalGetClinicsClinicidPatients(clinicid, pagingParams)
+	if err != nil {
+		return nil, err
+	}
+
+	// Place userids in array
+	for _, patient := range(clinicsPatients) {
+		userids = append(userids, *patient.PatientId)
+	}
+
+	// Get user information
+	users, err := c.InternalGetUsers(userids, pagingParams)
+
+	// Pass back users
+	return users, nil
 }
 
 // AddPatientToClinic
