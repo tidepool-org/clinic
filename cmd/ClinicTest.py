@@ -94,7 +94,7 @@ envs = {
     'local': 'http://localhost:{}'.format(LocalPort)
 }
 environment = 'local'
-environment = 'dev'
+environment = 'qa1'
 AuthUrl = '/auth/login'
 
 
@@ -167,7 +167,7 @@ Operations = [
 
 MinRemoveCount = 4
 NumberOps = 40
-CredentialFile = "ClinicTest-Credentials.csv"
+CredentialFilePrefix = "ClinicTest-Credentials"
 CredentialTable = []
 CredentialMap = {}
 
@@ -182,6 +182,7 @@ def validOperation(rec, clinicList):
 def randomId():
     if randomId.index == 0:
         # Read credential file
+        CredentialFile = "{prefix}.{env}.csv".format(prefix=CredentialFilePrefix, env=environment)
         with open(CredentialFile) as csvfile:
             reader = csv.DictReader(csvfile, fieldnames=["name", "url", "username", "password", "recname"])
             for row in reader:
