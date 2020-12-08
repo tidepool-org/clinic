@@ -609,7 +609,7 @@ components:
       allOf:
         - type: object
           properties:
-            id:
+            _id:
               type: string
         - $ref: '#/components/schemas/NewClinic'
     ClinicianPermissions:

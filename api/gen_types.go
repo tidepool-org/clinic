@@ -6,7 +6,7 @@ package api
 // Clinic defines model for Clinic.
 type Clinic struct {
 	// Embedded fields due to inline allOf schema
-	Id *string `json:"id,omitempty" bson:"id,omitempty"`
+	Id *string `json:"_id,omitempty" bson:"_id,omitempty"`
 	// Embedded struct due to allOf(#/components/schemas/NewClinic)
 	NewClinic `bson:",inline"`
 }
