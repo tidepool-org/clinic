@@ -226,6 +226,10 @@ func (c * ClinicServer) GetClinicsAccess(ctx echo.Context, params GetClinicsAcce
 		if err := c.Store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams, &clinicianClinics); err != nil {
 			return echo.NewHTTPError(http.StatusForbidden, "Can not access clinic")
 		}
+		if clinicianClinics == nil {
+			return echo.NewHTTPError(http.StatusForbidden, "Can not find any clinics")
+		}
+
 
 		// We found something - access granted
 		return ctx.JSON(http.StatusOK, nil)
