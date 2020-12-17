@@ -120,6 +120,13 @@ type PostClinicsParams struct {
 	XTIDEPOOLUSERID *string `json:"X-TIDEPOOL-USERID,omitempty" bson:"X-TIDEPOOL-USERID,omitempty"`
 }
 
+// GetClinicsAccessParams defines parameters for GetClinicsAccess.
+type GetClinicsAccessParams struct {
+	ClinicId        *string `json:"clinicId,omitempty" bson:"clinicId,omitempty"`
+	PatientId       *string `json:"patientId,omitempty" bson:"patientId,omitempty"`
+	XTIDEPOOLUSERID *string `json:"X-TIDEPOOL-USERID,omitempty" bson:"X-TIDEPOOL-USERID,omitempty"`
+}
+
 // GetClinicsClinicidParams defines parameters for GetClinicsClinicid.
 type GetClinicsClinicidParams struct {
 	Clinicians        *bool   `json:"clinicians,omitempty" bson:"clinicians,omitempty"`

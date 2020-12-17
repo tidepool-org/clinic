@@ -96,6 +96,9 @@ type ClientInterface interface {
 
 	PostClinics(ctx context.Context, params *PostClinicsParams, body PostClinicsJSONRequestBody) (*http.Response, error)
 
+	// GetClinicsAccess request
+	GetClinicsAccess(ctx context.Context, params *GetClinicsAccessParams) (*http.Response, error)
+
 	// DeleteClinicsCliniciansClinicianid request
 	DeleteClinicsCliniciansClinicianid(ctx context.Context, clinicianid string) (*http.Response, error)
 
@@ -190,6 +193,21 @@ func (c *Client) PostClinicsWithBody(ctx context.Context, params *PostClinicsPar
 
 func (c *Client) PostClinics(ctx context.Context, params *PostClinicsParams, body PostClinicsJSONRequestBody) (*http.Response, error) {
 	req, err := NewPostClinicsRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if c.RequestEditor != nil {
+		err = c.RequestEditor(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClinicsAccess(ctx context.Context, params *GetClinicsAccessParams) (*http.Response, error) {
+	req, err := NewGetClinicsAccessRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -691,6 +709,80 @@ func NewPostClinicsRequestWithBody(server string, params *PostClinicsParams, con
 	}
 
 	req.Header.Add("Content-Type", contentType)
+	return req, nil
+}
+
+// NewGetClinicsAccessRequest generates requests for GetClinicsAccess
+func NewGetClinicsAccessRequest(server string, params *GetClinicsAccessParams) (*http.Request, error) {
+	var err error
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/clinics/access")
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryUrl.Query()
+
+	if params.ClinicId != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "clinicId", *params.ClinicId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.PatientId != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "patientId", *params.PatientId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryUrl.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params.XTIDEPOOLUSERID != nil {
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParam("simple", false, "X-TIDEPOOL-USERID", *params.XTIDEPOOLUSERID)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Add("X-TIDEPOOL-USERID", headerParam0)
+	}
+
 	return req, nil
 }
 
@@ -1583,6 +1675,9 @@ type ClientWithResponsesInterface interface {
 
 	PostClinicsWithResponse(ctx context.Context, params *PostClinicsParams, body PostClinicsJSONRequestBody) (*PostClinicsResponse, error)
 
+	// GetClinicsAccess request
+	GetClinicsAccessWithResponse(ctx context.Context, params *GetClinicsAccessParams) (*GetClinicsAccessResponse, error)
+
 	// DeleteClinicsCliniciansClinicianid request
 	DeleteClinicsCliniciansClinicianidWithResponse(ctx context.Context, clinicianid string) (*DeleteClinicsCliniciansClinicianidResponse, error)
 
@@ -1687,6 +1782,27 @@ func (r PostClinicsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PostClinicsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClinicsAccessResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClinicsAccessResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClinicsAccessResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2085,6 +2201,15 @@ func (c *ClientWithResponses) PostClinicsWithResponse(ctx context.Context, param
 	return ParsePostClinicsResponse(rsp)
 }
 
+// GetClinicsAccessWithResponse request returning *GetClinicsAccessResponse
+func (c *ClientWithResponses) GetClinicsAccessWithResponse(ctx context.Context, params *GetClinicsAccessParams) (*GetClinicsAccessResponse, error) {
+	rsp, err := c.GetClinicsAccess(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClinicsAccessResponse(rsp)
+}
+
 // DeleteClinicsCliniciansClinicianidWithResponse request returning *DeleteClinicsCliniciansClinicianidResponse
 func (c *ClientWithResponses) DeleteClinicsCliniciansClinicianidWithResponse(ctx context.Context, clinicianid string) (*DeleteClinicsCliniciansClinicianidResponse, error) {
 	rsp, err := c.DeleteClinicsCliniciansClinicianid(ctx, clinicianid)
@@ -2353,6 +2478,25 @@ func ParsePostClinicsResponse(rsp *http.Response) (*PostClinicsResponse, error) 
 		}
 		response.XML200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseGetClinicsAccessResponse parses an HTTP response from a GetClinicsAccessWithResponse call
+func ParseGetClinicsAccessResponse(rsp *http.Response) (*GetClinicsAccessResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClinicsAccessResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	}
 
 	return response, nil

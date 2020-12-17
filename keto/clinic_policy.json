@@ -289,5 +289,26 @@
                 }
             }
         }
+    },
+    {
+        "id": "get_clinics_access",
+        "subjects": [
+            "users:*"
+        ],
+        "resources": [
+            "resources:clinics:access"
+        ],
+        "actions": [
+            "get"
+        ],
+        "effect": "allow",
+        "conditions": {
+            "role": {
+                "type": "StringMatchCondition",
+                "options": {
+                    "matches": "TIDEPOOL_ADMIN"
+                }
+            }
+        }
     }
 ]

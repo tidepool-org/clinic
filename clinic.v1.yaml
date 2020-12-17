@@ -623,6 +623,33 @@ paths:
       description: Deletes clinician from all clinics
       x-roles:
         - TIDEPOOL_ADMIN
+  /clinics/access:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: Forbidden
+      operationId: get-clinics-access
+      x-roles:
+        - TIDEPOOL_ADMIN
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: clinicId
+        - schema:
+            type: string
+          in: query
+          name: patientId
+        - schema:
+            type: string
+          in: header
+          name: X-TIDEPOOL-USERID
+      description: Determines if user can access resource specified by parameter
+    parameters: []
 components:
   schemas:
     Clinic:

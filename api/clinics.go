@@ -14,6 +14,7 @@ var (
 	CLINIC_ADMIN = "CLINIC_ADMIN"
 	PATIENT_ALL_PAGING_LIMIT int64 = 100000
 	CLINICIAN_ALL_PAGING_LIMIT int64 = 100000
+	CLINICS_ALL_PAGING_LIMIT int64 = 100000
 )
 
 type ClinicServer struct {
@@ -194,5 +195,76 @@ func (c *ClinicServer) PatchClinicsClinicid(ctx echo.Context, clinicid string) e
 		return echo.NewHTTPError(http.StatusInternalServerError, "error updating clinic")
 	}
 	return ctx.JSON(http.StatusOK, nil)
+}
+
+// (GET /clinics/access)
+func (c * ClinicServer) GetClinicsAccess(ctx echo.Context, params GetClinicsAccessParams) error {
+	if params.ClinicId != nil  && params.PatientId != nil {
+		// This is an error - can not search by clinician and patient
+		return echo.NewHTTPError(http.StatusBadRequest, "Can not filter by both clinicId and patientId ")
+	}
+	if params.ClinicId == nil  && params.PatientId == nil {
+		// This is an error - can not search by clinician and patient
+		return echo.NewHTTPError(http.StatusBadRequest, "Must specify clinicId or patientId parameter")
+	}
+	if params.XTIDEPOOLUSERID == nil || *params.XTIDEPOOLUSERID == "" {
+		// Must have userid parameter set
+		return echo.NewHTTPError(http.StatusBadRequest, "Must specify X-TIDEPOOL-USERID parameter")
+	}
+
+	// Get user id
+	pagingParams := store.DefaultPagingParams
+	pagingParams.Limit = CLINICS_ALL_PAGING_LIMIT
+
+	// Find all user belongs to
+
+	if params.ClinicId != nil {
+
+		// Just check clinics clinicians collection
+		var clinicianClinics []Clinic
+		filter := bson.M{"clinicianId": *params.XTIDEPOOLUSERID, "clinicId": *params.ClinicId}
+		if err := c.Store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams, &clinicianClinics); err != nil {
+			return echo.NewHTTPError(http.StatusForbidden, "Can not access clinic")
+		}
+
+		// We found something - access granted
+		return ctx.JSON(http.StatusOK, nil)
+
+	} else if params.PatientId != nil {
+		// First find user clinics
+		var clinicianClinics []ClinicsClinicians
+		filter := bson.M{"clinicianId": *params.XTIDEPOOLUSERID}
+		if err := c.Store.Find(store.ClinicsCliniciansCollection, filter, &pagingParams, &clinicianClinics); err != nil {
+			return echo.NewHTTPError(http.StatusForbidden, "Can not access any clinics")
+		}
+		if clinicianClinics == nil {
+			return echo.NewHTTPError(http.StatusForbidden, "Can not find any clinics")
+		}
+
+		// Next find patient clinics
+		var patientClinics []ClinicsPatients
+		filter = bson.M{"patientId": *params.PatientId}
+		if err := c.Store.Find(store.ClinicsPatientsCollection, filter, &pagingParams, &patientClinics); err != nil {
+			return echo.NewHTTPError(http.StatusForbidden, "Can not access any patients")
+		}
+		if patientClinics == nil {
+			return echo.NewHTTPError(http.StatusForbidden, "Can not find any patients")
+		}
+
+		// Do a set intersection
+		for _, clinicianClinic := range(clinicianClinics) {
+			for _, patientClinic := range(patientClinics) {
+				if *clinicianClinic.ClinicId == *patientClinic.ClinicId {
+
+					// If any matches - return
+					return ctx.JSON(http.StatusOK, nil)
+				}
+			}
+		}
+
+	}
+	// Find all clinics parient belongs to
+	// Set intersection
+	return ctx.JSON(http.StatusForbidden, nil)
 }
 

@@ -18,6 +18,9 @@ type ServerInterface interface {
 	// AddClinic
 	// (POST /clinics)
 	PostClinics(ctx echo.Context, params PostClinicsParams) error
+	// Your GET endpoint
+	// (GET /clinics/access)
+	GetClinicsAccess(ctx echo.Context, params GetClinicsAccessParams) error
 
 	// (DELETE /clinics/clinicians/{clinicianid})
 	DeleteClinicsCliniciansClinicianid(ctx echo.Context, clinicianid string) error
@@ -150,6 +153,48 @@ func (w *ServerInterfaceWrapper) PostClinics(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PostClinics(ctx, params)
+	return err
+}
+
+// GetClinicsAccess converts echo context to params.
+func (w *ServerInterfaceWrapper) GetClinicsAccess(ctx echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetClinicsAccessParams
+	// ------------- Optional query parameter "clinicId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "clinicId", ctx.QueryParams(), &params.ClinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Optional query parameter "patientId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "patientId", ctx.QueryParams(), &params.PatientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	headers := ctx.Request().Header
+	// ------------- Optional header parameter "X-TIDEPOOL-USERID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-TIDEPOOL-USERID")]; found {
+		var XTIDEPOOLUSERID string
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-TIDEPOOL-USERID, got %d", n))
+		}
+
+		err = runtime.BindStyledParameter("simple", false, "X-TIDEPOOL-USERID", valueList[0], &XTIDEPOOLUSERID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-TIDEPOOL-USERID: %s", err))
+		}
+
+		params.XTIDEPOOLUSERID = &XTIDEPOOLUSERID
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetClinicsAccess(ctx, params)
 	return err
 }
 
@@ -605,6 +650,7 @@ func RegisterHandlers(router EchoRouter, si ServerInterface) {
 
 	router.GET("/clinics", wrapper.GetClinics)
 	router.POST("/clinics", wrapper.PostClinics)
+	router.GET("/clinics/access", wrapper.GetClinicsAccess)
 	router.DELETE("/clinics/clinicians/:clinicianid", wrapper.DeleteClinicsCliniciansClinicianid)
 	router.GET("/clinics/clinicians/:clinicianid", wrapper.GetClinicsCliniciansClinicianid)
 	router.DELETE("/clinics/patients/:patientid", wrapper.DeleteClinicsPatientsPatientid)
