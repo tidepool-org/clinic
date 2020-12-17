@@ -40,7 +40,7 @@ func MainLoop() {
 	}
 
 	// Create Store
-	e.Logger.Print("Getting Mongog Store")
+	e.Logger.Print("Getting Mongo Store")
 	dbstore := store.NewMongoStoreClient(mongoHost)
 
 

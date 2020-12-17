@@ -80,6 +80,8 @@ type ServerInterfaceWrapper struct {
 func (w *ServerInterfaceWrapper) GetClinics(ctx echo.Context) error {
 	var err error
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetClinicsParams
 	// ------------- Optional query parameter "offset" -------------
@@ -178,6 +180,8 @@ func (w *ServerInterfaceWrapper) GetClinicsCliniciansClinicianid(ctx echo.Contex
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicianid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetClinicsCliniciansClinicianid(ctx, clinicianid)
 	return err
@@ -193,6 +197,8 @@ func (w *ServerInterfaceWrapper) DeleteClinicsPatientsPatientid(ctx echo.Context
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientid: %s", err))
 	}
+
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.DeleteClinicsPatientsPatientid(ctx, patientid)
@@ -210,6 +216,8 @@ func (w *ServerInterfaceWrapper) GetClinicsPatientsPatientid(ctx echo.Context) e
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetClinicsPatientsPatientid(ctx, patientid)
 	return err
@@ -226,6 +234,8 @@ func (w *ServerInterfaceWrapper) DeleteClinicsClinicid(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.DeleteClinicsClinicid(ctx, clinicid)
 	return err
@@ -241,6 +251,8 @@ func (w *ServerInterfaceWrapper) GetClinicsClinicid(ctx echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
+
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetClinicsClinicidParams
@@ -288,6 +300,8 @@ func (w *ServerInterfaceWrapper) PatchClinicsClinicid(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PatchClinicsClinicid(ctx, clinicid)
 	return err
@@ -303,6 +317,8 @@ func (w *ServerInterfaceWrapper) GetClinicsClinicidClinicians(ctx echo.Context) 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
+
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetClinicsClinicidCliniciansParams
@@ -343,6 +359,8 @@ func (w *ServerInterfaceWrapper) PostClinicsClinicidClinicians(ctx echo.Context)
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PostClinicsClinicidClinicians(ctx, clinicid)
 	return err
@@ -366,6 +384,8 @@ func (w *ServerInterfaceWrapper) DeleteClinicsClinicidCliniciansClinicianid(ctx 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicianid: %s", err))
 	}
+
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.DeleteClinicsClinicidCliniciansClinicianid(ctx, clinicid, clinicianid)
@@ -391,6 +411,8 @@ func (w *ServerInterfaceWrapper) GetClinicsClinicidCliniciansClinicianid(ctx ech
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicianid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetClinicsClinicidCliniciansClinicianid(ctx, clinicid, clinicianid)
 	return err
@@ -415,6 +437,8 @@ func (w *ServerInterfaceWrapper) PatchClinicsClinicidCliniciansClinicianid(ctx e
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicianid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PatchClinicsClinicidCliniciansClinicianid(ctx, clinicid, clinicianid)
 	return err
@@ -430,6 +454,8 @@ func (w *ServerInterfaceWrapper) GetClinicsClinicidPatients(ctx echo.Context) er
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
+
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetClinicsClinicidPatientsParams
@@ -470,6 +496,8 @@ func (w *ServerInterfaceWrapper) PostClinicsClinicidPatients(ctx echo.Context) e
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PostClinicsClinicidPatients(ctx, clinicid)
 	return err
@@ -493,6 +521,8 @@ func (w *ServerInterfaceWrapper) DeleteClinicClinicidPatientsPatientid(ctx echo.
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientid: %s", err))
 	}
+
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.DeleteClinicClinicidPatientsPatientid(ctx, clinicid, patientid)
@@ -518,6 +548,8 @@ func (w *ServerInterfaceWrapper) GetClinicsClinicidPatientsPatientid(ctx echo.Co
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientid: %s", err))
 	}
 
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetClinicsClinicidPatientsPatientid(ctx, clinicid, patientid)
 	return err
@@ -541,6 +573,8 @@ func (w *ServerInterfaceWrapper) PatchClinicsClinicidPatientsPatientid(ctx echo.
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientid: %s", err))
 	}
+
+	ctx.Set("TidepoolAuth.Scopes", []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PatchClinicsClinicidPatientsPatientid(ctx, clinicid, patientid)
