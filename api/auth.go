@@ -178,6 +178,10 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 func (a *AuthClient) getUserRoles(clinicId *string, userId *string) (*ClinicsClinicians, error) {
 	var clinicsClinicians ClinicsClinicians
 	filter := bson.M{"clinicId": clinicId, "clinicianId": userId, "active": true}
+	if clinicId == nil || *clinicId == "" {
+		filter = bson.M{"clinicianId": userId, "active": true}
+
+	}
 	if err := a.Store.FindOne(store.ClinicsCliniciansCollection, filter, &clinicsClinicians); err != nil {
 		return nil, err
 	}

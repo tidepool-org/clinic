@@ -47,6 +47,15 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 		return echo.NewHTTPError(http.StatusBadRequest, "Can not filter by both clinicianId and patientId ")
 	}
 
+	// Get Paging params
+	pagingParams := store.DefaultPagingParams
+	if params.Limit != nil {
+		pagingParams.Limit = int64(*params.Limit)
+	}
+	if params.Offset != nil {
+		pagingParams.Offset = int64(*params.Offset)
+	}
+
 	// XXX Auth on this one needs to be thought through
 	// XXX Empty result returns an error
 	// This part is a little funky - we are going to search in the specific collection for patient or clinician
@@ -55,38 +64,37 @@ func (c *ClinicServer) GetClinics(ctx echo.Context, params GetClinicsParams) err
 	var filter interface{}
 	if params.ClinicianId != nil {
 		clinicianFilter := bson.M{"clinicianId": params.ClinicianId, "active": true}
-		var clinicsClinicians ClinicsClinicians
-		if err := c.Store.FindOne(store.ClinicsCliniciansCollection, clinicianFilter, &clinicsClinicians); err != nil {
+		var clinicsClinicians[] ClinicsClinicians
+		if err := c.Store.Find(store.ClinicsCliniciansCollection, clinicianFilter, &pagingParams, &clinicsClinicians); err != nil {
 			fmt.Println("Find One error ", err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
 		}
-		objID, _ := primitive.ObjectIDFromHex(*clinicsClinicians.ClinicId)
-		filter = bson.M{"_id": objID}
+		var objIDArray[] primitive.ObjectID
+		for _, clinicsClinician := range(clinicsClinicians) {
+
+			objID, _ := primitive.ObjectIDFromHex(*clinicsClinician.ClinicId)
+			objIDArray = append(objIDArray, objID)
+		}
+		filter = bson.M{"_id": bson.M{"$in": objIDArray}}
 
 	} else if params.PatientId != nil {
-		patientFilter := bson.M{"clinicianId": params.PatientId, "active": true}
-		var clinicsPatients ClinicsPatients
-		if err := c.Store.FindOne(store.ClinicsPatientsCollection, patientFilter, &clinicsPatients); err != nil {
+		patientFilter := bson.M{"patientId": params.PatientId}
+		var clinicsPatients[] ClinicsPatients
+		if err := c.Store.Find(store.ClinicsPatientsCollection, patientFilter, &pagingParams, &clinicsPatients); err != nil {
 			fmt.Println("Find One error ", err)
 			return echo.NewHTTPError(http.StatusInternalServerError, "error accessing database")
 		}
-		objID, _ := primitive.ObjectIDFromHex(*clinicsPatients.ClinicId)
-		filter = bson.M{"_id": objID}
+		var objIDArray[] primitive.ObjectID
+		for _, clinicsPatient := range(clinicsPatients) {
+
+			objID, _ := primitive.ObjectIDFromHex(*clinicsPatient.ClinicId)
+			objIDArray = append(objIDArray, objID)
+		}
+		filter = bson.M{"_id": bson.M{"$in": objIDArray}}
 
 	} else {
 
 		filter = FullNewClinic{ClinicExtraFields: ClinicExtraFields{Active: true}, NewClinic: newClinic}
-	}
-
-
-
-	// Get Paging params
-	pagingParams := store.DefaultPagingParams
-	if params.Limit != nil {
-		pagingParams.Limit = int64(*params.Limit)
-	}
-	if params.Offset != nil {
-		pagingParams.Offset = int64(*params.Offset)
 	}
 
 	var clinics []Clinic
