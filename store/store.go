@@ -7,8 +7,7 @@ import (
 	"fmt" // Println() function
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"os"      // os.Exit(1) on Error
-	"reflect" // get an object type
+	"os" // os.Exit(1) on Error
 	"time"
 
 	// Official 'mongo-go-driver' packages
@@ -108,14 +107,7 @@ func (d MongoStoreClient) InsertOne(collection string, document interface{}) (*s
 		return nil, insertErr
 	}
 
-	fmt.Println("InsertOne() result type: ", reflect.TypeOf(result))
-	fmt.Println("InsertOne() API result:", result)
-
 	// get the inserted ID string
-	newID := result.InsertedID
-	fmt.Println("InsertOne() newID:", newID)
-	fmt.Println("InsertOne() newID type:", reflect.TypeOf(newID))
-
 	if oid, ok := result.InsertedID.(primitive.ObjectID); ok {
 		newID := oid.Hex()
 		return &newID, nil
@@ -126,8 +118,6 @@ func (d MongoStoreClient) InsertOne(collection string, document interface{}) (*s
 }
 
 func (d MongoStoreClient) FindOne(collection string, filter interface{}, data interface{}) error {
-	fmt.Println("FindOne")
-
 	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	ctx := NewDbContext()
@@ -135,7 +125,6 @@ func (d MongoStoreClient) FindOne(collection string, filter interface{}, data in
 		fmt.Println("Find One error ", err)
 		return err
 	}
-	//fmt.Printf("Found: %v\n", data)
 	return nil
 }
 
@@ -144,7 +133,6 @@ func (d MongoStoreClient) Find(collection string, filter interface{}, pagingPara
 
 }
 func (d MongoStoreClient) FindWithDatabase(database string, collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{})  error {
-	//fmt.Println("FindMany")
 	findOptions := options.Find()
 	findOptions.SetLimit(pagingParams.Limit)
 	findOptions.SetSkip(pagingParams.Offset)
@@ -152,8 +140,6 @@ func (d MongoStoreClient) FindWithDatabase(database string, collection string, f
 	if pagingParams == nil {
 		pagingParams = &DefaultPagingParams
 	}
-	//fmt.Println("print options: ", *findOptions.Limit, *findOptions.Skip)
-	//fmt.Println("filter: ", filter)
 
 
 	col := d.Client.Database(database).Collection(collection)
@@ -163,7 +149,6 @@ func (d MongoStoreClient) FindWithDatabase(database string, collection string, f
 	if err != nil {
 		return err
 	}
-	//fmt.Println("FoundMany")
 	if err = cursor.All(ctx, data); err != nil {
 		return err
 	}
@@ -172,8 +157,6 @@ func (d MongoStoreClient) FindWithDatabase(database string, collection string, f
 }
 
 func (d MongoStoreClient) Update(collection string, filter interface{}, update interface {}) error {
-	fmt.Println("UpdateOne")
-
 	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	ctx := NewDbContext()
@@ -182,13 +165,10 @@ func (d MongoStoreClient) Update(collection string, filter interface{}, update i
 		fmt.Println("error on update many", err)
 		return err
 	}
-	fmt.Println("Updated")
 	return nil
 }
 
 func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, update interface {}) error {
-	fmt.Println("UpdateOne")
-
 	col := d.Client.Database(DatabaseName).Collection(collection)
 
 	ctx := NewDbContext()
@@ -197,7 +177,6 @@ func (d MongoStoreClient) UpdateOne(collection string, filter interface{}, updat
 		fmt.Println("error on update one", err)
 		return err
 	}
-	fmt.Println("Updated")
 	return nil
 }
 

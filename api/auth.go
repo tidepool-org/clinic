@@ -89,9 +89,9 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 	// Get the clinic Id
 	clinicId := input.RequestValidationInput.PathParams[ClinicIdParamName]
 
-	fmt.Printf("\nPath: %s -- %s\n", path, getResourceFromPath(&path))
-	fmt.Printf("Method: %s\n", method)
-	fmt.Printf("UserId: %s\n", userId)
+	//fmt.Printf("\nPath: %s -- %s\n", path, getResourceFromPath(&path))
+	//fmt.Printf("Method: %s\n", method)
+	//fmt.Printf("UserId: %s\n", userId)
 	clinicsClinicians, err := a.getUserRoles(&clinicId, &userId)
 	if  err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -124,8 +124,8 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 	for _, role := range roles {
 		rolesArray = append(rolesArray, fmt.Sprintf("{%s}", role))
 	}
-	fmt.Printf("tidepoolRoles: %s,  len: %d\n", tidepoolRoles, len(tidepoolRoles))
-	fmt.Printf("roles: %s,  len: %d,  str: %s\n", roles, len(roles), strings.Join(rolesArray, ","))
+	//fmt.Printf("tidepoolRoles: %s,  len: %d\n", tidepoolRoles, len(tidepoolRoles))
+	//fmt.Printf("roles: %s,  len: %d,  str: %s\n", roles, len(roles), strings.Join(rolesArray, ","))
 
 
 
@@ -148,15 +148,15 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 		fmt.Printf("error marcshalling json: %s", err)
 		return err
 	}
-	fmt.Printf("req body; %s\n", b)
+	//fmt.Printf("req body; %s\n", b)
 	hostStr := fmt.Sprintf("http://%s:%d%s", KetoMachine, KetoPort, KetoUrl)
-	fmt.Printf("host str; %s\n", hostStr)
+	//fmt.Printf("host str; %s\n", hostStr)
 	req, err := http.NewRequest("POST", hostStr, bytes.NewBuffer(b))
 	if err != nil {
 		fmt.Printf("error creating http request: %s", err)
 		return err
 	}
-	fmt.Printf("Finished post creation\n")
+	//fmt.Printf("Finished post creation\n")
 	req.Header = headers
 
 	client := &http.Client{}
@@ -165,11 +165,11 @@ func (a *AuthClient) AuthenticationFunc(c context.Context, input *openapi3filter
 		fmt.Printf("ERROR contacting keto: %s", err)
 		return err
 	}
-	fmt.Printf("Finished keto - status code: %d\n", resp.StatusCode)
+	//fmt.Printf("Finished keto - status code: %d\n", resp.StatusCode)
 	if resp.StatusCode == 200 {
 		return nil
 	}
-	fmt.Printf("Response: %d\n", resp.StatusCode)
+	//fmt.Printf("Response: %d\n", resp.StatusCode)
 
 	// No scopes found
 	return errors.New("User not authorized for this endpoint")
