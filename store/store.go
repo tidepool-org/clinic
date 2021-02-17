@@ -62,6 +62,21 @@ type MongoPagingParams struct {
 	Limit int64
 }
 
+type Pagination struct {
+	Limit  int
+	Offset int
+}
+
+func ObjectIDSFromStringArray(ids []string) []primitive.ObjectID {
+	var objectIds []primitive.ObjectID
+	for _, id := range ids {
+		if objectId, err := primitive.ObjectIDFromHex(id); err == nil {
+			objectIds = append(objectIds, objectId)
+		}
+	}
+	return objectIds
+}
+
 func NewDbContext() context.Context {
 	ctx, _ := context.WithTimeout(context.Background(), ContextTimeout)
 	return ctx

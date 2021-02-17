@@ -1,8 +1,8 @@
 
-go run ../oapi-codegen/cmd/oapi-codegen/oapi-codegen.go  -generate=server clinic.v1.yaml > api/gen_server.go
-go run ../oapi-codegen/cmd/oapi-codegen/oapi-codegen.go  -generate=types clinic.v1.yaml > api/gen_types.go
-go run ../oapi-codegen/cmd/oapi-codegen/oapi-codegen.go  -generate=spec clinic.v1.yaml > api/gen_spec.go
-go run ../oapi-codegen/cmd/oapi-codegen/oapi-codegen.go  -generate=client clinic.v1.yaml > api/gen_client.go
+oapi-codegen  -generate=server clinic.v1.yaml > api/gen_server.go
+oapi-codegen  -generate=types clinic.v1.yaml > api/gen_types.go
+oapi-codegen  -generate=spec clinic.v1.yaml > api/gen_spec.go
+oapi-codegen  -generate=client clinic.v1.yaml > api/gen_client.go
 
 
 sed  -i .bak 's/package Clinic/package api/' api/gen_types.go; rm api/gen_types.go.bak
