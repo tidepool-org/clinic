@@ -27,7 +27,7 @@ var (
 	UsersCollection   = "users"
 	ProfileCollection   = "seagull"
 
-	MongoHost           = "mongodb://127.0.0.1:27017"
+	MongoLocalHost           = "mongodb://127.0.0.1:27017"
 	DefaultPagingParams = MongoPagingParams{Offset: 0 ,Limit: 10}
 	ContextTimeout = time.Duration(20)*time.Second
 )
@@ -63,8 +63,15 @@ type MongoPagingParams struct {
 }
 
 type Pagination struct {
-	Limit  int
 	Offset int
+	Limit  int
+}
+
+func DefaultPagination() Pagination {
+	return Pagination{
+		Offset: 0,
+		Limit: 10,
+	}
 }
 
 func ObjectIDSFromStringArray(ids []string) []primitive.ObjectID {

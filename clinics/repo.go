@@ -8,10 +8,25 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/fx"
 )
 
-func NewRepository() (Service, error) {
-	return &repository{}, nil
+const (
+	clinicsCollectionName = "clinics"
+)
+
+func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Service, error) {
+	repo := &repository{
+		collection: db.Collection(clinicsCollectionName),
+	}
+
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			return repo.Initialize(ctx)
+		},
+	})
+
+	return repo, nil
 }
 
 type repository struct {
@@ -41,7 +56,7 @@ func (c *repository) Get(ctx context.Context, id string) (*Clinic, error) {
 	clinic := &Clinic{}
 	err := c.collection.FindOne(ctx, selector).Decode(&clinic)
 	if err == mongo.ErrNoDocuments {
-		return nil, ErrClinicNotFound
+		return nil, NotFound
 	} else if err != nil {
 		return nil, err
 	}
@@ -54,14 +69,17 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 		SetLimit(int64(pagination.Limit)).
 		SetSkip(int64(pagination.Offset))
 
-	selector := bson.M{"_id": bson.M{"$in": store.ObjectIDSFromStringArray(filter.Ids)}}
+	selector := bson.M{}
+	if len(filter.Ids) > 0 {
+		selector["_id"] = bson.M{"$in": store.ObjectIDSFromStringArray(filter.Ids)}
+	}
 	cursor, err := c.collection.Find(ctx, selector, opts)
 	if err != nil {
 		return nil, fmt.Errorf("error listing clinics: %w", err)
 	}
 
-	var clinics []*Clinic
-	if err = cursor.All(ctx, clinics); err != nil {
+	clinics := make([]*Clinic, 0)
+	if err = cursor.All(ctx, &clinics); err != nil {
 		return nil, fmt.Errorf("error decoding clinics list: %w", err)
 	}
 
@@ -75,7 +93,7 @@ func (c *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error
 	}
 	// Fail gracefully if there is a duplicate Email address
 	if len(clinics) > 0 {
-		return nil, ErrDuplicateEmail
+		return nil, DuplicateEmail
 	}
 
 	// Insertion will fail if there are two concurrent requests, which are both
@@ -94,7 +112,7 @@ func (c *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Cl
 		if c, err := c.FindByEmail(ctx, *clinic.Email); err != nil {
 			return nil, err
 		} else if c != nil {
-			return nil, ErrDuplicateEmail
+			return nil, DuplicateEmail
 		}
 	}
 	clinicId, _ := primitive.ObjectIDFromHex(id)
@@ -124,7 +142,7 @@ func createUpdateDocument(clinic *Clinic) bson.M {
 	update := bson.M{}
 	if clinic != nil {
 		// Make sure we're not overriding the id
-		clinic.Id = primitive.NilObjectID
+		clinic.Id = nil
 		update["$set"] = clinic
 	}
 

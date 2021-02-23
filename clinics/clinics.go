@@ -7,8 +7,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var ErrClinicNotFound = errors.New("patient not found")
-var ErrDuplicateEmail = errors.New("duplicate Email address")
+var NotFound = errors.New("clinic not found")
+var DuplicateEmail = errors.New("duplicate email address")
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -23,19 +23,19 @@ type Filter struct {
 }
 
 type Clinic struct {
-	Id           primitive.ObjectID `bson:"_id,omitempty"`
+	Id           *primitive.ObjectID `bson:"_id,omitempty"`
 	Address      *string            `bson:"address,omitempty"`
 	City         *string            `bson:"city,omitempty"`
 	ClinicType   *string            `bson:"clinicType,omitempty"`
 	Country      *string            `bson:"country,omitempty"`
 	Email        *string            `bson:"Email,omitempty"`
 	Name         *string            `bson:"name,omitempty"`
-	PhoneNumbers []*PhoneNumber     `bson:"phoneNumbers,omitempty"`
+	PhoneNumbers *[]PhoneNumber     `bson:"phoneNumbers,omitempty"`
 	PostalCode   *string            `bson:"postalCode,omitempty"`
 	State        *string            `bson:"state,omitempty"`
 }
 
 type PhoneNumber struct {
-	Type   string `bson:"type,omitempty"`
+	Type   *string `bson:"type,omitempty"`
 	Number string `bson:"number,omitempty"`
 }

@@ -57,12 +57,12 @@ paths:
         - schema:
             type: integer
           in: query
-          name: offset
+          name: limit
           description: ''
         - schema:
             type: integer
           in: query
-          name: limit
+          name: offset
         - schema:
             type: string
           in: query
@@ -437,13 +437,14 @@ components:
       description: Resource that can be referenced by id
       properties:
         id:
-          readOnly: true
           type: string
           title: Object Id
           description: BSON ObjectId
           minLength: 24
           maxLength: 24
           pattern: '^[a-f0-9]{24}'
+      required:
+        - id
     Clinic:
       title: Clinic
       allOf:
@@ -460,6 +461,11 @@ components:
             - name
             - email
         - $ref: '#/components/schemas/Attributes'
+        - type: object
+          properties:
+            id:
+              type: string
+              readOnly: true
       description: An object representing clinic
       x-examples: {}
     Clinics:
@@ -557,6 +563,8 @@ components:
         key:
           type: string
           description: Confirmation Key
+      required:
+        - key
     Attributes:
       title: Clinic attributes
       x-examples:
@@ -582,15 +590,7 @@ components:
         phoneNumbers:
           type: array
           items:
-            title: Phone Number
-            type: object
-            properties:
-              type:
-                type: string
-              number:
-                type: string
-            required:
-              - number
+            $ref: '#/components/schemas/PhoneNumber'
         clinicType:
           type: string
         clinicSize:
@@ -616,6 +616,16 @@ components:
         enum:
           - ADMINISTER_CLINIC
           - SUBMIT_PRESCRIPTIONS
+    PhoneNumber:
+      title: Phone Number
+      type: object
+      properties:
+        type:
+          type: string
+        number:
+          type: string
+      required:
+        - number
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
