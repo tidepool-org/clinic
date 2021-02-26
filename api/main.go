@@ -7,8 +7,10 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"github.com/tidepool-org/clinic/users"
 	"go.uber.org/fx"
 	"net/http"
 )
@@ -56,6 +58,8 @@ func NewServer(handler *Handler) (*echo.Echo, error){
 	// Routes
 	e.GET("/", hello)
 
+	e.HTTPErrorHandler = errors.CustomHTTPErrorHandler
+
 	RegisterHandlers(e, handler)
 
 	return e, nil
@@ -72,6 +76,7 @@ func MainLoop() {
 			NewHandler,
 			NewServer,
 		),
+		users.Module,
 		fx.Invoke(Start),
 	).Run()
 }

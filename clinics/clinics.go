@@ -2,13 +2,14 @@ package clinics
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var NotFound = errors.New("clinic not found")
-var DuplicateEmail = errors.New("duplicate email address")
+var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
+var ErrDuplicateEmail = fmt.Errorf("%w email address", errors.Duplicate)
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)

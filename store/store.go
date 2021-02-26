@@ -18,14 +18,10 @@ import (
 var (
 	DatabaseName        = ""
 	DefaultClinicDatabaseName = "clinic"
-	UserDatabase = "user"
-	ProfileDatabase = "seagull"
 
 	ClinicsCollection   = "clinic"
 	ClinicsCliniciansCollection   = "clinicsClinicians"
 	ClinicsPatientsCollection   = "clinicsPatients"
-	UsersCollection   = "users"
-	ProfileCollection   = "seagull"
 
 	MongoLocalHost           = "mongodb://127.0.0.1:27017"
 	DefaultPagingParams = MongoPagingParams{Offset: 0 ,Limit: 10}

@@ -145,7 +145,7 @@ paths:
         - CLINIC_ADMIN
         - CLINIC_CLINICIAN
       parameters: []
-    patch:
+    put:
       summary: Update Clinic
       operationId: UpdateClinic
       responses:
@@ -166,7 +166,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Attributes'
+              $ref: '#/components/schemas/Clinic'
           application/xml:
             schema:
               type: object
@@ -211,6 +211,20 @@ paths:
             type: integer
           in: query
           name: offset
+    post:
+      summary: Create Clinician
+      operationId: CreateClinician
+      responses:
+        '200':
+          description: OK
+      description: Internal endpoint to create a new clinician
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Clinician'
+      tags:
+        - clinic
   '/v1/clinics/{clinicId}/patients':
     parameters:
       - schema:
@@ -291,7 +305,7 @@ paths:
                 $ref: '#/components/schemas/Clinician'
       operationId: GetClinician
       description: Retrieve a member of clinic given their user id
-    patch:
+    put:
       summary: Update Clinician
       operationId: UpdateClinician
       responses:
@@ -348,6 +362,24 @@ paths:
       description: Internal endpoint for creating a patient record from an existing user
       tags:
         - clinic
+    put:
+      summary: Update Patient
+      operationId: UpdatePatient
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+      description: Update existing patient of a clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patient'
+      tags:
+        - clinic
   '/v1/clinics/{clinicId}/invites':
     parameters:
       - schema:
@@ -372,7 +404,7 @@ paths:
             schema:
               $ref: '#/components/schemas/InviteClinician'
       tags:
-        - clinic
+        - confirmation
   '/v1/clinics/{clinicId}/invites/{inviteId}':
     parameters:
       - schema:
@@ -393,16 +425,16 @@ paths:
           description: OK
       description: Resend invite to clinician's email address
       tags:
-        - clinic
+        - confirmation
     delete:
-      summary: ''
+      summary: Delete Invite
       operationId: DeleteInvite
       responses:
         '200':
           description: OK
-      description: Delete invite
+      description: Deletes unaccepted invite
       tags:
-        - clinic
+        - confirmation
     put:
       summary: Accept Invite
       operationId: AcceptInvite
@@ -420,7 +452,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AcceptInvite'
       tags:
-        - clinic
+        - confirmation
 components:
   schemas:
     Error:
@@ -431,142 +463,8 @@ components:
           type: integer
         message:
           type: string
-    Identifiable:
-      type: object
-      title: Identifiable Object
-      description: Resource that can be referenced by id
-      properties:
-        id:
-          type: string
-          title: Object Id
-          description: BSON ObjectId
-          minLength: 24
-          maxLength: 24
-          pattern: '^[a-f0-9]{24}'
-      required:
-        - id
     Clinic:
       title: Clinic
-      allOf:
-        - $ref: '#/components/schemas/Identifiable'
-        - title: Required Attributes of a Clinic
-          type: object
-          properties:
-            name:
-              type: string
-              minLength: 1
-            email:
-              type: string
-          required:
-            - name
-            - email
-        - $ref: '#/components/schemas/Attributes'
-        - type: object
-          properties:
-            id:
-              type: string
-              readOnly: true
-      description: An object representing clinic
-      x-examples: {}
-    Clinics:
-      type: array
-      items:
-        $ref: '#/components/schemas/Clinic'
-    Clinician:
-      title: Clinician
-      type: object
-      properties:
-        id:
-          $ref: '#/components/schemas/UserId'
-        inviteId:
-          type: string
-          description: The id of the invite if it hasn't been accepted
-        name:
-          type: string
-          minLength: 1
-          description: The name of the clinician
-        email:
-          type: string
-          format: email
-          description: The email of the clinician
-          readOnly: true
-        permissions:
-          $ref: '#/components/schemas/ClinicianPermissions'
-      required:
-        - email
-    Clinicians:
-      type: array
-      items:
-        $ref: '#/components/schemas/Clinician'
-    Patient:
-      type: object
-      title: Patient
-      properties:
-        id:
-          $ref: '#/components/schemas/UserId'
-        email:
-          type: string
-          description: The email of the patient
-          format: email
-        fullName:
-          type: string
-        birthDate:
-          type: string
-          format: date
-          description: YYYY-MM-DD
-        mrn:
-          type: string
-          description: The medical record of a patient
-        targetDevices:
-          type: array
-          items:
-            type: string
-        permissions:
-          type: object
-          title: Patient Permissions
-          properties:
-            upload:
-              type: object
-              description: Allow uploading data
-            view:
-              type: object
-              description: Allow viewing data
-            note:
-              type: object
-              description: Allow annotating data
-            root:
-              type: object
-              description: Allow full control of account
-          readOnly: true
-      required:
-        - id
-      readOnly: true
-    Patients:
-      type: array
-      items:
-        $ref: '#/components/schemas/Patient'
-    InviteClinician:
-      title: Invite Clinician
-      type: object
-      properties:
-        email:
-          type: string
-        permissions:
-          $ref: '#/components/schemas/ClinicianPermissions'
-      required:
-        - email
-        - permissions
-    AcceptInvite:
-      title: Accept Invite
-      type: object
-      properties:
-        key:
-          type: string
-          description: Confirmation Key
-      required:
-        - key
-    Attributes:
-      title: Clinic attributes
       x-examples:
         example:
           name: ACME Diabetes Clinic
@@ -577,6 +475,8 @@ components:
       description: ''
       type: object
       properties:
+        id:
+          $ref: '#/components/schemas/Id'
         address:
           type: string
         city:
@@ -601,6 +501,95 @@ components:
         email:
           type: string
           format: email
+      required:
+        - name
+        - email
+        - id
+    Clinics:
+      type: array
+      items:
+        $ref: '#/components/schemas/Clinic'
+    Clinician:
+      title: Clinician
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        userId:
+          type: string
+          description: The user id of the clinician
+        inviteId:
+          type: string
+          description: The id of the invite if it hasn't been accepted
+        email:
+          type: string
+          format: email
+          description: The email of the clinician
+        name:
+          type: string
+          minLength: 1
+          description: The name of the clinician
+        permissions:
+          $ref: '#/components/schemas/ClinicianPermissions'
+      required:
+        - email
+    Clinicians:
+      type: array
+      items:
+        $ref: '#/components/schemas/Clinician'
+    Patient:
+      type: object
+      title: Patient
+      description: ''
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        email:
+          type: string
+          description: The email of the patient
+          format: email
+        fullName:
+          type: string
+          description: The full name of the patient
+        birthDate:
+          type: string
+          format: date
+          description: YYYY-MM-DD
+        mrn:
+          type: string
+          description: The medical record number of the patient
+        targetDevices:
+          type: array
+          items:
+            type: string
+        permissions:
+          $ref: '#/components/schemas/PatientPermissions'
+      required:
+        - id
+    Patients:
+      type: array
+      items:
+        $ref: '#/components/schemas/Patient'
+    InviteClinician:
+      title: Invite Clinician
+      type: object
+      properties:
+        email:
+          type: string
+        permissions:
+          $ref: '#/components/schemas/ClinicianPermissions'
+      required:
+        - email
+        - permissions
+    AcceptInvite:
+      title: Accept Invite
+      type: object
+      properties:
+        key:
+          type: string
+          description: Confirmation Key
+      required:
+        - key
     UserId:
       type: string
       title: Tidepool User ID
@@ -608,6 +597,7 @@ components:
       maxLength: 10
       pattern: '^[a-f0-9]{10}'
       description: String representation of a Tidepool User ID
+      readOnly: true
     ClinicianPermissions:
       type: array
       title: Clinician Permissions
@@ -626,6 +616,34 @@ components:
           type: string
       required:
         - number
+    PatientPermissions:
+      type: object
+      title: Patient Permissions
+      properties:
+        upload:
+          type: object
+          description: Allow uploading data
+        view:
+          type: object
+          description: Allow viewing data
+        note:
+          type: object
+          description: Allow annotating data
+        root:
+          type: object
+          description: Allow full control of account
+        custodian:
+          type: object
+          description: Allow custodial control of an account
+      readOnly: true
+    Id:
+      type: string
+      title: Object Id
+      description: String representation of a resource id
+      minLength: 24
+      maxLength: 24
+      pattern: '^[a-f0-9]{24}$'
+      readOnly: true
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
@@ -656,5 +674,6 @@ tags:
   - name: clinic
     description: Tidepool Clinic
   - name: invite
+  - name: confirmation
 security:
   - sessionToken: []

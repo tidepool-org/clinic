@@ -20,5 +20,5 @@ func NewDatabase(host string) (*mongo.Database, error){
 	}
 	fmt.Println("Created Mongo Store Successfully")
 
-	return client.Database(DatabaseName), nil
+	return client.Database(DefaultClinicDatabaseName), nil
 }

@@ -96,11 +96,13 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		selector["$text"] = bson.M{
 			"$search": filter.Search,
 		}
-		opts.SetSort(bson.M{
+		textScore := bson.M{
 			"score": bson.M{
 				"$meta": "textScore",
 			},
-		})
+		}
+		opts.SetProjection(textScore)
+		opts.SetSort(textScore)
 	}
 	cursor, err := r.collection.Find(ctx, selector, opts)
 	if err != nil {
@@ -108,7 +110,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 
 	var patients []*Patient
-	if err = cursor.All(ctx, patients); err != nil {
+	if err = cursor.All(ctx, &patients); err != nil {
 		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
 
@@ -129,35 +131,30 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		return nil, ErrDuplicate
 	}
 
-	res, err := r.collection.InsertOne(ctx, patient)
-	if err != nil {
+	if _, err = r.collection.InsertOne(ctx, patient); err != nil {
 		return nil, fmt.Errorf("error creating patient: %w", err)
 	}
 
-	id := res.InsertedID.(primitive.ObjectID)
-	return r.Get(ctx, patient.ClinicId.Hex(), id.Hex())
+	return r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
 }
 
-func (r *repository) Update(ctx context.Context, patient Patient) (*Patient, error) {
-	clinicId := patient.ClinicId.Hex()
-	patientId := *patient.UserId
+func (r *repository) Update(ctx context.Context, clinicId, userId string, patient Patient) (*Patient, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
-		"clinicId": clinicId,
-		"userId": patient,
+		"clinicId": clinicObjId,
+		"userId": userId,
 	}
 
-	err := r.collection.FindOneAndUpdate(ctx, selector, createUpdateDocument(patient)).Err()
+	update := bson.M{
+		"$set": patient,
+	}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
 	}
 
-	return r.Get(ctx, clinicId, patientId)
-}
-
-func createUpdateDocument(patient Patient) bson.M {
-	patient.UserId = nil
-	patient.ClinicId = nil
-	return bson.M{
-		"$set": patient,
-	}
+	return r.Get(ctx, clinicId, userId)
 }

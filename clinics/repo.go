@@ -56,7 +56,7 @@ func (c *repository) Get(ctx context.Context, id string) (*Clinic, error) {
 	clinic := &Clinic{}
 	err := c.collection.FindOne(ctx, selector).Decode(&clinic)
 	if err == mongo.ErrNoDocuments {
-		return nil, NotFound
+		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, err
 	}
@@ -66,8 +66,8 @@ func (c *repository) Get(ctx context.Context, id string) (*Clinic, error) {
 
 func (c *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error) {
 	opts := options.Find().
-		SetLimit(int64(pagination.Limit)).
-		SetSkip(int64(pagination.Offset))
+		SetSkip(int64(pagination.Offset)).
+		SetLimit(int64(pagination.Limit))
 
 	selector := bson.M{}
 	if len(filter.Ids) > 0 {
@@ -93,7 +93,7 @@ func (c *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error
 	}
 	// Fail gracefully if there is a duplicate Email address
 	if len(clinics) > 0 {
-		return nil, DuplicateEmail
+		return nil, ErrDuplicateEmail
 	}
 
 	// Insertion will fail if there are two concurrent requests, which are both
@@ -112,7 +112,7 @@ func (c *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Cl
 		if c, err := c.FindByEmail(ctx, *clinic.Email); err != nil {
 			return nil, err
 		} else if c != nil {
-			return nil, DuplicateEmail
+			return nil, ErrDuplicateEmail
 		}
 	}
 	clinicId, _ := primitive.ObjectIDFromHex(id)
@@ -126,7 +126,7 @@ func (c *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Cl
 }
 
 func (c *repository) FindByEmail(ctx context.Context, email string) (*Clinic, error) {
-	clinics, err := c.List(ctx, &Filter{Email: email}, store.Pagination{Limit: 1, Offset: 0})
+	clinics, err := c.List(ctx, &Filter{Email: email}, store.Pagination{Limit: 1})
 	if err != nil {
 		return nil, fmt.Errorf("error finding clinic by email address: %w", err)
 	}
