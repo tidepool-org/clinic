@@ -41,21 +41,26 @@ type Clinician struct {
 	InviteId *string `json:"inviteId,omitempty"`
 
 	// The name of the clinician
-	Name        *string               `json:"name,omitempty"`
-	Permissions *ClinicianPermissions `json:"permissions,omitempty"`
+	Name  *string        `json:"name,omitempty"`
+	Roles ClinicianRoles `json:"roles"`
 
 	// The user id of the clinician
 	UserId *string `json:"userId,omitempty"`
 }
 
-// ClinicianPermissions defines model for ClinicianPermissions.
-type ClinicianPermissions []string
+// ClinicianRoles defines model for ClinicianRoles.
+type ClinicianRoles []string
 
 // Clinicians defines model for Clinicians.
 type Clinicians []Clinician
 
 // Clinics defines model for Clinics.
 type Clinics []Clinic
+
+// CreatePatient defines model for CreatePatient.
+type CreatePatient struct {
+	Permissions *PatientPermissions `json:"permissions,omitempty"`
+}
 
 // Error defines model for Error.
 type Error struct {
@@ -87,23 +92,21 @@ type Patient struct {
 	TargetDevices *[]string           `json:"targetDevices,omitempty"`
 }
 
+// PatientClinicRelationship defines model for PatientClinicRelationship.
+type PatientClinicRelationship struct {
+	Clinic  Clinic  `json:"clinic"`
+	Patient Patient `json:"patient"`
+}
+
+// PatientClinicRelationships defines model for PatientClinicRelationships.
+type PatientClinicRelationships []PatientClinicRelationship
+
 // PatientPermissions defines model for PatientPermissions.
 type PatientPermissions struct {
-
-	// Allow custodial control of an account
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
-
-	// Allow annotating data
-	Note *map[string]interface{} `json:"note,omitempty"`
-
-	// Allow full control of account
-	Root *map[string]interface{} `json:"root,omitempty"`
-
-	// Allow uploading data
-	Upload *map[string]interface{} `json:"upload,omitempty"`
-
-	// Allow viewing data
-	View *map[string]interface{} `json:"view,omitempty"`
+	Note      *map[string]interface{} `json:"note,omitempty"`
+	Upload    *map[string]interface{} `json:"upload,omitempty"`
+	View      *map[string]interface{} `json:"view,omitempty"`
 }
 
 // Patients defines model for Patients.
@@ -125,6 +128,7 @@ type ListClinicsParams struct {
 	Sort        *string `json:"sort,omitempty"`
 	ClinicianId *string `json:"clinicianId,omitempty"`
 	PatientId   *string `json:"patientId,omitempty"`
+	Email       *string `json:"email,omitempty"`
 }
 
 // CreateClinicJSONBody defines parameters for CreateClinic.
@@ -135,9 +139,11 @@ type UpdateClinicJSONBody Clinic
 
 // ListCliniciansParams defines parameters for ListClinicians.
 type ListCliniciansParams struct {
+
+	// Full text search query
 	Search *string `json:"search,omitempty"`
-	Limit  *int    `json:"limit,omitempty"`
 	Offset *int    `json:"offset,omitempty"`
+	Limit  *int    `json:"limit,omitempty"`
 }
 
 // CreateClinicianJSONBody defines parameters for CreateClinician.
@@ -158,8 +164,20 @@ type ListPatientsParams struct {
 // CreatePatientAccountJSONBody defines parameters for CreatePatientAccount.
 type CreatePatientAccountJSONBody Patient
 
+// CreatePatientFromUserJSONBody defines parameters for CreatePatientFromUser.
+type CreatePatientFromUserJSONBody CreatePatient
+
 // UpdatePatientJSONBody defines parameters for UpdatePatient.
 type UpdatePatientJSONBody Patient
+
+// UpdatePatientPermissionsJSONBody defines parameters for UpdatePatientPermissions.
+type UpdatePatientPermissionsJSONBody PatientPermissions
+
+// GetPatientClinicRelationshipsParams defines parameters for GetPatientClinicRelationships.
+type GetPatientClinicRelationshipsParams struct {
+	Offset *int `json:"offset,omitempty"`
+	Limit  *int `json:"limit,omitempty"`
+}
 
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
 type CreateClinicJSONRequestBody CreateClinicJSONBody
@@ -176,6 +194,12 @@ type UpdateClinicianJSONRequestBody UpdateClinicianJSONBody
 // CreatePatientAccountJSONRequestBody defines body for CreatePatientAccount for application/json ContentType.
 type CreatePatientAccountJSONRequestBody CreatePatientAccountJSONBody
 
+// CreatePatientFromUserJSONRequestBody defines body for CreatePatientFromUser for application/json ContentType.
+type CreatePatientFromUserJSONRequestBody CreatePatientFromUserJSONBody
+
 // UpdatePatientJSONRequestBody defines body for UpdatePatient for application/json ContentType.
 type UpdatePatientJSONRequestBody UpdatePatientJSONBody
+
+// UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
+type UpdatePatientPermissionsJSONRequestBody UpdatePatientPermissionsJSONBody
 

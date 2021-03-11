@@ -66,7 +66,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetBackground(true).
 				SetUnique(true).
-				SetName("UniqueClinicMemberEmail"),
+				SetName("UniqueClinicMemberEmail").
+				SetPartialFilterExpression(bson.D{{"email", bson.M{"$exists": true}}}),
 		},
 		{
 			Keys: bson.D{
@@ -108,11 +109,13 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		selector["$text"] = bson.M{
 			"$search": filter.Search,
 		}
-		opts.SetSort(bson.M{
+		textScore := bson.M{
 			"score": bson.M{
 				"$meta": "textScore",
 			},
-		})
+		}
+		opts.SetProjection(textScore)
+		opts.SetSort(textScore)
 	}
 	cursor, err := r.collection.Find(ctx, selector, opts)
 	if err != nil {

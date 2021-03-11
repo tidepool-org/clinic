@@ -55,6 +55,12 @@ type ServerInterface interface {
 	// Update Patient
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId})
 	UpdatePatient(ctx echo.Context, clinicId string, patientId string) error
+	// Update Patient Permissions
+	// (PUT /v1/clinics/{clinicId}/patients/{patientId}/permissions)
+	UpdatePatientPermissions(ctx echo.Context, clinicId string, patientId string) error
+	// Get Patient Clinic Relatipnships
+	// (GET /v1/patients/{patientId}/clinics)
+	GetPatientClinicRelationships(ctx echo.Context, patientId string, params GetPatientClinicRelationshipsParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -103,6 +109,13 @@ func (w *ServerInterfaceWrapper) ListClinics(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "patientId", ctx.QueryParams(), &params.PatientId)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	// ------------- Optional query parameter "email" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "email", ctx.QueryParams(), &params.Email)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter email: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -179,18 +192,18 @@ func (w *ServerInterfaceWrapper) ListClinicians(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter search: %s", err))
 	}
 
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
-	}
-
 	// ------------- Optional query parameter "offset" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -431,6 +444,66 @@ func (w *ServerInterfaceWrapper) UpdatePatient(ctx echo.Context) error {
 	return err
 }
 
+// UpdatePatientPermissions converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdatePatientPermissions(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId string
+
+	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId string
+
+	err = runtime.BindStyledParameter("simple", false, "patientId", ctx.Param("patientId"), &patientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdatePatientPermissions(ctx, clinicId, patientId)
+	return err
+}
+
+// GetPatientClinicRelationships converts echo context to params.
+func (w *ServerInterfaceWrapper) GetPatientClinicRelationships(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "patientId" -------------
+	var patientId string
+
+	err = runtime.BindStyledParameter("simple", false, "patientId", ctx.Param("patientId"), &patientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPatientClinicRelationshipsParams
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetPatientClinicRelationships(ctx, patientId, params)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -473,6 +546,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.GetPatient)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.CreatePatientFromUser)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
+	router.GET(baseURL+"/v1/patients/:patientId/clinics", wrapper.GetPatientClinicRelationships)
 
 }
 

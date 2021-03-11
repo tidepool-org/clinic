@@ -137,13 +137,23 @@ type ClientInterface interface {
 	// GetPatient request
 	GetPatient(ctx context.Context, clinicId string, patientId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreatePatientFromUser request
-	CreatePatientFromUser(ctx context.Context, clinicId string, patientId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// CreatePatientFromUser request  with any body
+	CreatePatientFromUserWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreatePatientFromUser(ctx context.Context, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdatePatient request  with any body
 	UpdatePatientWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdatePatient(ctx context.Context, clinicId string, patientId string, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdatePatientPermissions request  with any body
+	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdatePatientPermissions(ctx context.Context, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPatientClinicRelationships request
+	GetPatientClinicRelationships(ctx context.Context, patientId string, params *GetPatientClinicRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ListClinics(ctx context.Context, params *ListClinicsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -333,8 +343,19 @@ func (c *Client) GetPatient(ctx context.Context, clinicId string, patientId stri
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreatePatientFromUser(ctx context.Context, clinicId string, patientId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreatePatientFromUserRequest(c.Server, clinicId, patientId)
+func (c *Client) CreatePatientFromUserWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePatientFromUserRequestWithBody(c.Server, clinicId, patientId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePatientFromUser(ctx context.Context, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePatientFromUserRequest(c.Server, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -357,6 +378,39 @@ func (c *Client) UpdatePatientWithBody(ctx context.Context, clinicId string, pat
 
 func (c *Client) UpdatePatient(ctx context.Context, clinicId string, patientId string, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientRequest(c.Server, clinicId, patientId, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePatientPermissionsWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientPermissionsRequestWithBody(c.Server, clinicId, patientId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePatientPermissions(ctx context.Context, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientPermissionsRequest(c.Server, clinicId, patientId, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPatientClinicRelationships(ctx context.Context, patientId string, params *GetPatientClinicRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPatientClinicRelationshipsRequest(c.Server, patientId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -454,6 +508,22 @@ func NewListClinicsRequest(server string, params *ListClinicsParams) (*http.Requ
 	if params.PatientId != nil {
 
 		if queryFrag, err := runtime.StyleParam("form", true, "patientId", *params.PatientId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Email != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "email", *params.Email); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -642,9 +712,9 @@ func NewListCliniciansRequest(server string, clinicId string, params *ListClinic
 
 	}
 
-	if params.Limit != nil {
+	if params.Offset != nil {
 
-		if queryFrag, err := runtime.StyleParam("form", true, "limit", *params.Limit); err != nil {
+		if queryFrag, err := runtime.StyleParam("form", true, "offset", *params.Offset); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -658,9 +728,9 @@ func NewListCliniciansRequest(server string, clinicId string, params *ListClinic
 
 	}
 
-	if params.Offset != nil {
+	if params.Limit != nil {
 
-		if queryFrag, err := runtime.StyleParam("form", true, "offset", *params.Offset); err != nil {
+		if queryFrag, err := runtime.StyleParam("form", true, "limit", *params.Limit); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -1041,8 +1111,19 @@ func NewGetPatientRequest(server string, clinicId string, patientId string) (*ht
 	return req, nil
 }
 
-// NewCreatePatientFromUserRequest generates requests for CreatePatientFromUser
-func NewCreatePatientFromUserRequest(server string, clinicId string, patientId string) (*http.Request, error) {
+// NewCreatePatientFromUserRequest calls the generic CreatePatientFromUser builder with application/json body
+func NewCreatePatientFromUserRequest(server string, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreatePatientFromUserRequestWithBody(server, clinicId, patientId, "application/json", bodyReader)
+}
+
+// NewCreatePatientFromUserRequestWithBody generates requests for CreatePatientFromUser with any type of body
+func NewCreatePatientFromUserRequestWithBody(server string, clinicId string, patientId string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1074,10 +1155,12 @@ func NewCreatePatientFromUserRequest(server string, clinicId string, patientId s
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryUrl.String(), nil)
+	req, err := http.NewRequest("POST", queryUrl.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1132,6 +1215,130 @@ func NewUpdatePatientRequestWithBody(server string, clinicId string, patientId s
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdatePatientPermissionsRequest calls the generic UpdatePatientPermissions builder with application/json body
+func NewUpdatePatientPermissionsRequest(server string, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdatePatientPermissionsRequestWithBody(server, clinicId, patientId, "application/json", bodyReader)
+}
+
+// NewUpdatePatientPermissionsRequestWithBody generates requests for UpdatePatientPermissions with any type of body
+func NewUpdatePatientPermissionsRequestWithBody(server string, clinicId string, patientId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "clinicId", clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParam("simple", false, "patientId", patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/%s/patients/%s/permissions", pathParam0, pathParam1)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryUrl.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetPatientClinicRelationshipsRequest generates requests for GetPatientClinicRelationships
+func NewGetPatientClinicRelationshipsRequest(server string, patientId string, params *GetPatientClinicRelationshipsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "patientId", patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/patients/%s/clinics", pathParam0)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryUrl.Query()
+
+	if params.Offset != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "offset", *params.Offset); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Limit != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "limit", *params.Limit); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryUrl.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -1226,13 +1433,23 @@ type ClientWithResponsesInterface interface {
 	// GetPatient request
 	GetPatientWithResponse(ctx context.Context, clinicId string, patientId string) (*GetPatientResponse, error)
 
-	// CreatePatientFromUser request
-	CreatePatientFromUserWithResponse(ctx context.Context, clinicId string, patientId string) (*CreatePatientFromUserResponse, error)
+	// CreatePatientFromUser request  with any body
+	CreatePatientFromUserWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*CreatePatientFromUserResponse, error)
+
+	CreatePatientFromUserWithResponse(ctx context.Context, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody) (*CreatePatientFromUserResponse, error)
 
 	// UpdatePatient request  with any body
 	UpdatePatientWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*UpdatePatientResponse, error)
 
 	UpdatePatientWithResponse(ctx context.Context, clinicId string, patientId string, body UpdatePatientJSONRequestBody) (*UpdatePatientResponse, error)
+
+	// UpdatePatientPermissions request  with any body
+	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error)
+
+	UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error)
+
+	// GetPatientClinicRelationships request
+	GetPatientClinicRelationshipsWithResponse(ctx context.Context, patientId string, params *GetPatientClinicRelationshipsParams) (*GetPatientClinicRelationshipsResponse, error)
 }
 
 type ListClinicsResponse struct {
@@ -1503,6 +1720,7 @@ func (r GetPatientResponse) StatusCode() int {
 type CreatePatientFromUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *Patient
 }
 
 // Status returns HTTPResponse.Status
@@ -1537,6 +1755,50 @@ func (r UpdatePatientResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdatePatientResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdatePatientPermissionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientPermissions
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdatePatientPermissionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdatePatientPermissionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPatientClinicRelationshipsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientClinicRelationships
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPatientClinicRelationshipsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPatientClinicRelationshipsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1691,9 +1953,17 @@ func (c *ClientWithResponses) GetPatientWithResponse(ctx context.Context, clinic
 	return ParseGetPatientResponse(rsp)
 }
 
-// CreatePatientFromUserWithResponse request returning *CreatePatientFromUserResponse
-func (c *ClientWithResponses) CreatePatientFromUserWithResponse(ctx context.Context, clinicId string, patientId string) (*CreatePatientFromUserResponse, error) {
-	rsp, err := c.CreatePatientFromUser(ctx, clinicId, patientId)
+// CreatePatientFromUserWithBodyWithResponse request with arbitrary body returning *CreatePatientFromUserResponse
+func (c *ClientWithResponses) CreatePatientFromUserWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*CreatePatientFromUserResponse, error) {
+	rsp, err := c.CreatePatientFromUserWithBody(ctx, clinicId, patientId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePatientFromUserResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreatePatientFromUserWithResponse(ctx context.Context, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody) (*CreatePatientFromUserResponse, error) {
+	rsp, err := c.CreatePatientFromUser(ctx, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1715,6 +1985,32 @@ func (c *ClientWithResponses) UpdatePatientWithResponse(ctx context.Context, cli
 		return nil, err
 	}
 	return ParseUpdatePatientResponse(rsp)
+}
+
+// UpdatePatientPermissionsWithBodyWithResponse request with arbitrary body returning *UpdatePatientPermissionsResponse
+func (c *ClientWithResponses) UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error) {
+	rsp, err := c.UpdatePatientPermissionsWithBody(ctx, clinicId, patientId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePatientPermissionsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error) {
+	rsp, err := c.UpdatePatientPermissions(ctx, clinicId, patientId, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePatientPermissionsResponse(rsp)
+}
+
+// GetPatientClinicRelationshipsWithResponse request returning *GetPatientClinicRelationshipsResponse
+func (c *ClientWithResponses) GetPatientClinicRelationshipsWithResponse(ctx context.Context, patientId string, params *GetPatientClinicRelationshipsParams) (*GetPatientClinicRelationshipsResponse, error) {
+	rsp, err := c.GetPatientClinicRelationships(ctx, patientId, params)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPatientClinicRelationshipsResponse(rsp)
 }
 
 // ParseListClinicsResponse parses an HTTP response from a ListClinicsWithResponse call
@@ -2050,6 +2346,13 @@ func ParseCreatePatientFromUserResponse(rsp *http.Response) (*CreatePatientFromU
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Patient
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil
@@ -2071,6 +2374,58 @@ func ParseUpdatePatientResponse(rsp *http.Response) (*UpdatePatientResponse, err
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Patient
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdatePatientPermissionsResponse parses an HTTP response from a UpdatePatientPermissionsWithResponse call
+func ParseUpdatePatientPermissionsResponse(rsp *http.Response) (*UpdatePatientPermissionsResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdatePatientPermissionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientPermissions
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPatientClinicRelationshipsResponse parses an HTTP response from a GetPatientClinicRelationshipsWithResponse call
+func ParseGetPatientClinicRelationshipsResponse(rsp *http.Response) (*GetPatientClinicRelationshipsResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPatientClinicRelationshipsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientClinicRelationships
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

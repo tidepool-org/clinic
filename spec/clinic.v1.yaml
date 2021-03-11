@@ -75,6 +75,10 @@ paths:
             type: string
           in: query
           name: patientId
+        - schema:
+            type: string
+          in: query
+          name: email
       x-roles:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
@@ -161,7 +165,7 @@ paths:
           description: Forbidden
         '500':
           description: Internal Server Error
-      description: Update a clinic
+      description: Update an existing clinic
       requestBody:
         content:
           application/json:
@@ -203,14 +207,15 @@ paths:
             type: string
           in: query
           name: search
-        - schema:
-            type: integer
-          in: query
-          name: limit
+          description: Full text search query
         - schema:
             type: integer
           in: query
           name: offset
+        - schema:
+            type: integer
+          in: query
+          name: limit
     post:
       summary: Create Clinician
       operationId: CreateClinician
@@ -359,9 +364,18 @@ paths:
       responses:
         '200':
           description: OK
-      description: Internal endpoint for creating a patient record from an existing user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+      description: Internal endpoint for creating a patient from an existing user
       tags:
         - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatient'
     put:
       summary: Update Patient
       operationId: UpdatePatient
@@ -453,6 +467,65 @@ paths:
               $ref: '#/components/schemas/AcceptInvite'
       tags:
         - confirmation
+  '/v1/clinics/{clinicId}/patients/{patientId}/permissions':
+    parameters:
+      - schema:
+          type: string
+        name: clinicId
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: patientId
+        in: path
+        required: true
+    put:
+      summary: Update Patient Permissions
+      operationId: UpdatePatientPermissions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientPermissions'
+      description: Update permissions that a clinic has over a patient account
+      tags:
+        - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientPermissions'
+  '/v1/patients/{patientId}/clinics':
+    parameters:
+      - schema:
+          type: string
+        name: patientId
+        in: path
+        required: true
+    get:
+      summary: Get Patient Clinic Relatipnships
+      tags:
+        - clinic
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientClinicRelationships'
+      operationId: GetPatientClinicRelationships
+      description: Get all clinics a patient is a member of
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: offset
+        - schema:
+            type: integer
+          in: query
+          name: limit
 components:
   schemas:
     Error:
@@ -529,10 +602,11 @@ components:
           type: string
           minLength: 1
           description: The name of the clinician
-        permissions:
-          $ref: '#/components/schemas/ClinicianPermissions'
+        roles:
+          $ref: '#/components/schemas/ClinicianRoles'
       required:
         - email
+        - roles
     Clinicians:
       type: array
       items:
@@ -564,6 +638,7 @@ components:
             type: string
         permissions:
           $ref: '#/components/schemas/PatientPermissions'
+          readOnly: true
       required:
         - id
     Patients:
@@ -576,11 +651,11 @@ components:
       properties:
         email:
           type: string
-        permissions:
-          $ref: '#/components/schemas/ClinicianPermissions'
+        roles:
+          $ref: '#/components/schemas/ClinicianRoles'
       required:
         - email
-        - permissions
+        - roles
     AcceptInvite:
       title: Accept Invite
       type: object
@@ -598,14 +673,17 @@ components:
       pattern: '^[a-f0-9]{10}'
       description: String representation of a Tidepool User ID
       readOnly: true
-    ClinicianPermissions:
+    ClinicianRoles:
       type: array
       title: Clinician Permissions
+      minItems: 1
+      uniqueItems: true
       items:
         type: string
         enum:
-          - ADMINISTER_CLINIC
-          - SUBMIT_PRESCRIPTIONS
+          - CLINIC_ADMINISTRATOR
+          - CLINIC_MEMBER
+          - PRESCRIBER
     PhoneNumber:
       title: Phone Number
       type: object
@@ -620,22 +698,14 @@ components:
       type: object
       title: Patient Permissions
       properties:
-        upload:
-          type: object
-          description: Allow uploading data
-        view:
-          type: object
-          description: Allow viewing data
-        note:
-          type: object
-          description: Allow annotating data
-        root:
-          type: object
-          description: Allow full control of account
         custodian:
           type: object
-          description: Allow custodial control of an account
-      readOnly: true
+        view:
+          type: object
+        note:
+          type: object
+        upload:
+          type: object
     Id:
       type: string
       title: Object Id
@@ -644,6 +714,28 @@ components:
       maxLength: 24
       pattern: '^[a-f0-9]{24}$'
       readOnly: true
+    PatientClinicRelationship:
+      title: PatientClinicRelationship
+      type: object
+      properties:
+        patient:
+          $ref: '#/components/schemas/Patient'
+        clinic:
+          $ref: '#/components/schemas/Clinic'
+      required:
+        - patient
+        - clinic
+    PatientClinicRelationships:
+      title: PatientClinicRelationships
+      type: array
+      items:
+        $ref: '#/components/schemas/PatientClinicRelationship'
+    CreatePatient:
+      title: Create Patient
+      type: object
+      properties:
+        permissions:
+          $ref: '#/components/schemas/PatientPermissions'
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

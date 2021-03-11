@@ -42,7 +42,9 @@ func NewHandler(p Params) *Handler {
 func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
-	filter := clinics.Filter{}
+	filter := clinics.Filter{
+		Email: params.Email,
+	}
 
 	list, err := h.clinics.List(ctx, &filter, page)
 	if err != nil {
@@ -167,7 +169,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId string, params ListPati
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId: clinicId,
+		ClinicId: &clinicId,
 		Search:   params.Search,
 	}
 
@@ -195,12 +197,28 @@ func (h *Handler) GetPatient(ec echo.Context, clinicId string, patientId string)
 
 func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId string, patientId string) error {
 	ctx := ec.Request().Context()
-	patient, err := h.users.CreatePatientFromExistingUser(ctx, clinicId, patientId)
+	dto := &CreatePatient{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+	patient := patients.Patient{
+		ClinicId:    &clinicObjId,
+		UserId:      &patientId,
+		Permissions: NewPermissions(dto.Permissions),
+	}
+
+	result, err := h.users.CreatePatientFromExistingUser(ctx, patient)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(result))
 }
 
 func (h *Handler) UpdatePatient(ec echo.Context, clinicId string, patientId string) error {
@@ -218,6 +236,43 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId string, patientId stri
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
+func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId string, patientId string) error {
+	ctx := ec.Request().Context()
+	dto := PatientPermissions{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	patient, err := h.patients.UpdatePermissions(ctx, clinicId, patientId, NewPermissions(&dto))
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient).Permissions)
+}
+
+func (h *Handler) GetPatientClinicRelationships(ec echo.Context, patientId string, params GetPatientClinicRelationshipsParams) error {
+	ctx := ec.Request().Context()
+	page := pagination(params.Offset, params.Limit)
+	patientList, err := h.patients.List(ctx, &patients.Filter{UserId: &patientId}, page)
+	if err != nil {
+		return err
+	}
+
+	var clinicIds []string
+	for _, patient := range patientList {
+		clinicIds = append(clinicIds, patient.ClinicId.Hex())
+	}
+
+	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
+	dtos, err := NewPatientClinicRelationshipsDto(patientList, clinicList)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, dtos)
+}
+
 func pagination(offset, limit *int) store.Pagination {
 	page := store.DefaultPagination()
 	if offset != nil {
@@ -228,4 +283,3 @@ func pagination(offset, limit *int) store.Pagination {
 	}
 	return page
 }
-

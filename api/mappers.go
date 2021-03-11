@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -70,13 +71,10 @@ func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
 		UserId:   clinician.UserId,
 		Name:     clinician.Name,
 		InviteId: clinician.InviteId,
+		Roles:    ClinicianRoles(clinician.Roles),
 	}
 	if clinician.Email != nil {
 		dto.Email = openapi_types.Email(*clinician.Email)
-	}
-	if clinician.Permissions != nil {
-		perms := ClinicianPermissions(*clinician.Permissions)
-		dto.Permissions = &perms
 	}
 	return dto
 }
@@ -92,29 +90,20 @@ func NewCliniciansDto(clinicians []*clinicians.Clinician) []Clinician {
 }
 
 func NewClinician(clinician Clinician) *clinicians.Clinician {
-	email := string(clinician.Email)
-	c := &clinicians.Clinician{
+	return &clinicians.Clinician{
 		Name:     clinician.Name,
 		UserId:   clinician.UserId,
 		InviteId: clinician.InviteId,
-		Email:    &email,
+		Roles:    clinician.Roles,
+		Email:    strp(string(clinician.Email)),
 	}
-	if clinician.Permissions != nil {
-		perms := []string(*clinician.Permissions)
-		c.Permissions = &perms
-	}
-	return c
 }
 
 func NewClinicianUpdate(clinician Clinician) *clinicians.Clinician {
-	c := &clinicians.Clinician{
-		Name: clinician.Name,
+	return &clinicians.Clinician{
+		Name:  clinician.Name,
+		Roles: clinician.Roles,
 	}
-	if clinician.Permissions != nil {
-		perms := []string(*clinician.Permissions)
-		c.Permissions = &perms
-	}
-	return c
 }
 
 func NewPatientDto(patient *patients.Patient) Patient {
@@ -124,9 +113,50 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		FullName:      patient.FullName,
 		Id:            *strtouserid(patient.UserId),
 		Mrn:           patient.Mrn,
-		Permissions:   permissions(patient.Permissions),
+		Permissions:   NewPermissionsDto(patient.Permissions),
 		TargetDevices: patient.TargetDevices,
 	}
+}
+
+func NewPermissions(dto *PatientPermissions) *patients.Permissions {
+	var permissions *patients.Permissions
+	if dto != nil {
+		permissions = &patients.Permissions{}
+		if dto.Custodian != nil {
+			permissions.Custodian = &patients.Permission{}
+		}
+		if dto.Upload != nil {
+			permissions.Upload = &patients.Permission{}
+		}
+		if dto.Note != nil {
+			permissions.Note = &patients.Permission{}
+		}
+		if dto.View != nil {
+			permissions.View = &patients.Permission{}
+		}
+	}
+	return permissions
+}
+
+func NewPermissionsDto(dto *patients.Permissions) *PatientPermissions {
+	var permissions *PatientPermissions
+	if dto != nil {
+		permissions = &PatientPermissions{}
+		permission := make(map[string]interface{})
+		if dto.Custodian != nil {
+			permissions.Custodian = &permission
+		}
+		if dto.Upload != nil {
+			permissions.Upload = &permission
+		}
+		if dto.Note != nil {
+			permissions.Note = &permission
+		}
+		if dto.View != nil {
+			permissions.View = &permission
+		}
+	}
+	return permissions
 }
 
 func NewPatientUpdate(patient Patient) patients.Patient {
@@ -152,6 +182,26 @@ func NewPatientsDto(patients []*patients.Patient) []Patient {
 		}
 	}
 	return dtos
+}
+
+func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList []*clinics.Clinic) (*[]PatientClinicRelationship, error) {
+	clinicsMap := make(map[string]*clinics.Clinic, 0)
+	for _, clinic := range clinicList {
+		clinicsMap[clinic.Id.Hex()] = clinic
+	}
+	dtos := make([]PatientClinicRelationship, 0)
+	for _, patient := range patients {
+		clinic, ok := clinicsMap[patient.ClinicId.Hex()]
+		if !ok || clinic == nil {
+			return nil, fmt.Errorf("clinic not found")
+		}
+
+		dtos = append(dtos, PatientClinicRelationship{
+			Clinic:  NewClinicDto(clinic),
+			Patient: NewPatientDto(patient),
+		})
+	}
+	return &dtos, nil
 }
 
 const dateFormat = "2006-01-02"
@@ -181,19 +231,6 @@ func strtouserid(s *string) *UserId {
 	}
 	id := UserId(*s)
 	return &id
-}
-
-func permissions(p *patients.PatientPermissions) *PatientPermissions {
-	if p == nil {
-		return nil
-	}
-	return &PatientPermissions{
-		Custodian: p.Custodian,
-		Note:      p.Note,
-		Root:      p.Root,
-		Upload:    p.Upload,
-		View:      p.View,
-	}
 }
 
 func strp(s string) *string {

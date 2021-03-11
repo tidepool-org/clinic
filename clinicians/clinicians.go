@@ -8,8 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var ErrNotFound = fmt.Errorf("clinician %w", errors.NotFound)
-var ErrDuplicate = fmt.Errorf("%w: clinician is already a member of the clinic", errors.Duplicate)
+var (
+	ErrNotFound  = fmt.Errorf("clinician %w", errors.NotFound)
+	ErrDuplicate = fmt.Errorf("%w: clinician is already a member of the clinic", errors.Duplicate)
+)
 
 type Service interface {
 	Get(ctx context.Context, clinicId string, id string) (*Clinician, error)
@@ -20,13 +22,13 @@ type Service interface {
 }
 
 type Clinician struct {
-	Id          *primitive.ObjectID `bson:"_id,omitempty"`
-	ClinicId    *primitive.ObjectID `bson:"clinicId,omitempty"`
-	UserId      *string             `bson:"userId,omitempty"`
-	Name        *string             `bson:"name"`
-	Email       *string             `bson:"email"`
-	InviteId    *string             `bson:"inviteId,omitempty"`
-	Permissions *[]string           `bson:"permissions"`
+	Id       *primitive.ObjectID `bson:"_id,omitempty"`
+	InviteId *string             `bson:"inviteId,omitempty"`
+	ClinicId *primitive.ObjectID `bson:"clinicId,omitempty"`
+	UserId   *string             `bson:"userId,omitempty"`
+	Name     *string             `bson:"name"`
+	Email    *string             `bson:"email"`
+	Roles    []string            `bson:"roles"`
 }
 
 type Filter struct {

@@ -81,7 +81,11 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 }
 
 func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
-	clinicObjId, _ := primitive.ObjectIDFromHex(filter.ClinicId)
+	if filter.ClinicId == nil {
+		return nil, fmt.Errorf("clinic id cannot be empty")
+	}
+	clinicId := *filter.ClinicId
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	opts := options.Find().
 		SetLimit(int64(pagination.Limit)).
 		SetSkip(int64(pagination.Offset))
@@ -120,7 +124,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
 	clinicId := patient.ClinicId.Hex()
 	filter := &Filter{
-		ClinicId: clinicId,
+		ClinicId: &clinicId,
 		UserId: patient.UserId,
 	}
 	patients, err := r.List(ctx, filter, store.Pagination{Limit: 1})
@@ -148,6 +152,35 @@ func (r *repository) Update(ctx context.Context, clinicId, userId string, patien
 	update := bson.M{
 		"$set": patient,
 	}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("error updating patient: %w", err)
+	}
+
+	return r.Get(ctx, clinicId, userId)
+}
+
+func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId": userId,
+	}
+
+	update := bson.M{}
+	if permissions == nil {
+		update["$unset"] = bson.M{
+			"permissions": "",
+		}
+	} else {
+		update["$set"] = bson.M{
+			"permissions": permissions,
+		}
+	}
+
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

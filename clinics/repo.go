@@ -73,6 +73,9 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 	if len(filter.Ids) > 0 {
 		selector["_id"] = bson.M{"$in": store.ObjectIDSFromStringArray(filter.Ids)}
 	}
+	if filter.Email != nil {
+		selector["email"] = filter.Email
+	}
 	cursor, err := c.collection.Find(ctx, selector, opts)
 	if err != nil {
 		return nil, fmt.Errorf("error listing clinics: %w", err)
@@ -87,7 +90,7 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 }
 
 func (c *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error) {
-	clinics, err := c.List(ctx, &Filter{Email: *clinic.Email}, store.Pagination{Limit: 1, Offset: 0})
+	clinics, err := c.List(ctx, &Filter{Email: clinic.Email}, store.Pagination{Limit: 1, Offset: 0})
 	if err != nil {
 		return nil, fmt.Errorf("error finding clinic by Email address: %w", err)
 	}
@@ -126,7 +129,7 @@ func (c *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Cl
 }
 
 func (c *repository) FindByEmail(ctx context.Context, email string) (*Clinic, error) {
-	clinics, err := c.List(ctx, &Filter{Email: email}, store.Pagination{Limit: 1})
+	clinics, err := c.List(ctx, &Filter{Email: &email}, store.Pagination{Limit: 1})
 	if err != nil {
 		return nil, fmt.Errorf("error finding clinic by email address: %w", err)
 	}

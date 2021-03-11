@@ -20,7 +20,7 @@ type Service interface {
 
 type Filter struct {
 	Ids   []string
-	Email string
+	Email *string
 }
 
 type Clinic struct {
