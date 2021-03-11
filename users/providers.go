@@ -13,10 +13,10 @@ import (
 )
 
 type DependenciesConfig struct {
-	AuthHost       string `envconfig:"TIDEPOOL_AUTH_CLIENT_ADDRESS"`
-	SeagullHost    string `envconfig:"TIDEPOOL_SEAGULL_CLIENT_ADDRESS"`
-	GatekeeperHost string `enbconfig:"TIDEPOOL_PERMISSION_CLIENT_ADDRESS"`
-	ServerSecret   string `envconfig:"TIDEPOOL_AUTH_CLIENT_EXTERNAL_SERVER_SESSION_TOKEN_SECRET"`
+	ShorelineHost  string `envconfig:"TIDEPOOL_SHORELINE_CLIENT_ADDRESS",default:"http://shoreline:9107"`
+	SeagullHost    string `envconfig:"TIDEPOOL_SEAGULL_CLIENT_ADDRESS",default:"http://seagull:9120"`
+	GatekeeperHost string `enbconfig:"TIDEPOOL_PERMISSION_CLIENT_ADDRESS",default:"http://gatekeeper:9123"`
+	ServerSecret   string `envconfig:"TIDEPOOL_SERVER_TOKEN"`
 }
 
 func configProvider() (DependenciesConfig, error) {
@@ -35,7 +35,7 @@ func httpClientProvider() *http.Client {
 
 func shorelineProvider(config DependenciesConfig, httpClient *http.Client, lifecycle fx.Lifecycle) shoreline.Client {
 	client := shoreline.NewShorelineClientBuilder().
-		WithHostGetter(disc.NewStaticHostGetterFromString(config.AuthHost)).
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.ShorelineHost)).
 		WithHttpClient(httpClient).
 		WithName("clinics").
 		WithSecret(config.ServerSecret).
@@ -46,7 +46,7 @@ func shorelineProvider(config DependenciesConfig, httpClient *http.Client, lifec
 		OnStart: func(ctx context.Context) error {
 			return client.Start()
 		},
-		OnStop:  func(ctx context.Context) error {
+		OnStop: func(ctx context.Context) error {
 			client.Close()
 			return nil
 		},
