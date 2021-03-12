@@ -197,7 +197,7 @@ func (h *Handler) GetPatient(ec echo.Context, clinicId string, patientId string)
 
 func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId string, patientId string) error {
 	ctx := ec.Request().Context()
-	dto := &CreatePatient{}
+	dto := CreatePatient{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
