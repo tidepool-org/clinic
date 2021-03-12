@@ -67,7 +67,9 @@ func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
 }
 
 func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
+	id := Id(clinician.Id.Hex())
 	dto := Clinician{
+		Id:       &id,
 		UserId:   clinician.UserId,
 		Name:     clinician.Name,
 		InviteId: clinician.InviteId,
