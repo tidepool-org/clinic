@@ -25,18 +25,18 @@ type Filter struct {
 
 type Clinic struct {
 	Id           *primitive.ObjectID `bson:"_id,omitempty"`
-	Address      *string            `bson:"address,omitempty"`
-	City         *string            `bson:"city,omitempty"`
-	ClinicType   *string            `bson:"clinicType,omitempty"`
-	Country      *string            `bson:"country,omitempty"`
-	Email        *string            `bson:"Email,omitempty"`
-	Name         *string            `bson:"name,omitempty"`
-	PhoneNumbers *[]PhoneNumber     `bson:"phoneNumbers,omitempty"`
-	PostalCode   *string            `bson:"postalCode,omitempty"`
-	State        *string            `bson:"state,omitempty"`
+	Address      *string             `bson:"address,omitempty"`
+	City         *string             `bson:"city,omitempty"`
+	ClinicType   *string             `bson:"clinicType,omitempty"`
+	Country      *string             `bson:"country,omitempty"`
+	Email        *string             `bson:"email,omitempty"`
+	Name         *string             `bson:"name,omitempty"`
+	PhoneNumbers *[]PhoneNumber      `bson:"phoneNumbers,omitempty"`
+	PostalCode   *string             `bson:"postalCode,omitempty"`
+	State        *string             `bson:"state,omitempty"`
 }
 
 type PhoneNumber struct {
 	Type   *string `bson:"type,omitempty"`
-	Number string `bson:"number,omitempty"`
+	Number string  `bson:"number,omitempty"`
 }
