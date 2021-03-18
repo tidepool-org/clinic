@@ -85,15 +85,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 
 func (r *repository) Get(ctx context.Context, clinicId string, id string) (*Clinician, error) {
 	selector := clinicianSelector(clinicId, id)
-	clinician := &Clinician{}
-	err := r.collection.FindOne(ctx, selector).Decode(&clinician)
-	if err == mongo.ErrNoDocuments {
-		return nil, ErrNotFound
-	} else if err != nil {
-		return nil, err
-	}
-
-	return clinician, nil
+	return r.getOne(ctx, selector)
 }
 
 func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error) {
@@ -142,8 +134,10 @@ func (r *repository) Create(ctx context.Context, clinician *Clinician) (*Clinici
 		return nil, fmt.Errorf("error creating clinician: %w", err)
 	}
 
-	id := res.InsertedID.(primitive.ObjectID)
-	return r.Get(ctx, clinician.ClinicId.Hex(), id.Hex())
+	selector := bson.M{
+		"_id": res.InsertedID.(primitive.ObjectID).Hex(),
+	}
+	return r.getOne(ctx, selector)
 }
 
 func (r *repository) Update(ctx context.Context, clinicId string, id string, clinician *Clinician) (*Clinician, error) {
@@ -158,7 +152,7 @@ func (r *repository) Update(ctx context.Context, clinicId string, id string, cli
 		return nil, fmt.Errorf("unable to update clinician: %w", err)
 	}
 
-	return r.Get(ctx, clinicId, id)
+	return r.getOne(ctx, selector)
 }
 
 func (r *repository) Delete(ctx context.Context, clinicId string, id string) error {
@@ -192,7 +186,7 @@ func (r *repository) clinicianExists(ctx context.Context, clinician *Clinician) 
 		if clinician.Email != nil {
 			or = append(or, bson.M{
 				"clinicId": clinician.ClinicId,
-				"email": clinician.Email,
+				"email":    clinician.Email,
 			})
 		}
 	}
@@ -207,11 +201,23 @@ func (r *repository) clinicianExists(ctx context.Context, clinician *Clinician) 
 	return count > int64(0), err
 }
 
-func clinicianSelector(clinicId string, id string) bson.M {
-	objectId, _ := primitive.ObjectIDFromHex(id)
+func (r *repository) getOne(ctx context.Context, selector bson.M) (*Clinician, error) {
+	clinician := &Clinician{}
+	err := r.collection.FindOne(ctx, selector).Decode(&clinician)
+	if err == mongo.ErrNoDocuments {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return clinician, nil
+}
+
+func clinicianSelector(clinicId string, clinicianId string) bson.M {
+	userId, _ := primitive.ObjectIDFromHex(clinicianId)
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	return bson.M{
-		"_id":      objectId,
+		"userId":   userId,
 		"clinicId": clinicObjId,
 	}
 }

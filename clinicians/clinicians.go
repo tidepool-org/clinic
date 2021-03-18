@@ -14,11 +14,11 @@ var (
 )
 
 type Service interface {
-	Get(ctx context.Context, clinicId string, id string) (*Clinician, error)
+	Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error)
 	Create(ctx context.Context, clinician *Clinician) (*Clinician, error)
-	Update(ctx context.Context, clinicId string, id string, clinician *Clinician) (*Clinician, error)
-	Delete(ctx context.Context, clinicId string, id string) error
+	Update(ctx context.Context, clinicId string, clinicianId string, clinician *Clinician) (*Clinician, error)
+	Delete(ctx context.Context, clinicId string, clinicianId string) error
 }
 
 type Clinician struct {
