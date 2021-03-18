@@ -83,8 +83,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (r *repository) Get(ctx context.Context, clinicId string, id string) (*Clinician, error) {
-	selector := clinicianSelector(clinicId, id)
+func (r *repository) Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error) {
+	selector := clinicianSelector(clinicId, clinicianId)
 	return r.getOne(ctx, selector)
 }
 
@@ -213,11 +213,10 @@ func (r *repository) getOne(ctx context.Context, selector bson.M) (*Clinician, e
 	return clinician, nil
 }
 
-func clinicianSelector(clinicId string, clinicianId string) bson.M {
-	userId, _ := primitive.ObjectIDFromHex(clinicianId)
+func clinicianSelector(clinicId, clinicianId string) bson.M {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	return bson.M{
-		"userId":   userId,
+		"userId":   clinicianId,
 		"clinicId": clinicObjId,
 	}
 }
