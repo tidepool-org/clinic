@@ -66,11 +66,25 @@ func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
 	return dtos
 }
 
+func strpuseridp(s *string) *UserId {
+	if s == nil {
+		return nil
+	}
+	id := UserId(*s)
+	return &id
+}
+
+func useridpstrp(u *UserId) *string {
+	if u == nil {
+		return nil
+	}
+	id := string(*u)
+	return &id
+}
+
 func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
-	id := Id(clinician.Id.Hex())
 	dto := Clinician{
-		Id:       &id,
-		UserId:   clinician.UserId,
+		Id:       strpuseridp(clinician.UserId),
 		Name:     clinician.Name,
 		InviteId: clinician.InviteId,
 		Roles:    ClinicianRoles(clinician.Roles),
@@ -94,7 +108,7 @@ func NewCliniciansDto(clinicians []*clinicians.Clinician) []Clinician {
 func NewClinician(clinician Clinician) *clinicians.Clinician {
 	return &clinicians.Clinician{
 		Name:     clinician.Name,
-		UserId:   clinician.UserId,
+		UserId:   useridpstrp(clinician.Id),
 		InviteId: clinician.InviteId,
 		Roles:    clinician.Roles,
 		Email:    strp(string(clinician.Email)),

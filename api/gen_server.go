@@ -40,6 +40,12 @@ type ServerInterface interface {
 	// Update Clinician
 	// (PUT /v1/clinics/{clinicId}/clinicians/{clinicianId})
 	UpdateClinician(ctx echo.Context, clinicId string, clinicianId string) error
+	// Delete Invited Clinician
+	// (DELETE /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
+	DeleteInvitedClinician(ctx echo.Context, clinicId string, inviteId string) error
+	// Associate Clinician to User
+	// (PATCH /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
+	AssociateClinicianToUser(ctx echo.Context, clinicId string, inviteId string) error
 	// List Patients
 	// (GET /v1/clinics/{clinicId}/patients)
 	ListPatients(ctx echo.Context, clinicId string, params ListPatientsParams) error
@@ -307,6 +313,58 @@ func (w *ServerInterfaceWrapper) UpdateClinician(ctx echo.Context) error {
 	return err
 }
 
+// DeleteInvitedClinician converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteInvitedClinician(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId string
+
+	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "inviteId" -------------
+	var inviteId string
+
+	err = runtime.BindStyledParameter("simple", false, "inviteId", ctx.Param("inviteId"), &inviteId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter inviteId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteInvitedClinician(ctx, clinicId, inviteId)
+	return err
+}
+
+// AssociateClinicianToUser converts echo context to params.
+func (w *ServerInterfaceWrapper) AssociateClinicianToUser(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId string
+
+	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "inviteId" -------------
+	var inviteId string
+
+	err = runtime.BindStyledParameter("simple", false, "inviteId", ctx.Param("inviteId"), &inviteId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter inviteId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.AssociateClinicianToUser(ctx, clinicId, inviteId)
+	return err
+}
+
 // ListPatients converts echo context to params.
 func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	var err error
@@ -541,6 +599,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.DeleteClinician)
 	router.GET(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.GetClinician)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.UpdateClinician)
+	router.DELETE(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.DeleteInvitedClinician)
+	router.PATCH(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.AssociateClinicianToUser)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients", wrapper.ListPatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients", wrapper.CreatePatientAccount)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.GetPatient)

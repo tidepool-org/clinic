@@ -273,6 +273,30 @@ func (h *Handler) GetPatientClinicRelationships(ec echo.Context, patientId strin
 	return ec.JSON(http.StatusOK, dtos)
 }
 
+func (h *Handler) DeleteInvitedClinician(ec echo.Context, clinicId string, inviteId string) error {
+	ctx := ec.Request().Context()
+	if err := h.clinicians.DeleteInvite(ctx, clinicId, inviteId); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId string, inviteId string) error {
+	ctx := ec.Request().Context()
+	dto := AssociateClinicianToUser{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	clinician, err := h.clinicians.AssociateInvite(ctx, clinicId, inviteId, dto.UserId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, clinician)
+}
+
 func pagination(offset, limit *int) store.Pagination {
 	page := store.DefaultPagination()
 	if offset != nil {

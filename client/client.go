@@ -126,6 +126,14 @@ type ClientInterface interface {
 
 	UpdateClinician(ctx context.Context, clinicId string, clinicianId string, body UpdateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteInvitedClinician request
+	DeleteInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AssociateClinicianToUser request  with any body
+	AssociateClinicianToUserWithBody(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AssociateClinicianToUser(ctx context.Context, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPatients request
 	ListPatients(ctx context.Context, clinicId string, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -290,6 +298,39 @@ func (c *Client) UpdateClinicianWithBody(ctx context.Context, clinicId string, c
 
 func (c *Client) UpdateClinician(ctx context.Context, clinicId string, clinicianId string, body UpdateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateClinicianRequest(c.Server, clinicId, clinicianId, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteInvitedClinicianRequest(c.Server, clinicId, inviteId)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AssociateClinicianToUserWithBody(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssociateClinicianToUserRequestWithBody(c.Server, clinicId, inviteId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AssociateClinicianToUser(ctx context.Context, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssociateClinicianToUserRequest(c.Server, clinicId, inviteId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -937,6 +978,101 @@ func NewUpdateClinicianRequestWithBody(server string, clinicId string, clinician
 	return req, nil
 }
 
+// NewDeleteInvitedClinicianRequest generates requests for DeleteInvitedClinician
+func NewDeleteInvitedClinicianRequest(server string, clinicId string, inviteId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "clinicId", clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParam("simple", false, "inviteId", inviteId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/%s/invites/clinicians/%s/clinician", pathParam0, pathParam1)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAssociateClinicianToUserRequest calls the generic AssociateClinicianToUser builder with application/json body
+func NewAssociateClinicianToUserRequest(server string, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAssociateClinicianToUserRequestWithBody(server, clinicId, inviteId, "application/json", bodyReader)
+}
+
+// NewAssociateClinicianToUserRequestWithBody generates requests for AssociateClinicianToUser with any type of body
+func NewAssociateClinicianToUserRequestWithBody(server string, clinicId string, inviteId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "clinicId", clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParam("simple", false, "inviteId", inviteId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/%s/invites/clinicians/%s/clinician", pathParam0, pathParam1)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryUrl.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListPatientsRequest generates requests for ListPatients
 func NewListPatientsRequest(server string, clinicId string, params *ListPatientsParams) (*http.Request, error) {
 	var err error
@@ -1422,6 +1558,14 @@ type ClientWithResponsesInterface interface {
 
 	UpdateClinicianWithResponse(ctx context.Context, clinicId string, clinicianId string, body UpdateClinicianJSONRequestBody) (*UpdateClinicianResponse, error)
 
+	// DeleteInvitedClinician request
+	DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*DeleteInvitedClinicianResponse, error)
+
+	// AssociateClinicianToUser request  with any body
+	AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error)
+
+	AssociateClinicianToUserWithResponse(ctx context.Context, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody) (*AssociateClinicianToUserResponse, error)
+
 	// ListPatients request
 	ListPatientsWithResponse(ctx context.Context, clinicId string, params *ListPatientsParams) (*ListPatientsResponse, error)
 
@@ -1645,6 +1789,49 @@ func (r UpdateClinicianResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateClinicianResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteInvitedClinicianResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteInvitedClinicianResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteInvitedClinicianResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AssociateClinicianToUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Clinician
+}
+
+// Status returns HTTPResponse.Status
+func (r AssociateClinicianToUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AssociateClinicianToUserResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1916,6 +2103,32 @@ func (c *ClientWithResponses) UpdateClinicianWithResponse(ctx context.Context, c
 		return nil, err
 	}
 	return ParseUpdateClinicianResponse(rsp)
+}
+
+// DeleteInvitedClinicianWithResponse request returning *DeleteInvitedClinicianResponse
+func (c *ClientWithResponses) DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*DeleteInvitedClinicianResponse, error) {
+	rsp, err := c.DeleteInvitedClinician(ctx, clinicId, inviteId)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteInvitedClinicianResponse(rsp)
+}
+
+// AssociateClinicianToUserWithBodyWithResponse request with arbitrary body returning *AssociateClinicianToUserResponse
+func (c *ClientWithResponses) AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error) {
+	rsp, err := c.AssociateClinicianToUserWithBody(ctx, clinicId, inviteId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAssociateClinicianToUserResponse(rsp)
+}
+
+func (c *ClientWithResponses) AssociateClinicianToUserWithResponse(ctx context.Context, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody) (*AssociateClinicianToUserResponse, error) {
+	rsp, err := c.AssociateClinicianToUser(ctx, clinicId, inviteId, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAssociateClinicianToUserResponse(rsp)
 }
 
 // ListPatientsWithResponse request returning *ListPatientsResponse
@@ -2249,6 +2462,51 @@ func ParseUpdateClinicianResponse(rsp *http.Response) (*UpdateClinicianResponse,
 	}
 
 	switch {
+	}
+
+	return response, nil
+}
+
+// ParseDeleteInvitedClinicianResponse parses an HTTP response from a DeleteInvitedClinicianWithResponse call
+func ParseDeleteInvitedClinicianResponse(rsp *http.Response) (*DeleteInvitedClinicianResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteInvitedClinicianResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	}
+
+	return response, nil
+}
+
+// ParseAssociateClinicianToUserResponse parses an HTTP response from a AssociateClinicianToUserWithResponse call
+func ParseAssociateClinicianToUserResponse(rsp *http.Response) (*AssociateClinicianToUserResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AssociateClinicianToUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Clinician
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

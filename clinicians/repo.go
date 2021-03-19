@@ -147,6 +147,49 @@ func (r *repository) Update(ctx context.Context, clinicId string, id string, cli
 		"$set": clinician,
 	}
 
+	return r.updateOne(ctx, selector, update)
+}
+
+func (r *repository) Delete(ctx context.Context, clinicId string, userId string) error {
+	return r.deleteOne(ctx, clinicianSelector(clinicId, userId))
+}
+
+func (r *repository) DeleteInvite(ctx context.Context, clinicId, inviteId string) error {
+	return r.deleteOne(ctx, inviteSelector(clinicId, inviteId))
+}
+
+func (r *repository) AssociateInvite(ctx context.Context, clinicId, inviteId, userId string) (*Clinician, error) {
+	if inviteId == "" {
+		return nil, fmt.Errorf("inviteId cannot be empty")
+	}
+	if userId == "" {
+		return nil, fmt.Errorf("userId cannot be empty")
+	}
+	selector := inviteSelector(clinicId, inviteId)
+	update := bson.M{
+		"$set": bson.M{
+			"userId": userId,
+		},
+		"$unset": bson.M{
+			"inviteId": inviteId,
+		},
+	}
+	return r.updateOne(ctx, selector, update)
+}
+
+func (r *repository) getOne(ctx context.Context, selector bson.M) (*Clinician, error) {
+	clinician := &Clinician{}
+	err := r.collection.FindOne(ctx, selector).Decode(&clinician)
+	if err == mongo.ErrNoDocuments {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return clinician, nil
+}
+
+func (r *repository) updateOne(ctx context.Context, selector, update bson.M) (*Clinician, error) {
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		return nil, fmt.Errorf("unable to update clinician: %w", err)
@@ -155,8 +198,7 @@ func (r *repository) Update(ctx context.Context, clinicId string, id string, cli
 	return r.getOne(ctx, selector)
 }
 
-func (r *repository) Delete(ctx context.Context, clinicId string, id string) error {
-	selector := clinicianSelector(clinicId, id)
+func (r *repository) deleteOne(ctx context.Context, selector bson.M) error {
 	res, err := r.collection.DeleteOne(ctx, selector)
 	if err != nil {
 		return fmt.Errorf("unable to delete clincian: %w", err)
@@ -201,22 +243,18 @@ func (r *repository) clinicianExists(ctx context.Context, clinician *Clinician) 
 	return count > int64(0), err
 }
 
-func (r *repository) getOne(ctx context.Context, selector bson.M) (*Clinician, error) {
-	clinician := &Clinician{}
-	err := r.collection.FindOne(ctx, selector).Decode(&clinician)
-	if err == mongo.ErrNoDocuments {
-		return nil, ErrNotFound
-	} else if err != nil {
-		return nil, err
-	}
-
-	return clinician, nil
-}
-
 func clinicianSelector(clinicId, clinicianId string) bson.M {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	return bson.M{
 		"userId":   clinicianId,
+		"clinicId": clinicObjId,
+	}
+}
+
+func inviteSelector(clinicId, inviteId string) bson.M {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	return bson.M{
+		"inviteId": inviteId,
 		"clinicId": clinicObjId,
 	}
 }
