@@ -19,6 +19,7 @@ type Service interface {
 	Create(ctx context.Context, clinician *Clinician) (*Clinician, error)
 	Update(ctx context.Context, clinicId string, clinicianId string, clinician *Clinician) (*Clinician, error)
 	Delete(ctx context.Context, clinicId string, clinicianId string) error
+	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
 	DeleteInvite(ctx context.Context, clinicId, inviteId string) error
 	AssociateInvite(ctx context.Context, clinicId, inviteId, userId string) (*Clinician, error)
 }

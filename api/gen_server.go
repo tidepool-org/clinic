@@ -43,6 +43,9 @@ type ServerInterface interface {
 	// Delete Invited Clinician
 	// (DELETE /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
 	DeleteInvitedClinician(ctx echo.Context, clinicId string, inviteId string) error
+	// Get Invited Clinician
+	// (GET /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
+	GetInvitedClinician(ctx echo.Context, clinicId string, inviteId string) error
 	// Associate Clinician to User
 	// (PATCH /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
 	AssociateClinicianToUser(ctx echo.Context, clinicId string, inviteId string) error
@@ -339,6 +342,32 @@ func (w *ServerInterfaceWrapper) DeleteInvitedClinician(ctx echo.Context) error 
 	return err
 }
 
+// GetInvitedClinician converts echo context to params.
+func (w *ServerInterfaceWrapper) GetInvitedClinician(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId string
+
+	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "inviteId" -------------
+	var inviteId string
+
+	err = runtime.BindStyledParameter("simple", false, "inviteId", ctx.Param("inviteId"), &inviteId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter inviteId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetInvitedClinician(ctx, clinicId, inviteId)
+	return err
+}
+
 // AssociateClinicianToUser converts echo context to params.
 func (w *ServerInterfaceWrapper) AssociateClinicianToUser(ctx echo.Context) error {
 	var err error
@@ -600,6 +629,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.GetClinician)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.UpdateClinician)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.DeleteInvitedClinician)
+	router.GET(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.GetInvitedClinician)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.AssociateClinicianToUser)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients", wrapper.ListPatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients", wrapper.CreatePatientAccount)

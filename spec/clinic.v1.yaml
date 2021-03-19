@@ -501,6 +501,19 @@ paths:
       description: Internal endpoint to delete an invited clinician object
       tags:
         - clinic
+    get:
+      summary: Get Invited Clinician
+      operationId: GetInvitedClinician
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Clinician'
+      description: Internal endpoint to retrieve invited clinician.
+      tags:
+        - clinic
   '/v1/clinics/{clinicId}/invites/patients':
     parameters:
       - schema:
@@ -741,6 +754,7 @@ components:
       required:
         - email
         - roles
+      description: ''
     UserId:
       type: string
       title: Tidepool User ID

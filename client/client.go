@@ -129,6 +129,9 @@ type ClientInterface interface {
 	// DeleteInvitedClinician request
 	DeleteInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetInvitedClinician request
+	GetInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AssociateClinicianToUser request  with any body
 	AssociateClinicianToUserWithBody(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -309,6 +312,17 @@ func (c *Client) UpdateClinician(ctx context.Context, clinicId string, clinician
 
 func (c *Client) DeleteInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteInvitedClinicianRequest(c.Server, clinicId, inviteId)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetInvitedClinicianRequest(c.Server, clinicId, inviteId)
 	if err != nil {
 		return nil, err
 	}
@@ -1019,6 +1033,47 @@ func NewDeleteInvitedClinicianRequest(server string, clinicId string, inviteId s
 	return req, nil
 }
 
+// NewGetInvitedClinicianRequest generates requests for GetInvitedClinician
+func NewGetInvitedClinicianRequest(server string, clinicId string, inviteId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "clinicId", clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParam("simple", false, "inviteId", inviteId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/%s/invites/clinicians/%s/clinician", pathParam0, pathParam1)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAssociateClinicianToUserRequest calls the generic AssociateClinicianToUser builder with application/json body
 func NewAssociateClinicianToUserRequest(server string, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -1561,6 +1616,9 @@ type ClientWithResponsesInterface interface {
 	// DeleteInvitedClinician request
 	DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*DeleteInvitedClinicianResponse, error)
 
+	// GetInvitedClinician request
+	GetInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*GetInvitedClinicianResponse, error)
+
 	// AssociateClinicianToUser request  with any body
 	AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error)
 
@@ -1810,6 +1868,28 @@ func (r DeleteInvitedClinicianResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteInvitedClinicianResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetInvitedClinicianResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Clinician
+}
+
+// Status returns HTTPResponse.Status
+func (r GetInvitedClinicianResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetInvitedClinicianResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2112,6 +2192,15 @@ func (c *ClientWithResponses) DeleteInvitedClinicianWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseDeleteInvitedClinicianResponse(rsp)
+}
+
+// GetInvitedClinicianWithResponse request returning *GetInvitedClinicianResponse
+func (c *ClientWithResponses) GetInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*GetInvitedClinicianResponse, error) {
+	rsp, err := c.GetInvitedClinician(ctx, clinicId, inviteId)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetInvitedClinicianResponse(rsp)
 }
 
 // AssociateClinicianToUserWithBodyWithResponse request with arbitrary body returning *AssociateClinicianToUserResponse
@@ -2481,6 +2570,32 @@ func ParseDeleteInvitedClinicianResponse(rsp *http.Response) (*DeleteInvitedClin
 	}
 
 	switch {
+	}
+
+	return response, nil
+}
+
+// ParseGetInvitedClinicianResponse parses an HTTP response from a GetInvitedClinicianWithResponse call
+func ParseGetInvitedClinicianResponse(rsp *http.Response) (*GetInvitedClinicianResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetInvitedClinicianResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Clinician
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

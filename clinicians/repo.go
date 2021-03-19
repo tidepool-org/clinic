@@ -154,6 +154,10 @@ func (r *repository) Delete(ctx context.Context, clinicId string, userId string)
 	return r.deleteOne(ctx, clinicianSelector(clinicId, userId))
 }
 
+func (r *repository) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {
+	return r.getOne(ctx, inviteSelector(clinicId, inviteId))
+}
+
 func (r *repository) DeleteInvite(ctx context.Context, clinicId, inviteId string) error {
 	return r.deleteOne(ctx, inviteSelector(clinicId, inviteId))
 }
