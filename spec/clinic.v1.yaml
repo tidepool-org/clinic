@@ -216,6 +216,10 @@ paths:
             type: integer
           in: query
           name: limit
+        - schema:
+            type: string
+          in: query
+          name: email
     post:
       summary: Create Clinician
       operationId: CreateClinician

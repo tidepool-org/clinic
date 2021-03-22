@@ -97,6 +97,12 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	selector := bson.M{
 		"clinicId": clinicObjId,
 	}
+	if filter.Email != nil {
+		selector["email"] = filter.Email
+	}
+	if filter.UserId != nil {
+		selector["userId"] = filter.UserId
+	}
 	if filter.Search != nil {
 		selector["$text"] = bson.M{
 			"$search": filter.Search,

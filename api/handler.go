@@ -98,6 +98,7 @@ func (h *Handler) ListClinicians(ec echo.Context, clinicId string, params ListCl
 	filter := clinicians.Filter{
 		ClinicId: clinicId,
 		Search:   params.Search,
+		Email:    params.Email,
 	}
 
 	list, err := h.clinicians.List(ctx, &filter, page)

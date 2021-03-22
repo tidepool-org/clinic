@@ -215,6 +215,13 @@ func (w *ServerInterfaceWrapper) ListClinicians(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
 	}
 
+	// ------------- Optional query parameter "email" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "email", ctx.QueryParams(), &params.Email)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter email: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListClinicians(ctx, clinicId, params)
 	return err

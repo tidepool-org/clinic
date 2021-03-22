@@ -38,4 +38,5 @@ type Filter struct {
 	ClinicId string
 	UserId   *string
 	Search   *string
+	Email    *string
 }

@@ -146,6 +146,7 @@ type ListCliniciansParams struct {
 	Search *string `json:"search,omitempty"`
 	Offset *int    `json:"offset,omitempty"`
 	Limit  *int    `json:"limit,omitempty"`
+	Email  *string `json:"email,omitempty"`
 }
 
 // CreateClinicianJSONBody defines parameters for CreateClinician.
