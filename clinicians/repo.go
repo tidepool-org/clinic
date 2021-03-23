@@ -141,7 +141,7 @@ func (r *repository) Create(ctx context.Context, clinician *Clinician) (*Clinici
 	}
 
 	selector := bson.M{
-		"_id": res.InsertedID.(primitive.ObjectID).Hex(),
+		"_id": res.InsertedID.(primitive.ObjectID),
 	}
 	return r.getOne(ctx, selector)
 }
