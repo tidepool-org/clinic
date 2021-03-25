@@ -201,7 +201,9 @@ func (r *repository) getOne(ctx context.Context, selector bson.M) (*Clinician, e
 
 func (r *repository) updateOne(ctx context.Context, selector, update bson.M) (*Clinician, error) {
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err != nil {
+	if err == mongo.ErrNoDocuments {
+		return nil, ErrNotFound
+	} else if err != nil {
 		return nil, fmt.Errorf("unable to update clinician: %w", err)
 	}
 
