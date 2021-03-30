@@ -10,7 +10,7 @@ require (
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
-	github.com/tidepool-org/clinic/client v0.0.0-00010101000000-000000000000
+	github.com/tidepool-org/clinic/client v0.0.0-00010101000000-000000000000 // indirect
 	github.com/tidepool-org/go-common v0.7.1
 	github.com/tidepool-org/oapi-codegen v1.3.9-0.20200610000610-300bfbd05ff1
 	go.mongodb.org/mongo-driver v1.3.2

@@ -8,6 +8,7 @@ generate:
 	oapi-codegen -exclude-tags=confirmation -package=api -generate=types spec/clinic.v1.yaml > api/gen_types.go
 	oapi-codegen -exclude-tags=confirmation -package=api -generate=types spec/clinic.v1.yaml > client/types.go
 	oapi-codegen -exclude-tags=confirmation -package=api -generate=client spec/clinic.v1.yaml > client/client.go
+	go generate ./client/mocks.go
 
 # Runs tests
 test:
