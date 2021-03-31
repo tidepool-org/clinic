@@ -176,6 +176,14 @@ func (r *repository) AssociateInvite(ctx context.Context, clinicId, inviteId, us
 		return nil, fmt.Errorf("userId cannot be empty")
 	}
 	selector := inviteSelector(clinicId, inviteId)
+	invite, err := r.getOne(ctx, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	idSelector := bson.M{
+		"_id": invite.Id,
+	}
 	update := bson.M{
 		"$set": bson.M{
 			"userId": userId,
@@ -184,7 +192,8 @@ func (r *repository) AssociateInvite(ctx context.Context, clinicId, inviteId, us
 			"inviteId": inviteId,
 		},
 	}
-	return r.updateOne(ctx, selector, update)
+
+	return r.updateOne(ctx, idSelector, update)
 }
 
 func (r *repository) getOne(ctx context.Context, selector bson.M) (*Clinician, error) {
