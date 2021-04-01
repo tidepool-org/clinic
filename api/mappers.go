@@ -34,15 +34,16 @@ func NewClinic(c Clinic) *clinics.Clinic {
 }
 
 func NewClinicDto(c *clinics.Clinic) Clinic {
-	dto := Clinic{}
-	dto.Id = Id(c.Id.Hex())
-	dto.Address = c.Address
-	dto.City = c.City
-	dto.ClinicType = c.ClinicType
-	dto.Email = openapi_types.Email(*c.Email)
-	dto.Name = *c.Name
-	dto.PostalCode = c.PostalCode
-	dto.State = c.State
+	dto := Clinic{
+		Id: Id(c.Id.Hex()),
+		Address: c.Address,
+		City: c.City,
+		ClinicType: c.ClinicType,
+		Email: openapi_types.Email(*c.Email),
+		Name: *c.Name,
+		PostalCode: c.PostalCode,
+		State: c.State,
+	}
 
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber
@@ -64,22 +65,6 @@ func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
 		dtos = append(dtos, NewClinicDto(clinic))
 	}
 	return dtos
-}
-
-func strpuseridp(s *string) *UserId {
-	if s == nil {
-		return nil
-	}
-	id := UserId(*s)
-	return &id
-}
-
-func useridpstrp(u *UserId) *string {
-	if u == nil {
-		return nil
-	}
-	id := string(*u)
-	return &id
 }
 
 func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
@@ -251,4 +236,20 @@ func strtouserid(s *string) *UserId {
 
 func strp(s string) *string {
 	return &s
+}
+
+func strpuseridp(s *string) *UserId {
+	if s == nil {
+		return nil
+	}
+	id := UserId(*s)
+	return &id
+}
+
+func useridpstrp(u *UserId) *string {
+	if u == nil {
+		return nil
+	}
+	id := string(*u)
+	return &id
 }
