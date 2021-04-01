@@ -69,10 +69,12 @@ func MainLoop() {
 	fx.New(
 		fx.Provide(
 			store.GetConnectionString,
+			store.NewClient,
 			store.NewDatabase,
 			patients.NewRepository,
-			clinics.NewRepository,
 			clinicians.NewRepository,
+			clinics.NewRepository,
+			clinics.NewCreator,
 			NewHandler,
 			NewServer,
 		),

@@ -37,17 +37,6 @@ func init() {
 	}
 }
 
-// Overall storage interface
-type StorageInterface interface {
-	InsertOne(collection string, document interface{}) (*string, error)
-	FindOne(collection string, filter interface{}, data interface{}) error
-	Find(collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{}) error
-	FindWithDatabase(database string, collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{}) error
-	UpdateOne(collection string, filter interface{}, update interface {}) error
-	Update(collection string, filter interface{}, update interface {}) error
-	Aggregate(collection string, pipeline []bson.D, data interface {}) error
-}
-
 //Mongo Storage Client
 type MongoStoreClient struct {
 	Client *mongo.Client

@@ -1,21 +1,20 @@
 package api
 
 import (
-	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/users"
 	"go.uber.org/fx"
-	"net/http"
 )
 
 type Handler struct {
-	clinics    clinics.Service
-	clinicians clinicians.Service
-	patients   patients.Service
-	users      users.Service
+	clinics        clinics.Service
+	clinicsCreator clinics.Creator
+	clinicians     clinicians.Service
+	patients       patients.Service
+	users          users.Service
 }
 
 var _ ServerInterface = &Handler{}
@@ -23,18 +22,20 @@ var _ ServerInterface = &Handler{}
 type Params struct {
 	fx.In
 
-	Clinics    clinics.Service
-	Clinicians clinicians.Service
-	Patients   patients.Service
-	Users      users.Service
+	Clinics        clinics.Service
+	ClinicsCreator clinics.Creator
+	Clinicians     clinicians.Service
+	Patients       patients.Service
+	Users          users.Service
 }
 
 func NewHandler(p Params) *Handler {
 	return &Handler{
-		clinics:    p.Clinics,
-		clinicians: p.Clinicians,
-		patients:   p.Patients,
-		users:      p.Users,
+		clinics:        p.Clinics,
+		clinicsCreator: p.ClinicsCreator,
+		clinicians:     p.Clinicians,
+		patients:       p.Patients,
+		users:          p.Users,
 	}
 }
 

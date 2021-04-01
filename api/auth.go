@@ -1,4 +1,23 @@
 package api
+
+import "github.com/labstack/echo/v4"
+
+const subjectIdHeaderName = "x-auth-subject-id"
+const serverAccessHeaderKey = "x-auth-server-access"
+
+func getAuthUserId(ec echo.Context) *string {
+	headers := ec.Request().Header
+	if headers.Get(serverAccessHeaderKey) == "true" {
+		return nil
+	}
+	subjectId := headers.Get(subjectIdHeaderName)
+	if subjectId == "" {
+		return nil
+	}
+
+	return &subjectId
+}
+
 //
 //import (
 //	"bytes"

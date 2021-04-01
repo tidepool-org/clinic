@@ -27,7 +27,21 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
-	result, err := h.clinics.Create(ctx, NewClinic(dto))
+
+	userId := getAuthUserId(ec)
+	if userId == nil {
+		return &echo.HTTPError{
+			Code:     http.StatusBadRequest,
+			Message:  "expected authenticated user id",
+		}
+	}
+
+	create := clinics.CreateClinic{
+		Clinic:        *NewClinic(dto),
+		CreatorUserId: *userId,
+	}
+
+	result, err := h.clinicsCreator.CreateClinic(ctx, &create)
 	if err != nil {
 		return err
 	}

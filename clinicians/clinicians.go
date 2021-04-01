@@ -11,6 +11,8 @@ import (
 var (
 	ErrNotFound  = fmt.Errorf("clinician %w", errors.NotFound)
 	ErrDuplicate = fmt.Errorf("%w: clinician is already a member of the clinic", errors.Duplicate)
+
+	ClinicAdmin = "CLINIC_ADMIN"
 )
 
 type Service interface {
