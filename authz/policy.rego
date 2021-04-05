@@ -4,12 +4,12 @@ subject_id := input.headers["x-auth-subject-id"]
 is_backend_service := input.headers["x-auth-server-access"] == "true"
 
 is_authenticated_user {
-  not backend_service
+  not is_backend_service
   subject_id
 }
 
 is_backend_service_any_of(services) {
-  backend_service
+  is_backend_service
   services[subject_id]
 }
 
