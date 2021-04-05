@@ -58,11 +58,14 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 		return err
 	}
 
+	clinicianStruct := structs.New(clinician)
+	clinicianStruct.TagName = "bson"
+	
 	in := map[string]interface{}{
-		"headers": e.getHeaders(input),
-		"path": strings.Split(input.RequestValidationInput.Route.Path, "/"),
-		"method": strings.ToUpper(input.RequestValidationInput.Request.Method),
-		"clinician": structs.Map(clinician),
+		"headers":   e.getHeaders(input),
+		"path":      strings.Split(input.RequestValidationInput.Route.Path, "/"),
+		"method":    strings.ToUpper(input.RequestValidationInput.Request.Method),
+		"clinician": clinicianStruct.Map(),
 	}
 
 	r := rego.New(
