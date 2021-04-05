@@ -49,6 +49,7 @@ type Options struct {
 
 // Create a validator from a swagger object, with validation options
 func OapiRequestValidatorWithOptions(swagger *openapi3.Swagger, options *Options) echo.MiddlewareFunc {
+	swagger.Security = nil
 	router := openapi3filter.NewRouter().WithSwagger(swagger)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -93,6 +94,11 @@ func ValidateRequestFromContext(ctx echo.Context, router *openapi3filter.Router,
 			return echo.NewHTTPError(http.StatusInternalServerError,
 				fmt.Sprintf("error validating route: %s", err.Error()))
 		}
+	}
+
+	// Remove security validation, because this is handled by the reverse proxy
+	if route.Operation != nil {
+		route.Operation.Security = nil
 	}
 
 	validationInput := &openapi3filter.RequestValidationInput{
