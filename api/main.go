@@ -14,6 +14,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/users"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -70,6 +71,8 @@ func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo
 func MainLoop() {
 	fx.New(
 		fx.Provide(
+			func() (*zap.Logger, error) { return zap.NewProduction() },
+			func(logger *zap.Logger) *zap.SugaredLogger { return logger.Sugar() },
 			store.GetConnectionString,
 			store.NewClient,
 			store.NewDatabase,

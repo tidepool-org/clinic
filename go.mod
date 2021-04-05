@@ -15,6 +15,7 @@ require (
 	github.com/tidepool-org/go-common v0.7.1
 	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/fx v1.13.1
+	go.uber.org/zap v1.13.0
 )
 
 replace github.com/tidepool-org/clinic/client => ./client

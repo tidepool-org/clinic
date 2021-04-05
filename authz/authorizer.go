@@ -11,6 +11,7 @@ import (
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/tidepool-org/clinic/clinicians"
 	internalErrs "github.com/tidepool-org/clinic/errors"
+	"go.uber.org/zap"
 
 	"net/http"
 	"strings"
@@ -31,9 +32,10 @@ var (
 
 type RequestAuthorizer interface {
 	Authorize(context.Context, *openapi3filter.AuthenticationInput) error
+	EvaluatePolicy(context.Context, map[string]interface{}) error
 }
 
-func NewRequestAuthorizer(clinicians clinicians.Service) (RequestAuthorizer, error) {
+func NewRequestAuthorizer(clinicians clinicians.Service, logger *zap.SugaredLogger) (RequestAuthorizer, error) {
 	compiler, err := ast.CompileModules(map[string]string{
 		"policy.rego": authzPolicy,
 	})
@@ -43,12 +45,14 @@ func NewRequestAuthorizer(clinicians clinicians.Service) (RequestAuthorizer, err
 
 	return &embeddedOpaAuthorizer{
 		clinicians: clinicians,
+		logger:     logger,
 		policy:     compiler,
 	}, nil
 }
 
 type embeddedOpaAuthorizer struct {
 	clinicians clinicians.Service
+	logger     *zap.SugaredLogger
 	policy     *ast.Compiler
 }
 
@@ -59,9 +63,9 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 	}
 
 	in := map[string]interface{}{
-		"headers":   e.getHeaders(input),
-		"path":      strings.Split(input.RequestValidationInput.Route.Path, "/"),
-		"method":    strings.ToUpper(input.RequestValidationInput.Request.Method),
+		"headers": e.getHeaders(input),
+		"path":    strings.Split(input.RequestValidationInput.Route.Path, "/"),
+		"method":  strings.ToUpper(input.RequestValidationInput.Request.Method),
 	}
 
 	if clinician != nil {
@@ -70,11 +74,15 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 		in["clinician"] = clinicianStruct.Map()
 	}
 
+	return e.EvaluatePolicy(ctx, in)
+}
+
+func (e *embeddedOpaAuthorizer) EvaluatePolicy(ctx context.Context, input map[string]interface{}) error {
 	r := rego.New(
 		rego.Package("http.authz.clinic"),
 		rego.Query("allow"),
 		rego.Compiler(e.policy),
-		rego.Input(in),
+		rego.Input(input),
 	)
 
 	results, err := r.Eval(ctx)
@@ -90,6 +98,8 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 	if !ok {
 		return fmt.Errorf("unexpected authorization result: %v", results[0].Expressions[0].Value)
 	}
+
+	e.logger.Infow("authorization policy eval", zap.Any("input", input), zap.Bool("allow", val))
 
 	if !val {
 		return ErrUnauthorized
