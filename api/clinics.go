@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/tidepool-org/clinic/authz"
 	"github.com/tidepool-org/clinic/clinics"
 	"net/http"
 )
@@ -28,7 +29,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		return err
 	}
 
-	userId := getAuthUserId(ec)
+	userId := authz.GetAuthUserId(ec.Request())
 	if userId == nil {
 		return &echo.HTTPError{
 			Code:     http.StatusBadRequest,

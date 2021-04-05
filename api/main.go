@@ -3,8 +3,10 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/tidepool-org/clinic/authz"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
@@ -39,21 +41,21 @@ func Start(e *echo.Echo, lifecycle fx.Lifecycle) {
 	})
 }
 
-func NewServer(handler *Handler) (*echo.Echo, error){
+func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo, error){
 	e := echo.New()
 	e.Logger.Print("Starting Main Loop")
-	_, err := GetSwagger()
+	swagger, err := GetSwagger()
 	if err != nil {
 		return nil, err
 	}
 
-	// Middleware
-	//authClient := AuthClient{Store: dbstore}
-	//filterOptions := openapi3filter.Options{AuthenticationFunc: authClient.AuthenticationFunc}
-	//options := Options{Options: filterOptions}
+	requestValidator := OapiRequestValidator(swagger, &Options{
+		Options: openapi3filter.Options{AuthenticationFunc: authorizer.Authorize},
+	})
+
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	//e.Use(OapiRequestValidator(swagger, &Options{}))
+	e.Use(requestValidator)
 
 	// Routes
 	e.GET("/", hello)
@@ -75,6 +77,7 @@ func MainLoop() {
 			clinicians.NewRepository,
 			clinics.NewRepository,
 			clinics.NewCreator,
+			authz.NewRequestAuthorizer,
 			NewHandler,
 			NewServer,
 		),
