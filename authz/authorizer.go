@@ -91,7 +91,7 @@ func (e *embeddedOpaAuthorizer) EvaluatePolicy(ctx context.Context, input map[st
 	}
 
 	if len(results) == 0 || len(results[0].Expressions) == 0 {
-		return fmt.Errorf("evaluating authorization policy return no results")
+		return fmt.Errorf("evaluating authorization policy returned no results")
 	}
 
 	val, ok := results[0].Expressions[0].Value.(bool)
