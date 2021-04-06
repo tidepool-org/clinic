@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	authHeaderPrefix = "x-auth-"
 	subjectIdHeaderName   = "x-auth-subject-id"
 	serverAccessHeaderKey = "x-auth-server-access"
 	clinicIdPathParameter = "clinicId"
@@ -63,8 +64,8 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 	}
 
 	in := map[string]interface{}{
-		"headers": e.getHeaders(input),
-		"path":    strings.Split(input.RequestValidationInput.Route.Path, "/"),
+		"headers": e.getAuthHeaders(input),
+		"path":    e.getSplitPath(input),
 		"method":  strings.ToUpper(input.RequestValidationInput.Request.Method),
 	}
 
@@ -99,7 +100,7 @@ func (e *embeddedOpaAuthorizer) EvaluatePolicy(ctx context.Context, input map[st
 		return fmt.Errorf("unexpected authorization result: %v", results[0].Expressions[0].Value)
 	}
 
-	e.logger.Infow("authorization policy eval", zap.Any("input", input), zap.Bool("allow", val))
+	e.logger.Debugw("authorization policy eval", zap.Any("input", input), zap.Bool("allow", val))
 
 	if !val {
 		return ErrUnauthorized
@@ -108,11 +109,22 @@ func (e *embeddedOpaAuthorizer) EvaluatePolicy(ctx context.Context, input map[st
 	return nil
 }
 
-func (e *embeddedOpaAuthorizer) getHeaders(input *openapi3filter.AuthenticationInput) map[string]string {
-	return map[string]string{
-		subjectIdHeaderName:   input.RequestValidationInput.Request.Header.Get(subjectIdHeaderName),
-		serverAccessHeaderKey: input.RequestValidationInput.Request.Header.Get(serverAccessHeaderKey),
+func (e *embeddedOpaAuthorizer) getAuthHeaders(input *openapi3filter.AuthenticationInput) map[string]string {
+	headers := make(map[string]string, 0)
+	for k, v := range input.RequestValidationInput.Request.Header {
+		if key := strings.ToLower(k); strings.HasPrefix(key, authHeaderPrefix) {
+			headers[key] = strings.Join(v, ",")
+		}
 	}
+	return headers
+}
+
+func (e *embeddedOpaAuthorizer) getSplitPath(input *openapi3filter.AuthenticationInput) []string {
+	path := strings.Split(input.RequestValidationInput.Request.URL.Path, "/")
+	if len(path) > 0 && path[0] == "" {
+		path = path[1:]
+	}
+	return path
 }
 
 // Get the clinician record for the currently authenticated user
@@ -126,7 +138,7 @@ func (e *embeddedOpaAuthorizer) getClinicianRecord(ctx context.Context, input *o
 		return nil, nil
 	}
 	clinician, err := e.clinicians.Get(ctx, clinicId, *currentUserId)
-	if !errors.Is(err, internalErrs.NotFound) {
+	if err != nil && !errors.Is(err, internalErrs.NotFound) {
 		return nil, err
 	}
 
@@ -134,11 +146,10 @@ func (e *embeddedOpaAuthorizer) getClinicianRecord(ctx context.Context, input *o
 }
 
 func GetAuthUserId(r *http.Request) *string {
-	headers := r.Header
-	if headers.Get(serverAccessHeaderKey) == "true" {
+	if r.Header.Get(serverAccessHeaderKey) == "true" {
 		return nil
 	}
-	subjectId := headers.Get(subjectIdHeaderName)
+	subjectId := r.Header.Get(subjectIdHeaderName)
 	if subjectId == "" {
 		return nil
 	}

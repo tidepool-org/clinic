@@ -49,6 +49,7 @@ type Options struct {
 
 // Create a validator from a swagger object, with validation options
 func OapiRequestValidatorWithOptions(swagger *openapi3.Swagger, options *Options) echo.MiddlewareFunc {
+	swagger.Servers = nil
 	router := openapi3filter.NewRouter().WithSwagger(swagger)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
