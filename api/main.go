@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	oapiMiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -50,7 +51,9 @@ func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo
 		return nil, err
 	}
 
-	requestValidator := OapiRequestValidator(swagger, &Options{
+	// Do not validate servers
+	swagger.Servers = nil
+	requestValidator := oapiMiddleware.OapiRequestValidatorWithOptions(swagger, &oapiMiddleware.Options{
 		Options: openapi3filter.Options{AuthenticationFunc: authorizer.Authorize},
 	})
 
