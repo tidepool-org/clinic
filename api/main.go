@@ -74,7 +74,11 @@ func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo
 func MainLoop() {
 	fx.New(
 		fx.Provide(
-			func() (*zap.Logger, error) { return zap.NewProduction() },
+			func() (*zap.Logger, error) {
+				config := zap.NewProductionConfig()
+				config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+				return config.Build()
+			},
 			func(logger *zap.Logger) *zap.SugaredLogger { return logger.Sugar() },
 			store.GetConnectionString,
 			store.NewClient,
