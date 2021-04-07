@@ -13,6 +13,9 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// List Clinics for Clinician
+	// (GET /v1/clinicians/{userId}/clinics)
+	ListClinicsForClinician(ctx echo.Context, userId string, params ListClinicsForClinicianParams) error
 	// List Clinics
 	// (GET /v1/clinics)
 	ListClinics(ctx echo.Context, params ListClinicsParams) error
@@ -67,14 +70,48 @@ type ServerInterface interface {
 	// Update Patient Permissions
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId}/permissions)
 	UpdatePatientPermissions(ctx echo.Context, clinicId string, patientId string) error
-	// Get Patient Clinic Relatipnships
-	// (GET /v1/patients/{patientId}/clinics)
-	GetPatientClinicRelationships(ctx echo.Context, patientId string, params GetPatientClinicRelationshipsParams) error
+	// List Clinics for Patient
+	// (GET /v1/patients/{userId}/clinics)
+	ListClinicsForPatient(ctx echo.Context, userId string, params ListClinicsForPatientParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// ListClinicsForClinician converts echo context to params.
+func (w *ServerInterfaceWrapper) ListClinicsForClinician(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId string
+
+	err = runtime.BindStyledParameter("simple", false, "userId", ctx.Param("userId"), &userId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListClinicsForClinicianParams
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ListClinicsForClinician(ctx, userId, params)
+	return err
 }
 
 // ListClinics converts echo context to params.
@@ -564,21 +601,21 @@ func (w *ServerInterfaceWrapper) UpdatePatientPermissions(ctx echo.Context) erro
 	return err
 }
 
-// GetPatientClinicRelationships converts echo context to params.
-func (w *ServerInterfaceWrapper) GetPatientClinicRelationships(ctx echo.Context) error {
+// ListClinicsForPatient converts echo context to params.
+func (w *ServerInterfaceWrapper) ListClinicsForPatient(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "patientId" -------------
-	var patientId string
+	// ------------- Path parameter "userId" -------------
+	var userId string
 
-	err = runtime.BindStyledParameter("simple", false, "patientId", ctx.Param("patientId"), &patientId)
+	err = runtime.BindStyledParameter("simple", false, "userId", ctx.Param("userId"), &userId)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
 	}
 
 	ctx.Set(SessionTokenScopes, []string{""})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetPatientClinicRelationshipsParams
+	var params ListClinicsForPatientParams
 	// ------------- Optional query parameter "offset" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
@@ -594,7 +631,7 @@ func (w *ServerInterfaceWrapper) GetPatientClinicRelationships(ctx echo.Context)
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetPatientClinicRelationships(ctx, patientId, params)
+	err = w.Handler.ListClinicsForPatient(ctx, userId, params)
 	return err
 }
 
@@ -626,6 +663,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.GET(baseURL+"/v1/clinicians/:userId/clinics", wrapper.ListClinicsForClinician)
 	router.GET(baseURL+"/v1/clinics", wrapper.ListClinics)
 	router.POST(baseURL+"/v1/clinics", wrapper.CreateClinic)
 	router.GET(baseURL+"/v1/clinics/:clinicId", wrapper.GetClinic)
@@ -644,7 +682,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.CreatePatientFromUser)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
-	router.GET(baseURL+"/v1/patients/:patientId/clinics", wrapper.GetPatientClinicRelationships)
+	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 
 }
 

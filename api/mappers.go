@@ -185,7 +185,7 @@ func NewPatientsDto(patients []*patients.Patient) []Patient {
 	return dtos
 }
 
-func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList []*clinics.Clinic) (*[]PatientClinicRelationship, error) {
+func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList []*clinics.Clinic) (PatientClinicRelationships, error) {
 	clinicsMap := make(map[string]*clinics.Clinic, 0)
 	for _, clinic := range clinicList {
 		clinicsMap[clinic.Id.Hex()] = clinic
@@ -202,7 +202,28 @@ func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList [
 			Patient: NewPatientDto(patient),
 		})
 	}
-	return &dtos, nil
+	return dtos, nil
+}
+
+func NewClinicianClinicRelationshipsDto(clinicians []*clinicians.Clinician, clinicList []*clinics.Clinic) (ClinicianClinicRelationships, error) {
+	clinicsMap := make(map[string]*clinics.Clinic, 0)
+	for _, clinic := range clinicList {
+		clinicsMap[clinic.Id.Hex()] = clinic
+	}
+	dtos := make([]ClinicianClinicRelationship, 0)
+	for _, clinician := range clinicians {
+		clinic, ok := clinicsMap[clinician.ClinicId.Hex()]
+		if !ok || clinic == nil {
+			return nil, fmt.Errorf("clinic not found")
+		}
+
+		dtos = append(dtos, ClinicianClinicRelationship{
+			Clinic:  NewClinicDto(clinic),
+			Clinician: NewClinicianDto(clinician),
+		})
+	}
+
+	return dtos, nil
 }
 
 const dateFormat = "2006-01-02"

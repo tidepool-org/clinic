@@ -3,6 +3,8 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 )
@@ -81,6 +83,32 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId string, clinicianId 
 	return ec.JSON(http.StatusOK, NewClinicianDto(result))
 }
 
+func (h *Handler) ListClinicsForClinician(ec echo.Context, userId string, params ListClinicsForClinicianParams) error {
+	ctx := ec.Request().Context()
+	page := pagination(params.Offset, params.Limit)
+	filter := clinicians.Filter{
+		UserId: &userId,
+	}
+
+	cliniciansList, err := h.clinicians.List(ctx, &filter, page)
+	if err != nil {
+		return err
+	}
+
+	var clinicIds []string
+	for _, clinician := range cliniciansList {
+		clinicIds = append(clinicIds, clinician.ClinicId.Hex())
+	}
+
+	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
+	dtos, err := NewClinicianClinicRelationshipsDto(cliniciansList, clinicList)
+	if err != nil {
+		return err
+	}
+
+
+	return ec.JSON(http.StatusOK, dtos)
+}
 
 func (h *Handler) GetInvitedClinician(ec echo.Context, clinicId string, inviteId string) error {
 	ctx := ec.Request().Context()

@@ -50,6 +50,15 @@ type Clinician struct {
 	Roles ClinicianRoles `json:"roles"`
 }
 
+// ClinicianClinicRelationship defines model for ClinicianClinicRelationship.
+type ClinicianClinicRelationship struct {
+	Clinic    Clinic    `json:"clinic"`
+	Clinician Clinician `json:"clinician"`
+}
+
+// ClinicianClinicRelationships defines model for ClinicianClinicRelationships.
+type ClinicianClinicRelationships []ClinicianClinicRelationship
+
 // ClinicianRoles defines model for ClinicianRoles.
 type ClinicianRoles []string
 
@@ -123,6 +132,12 @@ type PhoneNumber struct {
 // UserId defines model for UserId.
 type UserId string
 
+// ListClinicsForClinicianParams defines parameters for ListClinicsForClinician.
+type ListClinicsForClinicianParams struct {
+	Offset *int `json:"offset,omitempty"`
+	Limit  *int `json:"limit,omitempty"`
+}
+
 // ListClinicsParams defines parameters for ListClinics.
 type ListClinicsParams struct {
 	Limit       *int    `json:"limit,omitempty"`
@@ -179,8 +194,8 @@ type UpdatePatientJSONBody Patient
 // UpdatePatientPermissionsJSONBody defines parameters for UpdatePatientPermissions.
 type UpdatePatientPermissionsJSONBody PatientPermissions
 
-// GetPatientClinicRelationshipsParams defines parameters for GetPatientClinicRelationships.
-type GetPatientClinicRelationshipsParams struct {
+// ListClinicsForPatientParams defines parameters for ListClinicsForPatient.
+type ListClinicsForPatientParams struct {
 	Offset *int `json:"offset,omitempty"`
 	Limit  *int `json:"limit,omitempty"`
 }

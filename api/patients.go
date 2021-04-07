@@ -95,7 +95,7 @@ func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId string, pat
 	return ec.JSON(http.StatusOK, NewPatientDto(patient).Permissions)
 }
 
-func (h *Handler) GetPatientClinicRelationships(ec echo.Context, patientId string, params GetPatientClinicRelationshipsParams) error {
+func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId string, params ListClinicsForPatientParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	patientList, err := h.patients.List(ctx, &patients.Filter{UserId: &patientId}, page)

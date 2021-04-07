@@ -51,12 +51,20 @@ allow {
   input.path = ["v1", "clinics"]
 }
 
-# Allow currently authenticated user to fetch the clinics they are a member of
+# Allow currently authenticated user to fetch the clinics they are a patient of
 # GET /v1/patients/:patientId/clinics when ":patientId" == auth_subject_id
 allow {
   is_authenticated_user
   input.method = "GET"
   input.path = ["v1", "patients", auth_subject_id, "clinics"]
+}
+
+# Allow currently authenticated user to fetch the clinics they are a member of
+# GET /v1/clinicians/:clinicianId/clinics when ":clinicianId" == auth_subject_id
+allow {
+  is_authenticated_user
+  input.method = "GET"
+  input.path = ["v1", "clinicians", auth_subject_id, "clinics"]
 }
 
 # Allow currently authenticated user to change the permissions they have granted to a clinic
