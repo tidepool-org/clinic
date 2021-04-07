@@ -89,13 +89,14 @@ func (r *repository) Get(ctx context.Context, clinicId string, clinicianId strin
 }
 
 func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error) {
-	clinicObjId, _ := primitive.ObjectIDFromHex(filter.ClinicId)
 	opts := options.Find().
 		SetLimit(int64(pagination.Limit)).
 		SetSkip(int64(pagination.Offset))
 
-	selector := bson.M{
-		"clinicId": clinicObjId,
+	selector := bson.M{}
+	if filter.ClinicId != nil {
+		clinicObjId, _ := primitive.ObjectIDFromHex(*filter.ClinicId)
+		selector["clinicId"] = clinicObjId
 	}
 	if filter.Email != nil {
 		selector["email"] = filter.Email

@@ -37,7 +37,7 @@ type Clinician struct {
 }
 
 type Filter struct {
-	ClinicId string
+	ClinicId *string
 	UserId   *string
 	Search   *string
 	Email    *string

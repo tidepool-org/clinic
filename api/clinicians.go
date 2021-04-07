@@ -13,7 +13,7 @@ func (h *Handler) ListClinicians(ec echo.Context, clinicId string, params ListCl
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := clinicians.Filter{
-		ClinicId: clinicId,
+		ClinicId: &clinicId,
 		Search:   params.Search,
 		Email:    params.Email,
 	}
