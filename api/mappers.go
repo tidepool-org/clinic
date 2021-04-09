@@ -25,7 +25,7 @@ func NewClinic(c Clinic) *clinics.Clinic {
 		City:         c.City,
 		ClinicType:   c.ClinicType,
 		Country:      c.Country,
-		Email:        strp(c.Email),
+		Email:        &c.Email,
 		Name:         &c.Name,
 		PhoneNumbers: &phoneNumbers,
 		PostalCode:   c.PostalCode,

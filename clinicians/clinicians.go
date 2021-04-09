@@ -31,8 +31,8 @@ type Clinician struct {
 	InviteId *string             `bson:"inviteId,omitempty"`
 	ClinicId *primitive.ObjectID `bson:"clinicId,omitempty"`
 	UserId   *string             `bson:"userId,omitempty"`
-	Name     *string             `bson:"name"`
 	Email    *string             `bson:"email,omitempty"`
+	Name     *string             `bson:"name"`
 	Roles    []string            `bson:"roles"`
 }
 
