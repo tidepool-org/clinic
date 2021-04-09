@@ -32,7 +32,7 @@ type Clinician struct {
 	ClinicId *primitive.ObjectID `bson:"clinicId,omitempty"`
 	UserId   *string             `bson:"userId,omitempty"`
 	Name     *string             `bson:"name"`
-	Email    *string             `bson:"email"`
+	Email    *string             `bson:"email,omitempty"`
 	Roles    []string            `bson:"roles"`
 }
 
