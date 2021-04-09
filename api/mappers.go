@@ -25,7 +25,7 @@ func NewClinic(c Clinic) *clinics.Clinic {
 		City:         c.City,
 		ClinicType:   c.ClinicType,
 		Country:      c.Country,
-		Email:        strp(string(c.Email)),
+		Email:        strp(c.Email),
 		Name:         &c.Name,
 		PhoneNumbers: &phoneNumbers,
 		PostalCode:   c.PostalCode,
@@ -68,15 +68,12 @@ func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
 }
 
 func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
-
 	dto := Clinician{
 		Id:       strpuseridp(clinician.UserId),
-		Name:     clinician.Name,
 		InviteId: clinician.InviteId,
+		Name:     clinician.Name,
+		Email:    pstr(clinician.Email),
 		Roles:    ClinicianRoles(clinician.Roles),
-	}
-	if clinician.Email != nil {
-		dto.Email = openapi_types.Email(*clinician.Email)
 	}
 	return dto
 }
@@ -97,7 +94,7 @@ func NewClinician(clinician Clinician) *clinicians.Clinician {
 		UserId:   useridpstrp(clinician.Id),
 		InviteId: clinician.InviteId,
 		Roles:    clinician.Roles,
-		Email:    strp(string(clinician.Email)),
+		Email:    strp(clinician.Email),
 	}
 }
 
@@ -111,7 +108,7 @@ func NewClinicianUpdate(clinician Clinician) *clinicians.Clinician {
 func NewPatientDto(patient *patients.Patient) Patient {
 	return Patient{
 		BirthDate:     strtodatep(patient.BirthDate),
-		Email:         strtoemailp(patient.Email),
+		Email:         patient.Email,
 		FullName:      patient.FullName,
 		Id:            *strpuseridp(patient.UserId),
 		Mrn:           patient.Mrn,
@@ -168,7 +165,7 @@ func NewPatientUpdate(patient Patient) patients.Patient {
 		TargetDevices: patient.TargetDevices,
 	}
 	if patient.Email != nil {
-		p.Email = strp(string(*patient.Email))
+		p.Email = strp(*patient.Email)
 	}
 	if patient.BirthDate != nil {
 		p.BirthDate = strp(patient.BirthDate.Format(dateFormat))
@@ -240,12 +237,12 @@ func strtodatep(s *string) *openapi_types.Date {
 	return &openapi_types.Date{Time: t}
 }
 
-func strtoemailp(s *string) *openapi_types.Email {
-	if s == nil {
-		return nil
+func pstr(p *string) string {
+	if p == nil {
+		return ""
 	}
-	email := openapi_types.Email(*s)
-	return &email
+
+	return *p
 }
 
 func strp(s string) *string {

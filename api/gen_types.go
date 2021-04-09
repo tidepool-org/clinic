@@ -37,7 +37,7 @@ type Clinic struct {
 type Clinician struct {
 
 	// The email of the clinician
-	Email openapi_types.Email `json:"email"`
+	Email string `json:"email"`
 
 	// String representation of a Tidepool User ID
 	Id *TidepoolUserId `json:"id,omitempty"`
@@ -89,7 +89,7 @@ type Patient struct {
 	BirthDate *openapi_types.Date `json:"birthDate,omitempty"`
 
 	// The email of the patient
-	Email *openapi_types.Email `json:"email,omitempty"`
+	Email *string `json:"email,omitempty"`
 
 	// The full name of the patient
 	FullName *string `json:"fullName,omitempty"`

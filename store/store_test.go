@@ -56,7 +56,6 @@ var _ = Describe("Store Test", func() {
 				filter := bson.M{"name": testName}
 				err := mongoClient.FindOne(store.ClinicsCollection, &filter, &clinic)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				fmt.Printf("Clinic: %v\n", clinic)
 				gomega.Expect(clinic.Address).To(gomega.Equal(&testAddress))
 			})
 			It("Find After Insert", func() {

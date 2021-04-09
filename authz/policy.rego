@@ -55,30 +55,36 @@ allow {
 # GET /v1/patients/:patientId/clinics when ":patientId" == auth_subject_id
 allow {
   is_authenticated_user
-  input.method = "GET"
-  input.path = ["v1", "patients", auth_subject_id, "clinics"]
+  some patient_id
+  input.method == "GET"
+  input.path = ["v1", "patients", patient_id, "clinics"]
+  patient_id == subject_id
 }
 
 # Allow currently authenticated user to fetch the clinics they are a member of
 # GET /v1/clinicians/:clinicianId/clinics when ":clinicianId" == auth_subject_id
 allow {
   is_authenticated_user
-  input.method = "GET"
-  input.path = ["v1", "clinicians", auth_subject_id, "clinics"]
+  some clinician_id
+  input.method == "GET"
+  input.path = ["v1", "clinicians", clinician_id, "clinics"]
+  clinician_id == subject_id
 }
 
 # Allow currently authenticated user to change the permissions they have granted to a clinic
 # PUT /v1/clinics/:clinicId/patients/:patientId/permissions when ":patientId" == auth_subject_id
 allow {
   is_authenticated_user
-  input.method = "PUT"
-  input.path = ["v1", "clinics", _, "patients", auth_subject_id, "permissions"]
+  some patient_id
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patients", patient_id, "permissions"]
+  patient_id == subject_id
 }
 
 # Allow currently authenticated clinician to fetch clinic
 # GET /v1/clinics/:clinicId
 allow {
-  input.method = "GET"
+  input.method == "GET"
   input.path = ["v1", "clinics", _]
   clinician_has_read_access
 }
@@ -86,7 +92,7 @@ allow {
 # Allow currently authenticated clinician to update clinic
 # PUT /v1/clinics/:clinicId
 allow {
-  input.method = "PUT"
+  input.method == "PUT"
   input.path = ["v1", "clinics", _]
   clinician_has_write_access
 }
@@ -94,7 +100,7 @@ allow {
 # Allow currently authenticated clinician to list clinicians
 # GET /v1/clinics/:clinicId/clinicians
 allow {
-  input.method = "GET"
+  input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians"]
   clinician_has_read_access
 }
@@ -102,7 +108,7 @@ allow {
 # Allow hydrophone to create clinicians
 # POST /v1/clinics/:clinicId/clinicians
 allow {
-  input.method = "POST"
+  input.method == "POST"
   input.path = ["v1", "clinics", _, "clinicians"]
   is_backend_service_any_of({"hydrophone"})
 }
@@ -110,7 +116,7 @@ allow {
 # Allow currently authenticated clinician to get a clinician by id
 # GET /v1/clinics/:clinicId/clinicians/:clinicianId
 allow {
-  input.method = "GET"
+  input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians", _]
   clinician_has_read_access
 }
@@ -139,7 +145,7 @@ allow {
 # Allow currently authenticated clinician to list patients
 # GET /v1/clinics/:clinicId/patients
 allow {
-  input.method = "GET"
+  input.method == "GET"
   input.path = ["v1", "clinics", _, "patients"]
   clinician_has_read_access
 }
@@ -147,7 +153,7 @@ allow {
 # Allow currently authenticated clinician to create a custodial account
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
-  input.method = "POST"
+  input.method == "POST"
   input.path = ["v1", "clinics", _, "patients"]
   clinician_has_write_access
 }
@@ -155,7 +161,7 @@ allow {
 # Allow currently authenticated clinician to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
-  input.method = "GET"
+  input.method == "GET"
   input.path = ["v1", "clinics", _, "patients", _]
   clinician_has_read_access
 }
@@ -163,7 +169,7 @@ allow {
 # Allow hydrophone and prescription services to create patient from existing user
 # POST /v1/clinics/:clinicId/patients/:patientId
 allow {
-  input.method = "POST"
+  input.method == "POST"
   input.path = ["v1", "clinics", _, "patients", _]
   is_backend_service_any_of({"hydrophone", "prescription"})
 }
@@ -171,7 +177,7 @@ allow {
 # Allow currently authenticated clinician to update patient account
 # PUT /v1/clinics/:clinicId/patients/:patientId
 allow {
-  input.method = "PUT"
+  input.method == "PUT"
   input.path = ["v1", "clinics", _, "patients", _]
   clinician_has_write_access
 }

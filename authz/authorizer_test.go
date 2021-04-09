@@ -56,5 +56,32 @@ var _ = Describe("Request Authorizer", func() {
 			err := authorizer.EvaluatePolicy(context.Background(), input)
 			Expect(err).To(Equal(authz.ErrUnauthorized))
 		})
+
+		It("it allows clinicians to list clinics they are a member of", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinicians", "1234567890", "clinics"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "1234567890",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it prevents clinicians to list clinics of other users", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinicians", "123456789", "clinics"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "1234567890",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
 	})
 })

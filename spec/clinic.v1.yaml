@@ -563,14 +563,18 @@ components:
           $ref: '#/components/schemas/Id'
         address:
           type: string
+          minLength: 1
         city:
           type: string
+          minLength: 1
         postalCode:
           type: string
+          minLength: 1
         state:
           type: string
         country:
           type: string
+          minLength: 1
         phoneNumbers:
           type: array
           items:
@@ -579,17 +583,19 @@ components:
           type: string
         clinicSize:
           type: integer
+          minimum: 0
           readOnly: true
         name:
           type: string
+          minLength: 1
         email:
           type: string
           format: email
           x-go-type: string
       required:
+        - id
         - name
         - email
-        - id
     Clinics:
       type: array
       items:
@@ -605,6 +611,7 @@ components:
           type: string
           description: The id of the invite if it hasn't been accepted
         email:
+          x-go-type: string
           type: string
           format: email
           description: The email of the clinician
@@ -629,6 +636,7 @@ components:
         id:
           $ref: '#/components/schemas/TidepoolUserId'
         email:
+          x-go-type: string
           type: string
           description: The email of the patient
           format: email
@@ -648,7 +656,6 @@ components:
             type: string
         permissions:
           $ref: '#/components/schemas/PatientPermissions'
-          readOnly: true
       required:
         - id
     Patients:
@@ -658,15 +665,17 @@ components:
     InviteClinician:
       title: Invite Clinician
       type: object
+      description: ''
       properties:
         email:
+          x-go-type: string
           type: string
+          format: email
         roles:
           $ref: '#/components/schemas/ClinicianRoles'
       required:
         - email
         - roles
-      description: ''
     TidepoolUserId:
       type: string
       title: Tidepool User ID
@@ -693,6 +702,7 @@ components:
           type: string
         number:
           type: string
+          minLength: 1
       required:
         - number
     PatientPermissions:
