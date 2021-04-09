@@ -15,7 +15,7 @@ import (
 type ServerInterface interface {
 	// List Clinics for Clinician
 	// (GET /v1/clinicians/{userId}/clinics)
-	ListClinicsForClinician(ctx echo.Context, userId string, params ListClinicsForClinicianParams) error
+	ListClinicsForClinician(ctx echo.Context, userId UserId, params ListClinicsForClinicianParams) error
 	// List Clinics
 	// (GET /v1/clinics)
 	ListClinics(ctx echo.Context, params ListClinicsParams) error
@@ -24,55 +24,55 @@ type ServerInterface interface {
 	CreateClinic(ctx echo.Context) error
 	// Get Clinic
 	// (GET /v1/clinics/{clinicId})
-	GetClinic(ctx echo.Context, clinicId string) error
+	GetClinic(ctx echo.Context, clinicId ClinicId) error
 	// Update Clinic
 	// (PUT /v1/clinics/{clinicId})
-	UpdateClinic(ctx echo.Context, clinicId string) error
+	UpdateClinic(ctx echo.Context, clinicId ClinicId) error
 	// List Clinicians
 	// (GET /v1/clinics/{clinicId}/clinicians)
-	ListClinicians(ctx echo.Context, clinicId string, params ListCliniciansParams) error
+	ListClinicians(ctx echo.Context, clinicId ClinicId, params ListCliniciansParams) error
 	// Create Clinician
 	// (POST /v1/clinics/{clinicId}/clinicians)
-	CreateClinician(ctx echo.Context, clinicId string) error
+	CreateClinician(ctx echo.Context, clinicId ClinicId) error
 	// Delete Clinician
 	// (DELETE /v1/clinics/{clinicId}/clinicians/{clinicianId})
-	DeleteClinician(ctx echo.Context, clinicId string, clinicianId string) error
+	DeleteClinician(ctx echo.Context, clinicId ClinicId, clinicianId ClinicianId) error
 	// Get Clinician
 	// (GET /v1/clinics/{clinicId}/clinicians/{clinicianId})
-	GetClinician(ctx echo.Context, clinicId string, clinicianId string) error
+	GetClinician(ctx echo.Context, clinicId ClinicId, clinicianId ClinicianId) error
 	// Update Clinician
 	// (PUT /v1/clinics/{clinicId}/clinicians/{clinicianId})
-	UpdateClinician(ctx echo.Context, clinicId string, clinicianId string) error
+	UpdateClinician(ctx echo.Context, clinicId ClinicId, clinicianId ClinicianId) error
 	// Delete Invited Clinician
 	// (DELETE /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
-	DeleteInvitedClinician(ctx echo.Context, clinicId string, inviteId string) error
+	DeleteInvitedClinician(ctx echo.Context, clinicId ClinicId, inviteId InviteId) error
 	// Get Invited Clinician
 	// (GET /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
-	GetInvitedClinician(ctx echo.Context, clinicId string, inviteId string) error
+	GetInvitedClinician(ctx echo.Context, clinicId ClinicId, inviteId InviteId) error
 	// Associate Clinician to User
 	// (PATCH /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
-	AssociateClinicianToUser(ctx echo.Context, clinicId string, inviteId string) error
+	AssociateClinicianToUser(ctx echo.Context, clinicId ClinicId, inviteId InviteId) error
 	// List Patients
 	// (GET /v1/clinics/{clinicId}/patients)
-	ListPatients(ctx echo.Context, clinicId string, params ListPatientsParams) error
+	ListPatients(ctx echo.Context, clinicId ClinicId, params ListPatientsParams) error
 	// Create Patient Account
 	// (POST /v1/clinics/{clinicId}/patients)
-	CreatePatientAccount(ctx echo.Context, clinicId string) error
+	CreatePatientAccount(ctx echo.Context, clinicId ClinicId) error
 	// Get Patient
 	// (GET /v1/clinics/{clinicId}/patients/{patientId})
-	GetPatient(ctx echo.Context, clinicId string, patientId string) error
+	GetPatient(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Create Patient from Existing User
 	// (POST /v1/clinics/{clinicId}/patients/{patientId})
-	CreatePatientFromUser(ctx echo.Context, clinicId string, patientId string) error
+	CreatePatientFromUser(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Update Patient
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId})
-	UpdatePatient(ctx echo.Context, clinicId string, patientId string) error
+	UpdatePatient(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Update Patient Permissions
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId}/permissions)
-	UpdatePatientPermissions(ctx echo.Context, clinicId string, patientId string) error
+	UpdatePatientPermissions(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// List Clinics for Patient
 	// (GET /v1/patients/{userId}/clinics)
-	ListClinicsForPatient(ctx echo.Context, userId string, params ListClinicsForPatientParams) error
+	ListClinicsForPatient(ctx echo.Context, userId UserId, params ListClinicsForPatientParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -84,7 +84,7 @@ type ServerInterfaceWrapper struct {
 func (w *ServerInterfaceWrapper) ListClinicsForClinician(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
-	var userId string
+	var userId UserId
 
 	err = runtime.BindStyledParameter("simple", false, "userId", ctx.Param("userId"), &userId)
 	if err != nil {
@@ -136,27 +136,6 @@ func (w *ServerInterfaceWrapper) ListClinics(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
 	}
 
-	// ------------- Optional query parameter "sort" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "sort", ctx.QueryParams(), &params.Sort)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sort: %s", err))
-	}
-
-	// ------------- Optional query parameter "clinicianId" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "clinicianId", ctx.QueryParams(), &params.ClinicianId)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicianId: %s", err))
-	}
-
-	// ------------- Optional query parameter "patientId" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "patientId", ctx.QueryParams(), &params.PatientId)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
-	}
-
 	// ------------- Optional query parameter "email" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "email", ctx.QueryParams(), &params.Email)
@@ -184,7 +163,7 @@ func (w *ServerInterfaceWrapper) CreateClinic(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetClinic(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -202,7 +181,7 @@ func (w *ServerInterfaceWrapper) GetClinic(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateClinic(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -220,7 +199,7 @@ func (w *ServerInterfaceWrapper) UpdateClinic(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ListClinicians(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -268,7 +247,7 @@ func (w *ServerInterfaceWrapper) ListClinicians(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) CreateClinician(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -286,7 +265,7 @@ func (w *ServerInterfaceWrapper) CreateClinician(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteClinician(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -294,7 +273,7 @@ func (w *ServerInterfaceWrapper) DeleteClinician(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "clinicianId" -------------
-	var clinicianId string
+	var clinicianId ClinicianId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicianId", ctx.Param("clinicianId"), &clinicianId)
 	if err != nil {
@@ -312,7 +291,7 @@ func (w *ServerInterfaceWrapper) DeleteClinician(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetClinician(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -320,7 +299,7 @@ func (w *ServerInterfaceWrapper) GetClinician(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "clinicianId" -------------
-	var clinicianId string
+	var clinicianId ClinicianId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicianId", ctx.Param("clinicianId"), &clinicianId)
 	if err != nil {
@@ -338,7 +317,7 @@ func (w *ServerInterfaceWrapper) GetClinician(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateClinician(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -346,7 +325,7 @@ func (w *ServerInterfaceWrapper) UpdateClinician(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "clinicianId" -------------
-	var clinicianId string
+	var clinicianId ClinicianId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicianId", ctx.Param("clinicianId"), &clinicianId)
 	if err != nil {
@@ -364,7 +343,7 @@ func (w *ServerInterfaceWrapper) UpdateClinician(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteInvitedClinician(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -372,7 +351,7 @@ func (w *ServerInterfaceWrapper) DeleteInvitedClinician(ctx echo.Context) error 
 	}
 
 	// ------------- Path parameter "inviteId" -------------
-	var inviteId string
+	var inviteId InviteId
 
 	err = runtime.BindStyledParameter("simple", false, "inviteId", ctx.Param("inviteId"), &inviteId)
 	if err != nil {
@@ -390,7 +369,7 @@ func (w *ServerInterfaceWrapper) DeleteInvitedClinician(ctx echo.Context) error 
 func (w *ServerInterfaceWrapper) GetInvitedClinician(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -398,7 +377,7 @@ func (w *ServerInterfaceWrapper) GetInvitedClinician(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "inviteId" -------------
-	var inviteId string
+	var inviteId InviteId
 
 	err = runtime.BindStyledParameter("simple", false, "inviteId", ctx.Param("inviteId"), &inviteId)
 	if err != nil {
@@ -416,7 +395,7 @@ func (w *ServerInterfaceWrapper) GetInvitedClinician(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) AssociateClinicianToUser(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -424,7 +403,7 @@ func (w *ServerInterfaceWrapper) AssociateClinicianToUser(ctx echo.Context) erro
 	}
 
 	// ------------- Path parameter "inviteId" -------------
-	var inviteId string
+	var inviteId InviteId
 
 	err = runtime.BindStyledParameter("simple", false, "inviteId", ctx.Param("inviteId"), &inviteId)
 	if err != nil {
@@ -442,7 +421,7 @@ func (w *ServerInterfaceWrapper) AssociateClinicianToUser(ctx echo.Context) erro
 func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -483,7 +462,7 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) CreatePatientAccount(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -501,7 +480,7 @@ func (w *ServerInterfaceWrapper) CreatePatientAccount(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetPatient(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -509,7 +488,7 @@ func (w *ServerInterfaceWrapper) GetPatient(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "patientId" -------------
-	var patientId string
+	var patientId PatientId
 
 	err = runtime.BindStyledParameter("simple", false, "patientId", ctx.Param("patientId"), &patientId)
 	if err != nil {
@@ -527,7 +506,7 @@ func (w *ServerInterfaceWrapper) GetPatient(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) CreatePatientFromUser(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -535,7 +514,7 @@ func (w *ServerInterfaceWrapper) CreatePatientFromUser(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "patientId" -------------
-	var patientId string
+	var patientId PatientId
 
 	err = runtime.BindStyledParameter("simple", false, "patientId", ctx.Param("patientId"), &patientId)
 	if err != nil {
@@ -553,7 +532,7 @@ func (w *ServerInterfaceWrapper) CreatePatientFromUser(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdatePatient(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -561,7 +540,7 @@ func (w *ServerInterfaceWrapper) UpdatePatient(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "patientId" -------------
-	var patientId string
+	var patientId PatientId
 
 	err = runtime.BindStyledParameter("simple", false, "patientId", ctx.Param("patientId"), &patientId)
 	if err != nil {
@@ -579,7 +558,7 @@ func (w *ServerInterfaceWrapper) UpdatePatient(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdatePatientPermissions(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId string
+	var clinicId ClinicId
 
 	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
 	if err != nil {
@@ -587,7 +566,7 @@ func (w *ServerInterfaceWrapper) UpdatePatientPermissions(ctx echo.Context) erro
 	}
 
 	// ------------- Path parameter "patientId" -------------
-	var patientId string
+	var patientId PatientId
 
 	err = runtime.BindStyledParameter("simple", false, "patientId", ctx.Param("patientId"), &patientId)
 	if err != nil {
@@ -605,7 +584,7 @@ func (w *ServerInterfaceWrapper) UpdatePatientPermissions(ctx echo.Context) erro
 func (w *ServerInterfaceWrapper) ListClinicsForPatient(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
-	var userId string
+	var userId UserId
 
 	err = runtime.BindStyledParameter("simple", false, "userId", ctx.Param("userId"), &userId)
 	if err != nil {

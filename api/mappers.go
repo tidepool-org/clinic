@@ -35,14 +35,14 @@ func NewClinic(c Clinic) *clinics.Clinic {
 
 func NewClinicDto(c *clinics.Clinic) Clinic {
 	dto := Clinic{
-		Id: Id(c.Id.Hex()),
-		Address: c.Address,
-		City: c.City,
+		Id:         Id(c.Id.Hex()),
+		Address:    c.Address,
+		City:       c.City,
 		ClinicType: c.ClinicType,
-		Email: openapi_types.Email(*c.Email),
-		Name: *c.Name,
+		Email:      *c.Email,
+		Name:       *c.Name,
 		PostalCode: c.PostalCode,
-		State: c.State,
+		State:      c.State,
 	}
 
 	if c.PhoneNumbers != nil {
@@ -68,6 +68,7 @@ func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
 }
 
 func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
+
 	dto := Clinician{
 		Id:       strpuseridp(clinician.UserId),
 		Name:     clinician.Name,
@@ -112,7 +113,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		BirthDate:     strtodatep(patient.BirthDate),
 		Email:         strtoemailp(patient.Email),
 		FullName:      patient.FullName,
-		Id:            *strtouserid(patient.UserId),
+		Id:            *strpuseridp(patient.UserId),
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
 		TargetDevices: patient.TargetDevices,
@@ -218,7 +219,7 @@ func NewClinicianClinicRelationshipsDto(clinicians []*clinicians.Clinician, clin
 		}
 
 		dtos = append(dtos, ClinicianClinicRelationship{
-			Clinic:  NewClinicDto(clinic),
+			Clinic:    NewClinicDto(clinic),
 			Clinician: NewClinicianDto(clinician),
 		})
 	}
@@ -247,30 +248,36 @@ func strtoemailp(s *string) *openapi_types.Email {
 	return &email
 }
 
-func strtouserid(s *string) *UserId {
-	if s == nil {
-		return nil
-	}
-	id := UserId(*s)
-	return &id
-}
-
 func strp(s string) *string {
 	return &s
 }
 
-func strpuseridp(s *string) *UserId {
+func strpuseridp(s *string) *TidepoolUserId {
 	if s == nil {
 		return nil
 	}
-	id := UserId(*s)
+	id := TidepoolUserId(*s)
 	return &id
 }
 
-func useridpstrp(u *UserId) *string {
+func useridpstrp(u *TidepoolUserId) *string {
 	if u == nil {
 		return nil
 	}
 	id := string(*u)
 	return &id
+}
+
+func searchToString(s *Search) *string {
+	if s == nil {
+		return nil
+	}
+	return strp(string(*s))
+}
+
+func emailToString(e *Email) *string {
+	if e == nil {
+		return nil
+	}
+	return strp(string(*e))
 }

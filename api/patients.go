@@ -9,12 +9,12 @@ import (
 	"net/http"
 )
 
-func (h *Handler) ListPatients(ec echo.Context, clinicId string, params ListPatientsParams) error {
+func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId: &clinicId,
-		Search:   params.Search,
+		ClinicId: strp(string(clinicId)),
+		Search:   searchToString(params.Search),
 	}
 
 	list, err := h.patients.List(ctx, &filter, page)
@@ -25,13 +25,13 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId string, params ListPati
 	return ec.JSON(http.StatusOK, NewPatientsDto(list))
 }
 
-func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId string) error {
+func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error {
 	panic("implement me")
 }
 
-func (h *Handler) GetPatient(ec echo.Context, clinicId string, patientId string) error {
+func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	patient, err := h.patients.Get(ctx, clinicId, patientId)
+	patient, err := h.patients.Get(ctx, string(clinicId), string(patientId))
 	if err != nil {
 		return err
 	}
@@ -39,21 +39,21 @@ func (h *Handler) GetPatient(ec echo.Context, clinicId string, patientId string)
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
-func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId string, patientId string) error {
+func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := CreatePatient{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
+	clinicObjId, err := primitive.ObjectIDFromHex(string(clinicId))
 	if err != nil {
 		return err
 	}
 
 	patient := patients.Patient{
 		ClinicId:    &clinicObjId,
-		UserId:      &patientId,
+		UserId:      strp(string(patientId)),
 		Permissions: NewPermissions(dto.Permissions),
 	}
 
@@ -65,14 +65,14 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId string, patien
 	return ec.JSON(http.StatusOK, NewPatientDto(result))
 }
 
-func (h *Handler) UpdatePatient(ec echo.Context, clinicId string, patientId string) error {
+func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := Patient{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	patient, err := h.patients.Update(ctx, clinicId, patientId, NewPatientUpdate(dto))
+	patient, err := h.patients.Update(ctx, string(clinicId), string(patientId), NewPatientUpdate(dto))
 	if err != nil {
 		return err
 	}
@@ -80,14 +80,14 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId string, patientId stri
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
-func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId string, patientId string) error {
+func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := PatientPermissions{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	patient, err := h.patients.UpdatePermissions(ctx, clinicId, patientId, NewPermissions(&dto))
+	patient, err := h.patients.UpdatePermissions(ctx, string(clinicId), string(patientId), NewPermissions(&dto))
 	if err != nil {
 		return err
 	}
@@ -95,10 +95,10 @@ func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId string, pat
 	return ec.JSON(http.StatusOK, NewPatientDto(patient).Permissions)
 }
 
-func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId string, params ListClinicsForPatientParams) error {
+func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, params ListClinicsForPatientParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
-	patientList, err := h.patients.List(ctx, &patients.Filter{UserId: &patientId}, page)
+	patientList, err := h.patients.List(ctx, &patients.Filter{UserId: strp(string(patientId))}, page)
 	if err != nil {
 		return err
 	}

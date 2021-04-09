@@ -9,13 +9,13 @@ import (
 	"net/http"
 )
 
-func (h *Handler) ListClinicians(ec echo.Context, clinicId string, params ListCliniciansParams) error {
+func (h *Handler) ListClinicians(ec echo.Context, clinicId ClinicId, params ListCliniciansParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := clinicians.Filter{
-		ClinicId: &clinicId,
-		Search:   params.Search,
-		Email:    params.Email,
+		ClinicId: strp(string(clinicId)),
+		Search:   searchToString(params.Search),
+		Email:    emailToString(params.Email),
 	}
 
 	list, err := h.clinicians.List(ctx, &filter, page)
@@ -26,9 +26,9 @@ func (h *Handler) ListClinicians(ec echo.Context, clinicId string, params ListCl
 	return ec.JSON(http.StatusOK, NewCliniciansDto(list))
 }
 
-func (h *Handler) DeleteClinician(ec echo.Context, clinicId string, clinicianId string) error {
+func (h *Handler) DeleteClinician(ec echo.Context, clinicId ClinicId, clinicianId ClinicianId) error {
 	ctx := ec.Request().Context()
-	err := h.clinicians.Delete(ctx, clinicId, clinicianId)
+	err := h.clinicians.Delete(ctx, string(clinicId), string(clinicianId))
 	if err != nil {
 		return err
 	}
@@ -36,9 +36,9 @@ func (h *Handler) DeleteClinician(ec echo.Context, clinicId string, clinicianId 
 	return ec.NoContent(http.StatusOK)
 }
 
-func (h *Handler) GetClinician(ec echo.Context, clinicId string, clinicianId string) error {
+func (h *Handler) GetClinician(ec echo.Context, clinicId ClinicId, clinicianId ClinicianId) error {
 	ctx := ec.Request().Context()
-	clinician, err := h.clinicians.Get(ctx, clinicId, clinicianId)
+	clinician, err := h.clinicians.Get(ctx, string(clinicId), string(clinicianId))
 	if err != nil {
 		return err
 	}
@@ -46,14 +46,14 @@ func (h *Handler) GetClinician(ec echo.Context, clinicId string, clinicianId str
 	return ec.JSON(http.StatusOK, NewClinicianDto(clinician))
 }
 
-func (h *Handler) CreateClinician(ec echo.Context, clinicId string) error {
+func (h *Handler) CreateClinician(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 	dto := Clinician{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
+	clinicObjId, err := primitive.ObjectIDFromHex(string(clinicId))
 	if err != nil {
 		return ec.JSON(http.StatusBadRequest, "invalid clinic id")
 	}
@@ -68,14 +68,14 @@ func (h *Handler) CreateClinician(ec echo.Context, clinicId string) error {
 	return ec.JSON(http.StatusOK, NewClinicianDto(result))
 }
 
-func (h *Handler) UpdateClinician(ec echo.Context, clinicId string, clinicianId string) error {
+func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianId ClinicianId) error {
 	ctx := ec.Request().Context()
 	dto := Clinician{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	result, err := h.clinicians.Update(ctx, clinicId, clinicianId, NewClinicianUpdate(dto))
+	result, err := h.clinicians.Update(ctx, string(clinicId), string(clinicianId), NewClinicianUpdate(dto))
 	if err != nil {
 		return err
 	}
@@ -83,11 +83,11 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId string, clinicianId 
 	return ec.JSON(http.StatusOK, NewClinicianDto(result))
 }
 
-func (h *Handler) ListClinicsForClinician(ec echo.Context, userId string, params ListClinicsForClinicianParams) error {
+func (h *Handler) ListClinicsForClinician(ec echo.Context, userId UserId, params ListClinicsForClinicianParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := clinicians.Filter{
-		UserId: &userId,
+		UserId: strp(string(userId)),
 	}
 
 	cliniciansList, err := h.clinicians.List(ctx, &filter, page)
@@ -110,9 +110,9 @@ func (h *Handler) ListClinicsForClinician(ec echo.Context, userId string, params
 	return ec.JSON(http.StatusOK, dtos)
 }
 
-func (h *Handler) GetInvitedClinician(ec echo.Context, clinicId string, inviteId string) error {
+func (h *Handler) GetInvitedClinician(ec echo.Context, clinicId ClinicId, inviteId InviteId) error {
 	ctx := ec.Request().Context()
-	clinician, err := h.clinicians.GetInvite(ctx, clinicId, inviteId)
+	clinician, err := h.clinicians.GetInvite(ctx, string(clinicId), string(inviteId))
 	if err != nil {
 		return err
 	}
@@ -120,23 +120,23 @@ func (h *Handler) GetInvitedClinician(ec echo.Context, clinicId string, inviteId
 	return ec.JSON(http.StatusOK, NewClinicianDto(clinician))
 }
 
-func (h *Handler) DeleteInvitedClinician(ec echo.Context, clinicId string, inviteId string) error {
+func (h *Handler) DeleteInvitedClinician(ec echo.Context, clinicId ClinicId, inviteId InviteId) error {
 	ctx := ec.Request().Context()
-	if err := h.clinicians.DeleteInvite(ctx, clinicId, inviteId); err != nil {
+	if err := h.clinicians.DeleteInvite(ctx, string(clinicId), string(inviteId)); err != nil {
 		return err
 	}
 
 	return ec.NoContent(http.StatusOK)
 }
 
-func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId string, inviteId string) error {
+func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId ClinicId, inviteId InviteId) error {
 	ctx := ec.Request().Context()
 	dto := AssociateClinicianToUser{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	clinician, err := h.clinicians.AssociateInvite(ctx, clinicId, inviteId, dto.UserId)
+	clinician, err := h.clinicians.AssociateInvite(ctx, string(clinicId), string(inviteId), dto.UserId)
 	if err != nil {
 		return err
 	}

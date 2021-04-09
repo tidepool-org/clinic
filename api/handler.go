@@ -39,13 +39,13 @@ func NewHandler(p Params) *Handler {
 	}
 }
 
-func pagination(offset, limit *int) store.Pagination {
+func pagination(offset *Offset, limit *Limit) store.Pagination {
 	page := store.DefaultPagination()
 	if offset != nil {
-		page.Offset = *offset
+		page.Offset = int(*offset)
 	}
 	if limit != nil {
-		page.Limit = *limit
+		page.Limit = int(*limit)
 	}
 	return page
 }

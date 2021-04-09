@@ -75,7 +75,7 @@ func (m *MockClientInterface) EXPECT() *MockClientInterfaceMockRecorder {
 }
 
 // AssociateClinicianToUser mocks base method.
-func (m *MockClientInterface) AssociateClinicianToUser(ctx context.Context, clinicId, inviteId string, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) AssociateClinicianToUser(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, inviteId, body}
 	for _, a := range reqEditors {
@@ -95,7 +95,7 @@ func (mr *MockClientInterfaceMockRecorder) AssociateClinicianToUser(ctx, clinicI
 }
 
 // AssociateClinicianToUserWithBody mocks base method.
-func (m *MockClientInterface) AssociateClinicianToUserWithBody(ctx context.Context, clinicId, inviteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) AssociateClinicianToUserWithBody(ctx context.Context, clinicId ClinicId, inviteId InviteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, inviteId, contentType, body}
 	for _, a := range reqEditors {
@@ -155,7 +155,7 @@ func (mr *MockClientInterfaceMockRecorder) CreateClinicWithBody(ctx, contentType
 }
 
 // CreateClinician mocks base method.
-func (m *MockClientInterface) CreateClinician(ctx context.Context, clinicId string, body CreateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) CreateClinician(ctx context.Context, clinicId ClinicId, body CreateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, body}
 	for _, a := range reqEditors {
@@ -175,7 +175,7 @@ func (mr *MockClientInterfaceMockRecorder) CreateClinician(ctx, clinicId, body i
 }
 
 // CreateClinicianWithBody mocks base method.
-func (m *MockClientInterface) CreateClinicianWithBody(ctx context.Context, clinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) CreateClinicianWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, contentType, body}
 	for _, a := range reqEditors {
@@ -195,7 +195,7 @@ func (mr *MockClientInterfaceMockRecorder) CreateClinicianWithBody(ctx, clinicId
 }
 
 // CreatePatientAccount mocks base method.
-func (m *MockClientInterface) CreatePatientAccount(ctx context.Context, clinicId string, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) CreatePatientAccount(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, body}
 	for _, a := range reqEditors {
@@ -215,7 +215,7 @@ func (mr *MockClientInterfaceMockRecorder) CreatePatientAccount(ctx, clinicId, b
 }
 
 // CreatePatientAccountWithBody mocks base method.
-func (m *MockClientInterface) CreatePatientAccountWithBody(ctx context.Context, clinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) CreatePatientAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, contentType, body}
 	for _, a := range reqEditors {
@@ -235,7 +235,7 @@ func (mr *MockClientInterfaceMockRecorder) CreatePatientAccountWithBody(ctx, cli
 }
 
 // CreatePatientFromUser mocks base method.
-func (m *MockClientInterface) CreatePatientFromUser(ctx context.Context, clinicId, patientId string, body CreatePatientFromUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) CreatePatientFromUser(ctx context.Context, clinicId ClinicId, patientId PatientId, body CreatePatientFromUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId, body}
 	for _, a := range reqEditors {
@@ -255,7 +255,7 @@ func (mr *MockClientInterfaceMockRecorder) CreatePatientFromUser(ctx, clinicId, 
 }
 
 // CreatePatientFromUserWithBody mocks base method.
-func (m *MockClientInterface) CreatePatientFromUserWithBody(ctx context.Context, clinicId, patientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) CreatePatientFromUserWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId, contentType, body}
 	for _, a := range reqEditors {
@@ -275,7 +275,7 @@ func (mr *MockClientInterfaceMockRecorder) CreatePatientFromUserWithBody(ctx, cl
 }
 
 // DeleteClinician mocks base method.
-func (m *MockClientInterface) DeleteClinician(ctx context.Context, clinicId, clinicianId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) DeleteClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, clinicianId}
 	for _, a := range reqEditors {
@@ -295,7 +295,7 @@ func (mr *MockClientInterfaceMockRecorder) DeleteClinician(ctx, clinicId, clinic
 }
 
 // DeleteInvitedClinician mocks base method.
-func (m *MockClientInterface) DeleteInvitedClinician(ctx context.Context, clinicId, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) DeleteInvitedClinician(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, inviteId}
 	for _, a := range reqEditors {
@@ -315,7 +315,7 @@ func (mr *MockClientInterfaceMockRecorder) DeleteInvitedClinician(ctx, clinicId,
 }
 
 // GetClinic mocks base method.
-func (m *MockClientInterface) GetClinic(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) GetClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId}
 	for _, a := range reqEditors {
@@ -335,7 +335,7 @@ func (mr *MockClientInterfaceMockRecorder) GetClinic(ctx, clinicId interface{}, 
 }
 
 // GetClinician mocks base method.
-func (m *MockClientInterface) GetClinician(ctx context.Context, clinicId, clinicianId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) GetClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, clinicianId}
 	for _, a := range reqEditors {
@@ -355,7 +355,7 @@ func (mr *MockClientInterfaceMockRecorder) GetClinician(ctx, clinicId, clinician
 }
 
 // GetInvitedClinician mocks base method.
-func (m *MockClientInterface) GetInvitedClinician(ctx context.Context, clinicId, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) GetInvitedClinician(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, inviteId}
 	for _, a := range reqEditors {
@@ -375,7 +375,7 @@ func (mr *MockClientInterfaceMockRecorder) GetInvitedClinician(ctx, clinicId, in
 }
 
 // GetPatient mocks base method.
-func (m *MockClientInterface) GetPatient(ctx context.Context, clinicId, patientId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) GetPatient(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId}
 	for _, a := range reqEditors {
@@ -395,7 +395,7 @@ func (mr *MockClientInterfaceMockRecorder) GetPatient(ctx, clinicId, patientId i
 }
 
 // ListClinicians mocks base method.
-func (m *MockClientInterface) ListClinicians(ctx context.Context, clinicId string, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) ListClinicians(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, params}
 	for _, a := range reqEditors {
@@ -435,7 +435,7 @@ func (mr *MockClientInterfaceMockRecorder) ListClinics(ctx, params interface{}, 
 }
 
 // ListClinicsForClinician mocks base method.
-func (m *MockClientInterface) ListClinicsForClinician(ctx context.Context, userId string, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) ListClinicsForClinician(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, userId, params}
 	for _, a := range reqEditors {
@@ -455,7 +455,7 @@ func (mr *MockClientInterfaceMockRecorder) ListClinicsForClinician(ctx, userId, 
 }
 
 // ListClinicsForPatient mocks base method.
-func (m *MockClientInterface) ListClinicsForPatient(ctx context.Context, userId string, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, userId, params}
 	for _, a := range reqEditors {
@@ -475,7 +475,7 @@ func (mr *MockClientInterfaceMockRecorder) ListClinicsForPatient(ctx, userId, pa
 }
 
 // ListPatients mocks base method.
-func (m *MockClientInterface) ListPatients(ctx context.Context, clinicId string, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) ListPatients(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, params}
 	for _, a := range reqEditors {
@@ -495,7 +495,7 @@ func (mr *MockClientInterfaceMockRecorder) ListPatients(ctx, clinicId, params in
 }
 
 // UpdateClinic mocks base method.
-func (m *MockClientInterface) UpdateClinic(ctx context.Context, clinicId string, body UpdateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdateClinic(ctx context.Context, clinicId ClinicId, body UpdateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, body}
 	for _, a := range reqEditors {
@@ -515,7 +515,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdateClinic(ctx, clinicId, body inte
 }
 
 // UpdateClinicWithBody mocks base method.
-func (m *MockClientInterface) UpdateClinicWithBody(ctx context.Context, clinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdateClinicWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, contentType, body}
 	for _, a := range reqEditors {
@@ -535,7 +535,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdateClinicWithBody(ctx, clinicId, c
 }
 
 // UpdateClinician mocks base method.
-func (m *MockClientInterface) UpdateClinician(ctx context.Context, clinicId, clinicianId string, body UpdateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdateClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, body UpdateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, clinicianId, body}
 	for _, a := range reqEditors {
@@ -555,7 +555,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdateClinician(ctx, clinicId, clinic
 }
 
 // UpdateClinicianWithBody mocks base method.
-func (m *MockClientInterface) UpdateClinicianWithBody(ctx context.Context, clinicId, clinicianId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdateClinicianWithBody(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, clinicianId, contentType, body}
 	for _, a := range reqEditors {
@@ -575,7 +575,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdateClinicianWithBody(ctx, clinicId
 }
 
 // UpdatePatient mocks base method.
-func (m *MockClientInterface) UpdatePatient(ctx context.Context, clinicId, patientId string, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId, body}
 	for _, a := range reqEditors {
@@ -595,7 +595,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdatePatient(ctx, clinicId, patientI
 }
 
 // UpdatePatientPermissions mocks base method.
-func (m *MockClientInterface) UpdatePatientPermissions(ctx context.Context, clinicId, patientId string, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdatePatientPermissions(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId, body}
 	for _, a := range reqEditors {
@@ -615,7 +615,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdatePatientPermissions(ctx, clinicI
 }
 
 // UpdatePatientPermissionsWithBody mocks base method.
-func (m *MockClientInterface) UpdatePatientPermissionsWithBody(ctx context.Context, clinicId, patientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId, contentType, body}
 	for _, a := range reqEditors {
@@ -635,7 +635,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdatePatientPermissionsWithBody(ctx,
 }
 
 // UpdatePatientWithBody mocks base method.
-func (m *MockClientInterface) UpdatePatientWithBody(ctx context.Context, clinicId, patientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdatePatientWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId, contentType, body}
 	for _, a := range reqEditors {
@@ -678,7 +678,7 @@ func (m *MockClientWithResponsesInterface) EXPECT() *MockClientWithResponsesInte
 }
 
 // AssociateClinicianToUserWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId, inviteId, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error) {
+func (m *MockClientWithResponsesInterface) AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AssociateClinicianToUserWithBodyWithResponse", ctx, clinicId, inviteId, contentType, body)
 	ret0, _ := ret[0].(*AssociateClinicianToUserResponse)
@@ -693,7 +693,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) AssociateClinicianToUser
 }
 
 // AssociateClinicianToUserWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) AssociateClinicianToUserWithResponse(ctx context.Context, clinicId, inviteId string, body AssociateClinicianToUserJSONRequestBody) (*AssociateClinicianToUserResponse, error) {
+func (m *MockClientWithResponsesInterface) AssociateClinicianToUserWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody) (*AssociateClinicianToUserResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AssociateClinicianToUserWithResponse", ctx, clinicId, inviteId, body)
 	ret0, _ := ret[0].(*AssociateClinicianToUserResponse)
@@ -738,7 +738,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreateClinicWithResponse
 }
 
 // CreateClinicianWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) CreateClinicianWithBodyWithResponse(ctx context.Context, clinicId, contentType string, body io.Reader) (*CreateClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) CreateClinicianWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*CreateClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateClinicianWithBodyWithResponse", ctx, clinicId, contentType, body)
 	ret0, _ := ret[0].(*CreateClinicianResponse)
@@ -753,7 +753,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreateClinicianWithBodyW
 }
 
 // CreateClinicianWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) CreateClinicianWithResponse(ctx context.Context, clinicId string, body CreateClinicianJSONRequestBody) (*CreateClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) CreateClinicianWithResponse(ctx context.Context, clinicId ClinicId, body CreateClinicianJSONRequestBody) (*CreateClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateClinicianWithResponse", ctx, clinicId, body)
 	ret0, _ := ret[0].(*CreateClinicianResponse)
@@ -768,7 +768,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreateClinicianWithRespo
 }
 
 // CreatePatientAccountWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) CreatePatientAccountWithBodyWithResponse(ctx context.Context, clinicId, contentType string, body io.Reader) (*CreatePatientAccountResponse, error) {
+func (m *MockClientWithResponsesInterface) CreatePatientAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*CreatePatientAccountResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePatientAccountWithBodyWithResponse", ctx, clinicId, contentType, body)
 	ret0, _ := ret[0].(*CreatePatientAccountResponse)
@@ -783,7 +783,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreatePatientAccountWith
 }
 
 // CreatePatientAccountWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) CreatePatientAccountWithResponse(ctx context.Context, clinicId string, body CreatePatientAccountJSONRequestBody) (*CreatePatientAccountResponse, error) {
+func (m *MockClientWithResponsesInterface) CreatePatientAccountWithResponse(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody) (*CreatePatientAccountResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePatientAccountWithResponse", ctx, clinicId, body)
 	ret0, _ := ret[0].(*CreatePatientAccountResponse)
@@ -798,7 +798,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreatePatientAccountWith
 }
 
 // CreatePatientFromUserWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) CreatePatientFromUserWithBodyWithResponse(ctx context.Context, clinicId, patientId, contentType string, body io.Reader) (*CreatePatientFromUserResponse, error) {
+func (m *MockClientWithResponsesInterface) CreatePatientFromUserWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*CreatePatientFromUserResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePatientFromUserWithBodyWithResponse", ctx, clinicId, patientId, contentType, body)
 	ret0, _ := ret[0].(*CreatePatientFromUserResponse)
@@ -813,7 +813,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreatePatientFromUserWit
 }
 
 // CreatePatientFromUserWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) CreatePatientFromUserWithResponse(ctx context.Context, clinicId, patientId string, body CreatePatientFromUserJSONRequestBody) (*CreatePatientFromUserResponse, error) {
+func (m *MockClientWithResponsesInterface) CreatePatientFromUserWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body CreatePatientFromUserJSONRequestBody) (*CreatePatientFromUserResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePatientFromUserWithResponse", ctx, clinicId, patientId, body)
 	ret0, _ := ret[0].(*CreatePatientFromUserResponse)
@@ -828,7 +828,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreatePatientFromUserWit
 }
 
 // DeleteClinicianWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) DeleteClinicianWithResponse(ctx context.Context, clinicId, clinicianId string) (*DeleteClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) DeleteClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId) (*DeleteClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteClinicianWithResponse", ctx, clinicId, clinicianId)
 	ret0, _ := ret[0].(*DeleteClinicianResponse)
@@ -843,7 +843,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) DeleteClinicianWithRespo
 }
 
 // DeleteInvitedClinicianWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId, inviteId string) (*DeleteInvitedClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId) (*DeleteInvitedClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInvitedClinicianWithResponse", ctx, clinicId, inviteId)
 	ret0, _ := ret[0].(*DeleteInvitedClinicianResponse)
@@ -858,7 +858,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) DeleteInvitedClinicianWi
 }
 
 // GetClinicWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) GetClinicWithResponse(ctx context.Context, clinicId string) (*GetClinicResponse, error) {
+func (m *MockClientWithResponsesInterface) GetClinicWithResponse(ctx context.Context, clinicId ClinicId) (*GetClinicResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClinicWithResponse", ctx, clinicId)
 	ret0, _ := ret[0].(*GetClinicResponse)
@@ -873,7 +873,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClinicWithResponse(ct
 }
 
 // GetClinicianWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) GetClinicianWithResponse(ctx context.Context, clinicId, clinicianId string) (*GetClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) GetClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId) (*GetClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClinicianWithResponse", ctx, clinicId, clinicianId)
 	ret0, _ := ret[0].(*GetClinicianResponse)
@@ -888,7 +888,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClinicianWithResponse
 }
 
 // GetInvitedClinicianWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) GetInvitedClinicianWithResponse(ctx context.Context, clinicId, inviteId string) (*GetInvitedClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) GetInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId) (*GetInvitedClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInvitedClinicianWithResponse", ctx, clinicId, inviteId)
 	ret0, _ := ret[0].(*GetInvitedClinicianResponse)
@@ -903,7 +903,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetInvitedClinicianWithR
 }
 
 // GetPatientWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) GetPatientWithResponse(ctx context.Context, clinicId, patientId string) (*GetPatientResponse, error) {
+func (m *MockClientWithResponsesInterface) GetPatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId) (*GetPatientResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPatientWithResponse", ctx, clinicId, patientId)
 	ret0, _ := ret[0].(*GetPatientResponse)
@@ -918,7 +918,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetPatientWithResponse(c
 }
 
 // ListCliniciansWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) ListCliniciansWithResponse(ctx context.Context, clinicId string, params *ListCliniciansParams) (*ListCliniciansResponse, error) {
+func (m *MockClientWithResponsesInterface) ListCliniciansWithResponse(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams) (*ListCliniciansResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListCliniciansWithResponse", ctx, clinicId, params)
 	ret0, _ := ret[0].(*ListCliniciansResponse)
@@ -933,7 +933,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ListCliniciansWithRespon
 }
 
 // ListClinicsForClinicianWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) ListClinicsForClinicianWithResponse(ctx context.Context, userId string, params *ListClinicsForClinicianParams) (*ListClinicsForClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) ListClinicsForClinicianWithResponse(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams) (*ListClinicsForClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListClinicsForClinicianWithResponse", ctx, userId, params)
 	ret0, _ := ret[0].(*ListClinicsForClinicianResponse)
@@ -948,7 +948,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ListClinicsForClinicianW
 }
 
 // ListClinicsForPatientWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) ListClinicsForPatientWithResponse(ctx context.Context, userId string, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error) {
+func (m *MockClientWithResponsesInterface) ListClinicsForPatientWithResponse(ctx context.Context, userId UserId, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListClinicsForPatientWithResponse", ctx, userId, params)
 	ret0, _ := ret[0].(*ListClinicsForPatientResponse)
@@ -978,7 +978,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ListClinicsWithResponse(
 }
 
 // ListPatientsWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) ListPatientsWithResponse(ctx context.Context, clinicId string, params *ListPatientsParams) (*ListPatientsResponse, error) {
+func (m *MockClientWithResponsesInterface) ListPatientsWithResponse(ctx context.Context, clinicId ClinicId, params *ListPatientsParams) (*ListPatientsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPatientsWithResponse", ctx, clinicId, params)
 	ret0, _ := ret[0].(*ListPatientsResponse)
@@ -993,7 +993,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ListPatientsWithResponse
 }
 
 // UpdateClinicWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateClinicWithBodyWithResponse(ctx context.Context, clinicId, contentType string, body io.Reader) (*UpdateClinicResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdateClinicWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*UpdateClinicResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateClinicWithBodyWithResponse", ctx, clinicId, contentType, body)
 	ret0, _ := ret[0].(*UpdateClinicResponse)
@@ -1008,7 +1008,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateClinicWithBodyWith
 }
 
 // UpdateClinicWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateClinicWithResponse(ctx context.Context, clinicId string, body UpdateClinicJSONRequestBody) (*UpdateClinicResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdateClinicWithResponse(ctx context.Context, clinicId ClinicId, body UpdateClinicJSONRequestBody) (*UpdateClinicResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateClinicWithResponse", ctx, clinicId, body)
 	ret0, _ := ret[0].(*UpdateClinicResponse)
@@ -1023,7 +1023,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateClinicWithResponse
 }
 
 // UpdateClinicianWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateClinicianWithBodyWithResponse(ctx context.Context, clinicId, clinicianId, contentType string, body io.Reader) (*UpdateClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdateClinicianWithBodyWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, contentType string, body io.Reader) (*UpdateClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateClinicianWithBodyWithResponse", ctx, clinicId, clinicianId, contentType, body)
 	ret0, _ := ret[0].(*UpdateClinicianResponse)
@@ -1038,7 +1038,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateClinicianWithBodyW
 }
 
 // UpdateClinicianWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateClinicianWithResponse(ctx context.Context, clinicId, clinicianId string, body UpdateClinicianJSONRequestBody) (*UpdateClinicianResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdateClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, body UpdateClinicianJSONRequestBody) (*UpdateClinicianResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateClinicianWithResponse", ctx, clinicId, clinicianId, body)
 	ret0, _ := ret[0].(*UpdateClinicianResponse)
@@ -1053,7 +1053,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateClinicianWithRespo
 }
 
 // UpdatePatientPermissionsWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId, patientId, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePatientPermissionsWithBodyWithResponse", ctx, clinicId, patientId, contentType, body)
 	ret0, _ := ret[0].(*UpdatePatientPermissionsResponse)
@@ -1068,7 +1068,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdatePatientPermissions
 }
 
 // UpdatePatientPermissionsWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId, patientId string, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePatientPermissionsWithResponse", ctx, clinicId, patientId, body)
 	ret0, _ := ret[0].(*UpdatePatientPermissionsResponse)
@@ -1083,7 +1083,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdatePatientPermissions
 }
 
 // UpdatePatientWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdatePatientWithBodyWithResponse(ctx context.Context, clinicId, patientId, contentType string, body io.Reader) (*UpdatePatientResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdatePatientWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*UpdatePatientResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePatientWithBodyWithResponse", ctx, clinicId, patientId, contentType, body)
 	ret0, _ := ret[0].(*UpdatePatientResponse)
@@ -1098,7 +1098,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdatePatientWithBodyWit
 }
 
 // UpdatePatientWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdatePatientWithResponse(ctx context.Context, clinicId, patientId string, body UpdatePatientJSONRequestBody) (*UpdatePatientResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdatePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody) (*UpdatePatientResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePatientWithResponse", ctx, clinicId, patientId, body)
 	ret0, _ := ret[0].(*UpdatePatientResponse)

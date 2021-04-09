@@ -92,7 +92,7 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 // The interface specification for the client above.
 type ClientInterface interface {
 	// ListClinicsForClinician request
-	ListClinicsForClinician(ctx context.Context, userId string, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClinicsForClinician(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClinics request
 	ListClinics(ctx context.Context, params *ListClinicsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -103,74 +103,74 @@ type ClientInterface interface {
 	CreateClinic(ctx context.Context, body CreateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClinic request
-	GetClinic(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateClinic request  with any body
-	UpdateClinicWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateClinicWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateClinic(ctx context.Context, clinicId string, body UpdateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateClinic(ctx context.Context, clinicId ClinicId, body UpdateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClinicians request
-	ListClinicians(ctx context.Context, clinicId string, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClinicians(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateClinician request  with any body
-	CreateClinicianWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateClinicianWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateClinician(ctx context.Context, clinicId string, body CreateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateClinician(ctx context.Context, clinicId ClinicId, body CreateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteClinician request
-	DeleteClinician(ctx context.Context, clinicId string, clinicianId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClinician request
-	GetClinician(ctx context.Context, clinicId string, clinicianId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateClinician request  with any body
-	UpdateClinicianWithBody(ctx context.Context, clinicId string, clinicianId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateClinicianWithBody(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateClinician(ctx context.Context, clinicId string, clinicianId string, body UpdateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, body UpdateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteInvitedClinician request
-	DeleteInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteInvitedClinician(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetInvitedClinician request
-	GetInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetInvitedClinician(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AssociateClinicianToUser request  with any body
-	AssociateClinicianToUserWithBody(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AssociateClinicianToUserWithBody(ctx context.Context, clinicId ClinicId, inviteId InviteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	AssociateClinicianToUser(ctx context.Context, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	AssociateClinicianToUser(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListPatients request
-	ListPatients(ctx context.Context, clinicId string, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListPatients(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreatePatientAccount request  with any body
-	CreatePatientAccountWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreatePatientAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreatePatientAccount(ctx context.Context, clinicId string, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreatePatientAccount(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPatient request
-	GetPatient(ctx context.Context, clinicId string, patientId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetPatient(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreatePatientFromUser request  with any body
-	CreatePatientFromUserWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreatePatientFromUserWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreatePatientFromUser(ctx context.Context, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreatePatientFromUser(ctx context.Context, clinicId ClinicId, patientId PatientId, body CreatePatientFromUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdatePatient request  with any body
-	UpdatePatientWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdatePatientWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdatePatient(ctx context.Context, clinicId string, patientId string, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdatePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdatePatientPermissions request  with any body
-	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdatePatientPermissions(ctx context.Context, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdatePatientPermissions(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClinicsForPatient request
-	ListClinicsForPatient(ctx context.Context, userId string, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) ListClinicsForClinician(ctx context.Context, userId string, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) ListClinicsForClinician(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListClinicsForClinicianRequest(c.Server, userId, params)
 	if err != nil {
 		return nil, err
@@ -214,7 +214,7 @@ func (c *Client) CreateClinic(ctx context.Context, body CreateClinicJSONRequestB
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClinic(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClinicRequest(c.Server, clinicId)
 	if err != nil {
 		return nil, err
@@ -225,7 +225,7 @@ func (c *Client) GetClinic(ctx context.Context, clinicId string, reqEditors ...R
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateClinicWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdateClinicWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateClinicRequestWithBody(c.Server, clinicId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -236,7 +236,7 @@ func (c *Client) UpdateClinicWithBody(ctx context.Context, clinicId string, cont
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateClinic(ctx context.Context, clinicId string, body UpdateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdateClinic(ctx context.Context, clinicId ClinicId, body UpdateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateClinicRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
@@ -247,7 +247,7 @@ func (c *Client) UpdateClinic(ctx context.Context, clinicId string, body UpdateC
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClinicians(ctx context.Context, clinicId string, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) ListClinicians(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListCliniciansRequest(c.Server, clinicId, params)
 	if err != nil {
 		return nil, err
@@ -258,7 +258,7 @@ func (c *Client) ListClinicians(ctx context.Context, clinicId string, params *Li
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateClinicianWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CreateClinicianWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateClinicianRequestWithBody(c.Server, clinicId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -269,7 +269,7 @@ func (c *Client) CreateClinicianWithBody(ctx context.Context, clinicId string, c
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateClinician(ctx context.Context, clinicId string, body CreateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CreateClinician(ctx context.Context, clinicId ClinicId, body CreateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateClinicianRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
@@ -280,7 +280,7 @@ func (c *Client) CreateClinician(ctx context.Context, clinicId string, body Crea
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteClinician(ctx context.Context, clinicId string, clinicianId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DeleteClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteClinicianRequest(c.Server, clinicId, clinicianId)
 	if err != nil {
 		return nil, err
@@ -291,7 +291,7 @@ func (c *Client) DeleteClinician(ctx context.Context, clinicId string, clinician
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClinician(ctx context.Context, clinicId string, clinicianId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClinicianRequest(c.Server, clinicId, clinicianId)
 	if err != nil {
 		return nil, err
@@ -302,7 +302,7 @@ func (c *Client) GetClinician(ctx context.Context, clinicId string, clinicianId 
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateClinicianWithBody(ctx context.Context, clinicId string, clinicianId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdateClinicianWithBody(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateClinicianRequestWithBody(c.Server, clinicId, clinicianId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -313,7 +313,7 @@ func (c *Client) UpdateClinicianWithBody(ctx context.Context, clinicId string, c
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateClinician(ctx context.Context, clinicId string, clinicianId string, body UpdateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdateClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, body UpdateClinicianJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateClinicianRequest(c.Server, clinicId, clinicianId, body)
 	if err != nil {
 		return nil, err
@@ -324,7 +324,7 @@ func (c *Client) UpdateClinician(ctx context.Context, clinicId string, clinician
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DeleteInvitedClinician(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteInvitedClinicianRequest(c.Server, clinicId, inviteId)
 	if err != nil {
 		return nil, err
@@ -335,7 +335,7 @@ func (c *Client) DeleteInvitedClinician(ctx context.Context, clinicId string, in
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetInvitedClinician(ctx context.Context, clinicId string, inviteId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetInvitedClinician(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetInvitedClinicianRequest(c.Server, clinicId, inviteId)
 	if err != nil {
 		return nil, err
@@ -346,7 +346,7 @@ func (c *Client) GetInvitedClinician(ctx context.Context, clinicId string, invit
 	return c.Client.Do(req)
 }
 
-func (c *Client) AssociateClinicianToUserWithBody(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) AssociateClinicianToUserWithBody(ctx context.Context, clinicId ClinicId, inviteId InviteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAssociateClinicianToUserRequestWithBody(c.Server, clinicId, inviteId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -357,7 +357,7 @@ func (c *Client) AssociateClinicianToUserWithBody(ctx context.Context, clinicId 
 	return c.Client.Do(req)
 }
 
-func (c *Client) AssociateClinicianToUser(ctx context.Context, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) AssociateClinicianToUser(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAssociateClinicianToUserRequest(c.Server, clinicId, inviteId, body)
 	if err != nil {
 		return nil, err
@@ -368,7 +368,7 @@ func (c *Client) AssociateClinicianToUser(ctx context.Context, clinicId string, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListPatients(ctx context.Context, clinicId string, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) ListPatients(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListPatientsRequest(c.Server, clinicId, params)
 	if err != nil {
 		return nil, err
@@ -379,7 +379,7 @@ func (c *Client) ListPatients(ctx context.Context, clinicId string, params *List
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreatePatientAccountWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CreatePatientAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePatientAccountRequestWithBody(c.Server, clinicId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -390,7 +390,7 @@ func (c *Client) CreatePatientAccountWithBody(ctx context.Context, clinicId stri
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreatePatientAccount(ctx context.Context, clinicId string, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CreatePatientAccount(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePatientAccountRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
@@ -401,7 +401,7 @@ func (c *Client) CreatePatientAccount(ctx context.Context, clinicId string, body
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetPatient(ctx context.Context, clinicId string, patientId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetPatient(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPatientRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
@@ -412,7 +412,7 @@ func (c *Client) GetPatient(ctx context.Context, clinicId string, patientId stri
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreatePatientFromUserWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CreatePatientFromUserWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePatientFromUserRequestWithBody(c.Server, clinicId, patientId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -423,7 +423,7 @@ func (c *Client) CreatePatientFromUserWithBody(ctx context.Context, clinicId str
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreatePatientFromUser(ctx context.Context, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) CreatePatientFromUser(ctx context.Context, clinicId ClinicId, patientId PatientId, body CreatePatientFromUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePatientFromUserRequest(c.Server, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
@@ -434,7 +434,7 @@ func (c *Client) CreatePatientFromUser(ctx context.Context, clinicId string, pat
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePatientWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdatePatientWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientRequestWithBody(c.Server, clinicId, patientId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -445,7 +445,7 @@ func (c *Client) UpdatePatientWithBody(ctx context.Context, clinicId string, pat
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePatient(ctx context.Context, clinicId string, patientId string, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientRequest(c.Server, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
@@ -456,7 +456,7 @@ func (c *Client) UpdatePatient(ctx context.Context, clinicId string, patientId s
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePatientPermissionsWithBody(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientPermissionsRequestWithBody(c.Server, clinicId, patientId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -467,7 +467,7 @@ func (c *Client) UpdatePatientPermissionsWithBody(ctx context.Context, clinicId 
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePatientPermissions(ctx context.Context, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdatePatientPermissions(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientPermissionsRequest(c.Server, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
@@ -478,7 +478,7 @@ func (c *Client) UpdatePatientPermissions(ctx context.Context, clinicId string, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListClinicsForPatient(ctx context.Context, userId string, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListClinicsForPatientRequest(c.Server, userId, params)
 	if err != nil {
 		return nil, err
@@ -490,7 +490,7 @@ func (c *Client) ListClinicsForPatient(ctx context.Context, userId string, param
 }
 
 // NewListClinicsForClinicianRequest generates requests for ListClinicsForClinician
-func NewListClinicsForClinicianRequest(server string, userId string, params *ListClinicsForClinicianParams) (*http.Request, error) {
+func NewListClinicsForClinicianRequest(server string, userId UserId, params *ListClinicsForClinicianParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -612,54 +612,6 @@ func NewListClinicsRequest(server string, params *ListClinicsParams) (*http.Requ
 
 	}
 
-	if params.Sort != nil {
-
-		if queryFrag, err := runtime.StyleParam("form", true, "sort", *params.Sort); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.ClinicianId != nil {
-
-		if queryFrag, err := runtime.StyleParam("form", true, "clinicianId", *params.ClinicianId); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.PatientId != nil {
-
-		if queryFrag, err := runtime.StyleParam("form", true, "patientId", *params.PatientId); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
 	if params.Email != nil {
 
 		if queryFrag, err := runtime.StyleParam("form", true, "email", *params.Email); err != nil {
@@ -727,7 +679,7 @@ func NewCreateClinicRequestWithBody(server string, contentType string, body io.R
 }
 
 // NewGetClinicRequest generates requests for GetClinic
-func NewGetClinicRequest(server string, clinicId string) (*http.Request, error) {
+func NewGetClinicRequest(server string, clinicId ClinicId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -761,7 +713,7 @@ func NewGetClinicRequest(server string, clinicId string) (*http.Request, error) 
 }
 
 // NewUpdateClinicRequest calls the generic UpdateClinic builder with application/json body
-func NewUpdateClinicRequest(server string, clinicId string, body UpdateClinicJSONRequestBody) (*http.Request, error) {
+func NewUpdateClinicRequest(server string, clinicId ClinicId, body UpdateClinicJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -772,7 +724,7 @@ func NewUpdateClinicRequest(server string, clinicId string, body UpdateClinicJSO
 }
 
 // NewUpdateClinicRequestWithBody generates requests for UpdateClinic with any type of body
-func NewUpdateClinicRequestWithBody(server string, clinicId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateClinicRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -808,7 +760,7 @@ func NewUpdateClinicRequestWithBody(server string, clinicId string, contentType 
 }
 
 // NewListCliniciansRequest generates requests for ListClinicians
-func NewListCliniciansRequest(server string, clinicId string, params *ListCliniciansParams) (*http.Request, error) {
+func NewListCliniciansRequest(server string, clinicId ClinicId, params *ListCliniciansParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -910,7 +862,7 @@ func NewListCliniciansRequest(server string, clinicId string, params *ListClinic
 }
 
 // NewCreateClinicianRequest calls the generic CreateClinician builder with application/json body
-func NewCreateClinicianRequest(server string, clinicId string, body CreateClinicianJSONRequestBody) (*http.Request, error) {
+func NewCreateClinicianRequest(server string, clinicId ClinicId, body CreateClinicianJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -921,7 +873,7 @@ func NewCreateClinicianRequest(server string, clinicId string, body CreateClinic
 }
 
 // NewCreateClinicianRequestWithBody generates requests for CreateClinician with any type of body
-func NewCreateClinicianRequestWithBody(server string, clinicId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateClinicianRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -957,7 +909,7 @@ func NewCreateClinicianRequestWithBody(server string, clinicId string, contentTy
 }
 
 // NewDeleteClinicianRequest generates requests for DeleteClinician
-func NewDeleteClinicianRequest(server string, clinicId string, clinicianId string) (*http.Request, error) {
+func NewDeleteClinicianRequest(server string, clinicId ClinicId, clinicianId ClinicianId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -998,7 +950,7 @@ func NewDeleteClinicianRequest(server string, clinicId string, clinicianId strin
 }
 
 // NewGetClinicianRequest generates requests for GetClinician
-func NewGetClinicianRequest(server string, clinicId string, clinicianId string) (*http.Request, error) {
+func NewGetClinicianRequest(server string, clinicId ClinicId, clinicianId ClinicianId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1039,7 +991,7 @@ func NewGetClinicianRequest(server string, clinicId string, clinicianId string) 
 }
 
 // NewUpdateClinicianRequest calls the generic UpdateClinician builder with application/json body
-func NewUpdateClinicianRequest(server string, clinicId string, clinicianId string, body UpdateClinicianJSONRequestBody) (*http.Request, error) {
+func NewUpdateClinicianRequest(server string, clinicId ClinicId, clinicianId ClinicianId, body UpdateClinicianJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -1050,7 +1002,7 @@ func NewUpdateClinicianRequest(server string, clinicId string, clinicianId strin
 }
 
 // NewUpdateClinicianRequestWithBody generates requests for UpdateClinician with any type of body
-func NewUpdateClinicianRequestWithBody(server string, clinicId string, clinicianId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateClinicianRequestWithBody(server string, clinicId ClinicId, clinicianId ClinicianId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1093,7 +1045,7 @@ func NewUpdateClinicianRequestWithBody(server string, clinicId string, clinician
 }
 
 // NewDeleteInvitedClinicianRequest generates requests for DeleteInvitedClinician
-func NewDeleteInvitedClinicianRequest(server string, clinicId string, inviteId string) (*http.Request, error) {
+func NewDeleteInvitedClinicianRequest(server string, clinicId ClinicId, inviteId InviteId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1134,7 +1086,7 @@ func NewDeleteInvitedClinicianRequest(server string, clinicId string, inviteId s
 }
 
 // NewGetInvitedClinicianRequest generates requests for GetInvitedClinician
-func NewGetInvitedClinicianRequest(server string, clinicId string, inviteId string) (*http.Request, error) {
+func NewGetInvitedClinicianRequest(server string, clinicId ClinicId, inviteId InviteId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1175,7 +1127,7 @@ func NewGetInvitedClinicianRequest(server string, clinicId string, inviteId stri
 }
 
 // NewAssociateClinicianToUserRequest calls the generic AssociateClinicianToUser builder with application/json body
-func NewAssociateClinicianToUserRequest(server string, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody) (*http.Request, error) {
+func NewAssociateClinicianToUserRequest(server string, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -1186,7 +1138,7 @@ func NewAssociateClinicianToUserRequest(server string, clinicId string, inviteId
 }
 
 // NewAssociateClinicianToUserRequestWithBody generates requests for AssociateClinicianToUser with any type of body
-func NewAssociateClinicianToUserRequestWithBody(server string, clinicId string, inviteId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewAssociateClinicianToUserRequestWithBody(server string, clinicId ClinicId, inviteId InviteId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1229,7 +1181,7 @@ func NewAssociateClinicianToUserRequestWithBody(server string, clinicId string, 
 }
 
 // NewListPatientsRequest generates requests for ListPatients
-func NewListPatientsRequest(server string, clinicId string, params *ListPatientsParams) (*http.Request, error) {
+func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatientsParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1315,7 +1267,7 @@ func NewListPatientsRequest(server string, clinicId string, params *ListPatients
 }
 
 // NewCreatePatientAccountRequest calls the generic CreatePatientAccount builder with application/json body
-func NewCreatePatientAccountRequest(server string, clinicId string, body CreatePatientAccountJSONRequestBody) (*http.Request, error) {
+func NewCreatePatientAccountRequest(server string, clinicId ClinicId, body CreatePatientAccountJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -1326,7 +1278,7 @@ func NewCreatePatientAccountRequest(server string, clinicId string, body CreateP
 }
 
 // NewCreatePatientAccountRequestWithBody generates requests for CreatePatientAccount with any type of body
-func NewCreatePatientAccountRequestWithBody(server string, clinicId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreatePatientAccountRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1362,7 +1314,7 @@ func NewCreatePatientAccountRequestWithBody(server string, clinicId string, cont
 }
 
 // NewGetPatientRequest generates requests for GetPatient
-func NewGetPatientRequest(server string, clinicId string, patientId string) (*http.Request, error) {
+func NewGetPatientRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1403,7 +1355,7 @@ func NewGetPatientRequest(server string, clinicId string, patientId string) (*ht
 }
 
 // NewCreatePatientFromUserRequest calls the generic CreatePatientFromUser builder with application/json body
-func NewCreatePatientFromUserRequest(server string, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody) (*http.Request, error) {
+func NewCreatePatientFromUserRequest(server string, clinicId ClinicId, patientId PatientId, body CreatePatientFromUserJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -1414,7 +1366,7 @@ func NewCreatePatientFromUserRequest(server string, clinicId string, patientId s
 }
 
 // NewCreatePatientFromUserRequestWithBody generates requests for CreatePatientFromUser with any type of body
-func NewCreatePatientFromUserRequestWithBody(server string, clinicId string, patientId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreatePatientFromUserRequestWithBody(server string, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1457,7 +1409,7 @@ func NewCreatePatientFromUserRequestWithBody(server string, clinicId string, pat
 }
 
 // NewUpdatePatientRequest calls the generic UpdatePatient builder with application/json body
-func NewUpdatePatientRequest(server string, clinicId string, patientId string, body UpdatePatientJSONRequestBody) (*http.Request, error) {
+func NewUpdatePatientRequest(server string, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -1468,7 +1420,7 @@ func NewUpdatePatientRequest(server string, clinicId string, patientId string, b
 }
 
 // NewUpdatePatientRequestWithBody generates requests for UpdatePatient with any type of body
-func NewUpdatePatientRequestWithBody(server string, clinicId string, patientId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdatePatientRequestWithBody(server string, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1511,7 +1463,7 @@ func NewUpdatePatientRequestWithBody(server string, clinicId string, patientId s
 }
 
 // NewUpdatePatientPermissionsRequest calls the generic UpdatePatientPermissions builder with application/json body
-func NewUpdatePatientPermissionsRequest(server string, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
+func NewUpdatePatientPermissionsRequest(server string, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -1522,7 +1474,7 @@ func NewUpdatePatientPermissionsRequest(server string, clinicId string, patientI
 }
 
 // NewUpdatePatientPermissionsRequestWithBody generates requests for UpdatePatientPermissions with any type of body
-func NewUpdatePatientPermissionsRequestWithBody(server string, clinicId string, patientId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdatePatientPermissionsRequestWithBody(server string, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1565,7 +1517,7 @@ func NewUpdatePatientPermissionsRequestWithBody(server string, clinicId string, 
 }
 
 // NewListClinicsForPatientRequest generates requests for ListClinicsForPatient
-func NewListClinicsForPatientRequest(server string, userId string, params *ListClinicsForPatientParams) (*http.Request, error) {
+func NewListClinicsForPatientRequest(server string, userId UserId, params *ListClinicsForPatientParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1679,7 +1631,7 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 	// ListClinicsForClinician request
-	ListClinicsForClinicianWithResponse(ctx context.Context, userId string, params *ListClinicsForClinicianParams) (*ListClinicsForClinicianResponse, error)
+	ListClinicsForClinicianWithResponse(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams) (*ListClinicsForClinicianResponse, error)
 
 	// ListClinics request
 	ListClinicsWithResponse(ctx context.Context, params *ListClinicsParams) (*ListClinicsResponse, error)
@@ -1690,71 +1642,71 @@ type ClientWithResponsesInterface interface {
 	CreateClinicWithResponse(ctx context.Context, body CreateClinicJSONRequestBody) (*CreateClinicResponse, error)
 
 	// GetClinic request
-	GetClinicWithResponse(ctx context.Context, clinicId string) (*GetClinicResponse, error)
+	GetClinicWithResponse(ctx context.Context, clinicId ClinicId) (*GetClinicResponse, error)
 
 	// UpdateClinic request  with any body
-	UpdateClinicWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader) (*UpdateClinicResponse, error)
+	UpdateClinicWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*UpdateClinicResponse, error)
 
-	UpdateClinicWithResponse(ctx context.Context, clinicId string, body UpdateClinicJSONRequestBody) (*UpdateClinicResponse, error)
+	UpdateClinicWithResponse(ctx context.Context, clinicId ClinicId, body UpdateClinicJSONRequestBody) (*UpdateClinicResponse, error)
 
 	// ListClinicians request
-	ListCliniciansWithResponse(ctx context.Context, clinicId string, params *ListCliniciansParams) (*ListCliniciansResponse, error)
+	ListCliniciansWithResponse(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams) (*ListCliniciansResponse, error)
 
 	// CreateClinician request  with any body
-	CreateClinicianWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader) (*CreateClinicianResponse, error)
+	CreateClinicianWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*CreateClinicianResponse, error)
 
-	CreateClinicianWithResponse(ctx context.Context, clinicId string, body CreateClinicianJSONRequestBody) (*CreateClinicianResponse, error)
+	CreateClinicianWithResponse(ctx context.Context, clinicId ClinicId, body CreateClinicianJSONRequestBody) (*CreateClinicianResponse, error)
 
 	// DeleteClinician request
-	DeleteClinicianWithResponse(ctx context.Context, clinicId string, clinicianId string) (*DeleteClinicianResponse, error)
+	DeleteClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId) (*DeleteClinicianResponse, error)
 
 	// GetClinician request
-	GetClinicianWithResponse(ctx context.Context, clinicId string, clinicianId string) (*GetClinicianResponse, error)
+	GetClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId) (*GetClinicianResponse, error)
 
 	// UpdateClinician request  with any body
-	UpdateClinicianWithBodyWithResponse(ctx context.Context, clinicId string, clinicianId string, contentType string, body io.Reader) (*UpdateClinicianResponse, error)
+	UpdateClinicianWithBodyWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, contentType string, body io.Reader) (*UpdateClinicianResponse, error)
 
-	UpdateClinicianWithResponse(ctx context.Context, clinicId string, clinicianId string, body UpdateClinicianJSONRequestBody) (*UpdateClinicianResponse, error)
+	UpdateClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, body UpdateClinicianJSONRequestBody) (*UpdateClinicianResponse, error)
 
 	// DeleteInvitedClinician request
-	DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*DeleteInvitedClinicianResponse, error)
+	DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId) (*DeleteInvitedClinicianResponse, error)
 
 	// GetInvitedClinician request
-	GetInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*GetInvitedClinicianResponse, error)
+	GetInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId) (*GetInvitedClinicianResponse, error)
 
 	// AssociateClinicianToUser request  with any body
-	AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error)
+	AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error)
 
-	AssociateClinicianToUserWithResponse(ctx context.Context, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody) (*AssociateClinicianToUserResponse, error)
+	AssociateClinicianToUserWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody) (*AssociateClinicianToUserResponse, error)
 
 	// ListPatients request
-	ListPatientsWithResponse(ctx context.Context, clinicId string, params *ListPatientsParams) (*ListPatientsResponse, error)
+	ListPatientsWithResponse(ctx context.Context, clinicId ClinicId, params *ListPatientsParams) (*ListPatientsResponse, error)
 
 	// CreatePatientAccount request  with any body
-	CreatePatientAccountWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader) (*CreatePatientAccountResponse, error)
+	CreatePatientAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*CreatePatientAccountResponse, error)
 
-	CreatePatientAccountWithResponse(ctx context.Context, clinicId string, body CreatePatientAccountJSONRequestBody) (*CreatePatientAccountResponse, error)
+	CreatePatientAccountWithResponse(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody) (*CreatePatientAccountResponse, error)
 
 	// GetPatient request
-	GetPatientWithResponse(ctx context.Context, clinicId string, patientId string) (*GetPatientResponse, error)
+	GetPatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId) (*GetPatientResponse, error)
 
 	// CreatePatientFromUser request  with any body
-	CreatePatientFromUserWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*CreatePatientFromUserResponse, error)
+	CreatePatientFromUserWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*CreatePatientFromUserResponse, error)
 
-	CreatePatientFromUserWithResponse(ctx context.Context, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody) (*CreatePatientFromUserResponse, error)
+	CreatePatientFromUserWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body CreatePatientFromUserJSONRequestBody) (*CreatePatientFromUserResponse, error)
 
 	// UpdatePatient request  with any body
-	UpdatePatientWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*UpdatePatientResponse, error)
+	UpdatePatientWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*UpdatePatientResponse, error)
 
-	UpdatePatientWithResponse(ctx context.Context, clinicId string, patientId string, body UpdatePatientJSONRequestBody) (*UpdatePatientResponse, error)
+	UpdatePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody) (*UpdatePatientResponse, error)
 
 	// UpdatePatientPermissions request  with any body
-	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error)
+	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error)
 
-	UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error)
+	UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error)
 
 	// ListClinicsForPatient request
-	ListClinicsForPatientWithResponse(ctx context.Context, userId string, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error)
+	ListClinicsForPatientWithResponse(ctx context.Context, userId UserId, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error)
 }
 
 type ListClinicsForClinicianResponse struct {
@@ -2198,7 +2150,7 @@ func (r ListClinicsForPatientResponse) StatusCode() int {
 }
 
 // ListClinicsForClinicianWithResponse request returning *ListClinicsForClinicianResponse
-func (c *ClientWithResponses) ListClinicsForClinicianWithResponse(ctx context.Context, userId string, params *ListClinicsForClinicianParams) (*ListClinicsForClinicianResponse, error) {
+func (c *ClientWithResponses) ListClinicsForClinicianWithResponse(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams) (*ListClinicsForClinicianResponse, error) {
 	rsp, err := c.ListClinicsForClinician(ctx, userId, params)
 	if err != nil {
 		return nil, err
@@ -2233,7 +2185,7 @@ func (c *ClientWithResponses) CreateClinicWithResponse(ctx context.Context, body
 }
 
 // GetClinicWithResponse request returning *GetClinicResponse
-func (c *ClientWithResponses) GetClinicWithResponse(ctx context.Context, clinicId string) (*GetClinicResponse, error) {
+func (c *ClientWithResponses) GetClinicWithResponse(ctx context.Context, clinicId ClinicId) (*GetClinicResponse, error) {
 	rsp, err := c.GetClinic(ctx, clinicId)
 	if err != nil {
 		return nil, err
@@ -2242,7 +2194,7 @@ func (c *ClientWithResponses) GetClinicWithResponse(ctx context.Context, clinicI
 }
 
 // UpdateClinicWithBodyWithResponse request with arbitrary body returning *UpdateClinicResponse
-func (c *ClientWithResponses) UpdateClinicWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader) (*UpdateClinicResponse, error) {
+func (c *ClientWithResponses) UpdateClinicWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*UpdateClinicResponse, error) {
 	rsp, err := c.UpdateClinicWithBody(ctx, clinicId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -2250,7 +2202,7 @@ func (c *ClientWithResponses) UpdateClinicWithBodyWithResponse(ctx context.Conte
 	return ParseUpdateClinicResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateClinicWithResponse(ctx context.Context, clinicId string, body UpdateClinicJSONRequestBody) (*UpdateClinicResponse, error) {
+func (c *ClientWithResponses) UpdateClinicWithResponse(ctx context.Context, clinicId ClinicId, body UpdateClinicJSONRequestBody) (*UpdateClinicResponse, error) {
 	rsp, err := c.UpdateClinic(ctx, clinicId, body)
 	if err != nil {
 		return nil, err
@@ -2259,7 +2211,7 @@ func (c *ClientWithResponses) UpdateClinicWithResponse(ctx context.Context, clin
 }
 
 // ListCliniciansWithResponse request returning *ListCliniciansResponse
-func (c *ClientWithResponses) ListCliniciansWithResponse(ctx context.Context, clinicId string, params *ListCliniciansParams) (*ListCliniciansResponse, error) {
+func (c *ClientWithResponses) ListCliniciansWithResponse(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams) (*ListCliniciansResponse, error) {
 	rsp, err := c.ListClinicians(ctx, clinicId, params)
 	if err != nil {
 		return nil, err
@@ -2268,7 +2220,7 @@ func (c *ClientWithResponses) ListCliniciansWithResponse(ctx context.Context, cl
 }
 
 // CreateClinicianWithBodyWithResponse request with arbitrary body returning *CreateClinicianResponse
-func (c *ClientWithResponses) CreateClinicianWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader) (*CreateClinicianResponse, error) {
+func (c *ClientWithResponses) CreateClinicianWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*CreateClinicianResponse, error) {
 	rsp, err := c.CreateClinicianWithBody(ctx, clinicId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -2276,7 +2228,7 @@ func (c *ClientWithResponses) CreateClinicianWithBodyWithResponse(ctx context.Co
 	return ParseCreateClinicianResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateClinicianWithResponse(ctx context.Context, clinicId string, body CreateClinicianJSONRequestBody) (*CreateClinicianResponse, error) {
+func (c *ClientWithResponses) CreateClinicianWithResponse(ctx context.Context, clinicId ClinicId, body CreateClinicianJSONRequestBody) (*CreateClinicianResponse, error) {
 	rsp, err := c.CreateClinician(ctx, clinicId, body)
 	if err != nil {
 		return nil, err
@@ -2285,7 +2237,7 @@ func (c *ClientWithResponses) CreateClinicianWithResponse(ctx context.Context, c
 }
 
 // DeleteClinicianWithResponse request returning *DeleteClinicianResponse
-func (c *ClientWithResponses) DeleteClinicianWithResponse(ctx context.Context, clinicId string, clinicianId string) (*DeleteClinicianResponse, error) {
+func (c *ClientWithResponses) DeleteClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId) (*DeleteClinicianResponse, error) {
 	rsp, err := c.DeleteClinician(ctx, clinicId, clinicianId)
 	if err != nil {
 		return nil, err
@@ -2294,7 +2246,7 @@ func (c *ClientWithResponses) DeleteClinicianWithResponse(ctx context.Context, c
 }
 
 // GetClinicianWithResponse request returning *GetClinicianResponse
-func (c *ClientWithResponses) GetClinicianWithResponse(ctx context.Context, clinicId string, clinicianId string) (*GetClinicianResponse, error) {
+func (c *ClientWithResponses) GetClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId) (*GetClinicianResponse, error) {
 	rsp, err := c.GetClinician(ctx, clinicId, clinicianId)
 	if err != nil {
 		return nil, err
@@ -2303,7 +2255,7 @@ func (c *ClientWithResponses) GetClinicianWithResponse(ctx context.Context, clin
 }
 
 // UpdateClinicianWithBodyWithResponse request with arbitrary body returning *UpdateClinicianResponse
-func (c *ClientWithResponses) UpdateClinicianWithBodyWithResponse(ctx context.Context, clinicId string, clinicianId string, contentType string, body io.Reader) (*UpdateClinicianResponse, error) {
+func (c *ClientWithResponses) UpdateClinicianWithBodyWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, contentType string, body io.Reader) (*UpdateClinicianResponse, error) {
 	rsp, err := c.UpdateClinicianWithBody(ctx, clinicId, clinicianId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -2311,7 +2263,7 @@ func (c *ClientWithResponses) UpdateClinicianWithBodyWithResponse(ctx context.Co
 	return ParseUpdateClinicianResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateClinicianWithResponse(ctx context.Context, clinicId string, clinicianId string, body UpdateClinicianJSONRequestBody) (*UpdateClinicianResponse, error) {
+func (c *ClientWithResponses) UpdateClinicianWithResponse(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, body UpdateClinicianJSONRequestBody) (*UpdateClinicianResponse, error) {
 	rsp, err := c.UpdateClinician(ctx, clinicId, clinicianId, body)
 	if err != nil {
 		return nil, err
@@ -2320,7 +2272,7 @@ func (c *ClientWithResponses) UpdateClinicianWithResponse(ctx context.Context, c
 }
 
 // DeleteInvitedClinicianWithResponse request returning *DeleteInvitedClinicianResponse
-func (c *ClientWithResponses) DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*DeleteInvitedClinicianResponse, error) {
+func (c *ClientWithResponses) DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId) (*DeleteInvitedClinicianResponse, error) {
 	rsp, err := c.DeleteInvitedClinician(ctx, clinicId, inviteId)
 	if err != nil {
 		return nil, err
@@ -2329,7 +2281,7 @@ func (c *ClientWithResponses) DeleteInvitedClinicianWithResponse(ctx context.Con
 }
 
 // GetInvitedClinicianWithResponse request returning *GetInvitedClinicianResponse
-func (c *ClientWithResponses) GetInvitedClinicianWithResponse(ctx context.Context, clinicId string, inviteId string) (*GetInvitedClinicianResponse, error) {
+func (c *ClientWithResponses) GetInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId) (*GetInvitedClinicianResponse, error) {
 	rsp, err := c.GetInvitedClinician(ctx, clinicId, inviteId)
 	if err != nil {
 		return nil, err
@@ -2338,7 +2290,7 @@ func (c *ClientWithResponses) GetInvitedClinicianWithResponse(ctx context.Contex
 }
 
 // AssociateClinicianToUserWithBodyWithResponse request with arbitrary body returning *AssociateClinicianToUserResponse
-func (c *ClientWithResponses) AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId string, inviteId string, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error) {
+func (c *ClientWithResponses) AssociateClinicianToUserWithBodyWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, contentType string, body io.Reader) (*AssociateClinicianToUserResponse, error) {
 	rsp, err := c.AssociateClinicianToUserWithBody(ctx, clinicId, inviteId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -2346,7 +2298,7 @@ func (c *ClientWithResponses) AssociateClinicianToUserWithBodyWithResponse(ctx c
 	return ParseAssociateClinicianToUserResponse(rsp)
 }
 
-func (c *ClientWithResponses) AssociateClinicianToUserWithResponse(ctx context.Context, clinicId string, inviteId string, body AssociateClinicianToUserJSONRequestBody) (*AssociateClinicianToUserResponse, error) {
+func (c *ClientWithResponses) AssociateClinicianToUserWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody) (*AssociateClinicianToUserResponse, error) {
 	rsp, err := c.AssociateClinicianToUser(ctx, clinicId, inviteId, body)
 	if err != nil {
 		return nil, err
@@ -2355,7 +2307,7 @@ func (c *ClientWithResponses) AssociateClinicianToUserWithResponse(ctx context.C
 }
 
 // ListPatientsWithResponse request returning *ListPatientsResponse
-func (c *ClientWithResponses) ListPatientsWithResponse(ctx context.Context, clinicId string, params *ListPatientsParams) (*ListPatientsResponse, error) {
+func (c *ClientWithResponses) ListPatientsWithResponse(ctx context.Context, clinicId ClinicId, params *ListPatientsParams) (*ListPatientsResponse, error) {
 	rsp, err := c.ListPatients(ctx, clinicId, params)
 	if err != nil {
 		return nil, err
@@ -2364,7 +2316,7 @@ func (c *ClientWithResponses) ListPatientsWithResponse(ctx context.Context, clin
 }
 
 // CreatePatientAccountWithBodyWithResponse request with arbitrary body returning *CreatePatientAccountResponse
-func (c *ClientWithResponses) CreatePatientAccountWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader) (*CreatePatientAccountResponse, error) {
+func (c *ClientWithResponses) CreatePatientAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader) (*CreatePatientAccountResponse, error) {
 	rsp, err := c.CreatePatientAccountWithBody(ctx, clinicId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -2372,7 +2324,7 @@ func (c *ClientWithResponses) CreatePatientAccountWithBodyWithResponse(ctx conte
 	return ParseCreatePatientAccountResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreatePatientAccountWithResponse(ctx context.Context, clinicId string, body CreatePatientAccountJSONRequestBody) (*CreatePatientAccountResponse, error) {
+func (c *ClientWithResponses) CreatePatientAccountWithResponse(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody) (*CreatePatientAccountResponse, error) {
 	rsp, err := c.CreatePatientAccount(ctx, clinicId, body)
 	if err != nil {
 		return nil, err
@@ -2381,7 +2333,7 @@ func (c *ClientWithResponses) CreatePatientAccountWithResponse(ctx context.Conte
 }
 
 // GetPatientWithResponse request returning *GetPatientResponse
-func (c *ClientWithResponses) GetPatientWithResponse(ctx context.Context, clinicId string, patientId string) (*GetPatientResponse, error) {
+func (c *ClientWithResponses) GetPatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId) (*GetPatientResponse, error) {
 	rsp, err := c.GetPatient(ctx, clinicId, patientId)
 	if err != nil {
 		return nil, err
@@ -2390,7 +2342,7 @@ func (c *ClientWithResponses) GetPatientWithResponse(ctx context.Context, clinic
 }
 
 // CreatePatientFromUserWithBodyWithResponse request with arbitrary body returning *CreatePatientFromUserResponse
-func (c *ClientWithResponses) CreatePatientFromUserWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*CreatePatientFromUserResponse, error) {
+func (c *ClientWithResponses) CreatePatientFromUserWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*CreatePatientFromUserResponse, error) {
 	rsp, err := c.CreatePatientFromUserWithBody(ctx, clinicId, patientId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -2398,7 +2350,7 @@ func (c *ClientWithResponses) CreatePatientFromUserWithBodyWithResponse(ctx cont
 	return ParseCreatePatientFromUserResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreatePatientFromUserWithResponse(ctx context.Context, clinicId string, patientId string, body CreatePatientFromUserJSONRequestBody) (*CreatePatientFromUserResponse, error) {
+func (c *ClientWithResponses) CreatePatientFromUserWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body CreatePatientFromUserJSONRequestBody) (*CreatePatientFromUserResponse, error) {
 	rsp, err := c.CreatePatientFromUser(ctx, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
@@ -2407,7 +2359,7 @@ func (c *ClientWithResponses) CreatePatientFromUserWithResponse(ctx context.Cont
 }
 
 // UpdatePatientWithBodyWithResponse request with arbitrary body returning *UpdatePatientResponse
-func (c *ClientWithResponses) UpdatePatientWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*UpdatePatientResponse, error) {
+func (c *ClientWithResponses) UpdatePatientWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*UpdatePatientResponse, error) {
 	rsp, err := c.UpdatePatientWithBody(ctx, clinicId, patientId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -2415,7 +2367,7 @@ func (c *ClientWithResponses) UpdatePatientWithBodyWithResponse(ctx context.Cont
 	return ParseUpdatePatientResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdatePatientWithResponse(ctx context.Context, clinicId string, patientId string, body UpdatePatientJSONRequestBody) (*UpdatePatientResponse, error) {
+func (c *ClientWithResponses) UpdatePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody) (*UpdatePatientResponse, error) {
 	rsp, err := c.UpdatePatient(ctx, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
@@ -2424,7 +2376,7 @@ func (c *ClientWithResponses) UpdatePatientWithResponse(ctx context.Context, cli
 }
 
 // UpdatePatientPermissionsWithBodyWithResponse request with arbitrary body returning *UpdatePatientPermissionsResponse
-func (c *ClientWithResponses) UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId string, patientId string, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error) {
+func (c *ClientWithResponses) UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error) {
 	rsp, err := c.UpdatePatientPermissionsWithBody(ctx, clinicId, patientId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -2432,7 +2384,7 @@ func (c *ClientWithResponses) UpdatePatientPermissionsWithBodyWithResponse(ctx c
 	return ParseUpdatePatientPermissionsResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId string, patientId string, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error) {
+func (c *ClientWithResponses) UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error) {
 	rsp, err := c.UpdatePatientPermissions(ctx, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
@@ -2441,7 +2393,7 @@ func (c *ClientWithResponses) UpdatePatientPermissionsWithResponse(ctx context.C
 }
 
 // ListClinicsForPatientWithResponse request returning *ListClinicsForPatientResponse
-func (c *ClientWithResponses) ListClinicsForPatientWithResponse(ctx context.Context, userId string, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error) {
+func (c *ClientWithResponses) ListClinicsForPatientWithResponse(ctx context.Context, userId UserId, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error) {
 	rsp, err := c.ListClinicsForPatient(ctx, userId, params)
 	if err != nil {
 		return nil, err
