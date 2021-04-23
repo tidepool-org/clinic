@@ -18,16 +18,12 @@ import (
 var (
 	DatabaseName        = ""
 	DefaultClinicDatabaseName = "clinic"
-	UserDatabase = "user"
-	ProfileDatabase = "seagull"
 
 	ClinicsCollection   = "clinic"
 	ClinicsCliniciansCollection   = "clinicsClinicians"
 	ClinicsPatientsCollection   = "clinicsPatients"
-	UsersCollection   = "users"
-	ProfileCollection   = "seagull"
 
-	MongoHost           = "mongodb://127.0.0.1:27017"
+	MongoLocalHost           = "mongodb://127.0.0.1:27017"
 	DefaultPagingParams = MongoPagingParams{Offset: 0 ,Limit: 10}
 	ContextTimeout = time.Duration(20)*time.Second
 )
@@ -41,17 +37,6 @@ func init() {
 	}
 }
 
-// Overall storage interface
-type StorageInterface interface {
-	InsertOne(collection string, document interface{}) (*string, error)
-	FindOne(collection string, filter interface{}, data interface{}) error
-	Find(collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{}) error
-	FindWithDatabase(database string, collection string, filter interface{}, pagingParams *MongoPagingParams, data interface{}) error
-	UpdateOne(collection string, filter interface{}, update interface {}) error
-	Update(collection string, filter interface{}, update interface {}) error
-	Aggregate(collection string, pipeline []bson.D, data interface {}) error
-}
-
 //Mongo Storage Client
 type MongoStoreClient struct {
 	Client *mongo.Client
@@ -60,6 +45,28 @@ type MongoStoreClient struct {
 type MongoPagingParams struct {
 	Offset int64
 	Limit int64
+}
+
+type Pagination struct {
+	Offset int
+	Limit  int
+}
+
+func DefaultPagination() Pagination {
+	return Pagination{
+		Offset: 0,
+		Limit: 10,
+	}
+}
+
+func ObjectIDSFromStringArray(ids []string) []primitive.ObjectID {
+	var objectIds []primitive.ObjectID
+	for _, id := range ids {
+		if objectId, err := primitive.ObjectIDFromHex(id); err == nil {
+			objectIds = append(objectIds, objectId)
+		}
+	}
+	return objectIds
 }
 
 func NewDbContext() context.Context {

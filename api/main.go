@@ -1,18 +1,22 @@
 package api
 
-
 import (
 	"context"
 	"fmt"
+	oapiMiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/tidepool-org/clinic/authz"
+	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"github.com/tidepool-org/clinic/users"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 var (
@@ -23,60 +27,73 @@ var (
 
 )
 
+func Start(e *echo.Echo, lifecycle fx.Lifecycle) {
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go func() {
+				if err := e.Start(ServerString); err != nil {
+					fmt.Println(err)
+				}
+			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			return e.Shutdown(ctx)
+		},
+	})
+}
 
-func MainLoop() {
-	// Echo instance
+func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo, error){
 	e := echo.New()
 	e.Logger.Print("Starting Main Loop")
 	swagger, err := GetSwagger()
 	if err != nil {
-		e.Logger.Fatal("Cound not get spec")
+		return nil, err
 	}
 
-	// Connection string
-	mongoHost, err := store.GetConnectionString()
-	if err != nil {
-		e.Logger.Fatal("Cound not connect to database: ", err)
-	}
+	// Do not validate servers
+	swagger.Servers = nil
+	requestValidator := oapiMiddleware.OapiRequestValidatorWithOptions(swagger, &oapiMiddleware.Options{
+		Options: openapi3filter.Options{AuthenticationFunc: authorizer.Authorize},
+	})
 
-	// Create Store
-	e.Logger.Print("Getting Mongo Store")
-	dbstore := store.NewMongoStoreClient(mongoHost)
-
-
-	// Middleware
-	authClient := AuthClient{Store: dbstore}
-	filterOptions := openapi3filter.Options{AuthenticationFunc: authClient.AuthenticationFunc}
-	options := Options{Options: filterOptions}
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(OapiRequestValidator(swagger, &options))
+	e.Use(requestValidator)
 
 	// Routes
 	e.GET("/", hello)
 
-	// Register Handler
-	RegisterHandlers(e, &ClinicServer{Store: dbstore})
+	e.HTTPErrorHandler = errors.CustomHTTPErrorHandler
 
-	// Start server
-	e.Logger.Printf("Starting Server at: %s\n", ServerString)
-	go func() {
-		if err := e.Start(ServerString); err != nil {
-			e.Logger.Info("shutting down the server")
-		}
-	}()
+	RegisterHandlers(e, handler)
 
-	// Wait for interrupt signal to gracefully shutdown the server with
-	// a timeout of 10 seconds.
-	quit := make(chan os.Signal)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	return e, nil
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(ServerTimeoutAmount) * time.Second)
-	defer cancel()
-	if err := e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
-	}
+func MainLoop() {
+	fx.New(
+		fx.Provide(
+			func() (*zap.Logger, error) {
+				config := zap.NewProductionConfig()
+				config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+				return config.Build()
+			},
+			func(logger *zap.Logger) *zap.SugaredLogger { return logger.Sugar() },
+			store.GetConnectionString,
+			store.NewClient,
+			store.NewDatabase,
+			patients.NewRepository,
+			clinicians.NewRepository,
+			clinics.NewRepository,
+			clinics.NewCreator,
+			authz.NewRequestAuthorizer,
+			NewHandler,
+			NewServer,
+		),
+		users.Module,
+		fx.Invoke(Start),
+	).Run()
 }
 
 // Handler

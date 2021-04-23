@@ -2,7 +2,13 @@
 
 # Generates server files
 generate:
-	cmd/regenerateYaml.sh
+	swagger-cli bundle ../TidepoolApi/reference/clinic.v1.yaml -o ./spec/clinic.v1.yaml -t yaml
+	oapi-codegen -exclude-tags=confirmation -package=api -generate=server spec/clinic.v1.yaml > api/gen_server.go
+	oapi-codegen -exclude-tags=confirmation -package=api -generate=spec spec/clinic.v1.yaml > api/gen_spec.go
+	oapi-codegen -exclude-tags=confirmation -package=api -generate=types spec/clinic.v1.yaml > api/gen_types.go
+	oapi-codegen -exclude-tags=confirmation -package=api -generate=types spec/clinic.v1.yaml > client/types.go
+	oapi-codegen -exclude-tags=confirmation -package=api -generate=client spec/clinic.v1.yaml > client/client.go
+	go generate ./client/mocks.go
 
 # Runs tests
 test:

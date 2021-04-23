@@ -19,7 +19,7 @@ func TestStore(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	store.DatabaseName = "clinic_test"
-	mongoClient = store.NewMongoStoreClient(store.MongoHost)
+	mongoClient = store.NewMongoStoreClient(store.MongoLocalHost)
 
 	// Create database and collections
 	fmt.Println("Starting suite")
