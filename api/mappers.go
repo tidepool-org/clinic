@@ -125,7 +125,7 @@ func NewPatient(dto Patient) patients.Patient {
 		TargetDevices: dto.TargetDevices,
 	}
 	if dto.BirthDate != nil {
-		strp(dto.BirthDate.Format(dateFormat))
+		p.BirthDate = strp(dto.BirthDate.Format(dateFormat))
 	}
 	return p
 }
