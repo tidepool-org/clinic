@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	patientsCollectionName = "PatientsRepo"
+	patientsCollectionName = "patients"
 )
 
 func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, error) {
