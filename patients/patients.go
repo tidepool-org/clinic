@@ -8,8 +8,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var ErrNotFound = fmt.Errorf("patient %w", errors.NotFound)
-var ErrDuplicate = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
+
+var (
+	ErrNotFound = fmt.Errorf("patient %w", errors.NotFound)
+	ErrDuplicate = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
+
+	CustodialAccountPermissions = Permissions{
+		Custodian: new(Permission),
+		View:      new(Permission),
+		Upload:    new(Permission),
+		Note:      new(Permission),
+	}
+)
 
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
@@ -31,6 +41,10 @@ type Patient struct {
 	Permissions   *Permissions        `bson:"permissions,omitempty"`
 }
 
+func (p Patient) IsCustodial() bool {
+	return p.Permissions != nil && p.Permissions.Custodian != nil
+}
+
 type Filter struct {
 	ClinicId *string
 	UserId   *string
@@ -44,3 +58,5 @@ type Permissions struct {
 	Upload    *Permission `bson:"upload,omitempty"`
 	Note      *Permission `bson:"note,omitempty"`
 }
+
+

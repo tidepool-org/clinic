@@ -13,7 +13,6 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"github.com/tidepool-org/clinic/users"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
@@ -84,6 +83,8 @@ func MainLoop() {
 			store.NewClient,
 			store.NewDatabase,
 			patients.NewRepository,
+			patients.NewCustodialService,
+			patients.NewService,
 			clinicians.NewRepository,
 			clinics.NewRepository,
 			clinics.NewCreator,
@@ -91,7 +92,7 @@ func MainLoop() {
 			NewHandler,
 			NewServer,
 		),
-		users.Module,
+		patients.Module,
 		fx.Invoke(Start),
 	).Run()
 }

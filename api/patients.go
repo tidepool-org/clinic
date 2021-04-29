@@ -26,7 +26,28 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 }
 
 func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error {
-	panic("implement me")
+	ctx := ec.Request().Context()
+	dto := Patient{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	clinicObjId, err := primitive.ObjectIDFromHex(string(clinicId))
+	if err != nil {
+		return err
+	}
+
+	patient := patients.Patient{
+		ClinicId:    &clinicObjId,
+		Permissions: &patients.CustodialAccountPermissions,
+	}
+
+	result, err := h.patients.Create(ctx, patient)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(result))
 }
 
 func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
@@ -41,7 +62,7 @@ func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId Patie
 
 func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := CreatePatient{}
+	dto := Patient{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -57,7 +78,11 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 		Permissions: NewPermissions(dto.Permissions),
 	}
 
-	result, err := h.users.CreatePatientFromExistingUser(ctx, patient)
+	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
+		return err
+	}
+
+	result, err := h.patients.Create(ctx, patient)
 	if err != nil {
 		return err
 	}

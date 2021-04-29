@@ -15,8 +15,8 @@ const (
 	patientsCollectionName = "patients"
 )
 
-func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Service, error) {
-	repo := &repository{
+func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, error) {
+	repo := &Repository{
 		collection: db.Collection(patientsCollectionName),
 	}
 
@@ -29,11 +29,11 @@ func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Service, error) 
 	return repo, nil
 }
 
-type repository struct {
+type Repository struct {
 	collection *mongo.Collection
 }
 
-func (r *repository) Initialize(ctx context.Context) error {
+func (r *Repository) Initialize(ctx context.Context) error {
 	_, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
@@ -62,7 +62,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*Patient, error) {
+func (r *Repository) Get(ctx context.Context, clinicId string, userId string) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -80,7 +80,7 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 	return patient, nil
 }
 
-func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
+func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
 	if filter.ClinicId == nil {
 		return nil, fmt.Errorf("clinic id cannot be empty")
 	}
@@ -121,7 +121,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	return patients, nil
 }
 
-func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
+func (r *Repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
 	clinicId := patient.ClinicId.Hex()
 	filter := &Filter{
 		ClinicId: &clinicId,
@@ -142,7 +142,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	return r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
 }
 
-func (r *repository) Update(ctx context.Context, clinicId, userId string, patient Patient) (*Patient, error) {
+func (r *Repository) Update(ctx context.Context, clinicId, userId string, patient Patient) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -163,7 +163,7 @@ func (r *repository) Update(ctx context.Context, clinicId, userId string, patien
 	return r.Get(ctx, clinicId, userId)
 }
 
-func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
+func (r *Repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
