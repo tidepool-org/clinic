@@ -18,19 +18,19 @@ type custodialService struct {
 	logger      *zap.SugaredLogger
 }
 
-type Params struct {
+type CustodialServiceParams struct {
 	fx.In
 
-	patients    *Repository
-	userService UserService
-	logger      *zap.SugaredLogger
+	PatientsRepo *Repository
+	UserService  UserService
+	Logger       *zap.SugaredLogger
 }
 
-func NewCustodialService(p Params) (CustodialService, error) {
+func NewCustodialService(p CustodialServiceParams) (CustodialService, error) {
 	return &custodialService{
-		patients: p.patients,
-		userService: p.userService,
-		logger: p.logger,
+		patients: p.PatientsRepo,
+		userService: p.UserService,
+		logger: p.Logger,
 	}, nil
 }
 

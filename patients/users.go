@@ -11,13 +11,13 @@ import (
 	"net/http"
 )
 
-var Module = fx.Provide(
+var UserServiceModule = fx.Provide(
 	configProvider,
 	httpClientProvider,
 	shorelineProvider,
 	gatekeeperProvider,
 	seagullProvider,
-	NewService,
+	NewUserService,
 )
 
 type UserService interface {

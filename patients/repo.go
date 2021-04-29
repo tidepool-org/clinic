@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	patientsCollectionName = "patients"
+	patientsCollectionName = "PatientsRepo"
 )
 
 func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, error) {
@@ -110,12 +110,12 @@ func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	cursor, err := r.collection.Find(ctx, selector, opts)
 	if err != nil {
-		return nil, fmt.Errorf("error listing patients: %w", err)
+		return nil, fmt.Errorf("error listing PatientsRepo: %w", err)
 	}
 
 	var patients []*Patient
 	if err = cursor.All(ctx, &patients); err != nil {
-		return nil, fmt.Errorf("error decoding patients list: %w", err)
+		return nil, fmt.Errorf("error decoding PatientsRepo list: %w", err)
 	}
 
 	return patients, nil
@@ -129,7 +129,7 @@ func (r *Repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	}
 	patients, err := r.List(ctx, filter, store.Pagination{Limit: 1})
 	if err != nil {
-		return nil, fmt.Errorf("error checking for duplicate patients: %v", err)
+		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 	if len(patients) > 0 {
 		return nil, ErrDuplicate

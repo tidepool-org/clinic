@@ -92,7 +92,7 @@ func MainLoop() {
 			NewHandler,
 			NewServer,
 		),
-		patients.Module,
+		patients.UserServiceModule,
 		fx.Invoke(Start),
 	).Run()
 }
