@@ -118,13 +118,16 @@ func NewPatientDto(patient *patients.Patient) Patient {
 }
 
 func NewPatient(dto Patient) patients.Patient {
-	return patients.Patient{
-		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
+	p := patients.Patient{
 		Email:         dto.Email,
 		FullName:      dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
 	}
+	if dto.BirthDate != nil {
+		strp(dto.BirthDate.Format(dateFormat))
+	}
+	return p
 }
 
 func NewPermissions(dto *PatientPermissions) *patients.Permissions {

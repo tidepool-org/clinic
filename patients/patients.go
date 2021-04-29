@@ -13,11 +13,12 @@ var (
 	ErrNotFound = fmt.Errorf("patient %w", errors.NotFound)
 	ErrDuplicate = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 
+	permission = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
-		Custodian: new(Permission),
-		View:      new(Permission),
-		Upload:    new(Permission),
-		Note:      new(Permission),
+		Custodian: &permission,
+		View:      &permission,
+		Upload:    &permission,
+		Note:      &permission,
 	}
 )
 
