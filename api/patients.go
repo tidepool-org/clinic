@@ -37,10 +37,9 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 		return err
 	}
 
-	patient := patients.Patient{
-		ClinicId:    &clinicObjId,
-		Permissions: &patients.CustodialAccountPermissions,
-	}
+	patient := NewPatient(dto)
+	patient.ClinicId = &clinicObjId
+	patient.Permissions = &patients.CustodialAccountPermissions
 
 	result, err := h.patients.Create(ctx, patient)
 	if err != nil {
@@ -73,11 +72,10 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	}
 
 	patient := patients.Patient{
-		ClinicId:    &clinicObjId,
-		UserId:      strp(string(patientId)),
+		UserId: strp(string(patientId)),
+		ClinicId: &clinicObjId,
 		Permissions: NewPermissions(dto.Permissions),
 	}
-
 	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
 		return err
 	}
@@ -97,7 +95,7 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		return err
 	}
 
-	patient, err := h.patients.Update(ctx, string(clinicId), string(patientId), NewPatientUpdate(dto))
+	patient, err := h.patients.Update(ctx, string(clinicId), string(patientId), NewPatient(dto))
 	if err != nil {
 		return err
 	}
