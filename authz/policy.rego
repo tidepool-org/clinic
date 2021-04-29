@@ -121,6 +121,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow hydrophone to fetch clinician records
+# GET /v1/clinics/:clinicId/clinicians/:clinicianId
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "clinicians", _]
+  is_backend_service_any_of({"hydrophone"})
+}
+
 # Allow currently authenticated clinician to update or delete a clinician
 # PUT /v1/clinics/:clinicId/clinicians/:clinicianId
 # DELETE /v1/clinics/:clinicId/clinicians/:clinicianId
