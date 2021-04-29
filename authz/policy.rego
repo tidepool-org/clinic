@@ -159,7 +159,7 @@ allow {
 }
 
 # Allow currently authenticated clinician to create a custodial account
-# GET /v1/clinics/:clinicId/patients/:patientId
+# POST /v1/clinics/:clinicId/patients
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients"]

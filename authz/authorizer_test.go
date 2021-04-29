@@ -8,6 +8,14 @@ import (
 	"go.uber.org/zap"
 )
 
+var clinicAdmin = map[string]interface{}{
+	"roles": []string{"CLINIC_ADMIN"},
+}
+
+var clinicMember = map[string]interface{}{
+	"roles": []string{"CLINIC_MEMBER"},
+}
+
 var _ = Describe("Request Authorizer", func() {
 	var authorizer authz.RequestAuthorizer
 
@@ -68,6 +76,48 @@ var _ = Describe("Request Authorizer", func() {
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows clinic admins to update patients", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "99c290f838"},
+				"method": "PUT",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "1234567890",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows clinic admins to create custodial accounts for patients", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients"},
+				"method": "POST",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "1234567890",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it prevents clinic members to update patients", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "99c290f838"},
+				"method": "PUT",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "1234567890",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
 		})
 
 		It("it prevents clinicians to list clinics of other users", func() {
