@@ -65,6 +65,32 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(authz.ErrUnauthorized))
 		})
 
+		It("allows hydrophone to access /v1/clinics/6066fbabc6f484277200ac64", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "hydrophone",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("allows hydrophone to access /v1/clinics/6066fbabc6f484277200ac64/clinicians", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "hydrophone",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("it allows clinicians to list clinics they are a member of", func() {
 			input := map[string]interface{}{
 				"path": []string{"v1", "clinicians", "1234567890", "clinics"},
