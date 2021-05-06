@@ -35,7 +35,7 @@ func NewCustodialService(p CustodialServiceParams) (CustodialService, error) {
 }
 
 func (c *custodialService) CreateAccount(ctx context.Context, patient Patient) (*Patient, error) {
-	c.logger.Debug("creating custodial user")
+	c.logger.Debugw("creating custodial user", "patient", patient)
 	user, err := c.userService.CreateCustodialAccount(ctx, patient)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create custodial user: %w", err)

@@ -12,7 +12,7 @@ require (
 	github.com/onsi/gomega v1.9.0
 	github.com/open-policy-agent/opa v0.27.1
 	github.com/tidepool-org/clinic/client v0.0.0-00010101000000-000000000000
-	github.com/tidepool-org/go-common v0.8.3-0.20210422154305-a60c98c59433
+	github.com/tidepool-org/go-common v0.8.3-0.20210506120951-431d9698abbe
 	go.mongodb.org/mongo-driver v1.3.2
 	go.uber.org/fx v1.13.1
 	go.uber.org/zap v1.13.0

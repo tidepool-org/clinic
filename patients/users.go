@@ -52,9 +52,8 @@ func NewUserService(p UserServiceParams) (UserService, error) {
 
 func (s *userService) CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error) {
 	clinicId := patient.ClinicId.Hex()
-	user := shoreline.CustodialUserData{}
-	if patient.Email != nil && *patient.Email != "" {
-		user.Email = patient.Email
+	user := shoreline.CustodialUserData{
+		Email: patient.Email,
 	}
 	return s.shorelineClient.CreateCustodialUserForClinic(clinicId, user, s.shorelineClient.TokenProvide())
 }
