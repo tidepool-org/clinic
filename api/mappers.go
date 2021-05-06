@@ -107,9 +107,9 @@ func NewClinicianUpdate(clinician Clinician) *clinicians.Clinician {
 
 func NewPatientDto(patient *patients.Patient) Patient {
 	return Patient{
-		BirthDate:     strtodatep(patient.BirthDate),
+		BirthDate:     *strtodatep(patient.BirthDate),
 		Email:         patient.Email,
-		FullName:      patient.FullName,
+		FullName:      *patient.FullName,
 		Id:            *strpuseridp(patient.UserId),
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
@@ -118,16 +118,13 @@ func NewPatientDto(patient *patients.Patient) Patient {
 }
 
 func NewPatient(dto Patient) patients.Patient {
-	p := patients.Patient{
+	return patients.Patient{
 		Email:         dto.Email,
-		FullName:      dto.FullName,
+		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
+		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
 	}
-	if dto.BirthDate != nil {
-		p.BirthDate = strp(dto.BirthDate.Format(dateFormat))
-	}
-	return p
 }
 
 func NewPermissions(dto *PatientPermissions) *patients.Permissions {

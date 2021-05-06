@@ -86,13 +86,13 @@ type Id string
 type Patient struct {
 
 	// YYYY-MM-DD
-	BirthDate *openapi_types.Date `json:"birthDate,omitempty"`
+	BirthDate openapi_types.Date `json:"birthDate"`
 
 	// The email of the patient
 	Email *string `json:"email,omitempty"`
 
 	// The full name of the patient
-	FullName *string `json:"fullName,omitempty"`
+	FullName string `json:"fullName"`
 
 	// String representation of a Tidepool User ID
 	Id TidepoolUserId `json:"id"`

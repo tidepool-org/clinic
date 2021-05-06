@@ -661,6 +661,8 @@ components:
           readOnly: true
       required:
         - id
+        - fullName
+        - birthDate
     Patients:
       type: array
       items:
@@ -714,6 +716,7 @@ components:
       properties:
         custodian:
           type: object
+          readOnly: true
         view:
           type: object
         note:
