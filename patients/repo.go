@@ -191,3 +191,26 @@ func (r *Repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 
 	return r.Get(ctx, clinicId, userId)
 }
+
+func (r *Repository) DeletePermission(ctx context.Context, clinicId, userId, permission string) error {
+	key := fmt.Sprintf("permissions.%s", permission)
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId": userId,
+		"$exist": bson.D{{Key: key , Value: ""}},
+	}
+
+	update := bson.M{
+		"$unset": bson.D{{Key: key , Value: ""}},
+	}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return ErrNotFound
+		}
+		return fmt.Errorf("error removing permission: %w", err)
+	}
+
+	return nil
+}

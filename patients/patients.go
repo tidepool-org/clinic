@@ -28,6 +28,7 @@ type Service interface {
 	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, clinicId string, userId string, patient Patient) (*Patient, error)
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
+	DeletePermission(ctx context.Context, clinicId, userId, permission string) error
 }
 
 type Patient struct {

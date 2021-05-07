@@ -166,6 +166,9 @@ type ClientInterface interface {
 
 	UpdatePatientPermissions(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeletePatientPermission request
+	DeletePatientPermission(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListClinicsForPatient request
 	ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
@@ -469,6 +472,17 @@ func (c *Client) UpdatePatientPermissionsWithBody(ctx context.Context, clinicId 
 
 func (c *Client) UpdatePatientPermissions(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientPermissionsRequest(c.Server, clinicId, patientId, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatientPermission(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientPermissionRequest(c.Server, clinicId, patientId, permission)
 	if err != nil {
 		return nil, err
 	}
@@ -1516,6 +1530,54 @@ func NewUpdatePatientPermissionsRequestWithBody(server string, clinicId ClinicId
 	return req, nil
 }
 
+// NewDeletePatientPermissionRequest generates requests for DeletePatientPermission
+func NewDeletePatientPermissionRequest(server string, clinicId ClinicId, patientId PatientId, permission string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "clinicId", clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParam("simple", false, "patientId", patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParam("simple", false, "permission", permission)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/%s/patients/%s/permissions/%s", pathParam0, pathParam1, pathParam2)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListClinicsForPatientRequest generates requests for ListClinicsForPatient
 func NewListClinicsForPatientRequest(server string, userId UserId, params *ListClinicsForPatientParams) (*http.Request, error) {
 	var err error
@@ -1704,6 +1766,9 @@ type ClientWithResponsesInterface interface {
 	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*UpdatePatientPermissionsResponse, error)
 
 	UpdatePatientPermissionsWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*UpdatePatientPermissionsResponse, error)
+
+	// DeletePatientPermission request
+	DeletePatientPermissionWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string) (*DeletePatientPermissionResponse, error)
 
 	// ListClinicsForPatient request
 	ListClinicsForPatientWithResponse(ctx context.Context, userId UserId, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error)
@@ -2127,6 +2192,27 @@ func (r UpdatePatientPermissionsResponse) StatusCode() int {
 	return 0
 }
 
+type DeletePatientPermissionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePatientPermissionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePatientPermissionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListClinicsForPatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2390,6 +2476,15 @@ func (c *ClientWithResponses) UpdatePatientPermissionsWithResponse(ctx context.C
 		return nil, err
 	}
 	return ParseUpdatePatientPermissionsResponse(rsp)
+}
+
+// DeletePatientPermissionWithResponse request returning *DeletePatientPermissionResponse
+func (c *ClientWithResponses) DeletePatientPermissionWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string) (*DeletePatientPermissionResponse, error) {
+	rsp, err := c.DeletePatientPermission(ctx, clinicId, patientId, permission)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePatientPermissionResponse(rsp)
 }
 
 // ListClinicsForPatientWithResponse request returning *ListClinicsForPatientResponse
@@ -2890,6 +2985,25 @@ func ParseUpdatePatientPermissionsResponse(rsp *http.Response) (*UpdatePatientPe
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseDeletePatientPermissionResponse parses an HTTP response from a DeletePatientPermissionWithResponse call
+func ParseDeletePatientPermissionResponse(rsp *http.Response) (*DeletePatientPermissionResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePatientPermissionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	}
 
 	return response, nil

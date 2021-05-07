@@ -118,6 +118,16 @@ func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, p
 	return ec.JSON(http.StatusOK, NewPatientDto(patient).Permissions)
 }
 
+func (h *Handler) DeletePatientPermission(ec echo.Context, clinicId ClinicId, patientId PatientId, permission string) error {
+	ctx := ec.Request().Context()
+	err := h.patients.DeletePermission(ctx, string(clinicId), string(patientId), permission)
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
+}
+
 func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, params ListClinicsForPatientParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)

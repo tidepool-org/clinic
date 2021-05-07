@@ -56,3 +56,6 @@ func (s *service) UpdatePermissions(ctx context.Context, clinicId, userId string
 	return s.repo.UpdatePermissions(ctx, clinicId, userId, permissions)
 }
 
+func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permission string) error {
+	return s.repo.DeletePermission(ctx, clinicId, userId, permission)
+}
