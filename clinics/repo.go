@@ -44,6 +44,15 @@ func (c *repository) Initialize(ctx context.Context) error {
 				SetUnique(true).
 				SetName("UniqueEmail"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "shareCode", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetUnique(true).
+				SetName("UniqueShareCode"),
+		},
 	})
 	return err
 }
@@ -76,6 +85,9 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 	if filter.Email != nil {
 		selector["email"] = filter.Email
 	}
+	if filter.ShareCode != nil {
+		selector["shareCode"] = filter.ShareCode
+	}
 	cursor, err := c.collection.Find(ctx, selector, opts)
 	if err != nil {
 		return nil, fmt.Errorf("error listing clinics: %w", err)
@@ -90,13 +102,13 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 }
 
 func (c *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error) {
-	clinics, err := c.List(ctx, &Filter{Email: clinic.Email}, store.Pagination{Limit: 1, Offset: 0})
+	clinics, err := c.List(ctx, &Filter{ShareCode: clinic.ShareCode}, store.Pagination{Limit: 1, Offset: 0})
 	if err != nil {
 		return nil, fmt.Errorf("error finding clinic by Email address: %w", err)
 	}
 	// Fail gracefully if there is a duplicate Email address
 	if len(clinics) > 0 {
-		return nil, ErrDuplicateEmail
+		return nil, ErrDuplicateShareCode
 	}
 
 	// Insertion will fail if there are two concurrent requests, which are both

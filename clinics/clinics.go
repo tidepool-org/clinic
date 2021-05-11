@@ -10,6 +10,7 @@ import (
 
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
 var ErrDuplicateEmail = fmt.Errorf("%w email address", errors.Duplicate)
+var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -19,8 +20,9 @@ type Service interface {
 }
 
 type Filter struct {
-	Ids   []string
-	Email *string
+	Ids       []string
+	Email     *string
+	ShareCode *string
 }
 
 type Clinic struct {
@@ -34,6 +36,7 @@ type Clinic struct {
 	PhoneNumbers *[]PhoneNumber      `bson:"phoneNumbers,omitempty"`
 	PostalCode   *string             `bson:"postalCode,omitempty"`
 	State        *string             `bson:"state,omitempty"`
+	ShareCode    *string             `bson:"shareCode,omitempty"`
 }
 
 type PhoneNumber struct {
