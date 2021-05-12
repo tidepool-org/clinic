@@ -30,6 +30,7 @@ type Clinic struct {
 	Name         string         `json:"name"`
 	PhoneNumbers *[]PhoneNumber `json:"phoneNumbers,omitempty"`
 	PostalCode   *string        `json:"postalCode,omitempty"`
+	ShareCode    string         `json:"shareCode"`
 	State        *string        `json:"state,omitempty"`
 }
 

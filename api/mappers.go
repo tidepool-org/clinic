@@ -39,10 +39,11 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		Address:    c.Address,
 		City:       c.City,
 		ClinicType: c.ClinicType,
-		Email:      *c.Email,
-		Name:       *c.Name,
+		Email:      pstr(c.Email),
+		Name:       pstr(c.Name),
 		PostalCode: c.PostalCode,
 		State:      c.State,
+		ShareCode:  pstr(c.ShareCode),
 	}
 
 	if c.PhoneNumbers != nil {

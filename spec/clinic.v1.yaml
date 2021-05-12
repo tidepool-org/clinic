@@ -616,10 +616,14 @@ components:
           type: string
           format: email
           x-go-type: string
+        shareCode:
+          type: string
+          readOnly: true
       required:
         - id
         - name
         - email
+        - shareCode
     Clinics:
       type: array
       items:
