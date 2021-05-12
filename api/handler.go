@@ -5,7 +5,6 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"github.com/tidepool-org/clinic/users"
 	"go.uber.org/fx"
 )
 
@@ -14,7 +13,7 @@ type Handler struct {
 	clinicsCreator clinics.Creator
 	clinicians     clinicians.Service
 	patients       patients.Service
-	users          users.Service
+	users          patients.UserService
 }
 
 var _ ServerInterface = &Handler{}
@@ -26,7 +25,7 @@ type Params struct {
 	ClinicsCreator clinics.Creator
 	Clinicians     clinicians.Service
 	Patients       patients.Service
-	Users          users.Service
+	Users          patients.UserService
 }
 
 func NewHandler(p Params) *Handler {

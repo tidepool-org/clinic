@@ -89,6 +89,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow hydrophone to fetch a clinic by id
+# GET /v1/clinics/:clinicId
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _]
+  is_backend_service_any_of({"hydrophone"})
+}
+
 # Allow currently authenticated clinician to update clinic
 # PUT /v1/clinics/:clinicId
 allow {
@@ -121,6 +129,22 @@ allow {
   clinician_has_read_access
 }
 
+# Allow hydrophone to fetch clinician records
+# GET /v1/clinics/:clinicId/clinicians/:clinicianId
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "clinicians", _]
+  is_backend_service_any_of({"hydrophone"})
+}
+
+# Allow hydrophone to fetch clinicians list
+# GET /v1/clinics/:clinicId/clinicians
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "clinicians"]
+  is_backend_service_any_of({"hydrophone"})
+}
+
 # Allow currently authenticated clinician to update or delete a clinician
 # PUT /v1/clinics/:clinicId/clinicians/:clinicianId
 # DELETE /v1/clinics/:clinicId/clinicians/:clinicianId
@@ -151,7 +175,7 @@ allow {
 }
 
 # Allow currently authenticated clinician to create a custodial account
-# GET /v1/clinics/:clinicId/patients/:patientId
+# POST /v1/clinics/:clinicId/patients
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients"]

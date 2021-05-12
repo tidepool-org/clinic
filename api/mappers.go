@@ -107,9 +107,9 @@ func NewClinicianUpdate(clinician Clinician) *clinicians.Clinician {
 
 func NewPatientDto(patient *patients.Patient) Patient {
 	return Patient{
-		BirthDate:     strtodatep(patient.BirthDate),
+		BirthDate:     *strtodatep(patient.BirthDate),
 		Email:         patient.Email,
-		FullName:      patient.FullName,
+		FullName:      *patient.FullName,
 		Id:            *strpuseridp(patient.UserId),
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
@@ -117,13 +117,20 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	}
 }
 
+func NewPatient(dto Patient) patients.Patient {
+	return patients.Patient{
+		Email:         dto.Email,
+		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
+		FullName:      &dto.FullName,
+		Mrn:           dto.Mrn,
+		TargetDevices: dto.TargetDevices,
+	}
+}
+
 func NewPermissions(dto *PatientPermissions) *patients.Permissions {
 	var permissions *patients.Permissions
 	if dto != nil {
 		permissions = &patients.Permissions{}
-		if dto.Custodian != nil {
-			permissions.Custodian = &patients.Permission{}
-		}
 		if dto.Upload != nil {
 			permissions.Upload = &patients.Permission{}
 		}
@@ -156,21 +163,6 @@ func NewPermissionsDto(dto *patients.Permissions) *PatientPermissions {
 		}
 	}
 	return permissions
-}
-
-func NewPatientUpdate(patient Patient) patients.Patient {
-	p := patients.Patient{
-		FullName:      patient.FullName,
-		Mrn:           patient.Mrn,
-		TargetDevices: patient.TargetDevices,
-	}
-	if patient.Email != nil {
-		p.Email = strp(*patient.Email)
-	}
-	if patient.BirthDate != nil {
-		p.BirthDate = strp(patient.BirthDate.Format(dateFormat))
-	}
-	return p
 }
 
 func NewPatientsDto(patients []*patients.Patient) []Patient {

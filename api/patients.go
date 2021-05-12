@@ -26,7 +26,27 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 }
 
 func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error {
-	panic("implement me")
+	ctx := ec.Request().Context()
+	dto := Patient{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	clinicObjId, err := primitive.ObjectIDFromHex(string(clinicId))
+	if err != nil {
+		return err
+	}
+
+	patient := NewPatient(dto)
+	patient.ClinicId = &clinicObjId
+	patient.Permissions = &patients.CustodialAccountPermissions
+
+	result, err := h.patients.Create(ctx, patient)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(result))
 }
 
 func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
@@ -41,7 +61,7 @@ func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId Patie
 
 func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := CreatePatient{}
+	dto := Patient{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -52,12 +72,15 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	}
 
 	patient := patients.Patient{
-		ClinicId:    &clinicObjId,
-		UserId:      strp(string(patientId)),
+		UserId: strp(string(patientId)),
+		ClinicId: &clinicObjId,
 		Permissions: NewPermissions(dto.Permissions),
 	}
+	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
+		return err
+	}
 
-	result, err := h.users.CreatePatientFromExistingUser(ctx, patient)
+	result, err := h.patients.Create(ctx, patient)
 	if err != nil {
 		return err
 	}
@@ -72,7 +95,7 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		return err
 	}
 
-	patient, err := h.patients.Update(ctx, string(clinicId), string(patientId), NewPatientUpdate(dto))
+	patient, err := h.patients.Update(ctx, string(clinicId), string(patientId), NewPatient(dto))
 	if err != nil {
 		return err
 	}
@@ -93,6 +116,16 @@ func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, p
 	}
 
 	return ec.JSON(http.StatusOK, NewPatientDto(patient).Permissions)
+}
+
+func (h *Handler) DeletePatientPermission(ec echo.Context, clinicId ClinicId, patientId PatientId, permission string) error {
+	ctx := ec.Request().Context()
+	err := h.patients.DeletePermission(ctx, string(clinicId), string(patientId), permission)
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
 }
 
 func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, params ListClinicsForPatientParams) error {

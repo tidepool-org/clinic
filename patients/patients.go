@@ -8,8 +8,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var ErrNotFound = fmt.Errorf("patient %w", errors.NotFound)
-var ErrDuplicate = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
+
+var (
+	ErrNotFound = fmt.Errorf("patient %w", errors.NotFound)
+	ErrDuplicate = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
+
+	permission = make(Permission, 0)
+	CustodialAccountPermissions = Permissions{
+		Custodian: &permission,
+		View:      &permission,
+		Upload:    &permission,
+		Note:      &permission,
+	}
+)
 
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
@@ -17,6 +28,7 @@ type Service interface {
 	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, clinicId string, userId string, patient Patient) (*Patient, error)
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
+	DeletePermission(ctx context.Context, clinicId, userId, permission string) error
 }
 
 type Patient struct {
@@ -29,6 +41,10 @@ type Patient struct {
 	Mrn           *string             `bson:"mrn"`
 	TargetDevices *[]string           `bson:"targetDevices"`
 	Permissions   *Permissions        `bson:"permissions,omitempty"`
+}
+
+func (p Patient) IsCustodial() bool {
+	return p.Permissions != nil && p.Permissions.Custodian != nil
 }
 
 type Filter struct {
@@ -44,3 +60,5 @@ type Permissions struct {
 	Upload    *Permission `bson:"upload,omitempty"`
 	Note      *Permission `bson:"note,omitempty"`
 }
+
+

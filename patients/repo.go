@@ -15,8 +15,8 @@ const (
 	patientsCollectionName = "patients"
 )
 
-func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Service, error) {
-	repo := &repository{
+func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, error) {
+	repo := &Repository{
 		collection: db.Collection(patientsCollectionName),
 	}
 
@@ -29,11 +29,11 @@ func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Service, error) 
 	return repo, nil
 }
 
-type repository struct {
+type Repository struct {
 	collection *mongo.Collection
 }
 
-func (r *repository) Initialize(ctx context.Context) error {
+func (r *Repository) Initialize(ctx context.Context) error {
 	_, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
@@ -62,7 +62,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*Patient, error) {
+func (r *Repository) Get(ctx context.Context, clinicId string, userId string) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -80,7 +80,7 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 	return patient, nil
 }
 
-func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
+func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
 	if filter.ClinicId == nil {
 		return nil, fmt.Errorf("clinic id cannot be empty")
 	}
@@ -110,18 +110,18 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	cursor, err := r.collection.Find(ctx, selector, opts)
 	if err != nil {
-		return nil, fmt.Errorf("error listing patients: %w", err)
+		return nil, fmt.Errorf("error listing PatientsRepo: %w", err)
 	}
 
 	var patients []*Patient
 	if err = cursor.All(ctx, &patients); err != nil {
-		return nil, fmt.Errorf("error decoding patients list: %w", err)
+		return nil, fmt.Errorf("error decoding PatientsRepo list: %w", err)
 	}
 
 	return patients, nil
 }
 
-func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
+func (r *Repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
 	clinicId := patient.ClinicId.Hex()
 	filter := &Filter{
 		ClinicId: &clinicId,
@@ -129,7 +129,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	}
 	patients, err := r.List(ctx, filter, store.Pagination{Limit: 1})
 	if err != nil {
-		return nil, fmt.Errorf("error checking for duplicate patients: %v", err)
+		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 	if len(patients) > 0 {
 		return nil, ErrDuplicate
@@ -142,7 +142,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	return r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
 }
 
-func (r *repository) Update(ctx context.Context, clinicId, userId string, patient Patient) (*Patient, error) {
+func (r *Repository) Update(ctx context.Context, clinicId, userId string, patient Patient) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -163,7 +163,7 @@ func (r *repository) Update(ctx context.Context, clinicId, userId string, patien
 	return r.Get(ctx, clinicId, userId)
 }
 
-func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
+func (r *Repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -190,4 +190,27 @@ func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 	}
 
 	return r.Get(ctx, clinicId, userId)
+}
+
+func (r *Repository) DeletePermission(ctx context.Context, clinicId, userId, permission string) error {
+	key := fmt.Sprintf("permissions.%s", permission)
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId": userId,
+		"$exist": bson.D{{Key: key , Value: ""}},
+	}
+
+	update := bson.M{
+		"$unset": bson.D{{Key: key , Value: ""}},
+	}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return ErrNotFound
+		}
+		return fmt.Errorf("error removing permission: %w", err)
+	}
+
+	return nil
 }

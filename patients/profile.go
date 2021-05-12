@@ -1,11 +1,11 @@
-package users
+package patients
 
 type Profile struct {
-	FullName *string `json:"fullName"`
-	Patient  Patient `json:"patient"`
+	FullName *string        `json:"fullName"`
+	Patient  PatientProfile `json:"patient"`
 }
 
-type Patient struct {
+type PatientProfile struct {
 	Mrn           *string   `json:"mrn"`
 	Birthday      *string   `json:"birthday"`
 	TargetDevices *[]string `json:"targetDevices"`
