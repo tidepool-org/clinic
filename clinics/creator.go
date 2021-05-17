@@ -103,7 +103,9 @@ func (c *creator) createClinicObject(sessionCtx mongo.SessionContext, create *Cr
 retryLoop:
 	for i := 0; i < duplicateShareCodeRetryAttempts; i++ {
 		shareCode := c.shareCodeGenerator.Generate()
-		create.Clinic.ShareCode = &shareCode
+		shareCodes := []string{shareCode}
+		create.Clinic.CanonicalShareCode = &shareCode
+		create.Clinic.ShareCodes = &shareCodes
 
 		clinic, err = c.clinics.Create(sessionCtx, &create.Clinic)
 		if err == nil || err != ErrDuplicateShareCode {

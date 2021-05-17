@@ -9,7 +9,6 @@ import (
 )
 
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
-var ErrDuplicateEmail = fmt.Errorf("%w email address", errors.Duplicate)
 var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 
 type Service interface {
@@ -20,23 +19,23 @@ type Service interface {
 }
 
 type Filter struct {
-	Ids       []string
-	Email     *string
-	ShareCode *string
+	Ids        []string
+	Email      *string
+	ShareCodes []string
 }
 
 type Clinic struct {
-	Id           *primitive.ObjectID `bson:"_id,omitempty"`
-	Address      *string             `bson:"address,omitempty"`
-	City         *string             `bson:"city,omitempty"`
-	ClinicType   *string             `bson:"clinicType,omitempty"`
-	Country      *string             `bson:"country,omitempty"`
-	Email        *string             `bson:"email,omitempty"`
-	Name         *string             `bson:"name,omitempty"`
-	PhoneNumbers *[]PhoneNumber      `bson:"phoneNumbers,omitempty"`
-	PostalCode   *string             `bson:"postalCode,omitempty"`
-	State        *string             `bson:"state,omitempty"`
-	ShareCode    *string             `bson:"shareCode,omitempty"`
+	Id                 *primitive.ObjectID `bson:"_id,omitempty"`
+	Address            *string             `bson:"address,omitempty"`
+	City               *string             `bson:"city,omitempty"`
+	ClinicType         *string             `bson:"clinicType,omitempty"`
+	Country            *string             `bson:"country,omitempty"`
+	Name               *string             `bson:"name,omitempty"`
+	PhoneNumbers       *[]PhoneNumber      `bson:"phoneNumbers,omitempty"`
+	PostalCode         *string             `bson:"postalCode,omitempty"`
+	State              *string             `bson:"state,omitempty"`
+	CanonicalShareCode *string             `bson:"canonicalShareCode,omitempty"`
+	ShareCodes         *[]string           `bson:"shareCodes,omitempty"`
 }
 
 type PhoneNumber struct {
