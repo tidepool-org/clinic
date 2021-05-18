@@ -56,7 +56,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/offset'
-        - $ref: '#/components/parameters/email'
+        - $ref: '#/components/parameters/shareCode'
       x-roles:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
@@ -866,13 +866,12 @@ components:
       schema:
         type: string
         minLength: 1
-    email:
-      name: email
+    shareCode:
+      name: shareCode
       in: query
       required: false
       schema:
         type: string
-        format: email
     search:
       name: search
       in: query
@@ -880,6 +879,13 @@ components:
       schema:
         type: string
       description: Full text search query
+    email:
+      name: email
+      in: query
+      required: false
+      schema:
+        type: string
+        format: email
 tags:
   - name: auth
     description: Tidepool Authentication

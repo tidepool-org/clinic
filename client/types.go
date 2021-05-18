@@ -157,6 +157,9 @@ type PatientId string
 // Search defines model for search.
 type Search string
 
+// ShareCode defines model for shareCode.
+type ShareCode string
+
 // UserId defines model for userId.
 type UserId TidepoolUserId
 
@@ -168,9 +171,9 @@ type ListClinicsForClinicianParams struct {
 
 // ListClinicsParams defines parameters for ListClinics.
 type ListClinicsParams struct {
-	Limit  *Limit  `json:"limit,omitempty"`
-	Offset *Offset `json:"offset,omitempty"`
-	Email  *Email  `json:"email,omitempty"`
+	Limit     *Limit     `json:"limit,omitempty"`
+	Offset    *Offset    `json:"offset,omitempty"`
+	ShareCode *ShareCode `json:"shareCode,omitempty"`
 }
 
 // CreateClinicJSONBody defines parameters for CreateClinic.

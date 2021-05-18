@@ -10,8 +10,10 @@ import (
 func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
-	filter := clinics.Filter{
-		Email: emailToString(params.Email),
+
+	filter := clinics.Filter{}
+	if params.ShareCode != nil {
+		filter.ShareCodes = []string{string(*params.ShareCode)}
 	}
 
 	list, err := h.clinics.List(ctx, &filter, page)
