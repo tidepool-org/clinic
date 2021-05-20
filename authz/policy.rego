@@ -190,6 +190,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow hydrophone to fetch patient by id
+# GET /v1/clinics/:clinicId/patients/:patientId
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patients", _]
+  is_backend_service_any_of({"hydrophone"})
+}
+
 # Allow hydrophone and prescription services to create patient from existing user
 # POST /v1/clinics/:clinicId/patients/:patientId
 allow {
