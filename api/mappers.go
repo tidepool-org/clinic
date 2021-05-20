@@ -108,7 +108,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	return Patient{
 		BirthDate:     *strtodatep(patient.BirthDate),
 		Email:         patient.Email,
-		FullName:      *patient.FullName,
+		FullName:      pstr(patient.FullName),
 		Id:            *strpuseridp(patient.UserId),
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
