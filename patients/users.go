@@ -91,9 +91,12 @@ func (s *userService) updatePatientDetails(patient *Patient) error {
 	}
 
 	patient.BirthDate = profile.Patient.Birthday
-	patient.FullName = profile.Patient.Email
 	patient.Mrn = profile.Patient.Mrn
 	patient.TargetDevices = profile.Patient.TargetDevices
+	patient.FullName = profile.Patient.FullName
+	if patient.FullName == nil || *patient.FullName == "" {
+		patient.FullName = profile.FullName
+	}
 	patient.Email = profile.Patient.Email
 	if patient.Email == nil || *patient.Email == "" {
 		patient.Email = &user.Username

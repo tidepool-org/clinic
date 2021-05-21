@@ -19,11 +19,10 @@ import (
 )
 
 var (
-	Host = "localhost"
-	Port = 8080
-	ServerString = fmt.Sprintf("%s:%d", Host, Port)
+	Host                = "localhost"
+	Port                = 8080
+	ServerString        = fmt.Sprintf("%s:%d", Host, Port)
 	ServerTimeoutAmount = 20
-
 )
 
 func Start(e *echo.Echo, lifecycle fx.Lifecycle) {
@@ -42,7 +41,7 @@ func Start(e *echo.Echo, lifecycle fx.Lifecycle) {
 	})
 }
 
-func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo, error){
+func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo, error) {
 	e := echo.New()
 	e.Logger.Print("Starting Main Loop")
 	swagger, err := GetSwagger()
@@ -87,6 +86,7 @@ func MainLoop() {
 			patients.NewService,
 			clinicians.NewRepository,
 			clinics.NewRepository,
+			clinics.NewShareCodeGenerator,
 			clinics.NewCreator,
 			authz.NewRequestAuthorizer,
 			NewHandler,
@@ -101,5 +101,3 @@ func MainLoop() {
 func hello(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello, World!")
 }
-
-

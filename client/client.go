@@ -626,9 +626,9 @@ func NewListClinicsRequest(server string, params *ListClinicsParams) (*http.Requ
 
 	}
 
-	if params.Email != nil {
+	if params.ShareCode != nil {
 
-		if queryFrag, err := runtime.StyleParam("form", true, "email", *params.Email); err != nil {
+		if queryFrag, err := runtime.StyleParam("form", true, "shareCode", *params.ShareCode); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

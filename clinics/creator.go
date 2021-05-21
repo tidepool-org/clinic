@@ -12,6 +12,10 @@ import (
 	"go.uber.org/fx"
 )
 
+const (
+	duplicateShareCodeRetryAttempts = 100
+)
+
 type CreateClinic struct {
 	Clinic        Clinic
 	CreatorUserId string
@@ -22,27 +26,30 @@ type Creator interface {
 }
 
 type creator struct {
-	clinics           Service
-	cliniciansService clinicians.Service
-	dbClient          *mongo.Client
-	userService       shoreline.Client
+	clinics            Service
+	cliniciansService  clinicians.Service
+	dbClient           *mongo.Client
+	shareCodeGenerator ShareCodeGenerator
+	userService        shoreline.Client
 }
 
 type CreatorParams struct {
 	fx.In
 
-	Clinics           Service
-	CliniciansService clinicians.Service
-	DbClient          *mongo.Client
-	UserService       shoreline.Client
+	Clinics            Service
+	CliniciansService  clinicians.Service
+	DbClient           *mongo.Client
+	ShareCodeGenerator ShareCodeGenerator
+	UserService        shoreline.Client
 }
 
 func NewCreator(cp CreatorParams) (Creator, error) {
 	return &creator{
-		clinics:           cp.Clinics,
-		cliniciansService: cp.CliniciansService,
-		dbClient:          cp.DbClient,
-		userService:       cp.UserService,
+		clinics:            cp.Clinics,
+		cliniciansService:  cp.CliniciansService,
+		dbClient:           cp.DbClient,
+		shareCodeGenerator: cp.ShareCodeGenerator,
+		userService:        cp.UserService,
 	}, nil
 }
 
@@ -62,7 +69,7 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*Clin
 	defer session.EndSession(ctx)
 
 	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		clinic, err := c.clinics.Create(sessionCtx, &create.Clinic)
+		clinic, err := c.createClinicObject(sessionCtx, create)
 		if err != nil {
 			return nil, err
 		}
@@ -89,4 +96,21 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*Clin
 	}
 
 	return result.(*Clinic), nil
+}
+
+// Creates a clinic document in mongo and retries if there is a violation of the unique share code constraint
+func (c *creator) createClinicObject(sessionCtx mongo.SessionContext, create *CreateClinic) (clinic *Clinic, err error) {
+retryLoop:
+	for i := 0; i < duplicateShareCodeRetryAttempts; i++ {
+		shareCode := c.shareCodeGenerator.Generate()
+		shareCodes := []string{shareCode}
+		create.Clinic.CanonicalShareCode = &shareCode
+		create.Clinic.ShareCodes = &shareCodes
+
+		clinic, err = c.clinics.Create(sessionCtx, &create.Clinic)
+		if err == nil || err != ErrDuplicateShareCode {
+			break retryLoop
+		}
+	}
+	return clinic, err
 }
