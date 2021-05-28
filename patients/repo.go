@@ -81,17 +81,15 @@ func (r *Repository) Get(ctx context.Context, clinicId string, userId string) (*
 }
 
 func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
-	if filter.ClinicId == nil {
-		return nil, fmt.Errorf("clinic id cannot be empty")
-	}
-	clinicId := *filter.ClinicId
-	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	opts := options.Find().
 		SetLimit(int64(pagination.Limit)).
 		SetSkip(int64(pagination.Offset))
 
-	selector := bson.M{
-		"clinicId": clinicObjId,
+	selector := bson.M{}
+	if filter.ClinicId != nil {
+		clinicId := *filter.ClinicId
+		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+		selector["clinicId"] = clinicObjId
 	}
 	if filter.UserId != nil {
 		selector["userId"] = filter.UserId
