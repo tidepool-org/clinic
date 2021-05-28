@@ -78,6 +78,58 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("allows shoreline to list clinics for a given user id", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "patients", "12345", "clinics"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "shoreline",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("allows shoreline to delete custodian permission", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345", "permissions", "custodian"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "shoreline",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("allow users to delete permissions they have granted", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345", "permissions", "upload"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "12345",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("does not allow other users to delete permissions", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345", "permissions", "upload"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "99999",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(HaveOccurred())
+		})
+
 		It("allows hydrophone to access /v1/clinics/6066fbabc6f484277200ac64/clinicians", func() {
 			input := map[string]interface{}{
 				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians"},

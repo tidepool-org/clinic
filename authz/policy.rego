@@ -61,6 +61,32 @@ allow {
   patient_id == subject_id
 }
 
+# Allow shoreline to fetch list of clinics a patient belongs to
+# GET /v1/patients/:patientId/clinics
+allow {
+  is_backend_service_any_of({"shoreline", "orca"})
+  input.method == "GET"
+  input.path = ["v1", "patients", _, "clinics"]
+}
+
+# Allow shoreline to remove custodial permission
+# DELETE /v1/clinics/:clinicId/patients/:patientId/permissions/custodian
+allow {
+  is_backend_service_any_of({"shoreline"})
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patients", _, "permissions", "custodian"]
+}
+
+# Allow currently authenticated user to delete permissions they have granted
+# DELETE /v1/clinics/:clinicId/patients/:patientId/permissions/custodian when ":patientId" == auth_subject_id
+allow {
+  is_authenticated_user
+  some patient_id
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patients", patient_id, "permissions", "upload"]
+  patient_id == subject_id
+}
+
 # Allow currently authenticated user to fetch the clinics they are a member of
 # GET /v1/clinicians/:clinicianId/clinics when ":clinicianId" == auth_subject_id
 allow {
