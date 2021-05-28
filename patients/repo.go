@@ -130,7 +130,7 @@ func (r *Repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 	if len(patients) > 0 {
-		return nil, ErrDuplicate
+		return nil, ErrDuplicatePatient
 	}
 
 	if _, err = r.collection.InsertOne(ctx, patient); err != nil {

@@ -3,6 +3,7 @@ package patients
 import (
 	"context"
 	"fmt"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -37,7 +38,9 @@ func NewCustodialService(p CustodialServiceParams) (CustodialService, error) {
 func (c *custodialService) CreateAccount(ctx context.Context, patient Patient) (*Patient, error) {
 	c.logger.Debugw("creating custodial user", "patient", patient)
 	user, err := c.userService.CreateCustodialAccount(ctx, patient)
-	if err != nil {
+	if err == shoreline.ErrDuplicateUser {
+		return nil, ErrDuplicateEmail
+	} else if err != nil {
 		return nil, fmt.Errorf("unable to create custodial user: %w", err)
 	}
 

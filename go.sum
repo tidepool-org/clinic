@@ -400,6 +400,8 @@ github.com/tidepool-org/go-common v0.8.3-0.20210422154305-a60c98c59433 h1:+2qhT1
 github.com/tidepool-org/go-common v0.8.3-0.20210422154305-a60c98c59433/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/tidepool-org/go-common v0.8.3-0.20210506120951-431d9698abbe h1:njIxQmoL0uk8LGM4TYLggwMiTk/N7MWFuWmzy9SKUj4=
 github.com/tidepool-org/go-common v0.8.3-0.20210506120951-431d9698abbe/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
+github.com/tidepool-org/go-common v0.8.3-0.20210528114116-26ab9a2d32b5 h1:CKURwJQtA8awJooem9a2VdvCUaSs5BKxgIzYui/vb58=
+github.com/tidepool-org/go-common v0.8.3-0.20210528114116-26ab9a2d32b5/go.mod h1:0S1OUe8aQH8bKLyeemNKW4WOPkCXxK5FqN9OXu1as7E=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=

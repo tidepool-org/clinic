@@ -10,8 +10,9 @@ import (
 
 
 var (
-	ErrNotFound = fmt.Errorf("patient %w", errors.NotFound)
-	ErrDuplicate = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
+	ErrNotFound         = fmt.Errorf("patient %w", errors.NotFound)
+	ErrDuplicatePatient = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
+	ErrDuplicateEmail   = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
 
 	permission = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
