@@ -196,7 +196,7 @@ func (r *Repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	selector := bson.M{
 		"clinicId": clinicObjId,
 		"userId": userId,
-		"$exist": bson.D{{Key: key , Value: ""}},
+		key: bson.M{"$exists": true},
 	}
 
 	update := bson.M{
