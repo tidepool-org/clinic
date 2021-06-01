@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"time"
 )
 
 const (
@@ -122,6 +123,9 @@ func (c *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error
 		return nil, ErrDuplicateShareCode
 	}
 
+	setCreatedAt(clinic)
+	setUpdatedAt(clinic)
+
 	// Insertion will fail if there are two concurrent requests, which are both
 	// trying to create a clinic with the same share code
 	res, err := c.collection.InsertOne(ctx, clinic)
@@ -136,6 +140,8 @@ func (c *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error
 func (c *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error) {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
+
+	setUpdatedAt(clinic)
 	update := createUpdateDocument(clinic)
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
@@ -145,12 +151,68 @@ func (c *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Cl
 	return c.Get(ctx, id)
 }
 
+func (c *repository) UpsertAdmin(ctx context.Context, id, clinicianId string) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+	update := bson.M {
+		"$addToSet": bson.M {
+			"admins": clinicianId,
+		},
+		"$set": bson.M {
+			"updatedAt": time.Now(),
+		},
+	}
+	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+}
+
+func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) error {
+	clinic, err := c.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	selector := bson.M{
+		"_id": clinic.Id,
+		"updatedAt": clinic.UpdatedAt, // used for optimistic locking
+	}
+	update := bson.M {
+		"$pull": bson.M {
+			"admins": clinicianId,
+		},
+		"$set": bson.M {
+			"updatedAt": time.Now(),
+		},
+	}
+
+	var updated Clinic
+	if err := c.collection.FindOneAndUpdate(ctx, selector, update).Decode(&updated); err != nil {
+		return err
+	}
+
+	if updated.Admins == nil || len(*updated.Admins) == 0 {
+		return ErrAdminRequired
+	}
+
+	return nil
+}
+
+func setUpdatedAt(clinic *Clinic) {
+	clinic.UpdatedAt = time.Now()
+}
+
+func setCreatedAt(clinic *Clinic) {
+	clinic.CreatedAt = time.Now()
+}
+
 func createUpdateDocument(clinic *Clinic) bson.M {
 	update := bson.M{}
 	if clinic != nil {
 		// Make sure we're not overriding the id and sharecodes
 		clinic.Id = nil
 		clinic.ShareCodes = nil
+
+		// Refresh updatedAt timestamp
+		setUpdatedAt(clinic)
 
 		update["$set"] = clinic
 		if clinic.CanonicalShareCode != nil {

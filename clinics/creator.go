@@ -69,6 +69,10 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*Clin
 	defer session.EndSession(ctx)
 
 	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		// Set initial admins
+		admins := []string{create.CreatorUserId}
+		create.Clinic.Admins = &admins
+
 		clinic, err := c.createClinicObject(sessionCtx, create)
 		if err != nil {
 			return nil, err
@@ -114,3 +118,4 @@ retryLoop:
 	}
 	return clinic, err
 }
+

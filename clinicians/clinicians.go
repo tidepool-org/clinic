@@ -36,6 +36,17 @@ type Clinician struct {
 	Roles    []string            `bson:"roles"`
 }
 
+func (c *Clinician) IsAdmin() bool {
+	isAdmin := false
+	for _, role := range c.Roles {
+		if role == ClinicAdmin {
+			isAdmin = true
+			break
+		}
+	}
+	return isAdmin
+}
+
 type Filter struct {
 	ClinicId *string
 	UserId   *string
