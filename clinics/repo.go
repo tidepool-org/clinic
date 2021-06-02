@@ -38,15 +38,6 @@ func (c *repository) Initialize(ctx context.Context) error {
 	_, err := c.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
-				{Key: "email", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetUnique(true).
-				SetName("UniqueEmail"),
-		},
-		{
-			Keys: bson.D{
 				{Key: "shareCodes", Value: 1},
 			},
 			Options: options.Index().
