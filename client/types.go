@@ -23,7 +23,6 @@ type Clinic struct {
 	ClinicSize *int    `json:"clinicSize,omitempty"`
 	ClinicType *string `json:"clinicType,omitempty"`
 	Country    *string `json:"country,omitempty"`
-	Email      string  `json:"email"`
 
 	// String representation of a resource id
 	Id           Id             `json:"id"`
