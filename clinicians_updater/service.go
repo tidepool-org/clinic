@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
+	"go.uber.org/zap"
 )
 
 // The service is used for updating clinicians and clinics in transactions
@@ -21,15 +22,17 @@ type service struct {
 	dbClient          *mongo.Client
 	clinicsService    clinics.Service
 	cliniciansService clinicians.Service
+	logger            *zap.SugaredLogger
 }
 
 var _ Service = &service{}
 
-func NewService(dbClient *mongo.Client, clinicsService clinics.Service, cliniciansService clinicians.Service) (Service, error) {
+func NewService(dbClient *mongo.Client, clinicsService clinics.Service, cliniciansService clinicians.Service, logger *zap.SugaredLogger) (Service, error) {
 	return &service{
 		dbClient:          dbClient,
 		clinicsService:    clinicsService,
 		cliniciansService: cliniciansService,
+		logger:            logger,
 	}, nil
 }
 
@@ -40,28 +43,43 @@ func (s service) Update(ctx context.Context, clinicId string, clinicianId string
 	}
 	defer session.EndSession(ctx)
 
-	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		if clinician.IsAdmin() {
-			if err := s.clinicsService.UpsertAdmin(sessionCtx, clinicId, clinicianId); err != nil {
-				return nil, err
-			}
-		} else {
-			if err := s.clinicsService.RemoveAdmin(sessionCtx, clinicId, clinicianId); err != nil {
-				return nil, err
-			}
-		}
-		return s.cliniciansService.Update(sessionCtx, clinicId, clinicianId, clinician)
-	}
-
 	wc := writeconcern.New(writeconcern.WMajority())
 	rc := readconcern.Snapshot()
 	txnOpts := options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
-	result, err := session.WithTransaction(ctx, transaction, txnOpts)
-	if err != nil {
+	if err = session.StartTransaction(txnOpts); err != nil {
 		return nil, err
 	}
 
-	return result.(*clinicians.Clinician), nil
+	var result *clinicians.Clinician
+	err = mongo.WithSession(ctx, session, func(sessionCtx mongo.SessionContext) error {
+		if clinician.IsAdmin() {
+			if err := s.clinicsService.UpsertAdmin(sessionCtx, clinicId, clinicianId); err != nil {
+				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
+					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
+				}
+				return err
+			}
+		} else {
+			if err := s.clinicsService.RemoveAdmin(sessionCtx, clinicId, clinicianId); err != nil {
+				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
+					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
+				}
+				return err
+			}
+		}
+		updated, err := s.cliniciansService.Update(sessionCtx, clinicId, clinicianId, clinician)
+		if err != nil {
+			if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
+				s.logger.Error("error when aborting transaction", zap.Error(txnErr))
+			}
+			return err
+		}
+
+		result = updated
+		return nil
+	})
+
+	return result, err
 }
 
 func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId string) (*clinicians.Clinician, error) {
@@ -71,32 +89,44 @@ func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId
 	}
 	defer session.EndSession(ctx)
 
-	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
+	wc := writeconcern.New(writeconcern.WMajority())
+	rc := readconcern.Snapshot()
+	txnOpts := options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
+	if err = session.StartTransaction(txnOpts); err != nil {
+		return nil, err
+	}
+
+	var result *clinicians.Clinician
+	err = mongo.WithSession(ctx, session, func(sessionCtx mongo.SessionContext) error {
 		clinician, err := s.cliniciansService.AssociateInvite(sessionCtx, clinicId, inviteId, userId)
 		if err != nil {
-			return nil, err
+			if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
+				s.logger.Error("error when aborting transaction", zap.Error(txnErr))
+			}
+			return err
 		}
 
 		if clinician.IsAdmin() {
 			if err := s.clinicsService.UpsertAdmin(sessionCtx, clinicId, *clinician.UserId); err != nil {
-				return nil, err
+				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
+					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
+				}
+				return err
 			}
 		} else {
 			if err := s.clinicsService.RemoveAdmin(sessionCtx, clinicId, *clinician.UserId); err != nil {
-				return nil, err
+				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
+					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
+				}
+				return err
 			}
 		}
 
-		return clinician, nil
-	}
+		err = session.CommitTransaction(sessionCtx)
+		result = clinician
 
-	wc := writeconcern.New(writeconcern.WMajority())
-	rc := readconcern.Snapshot()
-	txnOpts := options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
-	result, err := session.WithTransaction(ctx, transaction, txnOpts)
-	if err != nil {
-		return nil, err
-	}
+		return err
+	})
 
-	return result.(*clinicians.Clinician), nil
+	return result, err
 }
