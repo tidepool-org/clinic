@@ -76,7 +76,7 @@ func (s service) Update(ctx context.Context, clinicId string, clinicianId string
 		}
 
 		err = session.CommitTransaction(sessionCtx)
-		if err != nil {
+		if err == nil {
 			result = updated
 		}
 
@@ -127,7 +127,7 @@ func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId
 		}
 
 		err = session.CommitTransaction(sessionCtx)
-		if err != nil {
+		if err == nil {
 			result = clinician
 		}
 
