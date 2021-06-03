@@ -175,16 +175,20 @@ func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) er
 		},
 	}
 
-	var updated Clinic
-	if err := c.collection.FindOneAndUpdate(ctx, selector, update).Decode(&updated); err != nil {
+	var beforeUpdate Clinic
+	if err := c.collection.FindOneAndUpdate(ctx, selector, update).Decode(&beforeUpdate); err != nil {
 		return err
 	}
 
-	if updated.Admins == nil || len(*updated.Admins) == 0 {
+	if !canRemoveAdmin(beforeUpdate){
 		return ErrAdminRequired
 	}
 
 	return nil
+}
+
+func canRemoveAdmin(clinic Clinic) bool {
+	return clinic.Admins != nil && len(*clinic.Admins) > 1
 }
 
 func setUpdatedAt(clinic *Clinic) {
