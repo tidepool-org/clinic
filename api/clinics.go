@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/authz"
+	"github.com/tidepool-org/clinic/cliniccreator"
 	"github.com/tidepool-org/clinic/clinics"
 	"net/http"
 )
@@ -39,7 +40,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		}
 	}
 
-	create := clinics.CreateClinic{
+	create := cliniccreator.CreateClinic{
 		Clinic:        *NewClinic(dto),
 		CreatorUserId: *userId,
 	}

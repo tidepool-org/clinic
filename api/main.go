@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/tidepool-org/clinic/authz"
+	"github.com/tidepool-org/clinic/cliniccreator"
 	"github.com/tidepool-org/clinic/clinicians"
-	"github.com/tidepool-org/clinic/clinicians_updater"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
@@ -86,10 +86,10 @@ func MainLoop() {
 			patients.NewCustodialService,
 			patients.NewService,
 			clinicians.NewRepository,
-			clinicians_updater.NewService,
+			clinicians.NewService,
 			clinics.NewRepository,
 			clinics.NewShareCodeGenerator,
-			clinics.NewCreator,
+			cliniccreator.NewCreator,
 			authz.NewRequestAuthorizer,
 			NewHandler,
 			NewServer,
