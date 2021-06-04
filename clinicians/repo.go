@@ -16,8 +16,8 @@ const (
 	cliniciansCollectionName = "clinicians"
 )
 
-func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Service, error) {
-	repo := &repository{
+func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, error) {
+	repo := &Repository{
 		collection: db.Collection(cliniciansCollectionName),
 	}
 
@@ -30,11 +30,11 @@ func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Service, error) 
 	return repo, nil
 }
 
-type repository struct {
+type Repository struct {
 	collection *mongo.Collection
 }
 
-func (r *repository) Initialize(ctx context.Context) error {
+func (r *Repository) Initialize(ctx context.Context) error {
 	_, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
@@ -83,12 +83,12 @@ func (r *repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (r *repository) Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error) {
+func (r *Repository) Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error) {
 	selector := clinicianSelector(clinicId, clinicianId)
 	return r.getOne(ctx, selector)
 }
 
-func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error) {
+func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error) {
 	opts := options.Find().
 		SetLimit(int64(pagination.Limit)).
 		SetSkip(int64(pagination.Offset))
@@ -129,7 +129,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	return clinicians, nil
 }
 
-func (r *repository) Create(ctx context.Context, clinician *Clinician) (*Clinician, error) {
+func (r *Repository) Create(ctx context.Context, clinician *Clinician) (*Clinician, error) {
 	if exists, err := r.clinicianExists(ctx, clinician); err != nil {
 		return nil, fmt.Errorf("error checking for duplicate clinicians: %v", err)
 	} else if exists {
@@ -147,7 +147,7 @@ func (r *repository) Create(ctx context.Context, clinician *Clinician) (*Clinici
 	return r.getOne(ctx, selector)
 }
 
-func (r *repository) Update(ctx context.Context, clinicId string, id string, clinician *Clinician) (*Clinician, error) {
+func (r *Repository) Update(ctx context.Context, clinicId string, id string, clinician *Clinician) (*Clinician, error) {
 	removeUnmodifiableFields(clinician)
 	selector := clinicianSelector(clinicId, id)
 	update := bson.M{
@@ -157,19 +157,19 @@ func (r *repository) Update(ctx context.Context, clinicId string, id string, cli
 	return r.updateOne(ctx, selector, update)
 }
 
-func (r *repository) Delete(ctx context.Context, clinicId string, userId string) error {
+func (r *Repository) Delete(ctx context.Context, clinicId string, userId string) error {
 	return r.deleteOne(ctx, clinicianSelector(clinicId, userId))
 }
 
-func (r *repository) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {
+func (r *Repository) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {
 	return r.getOne(ctx, inviteSelector(clinicId, inviteId))
 }
 
-func (r *repository) DeleteInvite(ctx context.Context, clinicId, inviteId string) error {
+func (r *Repository) DeleteInvite(ctx context.Context, clinicId, inviteId string) error {
 	return r.deleteOne(ctx, inviteSelector(clinicId, inviteId))
 }
 
-func (r *repository) AssociateInvite(ctx context.Context, clinicId, inviteId, userId string) (*Clinician, error) {
+func (r *Repository) AssociateInvite(ctx context.Context, clinicId, inviteId, userId string) (*Clinician, error) {
 	if inviteId == "" {
 		return nil, fmt.Errorf("inviteId cannot be empty")
 	}
@@ -197,7 +197,7 @@ func (r *repository) AssociateInvite(ctx context.Context, clinicId, inviteId, us
 	return r.updateOne(ctx, idSelector, update)
 }
 
-func (r *repository) getOne(ctx context.Context, selector bson.M) (*Clinician, error) {
+func (r *Repository) getOne(ctx context.Context, selector bson.M) (*Clinician, error) {
 	clinician := &Clinician{}
 	err := r.collection.FindOne(ctx, selector).Decode(&clinician)
 	if err == mongo.ErrNoDocuments {
@@ -209,7 +209,7 @@ func (r *repository) getOne(ctx context.Context, selector bson.M) (*Clinician, e
 	return clinician, nil
 }
 
-func (r *repository) updateOne(ctx context.Context, selector, update bson.M) (*Clinician, error) {
+func (r *Repository) updateOne(ctx context.Context, selector, update bson.M) (*Clinician, error) {
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err == mongo.ErrNoDocuments {
 		return nil, ErrNotFound
@@ -220,7 +220,7 @@ func (r *repository) updateOne(ctx context.Context, selector, update bson.M) (*C
 	return r.getOne(ctx, selector)
 }
 
-func (r *repository) deleteOne(ctx context.Context, selector bson.M) error {
+func (r *Repository) deleteOne(ctx context.Context, selector bson.M) error {
 	res, err := r.collection.DeleteOne(ctx, selector)
 	if err != nil {
 		return fmt.Errorf("unable to delete clincian: %w", err)
@@ -232,7 +232,7 @@ func (r *repository) deleteOne(ctx context.Context, selector bson.M) error {
 	return nil
 }
 
-func (r *repository) clinicianExists(ctx context.Context, clinician *Clinician) (bool, error) {
+func (r *Repository) clinicianExists(ctx context.Context, clinician *Clinician) (bool, error) {
 	or := make([]bson.M, 0)
 	if clinician.ClinicId != nil {
 		if clinician.UserId != nil {

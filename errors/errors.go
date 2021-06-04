@@ -8,6 +8,7 @@ import (
 var (
 	NotFound  = HttpError{http.StatusNotFound, errors.New("not found")}
 	Duplicate = HttpError{http.StatusConflict, errors.New("duplicate")}
+	ConstraintViolation = HttpError{http.StatusUnprocessableEntity, errors.New("constraint violation")}
 )
 
 type HttpError struct {

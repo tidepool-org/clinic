@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/tidepool-org/clinic/cliniccreator"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
@@ -9,11 +10,12 @@ import (
 )
 
 type Handler struct {
-	clinics        clinics.Service
-	clinicsCreator clinics.Creator
-	clinicians     clinicians.Service
-	patients       patients.Service
-	users          patients.UserService
+	clinics           clinics.Service
+	clinicsCreator    cliniccreator.Creator
+	clinicians        clinicians.Service
+	cliniciansUpdater clinicians.Service
+	patients          patients.Service
+	users             patients.UserService
 }
 
 var _ ServerInterface = &Handler{}
@@ -21,20 +23,22 @@ var _ ServerInterface = &Handler{}
 type Params struct {
 	fx.In
 
-	Clinics        clinics.Service
-	ClinicsCreator clinics.Creator
-	Clinicians     clinicians.Service
-	Patients       patients.Service
-	Users          patients.UserService
+	Clinics           clinics.Service
+	ClinicsCreator    cliniccreator.Creator
+	Clinicians        clinicians.Service
+	CliniciansUpdater clinicians.Service
+	Patients          patients.Service
+	Users             patients.UserService
 }
 
 func NewHandler(p Params) *Handler {
 	return &Handler{
-		clinics:        p.Clinics,
-		clinicsCreator: p.ClinicsCreator,
-		clinicians:     p.Clinicians,
-		patients:       p.Patients,
-		users:          p.Users,
+		clinics:           p.Clinics,
+		clinicsCreator:    p.ClinicsCreator,
+		clinicians:        p.Clinicians,
+		cliniciansUpdater: p.CliniciansUpdater,
+		patients:          p.Patients,
+		users:             p.Users,
 	}
 }
 

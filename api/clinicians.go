@@ -75,7 +75,7 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianI
 		return err
 	}
 
-	result, err := h.clinicians.Update(ctx, string(clinicId), string(clinicianId), NewClinicianUpdate(dto))
+	result, err := h.cliniciansUpdater.Update(ctx, string(clinicId), string(clinicianId), NewClinicianUpdate(dto))
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId ClinicId, i
 		return err
 	}
 
-	clinician, err := h.clinicians.AssociateInvite(ctx, string(clinicId), string(inviteId), dto.UserId)
+	clinician, err := h.cliniciansUpdater.AssociateInvite(ctx, string(clinicId), string(inviteId), dto.UserId)
 	if err != nil {
 		return err
 	}
