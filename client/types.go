@@ -39,7 +39,7 @@ type Clinician struct {
 	// The email of the clinician
 	Email string `json:"email"`
 
-	// String representation of a Tidepool User ID
+	// Tidepool User ID
 	Id *TidepoolUserId `json:"id,omitempty"`
 
 	// The id of the invite if it hasn't been accepted
@@ -94,7 +94,7 @@ type Patient struct {
 	// The full name of the patient
 	FullName string `json:"fullName"`
 
-	// String representation of a Tidepool User ID
+	// Tidepool User ID
 	Id TidepoolUserId `json:"id"`
 
 	// The medical record number of the patient

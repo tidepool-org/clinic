@@ -102,6 +102,9 @@ type ClientInterface interface {
 
 	CreateClinic(ctx context.Context, body CreateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetClinicByShareCode request
+	GetClinicByShareCode(ctx context.Context, shareCode string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetClinic request
 	GetClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -208,6 +211,17 @@ func (c *Client) CreateClinicWithBody(ctx context.Context, contentType string, b
 
 func (c *Client) CreateClinic(ctx context.Context, body CreateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateClinicRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetClinicByShareCode(ctx context.Context, shareCode string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClinicByShareCodeRequest(c.Server, shareCode)
 	if err != nil {
 		return nil, err
 	}
@@ -688,6 +702,40 @@ func NewCreateClinicRequestWithBody(server string, contentType string, body io.R
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetClinicByShareCodeRequest generates requests for GetClinicByShareCode
+func NewGetClinicByShareCodeRequest(server string, shareCode string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "shareCode", shareCode)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/share_code/%s", pathParam0)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -1703,6 +1751,9 @@ type ClientWithResponsesInterface interface {
 
 	CreateClinicWithResponse(ctx context.Context, body CreateClinicJSONRequestBody) (*CreateClinicResponse, error)
 
+	// GetClinicByShareCode request
+	GetClinicByShareCodeWithResponse(ctx context.Context, shareCode string) (*GetClinicByShareCodeResponse, error)
+
 	// GetClinic request
 	GetClinicWithResponse(ctx context.Context, clinicId ClinicId) (*GetClinicResponse, error)
 
@@ -1838,6 +1889,28 @@ func (r CreateClinicResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreateClinicResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetClinicByShareCodeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Clinic
+}
+
+// Status returns HTTPResponse.Status
+func (r GetClinicByShareCodeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetClinicByShareCodeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2270,6 +2343,15 @@ func (c *ClientWithResponses) CreateClinicWithResponse(ctx context.Context, body
 	return ParseCreateClinicResponse(rsp)
 }
 
+// GetClinicByShareCodeWithResponse request returning *GetClinicByShareCodeResponse
+func (c *ClientWithResponses) GetClinicByShareCodeWithResponse(ctx context.Context, shareCode string) (*GetClinicByShareCodeResponse, error) {
+	rsp, err := c.GetClinicByShareCode(ctx, shareCode)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetClinicByShareCodeResponse(rsp)
+}
+
 // GetClinicWithResponse request returning *GetClinicResponse
 func (c *ClientWithResponses) GetClinicWithResponse(ctx context.Context, clinicId ClinicId) (*GetClinicResponse, error) {
 	rsp, err := c.GetClinic(ctx, clinicId)
@@ -2596,6 +2678,32 @@ func ParseCreateClinicResponse(rsp *http.Response) (*CreateClinicResponse, error
 			return nil, err
 		}
 		response.XML200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetClinicByShareCodeResponse parses an HTTP response from a GetClinicByShareCodeWithResponse call
+func ParseGetClinicByShareCodeResponse(rsp *http.Response) (*GetClinicByShareCodeResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetClinicByShareCodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Clinic
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 

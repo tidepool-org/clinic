@@ -7,6 +7,9 @@ info:
     name: Tidepool
     url: 'https://www.tidepool.org'
     email: support@tidepool.org
+  license:
+    name: BSD-2-Clause
+    url: 'https://github.com/tidepool-org/gatekeeper/blob/develop/LICENSE'
 servers:
   - url: 'http://localhost:8080'
     description: local development
@@ -92,6 +95,27 @@ paths:
       tags:
         - clinic
       parameters: []
+  '/v1/clinics/share_code/{shareCode}':
+    parameters:
+      - schema:
+          type: string
+          minLength: 1
+        name: shareCode
+        in: path
+        required: true
+    get:
+      summary: Get Clinic by Share Code
+      tags:
+        - clinic
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Clinic'
+      operationId: GetClinicByShareCode
+      description: Retrieve a clinic object with a share code
   '/v1/clinics/{clinicId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -708,9 +732,10 @@ components:
       type: string
       title: Tidepool User ID
       pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
-      description: String representation of a Tidepool User ID
+      description: Tidepool User ID
       readOnly: true
       x-go-type: string
+      example: 0123456789
     ClinicianRoles:
       type: array
       title: Clinician Permissions
@@ -805,13 +830,6 @@ components:
       name: x-tidepool-session-token
       type: apiKey
       in: header
-      description: ''
-  headers:
-    x-tidepool-session-token:
-      schema:
-        type: string
-        title: Tidepool Session Token
-        pattern: '^[a-zA-Z0-9\-_]+?\.[a-zA-Z0-9\-_]+?\.([a-zA-Z0-9\-_]+)?$'
       description: A Tidepool session token
   parameters:
     offset:
