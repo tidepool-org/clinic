@@ -354,6 +354,26 @@ func (mr *MockClientInterfaceMockRecorder) GetClinic(ctx, clinicId interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClinic", reflect.TypeOf((*MockClientInterface)(nil).GetClinic), varargs...)
 }
 
+// GetClinicByShareCode mocks base method.
+func (m *MockClientInterface) GetClinicByShareCode(ctx context.Context, shareCode string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, shareCode}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetClinicByShareCode", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClinicByShareCode indicates an expected call of GetClinicByShareCode.
+func (mr *MockClientInterfaceMockRecorder) GetClinicByShareCode(ctx, shareCode interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, shareCode}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClinicByShareCode", reflect.TypeOf((*MockClientInterface)(nil).GetClinicByShareCode), varargs...)
+}
+
 // GetClinician mocks base method.
 func (m *MockClientInterface) GetClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -890,6 +910,21 @@ func (m *MockClientWithResponsesInterface) DeletePatientPermissionWithResponse(c
 func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientPermissionWithResponse(ctx, clinicId, patientId, permission interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientPermissionWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeletePatientPermissionWithResponse), ctx, clinicId, patientId, permission)
+}
+
+// GetClinicByShareCodeWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) GetClinicByShareCodeWithResponse(ctx context.Context, shareCode string) (*GetClinicByShareCodeResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClinicByShareCodeWithResponse", ctx, shareCode)
+	ret0, _ := ret[0].(*GetClinicByShareCodeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClinicByShareCodeWithResponse indicates an expected call of GetClinicByShareCodeWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClinicByShareCodeWithResponse(ctx, shareCode interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClinicByShareCodeWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetClinicByShareCodeWithResponse), ctx, shareCode)
 }
 
 // GetClinicWithResponse mocks base method.

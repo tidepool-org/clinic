@@ -1,10 +1,13 @@
 package api
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/authz"
 	"github.com/tidepool-org/clinic/cliniccreator"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/store"
 	"net/http"
 )
 
@@ -75,4 +78,28 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.JSON(http.StatusOK, NewClinicDto(result))
+}
+
+func (h *Handler) GetClinicByShareCode(ec echo.Context, shareCode string) error {
+	if shareCode == "" {
+		return fmt.Errorf("share code is missing")
+	}
+
+	ctx := ec.Request().Context()
+	filter := clinics.Filter{
+		ShareCodes: []string{shareCode},
+	}
+
+	list, err := h.clinics.List(ctx, &filter, store.Pagination{Limit: 2})
+	if err != nil {
+		return err
+	}
+
+	if len(list) == 0 {
+		return errors.NotFound
+	} else if len(list) > 1 {
+		return fmt.Errorf("duplicate sharecode %v", shareCode)
+	}
+
+	return ec.JSON(http.StatusOK, NewClinicDto(list[0]))
 }

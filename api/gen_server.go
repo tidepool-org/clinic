@@ -22,6 +22,9 @@ type ServerInterface interface {
 	// Create Clinic
 	// (POST /v1/clinics)
 	CreateClinic(ctx echo.Context) error
+	// Get Clinic by Share Code
+	// (GET /v1/clinics/share_code/{shareCode})
+	GetClinicByShareCode(ctx echo.Context, shareCode string) error
 	// Get Clinic
 	// (GET /v1/clinics/{clinicId})
 	GetClinic(ctx echo.Context, clinicId ClinicId) error
@@ -159,6 +162,24 @@ func (w *ServerInterfaceWrapper) CreateClinic(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.CreateClinic(ctx)
+	return err
+}
+
+// GetClinicByShareCode converts echo context to params.
+func (w *ServerInterfaceWrapper) GetClinicByShareCode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "shareCode" -------------
+	var shareCode string
+
+	err = runtime.BindStyledParameter("simple", false, "shareCode", ctx.Param("shareCode"), &shareCode)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter shareCode: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetClinicByShareCode(ctx, shareCode)
 	return err
 }
 
@@ -682,6 +703,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinicians/:userId/clinics", wrapper.ListClinicsForClinician)
 	router.GET(baseURL+"/v1/clinics", wrapper.ListClinics)
 	router.POST(baseURL+"/v1/clinics", wrapper.CreateClinic)
+	router.GET(baseURL+"/v1/clinics/share_code/:shareCode", wrapper.GetClinicByShareCode)
 	router.GET(baseURL+"/v1/clinics/:clinicId", wrapper.GetClinic)
 	router.PUT(baseURL+"/v1/clinics/:clinicId", wrapper.UpdateClinic)
 	router.GET(baseURL+"/v1/clinics/:clinicId/clinicians", wrapper.ListClinicians)
