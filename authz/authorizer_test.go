@@ -78,6 +78,19 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("allows authenticated users to fetch clinics by share code /v1/clinics/share_code/acmeclinic", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "share_code", "acmeclinic"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "123456",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("allows shoreline to list clinics for a given user id", func() {
 			input := map[string]interface{}{
 				"path": []string{"v1", "patients", "12345", "clinics"},
