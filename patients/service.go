@@ -7,13 +7,13 @@ import (
 )
 
 type service struct {
-	repo *Repository
+	repo Repository
 	custodialService CustodialService
 }
 
 var _ Service = &service{}
 
-func NewService(repo *Repository, custodialService CustodialService) (Service, error) {
+func NewService(repo Repository, custodialService CustodialService) (Service, error) {
 	return &service{
 		repo:             repo,
 		custodialService: custodialService,
@@ -52,10 +52,39 @@ func (s *service) Update(ctx context.Context, clinicId string, userId string, pa
 	return s.repo.Update(ctx, clinicId, userId, patient)
 }
 
+func (s *service) Remove(ctx context.Context, clinicId string, userId string) error {
+	return s.repo.Remove(ctx, clinicId, userId)
+}
+
 func (s *service) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
+	if permissions == nil || permissions.Empty() {
+		return nil, s.Remove(ctx, clinicId, userId)
+	}
 	return s.repo.UpdatePermissions(ctx, clinicId, userId, permissions)
 }
 
-func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permission string) error {
-	return s.repo.DeletePermission(ctx, clinicId, userId, permission)
+func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error) {
+	patient, err := s.repo.DeletePermission(ctx, clinicId, userId, permission)
+	if err != nil {
+		return nil, err
+	}
+	if shouldRemovePatientFromClinic(patient) {
+		if err := s.Remove(ctx, clinicId, userId); err != nil {
+			// the patient was removed by concurrent request which is not a problem,
+			// because it had to be removed as a result of the current operation
+			if err == ErrNotFound {
+				return nil, nil
+			}
+			return nil, err
+		}
+		return nil, nil
+	}
+	return patient, err
+}
+
+func shouldRemovePatientFromClinic(patient *Patient) bool {
+	if patient != nil {
+		return patient.Permissions == nil || patient.Permissions.Empty()
+	}
+	return false
 }

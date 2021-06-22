@@ -15,8 +15,14 @@ const (
 	patientsCollectionName = "patients"
 )
 
-func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, error) {
-	repo := &Repository{
+//go:generate mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
+
+type Repository interface {
+	Service
+}
+
+func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Repository, error) {
+	repo := &repository{
 		collection: db.Collection(patientsCollectionName),
 	}
 
@@ -29,11 +35,11 @@ func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, err
 	return repo, nil
 }
 
-type Repository struct {
+type repository struct {
 	collection *mongo.Collection
 }
 
-func (r *Repository) Initialize(ctx context.Context) error {
+func (r *repository) Initialize(ctx context.Context) error {
 	_, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
@@ -62,7 +68,7 @@ func (r *Repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (r *Repository) Get(ctx context.Context, clinicId string, userId string) (*Patient, error) {
+func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -80,7 +86,25 @@ func (r *Repository) Get(ctx context.Context, clinicId string, userId string) (*
 	return patient, nil
 }
 
-func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
+func (r *repository) Remove(ctx context.Context, clinicId string, userId string) error {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId": userId,
+	}
+
+	res, err := r.collection.DeleteOne(ctx, selector)
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
 	opts := options.Find().
 		SetLimit(int64(pagination.Limit)).
 		SetSkip(int64(pagination.Offset))
@@ -119,7 +143,7 @@ func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.
 	return patients, nil
 }
 
-func (r *Repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
+func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
 	clinicId := patient.ClinicId.Hex()
 	filter := &Filter{
 		ClinicId: &clinicId,
@@ -140,7 +164,7 @@ func (r *Repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	return r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
 }
 
-func (r *Repository) Update(ctx context.Context, clinicId, userId string, patient Patient) (*Patient, error) {
+func (r *repository) Update(ctx context.Context, clinicId, userId string, patient Patient) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -161,7 +185,7 @@ func (r *Repository) Update(ctx context.Context, clinicId, userId string, patien
 	return r.Get(ctx, clinicId, userId)
 }
 
-func (r *Repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
+func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -190,7 +214,7 @@ func (r *Repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 	return r.Get(ctx, clinicId, userId)
 }
 
-func (r *Repository) DeletePermission(ctx context.Context, clinicId, userId, permission string) error {
+func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error) {
 	key := fmt.Sprintf("permissions.%s", permission)
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
@@ -205,10 +229,10 @@ func (r *Repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return ErrNotFound
+			return nil, ErrNotFound
 		}
-		return fmt.Errorf("error removing permission: %w", err)
+		return nil, fmt.Errorf("error removing permission: %w", err)
 	}
 
-	return nil
+	return r.Get(ctx, clinicId, userId)
 }

@@ -28,8 +28,9 @@ type Service interface {
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error)
 	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, clinicId string, userId string, patient Patient) (*Patient, error)
+	Remove(ctx context.Context, clinicId string, userId string) error
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
-	DeletePermission(ctx context.Context, clinicId, userId, permission string) error
+	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
 }
 
 type Patient struct {
@@ -62,4 +63,9 @@ type Permissions struct {
 	Note      *Permission `bson:"note,omitempty"`
 }
 
-
+func (p *Permissions) Empty() bool {
+	return p.Custodian == nil &&
+		p.View == nil &&
+		p.Upload == nil &&
+		p.Note == nil
+}

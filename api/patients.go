@@ -115,12 +115,17 @@ func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, p
 		return err
 	}
 
+	// patient was deleted after all permissions were revoked
+	if patient == nil {
+		return ec.NoContent(http.StatusNoContent)
+	}
+
 	return ec.JSON(http.StatusOK, NewPatientDto(patient).Permissions)
 }
 
 func (h *Handler) DeletePatientPermission(ec echo.Context, clinicId ClinicId, patientId PatientId, permission string) error {
 	ctx := ec.Request().Context()
-	err := h.patients.DeletePermission(ctx, string(clinicId), string(patientId), permission)
+	_, err := h.patients.DeletePermission(ctx, string(clinicId), string(patientId), permission)
 	if err != nil {
 		return err
 	}
