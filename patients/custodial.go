@@ -14,7 +14,7 @@ type CustodialService interface {
 }
 
 type custodialService struct {
-	patients    *repository
+	patients    Repository
 	userService UserService
 	logger      *zap.SugaredLogger
 }
@@ -22,7 +22,7 @@ type custodialService struct {
 type CustodialServiceParams struct {
 	fx.In
 
-	PatientsRepo *repository
+	PatientsRepo Repository
 	UserService  UserService
 	Logger       *zap.SugaredLogger
 }
