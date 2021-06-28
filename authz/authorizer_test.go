@@ -211,6 +211,34 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(authz.ErrUnauthorized))
 		})
 
+		It("it allows currently authenticated clinic member to delete their own profile", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "1234567890"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "1234567890",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it prevents currently authenticated clinic member to delete profiles of other clinicians", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "99999999"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "1234567890",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
 		It("it prevents clinicians to list clinics of other users", func() {
 			input := map[string]interface{}{
 				"path": []string{"v1", "clinicians", "123456789", "clinics"},
