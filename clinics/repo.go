@@ -180,15 +180,24 @@ func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) er
 		return err
 	}
 
-	if !canRemoveAdmin(beforeUpdate){
+	if !canRemoveAdmin(beforeUpdate, clinicianId){
 		return ErrAdminRequired
 	}
 
 	return nil
 }
 
-func canRemoveAdmin(clinic Clinic) bool {
-	return clinic.Admins != nil && len(*clinic.Admins) > 1
+func canRemoveAdmin(clinic Clinic, clinicianId string) bool {
+	var adminsPostUpdate []string
+	if clinic.Admins != nil {
+		for _, admin := range *clinic.Admins {
+			if admin != clinicianId {
+				adminsPostUpdate = append(adminsPostUpdate, admin)
+			}
+		}
+	}
+
+	return len(adminsPostUpdate) >= 1
 }
 
 func setUpdatedAt(clinic *Clinic) {
