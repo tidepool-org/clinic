@@ -224,5 +224,43 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(authz.ErrUnauthorized))
 		})
 
+		It("it allows hydrophone to update invited clinicians", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "invites", "clinicians", "gw94dmVOaB4CH", "clinician"},
+				"method": "PATCH",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "hydrophone",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows hydrophone to retrieve invited clinicians", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "invites", "clinicians", "gw94dmVOaB4CH", "clinician"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "hydrophone",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows hydrophone to delete invited clinicians", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "invites", "clinicians", "gw94dmVOaB4CH", "clinician"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "hydrophone",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
 	})
 })
