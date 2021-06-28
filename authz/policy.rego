@@ -191,10 +191,10 @@ allow {
 
 # Allow hydrophone to fetch, update and delete invites
 # GET /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
-# PUT /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
+# PATCH /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
 # DELETE /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
 allow {
-  allowed_methods := {"GET", "PUT", "DELETE"}
+  allowed_methods := {"GET", "PATCH", "DELETE"}
   allowed_methods[input.method]
   input.path = ["v1", "clinics", _, "invites", "clinicians", _, "clinician"]
   is_backend_service_any_of({"hydrophone"})
