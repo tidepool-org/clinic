@@ -200,6 +200,24 @@ allow {
   clinician_has_read_access
 }
 
+# Allow currently authenticated patient to remove themselves from the clinic
+# DELETE /v1/clinics/:clinicId/patients/:patientId
+allow {
+  is_authenticated_user
+  some patient_id
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patients", patient_id]
+  patient_id == subject_id
+}
+
+# Allow currently authenticated clinic admin to remove patients from a clinic
+# DELETE /v1/clinics/:clinicId/patients/:patientId
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patients", _]
+  clinician_has_write_access
+}
+
 # Allow hydrophone to fetch, update and delete invites
 # GET /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
 # PATCH /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician

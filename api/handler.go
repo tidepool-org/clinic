@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/cliniccreator"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"

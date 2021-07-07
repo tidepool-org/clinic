@@ -61,6 +61,9 @@ type ServerInterface interface {
 	// Create Patient Account
 	// (POST /v1/clinics/{clinicId}/patients)
 	CreatePatientAccount(ctx echo.Context, clinicId ClinicId) error
+	// Delete Patient
+	// (DELETE /v1/clinics/{clinicId}/patients/{patientId})
+	DeletePatient(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Get Patient
 	// (GET /v1/clinics/{clinicId}/patients/{patientId})
 	GetPatient(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
@@ -500,6 +503,32 @@ func (w *ServerInterfaceWrapper) CreatePatientAccount(ctx echo.Context) error {
 	return err
 }
 
+// DeletePatient converts echo context to params.
+func (w *ServerInterfaceWrapper) DeletePatient(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameter("simple", false, "patientId", ctx.Param("patientId"), &patientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeletePatient(ctx, clinicId, patientId)
+	return err
+}
+
 // GetPatient converts echo context to params.
 func (w *ServerInterfaceWrapper) GetPatient(ctx echo.Context) error {
 	var err error
@@ -716,6 +745,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.AssociateClinicianToUser)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients", wrapper.ListPatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients", wrapper.CreatePatientAccount)
+	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.DeletePatient)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.GetPatient)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.CreatePatientFromUser)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
