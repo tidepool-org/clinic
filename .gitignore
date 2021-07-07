@@ -1,2 +1,5 @@
 # Compilation artifacts
 dist/
+
+# Test coverage report
+*.coverprofile

@@ -1,13 +1,10 @@
 package authz_test
 
 import (
+	"github.com/tidepool-org/clinic/test"
 	"testing"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
-func TestAuthz(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Authz Suite")
+func TestSuite(t *testing.T) {
+	test.Test(t)
 }

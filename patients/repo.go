@@ -229,7 +229,7 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, ErrNotFound
+			return nil, ErrPermissionNotFound
 		}
 		return nil, fmt.Errorf("error removing permission: %w", err)
 	}
