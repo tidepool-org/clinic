@@ -27,7 +27,7 @@ addons:
       - /
 
 script:
-  - ./test.sh
+  - make build test
   - ./artifact.sh
 
 services:

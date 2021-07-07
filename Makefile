@@ -10,10 +10,19 @@ generate:
 	oapi-codegen -exclude-tags=confirmation -package=api -generate=client spec/clinic.v1.yaml > client/client.go
 	go generate ./...
 
+# Set flags
+go-flags:
+	go env -w GOFLAGS=-mod=mod
+
+ginkgo:
+ifeq ($(shell which ginkgo),)
+	go get -u github.com/onsi/ginkgo/ginkgo
+endif
+
 # Runs tests
-test:
-	./test.sh
+test: go-flags ginkgo
+	ginkgo -requireSuite -slowSpecThreshold=10 --compilers=2 -r -randomizeSuites -randomizeAllSpecs -succinct -failOnPending -trace -race -progress -keepGoing ./...
 
 # Builds package
-build:
+build: go-flags
 	./build.sh
