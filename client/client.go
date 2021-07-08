@@ -151,6 +151,9 @@ type ClientInterface interface {
 
 	CreatePatientAccount(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeletePatient request
+	DeletePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetPatient request
 	GetPatient(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -409,6 +412,17 @@ func (c *Client) CreatePatientAccountWithBody(ctx context.Context, clinicId Clin
 
 func (c *Client) CreatePatientAccount(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreatePatientAccountRequest(c.Server, clinicId, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -1375,6 +1389,47 @@ func NewCreatePatientAccountRequestWithBody(server string, clinicId ClinicId, co
 	return req, nil
 }
 
+// NewDeletePatientRequest generates requests for DeletePatient
+func NewDeletePatientRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "clinicId", clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParam("simple", false, "patientId", patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/%s/patients/%s", pathParam0, pathParam1)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetPatientRequest generates requests for GetPatient
 func NewGetPatientRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
 	var err error
@@ -1800,6 +1855,9 @@ type ClientWithResponsesInterface interface {
 
 	CreatePatientAccountWithResponse(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody) (*CreatePatientAccountResponse, error)
 
+	// DeletePatient request
+	DeletePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId) (*DeletePatientResponse, error)
+
 	// GetPatient request
 	GetPatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId) (*GetPatientResponse, error)
 
@@ -2177,6 +2235,27 @@ func (r CreatePatientAccountResponse) StatusCode() int {
 	return 0
 }
 
+type DeletePatientResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePatientResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePatientResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetPatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2498,6 +2577,15 @@ func (c *ClientWithResponses) CreatePatientAccountWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseCreatePatientAccountResponse(rsp)
+}
+
+// DeletePatientWithResponse request returning *DeletePatientResponse
+func (c *ClientWithResponses) DeletePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId) (*DeletePatientResponse, error) {
+	rsp, err := c.DeletePatient(ctx, clinicId, patientId)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePatientResponse(rsp)
 }
 
 // GetPatientWithResponse request returning *GetPatientResponse
@@ -2989,6 +3077,25 @@ func ParseCreatePatientAccountResponse(rsp *http.Response) (*CreatePatientAccoun
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseDeletePatientResponse parses an HTTP response from a DeletePatientWithResponse call
+func ParseDeletePatientResponse(rsp *http.Response) (*DeletePatientResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePatientResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	}
 
 	return response, nil

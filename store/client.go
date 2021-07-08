@@ -7,7 +7,6 @@ import (
 )
 
 func NewClient(host string) (*mongo.Client, error){
-	fmt.Println("Creating Mongo Store")
 	client, err := mongo.NewClient(options.Client().ApplyURI(host))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create mongo client: %w", err)

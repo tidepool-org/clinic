@@ -1,13 +1,15 @@
 package patients_test
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	dbTest "github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/clinic/test"
+	"testing"
 )
 
-func TestPatients(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Patients Suite")
+func TestSuite(t *testing.T) {
+	test.Test(t)
 }
+
+var _ = BeforeSuite(dbTest.SetupDatabase)
+var _ = AfterSuite(dbTest.TeardownDatabase)

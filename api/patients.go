@@ -154,3 +154,13 @@ func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, param
 
 	return ec.JSON(http.StatusOK, dtos)
 }
+
+func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+	err := h.patients.Remove(ctx, string(clinicId), string(patientId))
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
+}

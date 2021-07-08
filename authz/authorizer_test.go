@@ -130,6 +130,60 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("allow clinic admins to delete patients of a clinic", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("allow prevents clinic members to delete patients of a clinic", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
+		It("allows users to delete their own patient profile", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "12345",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("prevents users to delete patient profiles of other people", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
+				"method": "DELETE",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
 		It("does not allow other users to delete permissions", func() {
 			input := map[string]interface{}{
 				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345", "permissions", "upload"},
