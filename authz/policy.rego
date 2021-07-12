@@ -107,12 +107,12 @@ allow {
   patient_id == subject_id
 }
 
-# Allow currently authenticated clinician to fetch clinic
+# Allow authenticated users to fetch clinics by id
 # GET /v1/clinics/:clinicId
 allow {
+  is_authenticated_user
   input.method == "GET"
   input.path = ["v1", "clinics", _]
-  clinician_has_read_access
 }
 
 # Allow authenticated users to fetch clinics by share code
