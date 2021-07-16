@@ -67,10 +67,15 @@ func (s *userService) UpdateCustodialAccount(ctx context.Context, patient Patien
 	if patient.Email != nil {
 		emails = append(emails, *patient.Email)
 	}
-	return s.shorelineClient.UpdateUser(*patient.UserId, shoreline.UserUpdate{
+
+	err := s.shorelineClient.UpdateUser(*patient.UserId, shoreline.UserUpdate{
 		Username:      patient.Email,
 		Emails:        &emails,
 	}, s.shorelineClient.TokenProvide())
+	if statusErr, ok := err.(*status.StatusError); ok && statusErr.Code == http.StatusConflict {
+		return ErrDuplicateEmail
+	}
+	return err
 }
 
 func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *Patient) error {
