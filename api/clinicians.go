@@ -143,3 +143,13 @@ func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId ClinicId, i
 
 	return ec.JSON(http.StatusOK, NewClinicianDto(clinician))
 }
+
+func (h *Handler) EnableNewClinicExperience(ec echo.Context, userId string) error {
+	ctx := ec.Request().Context()
+	clinic, err := h.clinicsMigrator.CreateEmptyClinic(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewClinicDto(clinic))
+}

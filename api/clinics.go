@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/authz"
-	"github.com/tidepool-org/clinic/cliniccreator"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/clinics/creator"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"net/http"
@@ -43,7 +43,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		}
 	}
 
-	create := cliniccreator.CreateClinic{
+	create := creator.CreateClinic{
 		Clinic:        *NewClinic(dto),
 		CreatorUserId: *userId,
 	}
@@ -102,4 +102,40 @@ func (h *Handler) GetClinicByShareCode(ec echo.Context, shareCode string) error 
 	}
 
 	return ec.JSON(http.StatusOK, NewClinicDto(list[0]))
+}
+
+
+func (h *Handler) TriggerInitialMigration(ec echo.Context, clinicId string) error {
+	ctx := ec.Request().Context()
+	migration, err := h.clinicsMigrator.TriggerInitialMigration(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
+}
+
+func (h *Handler) ListMigrations(ec echo.Context, clinicId string) error {
+	ctx := ec.Request().Context()
+	migrations, err := h.clinicsMigrator.ListMigrations(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewMigrationDtos(migrations))
+}
+
+func (h *Handler) MigrateLegacyClinicianPatients(ec echo.Context, clinicId string) error {
+	ctx := ec.Request().Context()
+	dto := Migration{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	migration, err := h.clinicsMigrator.MigrateLegacyClinicianPatients(ctx, clinicId, dto.UserId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
 }

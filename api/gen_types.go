@@ -39,7 +39,7 @@ type Clinician struct {
 	// The email of the clinician
 	Email string `json:"email"`
 
-	// Tidepool User ID
+	// Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)).
 	Id *TidepoolUserId `json:"id,omitempty"`
 
 	// The id of the invite if it hasn't been accepted
@@ -75,12 +75,23 @@ type CreatePatient struct {
 
 // Error defines model for Error.
 type Error struct {
-	Code    *int    `json:"code,omitempty"`
-	Message *string `json:"message,omitempty"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 // Id defines model for Id.
 type Id string
+
+// Migration defines model for Migration.
+type Migration struct {
+	CreatedTime openapi_types.Date `json:"createdTime"`
+
+	// The user id of the legacy clinician account that needs to be migrated.
+	UserId string `json:"userId"`
+}
+
+// Migrations defines model for Migrations.
+type Migrations []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
@@ -94,7 +105,7 @@ type Patient struct {
 	// The full name of the patient
 	FullName string `json:"fullName"`
 
-	// Tidepool User ID
+	// Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)).
 	Id TidepoolUserId `json:"id"`
 
 	// The medical record number of the patient
@@ -200,6 +211,9 @@ type UpdateClinicianJSONBody Clinician
 // AssociateClinicianToUserJSONBody defines parameters for AssociateClinicianToUser.
 type AssociateClinicianToUserJSONBody AssociateClinicianToUser
 
+// MigrateLegacyClinicianPatientsJSONBody defines parameters for MigrateLegacyClinicianPatients.
+type MigrateLegacyClinicianPatientsJSONBody Migration
+
 // ListPatientsParams defines parameters for ListPatients.
 type ListPatientsParams struct {
 
@@ -241,6 +255,9 @@ type UpdateClinicianJSONRequestBody UpdateClinicianJSONBody
 
 // AssociateClinicianToUserJSONRequestBody defines body for AssociateClinicianToUser for application/json ContentType.
 type AssociateClinicianToUserJSONRequestBody AssociateClinicianToUserJSONBody
+
+// MigrateLegacyClinicianPatientsJSONRequestBody defines body for MigrateLegacyClinicianPatients for application/json ContentType.
+type MigrateLegacyClinicianPatientsJSONRequestBody MigrateLegacyClinicianPatientsJSONBody
 
 // CreatePatientAccountJSONRequestBody defines body for CreatePatientAccount for application/json ContentType.
 type CreatePatientAccountJSONRequestBody CreatePatientAccountJSONBody

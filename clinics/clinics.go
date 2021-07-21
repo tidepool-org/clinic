@@ -45,6 +45,10 @@ type Clinic struct {
 	UpdatedAt          time.Time           `bson:"updatedAt"`
 }
 
+func (c *Clinic) CanMigrate() bool {
+	return c.Id != nil && c.Name != nil && *c.Name != "" && c.Admins != nil && len(*c.Admins) > 0
+}
+
 type PhoneNumber struct {
 	Type   *string `bson:"type,omitempty"`
 	Number string  `bson:"number,omitempty"`

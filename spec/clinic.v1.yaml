@@ -600,6 +600,91 @@ paths:
       parameters:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
+  '/v1/clinics/{clinicId}/migrations':
+    parameters:
+      - schema:
+          type: string
+        name: clinicId
+        in: path
+        required: true
+    post:
+      summary: Migrate Legacy Clinician Patients
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Migration'
+      operationId: MigrateLegacyClinicianPatients
+      tags:
+        - clinic
+        - internal
+      description: 'Migrate the patients of a legacy clinic account. '
+      x-internal: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Migration'
+    get:
+      summary: Retrieve Migration Status
+      operationId: ListMigrations
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Migrations'
+      description: ListMigrations
+      tags:
+        - clinic
+      x-internal: true
+  '/v1/clinicians/{userId}/migrate':
+    parameters:
+      - schema:
+          type: string
+        name: userId
+        in: path
+        required: true
+    post:
+      summary: Enable Clinics
+      tags:
+        - clinic
+        - internal
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Clinic'
+      operationId: EnableNewClinicExperience
+      description: Internal only endpoint to enable new clinic experience for a legacy clinician account. Patients won't be migrated until the clinic details are populated and migration is explicitly kicked-off by blip.
+      x-internal: true
+  '/v1/clinics/{clinicId}/migrate':
+    parameters:
+      - schema:
+          type: string
+        name: clinicId
+        in: path
+        required: true
+    post:
+      summary: Trigger initial migration
+      tags:
+        - clinic
+        - internal
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Migration'
+      operationId: TriggerInitialMigration
+      description: Trigger the initial migration
+      x-internal: true
 components:
   schemas:
     Error:
@@ -608,8 +693,13 @@ components:
       properties:
         code:
           type: integer
+          example: 404
         message:
           type: string
+          example: Requested resources was not found
+      required:
+        - code
+        - message
     Clinic:
       title: Clinic
       x-examples:
@@ -744,13 +834,14 @@ components:
         - email
         - roles
     TidepoolUserId:
-      type: string
       title: Tidepool User ID
+      type: string
       pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
-      description: Tidepool User ID
+      description: 'Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)).'
       readOnly: true
+      minLength: 10
       x-go-type: string
-      example: 0123456789
+      example: 7b39b1e1-5db5-4a09-9602-d9255b08a8e4
     ClinicianRoles:
       type: array
       title: Clinician Permissions
@@ -787,8 +878,8 @@ components:
         upload:
           type: object
     Id:
-      type: string
       title: Object Id
+      type: string
       description: String representation of a resource id
       minLength: 24
       maxLength: 24
@@ -840,6 +931,26 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/ClinicianClinicRelationship'
+    Migration:
+      title: Migration
+      type: object
+      properties:
+        userId:
+          type: string
+          description: The user id of the legacy clinician account that needs to be migrated.
+          minLength: 1
+        createdTime:
+          type: string
+          format: date
+          readOnly: true
+      required:
+        - userId
+        - createdTime
+    Migrations:
+      title: Migrations
+      type: array
+      items:
+        $ref: '#/components/schemas/Migration'
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
