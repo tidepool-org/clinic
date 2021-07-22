@@ -19,8 +19,9 @@ type AssociateClinicianToUser struct {
 // Clinic defines model for Clinic.
 type Clinic struct {
 	Address    *string `json:"address,omitempty"`
+	CanMigrate bool    `json:"canMigrate"`
 	City       *string `json:"city,omitempty"`
-	ClinicSize *int    `json:"clinicSize,omitempty"`
+	ClinicSize *string `json:"clinicSize,omitempty"`
 	ClinicType *string `json:"clinicType,omitempty"`
 	Country    *string `json:"country,omitempty"`
 

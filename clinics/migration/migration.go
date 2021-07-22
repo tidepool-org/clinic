@@ -6,11 +6,14 @@ import (
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/creator"
+	internalErrs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/fx"
 	"time"
 )
+
+var ErrAlreadyMigrated = fmt.Errorf("%w: clinic is already migrated", internalErrs.ConstraintViolation)
 
 type Migration struct {
 	ClinicId    *primitive.ObjectID `json:"clinicId" bson:"clinicId"`
@@ -94,6 +97,10 @@ func (m *migrator) TriggerInitialMigration(ctx context.Context, clinicId string)
 	if err != nil {
 		return nil, err
 	}
+	if clinic.IsMigrated {
+		return nil, ErrAlreadyMigrated
+	}
+
 	userId, err := getClinicianForInitialMigration(clinic)
 	if err != nil {
 		return nil, err
@@ -108,7 +115,18 @@ func (m *migrator) TriggerInitialMigration(ctx context.Context, clinicId string)
 		CreatedTime: time.Now(),
 	}
 
-	return m.migrationRepo.Create(ctx, migration)
+	result, err := m.migrationRepo.Create(ctx, migration)
+	if err != nil {
+		return nil, err
+	}
+
+	clinic.IsMigrated = true
+	_, err = m.clinicsService.Update(ctx, clinicId, clinic)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (m *migrator) assertUserIsClinician(userId string) error {

@@ -735,19 +735,21 @@ components:
         clinicType:
           type: string
         clinicSize:
-          type: integer
-          minimum: 0
-          readOnly: true
+          type: string
         name:
           type: string
           minLength: 1
         shareCode:
           type: string
           readOnly: true
+        canMigrate:
+          type: boolean
+          readOnly: true
       required:
         - id
         - name
         - shareCode
+        - canMigrate
     Clinics:
       type: array
       items:

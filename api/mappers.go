@@ -37,6 +37,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 	dto := Clinic{
 		Id:         Id(c.Id.Hex()),
 		Address:    c.Address,
+		CanMigrate: c.CanMigrate(),
 		City:       c.City,
 		ClinicType: c.ClinicType,
 		Name:       pstr(c.Name),
@@ -44,7 +45,6 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		State:      c.State,
 		ShareCode:  pstr(c.CanonicalShareCode),
 	}
-
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber
 		for _, n := range *c.PhoneNumbers {
