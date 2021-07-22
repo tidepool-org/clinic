@@ -1,9 +1,10 @@
 package api
 
 import (
-	"github.com/tidepool-org/clinic/cliniccreator"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/clinics/creator"
+	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/fx"
@@ -11,7 +12,8 @@ import (
 
 type Handler struct {
 	clinics           clinics.Service
-	clinicsCreator    cliniccreator.Creator
+	clinicsCreator    creator.Creator
+	clinicsMigrator   migration.Migrator
 	clinicians        clinicians.Service
 	cliniciansUpdater clinicians.Service
 	patients          patients.Service
@@ -24,7 +26,8 @@ type Params struct {
 	fx.In
 
 	Clinics           clinics.Service
-	ClinicsCreator    cliniccreator.Creator
+	ClinicsCreator    creator.Creator
+	ClinicsMigrator   migration.Migrator
 	Clinicians        clinicians.Service
 	CliniciansUpdater clinicians.Service
 	Patients          patients.Service

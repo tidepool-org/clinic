@@ -5,6 +5,7 @@ import (
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/patients"
 	"time"
 )
@@ -36,6 +37,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 	dto := Clinic{
 		Id:         Id(c.Id.Hex()),
 		Address:    c.Address,
+		CanMigrate: c.CanMigrate(),
 		City:       c.City,
 		ClinicType: c.ClinicType,
 		Name:       pstr(c.Name),
@@ -43,7 +45,6 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		State:      c.State,
 		ShareCode:  pstr(c.CanonicalShareCode),
 	}
-
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber
 		for _, n := range *c.PhoneNumbers {
@@ -213,6 +214,30 @@ func NewClinicianClinicRelationshipsDto(clinicians []*clinicians.Clinician, clin
 	}
 
 	return dtos, nil
+}
+
+func NewMigrationDto(migration *migration.Migration) *Migration {
+	if migration == nil {
+		return nil
+	}
+
+	return &Migration{
+		CreatedTime: openapi_types.Date{Time:migration.CreatedTime},
+		UserId:      migration.UserId,
+	}
+}
+
+func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
+	var dtos []*Migration
+	if len(migrations) == 0 {
+		return dtos
+	}
+
+	for _, m := range migrations {
+		dtos = append(dtos, NewMigrationDto(m))
+	}
+
+	return dtos
 }
 
 const dateFormat = "2006-01-02"

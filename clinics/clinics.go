@@ -33,6 +33,7 @@ type Clinic struct {
 	Address            *string             `bson:"address,omitempty"`
 	City               *string             `bson:"city,omitempty"`
 	ClinicType         *string             `bson:"clinicType,omitempty"`
+	ClinicSize         *string             `bson:"clinicSize,omitempty"`
 	Country            *string             `bson:"country,omitempty"`
 	Name               *string             `bson:"name,omitempty"`
 	PhoneNumbers       *[]PhoneNumber      `bson:"phoneNumbers,omitempty"`
@@ -43,9 +44,49 @@ type Clinic struct {
 	Admins             *[]string           `bson:"admins,omitempty"`
 	CreatedAt          time.Time           `bson:"createdAt"`
 	UpdatedAt          time.Time           `bson:"updatedAt"`
+	IsMigrated         bool                `bson:"isMigrated,omitempty"`
+}
+
+func (c *Clinic) HasAllRequiredFields() bool {
+	return c.Id != nil &&
+		isStringSet(c.Address) &&
+		isStringSet(c.City) &&
+		isStringSet(c.ClinicType) &&
+		isStringSet(c.ClinicSize) &&
+		isStringSet(c.Country) &&
+		isStringSet(c.Name) &&
+		isStringSet(c.PostalCode) &&
+		isStringSet(c.State) &&
+		c.Id != nil &&
+		c.PhoneNumbers != nil &&
+		hasValidPhoneNumber(*c.PhoneNumbers)
+
+}
+
+func (c *Clinic) CanMigrate() bool {
+	return !c.IsMigrated &&
+		c.HasAllRequiredFields() &&
+		c.Admins != nil && len(*c.Admins) > 0
 }
 
 type PhoneNumber struct {
 	Type   *string `bson:"type,omitempty"`
 	Number string  `bson:"number,omitempty"`
+}
+
+func (p *PhoneNumber) HasAllRequiredFields() bool {
+	return isStringSet(&p.Number)
+}
+
+func hasValidPhoneNumber(phoneNumbers []PhoneNumber) bool {
+	for _, p := range phoneNumbers {
+		if p.HasAllRequiredFields() {
+			return true
+		}
+	}
+	return false
+}
+
+func isStringSet(s *string) bool {
+	return s != nil && *s != ""
 }

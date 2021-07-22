@@ -16,6 +16,9 @@ type ServerInterface interface {
 	// List Clinics for Clinician
 	// (GET /v1/clinicians/{userId}/clinics)
 	ListClinicsForClinician(ctx echo.Context, userId UserId, params ListClinicsForClinicianParams) error
+	// Enable Clinics
+	// (POST /v1/clinicians/{userId}/migrate)
+	EnableNewClinicExperience(ctx echo.Context, userId string) error
 	// List Clinics
 	// (GET /v1/clinics)
 	ListClinics(ctx echo.Context, params ListClinicsParams) error
@@ -55,6 +58,15 @@ type ServerInterface interface {
 	// Associate Clinician to User
 	// (PATCH /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
 	AssociateClinicianToUser(ctx echo.Context, clinicId ClinicId, inviteId InviteId) error
+	// Trigger initial migration
+	// (POST /v1/clinics/{clinicId}/migrate)
+	TriggerInitialMigration(ctx echo.Context, clinicId string) error
+	// Retrieve Migration Status
+	// (GET /v1/clinics/{clinicId}/migrations)
+	ListMigrations(ctx echo.Context, clinicId string) error
+	// Migrate Legacy Clinician Patients
+	// (POST /v1/clinics/{clinicId}/migrations)
+	MigrateLegacyClinicianPatients(ctx echo.Context, clinicId string) error
 	// List Patients
 	// (GET /v1/clinics/{clinicId}/patients)
 	ListPatients(ctx echo.Context, clinicId ClinicId, params ListPatientsParams) error
@@ -120,6 +132,24 @@ func (w *ServerInterfaceWrapper) ListClinicsForClinician(ctx echo.Context) error
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListClinicsForClinician(ctx, userId, params)
+	return err
+}
+
+// EnableNewClinicExperience converts echo context to params.
+func (w *ServerInterfaceWrapper) EnableNewClinicExperience(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId string
+
+	err = runtime.BindStyledParameter("simple", false, "userId", ctx.Param("userId"), &userId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.EnableNewClinicExperience(ctx, userId)
 	return err
 }
 
@@ -444,6 +474,60 @@ func (w *ServerInterfaceWrapper) AssociateClinicianToUser(ctx echo.Context) erro
 	return err
 }
 
+// TriggerInitialMigration converts echo context to params.
+func (w *ServerInterfaceWrapper) TriggerInitialMigration(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId string
+
+	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.TriggerInitialMigration(ctx, clinicId)
+	return err
+}
+
+// ListMigrations converts echo context to params.
+func (w *ServerInterfaceWrapper) ListMigrations(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId string
+
+	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ListMigrations(ctx, clinicId)
+	return err
+}
+
+// MigrateLegacyClinicianPatients converts echo context to params.
+func (w *ServerInterfaceWrapper) MigrateLegacyClinicianPatients(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId string
+
+	err = runtime.BindStyledParameter("simple", false, "clinicId", ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.MigrateLegacyClinicianPatients(ctx, clinicId)
+	return err
+}
+
 // ListPatients converts echo context to params.
 func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	var err error
@@ -730,6 +814,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.GET(baseURL+"/v1/clinicians/:userId/clinics", wrapper.ListClinicsForClinician)
+	router.POST(baseURL+"/v1/clinicians/:userId/migrate", wrapper.EnableNewClinicExperience)
 	router.GET(baseURL+"/v1/clinics", wrapper.ListClinics)
 	router.POST(baseURL+"/v1/clinics", wrapper.CreateClinic)
 	router.GET(baseURL+"/v1/clinics/share_code/:shareCode", wrapper.GetClinicByShareCode)
@@ -743,6 +828,9 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.DeleteInvitedClinician)
 	router.GET(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.GetInvitedClinician)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.AssociateClinicianToUser)
+	router.POST(baseURL+"/v1/clinics/:clinicId/migrate", wrapper.TriggerInitialMigration)
+	router.GET(baseURL+"/v1/clinics/:clinicId/migrations", wrapper.ListMigrations)
+	router.POST(baseURL+"/v1/clinics/:clinicId/migrations", wrapper.MigrateLegacyClinicianPatients)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients", wrapper.ListPatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients", wrapper.CreatePatientAccount)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.DeletePatient)

@@ -276,3 +276,35 @@ allow {
   input.path = ["v1", "clinics", _, "patients", _]
   clinician_has_write_access
 }
+
+# Allow Orca to create an empty clinic for legacy clinician
+# POST /v1/clinicians/:userId/migrate
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinicians", _, "migrate"]
+  is_backend_service_any_of({"orca"})
+}
+
+# Allow currently authenticated clinician to trigger the initial migration
+# POST /v1/clinics/:clinicId/migrate
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "migrate"]
+  clinician_has_write_access
+}
+
+# Allow Orca to migrate users of a legacy clinician account to the clinic
+# POST /v1/clinics/:clinicId/migrations
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "migrations"]
+  is_backend_service_any_of({"orca"})
+}
+
+# Allow Orca to access the list of migrations for a given clinic
+# GET /v1/clinics/:clinicId/migrations
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "migrations"]
+  is_backend_service_any_of({"orca"})
+}

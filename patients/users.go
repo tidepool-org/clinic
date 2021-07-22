@@ -22,6 +22,7 @@ var UserServiceModule = fx.Provide(
 
 type UserService interface {
 	CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error)
+	GetUser(userId string) (*shoreline.UserData, error)
 	UpdateCustodialAccount(ctx context.Context, patient Patient) error
 	GetPatientFromExistingUser(ctx context.Context, patient *Patient) error
 }
@@ -78,12 +79,23 @@ func (s *userService) UpdateCustodialAccount(ctx context.Context, patient Patien
 	return err
 }
 
+func (s *userService) GetUser(userId string) (*shoreline.UserData, error) {
+	user, err := s.shorelineClient.GetUser(userId, s.shorelineClient.TokenProvide())
+	if err != nil {
+		if e, ok := err.(*status.StatusError); ok && e.Code == http.StatusNotFound {
+			return nil, errors.NotFound
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
 func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *Patient) error {
 	return s.updatePatientDetails(patient)
 }
 
 func (s *userService) updatePatientDetails(patient *Patient) error {
-	user, err := s.getUser(*patient.UserId)
+	user, err := s.GetUser(*patient.UserId)
 	if err != nil {
 		return err
 	}
@@ -108,15 +120,4 @@ func (s *userService) updatePatientDetails(patient *Patient) error {
 	}
 
 	return nil
-}
-
-func (s *userService) getUser(userId string) (*shoreline.UserData, error) {
-	user, err := s.shorelineClient.GetUser(userId, s.shorelineClient.TokenProvide())
-	if err != nil {
-		if e, ok := err.(*status.StatusError); ok && e.Code == http.StatusNotFound {
-			return nil, errors.NotFound
-		}
-		return nil, err
-	}
-	return user, nil
 }

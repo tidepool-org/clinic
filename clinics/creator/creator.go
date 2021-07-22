@@ -1,4 +1,4 @@
-package cliniccreator
+package creator
 
 import (
 	"context"
@@ -34,7 +34,7 @@ type creator struct {
 	userService          shoreline.Client
 }
 
-type CreatorParams struct {
+type Params struct {
 	fx.In
 
 	Clinics              clinics.Service
@@ -44,7 +44,7 @@ type CreatorParams struct {
 	UserService          shoreline.Client
 }
 
-func NewCreator(cp CreatorParams) (Creator, error) {
+func NewCreator(cp Params) (Creator, error) {
 	return &creator{
 		clinics:              cp.Clinics,
 		cliniciansRepository: cp.CliniciansRepository,
