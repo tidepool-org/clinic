@@ -106,7 +106,6 @@ func (h *Handler) ListClinicsForClinician(ec echo.Context, userId UserId, params
 		return err
 	}
 
-
 	return ec.JSON(http.StatusOK, dtos)
 }
 
@@ -136,7 +135,12 @@ func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId ClinicId, i
 		return err
 	}
 
-	clinician, err := h.cliniciansUpdater.AssociateInvite(ctx, string(clinicId), string(inviteId), dto.UserId)
+	associate := clinicians.AssociateInvite{
+		ClinicId: string(clinicId),
+		InviteId: string(inviteId),
+		UserId:   dto.UserId,
+	}
+	clinician, err := h.cliniciansUpdater.AssociateInvite(ctx, associate)
 	if err != nil {
 		return err
 	}

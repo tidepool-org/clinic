@@ -169,14 +169,14 @@ func (r *Repository) DeleteInvite(ctx context.Context, clinicId, inviteId string
 	return r.deleteOne(ctx, inviteSelector(clinicId, inviteId))
 }
 
-func (r *Repository) AssociateInvite(ctx context.Context, clinicId, inviteId, userId string) (*Clinician, error) {
-	if inviteId == "" {
+func (r *Repository) AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error) {
+	if associate.InviteId == "" {
 		return nil, fmt.Errorf("inviteId cannot be empty")
 	}
-	if userId == "" {
+	if associate.UserId == "" {
 		return nil, fmt.Errorf("userId cannot be empty")
 	}
-	selector := inviteSelector(clinicId, inviteId)
+	selector := inviteSelector(associate.ClinicId, associate.InviteId)
 	invite, err := r.getOne(ctx, selector)
 	if err != nil {
 		return nil, err
@@ -185,13 +185,20 @@ func (r *Repository) AssociateInvite(ctx context.Context, clinicId, inviteId, us
 	idSelector := bson.M{
 		"_id": invite.Id,
 	}
+	set := bson.M{
+		"userId": associate.UserId,
+	}
+	unset := bson.M{
+		"inviteId": associate.InviteId,
+	}
+
+	if associate.ClinicianName != nil {
+		set["fullName"] = associate.ClinicianName
+	}
+
 	update := bson.M{
-		"$set": bson.M{
-			"userId": userId,
-		},
-		"$unset": bson.M{
-			"inviteId": inviteId,
-		},
+		"$set": set,
+		"$unset": unset,
 	}
 	return r.updateOne(ctx, idSelector, update)
 }

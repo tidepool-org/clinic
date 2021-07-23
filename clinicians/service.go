@@ -136,11 +136,12 @@ func (s service) Update(ctx context.Context, clinicId string, clinicianId string
 	return result, err
 }
 
-func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId string) (*Clinician, error) {
-	profile, err := s.userService.GetUserProfile(ctx, userId)
+func (s service) AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error) {
+	profile, err := s.userService.GetUserProfile(ctx, associate.UserId)
 	if err != nil {
 		return nil, err
 	}
+	associate.ClinicianName = profile.FullName
 
 	session, err := s.dbClient.StartSession()
 	if err != nil {
@@ -158,7 +159,7 @@ func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId
 	var result *Clinician
 	err = mongo.WithSession(ctx, session, func(sessionCtx mongo.SessionContext) error {
 		// Associate invite clinician record to the user id
-		clinician, err := s.repository.AssociateInvite(sessionCtx, clinicId, inviteId, userId)
+		clinician, err := s.repository.AssociateInvite(sessionCtx, associate)
 		if err != nil {
 			if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
 				s.logger.Error("error when aborting transaction", zap.Error(txnErr))
@@ -166,21 +167,9 @@ func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId
 			return err
 		}
 
-		// Update the clinician name
-		if profile.FullName != nil{
-			clinician.Name = profile.FullName
-			clinician, err = s.repository.Update(ctx, clinicId, userId, clinician)
-			if err != nil {
-				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-				}
-				return err
-			}
-		}
-
 		if clinician.IsAdmin() {
 			// Make sure clinician user id is admin in clinic record
-			if err := s.clinicsService.UpsertAdmin(sessionCtx, clinicId, *clinician.UserId); err != nil {
+			if err := s.clinicsService.UpsertAdmin(sessionCtx, associate.ClinicId, *clinician.UserId); err != nil {
 				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
 					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
 				}
@@ -188,7 +177,7 @@ func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId
 			}
 		} else {
 			// Make sure clinician user id is removed as an admin from a clinic record
-			if err := s.clinicsService.RemoveAdmin(sessionCtx, clinicId, *clinician.UserId); err != nil {
+			if err := s.clinicsService.RemoveAdmin(sessionCtx, associate.ClinicId, *clinician.UserId); err != nil {
 				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
 					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
 				}
