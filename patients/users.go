@@ -23,6 +23,7 @@ var UserServiceModule = fx.Provide(
 type UserService interface {
 	CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error)
 	GetUser(userId string) (*shoreline.UserData, error)
+	GetUserProfile(ctx context.Context, userId string) (*Profile, error)
 	UpdateCustodialAccount(ctx context.Context, patient Patient) error
 	GetPatientFromExistingUser(ctx context.Context, patient *Patient) error
 }
@@ -91,18 +92,12 @@ func (s *userService) GetUser(userId string) (*shoreline.UserData, error) {
 }
 
 func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *Patient) error {
-	return s.updatePatientDetails(patient)
-}
-
-func (s *userService) updatePatientDetails(patient *Patient) error {
 	user, err := s.GetUser(*patient.UserId)
 	if err != nil {
 		return err
 	}
 
-	profile := Profile{}
-	token := s.shorelineClient.TokenProvide()
-	err = s.seagull.GetCollection(*patient.UserId, "profile", token, &profile)
+	profile, err := s.GetUserProfile(ctx, *patient.UserId)
 	if err != nil {
 		return err
 	}
@@ -120,4 +115,14 @@ func (s *userService) updatePatientDetails(patient *Patient) error {
 	}
 
 	return nil
+}
+
+func (s *userService) GetUserProfile(ctx context.Context, userId string) (*Profile, error) {
+	profile := Profile{}
+	token := s.shorelineClient.TokenProvide()
+	err := s.seagull.GetCollection(userId, "profile", token, &profile)
+	if err != nil {
+		return nil, err
+	}
+	return &profile, nil
 }

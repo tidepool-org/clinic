@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,16 +18,18 @@ type service struct {
 	clinicsService clinics.Service
 	repository     *Repository
 	logger         *zap.SugaredLogger
+	userService    patients.UserService
 }
 
 var _ Service = &service{}
 
-func NewService(dbClient *mongo.Client, clinicsService clinics.Service, repository *Repository, logger *zap.SugaredLogger) (Service, error) {
+func NewService(dbClient *mongo.Client, clinicsService clinics.Service, repository *Repository, logger *zap.SugaredLogger, userService patients.UserService) (Service, error) {
 	return &service{
 		dbClient:       dbClient,
 		clinicsService: clinicsService,
 		repository:     repository,
 		logger:         logger,
+		userService:    userService,
 	}, nil
 }
 
@@ -133,7 +136,13 @@ func (s service) Update(ctx context.Context, clinicId string, clinicianId string
 	return result, err
 }
 
-func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId string) (*Clinician, error) {
+func (s service) AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error) {
+	profile, err := s.userService.GetUserProfile(ctx, associate.UserId)
+	if err != nil {
+		return nil, err
+	}
+	associate.ClinicianName = profile.FullName
+
 	session, err := s.dbClient.StartSession()
 	if err != nil {
 		return nil, fmt.Errorf("unable to start sessions %w", err)
@@ -149,7 +158,8 @@ func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId
 
 	var result *Clinician
 	err = mongo.WithSession(ctx, session, func(sessionCtx mongo.SessionContext) error {
-		clinician, err := s.repository.AssociateInvite(sessionCtx, clinicId, inviteId, userId)
+		// Associate invite clinician record to the user id
+		clinician, err := s.repository.AssociateInvite(sessionCtx, associate)
 		if err != nil {
 			if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
 				s.logger.Error("error when aborting transaction", zap.Error(txnErr))
@@ -158,14 +168,16 @@ func (s service) AssociateInvite(ctx context.Context, clinicId, inviteId, userId
 		}
 
 		if clinician.IsAdmin() {
-			if err := s.clinicsService.UpsertAdmin(sessionCtx, clinicId, *clinician.UserId); err != nil {
+			// Make sure clinician user id is admin in clinic record
+			if err := s.clinicsService.UpsertAdmin(sessionCtx, associate.ClinicId, *clinician.UserId); err != nil {
 				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
 					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
 				}
 				return err
 			}
 		} else {
-			if err := s.clinicsService.RemoveAdmin(sessionCtx, clinicId, *clinician.UserId); err != nil {
+			// Make sure clinician user id is removed as an admin from a clinic record
+			if err := s.clinicsService.RemoveAdmin(sessionCtx, associate.ClinicId, *clinician.UserId); err != nil {
 				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
 					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
 				}
