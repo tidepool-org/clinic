@@ -193,7 +193,6 @@ func (r *Repository) AssociateInvite(ctx context.Context, clinicId, inviteId, us
 			"inviteId": inviteId,
 		},
 	}
-
 	return r.updateOne(ctx, idSelector, update)
 }
 
