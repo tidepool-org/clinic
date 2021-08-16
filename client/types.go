@@ -32,6 +32,7 @@ type Clinic struct {
 	PostalCode   *string        `json:"postalCode,omitempty"`
 	ShareCode    string         `json:"shareCode"`
 	State        *string        `json:"state,omitempty"`
+	Website      *string        `json:"website,omitempty"`
 }
 
 // Clinician defines model for Clinician.
