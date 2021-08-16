@@ -22,28 +22,33 @@ func NewClinic(c Clinic) *clinics.Clinic {
 	}
 
 	return &clinics.Clinic{
+		Name:         &c.Name,
+		ClinicType:   c.ClinicType,
+		ClinicSize:   c.ClinicSize,
 		Address:      c.Address,
 		City:         c.City,
-		ClinicType:   c.ClinicType,
 		Country:      c.Country,
-		Name:         &c.Name,
-		PhoneNumbers: &phoneNumbers,
 		PostalCode:   c.PostalCode,
 		State:        c.State,
+		PhoneNumbers: &phoneNumbers,
+		Website:      c.Website,
 	}
 }
 
 func NewClinicDto(c *clinics.Clinic) Clinic {
 	dto := Clinic{
 		Id:         Id(c.Id.Hex()),
-		Address:    c.Address,
-		CanMigrate: c.CanMigrate(),
-		City:       c.City,
-		ClinicType: c.ClinicType,
 		Name:       pstr(c.Name),
+		ShareCode:  pstr(c.CanonicalShareCode),
+		CanMigrate: c.CanMigrate(),
+		ClinicType: c.ClinicType,
+		ClinicSize: c.ClinicSize,
+		Address:    c.Address,
+		City:       c.City,
 		PostalCode: c.PostalCode,
 		State:      c.State,
-		ShareCode:  pstr(c.CanonicalShareCode),
+		Country:    c.Country,
+		Website:    c.Website,
 	}
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber
@@ -222,7 +227,7 @@ func NewMigrationDto(migration *migration.Migration) *Migration {
 	}
 
 	return &Migration{
-		CreatedTime: openapi_types.Date{Time:migration.CreatedTime},
+		CreatedTime: openapi_types.Date{Time: migration.CreatedTime},
 		UserId:      migration.UserId,
 	}
 }

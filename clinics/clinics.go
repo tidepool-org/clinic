@@ -40,6 +40,7 @@ type Clinic struct {
 	PostalCode         *string             `bson:"postalCode,omitempty"`
 	State              *string             `bson:"state,omitempty"`
 	CanonicalShareCode *string             `bson:"canonicalShareCode,omitempty"`
+	Website            *string             `bson:"website,omitempty"`
 	ShareCodes         *[]string           `bson:"shareCodes,omitempty"`
 	Admins             *[]string           `bson:"admins,omitempty"`
 	CreatedAt          time.Time           `bson:"createdAt"`

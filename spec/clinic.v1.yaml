@@ -725,6 +725,7 @@ components:
           minLength: 1
         state:
           type: string
+          minLength: 1
         country:
           type: string
           minLength: 1
@@ -734,8 +735,14 @@ components:
             $ref: '#/components/schemas/PhoneNumber'
         clinicType:
           type: string
+          minLength: 1
         clinicSize:
           type: string
+          enum:
+            - 0-249
+            - 250-499
+            - 500-999
+            - 1000+
         name:
           type: string
           minLength: 1
@@ -745,6 +752,10 @@ components:
         canMigrate:
           type: boolean
           readOnly: true
+        website:
+          type: string
+          format: uri
+          minLength: 1
       required:
         - id
         - name
