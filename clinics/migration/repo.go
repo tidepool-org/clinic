@@ -66,8 +66,9 @@ func (r *repository) Get(ctx context.Context, clinicId, userId string) (*Migrati
 }
 
 func (r *repository) List(ctx context.Context, clinicId string) ([]*Migration, error) {
+	id, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
-		"clinicId": clinicId,
+		"clinicId": id,
 	}
 	cursor, err := r.collection.Find(ctx, selector)
 	if err != nil {
@@ -101,10 +102,10 @@ func (r *repository) Create(ctx context.Context, migration *Migration) (*Migrati
 }
 
 func (r *repository) get(ctx context.Context, selector bson.M) (*Migration, error) {
-	inserted := &Migration{}
-	err := r.collection.FindOne(ctx, bson.M{"_id": selector}).Decode(inserted)
+	result := &Migration{}
+	err := r.collection.FindOne(ctx, selector).Decode(result)
 	if err != nil && err == mongo.ErrNoDocuments {
 		return nil, ErrNotFound
 	}
-	return inserted, err
+	return result, err
 }
