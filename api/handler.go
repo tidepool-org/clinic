@@ -38,6 +38,7 @@ func NewHandler(p Params) *Handler {
 	return &Handler{
 		clinics:           p.Clinics,
 		clinicsCreator:    p.ClinicsCreator,
+		clinicsMigrator:   p.ClinicsMigrator,
 		clinicians:        p.Clinicians,
 		cliniciansUpdater: p.CliniciansUpdater,
 		patients:          p.Patients,
