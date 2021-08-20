@@ -261,12 +261,12 @@ allow {
   is_backend_service_any_of({"hydrophone"})
 }
 
-# Allow hydrophone and prescription services to create patient from existing user
+# Allow clinic-worker, hydrophone, prescription services to create a patient from existing user
 # POST /v1/clinics/:clinicId/patients/:patientId
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients", _]
-  is_backend_service_any_of({"hydrophone", "prescription"})
+  is_backend_service_any_of({"hydrophone", "prescription", "clinic-worker"})
 }
 
 # Allow currently authenticated clinician to update patient account
