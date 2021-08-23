@@ -106,12 +106,20 @@ func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *P
 	patient.Mrn = profile.Patient.Mrn
 	patient.TargetDevices = profile.Patient.TargetDevices
 	patient.FullName = profile.Patient.FullName
+	patient.Email = profile.Patient.Email
+
 	if patient.FullName == nil || *patient.FullName == "" {
 		patient.FullName = profile.FullName
 	}
-	patient.Email = profile.Patient.Email
 	if patient.Email == nil || *patient.Email == "" {
 		patient.Email = &user.Username
+	}
+	// Some profiles don't have birth dates
+	// There isn't anything we can do, but to insert an empty string,
+	// because the birth date is a required field.
+	if patient.BirthDate == nil {
+		birthDate := ""
+		patient.BirthDate = &birthDate
 	}
 
 	return nil
