@@ -14,9 +14,9 @@ type CustodialService interface {
 }
 
 type custodialService struct {
-	patients    Repository
-	userService UserService
-	logger      *zap.SugaredLogger
+	patientsRepo Repository
+	userService  UserService
+	logger       *zap.SugaredLogger
 }
 
 type CustodialServiceParams struct {
@@ -29,9 +29,9 @@ type CustodialServiceParams struct {
 
 func NewCustodialService(p CustodialServiceParams) (CustodialService, error) {
 	return &custodialService{
-		patients: p.PatientsRepo,
-		userService: p.UserService,
-		logger: p.Logger,
+		patientsRepo: p.PatientsRepo,
+		userService:  p.UserService,
+		logger:       p.Logger,
 	}, nil
 }
 
@@ -46,7 +46,7 @@ func (c *custodialService) CreateAccount(ctx context.Context, patient Patient) (
 
 	c.logger.Debugw("creating patient from custodial user", zap.String("userId", user.UserID))
 	patient.UserId = &user.UserID
-	clinicPatient, err := c.patients.Create(ctx, patient)
+	clinicPatient, err := c.patientsRepo.Create(ctx, patient)
 	if err != nil {
 		return nil, fmt.Errorf("error creating patient from custodial user: %w", err)
 	}
@@ -61,7 +61,7 @@ func (c *custodialService) UpdateAccount(ctx context.Context, patient Patient) (
 	}
 
 	c.logger.Debugw("updating custodial patient", zap.String("userId", *patient.UserId))
-	clinicPatient, err := c.patients.Update(ctx, patient.ClinicId.Hex(), *patient.UserId, patient)
+	clinicPatient, err := c.patientsRepo.Update(ctx, patient.ClinicId.Hex(), *patient.UserId, patient)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update patient: %w", err)
 	}

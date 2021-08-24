@@ -29,7 +29,8 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
-	if patient.IsCustodial() {
+	// Only create new accounts if the custodial user doesn't exist already (i.e. we are not migrating it)
+	if patient.IsCustodial() && patient.UserId == nil {
 		return s.custodialService.CreateAccount(ctx, patient)
 	}
 	if patient.UserId == nil {
