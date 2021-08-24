@@ -83,7 +83,7 @@ allow {
   is_authenticated_user
   some patient_id
   input.method == "DELETE"
-  input.path = ["v1", "clinics", _, "patients", patient_id, "permissions", "upload"]
+  input.path = ["v1", "clinics", _, "patients", patient_id, "permissions", _]
   patient_id == subject_id
 }
 

@@ -57,6 +57,10 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string) er
 }
 
 func (s *service) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
+	if permissions != nil && permissions.Custodian != nil {
+		// Custodian permission cannot be set after patients claimed their accounts
+		permissions.Custodian = nil
+	}
 	if permissions == nil || permissions.Empty() {
 		return nil, s.Remove(ctx, clinicId, userId)
 	}

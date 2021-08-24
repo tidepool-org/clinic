@@ -136,6 +136,9 @@ func NewPermissions(dto *PatientPermissions) *patients.Permissions {
 	var permissions *patients.Permissions
 	if dto != nil {
 		permissions = &patients.Permissions{}
+		if dto.Custodian != nil {
+			permissions.Custodian = &patients.Permission{}
+		}
 		if dto.Upload != nil {
 			permissions.Upload = &patients.Permission{}
 		}

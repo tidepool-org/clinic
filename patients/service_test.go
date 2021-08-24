@@ -29,7 +29,7 @@ var _ = Describe("Patients Service", func() {
 	Describe("Update Permissions", func() {
 		Context("With non-empty permissions", func() {
 			perms := &patients.Permissions{
-				Custodian: &patients.Permission{},
+				Upload: &patients.Permission{},
 			}
 
 			It("updates permissions in repository", func() {
@@ -40,6 +40,24 @@ var _ = Describe("Patients Service", func() {
 					Return(&patients.Patient{Permissions: perms}, nil)
 
 				_, err := service.UpdatePermissions(nil, clinicId, userId, perms)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		Context("With custodian permission", func() {
+			perms := &patients.Permissions{
+				Custodian: &patients.Permission{},
+			}
+
+			It("removes the patient from the repository", func() {
+				userId := "1234567890"
+				clinicId := "60d1dc0eac5285751add8f82"
+				repo.EXPECT().
+					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
+					Return(nil)
+
+				patient, err := service.UpdatePermissions(nil, clinicId, userId, perms)
+				Expect(patient).To(BeNil())
 				Expect(err).To(BeNil())
 			})
 		})

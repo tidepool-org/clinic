@@ -157,7 +157,89 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("allow prevents clinic members to delete patients of a clinic", func() {
+		It("prevents users to migrate patients to a clinic", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
+				"method": "POST",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
+		It("prevents users to migrate their own account to a clinic", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "999999999"},
+				"method": "POST",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
+		It("prevents clinic admins to migrate users to a clinic", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "999999999"},
+				"method": "POST",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
+		It("prevents clinic members to migrate users to a clinic", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "999999999"},
+				"method": "POST",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
+		It("prevents clinic members from changing patient permissions", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "999999999", "permissions"},
+				"method": "POST",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
+		It("prevents clinic admins from changing patient permissions", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "999999999", "permissions"},
+				"method": "POST",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "999999999",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
+		It("prevents clinic members to delete patients of a clinic", func() {
 			input := map[string]interface{}{
 				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
 				"method": "DELETE",
