@@ -134,6 +134,7 @@ var _ = Describe("Patients Repository", func() {
 					Mrn:           update.Mrn,
 					TargetDevices: update.TargetDevices,
 					Permissions:   update.Permissions,
+					IsMigrated:    randomPatient.IsMigrated,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -342,5 +343,6 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"Mrn":           PointTo(Equal(*patient.Mrn)),
 		"TargetDevices": PointTo(Equal(*patient.TargetDevices)),
 		"Permissions":   PointTo(Equal(*patient.Permissions)),
+		"IsMigrated":    Equal(patient.IsMigrated),
 	})
 }

@@ -27,6 +27,7 @@ func RandomPatient() patients.Patient {
 		Mrn:           strp(test.Faker.UUID().V4()),
 		TargetDevices: &devices,
 		Permissions:   &permissions,
+		IsMigrated:    test.Faker.Bool(),
 	}
 }
 
