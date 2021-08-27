@@ -75,6 +75,7 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 		UserId: strp(string(patientId)),
 		ClinicId: &clinicObjId,
 		Permissions: NewPermissions(dto.Permissions),
+		IsMigrated: true,
 	}
 	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
 		return err

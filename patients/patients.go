@@ -43,6 +43,7 @@ type Patient struct {
 	Mrn           *string             `bson:"mrn"`
 	TargetDevices *[]string           `bson:"targetDevices"`
 	Permissions   *Permissions        `bson:"permissions,omitempty"`
+	IsMigrated    bool                `bson:"isMigrated,omitempty"`
 }
 
 func (p Patient) IsCustodial() bool {
