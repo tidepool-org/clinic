@@ -61,7 +61,7 @@ func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId Patie
 
 func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := Patient{}
+	dto := CreatePatient{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -75,8 +75,11 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 		UserId: strp(string(patientId)),
 		ClinicId: &clinicObjId,
 		Permissions: NewPermissions(dto.Permissions),
-		IsMigrated: true,
 	}
+	if dto.IsMigrated != nil {
+		patient.IsMigrated = *dto.IsMigrated
+	}
+	
 	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
 		return err
 	}

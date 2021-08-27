@@ -72,6 +72,7 @@ type Clinics []Clinic
 
 // CreatePatient defines model for CreatePatient.
 type CreatePatient struct {
+	IsMigrated  *bool               `json:"isMigrated,omitempty"`
 	Permissions *PatientPermissions `json:"permissions,omitempty"`
 }
 

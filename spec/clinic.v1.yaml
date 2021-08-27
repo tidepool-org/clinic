@@ -883,7 +883,6 @@ components:
       properties:
         custodian:
           type: object
-          readOnly: true
         view:
           type: object
         note:
@@ -920,6 +919,8 @@ components:
       properties:
         permissions:
           $ref: '#/components/schemas/PatientPermissions'
+        isMigrated:
+          type: boolean
     AssociateClinicianToUser:
       title: Associate Clinician
       type: object
