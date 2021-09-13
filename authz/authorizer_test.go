@@ -292,6 +292,19 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
+		It("allows prescription service to fetch clinician by id", func() {
+			input := map[string]interface{}{
+				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "1234567890"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id": "prescription",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("allows hydrophone to access /v1/clinics/6066fbabc6f484277200ac64/clinicians", func() {
 			input := map[string]interface{}{
 				"path": []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians"},
