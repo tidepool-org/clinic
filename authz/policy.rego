@@ -261,12 +261,12 @@ allow {
   clinician_has_read_access
 }
 
-# Allow hydrophone to fetch patient by id
+# Allow hydrophone and clinic-worker to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "patients", _]
-  is_backend_service_any_of({"hydrophone"})
+  is_backend_service_any_of({"hydrophone", "clinic-worker"})
 }
 
 # Allow clinic-worker, hydrophone, prescription services to create a patient from existing user
