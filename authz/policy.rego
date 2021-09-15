@@ -115,6 +115,14 @@ allow {
   input.path = ["v1", "clinics", _]
 }
 
+# Allow clinic-worker to fetch clinics by id
+# GET /v1/clinics/:clinicId
+allow {
+  is_backend_service_any_of({"clinic-worker"})
+  input.method == "GET"
+  input.path = ["v1", "clinics", _]
+}
+
 # Allow authenticated users to fetch clinics by share code
 # GET /v1/clinics/share_code/:shareCode
 allow {
