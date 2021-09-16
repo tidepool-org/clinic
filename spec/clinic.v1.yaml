@@ -755,7 +755,6 @@ components:
         website:
           type: string
           format: uri
-          minLength: 1
       required:
         - id
         - name
