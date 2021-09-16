@@ -9,7 +9,11 @@ info:
     email: support@tidepool.org
   license:
     name: BSD-2-Clause
-    url: 'https://github.com/tidepool-org/gatekeeper/blob/develop/LICENSE'
+    url: 'https://github.com/tidepool-org/clinic/blob/master/LICENSE'
+  x-logo:
+    url: 'https://github.com/tidepool-org/TidepoolApi/blob/master/assets/images/Tidepool_Logo_Light_Large.png'
+    altText: Tidepool Logo
+  x-tidepool-service: 'https://github.com/tidepool-org/clinic/'
 servers:
   - url: 'http://localhost:8080'
     description: local development
@@ -553,11 +557,7 @@ paths:
       description: Retrieve a list of the outstanding invites to join a clinic
   '/v1/clinicians/{userId}/invites/{inviteId}':
     parameters:
-      - name: userId
-        in: path
-        schema:
-          $ref: '#/components/schemas/TidepoolUserId'
-        required: true
+      - $ref: '#/components/parameters/userId'
       - $ref: '#/components/parameters/inviteId'
     delete:
       summary: Dismiss Clinician Invite
@@ -702,35 +702,46 @@ components:
         - message
     Clinic:
       title: Clinic
-      x-examples:
-        example:
-          name: ACME Diabetes Clinic
-          address: 3000 Main drive
-          phoneNumbers:
-            type: main
-            number: 555-555-5555
-      description: ''
+      description: Clinic
       type: object
       properties:
         id:
           $ref: '#/components/schemas/Id'
         address:
+          title: Street Address
+          description: Street address.
           type: string
           minLength: 1
         city:
+          title: City
+          description: City name.
           type: string
           minLength: 1
+          example: Palo Alto
         postalCode:
+          title: Postal Code
+          description: 'Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.'
           type: string
           minLength: 1
+          example: '94301'
         state:
+          title: State
+          description: 'State or province. In the U.S., typically something like `CA` or `California`.'
           type: string
           minLength: 1
+          example: CA
         country:
+          title: Country
+          description: Country name.
           type: string
           minLength: 1
+          example: USA
         phoneNumbers:
+          title: Phone phoneNumbers
+          description: An array of phone numbers.
           type: array
+          uniqueItems: true
+          minItems: 1
           items:
             $ref: '#/components/schemas/PhoneNumber'
         clinicType:
@@ -744,10 +755,15 @@ components:
             - 500-999
             - 1000+
         name:
+          title: Clinic Name
+          description: Name of the clinic.
           type: string
-          minLength: 1
+          minItems: 1
         shareCode:
+          title: Clinic Share Code
+          description: 'Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.'
           type: string
+          pattern: '^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$'
           readOnly: true
         canMigrate:
           type: boolean
@@ -766,19 +782,18 @@ components:
         $ref: '#/components/schemas/Clinic'
     Clinician:
       title: Clinician
+      description: The `id` may be empty if the clinician invite has not been accepted.
       type: object
       properties:
         id:
           $ref: '#/components/schemas/TidepoolUserId'
-          description: The user id of the clinician (may be empty if the invite is not accepted)
         inviteId:
           type: string
           description: The id of the invite if it hasn't been accepted
         email:
-          x-go-type: string
           type: string
+          x-go-type: string
           format: email
-          description: The email of the clinician
         name:
           type: string
           description: The name of the clinician
@@ -800,9 +815,8 @@ components:
         id:
           $ref: '#/components/schemas/TidepoolUserId'
         email:
-          x-go-type: string
           type: string
-          description: The email of the patient
+          x-go-type: string
           format: email
         fullName:
           type: string
@@ -811,7 +825,7 @@ components:
         birthDate:
           type: string
           format: date
-          description: YYYY-MM-DD
+          example: '2012-08-30'
         mrn:
           type: string
           description: The medical record number of the patient
@@ -822,7 +836,6 @@ components:
             type: string
         permissions:
           $ref: '#/components/schemas/PatientPermissions'
-          readOnly: true
       required:
         - id
         - fullName
@@ -837,23 +850,25 @@ components:
       description: ''
       properties:
         email:
-          x-go-type: string
+          title: Email Address
+          description: 'An email address, as specified by [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322).'
           type: string
           format: email
+          minLength: 6
+          example: example@tidepool.org
+          x-go-type: string
         roles:
           $ref: '#/components/schemas/ClinicianRoles'
       required:
         - email
         - roles
     TidepoolUserId:
-      title: Tidepool User ID
       type: string
+      title: Tidepool User ID
       pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
-      description: 'Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)).'
+      description: 'String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))'
       readOnly: true
-      minLength: 10
       x-go-type: string
-      example: 7b39b1e1-5db5-4a09-9602-d9255b08a8e4
     ClinicianRoles:
       type: array
       title: Clinician Permissions
@@ -871,11 +886,15 @@ components:
       properties:
         type:
           type: string
+          minLength: 1
         number:
           type: string
           minLength: 1
       required:
         - number
+      example:
+        type: main
+        number: +1 (555) 555-1212
     PatientPermissions:
       type: object
       title: Patient Permissions
@@ -889,9 +908,9 @@ components:
         upload:
           type: object
     Id:
-      title: Object Id
+      title: Clinic ID
+      description: Clinic identifier.
       type: string
-      description: String representation of a resource id
       minLength: 24
       maxLength: 24
       pattern: '^[a-f0-9]{24}$'

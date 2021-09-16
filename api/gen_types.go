@@ -18,30 +18,44 @@ type AssociateClinicianToUser struct {
 
 // Clinic defines model for Clinic.
 type Clinic struct {
+
+	// Street address.
 	Address    *string `json:"address,omitempty"`
 	CanMigrate bool    `json:"canMigrate"`
+
+	// City name.
 	City       *string `json:"city,omitempty"`
 	ClinicSize *string `json:"clinicSize,omitempty"`
 	ClinicType *string `json:"clinicType,omitempty"`
-	Country    *string `json:"country,omitempty"`
 
-	// String representation of a resource id
-	Id           Id             `json:"id"`
-	Name         string         `json:"name"`
+	// Country name.
+	Country *string `json:"country,omitempty"`
+
+	// Clinic identifier.
+	Id Id `json:"id"`
+
+	// Name of the clinic.
+	Name string `json:"name"`
+
+	// An array of phone numbers.
 	PhoneNumbers *[]PhoneNumber `json:"phoneNumbers,omitempty"`
-	PostalCode   *string        `json:"postalCode,omitempty"`
-	ShareCode    string         `json:"shareCode"`
-	State        *string        `json:"state,omitempty"`
-	Website      *string        `json:"website,omitempty"`
+
+	// Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
+	PostalCode *string `json:"postalCode,omitempty"`
+
+	// Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
+	ShareCode string `json:"shareCode"`
+
+	// State or province. In the U.S., typically something like `CA` or `California`.
+	State   *string `json:"state,omitempty"`
+	Website *string `json:"website,omitempty"`
 }
 
 // Clinician defines model for Clinician.
 type Clinician struct {
-
-	// The email of the clinician
 	Email string `json:"email"`
 
-	// Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)).
+	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id *TidepoolUserId `json:"id,omitempty"`
 
 	// The id of the invite if it hasn't been accepted
@@ -54,7 +68,11 @@ type Clinician struct {
 
 // ClinicianClinicRelationship defines model for ClinicianClinicRelationship.
 type ClinicianClinicRelationship struct {
-	Clinic    Clinic    `json:"clinic"`
+
+	// Clinic
+	Clinic Clinic `json:"clinic"`
+
+	// The `id` may be empty if the clinician invite has not been accepted.
 	Clinician Clinician `json:"clinician"`
 }
 
@@ -98,17 +116,13 @@ type Migrations []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-
-	// YYYY-MM-DD
 	BirthDate openapi_types.Date `json:"birthDate"`
-
-	// The email of the patient
-	Email *string `json:"email,omitempty"`
+	Email     *string            `json:"email,omitempty"`
 
 	// The full name of the patient
 	FullName string `json:"fullName"`
 
-	// Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)).
+	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id TidepoolUserId `json:"id"`
 
 	// The medical record number of the patient
@@ -119,6 +133,8 @@ type Patient struct {
 
 // PatientClinicRelationship defines model for PatientClinicRelationship.
 type PatientClinicRelationship struct {
+
+	// Clinic
 	Clinic  Clinic  `json:"clinic"`
 	Patient Patient `json:"patient"`
 }
