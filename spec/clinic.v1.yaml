@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Clinic service
+  title: Clinics API
   version: '1.0'
   description: 'Web service that stores information about clinics, clinicians and their patients'
   contact:
