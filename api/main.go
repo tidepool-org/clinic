@@ -13,10 +13,10 @@ import (
 	"github.com/tidepool-org/clinic/clinics/creator"
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -74,12 +74,8 @@ func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo
 func MainLoop() {
 	fx.New(
 		fx.Provide(
-			func() (*zap.Logger, error) {
-				config := zap.NewProductionConfig()
-				config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-				return config.Build()
-			},
-			func(logger *zap.Logger) *zap.SugaredLogger { return logger.Sugar() },
+			logger.NewProductionLogger,
+			logger.Suggar,
 			store.GetConnectionString,
 			store.NewClient,
 			store.NewDatabase,
