@@ -90,6 +90,7 @@ func MainLoop() {
 			clinicians.NewService,
 			clinics.NewRepository,
 			clinics.NewShareCodeGenerator,
+			creator.NewConfig,
 			creator.NewCreator,
 			migration.NewMigrator,
 			migration.NewRepository,

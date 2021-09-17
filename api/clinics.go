@@ -38,14 +38,15 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 	userId := authz.GetAuthUserId(ec.Request())
 	if userId == nil {
 		return &echo.HTTPError{
-			Code:     http.StatusBadRequest,
-			Message:  "expected authenticated user id",
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
 		}
 	}
 
 	create := creator.CreateClinic{
-		Clinic:        *NewClinic(dto),
-		CreatorUserId: *userId,
+		Clinic:            *NewClinic(dto),
+		CreatorUserId:     *userId,
+		CreateDemoPatient: true,
 	}
 
 	result, err := h.clinicsCreator.CreateClinic(ctx, &create)
@@ -103,7 +104,6 @@ func (h *Handler) GetClinicByShareCode(ec echo.Context, shareCode string) error 
 
 	return ec.JSON(http.StatusOK, NewClinicDto(list[0]))
 }
-
 
 func (h *Handler) TriggerInitialMigration(ec echo.Context, clinicId string) error {
 	ctx := ec.Request().Context()
