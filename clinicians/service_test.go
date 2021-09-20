@@ -2,6 +2,7 @@ package clinicians_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,13 +24,16 @@ import (
 var _ = Describe("Clinicians Service", func() {
 	var cliniciansService clinicians.Service
 	var clinicsService clinics.Service
+	var userService *patientsTest.MockUserService
+	var ctrl *gomock.Controller
 	var app *fxtest.App
 	beforeOnce := sync.Once{}
 	afterOnce := sync.Once{}
 
 	BeforeEach(func() {
 		tb := GinkgoT()
-		ctrl := gomock.NewController(tb)
+		ctrl = gomock.NewController(tb)
+
 		beforeOnce.Do(func() {
 			app = fxtest.New(tb,
 				fx.Provide(
@@ -47,9 +51,10 @@ var _ = Describe("Clinicians Service", func() {
 					clinicians.NewRepository,
 					clinicians.NewService,
 				),
-				fx.Invoke(func(cliniciansSvc clinicians.Service, clinicsSvc clinics.Service) {
+				fx.Invoke(func(cliniciansSvc clinicians.Service, clinicsSvc clinics.Service, userSvc patients.UserService) {
 					cliniciansService = cliniciansSvc
 					clinicsService = clinicsSvc
+					userService = userSvc.(*patientsTest.MockUserService)
 				}),
 			)
 			app.RequireStart()
@@ -109,7 +114,69 @@ var _ = Describe("Clinicians Service", func() {
 			_, err := cliniciansService.Create(context.Background(), clinician)
 			Expect(err).ToNot(HaveOccurred())
 
-			clinic, err := clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic.Admins).ToNot(BeNil())
+			Expect(*clinic.Admins).To(ContainElement(*clinician.UserId))
+		})
+	})
+
+	Describe("Delete clinician", func() {
+		var clinic *clinics.Clinic
+		var clinician *clinicians.Clinician
+
+		BeforeEach(func() {
+			clinic = clinicsTest.RandomClinic()
+
+			var err error
+			clinic, err = clinicsService.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			adminId := (*clinic.Admins)[0]
+			clinician = cliniciansTest.RandomClinician()
+			clinician.UserId = &adminId
+			clinician.ClinicId = clinic.Id
+			clinician.Roles = []string{"CLINIC_ADMIN"}
+
+			_, err = cliniciansService.Create(context.Background(), clinician)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("Prevents orphaning a clinic", func() {
+			err := cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
+		})
+
+		It("Works when there are multiple admins", func() {
+			second := cliniciansTest.RandomClinician()
+			second.ClinicId = clinic.Id
+			second.Roles = []string{"CLINIC_ADMIN"}
+
+			created, err := cliniciansService.Create(context.Background(), second)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(created).ToNot(BeNil())
+			Expect(created.Id).ToNot(BeNil())
+			Expect(created.UserId).ToNot(BeNil())
+
+			err = cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+
+			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic.Admins).ToNot(BeNil())
+			Expect(*clinic.Admins).ToNot(ContainElement(*clinician.UserId))
+		})
+
+		It("Adds clinic admins to the clinic", func() {
+			clinician := cliniciansTest.RandomClinician()
+			clinician.ClinicId = clinic.Id
+			clinician.Roles = []string{"CLINIC_ADMIN"}
+
+			_, err := cliniciansService.Create(context.Background(), clinician)
+			Expect(err).ToNot(HaveOccurred())
+
+			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).To(ContainElement(*clinician.UserId))
@@ -166,7 +233,7 @@ var _ = Describe("Clinicians Service", func() {
 			newClinician, err = cliniciansService.Update(context.Background(), newClinician.ClinicId.Hex(), *newClinician.UserId, newClinician)
 			Expect(err).ToNot(HaveOccurred())
 
-			clinic, err := clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).To(ContainElement(*newClinician.UserId))
@@ -185,7 +252,7 @@ var _ = Describe("Clinicians Service", func() {
 			_, err = cliniciansService.Update(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId, clinician)
 			Expect(err).ToNot(HaveOccurred())
 
-			clinic, err := clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).ToNot(ContainElement(*clinician.UserId))
@@ -203,4 +270,69 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
 		})
 	})
+
+
+	Describe("Associate invite", func() {
+		var clinic *clinics.Clinic
+		var clinician *clinicians.Clinician
+		var invite *clinicians.Clinician
+
+		BeforeEach(func() {
+			clinic = clinicsTest.RandomClinic()
+
+			var err error
+			clinic, err = clinicsService.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			adminId := (*clinic.Admins)[0]
+			clinician = cliniciansTest.RandomClinician()
+			clinician.UserId = &adminId
+			clinician.ClinicId = clinic.Id
+			clinician.Roles = []string{"CLINIC_ADMIN"}
+
+			_, err = cliniciansService.Create(context.Background(), clinician)
+			Expect(err).ToNot(HaveOccurred())
+
+			invite = cliniciansTest.RandomClinicianInvite()
+			invite.ClinicId = clinic.Id
+			invite.Roles = []string{"CLINIC_ADMIN"}
+			_, err = cliniciansService.Create(context.Background(), invite)
+			Expect(err).ToNot(HaveOccurred())
+			fmt.Println(invite)
+		})
+
+		AfterEach(func() {
+			ctrl.Finish()
+		})
+
+		It("Adds the user id to the clinic admins attribute of a clinic", func() {
+			userId := cliniciansTest.Faker.UUID().V4()
+			name := cliniciansTest.Faker.Person().Name()
+
+			association := clinicians.AssociateInvite{
+				ClinicId:      clinic.Id.Hex(),
+				InviteId:      *invite.InviteId,
+				UserId:        userId,
+			}
+
+			userService.EXPECT().
+				GetUserProfile(gomock.Any(), gomock.Eq(userId)).
+				Return(&patients.Profile{
+					FullName: &name,
+				}, nil)
+
+			result, err := cliniciansService.AssociateInvite(context.Background(), association)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result).ToNot(BeNil())
+			Expect(result.Name).ToNot(BeNil())
+			Expect(*result.Name).To(Equal(name))
+
+			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic.Admins).ToNot(BeNil())
+			Expect(*clinic.Admins).To(ContainElement(userId))
+		})
+	})
+
 })

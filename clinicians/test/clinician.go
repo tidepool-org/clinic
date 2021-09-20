@@ -27,3 +27,13 @@ func RandomClinician() *clinicians.Clinician {
 		Roles:    roles,
 	}
 }
+
+func RandomClinicianInvite() *clinicians.Clinician {
+	inviteId := Faker.UUID().V4()
+	clinician := RandomClinician()
+	clinician.UserId = nil
+	clinician.Name = nil
+	clinician.InviteId = &inviteId
+
+	return clinician
+}
