@@ -136,7 +136,7 @@ func (m *migrator) assertUserIsClinician(userId string) error {
 	}
 
 	if !user.IsClinic() {
-		return fmt.Errorf("user %v is not clinician", userId)
+		return fmt.Errorf("%w: user %v is not clinician", internalErrs.ConstraintViolation, userId)
 	}
 
 	return nil
