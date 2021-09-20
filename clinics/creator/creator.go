@@ -3,13 +3,12 @@ package creator
 import (
 	"context"
 	"fmt"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readconcern"
-	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"go.uber.org/fx"
 )
 
@@ -17,9 +16,20 @@ const (
 	duplicateShareCodeRetryAttempts = 100
 )
 
+type Config struct {
+	ClinicDemoPatientUserId string `envconfig:"CLINIC_DEMO_PATIENT_USER_ID"`
+}
+
+func NewConfig() (*Config, error) {
+	c := &Config{}
+	err := envconfig.Process("", c)
+	return c, err
+}
+
 type CreateClinic struct {
-	Clinic        clinics.Clinic
-	CreatorUserId string
+	Clinic            clinics.Clinic
+	CreatorUserId     string
+	CreateDemoPatient bool
 }
 
 type Creator interface {
@@ -29,9 +39,11 @@ type Creator interface {
 type creator struct {
 	clinics              clinics.Service
 	cliniciansRepository *clinicians.Repository
+	config               *Config
 	dbClient             *mongo.Client
+	patientsService      patients.Service
 	shareCodeGenerator   clinics.ShareCodeGenerator
-	userService          shoreline.Client
+	userService          patients.UserService
 }
 
 type Params struct {
@@ -39,15 +51,17 @@ type Params struct {
 
 	Clinics              clinics.Service
 	CliniciansRepository *clinicians.Repository
+	Config               *Config
 	DbClient             *mongo.Client
 	ShareCodeGenerator   clinics.ShareCodeGenerator
-	UserService          shoreline.Client
+	UserService          patients.UserService
 }
 
 func NewCreator(cp Params) (Creator, error) {
 	return &creator{
 		clinics:              cp.Clinics,
 		cliniciansRepository: cp.CliniciansRepository,
+		config:               cp.Config,
 		dbClient:             cp.DbClient,
 		shareCodeGenerator:   cp.ShareCodeGenerator,
 		userService:          cp.UserService,
@@ -55,7 +69,7 @@ func NewCreator(cp Params) (Creator, error) {
 }
 
 func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clinics.Clinic, error) {
-	user, err := c.userService.GetUser(create.CreatorUserId, c.userService.TokenProvide())
+	user, err := c.userService.GetUser(create.CreatorUserId)
 	if err != nil {
 		return nil, err
 	}
@@ -63,22 +77,25 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 		return nil, fmt.Errorf("unable to find user with id %v", create.CreatorUserId)
 	}
 
-	session, err := c.dbClient.StartSession()
-	if err != nil {
-		return nil, fmt.Errorf("unable to start sessions %w", err)
+	var demoPatient *patients.Patient
+	if create.CreateDemoPatient {
+		demoPatient, err = c.getDemoPatient(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
-	defer session.EndSession(ctx)
 
 	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
 		// Set initial admins
-		admins := []string{create.CreatorUserId}
-		create.Clinic.Admins = &admins
+		create.Clinic.AddAdmin(create.CreatorUserId)
 
+		// Add the clinic to the collection
 		clinic, err := c.createClinicObject(sessionCtx, create)
 		if err != nil {
 			return nil, err
 		}
 
+		// Add the clinician to the collection
 		clinician := &clinicians.Clinician{
 			ClinicId: clinic.Id,
 			UserId:   &create.CreatorUserId,
@@ -89,13 +106,18 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 			return nil, err
 		}
 
+		// Add the demo patient account
+		if demoPatient != nil {
+			demoPatient.ClinicId = clinic.Id
+			if _, err = c.patientsService.Create(sessionCtx, *demoPatient); err != nil {
+				return nil, err
+			}
+		}
+
 		return clinic, nil
 	}
 
-	wc := writeconcern.New(writeconcern.WMajority())
-	rc := readconcern.Snapshot()
-	txnOpts := options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
-	result, err := session.WithTransaction(ctx, transaction, txnOpts)
+	result, err := store.WithTransaction(ctx, c.dbClient, transaction)
 	if err != nil {
 		return nil, err
 	}
@@ -118,4 +140,23 @@ retryLoop:
 		}
 	}
 	return clinic, err
+}
+
+func (c *creator) getDemoPatient(ctx context.Context) (*patients.Patient, error) {
+	if c.config.ClinicDemoPatientUserId == "" {
+		return nil, nil
+	}
+
+	perm := make(patients.Permission, 0)
+	patient := &patients.Patient{
+		UserId:     &c.config.ClinicDemoPatientUserId,
+		IsMigrated: true, // Do not send emails
+		Permissions: &patients.Permissions{
+			View: &perm,
+		},
+	}
+	if err := c.userService.GetPatientFromExistingUser(ctx, patient); err != nil {
+		return nil, err
+	}
+	return patient, nil
 }

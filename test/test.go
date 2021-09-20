@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-
 func Test(t *testing.T) {
 	RegisterFailHandler(ginkgo.Fail)
 	ginkgo.RunSpecs(t, getCallerPackage())

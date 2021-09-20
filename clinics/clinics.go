@@ -64,6 +64,15 @@ func (c *Clinic) HasAllRequiredFields() bool {
 
 }
 
+func (c *Clinic) AddAdmin(userId string) {
+	admins := make([]string, 0)
+	if c.Admins != nil {
+		admins = *c.Admins
+	}
+	admins = append(admins, userId)
+	c.Admins = &admins
+}
+
 func (c *Clinic) CanMigrate() bool {
 	return !c.IsMigrated &&
 		c.HasAllRequiredFields() &&

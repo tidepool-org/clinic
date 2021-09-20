@@ -2,14 +2,10 @@ package clinicians
 
 import (
 	"context"
-	"fmt"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readconcern"
-	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"go.uber.org/zap"
 )
 
@@ -34,106 +30,45 @@ func NewService(dbClient *mongo.Client, clinicsService clinics.Service, reposito
 }
 
 func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician, error) {
-	session, err := s.dbClient.StartSession()
-	if err != nil {
-		return nil, fmt.Errorf("unable to start sessions %w", err)
-	}
-	defer session.EndSession(ctx)
+	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		created, err := s.repository.Create(ctx, clinician)
+		if err != nil {
+			return nil, err
+		}
 
-	wc := writeconcern.New(writeconcern.WMajority())
-	rc := readconcern.Snapshot()
-	txnOpts := options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
-	if err = session.StartTransaction(txnOpts); err != nil {
+		if err := s.onUpdate(ctx, clinician); err != nil {
+			return nil, err
+		}
+
+		return created, nil
+	})
+
+	if err != nil {
 		return nil, err
 	}
 
-	var result *Clinician
-	err = mongo.WithSession(ctx, session, func(sessionCtx mongo.SessionContext) error {
-		created, err := s.repository.Create(ctx, clinician)
-		if err != nil {
-			if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-				s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-			}
-			return err
-		}
-
-		if created.UserId != nil {
-			if created.IsAdmin() {
-				if err := s.clinicsService.UpsertAdmin(sessionCtx, created.ClinicId.Hex(), *created.UserId); err != nil {
-					if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-						s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-					}
-					return err
-				}
-			} else {
-				if err := s.clinicsService.RemoveAdmin(sessionCtx, created.ClinicId.Hex(), *created.UserId); err != nil {
-					if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-						s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-					}
-					return err
-				}
-			}
-		}
-
-		err = session.CommitTransaction(sessionCtx)
-		if err == nil {
-			result = created
-		}
-
-		return err
-	})
-
-	return result, err
+	return result.(*Clinician), nil
 }
 
 func (s service) Update(ctx context.Context, clinicId string, clinicianId string, clinician *Clinician) (*Clinician, error) {
-	session, err := s.dbClient.StartSession()
-	if err != nil {
-		return nil, fmt.Errorf("unable to start sessions %w", err)
-	}
-	defer session.EndSession(ctx)
+	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		if err := s.onUpdate(ctx, clinician); err != nil {
+			return nil, err
+		}
 
-	wc := writeconcern.New(writeconcern.WMajority())
-	rc := readconcern.Snapshot()
-	txnOpts := options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
-	if err = session.StartTransaction(txnOpts); err != nil {
+		updated, err := s.repository.Update(sessionCtx, clinicId, clinicianId, clinician)
+		if err != nil {
+			return nil, err
+		}
+
+		return updated, err
+	})
+
+	if err != nil {
 		return nil, err
 	}
 
-	var result *Clinician
-	err = mongo.WithSession(ctx, session, func(sessionCtx mongo.SessionContext) error {
-		if clinician.IsAdmin() {
-			if err := s.clinicsService.UpsertAdmin(sessionCtx, clinicId, clinicianId); err != nil {
-				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-				}
-				return err
-			}
-		} else {
-			if err := s.clinicsService.RemoveAdmin(sessionCtx, clinicId, clinicianId); err != nil {
-				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-				}
-				return err
-			}
-		}
-		updated, err := s.repository.Update(sessionCtx, clinicId, clinicianId, clinician)
-		if err != nil {
-			if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-				s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-			}
-			return err
-		}
-
-		err = session.CommitTransaction(sessionCtx)
-		if err == nil {
-			result = updated
-		}
-
-		return err
-	})
-
-	return result, err
+	return result.(*Clinician), nil
 }
 
 func (s service) AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error) {
@@ -143,57 +78,25 @@ func (s service) AssociateInvite(ctx context.Context, associate AssociateInvite)
 	}
 	associate.ClinicianName = profile.FullName
 
-	session, err := s.dbClient.StartSession()
-	if err != nil {
-		return nil, fmt.Errorf("unable to start sessions %w", err)
-	}
-	defer session.EndSession(ctx)
-
-	wc := writeconcern.New(writeconcern.WMajority())
-	rc := readconcern.Snapshot()
-	txnOpts := options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
-	if err = session.StartTransaction(txnOpts); err != nil {
-		return nil, err
-	}
-
-	var result *Clinician
-	err = mongo.WithSession(ctx, session, func(sessionCtx mongo.SessionContext) error {
+	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
 		// Associate invite clinician record to the user id
 		clinician, err := s.repository.AssociateInvite(sessionCtx, associate)
 		if err != nil {
-			if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-				s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-			}
-			return err
+			return nil, err
 		}
 
-		if clinician.IsAdmin() {
-			// Make sure clinician user id is admin in clinic record
-			if err := s.clinicsService.UpsertAdmin(sessionCtx, associate.ClinicId, *clinician.UserId); err != nil {
-				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-				}
-				return err
-			}
-		} else {
-			// Make sure clinician user id is removed as an admin from a clinic record
-			if err := s.clinicsService.RemoveAdmin(sessionCtx, associate.ClinicId, *clinician.UserId); err != nil {
-				if txnErr := session.AbortTransaction(sessionCtx); txnErr != nil {
-					s.logger.Error("error when aborting transaction", zap.Error(txnErr))
-				}
-				return err
-			}
+		if err := s.onUpdate(ctx, clinician); err != nil {
+			return nil, err
 		}
 
-		err = session.CommitTransaction(sessionCtx)
-		if err == nil {
-			result = clinician
-		}
-
-		return err
+		return clinician, nil
 	})
 
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+
+	return result.(*Clinician), nil
 }
 
 func (s *service) Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error) {
@@ -205,7 +108,40 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 }
 
 func (s *service) Delete(ctx context.Context, clinicId string, clinicianId string) error {
-	return s.repository.Delete(ctx, clinicId, clinicianId)
+	_, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		clinician, err := s.repository.Get(ctx, clinicId, clinicianId)
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.repository.Delete(ctx, clinicId, clinicianId)
+		if err != nil {
+			return nil, err
+		}
+
+		// Make sure the clinician is removed from the clinic record
+		clinician.Roles = nil
+		err = s.onUpdate(ctx, clinician)
+		return nil, err
+	})
+
+	return err
+}
+
+// onUpdate makes sure the clinic object "admins" attribute is consistent with the admins in the clinicians collection.
+// It must be executed on every operation that can change the roles of clinician.
+func (s *service) onUpdate(ctx context.Context, clinician *Clinician) error {
+	if clinician.UserId == nil {
+		return nil
+	}
+
+	if clinician.IsAdmin() {
+		// Make sure clinician user id is admin in clinic record
+		return s.clinicsService.UpsertAdmin(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
+	}
+
+	// Make sure clinician user id is removed as an admin from a clinic record
+	return s.clinicsService.RemoveAdmin(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
 }
 
 func (s *service) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {

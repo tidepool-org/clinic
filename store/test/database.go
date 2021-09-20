@@ -15,12 +15,11 @@ import (
 
 const (
 	mongoTestHost = "mongodb://127.0.0.1:27017"
-	mongoTimeout = time.Second * 5
-
+	mongoTimeout  = time.Second * 5
 )
 
 var (
-	Faker = faker.NewWithSeed(rand.NewSource(config.GinkgoConfig.RandomSeed))
+	Faker    = faker.NewWithSeed(rand.NewSource(config.GinkgoConfig.RandomSeed))
 	database *mongo.Database
 )
 

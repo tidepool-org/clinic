@@ -1,4 +1,4 @@
-package patients_test
+package clinicians_test
 
 import (
 	. "github.com/onsi/ginkgo"

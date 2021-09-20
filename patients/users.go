@@ -20,6 +20,8 @@ var UserServiceModule = fx.Provide(
 	NewUserService,
 )
 
+//go:generate mockgen --build_flags=--mod=mod -source=./users.go -destination=./test/mock_users.go -package test MockUserService
+
 type UserService interface {
 	CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error)
 	GetUser(userId string) (*shoreline.UserData, error)
@@ -71,8 +73,8 @@ func (s *userService) UpdateCustodialAccount(ctx context.Context, patient Patien
 	}
 
 	err := s.shorelineClient.UpdateUser(*patient.UserId, shoreline.UserUpdate{
-		Username:      patient.Email,
-		Emails:        &emails,
+		Username: patient.Email,
+		Emails:   &emails,
 	}, s.shorelineClient.TokenProvide())
 	if statusErr, ok := err.(*status.StatusError); ok && statusErr.Code == http.StatusConflict {
 		return ErrDuplicateEmail

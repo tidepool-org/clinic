@@ -72,7 +72,7 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
-		"userId": userId,
+		"userId":   userId,
 	}
 
 	patient := &Patient{}
@@ -90,7 +90,7 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string)
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
-		"userId": userId,
+		"userId":   userId,
 	}
 
 	res, err := r.collection.DeleteOne(ctx, selector)
@@ -147,7 +147,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	clinicId := patient.ClinicId.Hex()
 	filter := &Filter{
 		ClinicId: &clinicId,
-		UserId: patient.UserId,
+		UserId:   patient.UserId,
 	}
 	patients, err := r.List(ctx, filter, store.Pagination{Limit: 1})
 	if err != nil {
@@ -168,7 +168,7 @@ func (r *repository) Update(ctx context.Context, clinicId, userId string, patien
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
-		"userId": userId,
+		"userId":   userId,
 	}
 
 	update := bson.M{
@@ -189,7 +189,7 @@ func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
-		"userId": userId,
+		"userId":   userId,
 	}
 
 	update := bson.M{}
@@ -219,12 +219,12 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
-		"userId": userId,
-		key: bson.M{"$exists": true},
+		"userId":   userId,
+		key:        bson.M{"$exists": true},
 	}
 
 	update := bson.M{
-		"$unset": bson.D{{Key: key , Value: ""}},
+		"$unset": bson.D{{Key: key, Value: ""}},
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
