@@ -10,12 +10,12 @@ import (
 
 var (
 	DefaultClinicDatabaseName = "clinic"
-	ContextTimeout = time.Duration(20)*time.Second
+	ContextTimeout            = time.Duration(20) * time.Second
 )
 
 type MongoPagingParams struct {
 	Offset int64
-	Limit int64
+	Limit  int64
 }
 
 type Pagination struct {
@@ -26,7 +26,7 @@ type Pagination struct {
 func DefaultPagination() Pagination {
 	return Pagination{
 		Offset: 0,
-		Limit: 10,
+		Limit:  10,
 	}
 }
 
@@ -53,7 +53,6 @@ func GetConnectionString() (string, error) {
 	password, _ := os.LookupEnv("TIDEPOOL_STORE_PASSWORD")
 	optParams, _ := os.LookupEnv("TIDEPOOL_STORE_OPT_PARAMS")
 	ssl, _ := os.LookupEnv("TIDEPOOL_STORE_TLS")
-
 
 	var cs string
 	if scheme != "" {

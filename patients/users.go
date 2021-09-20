@@ -73,8 +73,8 @@ func (s *userService) UpdateCustodialAccount(ctx context.Context, patient Patien
 	}
 
 	err := s.shorelineClient.UpdateUser(*patient.UserId, shoreline.UserUpdate{
-		Username:      patient.Email,
-		Emails:        &emails,
+		Username: patient.Email,
+		Emails:   &emails,
 	}, s.shorelineClient.TokenProvide())
 	if statusErr, ok := err.(*status.StatusError); ok && statusErr.Code == http.StatusConflict {
 		return ErrDuplicateEmail

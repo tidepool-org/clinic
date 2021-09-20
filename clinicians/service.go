@@ -2,7 +2,6 @@ package clinicians
 
 import (
 	"context"
-	"fmt"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"

@@ -7,7 +7,7 @@ import (
 )
 
 type service struct {
-	repo Repository
+	repo             Repository
 	custodialService CustodialService
 }
 

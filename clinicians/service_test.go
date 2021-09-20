@@ -2,7 +2,6 @@ package clinicians_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,10 +39,10 @@ var _ = Describe("Clinicians Service", func() {
 					zap.NewNop,
 					logger.Suggar,
 					dbTest.GetTestDatabase,
-					func (database *mongo.Database) *mongo.Client {
+					func(database *mongo.Database) *mongo.Client {
 						return database.Client()
 					},
-					func () patients.UserService {
+					func() patients.UserService {
 						return patientsTest.NewMockUserService(ctrl)
 					},
 					patientsTest.NewMockUserService,
@@ -271,7 +270,6 @@ var _ = Describe("Clinicians Service", func() {
 		})
 	})
 
-
 	Describe("Associate invite", func() {
 		var clinic *clinics.Clinic
 		var clinician *clinicians.Clinician
@@ -299,7 +297,6 @@ var _ = Describe("Clinicians Service", func() {
 			invite.Roles = []string{"CLINIC_ADMIN"}
 			_, err = cliniciansService.Create(context.Background(), invite)
 			Expect(err).ToNot(HaveOccurred())
-			fmt.Println(invite)
 		})
 
 		AfterEach(func() {
@@ -311,9 +308,9 @@ var _ = Describe("Clinicians Service", func() {
 			name := cliniciansTest.Faker.Person().Name()
 
 			association := clinicians.AssociateInvite{
-				ClinicId:      clinic.Id.Hex(),
-				InviteId:      *invite.InviteId,
-				UserId:        userId,
+				ClinicId: clinic.Id.Hex(),
+				InviteId: *invite.InviteId,
+				UserId:   userId,
 			}
 
 			userService.EXPECT().

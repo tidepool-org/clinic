@@ -11,7 +11,7 @@ import (
 
 type Transaction = func(sessCtx mongo.SessionContext) (interface{}, error)
 
-func WithTransaction(ctx context.Context, dbClient *mongo.Client, txn Transaction) (interface{}, error){
+func WithTransaction(ctx context.Context, dbClient *mongo.Client, txn Transaction) (interface{}, error) {
 	session, err := dbClient.StartSession()
 	if err != nil {
 		return nil, fmt.Errorf("unable to start sessions %w", err)

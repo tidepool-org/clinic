@@ -58,7 +58,6 @@ func (c *repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-
 func (c *repository) Get(ctx context.Context, id string) (*Clinic, error) {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
@@ -145,11 +144,11 @@ func (c *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Cl
 func (c *repository) UpsertAdmin(ctx context.Context, id, clinicianId string) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
-	update := bson.M {
-		"$addToSet": bson.M {
+	update := bson.M{
+		"$addToSet": bson.M{
 			"admins": clinicianId,
 		},
-		"$set": bson.M {
+		"$set": bson.M{
 			"updatedAt": time.Now(),
 		},
 	}
@@ -163,14 +162,14 @@ func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) er
 	}
 
 	selector := bson.M{
-		"_id": clinic.Id,
+		"_id":       clinic.Id,
 		"updatedAt": clinic.UpdatedAt, // used for optimistic locking
 	}
-	update := bson.M {
-		"$pull": bson.M {
+	update := bson.M{
+		"$pull": bson.M{
 			"admins": clinicianId,
 		},
-		"$set": bson.M {
+		"$set": bson.M{
 			"updatedAt": time.Now(),
 		},
 	}
@@ -180,7 +179,7 @@ func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) er
 		return err
 	}
 
-	if !canRemoveAdmin(beforeUpdate, clinicianId){
+	if !canRemoveAdmin(beforeUpdate, clinicianId) {
 		return ErrAdminRequired
 	}
 

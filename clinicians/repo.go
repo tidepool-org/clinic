@@ -197,7 +197,7 @@ func (r *Repository) AssociateInvite(ctx context.Context, associate AssociateInv
 	}
 
 	update := bson.M{
-		"$set": set,
+		"$set":   set,
 		"$unset": unset,
 	}
 	return r.updateOne(ctx, idSelector, update)

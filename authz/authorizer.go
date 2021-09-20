@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	authHeaderPrefix = "x-auth-"
+	authHeaderPrefix      = "x-auth-"
 	subjectIdHeaderName   = "x-auth-subject-id"
 	serverAccessHeaderKey = "x-auth-server-access"
 	clinicIdPathParameter = "clinicId"
