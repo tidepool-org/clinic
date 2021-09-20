@@ -230,7 +230,7 @@ func NewMigrationDto(migration *migration.Migration) *Migration {
 	}
 
 	return &Migration{
-		CreatedTime: openapi_types.Date{Time: migration.CreatedTime},
+		CreatedTime: migration.CreatedTime,
 		UserId:      migration.UserId,
 	}
 }

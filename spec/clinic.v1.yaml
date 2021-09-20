@@ -973,7 +973,7 @@ components:
           minLength: 1
         createdTime:
           type: string
-          format: date
+          format: date-time
           readOnly: true
       required:
         - userId

@@ -4,6 +4,8 @@
 package api
 
 import (
+	"time"
+
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
@@ -105,7 +107,7 @@ type Id string
 
 // Migration defines model for Migration.
 type Migration struct {
-	CreatedTime openapi_types.Date `json:"createdTime"`
+	CreatedTime time.Time `json:"createdTime"`
 
 	// The user id of the legacy clinician account that needs to be migrated.
 	UserId string `json:"userId"`
