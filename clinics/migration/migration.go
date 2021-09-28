@@ -13,19 +13,28 @@ import (
 	"time"
 )
 
+const (
+	StatusPending   = "pending"
+	StatusRunning   = "running"
+	StatusCompleted = "completed"
+)
+
 var ErrAlreadyMigrated = fmt.Errorf("%w: clinic is already migrated", internalErrs.ConstraintViolation)
 
 type Migration struct {
 	ClinicId    *primitive.ObjectID `json:"clinicId" bson:"clinicId"`
 	UserId      string              `json:"userId" bson:"userId"`
+	Status      string              `json:"status" bson:"status"`
 	CreatedTime time.Time           `json:"createdTime" bson:"createdTime"`
 }
 
 type Migrator interface {
 	CreateEmptyClinic(ctx context.Context, userId string) (*clinics.Clinic, error)
+	GetMigration(ctx context.Context, clinicId string, userId string) (*Migration, error)
 	ListMigrations(ctx context.Context, clinicId string) ([]*Migration, error)
 	MigrateLegacyClinicianPatients(ctx context.Context, clinicId, userId string) (*Migration, error)
 	TriggerInitialMigration(ctx context.Context, clinicId string) (*Migration, error)
+	UpdateMigrationStatus(ctx context.Context, clinicId, userId, status string) (*Migration, error)
 }
 
 type Params struct {
@@ -113,6 +122,7 @@ func (m *migrator) TriggerInitialMigration(ctx context.Context, clinicId string)
 		ClinicId:    clinic.Id,
 		UserId:      userId,
 		CreatedTime: time.Now(),
+		Status:      StatusPending,
 	}
 
 	result, err := m.migrationRepo.Create(ctx, migration)
@@ -127,6 +137,14 @@ func (m *migrator) TriggerInitialMigration(ctx context.Context, clinicId string)
 	}
 
 	return result, nil
+}
+
+func (m *migrator) GetMigration(ctx context.Context, clinicId string, userId string) (*Migration, error) {
+	return m.migrationRepo.Get(ctx, clinicId, userId)
+}
+
+func (m *migrator) UpdateMigrationStatus(ctx context.Context, clinicId, userId, status string) (*Migration, error) {
+	return m.migrationRepo.UpdateStatus(ctx, clinicId, userId, status)
 }
 
 func (m *migrator) assertUserIsClinician(userId string) error {

@@ -139,3 +139,29 @@ func (h *Handler) MigrateLegacyClinicianPatients(ec echo.Context, clinicId strin
 
 	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
 }
+
+func (h *Handler) GetMigration(ec echo.Context, clinicId Id, userId UserId) error {
+	ctx := ec.Request().Context()
+
+	migration, err := h.clinicsMigrator.GetMigration(ctx, string(clinicId), string(userId))
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
+}
+
+func (h *Handler) UpdateMigration(ec echo.Context, clinicId Id, userId UserId) error {
+	ctx := ec.Request().Context()
+	dto := MigrationUpdate{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	migration, err := h.clinicsMigrator.UpdateMigrationStatus(ctx, string(clinicId), string(userId), string(dto.Status))
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
+}
