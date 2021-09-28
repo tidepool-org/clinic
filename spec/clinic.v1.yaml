@@ -685,6 +685,43 @@ paths:
       operationId: TriggerInitialMigration
       description: Trigger the initial migration
       x-internal: true
+  '/v1/clinics/{clinicId}/migrations/{userId}':
+    parameters:
+      - description: Clinic ID
+        name: clinicId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/Id'
+      - $ref: '#/components/parameters/userId'
+    get:
+      summary: Get Migration
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Migration'
+      operationId: GetMigration
+      description: Get a migration by user id
+    patch:
+      summary: Update Migration
+      operationId: UpdateMigration
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Migration'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MigrationUpdate'
+      description: Internal endpoint to update the status of a migration
 components:
   schemas:
     Error:
@@ -971,18 +1008,41 @@ components:
           type: string
           description: The user id of the legacy clinician account that needs to be migrated.
           minLength: 1
+        status:
+          $ref: '#/components/schemas/MigrationStatus'
         createdTime:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedTime:
           type: string
           format: date-time
           readOnly: true
       required:
         - userId
         - createdTime
+        - updatedTime
     Migrations:
       title: Migrations
       type: array
       items:
         $ref: '#/components/schemas/Migration'
+    MigrationUpdate:
+      title: MigrationUpdate
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/MigrationStatus'
+      required:
+        - status
+    MigrationStatus:
+      type: string
+      title: Migration Status
+      enum:
+        - PENDING
+        - RUNNING
+        - COMPLETED
+      description: The current status of the migration
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

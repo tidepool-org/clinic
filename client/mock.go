@@ -454,6 +454,26 @@ func (mr *MockClientInterfaceMockRecorder) GetInvitedClinician(ctx, clinicId, in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInvitedClinician", reflect.TypeOf((*MockClientInterface)(nil).GetInvitedClinician), varargs...)
 }
 
+// GetMigration mocks base method.
+func (m *MockClientInterface) GetMigration(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, userId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMigration", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMigration indicates an expected call of GetMigration.
+func (mr *MockClientInterfaceMockRecorder) GetMigration(ctx, clinicId, userId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, userId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMigration", reflect.TypeOf((*MockClientInterface)(nil).GetMigration), varargs...)
+}
+
 // GetPatient mocks base method.
 func (m *MockClientInterface) GetPatient(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -732,6 +752,46 @@ func (mr *MockClientInterfaceMockRecorder) UpdateClinicianWithBody(ctx, clinicId
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId, clinicianId, contentType, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClinicianWithBody", reflect.TypeOf((*MockClientInterface)(nil).UpdateClinicianWithBody), varargs...)
+}
+
+// UpdateMigration mocks base method.
+func (m *MockClientInterface) UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, userId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateMigration", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMigration indicates an expected call of UpdateMigration.
+func (mr *MockClientInterfaceMockRecorder) UpdateMigration(ctx, clinicId, userId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, userId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMigration", reflect.TypeOf((*MockClientInterface)(nil).UpdateMigration), varargs...)
+}
+
+// UpdateMigrationWithBody mocks base method.
+func (m *MockClientInterface) UpdateMigrationWithBody(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, userId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateMigrationWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMigrationWithBody indicates an expected call of UpdateMigrationWithBody.
+func (mr *MockClientInterfaceMockRecorder) UpdateMigrationWithBody(ctx, clinicId, userId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, userId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMigrationWithBody", reflect.TypeOf((*MockClientInterface)(nil).UpdateMigrationWithBody), varargs...)
 }
 
 // UpdatePatient mocks base method.
@@ -1122,6 +1182,21 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetInvitedClinicianWithR
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInvitedClinicianWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetInvitedClinicianWithResponse), ctx, clinicId, inviteId)
 }
 
+// GetMigrationWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) GetMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId) (*GetMigrationResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMigrationWithResponse", ctx, clinicId, userId)
+	ret0, _ := ret[0].(*GetMigrationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMigrationWithResponse indicates an expected call of GetMigrationWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) GetMigrationWithResponse(ctx, clinicId, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMigrationWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetMigrationWithResponse), ctx, clinicId, userId)
+}
+
 // GetPatientWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) GetPatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId) (*GetPatientResponse, error) {
 	m.ctrl.T.Helper()
@@ -1330,6 +1405,36 @@ func (m *MockClientWithResponsesInterface) UpdateClinicianWithResponse(ctx conte
 func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateClinicianWithResponse(ctx, clinicId, clinicianId, body interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClinicianWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateClinicianWithResponse), ctx, clinicId, clinicianId, body)
+}
+
+// UpdateMigrationWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader) (*UpdateMigrationResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMigrationWithBodyWithResponse", ctx, clinicId, userId, contentType, body)
+	ret0, _ := ret[0].(*UpdateMigrationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMigrationWithBodyWithResponse indicates an expected call of UpdateMigrationWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateMigrationWithBodyWithResponse(ctx, clinicId, userId, contentType, body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMigrationWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateMigrationWithBodyWithResponse), ctx, clinicId, userId, contentType, body)
+}
+
+// UpdateMigrationWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody) (*UpdateMigrationResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMigrationWithResponse", ctx, clinicId, userId, body)
+	ret0, _ := ret[0].(*UpdateMigrationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMigrationWithResponse indicates an expected call of UpdateMigrationWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateMigrationWithResponse(ctx, clinicId, userId, body interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMigrationWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateMigrationWithResponse), ctx, clinicId, userId, body)
 }
 
 // UpdatePatientPermissionsWithBodyWithResponse mocks base method.

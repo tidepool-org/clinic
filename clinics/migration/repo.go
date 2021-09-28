@@ -25,6 +25,7 @@ type Repository interface {
 	Get(ctx context.Context, clinicId, userId string) (*Migration, error)
 	List(ctx context.Context, clinicId string) ([]*Migration, error)
 	Create(ctx context.Context, migration *Migration) (*Migration, error)
+	UpdateStatus(ctx context.Context, clinicId, userId, status string) (*Migration, error)
 }
 
 func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Repository, error) {
@@ -99,6 +100,26 @@ func (r *repository) Create(ctx context.Context, migration *Migration) (*Migrati
 	return r.get(ctx, bson.M{
 		"_id": res.InsertedID,
 	})
+}
+
+func (r *repository) UpdateStatus(ctx context.Context, clinicId, userId, status string) (*Migration, error) {
+	selector := bson.M{
+		"clinicId": clinicId,
+		"userId": userId,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"status": status,
+		},
+	}
+	res, err := r.collection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return nil, err
+	} else if res.MatchedCount == 0 {
+		return nil, ErrNotFound
+	}
+
+	return r.get(ctx, selector)
 }
 
 func (r *repository) get(ctx context.Context, selector bson.M) (*Migration, error) {

@@ -316,3 +316,30 @@ allow {
   input.path = ["v1", "clinics", _, "migrations"]
   is_backend_service_any_of({"orca"})
 }
+
+# Allow ORCA and clinic-worker to fetch migrations by id
+# GET /v1/clinics/:clinicId/migrations/:userId
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "migrations", _]
+  is_backend_service_any_of({"orca", "clinic-worker"})
+}
+
+# Allow clinicians to access their own migrations
+# GET /v1/clinics/:clinicId/migrations/:userId
+allow {
+  is_authenticated_user
+  some clinician_id
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "migrations", clinician_id]
+  clinician_id == subject_id
+  clinician_has_read_access
+}
+
+# Allow clinic-worker to update the status of migrations
+# PATCH /v1/clinics/:clinicId/migrations/:userId
+allow {
+  input.method == "PATCH"
+  input.path = ["v1", "clinics", _, "migrations", _]
+  is_backend_service_any_of({"clinic-worker"})
+}

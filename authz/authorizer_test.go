@@ -452,5 +452,87 @@ var _ = Describe("Request Authorizer", func() {
 			err := authorizer.EvaluatePolicy(context.Background(), input)
 			Expect(err).ToNot(HaveOccurred())
 		})
+
+		It("it allows orca to fetch migrations by id", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "migrations", "123456789"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id":    "orca",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows clinic-worker to fetch migrations by id", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "migrations", "123456789"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id":    "clinic-worker",
+					"x-auth-server-access": "true",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows clinicians to fetch their own migrations", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "migrations", "1234567890"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id":    "1234567890",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it prevents clinicians to fetch migrations of other users", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "migrations", "999999999"},
+				"method": "GET",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id":    "1234567890",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
+
+		It("it allows clinic-worker to update migrations", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "migrations", "1234567890"},
+				"method": "PATCH",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id":    "clinic-worker",
+					"x-auth-server-access": "true",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it prevents clinicians to update their own migrations", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "migrations", "1234567890"},
+				"method": "PATCH",
+				"headers": map[string]interface{}{
+					"x-auth-subject-id":    "1234567890",
+					"x-auth-server-access": "false",
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(authz.ErrUnauthorized))
+		})
 	})
 })

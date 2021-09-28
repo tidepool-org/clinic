@@ -229,10 +229,15 @@ func NewMigrationDto(migration *migration.Migration) *Migration {
 		return nil
 	}
 
-	return &Migration{
+	result := &Migration{
 		CreatedTime: migration.CreatedTime,
 		UserId:      migration.UserId,
 	}
+	if migration.Status != "" {
+		status := MigrationStatus(migration.Status)
+		result.Status = &status
+	}
+	return result
 }
 
 func NewMigrationDtos(migrations []*migration.Migration) []*Migration {

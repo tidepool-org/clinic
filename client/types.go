@@ -109,8 +109,29 @@ type Id string
 type Migration struct {
 	CreatedTime time.Time `json:"createdTime"`
 
+	// The current status of the migration
+	Status      *MigrationStatus `json:"status,omitempty"`
+	UpdatedTime time.Time        `json:"updatedTime"`
+
 	// The user id of the legacy clinician account that needs to be migrated.
 	UserId string `json:"userId"`
+}
+
+// MigrationStatus defines model for MigrationStatus.
+type MigrationStatus string
+
+// List of MigrationStatus
+const (
+	MigrationStatus_COMPLETED MigrationStatus = "COMPLETED"
+	MigrationStatus_PENDING   MigrationStatus = "PENDING"
+	MigrationStatus_RUNNING   MigrationStatus = "RUNNING"
+)
+
+// MigrationUpdate defines model for MigrationUpdate.
+type MigrationUpdate struct {
+
+	// The current status of the migration
+	Status MigrationStatus `json:"status"`
 }
 
 // Migrations defines model for Migrations.
@@ -235,6 +256,9 @@ type AssociateClinicianToUserJSONBody AssociateClinicianToUser
 // MigrateLegacyClinicianPatientsJSONBody defines parameters for MigrateLegacyClinicianPatients.
 type MigrateLegacyClinicianPatientsJSONBody Migration
 
+// UpdateMigrationJSONBody defines parameters for UpdateMigration.
+type UpdateMigrationJSONBody MigrationUpdate
+
 // ListPatientsParams defines parameters for ListPatients.
 type ListPatientsParams struct {
 
@@ -279,6 +303,9 @@ type AssociateClinicianToUserJSONRequestBody AssociateClinicianToUserJSONBody
 
 // MigrateLegacyClinicianPatientsJSONRequestBody defines body for MigrateLegacyClinicianPatients for application/json ContentType.
 type MigrateLegacyClinicianPatientsJSONRequestBody MigrateLegacyClinicianPatientsJSONBody
+
+// UpdateMigrationJSONRequestBody defines body for UpdateMigration for application/json ContentType.
+type UpdateMigrationJSONRequestBody UpdateMigrationJSONBody
 
 // CreatePatientAccountJSONRequestBody defines body for CreatePatientAccount for application/json ContentType.
 type CreatePatientAccountJSONRequestBody CreatePatientAccountJSONBody

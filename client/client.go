@@ -157,6 +157,14 @@ type ClientInterface interface {
 
 	MigrateLegacyClinicianPatients(ctx context.Context, clinicId string, body MigrateLegacyClinicianPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetMigration request
+	GetMigration(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateMigration request  with any body
+	UpdateMigrationWithBody(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPatients request
 	ListPatients(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -448,6 +456,39 @@ func (c *Client) MigrateLegacyClinicianPatientsWithBody(ctx context.Context, cli
 
 func (c *Client) MigrateLegacyClinicianPatients(ctx context.Context, clinicId string, body MigrateLegacyClinicianPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMigrateLegacyClinicianPatientsRequest(c.Server, clinicId, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetMigration(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMigrationRequest(c.Server, clinicId, userId)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMigrationWithBody(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMigrationRequestWithBody(c.Server, clinicId, userId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMigrationRequest(c.Server, clinicId, userId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1474,6 +1515,101 @@ func NewMigrateLegacyClinicianPatientsRequestWithBody(server string, clinicId st
 	return req, nil
 }
 
+// NewGetMigrationRequest generates requests for GetMigration
+func NewGetMigrationRequest(server string, clinicId Id, userId UserId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "clinicId", clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParam("simple", false, "userId", userId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/%s/migrations/%s", pathParam0, pathParam1)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateMigrationRequest calls the generic UpdateMigration builder with application/json body
+func NewUpdateMigrationRequest(server string, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateMigrationRequestWithBody(server, clinicId, userId, "application/json", bodyReader)
+}
+
+// NewUpdateMigrationRequestWithBody generates requests for UpdateMigration with any type of body
+func NewUpdateMigrationRequestWithBody(server string, clinicId Id, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "clinicId", clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParam("simple", false, "userId", userId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/clinics/%s/migrations/%s", pathParam0, pathParam1)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryUrl.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListPatientsRequest generates requests for ListPatients
 func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatientsParams) (*http.Request, error) {
 	var err error
@@ -2079,6 +2215,14 @@ type ClientWithResponsesInterface interface {
 
 	MigrateLegacyClinicianPatientsWithResponse(ctx context.Context, clinicId string, body MigrateLegacyClinicianPatientsJSONRequestBody) (*MigrateLegacyClinicianPatientsResponse, error)
 
+	// GetMigration request
+	GetMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId) (*GetMigrationResponse, error)
+
+	// UpdateMigration request  with any body
+	UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader) (*UpdateMigrationResponse, error)
+
+	UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody) (*UpdateMigrationResponse, error)
+
 	// ListPatients request
 	ListPatientsWithResponse(ctx context.Context, clinicId ClinicId, params *ListPatientsParams) (*ListPatientsResponse, error)
 
@@ -2511,6 +2655,50 @@ func (r MigrateLegacyClinicianPatientsResponse) StatusCode() int {
 	return 0
 }
 
+type GetMigrationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Migration
+}
+
+// Status returns HTTPResponse.Status
+func (r GetMigrationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetMigrationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateMigrationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Migration
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateMigrationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateMigrationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListPatientsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2915,6 +3103,32 @@ func (c *ClientWithResponses) MigrateLegacyClinicianPatientsWithResponse(ctx con
 		return nil, err
 	}
 	return ParseMigrateLegacyClinicianPatientsResponse(rsp)
+}
+
+// GetMigrationWithResponse request returning *GetMigrationResponse
+func (c *ClientWithResponses) GetMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId) (*GetMigrationResponse, error) {
+	rsp, err := c.GetMigration(ctx, clinicId, userId)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetMigrationResponse(rsp)
+}
+
+// UpdateMigrationWithBodyWithResponse request with arbitrary body returning *UpdateMigrationResponse
+func (c *ClientWithResponses) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader) (*UpdateMigrationResponse, error) {
+	rsp, err := c.UpdateMigrationWithBody(ctx, clinicId, userId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMigrationResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody) (*UpdateMigrationResponse, error) {
+	rsp, err := c.UpdateMigration(ctx, clinicId, userId, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMigrationResponse(rsp)
 }
 
 // ListPatientsWithResponse request returning *ListPatientsResponse
@@ -3492,6 +3706,58 @@ func ParseMigrateLegacyClinicianPatientsResponse(rsp *http.Response) (*MigrateLe
 			return nil, err
 		}
 		response.JSON202 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetMigrationResponse parses an HTTP response from a GetMigrationWithResponse call
+func ParseGetMigrationResponse(rsp *http.Response) (*GetMigrationResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetMigrationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Migration
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateMigrationResponse parses an HTTP response from a UpdateMigrationWithResponse call
+func ParseUpdateMigrationResponse(rsp *http.Response) (*UpdateMigrationResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateMigrationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Migration
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 
