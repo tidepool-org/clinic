@@ -2,11 +2,8 @@
 ### Overview
 
 The Clinic Service manages Clinics and there relationships between patients and clinicians.
-This service is a proof of concept for attempting to use more open source software
-within our services to minimize code and cut down on the boilerplate.
 
-The overarching goal is to go from JSON Open Schema specification to server with a minimum 
-amount of code.  We store the schema files in https://github.com/tidepool-org/TidepoolApi
+Server stubs and client library are generated from JSON Open Schema specification. We store the schema files in https://github.com/tidepool-org/TidepoolApi
 as yaml files.
 
 The main open source software packages that we use are:
@@ -18,28 +15,66 @@ specification
 (and out of) the server are valid.  This code is used as middleware for the web framework
 * https://github.com/labstack/echo as a web framework to minimize all the code to run a
 service
-* https://github.com/mongodb/mongo-go-driver - the latest mongo drivers which enables easier
-reading and writing from go structs directly to database.
+
+### Asynchronous processing
+
+To improve the resilience and minimize the direct dependencies to other services some operations
+are handled asynchronously. The clinic administration services rely heavily on CDC (Change Data Capture) 
+pattern to react to events and process event streams. We use [Kafka](https://kafka.apache.org/), 
+[Kafka Connect](https://docs.confluent.io/3.0.1/connect/intro.html) and 
+[Kafka Mongo Connector](https://docs.mongodb.com/kafka-connector/current/). The mongo connector for kafka
+uses the mongo oplog as a source for events and writes a message to a kafka topic every time a document
+in mongo is created, updated or deleted. There are two consumers of those events - 
+the [clinic-worker](https://github.com/tidepool-org/clinic-worker) service and the mongo connector for kafka itself
+which can read a CDC source stream and replay it to a different mongo collection. 
+
+#### Permissions
+
+Tidepool uses the [gatekeeper](https://github.com/tidepool-org/gatekeeper) service to determine 
+whether one user has access to another user's data. However, permissions from patients to clinics 
+and from clinics to clinicians are stored in the clinic service database. Those are asynchronously
+replicated to gatekeeper's database using 
+[Kafka Mongo Connector](https://docs.mongodb.com/kafka-connector/current/).
+
+#### Migrations
+
+The migration triggers are insertion of documents in the migrations collection.
+Those triggers are handled by the [clinic-worker](https://github.com/tidepool-org/clinic-worker) service, 
+which migrates patient profiles from a legacy clinic account to a clinic in the clinic service.
+
+#### User deletions
+
+Every time a user is deleted from the system, the clinic-worker service deletes the corresponding patient
+and clinician records.
+
+#### Emails
+
+We send transaction emails to users when:
+- a new clinic is created
+- all patients of a clinic are migrated from a legacy account
+- a patient sends an invite to a clinic
+- an administrator changes the permissions of a clinician
 
 ### Code generation
 
 The OpenAPI Client and Server Code Generation tool generates the necessary files from
-a bundled yaml file exported from Spotlight Studio.  Unfortunately, Spotlight Studio 
+a bundled yaml file exported from Spotlight Studio. Unfortunately, Spotlight Studio 
 exports the yaml file in a slightly different format than what the code generation tool
-can import.  We had to write a python script - fixYaml.py to move the references to the components 
-section of the schema for the code generation tool to work.
+can import. We use [swagger-cli](https://github.com/APIDevTools/swagger-cli) for bundling
+references.
 
-There is also a shell script - refreshYaml.sh which will do everything necessary to 
-regenerate the server, types and swagger files.  If minor changes were made (such as 
-just adding more validation) - this service will continue to work.  If more major changes
-are made (such as changing the data structures) - the service will also have to be 
-modified.
+### Development
 
-### Makefile
+You need to download and install `swagger-cli` and `oapi-codegen` binaries to be able to regenerate the code:
+```
+npm install -g @apidevtools/swagger-cli
+go get github.com/deepmap/oapi-codegen/cmd/oapi-codegen
+```
+
+#### Makefile
 
 The makefile has three targets:
-* generate - code generation for server stubs, types and specification.  Runs intermediate 
-scripts to match output of studio to oapigen
+* generate - code generation for server stubs, types and specification. Runs `swagger-cli` to bundle
+refs. 
 * test - runs test scripts
 * build - builds package
-
