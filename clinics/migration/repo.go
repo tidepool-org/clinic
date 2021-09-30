@@ -93,7 +93,6 @@ func (r *repository) Create(ctx context.Context, migration *Migration) (*Migrati
 		return nil, err
 	}
 
-	migration.UpdatedTime = time.Now()
 	res, err := r.collection.InsertOne(ctx, migration)
 	if err != nil {
 		return nil, err
@@ -116,7 +115,7 @@ func (r *repository) UpdateStatus(ctx context.Context, clinicId, userId, status 
 	res, err := r.collection.UpdateOne(ctx, selector, update)
 	if err != nil {
 		return nil, err
-	} else if res.MatchedCount == 0 {
+	} else if res.ModifiedCount == 0 {
 		return nil, ErrNotFound
 	}
 
@@ -132,7 +131,7 @@ func (r *repository) get(ctx context.Context, selector bson.M) (*Migration, erro
 	return result, err
 }
 
-func migrationSelector(userId, clinicId string) bson.M {
+func migrationSelector(clinicId, userId string) bson.M {
 	id, _ := primitive.ObjectIDFromHex(clinicId)
 	return bson.M{
 		"clinicId": id,

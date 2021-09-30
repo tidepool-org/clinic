@@ -14,9 +14,7 @@ import (
 )
 
 const (
-	StatusPending   = "pending"
-	StatusRunning   = "running"
-	StatusCompleted = "completed"
+	StatusPending   = "PENDING"
 )
 
 var ErrAlreadyMigrated = fmt.Errorf("%w: clinic is already migrated", internalErrs.ConstraintViolation)
@@ -123,6 +121,7 @@ func (m *migrator) TriggerInitialMigration(ctx context.Context, clinicId string)
 		ClinicId:    clinic.Id,
 		UserId:      userId,
 		CreatedTime: time.Now(),
+		UpdatedTime: time.Now(),
 		Status:      StatusPending,
 	}
 
