@@ -7,6 +7,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/patients"
+	"strings"
 	"time"
 )
 
@@ -231,10 +232,11 @@ func NewMigrationDto(migration *migration.Migration) *Migration {
 
 	result := &Migration{
 		CreatedTime: migration.CreatedTime,
+		UpdatedTime: migration.UpdatedTime,
 		UserId:      migration.UserId,
 	}
 	if migration.Status != "" {
-		status := MigrationStatus(migration.Status)
+		status := MigrationStatus(strings.ToUpper(migration.Status))
 		result.Status = &status
 	}
 	return result
