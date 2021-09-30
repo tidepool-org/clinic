@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"time"
 )
 
 const (
@@ -92,6 +93,7 @@ func (r *repository) Create(ctx context.Context, migration *Migration) (*Migrati
 		return nil, err
 	}
 
+	migration.UpdatedTime = time.Now()
 	res, err := r.collection.InsertOne(ctx, migration)
 	if err != nil {
 		return nil, err
@@ -110,8 +112,10 @@ func (r *repository) UpdateStatus(ctx context.Context, clinicId, userId, status 
 	update := bson.M{
 		"$set": bson.M{
 			"status": status,
+			"updatedTime": time.Now(),
 		},
 	}
+
 	res, err := r.collection.UpdateOne(ctx, selector, update)
 	if err != nil {
 		return nil, err

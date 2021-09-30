@@ -26,6 +26,7 @@ type Migration struct {
 	UserId      string              `json:"userId" bson:"userId"`
 	Status      string              `json:"status" bson:"status"`
 	CreatedTime time.Time           `json:"createdTime" bson:"createdTime"`
+	UpdatedTime time.Time           `json:"updatedTime" bson:"updatedTime"`
 }
 
 type Migrator interface {
