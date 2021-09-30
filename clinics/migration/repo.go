@@ -63,8 +63,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 }
 
 func (r *repository) Get(ctx context.Context, clinicId, userId string) (*Migration, error) {
-	id, _ := primitive.ObjectIDFromHex(clinicId)
-	return r.get(ctx, bson.M{"userId": userId, "clinicId": id})
+	selector := migrationSelector(clinicId, userId)
+	return r.get(ctx, selector)
 }
 
 func (r *repository) List(ctx context.Context, clinicId string) ([]*Migration, error) {
@@ -105,13 +105,10 @@ func (r *repository) Create(ctx context.Context, migration *Migration) (*Migrati
 }
 
 func (r *repository) UpdateStatus(ctx context.Context, clinicId, userId, status string) (*Migration, error) {
-	selector := bson.M{
-		"clinicId": clinicId,
-		"userId": userId,
-	}
+	selector := migrationSelector(clinicId, userId)
 	update := bson.M{
 		"$set": bson.M{
-			"status": status,
+			"status":      status,
 			"updatedTime": time.Now(),
 		},
 	}
@@ -133,4 +130,12 @@ func (r *repository) get(ctx context.Context, selector bson.M) (*Migration, erro
 		return nil, ErrNotFound
 	}
 	return result, err
+}
+
+func migrationSelector(userId, clinicId string) bson.M {
+	id, _ := primitive.ObjectIDFromHex(clinicId)
+	return bson.M{
+		"clinicId": id,
+		"userId":   userId,
+	}
 }
