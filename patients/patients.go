@@ -6,6 +6,7 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 var (
@@ -44,6 +45,8 @@ type Patient struct {
 	TargetDevices *[]string           `bson:"targetDevices"`
 	Permissions   *Permissions        `bson:"permissions,omitempty"`
 	IsMigrated    bool                `bson:"isMigrated,omitempty"`
+	CreatedTime   time.Time           `bson:"createdTime,omitempty"`
+	UpdatedTime   time.Time           `bson:"updatedTime,omitempty"`
 }
 
 func (p Patient) IsCustodial() bool {

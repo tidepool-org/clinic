@@ -31,7 +31,8 @@ type Clinic struct {
 	ClinicType *string `json:"clinicType,omitempty"`
 
 	// Country name.
-	Country *string `json:"country,omitempty"`
+	Country     *string   `json:"country,omitempty"`
+	CreatedTime time.Time `json:"createdTime"`
 
 	// Clinic identifier.
 	Id Id `json:"id"`
@@ -49,13 +50,15 @@ type Clinic struct {
 	ShareCode string `json:"shareCode"`
 
 	// State or province. In the U.S., typically something like `CA` or `California`.
-	State   *string `json:"state,omitempty"`
-	Website *string `json:"website,omitempty"`
+	State       *string   `json:"state,omitempty"`
+	UpdatedTime time.Time `json:"updatedTime"`
+	Website     *string   `json:"website,omitempty"`
 }
 
 // Clinician defines model for Clinician.
 type Clinician struct {
-	Email string `json:"email"`
+	CreatedTime time.Time `json:"createdTime"`
+	Email       string    `json:"email"`
 
 	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id *TidepoolUserId `json:"id,omitempty"`
@@ -64,8 +67,9 @@ type Clinician struct {
 	InviteId *string `json:"inviteId,omitempty"`
 
 	// The name of the clinician
-	Name  *string        `json:"name,omitempty"`
-	Roles ClinicianRoles `json:"roles"`
+	Name        *string        `json:"name,omitempty"`
+	Roles       ClinicianRoles `json:"roles"`
+	UpdatedTime time.Time      `json:"updatedTime"`
 }
 
 // ClinicianClinicRelationship defines model for ClinicianClinicRelationship.
@@ -139,8 +143,9 @@ type Migrations []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	BirthDate openapi_types.Date `json:"birthDate"`
-	Email     *string            `json:"email,omitempty"`
+	BirthDate   openapi_types.Date `json:"birthDate"`
+	CreatedTime time.Time          `json:"createdTime"`
+	Email       *string            `json:"email,omitempty"`
 
 	// The full name of the patient
 	FullName string `json:"fullName"`
@@ -152,6 +157,7 @@ type Patient struct {
 	Mrn           *string             `json:"mrn,omitempty"`
 	Permissions   *PatientPermissions `json:"permissions,omitempty"`
 	TargetDevices *[]string           `json:"targetDevices,omitempty"`
+	UpdatedTime   time.Time           `json:"updatedTime"`
 }
 
 // PatientClinicRelationship defines model for PatientClinicRelationship.

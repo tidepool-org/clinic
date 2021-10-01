@@ -38,18 +38,20 @@ func NewClinic(c Clinic) *clinics.Clinic {
 
 func NewClinicDto(c *clinics.Clinic) Clinic {
 	dto := Clinic{
-		Id:         Id(c.Id.Hex()),
-		Name:       pstr(c.Name),
-		ShareCode:  pstr(c.CanonicalShareCode),
-		CanMigrate: c.CanMigrate(),
-		ClinicType: c.ClinicType,
-		ClinicSize: c.ClinicSize,
-		Address:    c.Address,
-		City:       c.City,
-		PostalCode: c.PostalCode,
-		State:      c.State,
-		Country:    c.Country,
-		Website:    c.Website,
+		Id:          Id(c.Id.Hex()),
+		Name:        pstr(c.Name),
+		ShareCode:   pstr(c.CanonicalShareCode),
+		CanMigrate:  c.CanMigrate(),
+		ClinicType:  c.ClinicType,
+		ClinicSize:  c.ClinicSize,
+		Address:     c.Address,
+		City:        c.City,
+		PostalCode:  c.PostalCode,
+		State:       c.State,
+		Country:     c.Country,
+		Website:     c.Website,
+		CreatedTime: c.CreatedTime,
+		UpdatedTime: c.UpdatedTime,
 	}
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber
@@ -75,11 +77,13 @@ func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
 
 func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
 	dto := Clinician{
-		Id:       strpuseridp(clinician.UserId),
-		InviteId: clinician.InviteId,
-		Name:     clinician.Name,
-		Email:    pstr(clinician.Email),
-		Roles:    ClinicianRoles(clinician.Roles),
+		Id:          strpuseridp(clinician.UserId),
+		InviteId:    clinician.InviteId,
+		Name:        clinician.Name,
+		Email:       pstr(clinician.Email),
+		Roles:       ClinicianRoles(clinician.Roles),
+		CreatedTime: clinician.CreatedTime,
+		UpdatedTime: clinician.UpdatedTime,
 	}
 	return dto
 }
@@ -120,6 +124,8 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
 		TargetDevices: patient.TargetDevices,
+		CreatedTime:   patient.CreatedTime,
+		UpdatedTime:   patient.UpdatedTime,
 	}
 }
 

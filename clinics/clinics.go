@@ -43,8 +43,8 @@ type Clinic struct {
 	Website            *string             `bson:"website,omitempty"`
 	ShareCodes         *[]string           `bson:"shareCodes,omitempty"`
 	Admins             *[]string           `bson:"admins,omitempty"`
-	CreatedAt          time.Time           `bson:"createdAt"`
-	UpdatedAt          time.Time           `bson:"updatedAt"`
+	CreatedTime        time.Time           `bson:"createdTime"`
+	UpdatedTime        time.Time           `bson:"updatedTime"`
 	IsMigrated         bool                `bson:"isMigrated,omitempty"`
 }
 

@@ -344,5 +344,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"TargetDevices": PointTo(Equal(*patient.TargetDevices)),
 		"Permissions":   PointTo(Equal(*patient.Permissions)),
 		"IsMigrated":    Equal(patient.IsMigrated),
+		"UpdatedTime":   Ignore(),
+		"CreatedTime":   Ignore(),
 	})
 }

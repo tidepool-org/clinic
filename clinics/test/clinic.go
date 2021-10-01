@@ -34,8 +34,8 @@ func RandomClinic() *clinics.Clinic {
 		Website:            strp(Faker.Internet().Domain()),
 		ShareCodes:         &shareCodes,
 		Admins:             &admins,
-		CreatedAt:          Faker.Time().Time(time.Now()),
-		UpdatedAt:          Faker.Time().Time(time.Now()),
+		CreatedTime:        Faker.Time().Time(time.Now()),
+		UpdatedTime:        Faker.Time().Time(time.Now()),
 		IsMigrated:         false,
 	}
 }

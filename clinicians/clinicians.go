@@ -6,6 +6,7 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 var (
@@ -34,13 +35,15 @@ type AssociateInvite struct {
 }
 
 type Clinician struct {
-	Id       *primitive.ObjectID `bson:"_id,omitempty"`
-	InviteId *string             `bson:"inviteId,omitempty"`
-	ClinicId *primitive.ObjectID `bson:"clinicId,omitempty"`
-	UserId   *string             `bson:"userId,omitempty"`
-	Email    *string             `bson:"email,omitempty"`
-	Name     *string             `bson:"name"`
-	Roles    []string            `bson:"roles"`
+	Id          *primitive.ObjectID `bson:"_id,omitempty"`
+	InviteId    *string             `bson:"inviteId,omitempty"`
+	ClinicId    *primitive.ObjectID `bson:"clinicId,omitempty"`
+	UserId      *string             `bson:"userId,omitempty"`
+	Email       *string             `bson:"email,omitempty"`
+	Name        *string             `bson:"name"`
+	Roles       []string            `bson:"roles"`
+	CreatedTime time.Time           `bson:"createdTime"`
+	UpdatedTime time.Time           `bson:"updatedTime"`
 }
 
 func (c *Clinician) IsAdmin() bool {
