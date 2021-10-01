@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"time"
 )
 
 const (
@@ -157,6 +158,8 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		return nil, ErrDuplicatePatient
 	}
 
+	patient.CreatedTime = time.Now()
+	patient.UpdatedTime = time.Now()
 	if _, err = r.collection.InsertOne(ctx, patient); err != nil {
 		return nil, fmt.Errorf("error creating patient: %w", err)
 	}
@@ -171,6 +174,7 @@ func (r *repository) Update(ctx context.Context, clinicId, userId string, patien
 		"userId":   userId,
 	}
 
+	patient.UpdatedTime = time.Now()
 	update := bson.M{
 		"$set": patient,
 	}
@@ -196,10 +200,12 @@ func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 	if permissions == nil {
 		update["$unset"] = bson.M{
 			"permissions": "",
+			"updatedTime": time.Now(),
 		}
 	} else {
 		update["$set"] = bson.M{
 			"permissions": permissions,
+			"updatedTime": time.Now(),
 		}
 	}
 
@@ -225,6 +231,9 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 
 	update := bson.M{
 		"$unset": bson.D{{Key: key, Value: ""}},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {

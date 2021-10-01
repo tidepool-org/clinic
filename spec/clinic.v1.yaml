@@ -808,11 +808,21 @@ components:
         website:
           type: string
           format: uri
+        createdTime:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedTime:
+          type: string
+          format: date-time
+          readOnly: true
       required:
         - id
         - name
         - shareCode
         - canMigrate
+        - createdTime
+        - updatedTime
     Clinics:
       type: array
       items:
@@ -837,9 +847,19 @@ components:
           minLength: 1
         roles:
           $ref: '#/components/schemas/ClinicianRoles'
+        createdTime:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedTime:
+          type: string
+          format: date-time
+          readOnly: true
       required:
         - email
         - roles
+        - createdTime
+        - updatedTime
     Clinicians:
       type: array
       items:
@@ -873,10 +893,20 @@ components:
             type: string
         permissions:
           $ref: '#/components/schemas/PatientPermissions'
+        createdTime:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedTime:
+          type: string
+          format: date-time
+          readOnly: true
       required:
         - id
         - fullName
         - birthDate
+        - createdTime
+        - updatedTime
     Patients:
       type: array
       items:

@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"time"
 )
 
 const (
@@ -136,6 +137,8 @@ func (r *Repository) Create(ctx context.Context, clinician *Clinician) (*Clinici
 		return nil, ErrDuplicate
 	}
 
+	clinician.CreatedTime = time.Now()
+	clinician.UpdatedTime = time.Now()
 	res, err := r.collection.InsertOne(ctx, clinician)
 	if err != nil {
 		return nil, fmt.Errorf("error creating clinician: %w", err)
@@ -150,6 +153,8 @@ func (r *Repository) Create(ctx context.Context, clinician *Clinician) (*Clinici
 func (r *Repository) Update(ctx context.Context, clinicId string, id string, clinician *Clinician) (*Clinician, error) {
 	removeUnmodifiableFields(clinician)
 	selector := clinicianSelector(clinicId, id)
+
+	clinician.UpdatedTime = time.Now()
 	update := bson.M{
 		"$set": clinician,
 	}
@@ -187,6 +192,7 @@ func (r *Repository) AssociateInvite(ctx context.Context, associate AssociateInv
 	}
 	set := bson.M{
 		"userId": associate.UserId,
+		"updatedTime": time.Now(),
 	}
 	unset := bson.M{
 		"inviteId": associate.InviteId,

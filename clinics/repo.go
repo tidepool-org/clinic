@@ -113,8 +113,8 @@ func (c *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error
 		return nil, ErrDuplicateShareCode
 	}
 
-	setCreatedAt(clinic)
-	setUpdatedAt(clinic)
+	setCreatedTime(clinic)
+	setUpdatedTime(clinic)
 
 	// Insertion will fail if there are two concurrent requests, which are both
 	// trying to create a clinic with the same share code
@@ -131,7 +131,7 @@ func (c *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Cl
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
-	setUpdatedAt(clinic)
+	setUpdatedTime(clinic)
 	update := createUpdateDocument(clinic)
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
@@ -149,7 +149,7 @@ func (c *repository) UpsertAdmin(ctx context.Context, id, clinicianId string) er
 			"admins": clinicianId,
 		},
 		"$set": bson.M{
-			"updatedAt": time.Now(),
+			"updatedTime": time.Now(),
 		},
 	}
 	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
@@ -163,14 +163,14 @@ func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) er
 
 	selector := bson.M{
 		"_id":       clinic.Id,
-		"updatedAt": clinic.UpdatedAt, // used for optimistic locking
+		"updatedTime": clinic.UpdatedTime, // used for optimistic locking
 	}
 	update := bson.M{
 		"$pull": bson.M{
 			"admins": clinicianId,
 		},
 		"$set": bson.M{
-			"updatedAt": time.Now(),
+			"updatedTime": time.Now(),
 		},
 	}
 
@@ -199,12 +199,12 @@ func canRemoveAdmin(clinic Clinic, clinicianId string) bool {
 	return len(adminsPostUpdate) >= 1
 }
 
-func setUpdatedAt(clinic *Clinic) {
-	clinic.UpdatedAt = time.Now()
+func setUpdatedTime(clinic *Clinic) {
+	clinic.UpdatedTime = time.Now()
 }
 
-func setCreatedAt(clinic *Clinic) {
-	clinic.CreatedAt = time.Now()
+func setCreatedTime(clinic *Clinic) {
+	clinic.CreatedTime = time.Now()
 }
 
 func createUpdateDocument(clinic *Clinic) bson.M {
@@ -214,8 +214,8 @@ func createUpdateDocument(clinic *Clinic) bson.M {
 		clinic.Id = nil
 		clinic.ShareCodes = nil
 
-		// Refresh updatedAt timestamp
-		setUpdatedAt(clinic)
+		// Refresh updatedTime timestamp
+		setUpdatedTime(clinic)
 
 		update["$set"] = clinic
 		if clinic.CanonicalShareCode != nil {
