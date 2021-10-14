@@ -150,16 +150,36 @@ func (r *Repository) Create(ctx context.Context, clinician *Clinician) (*Clinici
 	return r.getOne(ctx, selector)
 }
 
-func (r *Repository) Update(ctx context.Context, clinicId string, id string, clinician *Clinician) (*Clinician, error) {
-	removeUnmodifiableFields(clinician)
-	selector := clinicianSelector(clinicId, id)
+func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error) {
+	removeUnmodifiableFields(&update.Clinician)
 
-	clinician.UpdatedTime = time.Now()
-	update := bson.M{
-		"$set": clinician,
+	selector := clinicianSelector(update.ClinicId, update.ClinicianId)
+	clinician, err := r.getOne(ctx, selector)
+	if err != nil {
+		return nil, err
 	}
 
-	return r.updateOne(ctx, selector, update)
+	updates := bson.M{
+		"$set": update.Clinician,
+	}
+
+	if clinician.RolesChanged(update.Clinician.Roles) {
+		// Used for optimistic locking
+		selector["updatedTime"] = clinician.UpdatedTime
+
+		// Keep track of the user who updated clinician's roles
+		updates["$push"] = bson.M{
+			"rolesUpdates": RolesUpdate{
+				Roles:     update.Clinician.Roles,
+				UpdatedBy: update.UpdatedBy,
+			},
+		}
+
+		// Reset updated time
+		update.Clinician.UpdatedTime = time.Now()
+	}
+
+	return r.updateOne(ctx, selector, updates)
 }
 
 func (r *Repository) Delete(ctx context.Context, clinicId string, userId string) error {
@@ -191,7 +211,7 @@ func (r *Repository) AssociateInvite(ctx context.Context, associate AssociateInv
 		"_id": invite.Id,
 	}
 	set := bson.M{
-		"userId": associate.UserId,
+		"userId":      associate.UserId,
 		"updatedTime": time.Now(),
 	}
 	unset := bson.M{

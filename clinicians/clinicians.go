@@ -6,6 +6,7 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"sort"
 	"time"
 )
 
@@ -20,7 +21,7 @@ type Service interface {
 	Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error)
 	Create(ctx context.Context, clinician *Clinician) (*Clinician, error)
-	Update(ctx context.Context, clinicId string, clinicianId string, clinician *Clinician) (*Clinician, error)
+	Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error)
 	Delete(ctx context.Context, clinicId string, clinicianId string) error
 	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
 	DeleteInvite(ctx context.Context, clinicId, inviteId string) error
@@ -34,16 +35,29 @@ type AssociateInvite struct {
 	ClinicianName *string
 }
 
+type ClinicianUpdate struct {
+	UpdatedBy   string
+	ClinicId    string
+	ClinicianId string
+	Clinician   Clinician
+}
+
 type Clinician struct {
-	Id          *primitive.ObjectID `bson:"_id,omitempty"`
-	InviteId    *string             `bson:"inviteId,omitempty"`
-	ClinicId    *primitive.ObjectID `bson:"clinicId,omitempty"`
-	UserId      *string             `bson:"userId,omitempty"`
-	Email       *string             `bson:"email,omitempty"`
-	Name        *string             `bson:"name"`
-	Roles       []string            `bson:"roles"`
-	CreatedTime time.Time           `bson:"createdTime"`
-	UpdatedTime time.Time           `bson:"updatedTime"`
+	Id           *primitive.ObjectID `bson:"_id,omitempty"`
+	InviteId     *string             `bson:"inviteId,omitempty"`
+	ClinicId     *primitive.ObjectID `bson:"clinicId,omitempty"`
+	UserId       *string             `bson:"userId,omitempty"`
+	Email        *string             `bson:"email,omitempty"`
+	Name         *string             `bson:"name"`
+	Roles        []string            `bson:"roles"`
+	RolesUpdates []RolesUpdate       `bson:"rolesUpdates,omitempty"`
+	CreatedTime  time.Time           `bson:"createdTime"`
+	UpdatedTime  time.Time           `bson:"updatedTime"`
+}
+
+type RolesUpdate struct {
+	Roles     []string `bson:"roles"`
+	UpdatedBy string   `bson:"updatedBy"`
 }
 
 func (c *Clinician) IsAdmin() bool {
@@ -55,6 +69,23 @@ func (c *Clinician) IsAdmin() bool {
 		}
 	}
 	return isAdmin
+}
+
+func (c *Clinician) RolesChanged(newRoles []string) bool {
+	if len(c.Roles) != len(newRoles) {
+		return true
+	}
+
+	sort.Strings(c.Roles)
+	sort.Strings(newRoles)
+
+	for i, role := range c.Roles {
+		if newRoles[i] != role {
+			return true
+		}
+	}
+
+	return false
 }
 
 type Filter struct {

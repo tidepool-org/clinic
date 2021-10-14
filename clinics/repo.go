@@ -162,7 +162,7 @@ func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) er
 	}
 
 	selector := bson.M{
-		"_id":       clinic.Id,
+		"_id":         clinic.Id,
 		"updatedTime": clinic.UpdatedTime, // used for optimistic locking
 	}
 	update := bson.M{

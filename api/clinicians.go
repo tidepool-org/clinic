@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/tidepool-org/clinic/authz"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/store"
@@ -75,7 +76,15 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianI
 		return err
 	}
 
-	result, err := h.cliniciansUpdater.Update(ctx, string(clinicId), string(clinicianId), NewClinicianUpdate(dto))
+	userId := authz.GetAuthUserId(ec.Request())
+	update := &clinicians.ClinicianUpdate{
+		UpdatedBy:   *userId,
+		ClinicId:    string(clinicId),
+		ClinicianId: string(clinicianId),
+		Clinician:   NewClinicianUpdate(dto),
+	}
+
+	result, err := h.cliniciansUpdater.Update(ctx, update)
 	if err != nil {
 		return err
 	}
