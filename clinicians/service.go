@@ -50,13 +50,13 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 	return result.(*Clinician), nil
 }
 
-func (s service) Update(ctx context.Context, clinicId string, clinicianId string, clinician *Clinician) (*Clinician, error) {
+func (s service) Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error) {
 	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		if err := s.onUpdate(ctx, clinician); err != nil {
+		if err := s.onUpdate(ctx, &update.Clinician); err != nil {
 			return nil, err
 		}
 
-		updated, err := s.repository.Update(sessionCtx, clinicId, clinicianId, clinician)
+		updated, err := s.repository.Update(sessionCtx, update)
 		if err != nil {
 			return nil, err
 		}

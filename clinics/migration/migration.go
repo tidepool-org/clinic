@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	StatusPending   = "PENDING"
+	StatusPending = "PENDING"
 )
 
 var ErrAlreadyMigrated = fmt.Errorf("%w: clinic is already migrated", internalErrs.ConstraintViolation)

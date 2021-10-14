@@ -108,8 +108,8 @@ func NewClinician(clinician Clinician) *clinicians.Clinician {
 	}
 }
 
-func NewClinicianUpdate(clinician Clinician) *clinicians.Clinician {
-	return &clinicians.Clinician{
+func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
+	return clinicians.Clinician{
 		Name:  clinician.Name,
 		Roles: clinician.Roles,
 	}

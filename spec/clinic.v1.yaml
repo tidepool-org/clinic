@@ -390,6 +390,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1v1~1clinics~1%7BclinicId%7D~1invites~1clinicians~1%7BinviteId%7D/get/responses/200/content/application~1json/schema'
       description: Resend invite to the email address of the clinician.
       tags:
         - confirmation
@@ -400,6 +404,97 @@ paths:
         '200':
           description: OK
       description: Deletes unaccepted invite
+      tags:
+        - confirmation
+    get:
+      summary: Get Clinician Invite
+      operationId: GetClinicianInvite
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: Confirmation
+                type: object
+                properties:
+                  key:
+                    title: Confirmation key that uniquely identifies each confirmation
+                    type: string
+                    minLength: 32
+                    maxLength: 32
+                    example: Sds2PHMALZrmt++JyD5mIjLkZruJldiM
+                  type:
+                    title: Confirmation Type
+                    type: string
+                    enum:
+                      - password_reset
+                      - careteam_invitation
+                      - signup_confirmation
+                      - no_account
+                  email:
+                    $ref: '#/components/schemas/InviteClinician/properties/email'
+                  creatorId:
+                    $ref: '#/components/schemas/TidepoolUserId'
+                  created:
+                    title: Date/Time
+                    description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
+                    type: string
+                    format: date-time
+                    example: '2017-02-06T02:37:46Z'
+                    x-go-type: string
+                  modified:
+                    $ref: '#/paths/~1v1~1clinics~1%7BclinicId%7D~1invites~1clinicians~1%7BinviteId%7D/get/responses/200/content/application~1json/schema/properties/created'
+                  creator:
+                    title: Creator
+                    type: object
+                    properties:
+                      userid:
+                        $ref: '#/components/schemas/TidepoolUserId'
+                      profile:
+                        title: Creator user profile
+                        type: object
+                        properties:
+                          fullName:
+                            type: string
+                          patient:
+                            title: Patient User Profile
+                            type: object
+                            properties:
+                              birthday:
+                                title: Birthday
+                                type: string
+                                format: date
+                                example: '2012-08-30'
+                                x-go-type: string
+                              diagnosisDate:
+                                title: Diagnosis Date
+                                type: string
+                                format: date
+                                pattern: '^\d{4}-\d{2}-\d{2}$'
+                                example: '2013-05-09'
+                                x-go-type: string
+                              isOtherPerson:
+                                type: boolean
+                                example: false
+                              fullName:
+                                type: string
+                                example: James Jellyfish
+                        required:
+                          - fullName
+                          - patient
+                    required:
+                      - userid
+                      - profile
+                  context:
+                    type: string
+                required:
+                  - key
+                  - type
+                  - email
+                  - creatorId
+                  - created
+      description: Retrieve an invitation sent to clinician to join the clinic
       tags:
         - confirmation
   '/v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician':
