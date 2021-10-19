@@ -171,12 +171,12 @@ allow {
   clinician_has_read_access
 }
 
-# Allow hydrophone and prescription service to fetch clinician records
+# Allow hydrophone, prescription and clinic-worker services to fetch clinician records
 # GET /v1/clinics/:clinicId/clinicians/:clinicianId
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians", _]
-  is_backend_service_any_of({"hydrophone", "prescription"})
+  is_backend_service_any_of({"hydrophone", "prescription", "clinic-worker"})
 }
 
 # Allow hydrophone to fetch clinicians list
