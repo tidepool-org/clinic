@@ -126,7 +126,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		CreatedTime:   patient.CreatedTime,
 		UpdatedTime:   patient.UpdatedTime,
 	}
-	if patient.BirthDate != nil {
+	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
 	}
 	return dto
