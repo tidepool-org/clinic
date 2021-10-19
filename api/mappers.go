@@ -116,8 +116,7 @@ func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
 }
 
 func NewPatientDto(patient *patients.Patient) Patient {
-	return Patient{
-		BirthDate:     *strtodatep(patient.BirthDate),
+	dto := Patient{
 		Email:         patient.Email,
 		FullName:      pstr(patient.FullName),
 		Id:            *strpuseridp(patient.UserId),
@@ -127,6 +126,10 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		CreatedTime:   patient.CreatedTime,
 		UpdatedTime:   patient.UpdatedTime,
 	}
+	if patient.BirthDate != nil {
+		dto.BirthDate = *strtodatep(patient.BirthDate)
+	}
+	return dto
 }
 
 func NewPatient(dto Patient) patients.Patient {
