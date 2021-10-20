@@ -1,4 +1,4 @@
-package authz
+package auth
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	internalErrs "github.com/tidepool-org/clinic/errors"
 	"go.uber.org/zap"
 
-	"net/http"
 	"strings"
 )
 
@@ -21,6 +20,7 @@ const (
 	authHeaderPrefix      = "x-auth-"
 	subjectIdHeaderName   = "x-auth-subject-id"
 	serverAccessHeaderKey = "x-auth-server-access"
+	sessionTokenHeaderKey = "x-tidepool-session-token"
 	clinicIdPathParameter = "clinicId"
 )
 
@@ -64,9 +64,9 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 	}
 
 	in := map[string]interface{}{
-		"headers": e.getAuthHeaders(input),
-		"path":    e.getSplitPath(input),
-		"method":  strings.ToUpper(input.RequestValidationInput.Request.Method),
+		"auth":   GetAuthData(input.RequestValidationInput.Request.Context()),
+		"path":   e.getSplitPath(input),
+		"method": strings.ToUpper(input.RequestValidationInput.Request.Method),
 	}
 
 	if clinician != nil {
@@ -109,16 +109,6 @@ func (e *embeddedOpaAuthorizer) EvaluatePolicy(ctx context.Context, input map[st
 	return nil
 }
 
-func (e *embeddedOpaAuthorizer) getAuthHeaders(input *openapi3filter.AuthenticationInput) map[string]string {
-	headers := make(map[string]string, 0)
-	for k, v := range input.RequestValidationInput.Request.Header {
-		if key := strings.ToLower(k); strings.HasPrefix(key, authHeaderPrefix) {
-			headers[key] = strings.Join(v, ",")
-		}
-	}
-	return headers
-}
-
 func (e *embeddedOpaAuthorizer) getSplitPath(input *openapi3filter.AuthenticationInput) []string {
 	path := strings.Split(input.RequestValidationInput.Request.URL.Path, "/")
 	if len(path) > 0 && path[0] == "" {
@@ -133,26 +123,14 @@ func (e *embeddedOpaAuthorizer) getClinicianRecord(ctx context.Context, input *o
 	if clinicId == "" {
 		return nil, nil
 	}
-	currentUserId := GetAuthUserId(input.RequestValidationInput.Request)
-	if currentUserId == nil {
+	authData := GetAuthData(input.RequestValidationInput.Request.Context())
+	if authData == nil {
 		return nil, nil
 	}
-	clinician, err := e.clinicians.Get(ctx, clinicId, *currentUserId)
+	clinician, err := e.clinicians.Get(ctx, clinicId, authData.SubjectId)
 	if err != nil && !errors.Is(err, internalErrs.NotFound) {
 		return nil, err
 	}
 
 	return clinician, nil
-}
-
-func GetAuthUserId(r *http.Request) *string {
-	if r.Header.Get(serverAccessHeaderKey) == "true" {
-		return nil
-	}
-	subjectId := r.Header.Get(subjectIdHeaderName)
-	if subjectId == "" {
-		return nil
-	}
-
-	return &subjectId
 }

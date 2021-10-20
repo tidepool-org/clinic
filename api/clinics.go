@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/tidepool-org/clinic/authz"
+	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/creator"
 	"github.com/tidepool-org/clinic/errors"
@@ -35,8 +35,8 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		return err
 	}
 
-	userId := authz.GetAuthUserId(ec.Request())
-	if userId == nil {
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
 		return &echo.HTTPError{
 			Code:    http.StatusBadRequest,
 			Message: "expected authenticated user id",
@@ -45,7 +45,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 
 	create := creator.CreateClinic{
 		Clinic:            *NewClinic(dto),
-		CreatorUserId:     *userId,
+		CreatorUserId:     authData.SubjectId,
 		CreateDemoPatient: true,
 	}
 
