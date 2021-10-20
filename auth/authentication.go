@@ -65,7 +65,7 @@ func (s *ShorelineAuthenticator) ValidateAndSetAuthData(token string, ec echo.Co
 			SubjectId:    data.UserID,
 			ServerAccess: data.IsServer,
 		})
-		ec.Request().WithContext(ctx)
+		ec.SetRequest(ec.Request().WithContext(ctx))
 		return true, nil
 	}
 
