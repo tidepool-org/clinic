@@ -1,4 +1,4 @@
-package authz_test
+package auth_test
 
 import (
 	"github.com/tidepool-org/clinic/test"

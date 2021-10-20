@@ -7,7 +7,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/tidepool-org/clinic/authz"
+	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/creator"
@@ -43,7 +43,7 @@ func Start(e *echo.Echo, lifecycle fx.Lifecycle) {
 	})
 }
 
-func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo, error) {
+func NewServer(handler *Handler, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator) (*echo.Echo, error) {
 	e := echo.New()
 	e.Logger.Print("Starting Main Loop")
 	swagger, err := GetSwagger()
@@ -54,11 +54,14 @@ func NewServer(handler *Handler, authorizer authz.RequestAuthorizer) (*echo.Echo
 	// Do not validate servers
 	swagger.Servers = nil
 	requestValidator := oapiMiddleware.OapiRequestValidatorWithOptions(swagger, &oapiMiddleware.Options{
-		Options: openapi3filter.Options{AuthenticationFunc: authorizer.Authorize},
+		Options: openapi3filter.Options{
+			AuthenticationFunc: authorizer.Authorize,
+		},
 	})
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(auth.NewAuthMiddleware(authenticator))
 	e.Use(requestValidator)
 
 	// Routes
@@ -90,7 +93,8 @@ func MainLoop() {
 			creator.NewCreator,
 			migration.NewMigrator,
 			migration.NewRepository,
-			authz.NewRequestAuthorizer,
+			auth.NewShorelineAuthenticator,
+			auth.NewRequestAuthorizer,
 			NewHandler,
 			NewServer,
 		),
