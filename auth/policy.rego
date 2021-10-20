@@ -1,7 +1,7 @@
 package http.authz.clinic
 
 subject_id := input.auth.subjectId
-is_backend_service := input.auth.serverAccess == "true"
+is_backend_service := input.auth.serverAccess == true
 
 is_authenticated_user {
   not is_backend_service

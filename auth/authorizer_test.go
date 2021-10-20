@@ -32,7 +32,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -45,7 +45,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "hydrophone",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -58,7 +58,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "non-existent-service",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -71,7 +71,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "hydrophone",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -84,7 +84,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "123456",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -97,7 +97,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "123456",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -110,7 +110,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "shoreline",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -123,7 +123,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "shoreline",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -136,7 +136,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "12345",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -149,7 +149,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicAdmin,
 			}
@@ -163,7 +163,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "POST",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -176,7 +176,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "POST",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -189,7 +189,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "POST",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicAdmin,
 			}
@@ -203,7 +203,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "POST",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
@@ -217,7 +217,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "POST",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
@@ -231,7 +231,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "POST",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicAdmin,
 			}
@@ -245,7 +245,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
@@ -259,7 +259,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "12345",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -272,7 +272,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "999999999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -285,7 +285,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "99999",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -298,7 +298,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "prescription",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -311,7 +311,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "hydrophone",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -324,7 +324,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -337,7 +337,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "PUT",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicAdmin,
 			}
@@ -351,7 +351,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "POST",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicAdmin,
 			}
@@ -365,7 +365,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "PUT",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
@@ -379,7 +379,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
@@ -393,7 +393,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
@@ -407,7 +407,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -420,7 +420,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "PATCH",
 				"auth": map[string]interface{}{
 					"subjectId":    "hydrophone",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -433,7 +433,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "hydrophone",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -446,7 +446,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "DELETE",
 				"auth": map[string]interface{}{
 					"subjectId":    "hydrophone",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -459,7 +459,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "orca",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -472,7 +472,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "clinic-worker",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
@@ -485,7 +485,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
@@ -499,7 +499,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "GET",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
@@ -513,7 +513,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "PATCH",
 				"auth": map[string]interface{}{
 					"subjectId":    "clinic-worker",
-					"serverAccess": "true",
+					"serverAccess": true,
 				},
 				"clinician": clinicMember,
 			}
@@ -527,7 +527,7 @@ var _ = Describe("Request Authorizer", func() {
 				"method": "PATCH",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
-					"serverAccess": "false",
+					"serverAccess": false,
 				},
 				"clinician": clinicMember,
 			}
