@@ -36,7 +36,7 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 			return nil, err
 		}
 
-		if err := s.onUpdate(ctx, clinician); err != nil {
+		if err := s.onUpdate(ctx, clinician, false); err != nil {
 			return nil, err
 		}
 
@@ -52,7 +52,7 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 
 func (s service) Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error) {
 	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		if err := s.onUpdate(ctx, &update.Clinician); err != nil {
+		if err := s.onUpdate(ctx, &update.Clinician, false); err != nil {
 			return nil, err
 		}
 
@@ -85,7 +85,7 @@ func (s service) AssociateInvite(ctx context.Context, associate AssociateInvite)
 			return nil, err
 		}
 
-		if err := s.onUpdate(ctx, clinician); err != nil {
+		if err := s.onUpdate(ctx, clinician, false); err != nil {
 			return nil, err
 		}
 
@@ -114,23 +114,53 @@ func (s *service) Delete(ctx context.Context, clinicId string, clinicianId strin
 			return nil, err
 		}
 
-		err = s.repository.Delete(ctx, clinicId, clinicianId)
-		if err != nil {
-			return nil, err
-		}
-
-		// Make sure the clinician is removed from the clinic record
-		clinician.Roles = nil
-		err = s.onUpdate(ctx, clinician)
-		return nil, err
+		return nil, s.deleteSingle(ctx, clinician, false)
 	})
 
 	return err
 }
 
+func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string) error {
+	_, err := store.WithTransaction(ctx, s.dbClient, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		filter := &Filter{
+			UserId: &clinicianId,
+		}
+		pagination := store.Pagination{
+			Offset: 0,
+			Limit:  0, // Fetches all records from mongo
+		}
+
+		clinicianList, err := s.List(sessCtx, filter, pagination)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, clinician := range clinicianList {
+			if err := s.deleteSingle(ctx, clinician, true); err != nil {
+				return nil, err
+			}
+		}
+
+		return nil, nil
+	})
+
+	return err
+}
+
+func (s *service) deleteSingle(ctx context.Context, clinician *Clinician, allowOrphaning bool) error {
+	err := s.repository.Delete(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
+	if err != nil {
+		return err
+	}
+
+	// Make sure the clinician is removed from the clinic record
+	clinician.Roles = nil
+	return s.onUpdate(ctx, clinician, allowOrphaning)
+}
+
 // onUpdate makes sure the clinic object "admins" attribute is consistent with the admins in the clinicians collection.
 // It must be executed on every operation that can change the roles of clinician.
-func (s *service) onUpdate(ctx context.Context, clinician *Clinician) error {
+func (s *service) onUpdate(ctx context.Context, clinician *Clinician, allowOrphaning bool) error {
 	if clinician.UserId == nil {
 		return nil
 	}
@@ -141,7 +171,9 @@ func (s *service) onUpdate(ctx context.Context, clinician *Clinician) error {
 	}
 
 	// Make sure clinician user id is removed as an admin from a clinic record
-	return s.clinicsService.RemoveAdmin(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
+	err := s.clinicsService.RemoveAdmin(ctx, clinician.ClinicId.Hex(), *clinician.UserId, allowOrphaning)
+
+	return err
 }
 
 func (s *service) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {

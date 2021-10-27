@@ -87,6 +87,14 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 	return patient, err
 }
 
+func (s *service) DeleteFromAllClinics(ctx context.Context, userId string) error {
+	return s.repo.DeleteFromAllClinics(ctx, userId)
+}
+
+func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error {
+	return s.repo.DeleteFromAllClinics(ctx, clinicId)
+}
+
 func shouldRemovePatientFromClinic(patient *Patient) bool {
 	if patient != nil {
 		return patient.Permissions == nil || patient.Permissions.Empty()

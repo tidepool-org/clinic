@@ -147,6 +147,11 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
 		})
 
+		It("Allows orphaning when deleting from all clinics", func() {
+			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("Works when there are multiple admins", func() {
 			second := cliniciansTest.RandomClinician()
 			second.ClinicId = clinic.Id
@@ -179,6 +184,39 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).To(ContainElement(*clinician.UserId))
+		})
+	})
+
+	Describe("Delete clinician from all clinics", func() {
+		var clinician *clinicians.Clinician
+
+		BeforeEach(func() {
+			clinicsList := []*clinics.Clinic{clinicsTest.RandomClinic(), clinicsTest.RandomClinic()}
+			clinician = cliniciansTest.RandomClinician()
+
+			for _, clinic := range clinicsList {
+				var err error
+				clinic.Admins = &[]string{*clinician.UserId}
+				clinic, err = clinicsService.Create(context.Background(), clinic)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clinic).ToNot(BeNil())
+
+				clinician.ClinicId = clinic.Id
+				clinician.Roles = []string{"CLINIC_ADMIN"}
+
+				_, err = cliniciansService.Create(context.Background(), clinician)
+				Expect(err).ToNot(HaveOccurred())
+			}
+
+		})
+
+		It("Allows orphaning when deleting from all clinics", func() {
+			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+
+			result, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			Expect(err).To(Equal(clinicians.ErrNotFound))
+			Expect(result).To(BeNil())
 		})
 	})
 
