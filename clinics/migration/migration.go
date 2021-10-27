@@ -27,6 +27,21 @@ type Migration struct {
 	UpdatedTime time.Time           `json:"updatedTime" bson:"updatedTime"`
 }
 
+func NewMigration(clinicId, userId string) *Migration {
+	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		panic(err)
+	}
+
+	return &Migration{
+		UserId: userId,
+		ClinicId: &clinicObjId,
+		Status: StatusPending,
+		CreatedTime: time.Now(),
+		UpdatedTime: time.Now(),
+	}
+}
+
 type Migrator interface {
 	CreateEmptyClinic(ctx context.Context, userId string) (*clinics.Clinic, error)
 	GetMigration(ctx context.Context, clinicId string, userId string) (*Migration, error)
@@ -86,17 +101,7 @@ func (m *migrator) MigrateLegacyClinicianPatients(ctx context.Context, clinicId,
 		return nil, err
 	}
 
-	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	migration := &Migration{
-		ClinicId:    &clinicObjId,
-		UserId:      userId,
-		CreatedTime: time.Now(),
-	}
-
+	migration := NewMigration(clinicId, userId)
 	return m.migrationRepo.Create(ctx, migration)
 }
 
@@ -117,14 +122,7 @@ func (m *migrator) TriggerInitialMigration(ctx context.Context, clinicId string)
 		return nil, err
 	}
 
-	migration := &Migration{
-		ClinicId:    clinic.Id,
-		UserId:      userId,
-		CreatedTime: time.Now(),
-		UpdatedTime: time.Now(),
-		Status:      StatusPending,
-	}
-
+	migration := NewMigration(clinicId, userId)
 	result, err := m.migrationRepo.Create(ctx, migration)
 	if err != nil {
 		return nil, err
