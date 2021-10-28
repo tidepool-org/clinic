@@ -166,7 +166,7 @@ func (h *Handler) UpdateMigration(ec echo.Context, clinicId Id, userId UserId) e
 	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
 }
 
-func (h *Handler) DeleteUserFromClinics(ec echo.Context, userId string) error {
+func (h *Handler) DeleteUserFromClinics(ec echo.Context, userId UserId) error {
 	ctx := ec.Request().Context()
 	if err := h.patients.DeleteFromAllClinics(ctx, string(userId)); err != nil {
 		return err

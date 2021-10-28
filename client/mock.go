@@ -355,7 +355,7 @@ func (mr *MockClientInterfaceMockRecorder) DeletePatientPermission(ctx, clinicId
 }
 
 // DeleteUserFromClinics mocks base method.
-func (m *MockClientInterface) DeleteUserFromClinics(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, userId}
 	for _, a := range reqEditors {
@@ -1128,7 +1128,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientWithRespons
 }
 
 // DeleteUserFromClinicsWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) DeleteUserFromClinicsWithResponse(ctx context.Context, userId string) (*DeleteUserFromClinicsResponse, error) {
+func (m *MockClientWithResponsesInterface) DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId) (*DeleteUserFromClinicsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteUserFromClinicsWithResponse", ctx, userId)
 	ret0, _ := ret[0].(*DeleteUserFromClinicsResponse)

@@ -258,8 +258,11 @@ func (r *repository) DeleteFromAllClinics(ctx context.Context, userId string) er
 func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
-		"clinicId":              clinicObjId,
-		"permissions.custodian": bson.M{"$exists": true},
+		"clinicId": clinicObjId,
+		"$or": []bson.M{
+			{"permissions.custodian": bson.M{"$exists": false}},
+			{"permissions.custodian": bson.M{"$eq": false}},
+		},
 	}
 
 	_, err := r.collection.DeleteMany(ctx, selector)

@@ -102,7 +102,7 @@ type ServerInterface interface {
 	ListClinicsForPatient(ctx echo.Context, userId UserId, params ListClinicsForPatientParams) error
 
 	// (DELETE /v1/users/{userId}/clinics)
-	DeleteUserFromClinics(ctx echo.Context, userId string) error
+	DeleteUserFromClinics(ctx echo.Context, userId UserId) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -850,7 +850,7 @@ func (w *ServerInterfaceWrapper) ListClinicsForPatient(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteUserFromClinics(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
-	var userId string
+	var userId UserId
 
 	err = runtime.BindStyledParameter("simple", false, "userId", ctx.Param("userId"), &userId)
 	if err != nil {
@@ -924,4 +924,3 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 
 }
-

@@ -201,7 +201,7 @@ type ClientInterface interface {
 	ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteUserFromClinics request
-	DeleteUserFromClinics(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ListClinicsForClinician(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -644,7 +644,7 @@ func (c *Client) ListClinicsForPatient(ctx context.Context, userId UserId, param
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteUserFromClinics(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteUserFromClinicsRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
@@ -2120,7 +2120,7 @@ func NewListClinicsForPatientRequest(server string, userId UserId, params *ListC
 }
 
 // NewDeleteUserFromClinicsRequest generates requests for DeleteUserFromClinics
-func NewDeleteUserFromClinicsRequest(server string, userId string) (*http.Request, error) {
+func NewDeleteUserFromClinicsRequest(server string, userId UserId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -2307,7 +2307,7 @@ type ClientWithResponsesInterface interface {
 	ListClinicsForPatientWithResponse(ctx context.Context, userId UserId, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error)
 
 	// DeleteUserFromClinics request
-	DeleteUserFromClinicsWithResponse(ctx context.Context, userId string) (*DeleteUserFromClinicsResponse, error)
+	DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId) (*DeleteUserFromClinicsResponse, error)
 }
 
 type ListClinicsForClinicianResponse struct {
@@ -3317,7 +3317,7 @@ func (c *ClientWithResponses) ListClinicsForPatientWithResponse(ctx context.Cont
 }
 
 // DeleteUserFromClinicsWithResponse request returning *DeleteUserFromClinicsResponse
-func (c *ClientWithResponses) DeleteUserFromClinicsWithResponse(ctx context.Context, userId string) (*DeleteUserFromClinicsResponse, error) {
+func (c *ClientWithResponses) DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId) (*DeleteUserFromClinicsResponse, error) {
 	rsp, err := c.DeleteUserFromClinics(ctx, userId)
 	if err != nil {
 		return nil, err

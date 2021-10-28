@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/patients/test"
+	"go.uber.org/zap"
 )
 
 var _ = Describe("Patients Service", func() {
@@ -18,7 +19,7 @@ var _ = Describe("Patients Service", func() {
 		repo = test.NewMockRepository(repoCtrl)
 
 		var err error
-		service, err = patients.NewService(repo, nil)
+		service, err = patients.NewService(repo, nil, zap.NewNop().Sugar())
 		Expect(err).ToNot(HaveOccurred())
 	})
 

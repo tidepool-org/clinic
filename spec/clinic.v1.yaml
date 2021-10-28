@@ -819,11 +819,7 @@ paths:
       description: Internal endpoint to update the status of a migration
   '/v1/users/{userId}/clinics':
     parameters:
-      - schema:
-          type: string
-        name: userId
-        in: path
-        required: true
+      - $ref: '#/components/parameters/userId'
     delete:
       summary: ''
       operationId: DeleteUserFromClinics
