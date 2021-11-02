@@ -165,3 +165,7 @@ func (h *Handler) UpdateMigration(ec echo.Context, clinicId Id, userId UserId) e
 
 	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
 }
+
+func (h *Handler) DeleteUserFromClinics(ctx echo.Context, userId UserId) error {
+	panic("implement me")
+}

@@ -212,6 +212,9 @@ type Offset int
 // PatientId defines model for patientId.
 type PatientId string
 
+// Role defines model for role.
+type Role string
+
 // Search defines model for search.
 type Search string
 
@@ -248,6 +251,7 @@ type ListCliniciansParams struct {
 	Offset *Offset `json:"offset,omitempty"`
 	Limit  *Limit  `json:"limit,omitempty"`
 	Email  *Email  `json:"email,omitempty"`
+	Role   *Role   `json:"role,omitempty"`
 }
 
 // CreateClinicianJSONBody defines parameters for CreateClinician.

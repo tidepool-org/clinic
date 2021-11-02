@@ -80,6 +80,15 @@ func (r *Repository) Initialize(ctx context.Context) error {
 				SetBackground(true).
 				SetName("ClinicianSearch"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "role", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("ClinicianByRole"),
+		},
 	})
 	return err
 }
@@ -104,6 +113,13 @@ func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	if filter.UserId != nil {
 		selector["userId"] = filter.UserId
+	}
+	if filter.Role != nil {
+		selector["roles"] = bson.M{
+			"$elemMatch": bson.M{
+				"$eq": filter.Role,
+			},
+		}
 	}
 	if filter.Search != nil {
 		selector["$text"] = bson.M{

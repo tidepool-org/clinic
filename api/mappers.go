@@ -318,3 +318,10 @@ func emailToString(e *Email) *string {
 	}
 	return strp(string(*e))
 }
+
+func roleToString(e *Role) *string {
+	if e == nil {
+		return nil
+	}
+	return strp(string(*e))
+}
