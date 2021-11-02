@@ -324,4 +324,3 @@ type UpdatePatientJSONRequestBody UpdatePatientJSONBody
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody UpdatePatientPermissionsJSONBody
-

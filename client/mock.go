@@ -354,6 +354,26 @@ func (mr *MockClientInterfaceMockRecorder) DeletePatientPermission(ctx, clinicId
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientPermission", reflect.TypeOf((*MockClientInterface)(nil).DeletePatientPermission), varargs...)
 }
 
+// DeleteUserFromClinics mocks base method.
+func (m *MockClientInterface) DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, userId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteUserFromClinics", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteUserFromClinics indicates an expected call of DeleteUserFromClinics.
+func (mr *MockClientInterfaceMockRecorder) DeleteUserFromClinics(ctx, userId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, userId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserFromClinics", reflect.TypeOf((*MockClientInterface)(nil).DeleteUserFromClinics), varargs...)
+}
+
 // EnableNewClinicExperience mocks base method.
 func (m *MockClientInterface) EnableNewClinicExperience(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1105,6 +1125,21 @@ func (m *MockClientWithResponsesInterface) DeletePatientWithResponse(ctx context
 func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientWithResponse(ctx, clinicId, patientId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeletePatientWithResponse), ctx, clinicId, patientId)
+}
+
+// DeleteUserFromClinicsWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId) (*DeleteUserFromClinicsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserFromClinicsWithResponse", ctx, userId)
+	ret0, _ := ret[0].(*DeleteUserFromClinicsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteUserFromClinicsWithResponse indicates an expected call of DeleteUserFromClinicsWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) DeleteUserFromClinicsWithResponse(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserFromClinicsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeleteUserFromClinicsWithResponse), ctx, userId)
 }
 
 // EnableNewClinicExperienceWithResponse mocks base method.

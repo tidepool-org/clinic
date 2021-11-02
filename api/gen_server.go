@@ -100,6 +100,9 @@ type ServerInterface interface {
 	// List Clinics for Patient
 	// (GET /v1/patients/{userId}/clinics)
 	ListClinicsForPatient(ctx echo.Context, userId UserId, params ListClinicsForPatientParams) error
+
+	// (DELETE /v1/users/{userId}/clinics)
+	DeleteUserFromClinics(ctx echo.Context, userId UserId) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -843,6 +846,24 @@ func (w *ServerInterfaceWrapper) ListClinicsForPatient(ctx echo.Context) error {
 	return err
 }
 
+// DeleteUserFromClinics converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteUserFromClinics(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameter("simple", false, "userId", ctx.Param("userId"), &userId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteUserFromClinics(ctx, userId)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -900,6 +921,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
+	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 
 }
-

@@ -199,6 +199,9 @@ type ClientInterface interface {
 
 	// ListClinicsForPatient request
 	ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteUserFromClinics request
+	DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ListClinicsForClinician(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -632,6 +635,17 @@ func (c *Client) DeletePatientPermission(ctx context.Context, clinicId ClinicId,
 
 func (c *Client) ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListClinicsForPatientRequest(c.Server, userId, params)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteUserFromClinicsRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -2105,6 +2119,40 @@ func NewListClinicsForPatientRequest(server string, userId UserId, params *ListC
 	return req, nil
 }
 
+// NewDeleteUserFromClinicsRequest generates requests for DeleteUserFromClinics
+func NewDeleteUserFromClinicsRequest(server string, userId UserId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "userId", userId)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/v1/users/%s/clinics", pathParam0)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	req = req.WithContext(ctx)
 	for _, r := range c.RequestEditors {
@@ -2257,6 +2305,9 @@ type ClientWithResponsesInterface interface {
 
 	// ListClinicsForPatient request
 	ListClinicsForPatientWithResponse(ctx context.Context, userId UserId, params *ListClinicsForPatientParams) (*ListClinicsForPatientResponse, error)
+
+	// DeleteUserFromClinics request
+	DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId) (*DeleteUserFromClinicsResponse, error)
 }
 
 type ListClinicsForClinicianResponse struct {
@@ -2895,6 +2946,27 @@ func (r ListClinicsForPatientResponse) StatusCode() int {
 	return 0
 }
 
+type DeleteUserFromClinicsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteUserFromClinicsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteUserFromClinicsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ListClinicsForClinicianWithResponse request returning *ListClinicsForClinicianResponse
 func (c *ClientWithResponses) ListClinicsForClinicianWithResponse(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams) (*ListClinicsForClinicianResponse, error) {
 	rsp, err := c.ListClinicsForClinician(ctx, userId, params)
@@ -3242,6 +3314,15 @@ func (c *ClientWithResponses) ListClinicsForPatientWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseListClinicsForPatientResponse(rsp)
+}
+
+// DeleteUserFromClinicsWithResponse request returning *DeleteUserFromClinicsResponse
+func (c *ClientWithResponses) DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId) (*DeleteUserFromClinicsResponse, error) {
+	rsp, err := c.DeleteUserFromClinics(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteUserFromClinicsResponse(rsp)
 }
 
 // ParseListClinicsForClinicianResponse parses an HTTP response from a ListClinicsForClinicianWithResponse call
@@ -3979,6 +4060,25 @@ func ParseListClinicsForPatientResponse(rsp *http.Response) (*ListClinicsForPati
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseDeleteUserFromClinicsResponse parses an HTTP response from a DeleteUserFromClinicsWithResponse call
+func ParseDeleteUserFromClinicsResponse(rsp *http.Response) (*DeleteUserFromClinicsResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteUserFromClinicsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	}
 
 	return response, nil

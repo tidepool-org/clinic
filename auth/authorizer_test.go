@@ -534,5 +534,31 @@ var _ = Describe("Request Authorizer", func() {
 			err := authorizer.EvaluatePolicy(context.Background(), input)
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
+
+		It("it allows clinic-worker to delete user accounts", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "users", "1234567890", "clinics"},
+				"method": "DELETE",
+				"auth": map[string]interface{}{
+					"subjectId":    "clinic-worker",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it prevents users from triggering deletion", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "users", "1234567890", "clinics"},
+				"method": "DELETE",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
 	})
 })

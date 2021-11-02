@@ -51,6 +51,34 @@ func (mr *MockRepositoryMockRecorder) Create(ctx, patient interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepository)(nil).Create), ctx, patient)
 }
 
+// DeleteFromAllClinics mocks base method.
+func (m *MockRepository) DeleteFromAllClinics(ctx context.Context, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteFromAllClinics", ctx, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteFromAllClinics indicates an expected call of DeleteFromAllClinics.
+func (mr *MockRepositoryMockRecorder) DeleteFromAllClinics(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFromAllClinics", reflect.TypeOf((*MockRepository)(nil).DeleteFromAllClinics), ctx, userId)
+}
+
+// DeleteNonCustodialPatientsOfClinic mocks base method.
+func (m *MockRepository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteNonCustodialPatientsOfClinic", ctx, clinicId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteNonCustodialPatientsOfClinic indicates an expected call of DeleteNonCustodialPatientsOfClinic.
+func (mr *MockRepositoryMockRecorder) DeleteNonCustodialPatientsOfClinic(ctx, clinicId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNonCustodialPatientsOfClinic", reflect.TypeOf((*MockRepository)(nil).DeleteNonCustodialPatientsOfClinic), ctx, clinicId)
+}
+
 // DeletePermission mocks base method.
 func (m *MockRepository) DeletePermission(ctx context.Context, clinicId, userId, permission string) (*patients.Patient, error) {
 	m.ctrl.T.Helper()

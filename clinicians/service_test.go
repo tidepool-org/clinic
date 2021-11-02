@@ -24,6 +24,7 @@ var _ = Describe("Clinicians Service", func() {
 	var cliniciansService clinicians.Service
 	var clinicsService clinics.Service
 	var userService *patientsTest.MockUserService
+	var patientsService patients.Service
 	var ctrl *gomock.Controller
 	var app *fxtest.App
 	beforeOnce := sync.Once{}
@@ -49,11 +50,15 @@ var _ = Describe("Clinicians Service", func() {
 					clinics.NewRepository,
 					clinicians.NewRepository,
 					clinicians.NewService,
+					patients.NewRepository,
+					patients.NewService,
+					patients.NewCustodialService,
 				),
-				fx.Invoke(func(cliniciansSvc clinicians.Service, clinicsSvc clinics.Service, userSvc patients.UserService) {
+				fx.Invoke(func(cliniciansSvc clinicians.Service, clinicsSvc clinics.Service, userSvc patients.UserService, patientsSvc patients.Service) {
 					cliniciansService = cliniciansSvc
 					clinicsService = clinicsSvc
 					userService = userSvc.(*patientsTest.MockUserService)
+					patientsService = patientsSvc
 				}),
 			)
 			app.RequireStart()
@@ -147,6 +152,11 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
 		})
 
+		It("Allows orphaning when deleting from all clinics", func() {
+			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("Works when there are multiple admins", func() {
 			second := cliniciansTest.RandomClinician()
 			second.ClinicId = clinic.Id
@@ -179,6 +189,92 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).To(ContainElement(*clinician.UserId))
+		})
+	})
+
+	Describe("Delete clinician from all clinics", func() {
+		var clinician *clinicians.Clinician
+		var clinicsList []*clinics.Clinic
+
+		BeforeEach(func() {
+			clinicsList = []*clinics.Clinic{clinicsTest.RandomClinic(), clinicsTest.RandomClinic()}
+			clinician = cliniciansTest.RandomClinician()
+
+			for i, clinic := range clinicsList {
+				var err error
+				clinic.Admins = &[]string{*clinician.UserId}
+				clinic, err = clinicsService.Create(context.Background(), clinic)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clinic).ToNot(BeNil())
+
+				clinicsList[i] = clinic
+				clinician.ClinicId = clinic.Id
+				clinician.Roles = []string{"CLINIC_ADMIN"}
+
+				_, err = cliniciansService.Create(context.Background(), clinician)
+				Expect(err).ToNot(HaveOccurred())
+			}
+		})
+
+		It("Allows orphaning when deleting from all clinics", func() {
+			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+
+			for _, clinic := range clinicsList {
+				result, err := cliniciansService.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				Expect(err).To(Equal(clinicians.ErrNotFound))
+				Expect(result).To(BeNil())
+			}
+		})
+
+		It("Deletes non-custodial patients of a clinic when clinic is orphaned", func() {
+			// Create a patient so we can check later it was deleted from the orphaned clinic
+			patient := patientsTest.RandomPatient()
+			patient.ClinicId = clinician.ClinicId
+			patient.Permissions = &patients.Permissions{
+				View: &patients.Permission{},
+			}
+			_, err := patientsService.Create(nil, patient)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Delete all clinician records
+			err = cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Check clinicians records were deleted
+			for _, clinic := range clinicsList {
+				result, err := cliniciansService.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				Expect(err).To(Equal(clinicians.ErrNotFound))
+				Expect(result).To(BeNil())
+			}
+
+			// Check non-custodial patient was deleted
+			_, err = patientsService.Get(nil, patient.ClinicId.Hex(), *patient.UserId)
+			Expect(err).To(Equal(patients.ErrNotFound))
+		})
+
+		It("Does not delete custodial patients of a clinic when clinic is orphaned", func() {
+			// Create a patient so we can check later it was not deleted from the orphaned clinic
+			patient := patientsTest.RandomPatient()
+			patient.ClinicId = clinician.ClinicId
+			patient.Permissions = &patients.CustodialAccountPermissions
+			_, err := patientsService.Create(nil, patient)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Delete all clinician records
+			err = cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Check clinicians records were deleted
+			for _, clinic := range clinicsList {
+				result, err := cliniciansService.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				Expect(err).To(Equal(clinicians.ErrNotFound))
+				Expect(result).To(BeNil())
+			}
+
+			// Check custodial patient was not deleted
+			_, err = patientsService.Get(nil, patient.ClinicId.Hex(), *patient.UserId)
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
