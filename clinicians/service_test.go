@@ -329,13 +329,13 @@ var _ = Describe("Clinicians Service", func() {
 			newClinician, err := cliniciansService.Create(context.Background(), newClinician)
 			Expect(err).ToNot(HaveOccurred())
 
-			newClinician.Id = nil // Id is immutable
-			newClinician.Roles = []string{"CLINIC_ADMIN"}
 			clinicianUpdate := &clinicians.ClinicianUpdate{
 				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
-				Clinician:   *clinician,
+				Clinician: clinicians.Clinician{
+					Roles: []string{"CLINIC_ADMIN"},
+				},
 			}
 			newClinician, err = cliniciansService.Update(context.Background(), clinicianUpdate)
 			Expect(err).ToNot(HaveOccurred())
@@ -348,19 +348,20 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Removes an admin of the clinic", func() {
+			// Make sure we're not orphaning the clinic
 			newClinician := cliniciansTest.RandomClinician()
 			newClinician.ClinicId = clinic.Id
 			newClinician.Roles = []string{"CLINIC_ADMIN"}
-
 			_, err := cliniciansService.Create(context.Background(), newClinician)
 			Expect(err).ToNot(HaveOccurred())
 
-			clinician.Roles = []string{"CLINIC_MEMBER"}
 			clinicianUpdate := &clinicians.ClinicianUpdate{
 				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
-				Clinician:   *clinician,
+				Clinician: clinicians.Clinician{
+					Roles: []string{"CLINIC_MEMBER"},
+				},
 			}
 			_, err = cliniciansService.Update(context.Background(), clinicianUpdate)
 			Expect(err).ToNot(HaveOccurred())
@@ -372,43 +373,34 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Prevents orphaning a clinic", func() {
-			updatedRoles := []string{"CLINIC_MEMBER"}
-
-			result, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(result).ToNot(BeNil())
-
-			result.Roles = updatedRoles
 			clinicianUpdate := &clinicians.ClinicianUpdate{
 				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
-				Clinician:   *result,
+				Clinician: clinicians.Clinician{
+					Roles: []string{"CLINIC_MEMBER"},
+				},
 			}
-			_, err = cliniciansService.Update(context.Background(), clinicianUpdate)
+			_, err := cliniciansService.Update(context.Background(), clinicianUpdate)
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
 		})
 
 		It("Updates the roles history", func() {
-			updatedRoles := []string{"CLINIC_ADMIN", "PRESCRIBER"}
-
-			result, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(result).ToNot(BeNil())
-
-			result.Roles = updatedRoles
+			roles := []string{"CLINIC_ADMIN", "PRESCRIBER"}
 			clinicianUpdate := &clinicians.ClinicianUpdate{
 				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
-				Clinician:   *result,
+				Clinician: clinicians.Clinician{
+					Roles: roles,
+				},
 			}
 			updated, err := cliniciansService.Update(context.Background(), clinicianUpdate)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(updated).ToNot(BeNil())
 			Expect(updated.RolesUpdates).To(HaveLen(1))
 			Expect(updated.RolesUpdates[0].UpdatedBy).To(Equal(clinicianUpdate.UpdatedBy))
-			Expect(updated.RolesUpdates[0].Roles).To(ConsistOf(updatedRoles))
+			Expect(updated.RolesUpdates[0].Roles).To(ConsistOf(roles))
 		})
 	})
 
