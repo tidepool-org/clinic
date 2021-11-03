@@ -2,6 +2,7 @@ package clinicians
 
 import (
 	"context"
+	"fmt"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
@@ -38,8 +39,13 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 			return nil, err
 		}
 
-		if err := s.onUpdate(ctx, clinician, false); err != nil {
-			return nil, err
+		if created.UserId != nil {
+			// When the user id is not set the clinician object is an invite
+			// and is not yet associated with a user, thus the operation cannot
+			// change clinic admins
+			if err := s.onUpdate(ctx, created, false); err != nil {
+				return nil, err
+			}
 		}
 
 		return created, nil
@@ -54,12 +60,12 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 
 func (s service) Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error) {
 	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		if err := s.onUpdate(ctx, &update.Clinician, false); err != nil {
+		updated, err := s.repository.Update(sessionCtx, update)
+		if err != nil {
 			return nil, err
 		}
 
-		updated, err := s.repository.Update(sessionCtx, update)
-		if err != nil {
+		if err := s.onUpdate(ctx, updated, false); err != nil {
 			return nil, err
 		}
 
@@ -187,18 +193,18 @@ func (s *service) deleteSingle(ctx context.Context, clinician *Clinician, allowO
 
 // onUpdate makes sure the clinic object "admins" attribute is consistent with the admins in the clinicians collection.
 // It must be executed on every operation that can change the roles of clinician.
-func (s *service) onUpdate(ctx context.Context, clinician *Clinician, allowOrphaning bool) error {
-	if clinician.UserId == nil {
-		return nil
+func (s *service) onUpdate(ctx context.Context, updated *Clinician, allowOrphaning bool) error {
+	if updated.UserId == nil {
+		return fmt.Errorf("clinician user id cannot be empty")
 	}
 
-	if clinician.IsAdmin() {
+	if updated.IsAdmin() {
 		// Make sure clinician user id is admin in clinic record
-		return s.clinicsService.UpsertAdmin(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
+		return s.clinicsService.UpsertAdmin(ctx, updated.ClinicId.Hex(), *updated.UserId)
 	}
 
 	// Make sure clinician user id is removed as an admin from a clinic record
-	err := s.clinicsService.RemoveAdmin(ctx, clinician.ClinicId.Hex(), *clinician.UserId, allowOrphaning)
+	err := s.clinicsService.RemoveAdmin(ctx, updated.ClinicId.Hex(), *updated.UserId, allowOrphaning)
 
 	return err
 }
