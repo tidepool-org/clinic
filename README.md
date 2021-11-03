@@ -1,7 +1,7 @@
 # Clinic Service
 ### Overview
 
-The Clinic Service manages Clinics and there relationships between patients and clinicians.
+The Clinic Service manages Clinics and their patients and clinicians.
 
 Server stubs and client library are generated from JSON Open Schema specification. We store the schema files in https://github.com/tidepool-org/TidepoolApi
 as yaml files.
