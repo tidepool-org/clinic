@@ -110,18 +110,18 @@ func (mr *MockRepositoryMockRecorder) Get(ctx, clinicId, userId interface{}) *go
 }
 
 // List mocks base method.
-func (m *MockRepository) List(ctx context.Context, filter *patients.Filter, pagination store.Pagination) ([]*patients.Patient, error) {
+func (m *MockRepository) List(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sort *store.Sort) (*patients.ListResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", ctx, filter, pagination)
-	ret0, _ := ret[0].([]*patients.Patient)
+	ret := m.ctrl.Call(m, "List", ctx, filter, pagination, sort)
+	ret0, _ := ret[0].(*patients.ListResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // List indicates an expected call of List.
-func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination interface{}) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination, sort interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepository)(nil).List), ctx, filter, pagination)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepository)(nil).List), ctx, filter, pagination, sort)
 }
 
 // Remove mocks base method.

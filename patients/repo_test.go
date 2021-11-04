@@ -280,9 +280,9 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination)
+				result, err := repo.List(nil, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result).To(HaveLen(count))
+				Expect(result.Patients).To(HaveLen(count))
 			})
 
 			It("applies pagination limit correctly", func() {
@@ -291,9 +291,9 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  2,
 				}
-				result, err := repo.List(nil, &filter, pagination)
+				result, err := repo.List(nil, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result).To(HaveLen(2))
+				Expect(result.Patients).To(HaveLen(2))
 			})
 
 			It("applies pagination offset correctly", func() {
@@ -302,15 +302,15 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  2,
 				}
-				result, err := repo.List(nil, &filter, pagination)
+				result, err := repo.List(nil, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result).To(HaveLen(2))
+				Expect(result.Patients).To(HaveLen(2))
 
 				pagination.Offset = 1
-				offsetResults, err := repo.List(nil, &filter, pagination)
+				offsetResults, err := repo.List(nil, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(offsetResults).To(HaveLen(2))
-				Expect(*offsetResults[0]).To(patientFieldsMatcher(*result[1]))
+				Expect(offsetResults.Patients).To(HaveLen(2))
+				Expect(*offsetResults.Patients[0]).To(patientFieldsMatcher(*result.Patients[1]))
 			})
 
 			It("filters by users id correctly", func() {
@@ -321,11 +321,11 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination)
+				result, err := repo.List(nil, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result).ToNot(HaveLen(0))
+				Expect(result.Patients).ToNot(HaveLen(0))
 
-				for _, patient := range result {
+				for _, patient := range result.Patients {
 					Expect(patient.UserId).To(Equal(randomPatient.UserId))
 				}
 			})
@@ -339,11 +339,11 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination)
+				result, err := repo.List(nil, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result).ToNot(HaveLen(0))
+				Expect(result.Patients).ToNot(HaveLen(0))
 
-				for _, patient := range result {
+				for _, patient := range result.Patients {
 					Expect(patient.ClinicId.Hex()).To(Equal(randomPatient.ClinicId.Hex()))
 				}
 			})
@@ -358,12 +358,12 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination)
+				result, err := repo.List(nil, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(result).ToNot(HaveLen(0))
+				Expect(result.Patients).ToNot(HaveLen(0))
 
 				found := false
-				for _, patient := range result {
+				for _, patient := range result.Patients {
 					if *patient.UserId == *randomPatient.UserId && patient.ClinicId.Hex() == randomPatient.ClinicId.Hex() {
 						found = true
 						break

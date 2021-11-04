@@ -6,7 +6,9 @@ import (
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/migration"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/store"
 	"strings"
 	"time"
 )
@@ -193,6 +195,14 @@ func NewPatientsDto(patients []*patients.Patient) []Patient {
 	return dtos
 }
 
+func NewPatientsResponseDto(list *patients.ListResult) PatientsResponse {
+	data := Patients(NewPatientsDto(list.Patients))
+	return PatientsResponse{
+		Data: &data,
+		Meta: &Meta{Count: &list.TotalCount},
+	}
+}
+
 func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList []*clinics.Clinic) (PatientClinicRelationships, error) {
 	clinicsMap := make(map[string]*clinics.Clinic, 0)
 	for _, clinic := range clinicList {
@@ -262,6 +272,29 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	}
 
 	return dtos
+}
+
+func ParseSort(sort *Sort) (*store.Sort, error) {
+	if sort == nil {
+		return nil, nil
+	}
+	str := string(*sort)
+	result := store.Sort{}
+
+	if strings.HasPrefix(str, "+") {
+		result.Ascending = true
+	} else if strings.HasPrefix(str, "-") {
+		result.Ascending = false
+	} else {
+		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort order", errors.BadRequest)
+	}
+
+	result.Attribute = str[1:]
+	if result.Attribute == "" {
+		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort attribute", errors.BadRequest)
+	}
+
+	return &result, nil
 }
 
 const dateFormat = "2006-01-02"
