@@ -64,15 +64,22 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "email", Value: "text"},
 				{Key: "fullName", Value: "text"},
+				{Key: "email", Value: "text"},
+				{Key: "mrn", Value: "text"},
+				{Key: "birthDate", Value: "text"},
 				{Key: "firstName", Value: "text"},
 				{Key: "lastName", Value: "text"},
-				{Key: "mrn", Value: "text"},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSearch"),
+				SetName("PatientSearch").
+				SetWeights(bson.M{
+					"fullName":  3,
+					"email":     2,
+					"mrn":       1,
+					"birthDate": 1,
+				}),
 		},
 	})
 	return err
