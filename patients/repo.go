@@ -59,7 +59,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetUnique(true).
 				SetName("PatientFullName"),
 		},
 		{
