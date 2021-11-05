@@ -26,7 +26,7 @@ var (
 
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
-	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error)
+	List(ctx context.Context, filter *Filter, pagination store.Pagination, sort *store.Sort) (*ListResult, error)
 	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, clinicId string, userId string, patient Patient) (*Patient, error)
 	Remove(ctx context.Context, clinicId string, userId string) error
@@ -49,6 +49,11 @@ type Patient struct {
 	IsMigrated    bool                `bson:"isMigrated,omitempty"`
 	CreatedTime   time.Time           `bson:"createdTime,omitempty"`
 	UpdatedTime   time.Time           `bson:"updatedTime,omitempty"`
+}
+
+type ListResult struct {
+	Patients   []*Patient `bson:"data"`
+	TotalCount int        `bson:"count"`
 }
 
 func (p Patient) IsCustodial() bool {

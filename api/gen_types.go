@@ -109,6 +109,11 @@ type Error struct {
 // Id defines model for Id.
 type Id string
 
+// Meta defines model for Meta.
+type Meta struct {
+	Count *int `json:"count,omitempty"`
+}
+
 // Migration defines model for Migration.
 type Migration struct {
 	CreatedTime time.Time `json:"createdTime"`
@@ -182,6 +187,12 @@ type PatientPermissions struct {
 // Patients defines model for Patients.
 type Patients []Patient
 
+// PatientsResponse defines model for PatientsResponse.
+type PatientsResponse struct {
+	Data *Patients `json:"data,omitempty"`
+	Meta *Meta     `json:"meta,omitempty"`
+}
+
 // PhoneNumber defines model for PhoneNumber.
 type PhoneNumber struct {
 	Number string  `json:"number"`
@@ -212,11 +223,17 @@ type Offset int
 // PatientId defines model for patientId.
 type PatientId string
 
+// Role defines model for role.
+type Role string
+
 // Search defines model for search.
 type Search string
 
 // ShareCode defines model for shareCode.
 type ShareCode string
+
+// Sort defines model for sort.
+type Sort string
 
 // UserId defines model for userId.
 type UserId TidepoolUserId
@@ -248,6 +265,7 @@ type ListCliniciansParams struct {
 	Offset *Offset `json:"offset,omitempty"`
 	Limit  *Limit  `json:"limit,omitempty"`
 	Email  *Email  `json:"email,omitempty"`
+	Role   *Role   `json:"role,omitempty"`
 }
 
 // CreateClinicianJSONBody defines parameters for CreateClinician.
@@ -272,6 +290,9 @@ type ListPatientsParams struct {
 	Search *Search `json:"search,omitempty"`
 	Offset *Offset `json:"offset,omitempty"`
 	Limit  *Limit  `json:"limit,omitempty"`
+
+	// Sort order and attribute (e.g. +name or -name)
+	Sort *Sort `json:"sort,omitempty"`
 }
 
 // CreatePatientAccountJSONBody defines parameters for CreatePatientAccount.

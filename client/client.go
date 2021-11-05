@@ -1085,6 +1085,22 @@ func NewListCliniciansRequest(server string, clinicId ClinicId, params *ListClin
 
 	}
 
+	if params.Role != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "role", *params.Role); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
 	queryUrl.RawQuery = queryValues.Encode()
 
 	req, err := http.NewRequest("GET", queryUrl.String(), nil)
@@ -1687,6 +1703,22 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 	if params.Limit != nil {
 
 		if queryFrag, err := runtime.StyleParam("form", true, "limit", *params.Limit); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Sort != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "sort", *params.Sort); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2753,7 +2785,7 @@ func (r UpdateMigrationResponse) StatusCode() int {
 type ListPatientsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Patients
+	JSON200      *PatientsResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -3860,7 +3892,7 @@ func ParseListPatientsResponse(rsp *http.Response) (*ListPatientsResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Patients
+		var dest PatientsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

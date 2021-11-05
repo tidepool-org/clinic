@@ -16,13 +16,17 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		ClinicId: strp(string(clinicId)),
 		Search:   searchToString(params.Search),
 	}
-
-	list, err := h.patients.List(ctx, &filter, page)
+	sort, err := ParseSort(params.Sort)
 	if err != nil {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewPatientsDto(list))
+	list, err := h.patients.List(ctx, &filter, page, sort)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientsResponseDto(list))
 }
 
 func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error {
@@ -140,18 +144,18 @@ func (h *Handler) DeletePatientPermission(ec echo.Context, clinicId ClinicId, pa
 func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, params ListClinicsForPatientParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
-	patientList, err := h.patients.List(ctx, &patients.Filter{UserId: strp(string(patientId))}, page)
+	list, err := h.patients.List(ctx, &patients.Filter{UserId: strp(string(patientId))}, page, nil)
 	if err != nil {
 		return err
 	}
 
 	var clinicIds []string
-	for _, patient := range patientList {
+	for _, patient := range list.Patients {
 		clinicIds = append(clinicIds, patient.ClinicId.Hex())
 	}
 
 	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
-	dtos, err := NewPatientClinicRelationshipsDto(patientList, clinicList)
+	dtos, err := NewPatientClinicRelationshipsDto(list.Patients, clinicList)
 	if err != nil {
 		return err
 	}

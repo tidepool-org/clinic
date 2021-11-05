@@ -30,6 +30,18 @@ func DefaultPagination() Pagination {
 	}
 }
 
+type Sort struct {
+	Attribute string
+	Ascending bool
+}
+
+func (s *Sort) Order() int {
+	if s.Ascending {
+		return 1
+	}
+	return -1
+}
+
 func ObjectIDSFromStringArray(ids []string) []primitive.ObjectID {
 	var objectIds []primitive.ObjectID
 	for _, id := range ids {
