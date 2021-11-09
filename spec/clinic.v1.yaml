@@ -233,12 +233,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Patients'
+                $ref: '#/components/schemas/PatientsResponse'
       operationId: ListPatients
       parameters:
         - $ref: '#/components/parameters/search'
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/sort'
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
@@ -1193,6 +1194,20 @@ components:
         - RUNNING
         - COMPLETED
       description: The current status of the migration
+    Meta:
+      title: Meta
+      type: object
+      properties:
+        count:
+          type: integer
+    PatientsResponse:
+      title: PatientsResponse
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Patients'
+        meta:
+          $ref: '#/components/schemas/Meta'
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
@@ -1273,6 +1288,14 @@ components:
       required: false
       schema:
         type: string
+    sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        pattern: '(?:-|\+)(?:[a-zA-Z]|_)+'
+      description: Sort order and attribute (e.g. +name or -name)
 tags:
   - name: auth
     description: Tidepool Authentication
