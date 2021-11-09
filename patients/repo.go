@@ -55,15 +55,31 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "email", Value: "text"},
-				{Key: "fullName", Value: "text"},
-				{Key: "firstName", Value: "text"},
-				{Key: "lastName", Value: "text"},
-				{Key: "mrn", Value: "text"},
+				{Key: "fullName", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSearch"),
+				SetName("PatientFullName"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "fullName", Value: "text"},
+				{Key: "email", Value: "text"},
+				{Key: "mrn", Value: "text"},
+				{Key: "birthDate", Value: "text"},
+				{Key: "firstName", Value: "text"},
+				{Key: "lastName", Value: "text"},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSearch").
+				SetWeights(bson.M{
+					"fullName":  3,
+					"email":     2,
+					"mrn":       1,
+					"birthDate": 1,
+				}),
 		},
 	})
 	return err
@@ -105,43 +121,33 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string)
 	return nil
 }
 
-func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Patient, error) {
-	opts := options.Find().
-		SetLimit(int64(pagination.Limit)).
-		SetSkip(int64(pagination.Offset))
+func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination, sort *store.Sort) (*ListResult, error) {
+	// We use an aggregation pipeline with facet in order to get the count
+	// and the patients from a single query
+	pipeline := []bson.M{
+		{"$match": generateListFilterQuery(filter)},
+		{"$sort": generateListSortStage(filter, sort)},
+	}
+	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
-	selector := bson.M{}
-	if filter.ClinicId != nil {
-		clinicId := *filter.ClinicId
-		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
-		selector["clinicId"] = clinicObjId
-	}
-	if filter.UserId != nil {
-		selector["userId"] = filter.UserId
-	}
-	if filter.Search != nil {
-		selector["$text"] = bson.M{
-			"$search": filter.Search,
-		}
-		textScore := bson.M{
-			"score": bson.M{
-				"$meta": "textScore",
-			},
-		}
-		opts.SetProjection(textScore)
-		opts.SetSort(textScore)
-	}
-	cursor, err := r.collection.Find(ctx, selector, opts)
+	cursor, err := r.collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, fmt.Errorf("error listing PatientsRepo: %w", err)
+		return nil, fmt.Errorf("error listing patients: %w", err)
+	}
+	if !cursor.Next(ctx) {
+		return nil, fmt.Errorf("error getting pipeline result")
 	}
 
-	var patients []*Patient
-	if err = cursor.All(ctx, &patients); err != nil {
-		return nil, fmt.Errorf("error decoding PatientsRepo list: %w", err)
+	var result ListResult
+	if err = cursor.Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
 
-	return patients, nil
+	if result.TotalCount == 0 {
+		result.Patients = make([]*Patient, 0)
+	}
+
+	return &result, nil
 }
 
 func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
@@ -150,11 +156,11 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		ClinicId: &clinicId,
 		UserId:   patient.UserId,
 	}
-	patients, err := r.List(ctx, filter, store.Pagination{Limit: 1})
+	patients, err := r.List(ctx, filter, store.Pagination{Limit: 1}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
-	if len(patients) > 0 {
+	if patients.TotalCount > 0 {
 		return nil, ErrDuplicatePatient
 	}
 
@@ -244,4 +250,112 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	}
 
 	return r.Get(ctx, clinicId, userId)
+}
+
+func (r *repository) DeleteFromAllClinics(ctx context.Context, userId string) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	_, err := r.collection.DeleteMany(ctx, selector)
+	return err
+}
+
+func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"$or": []bson.M{
+			{"permissions.custodian": bson.M{"$exists": false}},
+			{"permissions.custodian": bson.M{"$eq": false}},
+		},
+	}
+
+	_, err := r.collection.DeleteMany(ctx, selector)
+	return err
+}
+
+func generateListFilterQuery(filter *Filter) bson.M {
+	selector := bson.M{}
+	if filter.ClinicId != nil {
+		clinicId := *filter.ClinicId
+		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+		selector["clinicId"] = clinicObjId
+	}
+	if filter.UserId != nil {
+		selector["userId"] = filter.UserId
+	}
+	if filter.Search != nil {
+		selector["$text"] = bson.M{
+			"$search": filter.Search,
+		}
+	}
+	return selector
+}
+
+func generateListSortStage(filter *Filter, sort *store.Sort) bson.D {
+	var s bson.D
+	if filter.Search != nil && sort == nil {
+		s = append(s, bson.E{Key: "score", Value: bson.M{"$meta": "textScore"}})
+	} else if sort != nil && sort.Attribute == "fullName" {
+		s = append(s, bson.E{Key: "fullName", Value: sort.Order()})
+	} else {
+		s = append(s, bson.E{Key: "fullName", Value: 1})
+	}
+
+	// Including _id in the sort query ensure $skip aggregation works correctly
+	// See https://docs.mongodb.com/manual/reference/operator/aggregation/skip/
+	// for more details
+	s = append(s, bson.E{Key: "_id", Value: 1})
+
+	return s
+}
+
+func generatePaginationFacetStages(pagination store.Pagination) []bson.M {
+	data := []bson.M{
+		{"$match": bson.M{}},
+		{"$skip": pagination.Offset},
+	}
+	if pagination.Limit != 0 {
+		data = append(data, bson.M{"$limit": pagination.Limit})
+	}
+
+	return []bson.M{
+		{
+			"$facet": bson.M{
+				"data": []bson.M{
+					{"$match": bson.M{}},
+					{"$skip": pagination.Offset},
+					{"$limit": pagination.Limit},
+				},
+				"meta": []bson.M{
+					{"$count": "count"},
+				},
+			},
+		},
+		// The facet above returns the count in an object as first element of the array, e.g.:
+		// {
+		//   "data": [],
+		//   "meta": [{"count": 1}]
+		// }
+		// The projections below lift it up to the top level, e.g.:
+		// {
+		//   "data": [],
+		//   "count": 1,
+		// }
+		{
+			"$project": bson.M{
+				"data": "$data",
+				"temp_count": bson.M{
+					"$arrayElemAt": bson.A{"$meta", 0},
+				},
+			},
+		},
+		{
+			"$project": bson.M{
+				"data":  "$data",
+				"count": "$temp_count.count",
+			},
+		},
+	}
 }

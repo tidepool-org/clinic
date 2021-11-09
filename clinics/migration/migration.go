@@ -34,9 +34,9 @@ func NewMigration(clinicId, userId string) *Migration {
 	}
 
 	return &Migration{
-		UserId: userId,
-		ClinicId: &clinicObjId,
-		Status: StatusPending,
+		UserId:      userId,
+		ClinicId:    &clinicObjId,
+		Status:      StatusPending,
 		CreatedTime: time.Now(),
 		UpdatedTime: time.Now(),
 	}

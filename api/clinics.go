@@ -166,6 +166,14 @@ func (h *Handler) UpdateMigration(ec echo.Context, clinicId Id, userId UserId) e
 	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
 }
 
-func (h *Handler) DeleteUserFromClinics(ctx echo.Context, userId UserId) error {
-	panic("implement me")
+func (h *Handler) DeleteUserFromClinics(ec echo.Context, userId UserId) error {
+	ctx := ec.Request().Context()
+	if err := h.patients.DeleteFromAllClinics(ctx, string(userId)); err != nil {
+		return err
+	}
+	if err := h.clinicians.DeleteFromAllClinics(ctx, string(userId)); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
 }

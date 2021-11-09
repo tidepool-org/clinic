@@ -2,6 +2,7 @@ package clinicians
 
 import (
 	"context"
+	"fmt"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
@@ -10,22 +11,24 @@ import (
 )
 
 type service struct {
-	dbClient       *mongo.Client
-	clinicsService clinics.Service
-	repository     *Repository
-	logger         *zap.SugaredLogger
-	userService    patients.UserService
+	dbClient        *mongo.Client
+	clinicsService  clinics.Service
+	repository      *Repository
+	logger          *zap.SugaredLogger
+	userService     patients.UserService
+	patientsService patients.Service
 }
 
 var _ Service = &service{}
 
-func NewService(dbClient *mongo.Client, clinicsService clinics.Service, repository *Repository, logger *zap.SugaredLogger, userService patients.UserService) (Service, error) {
+func NewService(dbClient *mongo.Client, clinicsService clinics.Service, repository *Repository, logger *zap.SugaredLogger, userService patients.UserService, patientsService patients.Service) (Service, error) {
 	return &service{
-		dbClient:       dbClient,
-		clinicsService: clinicsService,
-		repository:     repository,
-		logger:         logger,
-		userService:    userService,
+		dbClient:        dbClient,
+		clinicsService:  clinicsService,
+		repository:      repository,
+		logger:          logger,
+		userService:     userService,
+		patientsService: patientsService,
 	}, nil
 }
 
@@ -36,8 +39,13 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 			return nil, err
 		}
 
-		if err := s.onUpdate(ctx, clinician); err != nil {
-			return nil, err
+		if created.UserId != nil {
+			// When the user id is not set the clinician object is an invite
+			// and is not yet associated with a user, thus the operation cannot
+			// change clinic admins
+			if err := s.onUpdate(ctx, created, false); err != nil {
+				return nil, err
+			}
 		}
 
 		return created, nil
@@ -52,12 +60,12 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 
 func (s service) Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error) {
 	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		if err := s.onUpdate(ctx, &update.Clinician); err != nil {
+		updated, err := s.repository.Update(sessionCtx, update)
+		if err != nil {
 			return nil, err
 		}
 
-		updated, err := s.repository.Update(sessionCtx, update)
-		if err != nil {
+		if err := s.onUpdate(ctx, updated, false); err != nil {
 			return nil, err
 		}
 
@@ -85,7 +93,7 @@ func (s service) AssociateInvite(ctx context.Context, associate AssociateInvite)
 			return nil, err
 		}
 
-		if err := s.onUpdate(ctx, clinician); err != nil {
+		if err := s.onUpdate(ctx, clinician, false); err != nil {
 			return nil, err
 		}
 
@@ -114,34 +122,91 @@ func (s *service) Delete(ctx context.Context, clinicId string, clinicianId strin
 			return nil, err
 		}
 
-		err = s.repository.Delete(ctx, clinicId, clinicianId)
-		if err != nil {
-			return nil, err
-		}
-
-		// Make sure the clinician is removed from the clinic record
-		clinician.Roles = nil
-		err = s.onUpdate(ctx, clinician)
-		return nil, err
+		return nil, s.deleteSingle(ctx, clinician, false)
 	})
 
 	return err
 }
 
-// onUpdate makes sure the clinic object "admins" attribute is consistent with the admins in the clinicians collection.
-// It must be executed on every operation that can change the roles of clinician.
-func (s *service) onUpdate(ctx context.Context, clinician *Clinician) error {
-	if clinician.UserId == nil {
-		return nil
+func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string) error {
+	_, err := store.WithTransaction(ctx, s.dbClient, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		filter := &Filter{
+			UserId: &clinicianId,
+		}
+		pagination := store.Pagination{
+			Offset: 0,
+			Limit:  0, // Fetches all records from mongo
+		}
+
+		s.logger.Debugw("retrieving clinician records for user", "userId", clinicianId)
+		clinicianList, err := s.List(sessCtx, filter, pagination)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, clinician := range clinicianList {
+			clinicId := clinician.ClinicId.Hex()
+			if err := s.deleteSingle(ctx, clinician, true); err != nil {
+				return nil, err
+			}
+
+			// Check if clinic has any remaining members
+			filter = &Filter{
+				ClinicId: &clinicId,
+			}
+			pagination = store.Pagination{
+				Limit: 1,
+			}
+			remaining, err := s.List(ctx, filter, pagination)
+			if err != nil {
+				return nil, err
+			}
+
+			// Remove all connections to non-custodial accounts,
+			// because the clinic doesn't have any clinicians
+			if len(remaining) == 0 {
+				s.logger.Infow("deleting all non-custodial patients of clinic", "clinicId", clinicId)
+				if err := s.patientsService.DeleteNonCustodialPatientsOfClinic(ctx, clinicId); err != nil {
+					return nil, err
+				}
+			}
+
+		}
+
+		return nil, nil
+	})
+
+	return err
+}
+
+func (s *service) deleteSingle(ctx context.Context, clinician *Clinician, allowOrphaning bool) error {
+	s.logger.Infow("deleting user from clinic", "userId", *clinician.UserId, "clinicId", clinician.ClinicId.Hex())
+	err := s.repository.Delete(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
+	if err != nil {
+		return err
 	}
 
-	if clinician.IsAdmin() {
+	// Make sure the clinician is removed from the clinic record
+	clinician.Roles = nil
+	return s.onUpdate(ctx, clinician, allowOrphaning)
+}
+
+// onUpdate makes sure the clinic object "admins" attribute is consistent with the admins in the clinicians collection.
+// It must be executed on every operation that can change the roles of clinician.
+func (s *service) onUpdate(ctx context.Context, updated *Clinician, allowOrphaning bool) error {
+	if updated.UserId == nil {
+		return fmt.Errorf("clinician user id cannot be empty")
+	}
+
+	if updated.IsAdmin() {
 		// Make sure clinician user id is admin in clinic record
-		return s.clinicsService.UpsertAdmin(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
+		return s.clinicsService.UpsertAdmin(ctx, updated.ClinicId.Hex(), *updated.UserId)
 	}
 
 	// Make sure clinician user id is removed as an admin from a clinic record
-	return s.clinicsService.RemoveAdmin(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
+	err := s.clinicsService.RemoveAdmin(ctx, updated.ClinicId.Hex(), *updated.UserId, allowOrphaning)
+
+	return err
 }
 
 func (s *service) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {

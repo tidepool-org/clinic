@@ -6,7 +6,9 @@ import (
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/migration"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/store"
 	"strings"
 	"time"
 )
@@ -25,7 +27,7 @@ func NewClinic(c Clinic) *clinics.Clinic {
 	return &clinics.Clinic{
 		Name:         &c.Name,
 		ClinicType:   c.ClinicType,
-		ClinicSize:   c.ClinicSize,
+		ClinicSize:   clinicSizeToString(c.ClinicSize),
 		Address:      c.Address,
 		City:         c.City,
 		Country:      c.Country,
@@ -43,7 +45,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		ShareCode:   pstr(c.CanonicalShareCode),
 		CanMigrate:  c.CanMigrate(),
 		ClinicType:  c.ClinicType,
-		ClinicSize:  c.ClinicSize,
+		ClinicSize:  stringToClinicSize(c.ClinicSize),
 		Address:     c.Address,
 		City:        c.City,
 		PostalCode:  c.PostalCode,
@@ -193,6 +195,14 @@ func NewPatientsDto(patients []*patients.Patient) []Patient {
 	return dtos
 }
 
+func NewPatientsResponseDto(list *patients.ListResult) PatientsResponse {
+	data := Patients(NewPatientsDto(list.Patients))
+	return PatientsResponse{
+		Data: &data,
+		Meta: &Meta{Count: &list.TotalCount},
+	}
+}
+
 func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList []*clinics.Clinic) (PatientClinicRelationships, error) {
 	clinicsMap := make(map[string]*clinics.Clinic, 0)
 	for _, clinic := range clinicList {
@@ -264,6 +274,29 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
+func ParseSort(sort *Sort) (*store.Sort, error) {
+	if sort == nil {
+		return nil, nil
+	}
+	str := string(*sort)
+	result := store.Sort{}
+
+	if strings.HasPrefix(str, "+") {
+		result.Ascending = true
+	} else if strings.HasPrefix(str, "-") {
+		result.Ascending = false
+	} else {
+		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort order", errors.BadRequest)
+	}
+
+	result.Attribute = str[1:]
+	if result.Attribute == "" {
+		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort attribute", errors.BadRequest)
+	}
+
+	return &result, nil
+}
+
 const dateFormat = "2006-01-02"
 
 func strtodatep(s *string) *openapi_types.Date {
@@ -324,4 +357,19 @@ func roleToString(e *Role) *string {
 		return nil
 	}
 	return strp(string(*e))
+}
+
+func clinicSizeToString(c *ClinicClinicSize) *string {
+	if c == nil {
+		return nil
+	}
+	return strp(string(*c))
+}
+
+func stringToClinicSize(s *string) *ClinicClinicSize {
+	if s == nil {
+		return nil
+	}
+	size := ClinicClinicSize(*s)
+	return &size
 }

@@ -343,3 +343,11 @@ allow {
   input.path = ["v1", "clinics", _, "migrations", _]
   is_backend_service_any_of({"clinic-worker"})
 }
+
+# Allow clinic-worker to update the status of migrations
+# PATCH /v1/users/:clinicId/clinics
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "users", _, "clinics"]
+  is_backend_service_any_of({"clinic-worker"})
+}

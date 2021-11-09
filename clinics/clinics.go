@@ -19,7 +19,7 @@ type Service interface {
 	Create(ctx context.Context, clinic *Clinic) (*Clinic, error)
 	Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error)
 	UpsertAdmin(ctx context.Context, clinicId, clinicianId string) error
-	RemoveAdmin(ctx context.Context, clinicId, clinicianId string) error
+	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
 }
 
 type Filter struct {

@@ -167,8 +167,6 @@ func (r *Repository) Create(ctx context.Context, clinician *Clinician) (*Clinici
 }
 
 func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error) {
-	removeUnmodifiableFields(&update.Clinician)
-
 	selector := clinicianSelector(update.ClinicId, update.ClinicianId)
 	clinician, err := r.getOne(ctx, selector)
 	if err != nil {
@@ -176,7 +174,11 @@ func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clin
 	}
 
 	updates := bson.M{
-		"$set": update.Clinician,
+		"$set": bson.M{
+			"roles":       update.Clinician.Roles,
+			"name":        update.Clinician.Name,
+			"updatedTime": time.Now(),
+		},
 	}
 
 	if clinician.RolesChanged(update.Clinician.Roles) {
@@ -190,9 +192,6 @@ func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clin
 				UpdatedBy: update.UpdatedBy,
 			},
 		}
-
-		// Reset updated time
-		update.Clinician.UpdatedTime = time.Now()
 	}
 
 	return r.updateOne(ctx, selector, updates)
@@ -247,7 +246,7 @@ func (r *Repository) AssociateInvite(ctx context.Context, associate AssociateInv
 
 func (r *Repository) getOne(ctx context.Context, selector bson.M) (*Clinician, error) {
 	clinician := &Clinician{}
-	err := r.collection.FindOne(ctx, selector).Decode(&clinician)
+	err := r.collection.FindOne(ctx, selector).Decode(clinician)
 	if err == mongo.ErrNoDocuments {
 		return nil, ErrNotFound
 	} else if err != nil {
@@ -258,14 +257,21 @@ func (r *Repository) getOne(ctx context.Context, selector bson.M) (*Clinician, e
 }
 
 func (r *Repository) updateOne(ctx context.Context, selector, update bson.M) (*Clinician, error) {
-	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	result := r.collection.FindOneAndUpdate(ctx, selector, update)
+	err := result.Err()
+
+	if result.Err() == mongo.ErrNoDocuments {
 		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("unable to update clinician: %w", err)
 	}
 
-	return r.getOne(ctx, selector)
+	beforeUpdate := Clinician{}
+	if err := result.Decode(&beforeUpdate); err != nil {
+		return nil, err
+	}
+
+	return r.getOne(ctx, bson.M{"_id": beforeUpdate.Id})
 }
 
 func (r *Repository) deleteOne(ctx context.Context, selector bson.M) error {
@@ -327,8 +333,4 @@ func inviteSelector(clinicId, inviteId string) bson.M {
 		"inviteId": inviteId,
 		"clinicId": clinicObjId,
 	}
-}
-
-func removeUnmodifiableFields(clinician *Clinician) {
-	clinician.ClinicId = nil
 }

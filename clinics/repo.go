@@ -155,12 +155,16 @@ func (c *repository) UpsertAdmin(ctx context.Context, id, clinicianId string) er
 	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 }
 
-func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) error {
+func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string, allowOrphaning bool) error {
 	clinic, err := c.Get(ctx, id)
 	if err != nil {
 		return err
 	}
+	if !allowOrphaning && !canRemoveAdmin(*clinic, clinicianId) {
+		return ErrAdminRequired
+	}
 
+	updatedTime := time.Now()
 	selector := bson.M{
 		"_id":         clinic.Id,
 		"updatedTime": clinic.UpdatedTime, // used for optimistic locking
@@ -170,17 +174,14 @@ func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string) er
 			"admins": clinicianId,
 		},
 		"$set": bson.M{
-			"updatedTime": time.Now(),
+			"updatedTime": updatedTime,
 		},
 	}
 
-	var beforeUpdate Clinic
-	if err := c.collection.FindOneAndUpdate(ctx, selector, update).Decode(&beforeUpdate); err != nil {
+	if res, err := c.collection.UpdateOne(ctx, selector, update); err != nil {
 		return err
-	}
-
-	if !canRemoveAdmin(beforeUpdate, clinicianId) {
-		return ErrAdminRequired
+	} else if res.MatchedCount != int64(1) {
+		return fmt.Errorf("concurrent modification of clinic detected")
 	}
 
 	return nil
