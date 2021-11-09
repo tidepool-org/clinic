@@ -27,7 +27,7 @@ func NewClinic(c Clinic) *clinics.Clinic {
 	return &clinics.Clinic{
 		Name:         &c.Name,
 		ClinicType:   c.ClinicType,
-		ClinicSize:   c.ClinicSize,
+		ClinicSize:   clinicSizeToString(c.ClinicSize),
 		Address:      c.Address,
 		City:         c.City,
 		Country:      c.Country,
@@ -45,7 +45,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		ShareCode:   pstr(c.CanonicalShareCode),
 		CanMigrate:  c.CanMigrate(),
 		ClinicType:  c.ClinicType,
-		ClinicSize:  c.ClinicSize,
+		ClinicSize:  stringToClinicSize(c.ClinicSize),
 		Address:     c.Address,
 		City:        c.City,
 		PostalCode:  c.PostalCode,
@@ -350,4 +350,19 @@ func emailToString(e *Email) *string {
 		return nil
 	}
 	return strp(string(*e))
+}
+
+func clinicSizeToString(c *ClinicClinicSize) *string {
+	if c == nil {
+		return nil
+	}
+	return strp(string(*c))
+}
+
+func stringToClinicSize(s *string) *ClinicClinicSize {
+	if s == nil {
+		return nil
+	}
+	size := ClinicClinicSize(*s)
+	return &size
 }
