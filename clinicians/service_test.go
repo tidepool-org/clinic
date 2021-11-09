@@ -12,6 +12,7 @@ import (
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
@@ -275,6 +276,67 @@ var _ = Describe("Clinicians Service", func() {
 			// Check custodial patient was not deleted
 			_, err = patientsService.Get(nil, patient.ClinicId.Hex(), *patient.UserId)
 			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Describe("List clinicians", func() {
+		const count = 10
+		var clinic *clinics.Clinic
+		var members []*clinicians.Clinician
+		var admins []*clinicians.Clinician
+
+		BeforeEach(func() {
+			clinic = clinicsTest.RandomClinic()
+			members = make([]*clinicians.Clinician, count)
+			admins = make([]*clinicians.Clinician, count)
+
+			var err error
+			clinic, err = clinicsService.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			for i := range members {
+				members[i] = cliniciansTest.RandomClinician()
+				members[i].ClinicId = clinic.Id
+				members[i].Roles = []string{"CLINIC_MEMBER"}
+				_, err = cliniciansService.Create(context.Background(), members[i])
+				Expect(err).ToNot(HaveOccurred())
+			}
+
+			for i := range admins {
+				admins[i] = cliniciansTest.RandomClinician()
+				admins[i].ClinicId = clinic.Id
+				admins[i].Roles = []string{"CLINIC_ADMIN"}
+				_, err = cliniciansService.Create(context.Background(), admins[i])
+				Expect(err).ToNot(HaveOccurred())
+			}
+		})
+
+		AfterEach(func() {
+			for _, clinician := range admins {
+				err := cliniciansService.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				Expect(err).ToNot(HaveOccurred())
+			}
+			for _, clinician := range members {
+				err := cliniciansService.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				Expect(err).ToNot(HaveOccurred())
+			}
+		})
+
+		It("Applies role filter correctly", func() {
+			role := cliniciansTest.Faker.RandomStringElement([]string{"CLINIC_ADMIN", "CLINIC_MEMBER"})
+			filter := clinicians.Filter{
+				Role: &role,
+			}
+			pagination := store.Pagination{}
+
+			results, err := cliniciansService.List(context.Background(), &filter, pagination)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(results).ToNot(BeEmpty())
+
+			for _, clinician := range results {
+				Expect(clinician.Roles).To(ContainElement(role))
+			}
 		})
 	})
 

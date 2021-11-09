@@ -17,6 +17,7 @@ func (h *Handler) ListClinicians(ec echo.Context, clinicId ClinicId, params List
 		ClinicId: strp(string(clinicId)),
 		Search:   searchToString(params.Search),
 		Email:    emailToString(params.Email),
+		Role:     roleToString(params.Role),
 	}
 
 	list, err := h.clinicians.List(ctx, &filter, page)

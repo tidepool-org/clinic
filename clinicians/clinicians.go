@@ -94,4 +94,5 @@ type Filter struct {
 	UserId   *string
 	Search   *string
 	Email    *string
+	Role     *string
 }
