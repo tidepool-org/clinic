@@ -16,7 +16,7 @@ require (
 	github.com/open-policy-agent/opa v0.27.1
 	github.com/tidepool-org/clinic/client v0.0.0-00010101000000-000000000000
 	github.com/tidepool-org/go-common v0.8.3-0.20210528114116-26ab9a2d32b5
-	go.mongodb.org/mongo-driver v1.3.2
+	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/fx v1.13.1
 	go.uber.org/zap v1.13.0
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
