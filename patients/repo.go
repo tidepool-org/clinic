@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"regexp"
 	"time"
 )
 
@@ -60,6 +61,33 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetBackground(true).
 				SetName("PatientFullName"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "birthDate", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientBirthDate"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "email", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientEmail"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "mrn", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientMRN"),
 		},
 		{
 			Keys: bson.D{
@@ -126,7 +154,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	// and the patients from a single query
 	pipeline := []bson.M{
 		{"$match": generateListFilterQuery(filter)},
-		{"$sort": generateListSortStage(filter, sort)},
+		{"$sort": generateListSortStage(sort)},
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
@@ -286,21 +314,33 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		selector["userId"] = filter.UserId
 	}
 	if filter.Search != nil {
-		selector["$text"] = bson.M{
-			"$search": filter.Search,
+		search := regexp.QuoteMeta(*filter.Search)
+		filter := bson.M{"$regex": primitive.Regex{
+			Pattern: search,
+			Options: "i",
+		}}
+		selector["$or"] = bson.A{
+			bson.M{"fullName": filter},
+			bson.M{"email": filter},
+			bson.M{"mrn": filter},
+			bson.M{"birthDate": filter},
 		}
 	}
 	return selector
 }
 
-func generateListSortStage(filter *Filter, sort *store.Sort) bson.D {
+func generateListSortStage(sort *store.Sort) bson.D {
 	var s bson.D
-	if filter.Search != nil && sort == nil {
-		s = append(s, bson.E{Key: "score", Value: bson.M{"$meta": "textScore"}})
-	} else if sort != nil && sort.Attribute == "fullName" {
-		s = append(s, bson.E{Key: "fullName", Value: sort.Order()})
-	} else {
-		s = append(s, bson.E{Key: "fullName", Value: 1})
+	if sort != nil {
+		if sort.Attribute == "fullName" {
+			s = append(s, bson.E{Key: "fullName", Value: sort.Order()})
+		} else if  sort.Attribute == "birthDate" {
+			s = append(s, bson.E{Key: "birthDate", Value: sort.Order()})
+		}
+	}
+
+	if len(s) == 0 {
+		s = bson.D{bson.E{Key: "fullName", Value: 1}}
 	}
 
 	// Including _id in the sort query ensure $skip aggregation works correctly

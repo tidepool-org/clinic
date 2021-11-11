@@ -10,6 +10,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"strings"
 
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
@@ -353,6 +354,57 @@ var _ = Describe("Patients Repository", func() {
 				filter := patients.Filter{
 					ClinicId: &clinicId,
 					Search:   randomPatient.Mrn,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				found := false
+				for _, patient := range result.Patients {
+					if *patient.UserId == *randomPatient.UserId && patient.ClinicId.Hex() == randomPatient.ClinicId.Hex() {
+						found = true
+						break
+					}
+				}
+
+				Expect(found).To(BeTrue())
+			})
+
+			It("supports searching by patient name", func() {
+				clinicId := randomPatient.ClinicId.Hex()
+				names := strings.Split(*randomPatient.FullName, " ")
+				filter := patients.Filter{
+					ClinicId: &clinicId,
+					Search:   &names[0],
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				found := false
+				for _, patient := range result.Patients {
+					if *patient.UserId == *randomPatient.UserId && patient.ClinicId.Hex() == randomPatient.ClinicId.Hex() {
+						found = true
+						break
+					}
+				}
+
+				Expect(found).To(BeTrue())
+			})
+
+			It("supports searching by patient email", func() {
+				clinicId := randomPatient.ClinicId.Hex()
+				filter := patients.Filter{
+					ClinicId: &clinicId,
+					Search:   randomPatient.Email,
 				}
 				pagination := store.Pagination{
 					Offset: 0,
