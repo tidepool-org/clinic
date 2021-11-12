@@ -1127,6 +1127,8 @@ components:
           $ref: '#/components/schemas/PatientPermissions'
         isMigrated:
           type: boolean
+        legacyClinicianId:
+          $ref: '#/components/schemas/TidepoolUserId'
     AssociateClinicianToUser:
       title: Associate Clinician
       type: object
