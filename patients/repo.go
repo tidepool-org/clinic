@@ -179,6 +179,13 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 }
 
 func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
+	if patient.ClinicId == nil {
+		return nil, fmt.Errorf("patient clinic id is missing")
+	}
+	if patient.UserId == nil {
+		return nil, fmt.Errorf("patient user id is missing")
+	}
+
 	clinicId := patient.ClinicId.Hex()
 	filter := &Filter{
 		ClinicId: &clinicId,
@@ -189,13 +196,19 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 	if patients.TotalCount > 0 {
-		return nil, ErrDuplicatePatient
-	}
-
-	patient.CreatedTime = time.Now()
-	patient.UpdatedTime = time.Now()
-	if _, err = r.collection.InsertOne(ctx, patient); err != nil {
-		return nil, fmt.Errorf("error creating patient: %w", err)
+		if len(patient.LegacyClinicianIds) == 0 {
+			return nil, ErrDuplicatePatient
+		}
+		// The user is being migrated multiple times from different legacy clinician accounts
+		if err = r.updateLegacyClinicianIds(ctx, patient); err != nil {
+			return nil, err
+		}
+	} else {
+		patient.CreatedTime = time.Now()
+		patient.UpdatedTime = time.Now()
+		if _, err = r.collection.InsertOne(ctx, patient); err != nil {
+			return nil, fmt.Errorf("error creating patient: %w", err)
+		}
 	}
 
 	return r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
@@ -303,6 +316,30 @@ func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, cli
 	return err
 }
 
+func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patient) error {
+	selector := bson.M{
+		"clinicId": patient.ClinicId,
+		"userId":   patient.UserId,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+		"$addToSet": bson.M{
+			"legacyClinicianIds": bson.M{
+				"$each": patient.LegacyClinicianIds,
+			},
+		},
+	}
+	res, err := r.collection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return err
+	} else if res.ModifiedCount == 0 {
+		return fmt.Errorf("unable to update legacy clinician ids")
+	}
+	return nil
+}
+
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
 	if filter.ClinicId != nil {
@@ -334,7 +371,7 @@ func generateListSortStage(sort *store.Sort) bson.D {
 	if sort != nil {
 		if sort.Attribute == "fullName" {
 			s = append(s, bson.E{Key: "fullName", Value: sort.Order()})
-		} else if  sort.Attribute == "birthDate" {
+		} else if sort.Attribute == "birthDate" {
 			s = append(s, bson.E{Key: "birthDate", Value: sort.Order()})
 		}
 	}

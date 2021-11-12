@@ -83,6 +83,9 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	if dto.IsMigrated != nil {
 		patient.IsMigrated = *dto.IsMigrated
 	}
+	if dto.LegacyClinicianId != nil {
+		patient.LegacyClinicianIds = []string{string(*dto.LegacyClinicianId)}
+	}
 
 	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
 		return err

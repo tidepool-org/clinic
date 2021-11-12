@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
+	"github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -107,7 +108,37 @@ var _ = Describe("Patients Repository", func() {
 				err = collection.FindOne(nil, primitive.M{"_id": result.Id}).Decode(&inserted)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(inserted).To(matchPatientFields)
+			})
 
+			It("updates legacy clinician ids if the patient exists already", func() {
+				result, err := repo.Create(nil, patient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				patient.Id = result.Id
+				patient.LegacyClinicianIds = []string{test.Faker.UUID().V4()}
+				matchPatientFields = patientFieldsMatcher(patient)
+
+				result, err = repo.Create(nil, patient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				var inserted patients.Patient
+				err = collection.FindOne(nil, primitive.M{"_id": result.Id}).Decode(&inserted)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(inserted).To(matchPatientFields)
+			})
+
+			It("to fail if patient exists already and legacy clinician ids is not set", func() {
+				result, err := repo.Create(nil, patient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				patient.Id = result.Id
+				
+				result, err = repo.Create(nil, patient)
+				Expect(err).To(Equal(patients.ErrDuplicatePatient))
+				Expect(result).To(BeNil())
 			})
 		})
 
@@ -488,17 +519,18 @@ var _ = Describe("Patients Repository", func() {
 
 func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 	return MatchAllFields(Fields{
-		"Id":            PointTo(Not(BeEmpty())),
-		"UserId":        PointTo(Equal(*patient.UserId)),
-		"ClinicId":      PointTo(Equal(*patient.ClinicId)),
-		"BirthDate":     PointTo(Equal(*patient.BirthDate)),
-		"Email":         PointTo(Equal(*patient.Email)),
-		"FullName":      PointTo(Equal(*patient.FullName)),
-		"Mrn":           PointTo(Equal(*patient.Mrn)),
-		"TargetDevices": PointTo(Equal(*patient.TargetDevices)),
-		"Permissions":   PointTo(Equal(*patient.Permissions)),
-		"IsMigrated":    Equal(patient.IsMigrated),
-		"UpdatedTime":   Ignore(),
-		"CreatedTime":   Ignore(),
+		"Id":                 PointTo(Not(BeEmpty())),
+		"UserId":             PointTo(Equal(*patient.UserId)),
+		"ClinicId":           PointTo(Equal(*patient.ClinicId)),
+		"BirthDate":          PointTo(Equal(*patient.BirthDate)),
+		"Email":              PointTo(Equal(*patient.Email)),
+		"FullName":           PointTo(Equal(*patient.FullName)),
+		"Mrn":                PointTo(Equal(*patient.Mrn)),
+		"TargetDevices":      PointTo(Equal(*patient.TargetDevices)),
+		"Permissions":        PointTo(Equal(*patient.Permissions)),
+		"IsMigrated":         Equal(patient.IsMigrated),
+		"LegacyClinicianIds": ConsistOf(patient.LegacyClinicianIds),
+		"UpdatedTime":        Ignore(),
+		"CreatedTime":        Ignore(),
 	})
 }
