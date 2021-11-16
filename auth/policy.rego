@@ -325,14 +325,19 @@ allow {
   is_backend_service_any_of({"orca", "clinic-worker"})
 }
 
-# Allow clinicians to access their own migrations
+# Allow clinicians to access all migrations
 # GET /v1/clinics/:clinicId/migrations/:userId
 allow {
-  is_authenticated_user
-  some clinician_id
   input.method == "GET"
-  input.path = ["v1", "clinics", _, "migrations", clinician_id]
-  clinician_id == subject_id
+  input.path = ["v1", "clinics", _, "migrations", _]
+  clinician_has_read_access
+}
+
+# Allow clinicians to list all migrations
+# GET /v1/clinics/:clinicId/migrations
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "migrations"]
   clinician_has_read_access
 }
 

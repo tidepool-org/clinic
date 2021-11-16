@@ -493,20 +493,6 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("it prevents clinicians to fetch migrations of other users", func() {
-			input := map[string]interface{}{
-				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "migrations", "999999999"},
-				"method": "GET",
-				"auth": map[string]interface{}{
-					"subjectId":    "1234567890",
-					"serverAccess": false,
-				},
-				"clinician": clinicMember,
-			}
-			err := authorizer.EvaluatePolicy(context.Background(), input)
-			Expect(err).To(Equal(auth.ErrUnauthorized))
-		})
-
 		It("it allows clinic-worker to update migrations", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "migrations", "1234567890"},
