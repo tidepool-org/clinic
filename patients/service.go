@@ -51,13 +51,13 @@ func (s *service) Update(ctx context.Context, clinicId string, userId string, pa
 	}
 
 	if existing.IsCustodial() {
-		s.logger.Infow("updating custodial account", "userId", patient.UserId, "clinicId", patient.ClinicId.Hex())
+		s.logger.Infow("updating custodial account", "userId", existing.UserId, "clinicId", clinicId)
 		patient.ClinicId = existing.ClinicId
 		patient.UserId = existing.UserId
 		return s.custodialService.UpdateAccount(ctx, patient)
 	}
 
-	s.logger.Infow("updating patient", "userId", patient.UserId, "clinicId", patient.ClinicId.Hex())
+	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", clinicId)
 	return s.repo.Update(ctx, clinicId, userId, patient)
 }
 
