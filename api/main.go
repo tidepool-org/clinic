@@ -128,9 +128,9 @@ func MainLoop() {
 			NewHealthCheck,
 			NewHandler,
 			NewServer,
-			SetReady,
 		),
 		patients.UserServiceModule,
+		fx.Invoke(SetReady),
 		fx.Invoke(Start),
 	).Run()
 }
