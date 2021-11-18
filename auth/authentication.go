@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"net/http"
 )
@@ -31,9 +32,20 @@ type ShorelineAuthenticator struct {
 
 var _ Authenticator = &ShorelineAuthenticator{}
 
-func NewAuthMiddleware(authenticator Authenticator) echo.MiddlewareFunc {
+type AuthMiddlewareOpts struct {
+	Skipper middleware.Skipper
+}
+
+func NewAuthMiddleware(authenticator Authenticator, opts AuthMiddlewareOpts) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			// Allow skipping authentication for certain routes (e.g. readiness probe)
+			if opts.Skipper != nil {
+				if opts.Skipper(c) {
+					return next(c)
+				}
+			}
+
 			token := c.Request().Header.Get(TidepoolSessionTokenHeaderKey)
 			if token == "" {
 				return echo.NewHTTPError(http.StatusBadRequest, "session token is missing")
