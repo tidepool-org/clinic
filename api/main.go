@@ -16,8 +16,8 @@ import (
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
-	"net/http"
 )
 
 var (
@@ -43,7 +43,24 @@ func Start(e *echo.Echo, lifecycle fx.Lifecycle) {
 	})
 }
 
-func NewServer(handler *Handler, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator) (*echo.Echo, error) {
+func SetReady(healthCheck *HealthCheck, db *mongo.Database, lifecycle fx.Lifecycle) {
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			if err := db.Client().Ping(ctx, nil); err != nil {
+				return err
+			}
+
+			// It's important this is set after mongo is initialized, which is ensured
+			// by taking a dependency on mongo in the constructor, because lifecycle hooks
+			// are executed in topological order
+			healthCheck.SetReady(true)
+			return nil
+		},
+		OnStop:  nil,
+	})
+}
+
+func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator) (*echo.Echo, error) {
 	e := echo.New()
 	e.Logger.Print("Starting Main Loop")
 	swagger, err := GetSwagger()
@@ -51,24 +68,37 @@ func NewServer(handler *Handler, authorizer auth.RequestAuthorizer, authenticato
 		return nil, err
 	}
 
-	// Do not validate servers
+	// Do not validate servers in the open api spec
 	swagger.Servers = nil
+
+	// Skip auth and validation for readiness probe
+	skipAuthAndValidationRoutes := map[string]struct{}{
+		"/ready": {},
+	}
+	skipper := func(ec echo.Context) bool {
+		_, ok := skipAuthAndValidationRoutes[ec.Path()]
+		return ok
+	}
+
+	authMiddleware := auth.NewAuthMiddleware(authenticator, auth.AuthMiddlewareOpts{
+		Skipper: skipper,
+	})
 	requestValidator := oapiMiddleware.OapiRequestValidatorWithOptions(swagger, &oapiMiddleware.Options{
 		Options: openapi3filter.Options{
 			AuthenticationFunc: authorizer.Authorize,
 		},
+		Skipper: skipper,
 	})
 
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(auth.NewAuthMiddleware(authenticator))
-	e.Use(requestValidator)
 
-	// Routes
-	e.GET("/", hello)
+	e.Use(middleware.Recover())
+	e.Use(middleware.Logger())
+	e.Use(authMiddleware)
+	e.Use(requestValidator)
 
 	e.HTTPErrorHandler = errors.CustomHTTPErrorHandler
 
+	e.GET("/ready", healthCheck.Ready)
 	RegisterHandlers(e, handler)
 
 	return e, nil
@@ -95,15 +125,12 @@ func MainLoop() {
 			migration.NewRepository,
 			auth.NewShorelineAuthenticator,
 			auth.NewRequestAuthorizer,
+			NewHealthCheck,
 			NewHandler,
 			NewServer,
+			SetReady,
 		),
 		patients.UserServiceModule,
 		fx.Invoke(Start),
 	).Run()
-}
-
-// Handler
-func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
 }
