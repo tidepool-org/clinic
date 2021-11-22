@@ -71,15 +71,8 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 	// Do not validate servers in the open api spec
 	swagger.Servers = nil
 
-	// Skip auth and validation for readiness probe
-	skipAuthAndValidationRoutes := map[string]struct{}{
-		"/ready": {},
-	}
-	skipper := func(ec echo.Context) bool {
-		_, ok := skipAuthAndValidationRoutes[ec.Path()]
-		return ok
-	}
-
+	// Skip auth, validation and logging for readiness probe and metrics routes
+	skipper := RouteSkipper([]string{"/ready", "/metrics"})
 	authMiddleware := auth.NewAuthMiddleware(authenticator, auth.AuthMiddlewareOpts{
 		Skipper: skipper,
 	})
@@ -89,10 +82,12 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 		},
 		Skipper: skipper,
 	})
-
+	loggerConfig := middleware.DefaultLoggerConfig
+	loggerConfig.Skipper = skipper
+	loggerMiddleware := middleware.LoggerWithConfig(loggerConfig)
 
 	e.Use(middleware.Recover())
-	e.Use(middleware.Logger())
+	e.Use(loggerMiddleware)
 	e.Use(authMiddleware)
 	e.Use(requestValidator)
 
