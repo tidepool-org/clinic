@@ -54,6 +54,7 @@ We send transaction emails to users when:
 - all patients of a clinic are migrated from a legacy account
 - a patient sends an invite to a clinic
 - an administrator changes the permissions of a clinician
+- a clinic member creates a custodial account 
 
 ### Code generation
 
