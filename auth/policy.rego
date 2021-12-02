@@ -97,6 +97,14 @@ allow {
   clinician_id == subject_id
 }
 
+# Allow ORCA to fetch the clinics membership information for a given user
+# GET /v1/clinicians/:clinicianId/clinics
+allow {
+  is_backend_service_any_of({"orca"})
+  input.method == "GET"
+  input.path = ["v1", "clinicians", clinician_id, "clinics"]
+}
+
 # Allow currently authenticated user to change the permissions they have granted to a clinic
 # PUT /v1/clinics/:clinicId/patients/:patientId/permissions when ":patientId" == auth_subject_id
 allow {
