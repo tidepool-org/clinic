@@ -135,7 +135,7 @@ var _ = Describe("Patients Repository", func() {
 				Expect(result).ToNot(BeNil())
 
 				patient.Id = result.Id
-				
+
 				result, err = repo.Create(nil, patient)
 				Expect(err).To(Equal(patients.ErrDuplicatePatient))
 				Expect(result).To(BeNil())
@@ -153,7 +153,7 @@ var _ = Describe("Patients Repository", func() {
 		})
 
 		Describe("Update", func() {
-			var update patients.Patient
+			var update patients.PatientUpdate
 
 			BeforeEach(func() {
 				update = patientsTest.RandomPatientUpdate()
@@ -161,19 +161,21 @@ var _ = Describe("Patients Repository", func() {
 					Id:            randomPatient.Id,
 					ClinicId:      randomPatient.ClinicId,
 					UserId:        randomPatient.UserId,
-					BirthDate:     update.BirthDate,
-					Email:         update.Email,
-					FullName:      update.FullName,
-					Mrn:           update.Mrn,
-					TargetDevices: update.TargetDevices,
-					Permissions:   update.Permissions,
+					BirthDate:     update.Patient.BirthDate,
+					Email:         update.Patient.Email,
+					FullName:      update.Patient.FullName,
+					Mrn:           update.Patient.Mrn,
+					TargetDevices: update.Patient.TargetDevices,
+					Permissions:   update.Patient.Permissions,
 					IsMigrated:    randomPatient.IsMigrated,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
 
 			It("updates the patient in the collection", func() {
-				result, err := repo.Update(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, update)
+				update.ClinicId = randomPatient.ClinicId.Hex()
+				update.UserId = *randomPatient.UserId
+				result, err := repo.Update(nil, update)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
@@ -184,7 +186,9 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("returns the updated patient", func() {
-				result, err := repo.Update(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, update)
+				update.ClinicId = randomPatient.ClinicId.Hex()
+				update.UserId = *randomPatient.UserId
+				result, err := repo.Update(nil, update)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 				Expect(*result).To(matchPatientFields)
@@ -532,5 +536,6 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"LegacyClinicianIds": ConsistOf(patient.LegacyClinicianIds),
 		"UpdatedTime":        Ignore(),
 		"CreatedTime":        Ignore(),
+		"InvitedBy":          Ignore(),
 	})
 }

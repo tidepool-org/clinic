@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
@@ -106,7 +107,27 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		return err
 	}
 
-	patient, err := h.patients.Update(ctx, string(clinicId), string(patientId), NewPatient(dto))
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	update := patients.PatientUpdate{
+		ClinicId:  string(clinicId),
+		UserId:    string(patientId),
+		Patient:   NewPatient(dto),
+		UpdatedBy: authData.SubjectId,
+	}
+	patient, err := h.patients.Update(ctx, update)
 	if err != nil {
 		return err
 	}

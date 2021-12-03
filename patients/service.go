@@ -35,30 +35,41 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 	// Only create new accounts if the custodial user doesn't exist already (i.e. we are not migrating it)
 	if patient.IsCustodial() && patient.UserId == nil {
 		s.logger.Infow("creating custodial account", "clinicId", patient.ClinicId.Hex())
-		return s.custodialService.CreateAccount(ctx, patient)
+		userId, err := s.custodialService.CreateAccount(ctx, patient)
+		if err != nil {
+			return nil, err
+		}
+		patient.UserId = &userId
 	}
+
 	if patient.UserId == nil {
 		return nil, errors.New("user id is missing")
 	}
+
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", patient.ClinicId.Hex())
 	return s.repo.Create(ctx, patient)
 }
 
-func (s *service) Update(ctx context.Context, clinicId string, userId string, patient Patient) (*Patient, error) {
-	existing, err := s.Get(ctx, clinicId, userId)
+func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, error) {
+	existing, err := s.Get(ctx, update.ClinicId, update.UserId)
 	if err != nil {
 		return nil, err
 	}
 
 	if existing.IsCustodial() {
-		s.logger.Infow("updating custodial account", "userId", existing.UserId, "clinicId", clinicId)
-		patient.ClinicId = existing.ClinicId
-		patient.UserId = existing.UserId
-		return s.custodialService.UpdateAccount(ctx, patient)
+		s.logger.Infow("updating custodial account", "userId", existing.UserId, "clinicId", update.ClinicId)
+		update.Patient.ClinicId = existing.ClinicId
+		update.Patient.UserId = existing.UserId
+		if shouldUpdateInvitedBy(*existing, update) {
+			update.Patient.InvitedBy = getUpdatedBy(update)
+		}
+		if err = s.custodialService.UpdateAccount(ctx, update.Patient); err != nil {
+			return nil, err
+		}
 	}
 
-	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", clinicId)
-	return s.repo.Update(ctx, clinicId, userId, patient)
+	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
+	return s.repo.Update(ctx, update)
 }
 
 func (s *service) Remove(ctx context.Context, clinicId string, userId string) error {
@@ -119,4 +130,18 @@ func shouldRemovePatientFromClinic(patient *Patient) bool {
 		return patient.Permissions == nil || patient.Permissions.Empty()
 	}
 	return false
+}
+
+func shouldUpdateInvitedBy(existing Patient, update PatientUpdate) bool {
+	return (existing.Email == nil && update.Patient.Email != nil) ||
+	    	 (existing.Email != nil && update.Patient.Email == nil) ||
+	    	 (existing.Email != nil && update.Patient.Email != nil && *existing.Email != *update.Patient.Email)
+}
+
+func getUpdatedBy(update PatientUpdate) *string {
+	if update.Patient.Email == nil {
+		return nil
+	}
+
+	return update.Patient.Email
 }
