@@ -77,6 +77,11 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 		return nil, fmt.Errorf("unable to find user with id %v", create.CreatorUserId)
 	}
 
+	profile, err := c.userService.GetUserProfile(ctx, create.CreatorUserId)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching user profile of clinician %v", create.CreatorUserId)
+	}
+
 	var demoPatient *patients.Patient
 	if create.CreateDemoPatient {
 		demoPatient, err = c.getDemoPatient(ctx)
@@ -101,6 +106,9 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 			UserId:   &create.CreatorUserId,
 			Roles:    []string{clinicians.ClinicAdmin},
 			Email:    &user.Emails[0],
+		}
+		if profile != nil {
+			clinician.Name = profile.FullName
 		}
 		if _, err = c.cliniciansRepository.Create(sessionCtx, clinician); err != nil {
 			return nil, err
