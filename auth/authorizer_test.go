@@ -345,6 +345,20 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("it allows clinic members to update patients", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "99c290f838"},
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("it allows clinic admins to create custodial accounts for patients", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients"},
@@ -359,10 +373,10 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("it prevents clinic members to update patients", func() {
+		It("it allows clinic members to create custodial accounts for patients", func() {
 			input := map[string]interface{}{
-				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "99c290f838"},
-				"method": "PUT",
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients"},
+				"method": "POST",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
 					"serverAccess": false,
@@ -370,7 +384,7 @@ var _ = Describe("Request Authorizer", func() {
 				"clinician": clinicMember,
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
-			Expect(err).To(Equal(auth.ErrUnauthorized))
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("it allows currently authenticated clinic member to delete their own profile", func() {

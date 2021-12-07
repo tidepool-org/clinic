@@ -258,7 +258,7 @@ allow {
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients"]
-  clinician_has_write_access
+  clinician_has_read_access
 }
 
 # Allow currently authenticated clinician to fetch patient by id
@@ -290,7 +290,7 @@ allow {
 allow {
   input.method == "PUT"
   input.path = ["v1", "clinics", _, "patients", _]
-  clinician_has_write_access
+  clinician_has_read_access
 }
 
 # Allow Orca to create an empty clinic for legacy clinician
