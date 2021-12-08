@@ -214,14 +214,16 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	return r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
 }
 
-func (r *repository) Update(ctx context.Context, clinicId, userId string, patient Patient) (*Patient, error) {
-	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*Patient, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(patientUpdate.ClinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
-		"userId":   userId,
+		"userId":   patientUpdate.UserId,
 	}
 
+	patient := patientUpdate.Patient
 	patient.UpdatedTime = time.Now()
+
 	update := bson.M{
 		"$set": patient,
 	}
@@ -233,7 +235,7 @@ func (r *repository) Update(ctx context.Context, clinicId, userId string, patien
 		return nil, fmt.Errorf("error updating patient: %w", err)
 	}
 
-	return r.Get(ctx, clinicId, userId)
+	return r.Get(ctx, patientUpdate.ClinicId, patientUpdate.UserId)
 }
 
 func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
@@ -415,7 +417,7 @@ func generatePaginationFacetStages(pagination store.Pagination) []bson.M {
 		//   "data": [],
 		//   "meta": [{"count": 1}]
 		// }
-		// The projections below lift it up to the top level, e.g.:
+		// The projections below lifts it up to the top level, e.g.:
 		// {
 		//   "data": [],
 		//   "count": 1,

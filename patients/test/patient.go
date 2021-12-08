@@ -31,15 +31,17 @@ func RandomPatient() patients.Patient {
 	}
 }
 
-func RandomPatientUpdate() patients.Patient {
+func RandomPatientUpdate() patients.PatientUpdate {
 	patient := RandomPatient()
-	return patients.Patient{
-		BirthDate:     patient.BirthDate,
-		Email:         patient.Email,
-		FullName:      patient.FullName,
-		Mrn:           patient.Mrn,
-		TargetDevices: patient.TargetDevices,
-		Permissions:   patient.Permissions,
+	return patients.PatientUpdate{
+		Patient:   patients.Patient{
+			BirthDate:     patient.BirthDate,
+			Email:         patient.Email,
+			FullName:      patient.FullName,
+			Mrn:           patient.Mrn,
+			TargetDevices: patient.TargetDevices,
+			Permissions:   patient.Permissions,
+		},
 	}
 }
 

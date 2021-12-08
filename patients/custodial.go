@@ -9,8 +9,8 @@ import (
 )
 
 type CustodialService interface {
-	CreateAccount(ctx context.Context, patient Patient) (*Patient, error)
-	UpdateAccount(ctx context.Context, patient Patient) (*Patient, error)
+	CreateAccount(ctx context.Context, patient Patient) (string, error)
+	UpdateAccount(ctx context.Context, patient Patient) error
 }
 
 type custodialService struct {
@@ -35,36 +35,24 @@ func NewCustodialService(p CustodialServiceParams) (CustodialService, error) {
 	}, nil
 }
 
-func (c *custodialService) CreateAccount(ctx context.Context, patient Patient) (*Patient, error) {
+func (c *custodialService) CreateAccount(ctx context.Context, patient Patient) (string, error) {
 	c.logger.Debugw("creating custodial user", "patient", patient)
 	user, err := c.userService.CreateCustodialAccount(ctx, patient)
 	if err == shoreline.ErrDuplicateUser {
-		return nil, ErrDuplicateEmail
+		return "", ErrDuplicateEmail
 	} else if err != nil {
-		return nil, fmt.Errorf("unable to create custodial user: %w", err)
+		return "", fmt.Errorf("unable to create custodial user: %w", err)
+	} else if user.UserID == "" {
+		return "", fmt.Errorf("unexpected empty user id for custodial user")
 	}
 
-	c.logger.Debugw("creating patient from custodial user", zap.String("userId", user.UserID))
-	patient.UserId = &user.UserID
-	clinicPatient, err := c.patientsRepo.Create(ctx, patient)
-	if err != nil {
-		return nil, fmt.Errorf("error creating patient from custodial user: %w", err)
-	}
-
-	return clinicPatient, nil
+	return user.UserID, nil
 }
 
-func (c *custodialService) UpdateAccount(ctx context.Context, patient Patient) (*Patient, error) {
+func (c *custodialService) UpdateAccount(ctx context.Context, patient Patient) error {
 	c.logger.Debugw("updating custodial user", zap.String("userId", *patient.UserId))
 	if err := c.userService.UpdateCustodialAccount(ctx, patient); err != nil {
-		return nil, fmt.Errorf("unable to update custodial user: %w", err)
+		return fmt.Errorf("unable to update custodial user: %w", err)
 	}
-
-	c.logger.Debugw("updating custodial patient", zap.String("userId", *patient.UserId))
-	clinicPatient, err := c.patientsRepo.Update(ctx, patient.ClinicId.Hex(), *patient.UserId, patient)
-	if err != nil {
-		return nil, fmt.Errorf("unable to update patient: %w", err)
-	}
-
-	return clinicPatient, nil
+	return nil
 }
