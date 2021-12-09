@@ -143,5 +143,5 @@ func getUpdatedBy(update PatientUpdate) *string {
 		return nil
 	}
 
-	return update.Patient.Email
+	return update.Patient.InvitedBy
 }
