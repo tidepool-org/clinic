@@ -37,6 +37,14 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 		return err
 	}
 
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+
 	clinicObjId, err := primitive.ObjectIDFromHex(string(clinicId))
 	if err != nil {
 		return err
@@ -45,6 +53,10 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 	patient := NewPatient(dto)
 	patient.ClinicId = &clinicObjId
 	patient.Permissions = &patients.CustodialAccountPermissions
+
+	if !authData.ServerAccess {
+		patient.InvitedBy = &authData.SubjectId
+	}
 
 	result, err := h.patients.Create(ctx, patient)
 	if err != nil {
