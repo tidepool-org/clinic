@@ -34,7 +34,7 @@ func NewService(dbClient *mongo.Client, clinicsService clinics.Service, reposito
 
 func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician, error) {
 	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		created, err := s.repository.Create(ctx, clinician)
+		created, err := s.repository.Create(sessionCtx, clinician)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 			// When the user id is not set the clinician object is an invite
 			// and is not yet associated with a user, thus the operation cannot
 			// change clinic admins
-			if err := s.onUpdate(ctx, created, false); err != nil {
+			if err := s.onUpdate(sessionCtx, created, false); err != nil {
 				return nil, err
 			}
 		}
@@ -65,7 +65,7 @@ func (s service) Update(ctx context.Context, update *ClinicianUpdate) (*Clinicia
 			return nil, err
 		}
 
-		if err := s.onUpdate(ctx, updated, false); err != nil {
+		if err := s.onUpdate(sessionCtx, updated, false); err != nil {
 			return nil, err
 		}
 
@@ -93,7 +93,7 @@ func (s service) AssociateInvite(ctx context.Context, associate AssociateInvite)
 			return nil, err
 		}
 
-		if err := s.onUpdate(ctx, clinician, false); err != nil {
+		if err := s.onUpdate(sessionCtx, clinician, false); err != nil {
 			return nil, err
 		}
 
@@ -117,12 +117,12 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 
 func (s *service) Delete(ctx context.Context, clinicId string, clinicianId string) error {
 	_, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		clinician, err := s.repository.Get(ctx, clinicId, clinicianId)
+		clinician, err := s.repository.Get(sessionCtx, clinicId, clinicianId)
 		if err != nil {
 			return nil, err
 		}
 
-		return nil, s.deleteSingle(ctx, clinician, false)
+		return nil, s.deleteSingle(sessionCtx, clinician, false)
 	})
 
 	return err
@@ -146,7 +146,7 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string) 
 
 		for _, clinician := range clinicianList {
 			clinicId := clinician.ClinicId.Hex()
-			if err := s.deleteSingle(ctx, clinician, true); err != nil {
+			if err := s.deleteSingle(sessCtx, clinician, true); err != nil {
 				return nil, err
 			}
 
@@ -157,7 +157,7 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string) 
 			pagination = store.Pagination{
 				Limit: 1,
 			}
-			remaining, err := s.List(ctx, filter, pagination)
+			remaining, err := s.List(sessCtx, filter, pagination)
 			if err != nil {
 				return nil, err
 			}

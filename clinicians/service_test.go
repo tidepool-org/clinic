@@ -5,6 +5,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
@@ -151,6 +152,13 @@ var _ = Describe("Clinicians Service", func() {
 		It("Prevents orphaning a clinic", func() {
 			err := cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
+
+			res, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			Expect(res.ClinicId).ToNot(BeNil())
+			Expect(res.ClinicId.Hex()).To(Equal(clinician.ClinicId.Hex()))
+			Expect(res.UserId).To(gstruct.PointTo(Equal(*clinician.UserId)))
 		})
 
 		It("Allows orphaning when deleting from all clinics", func() {
@@ -445,6 +453,13 @@ var _ = Describe("Clinicians Service", func() {
 			}
 			_, err := cliniciansService.Update(context.Background(), clinicianUpdate)
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
+
+			res, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			Expect(res.ClinicId).ToNot(BeNil())
+			Expect(res.ClinicId.Hex()).To(Equal(clinician.ClinicId.Hex()))
+			Expect(res.UserId).To(gstruct.PointTo(Equal(*clinician.UserId)))
 		})
 
 		It("Updates the roles history", func() {
