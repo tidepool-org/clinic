@@ -144,7 +144,7 @@ allow {
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _]
-  is_backend_service_any_of({"hydrophone"})
+  is_backend_service_any_of({"hydrophone", "orca"})
 }
 
 # Allow currently authenticated clinician to update clinic
@@ -161,6 +161,14 @@ allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians"]
   clinician_has_read_access
+}
+
+# Allow orca to list clinicians
+# GET /v1/clinics/:clinicId/clinicians
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "clinicians"]
+  is_backend_service_any_of({"orca"})
 }
 
 # Allow hydrophone to create clinicians
@@ -184,7 +192,7 @@ allow {
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians", _]
-  is_backend_service_any_of({"hydrophone", "prescription", "clinic-worker"})
+  is_backend_service_any_of({"hydrophone", "prescription", "clinic-worker", "orca"})
 }
 
 # Allow hydrophone to fetch clinicians list
@@ -192,7 +200,7 @@ allow {
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians"]
-  is_backend_service_any_of({"hydrophone"})
+  is_backend_service_any_of({"hydrophone", "orca"})
 }
 
 # Allow currently authenticated clinician to update or delete a clinician
@@ -253,6 +261,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow orca to list patients
+# GET /v1/clinics/:clinicId/patients
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patients"]
+  is_backend_service_any_of({"orca"})
+}
+
 # Allow currently authenticated clinician to create a custodial account
 # POST /v1/clinics/:clinicId/patients
 allow {
@@ -269,12 +285,12 @@ allow {
   clinician_has_read_access
 }
 
-# Allow hydrophone and clinic-worker to fetch patient by id
+# Allow hydrophone, clinic-worker and orca to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "patients", _]
-  is_backend_service_any_of({"hydrophone", "clinic-worker"})
+  is_backend_service_any_of({"hydrophone", "clinic-worker", "orca"})
 }
 
 # Allow clinic-worker, hydrophone, prescription services to create a patient from existing user
