@@ -8,11 +8,6 @@ is_authenticated_user {
   subject_id
 }
 
-is_backend_service_any_of(services) {
-  is_backend_service
-  services[subject_id]
-}
-
 read_access_roles := {
   "CLINIC_MEMBER",
   "CLINIC_ADMIN"
@@ -35,10 +30,10 @@ clinician_has_write_access {
 
 default allow = false
 
-# Only allow backend services to list all clinics
+# Allow backend services to list all clinics
 # GET /v1/clinics
 allow {
-  is_backend_service_any_of({"orca", "hydrophone"})
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics"]
 }
@@ -61,18 +56,18 @@ allow {
   patient_id == subject_id
 }
 
-# Allow shoreline to fetch list of clinics a patient belongs to
+# Allow backend services to fetch list of clinics a patient belongs to
 # GET /v1/patients/:patientId/clinics
 allow {
-  is_backend_service_any_of({"shoreline", "orca"})
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "patients", _, "clinics"]
 }
 
-# Allow shoreline to remove custodial permission
+# Allow backend services to remove custodial permission
 # DELETE /v1/clinics/:clinicId/patients/:patientId/permissions/custodian
 allow {
-  is_backend_service_any_of({"shoreline"})
+  is_backend_service
   input.method == "DELETE"
   input.path = ["v1", "clinics", _, "patients", _, "permissions", "custodian"]
 }
@@ -97,10 +92,10 @@ allow {
   clinician_id == subject_id
 }
 
-# Allow ORCA to fetch the clinics membership information for a given user
+# Allow backend services to fetch the clinics membership information for a given user
 # GET /v1/clinicians/:clinicianId/clinics
 allow {
-  is_backend_service_any_of({"orca"})
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinicians", clinician_id, "clinics"]
 }
@@ -123,10 +118,10 @@ allow {
   input.path = ["v1", "clinics", _]
 }
 
-# Allow clinic-worker to fetch clinics by id
+# Allow backend services to fetch clinics by id
 # GET /v1/clinics/:clinicId
 allow {
-  is_backend_service_any_of({"clinic-worker"})
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _]
 }
@@ -139,12 +134,12 @@ allow {
   input.path = ["v1", "clinics", "share_code", _]
 }
 
-# Allow hydrophone to fetch a clinic by id
+# Allow backend services to fetch a clinic by id
 # GET /v1/clinics/:clinicId
 allow {
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _]
-  is_backend_service_any_of({"hydrophone", "orca"})
 }
 
 # Allow currently authenticated clinician to update clinic
@@ -163,20 +158,20 @@ allow {
   clinician_has_read_access
 }
 
-# Allow orca to list clinicians
+# Allow backend services to list clinicians
 # GET /v1/clinics/:clinicId/clinicians
 allow {
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians"]
-  is_backend_service_any_of({"orca"})
 }
 
-# Allow hydrophone to create clinicians
+# Allow backend services to create clinicians
 # POST /v1/clinics/:clinicId/clinicians
 allow {
+  is_backend_service
   input.method == "POST"
   input.path = ["v1", "clinics", _, "clinicians"]
-  is_backend_service_any_of({"hydrophone"})
 }
 
 # Allow currently authenticated clinician to get a clinician by id
@@ -187,20 +182,20 @@ allow {
   clinician_has_read_access
 }
 
-# Allow hydrophone, prescription and clinic-worker services to fetch clinician records
+# Allow backend services to fetch clinician records
 # GET /v1/clinics/:clinicId/clinicians/:clinicianId
 allow {
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians", _]
-  is_backend_service_any_of({"hydrophone", "prescription", "clinic-worker", "orca"})
 }
 
-# Allow hydrophone to fetch clinicians list
+# Allow backend services to fetch clinicians list
 # GET /v1/clinics/:clinicId/clinicians
 allow {
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _, "clinicians"]
-  is_backend_service_any_of({"hydrophone", "orca"})
 }
 
 # Allow currently authenticated clinician to update or delete a clinician
@@ -242,15 +237,15 @@ allow {
   clinician_has_write_access
 }
 
-# Allow hydrophone to fetch, update and delete invites
+# Allow backend services to fetch, update and delete invites
 # GET /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
 # PATCH /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
 # DELETE /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
 allow {
+  is_backend_service
   allowed_methods := {"GET", "PATCH", "DELETE"}
   allowed_methods[input.method]
   input.path = ["v1", "clinics", _, "invites", "clinicians", _, "clinician"]
-  is_backend_service_any_of({"hydrophone"})
 }
 
 # Allow currently authenticated clinician to list patients
@@ -261,12 +256,12 @@ allow {
   clinician_has_read_access
 }
 
-# Allow orca to list patients
+# Allow backend services to list patients
 # GET /v1/clinics/:clinicId/patients
 allow {
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _, "patients"]
-  is_backend_service_any_of({"orca"})
 }
 
 # Allow currently authenticated clinician to create a custodial account
@@ -285,20 +280,20 @@ allow {
   clinician_has_read_access
 }
 
-# Allow hydrophone, clinic-worker and orca to fetch patient by id
+# Allow backend services to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _, "patients", _]
-  is_backend_service_any_of({"hydrophone", "clinic-worker", "orca"})
 }
 
-# Allow clinic-worker, hydrophone, prescription services to create a patient from existing user
+# Allow backend services to create a patient from existing user
 # POST /v1/clinics/:clinicId/patients/:patientId
 allow {
+  is_backend_service
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients", _]
-  is_backend_service_any_of({"hydrophone", "prescription", "clinic-worker"})
 }
 
 # Allow currently authenticated clinician to update patient account
@@ -309,12 +304,12 @@ allow {
   clinician_has_read_access
 }
 
-# Allow Orca to create an empty clinic for legacy clinician
+# Allow backend services to create an empty clinic for legacy clinician
 # POST /v1/clinicians/:userId/migrate
 allow {
+  is_backend_service
   input.method == "POST"
   input.path = ["v1", "clinicians", _, "migrate"]
-  is_backend_service_any_of({"orca"})
 }
 
 # Allow currently authenticated clinician to trigger the initial migration
@@ -325,28 +320,28 @@ allow {
   clinician_has_write_access
 }
 
-# Allow Orca to migrate users of a legacy clinician account to the clinic
+# Allow backend services to migrate users of a legacy clinician account to the clinic
 # POST /v1/clinics/:clinicId/migrations
 allow {
+  is_backend_service
   input.method == "POST"
   input.path = ["v1", "clinics", _, "migrations"]
-  is_backend_service_any_of({"orca"})
 }
 
-# Allow Orca to access the list of migrations for a given clinic
+# Allow backend services to access the list of migrations for a given clinic
 # GET /v1/clinics/:clinicId/migrations
 allow {
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _, "migrations"]
-  is_backend_service_any_of({"orca"})
 }
 
-# Allow ORCA and clinic-worker to fetch migrations by id
+# Allow backend services to fetch migrations by id
 # GET /v1/clinics/:clinicId/migrations/:userId
 allow {
+  is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _, "migrations", _]
-  is_backend_service_any_of({"orca", "clinic-worker"})
 }
 
 # Allow clinicians to access all migrations
@@ -365,18 +360,18 @@ allow {
   clinician_has_read_access
 }
 
-# Allow clinic-worker to update the status of migrations
+# Allow backend services to update the status of migrations
 # PATCH /v1/clinics/:clinicId/migrations/:userId
 allow {
+  is_backend_service
   input.method == "PATCH"
   input.path = ["v1", "clinics", _, "migrations", _]
-  is_backend_service_any_of({"clinic-worker"})
 }
 
-# Allow clinic-worker to update the status of migrations
+# Allow backend services to update the status of migrations
 # PATCH /v1/users/:clinicId/clinics
 allow {
+  is_backend_service
   input.method == "DELETE"
   input.path = ["v1", "users", _, "clinics"]
-  is_backend_service_any_of({"clinic-worker"})
 }
