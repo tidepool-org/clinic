@@ -52,19 +52,6 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("prevents random services from accessing /v1/clinics", func() {
-			input := map[string]interface{}{
-				"path":   []string{"v1", "clinics"},
-				"method": "GET",
-				"auth": map[string]interface{}{
-					"subjectId":    "non-existent-service",
-					"serverAccess": true,
-				},
-			}
-			err := authorizer.EvaluatePolicy(context.Background(), input)
-			Expect(err).To(Equal(auth.ErrUnauthorized))
-		})
-
 		It("allows hydrophone to access /v1/clinics/6066fbabc6f484277200ac64", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64"},
