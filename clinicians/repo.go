@@ -89,6 +89,14 @@ func (r *Repository) Initialize(ctx context.Context) error {
 				SetBackground(true).
 				SetName("ClinicianByRole"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "createdTime", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("CliniciansByCreatedTime"),
+		},
 	})
 	return err
 }
@@ -100,6 +108,7 @@ func (r *Repository) Get(ctx context.Context, clinicId string, clinicianId strin
 
 func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error) {
 	opts := options.Find().
+		SetSort(bson.D{{"createdTime", -1}}).
 		SetLimit(int64(pagination.Limit)).
 		SetSkip(int64(pagination.Offset))
 

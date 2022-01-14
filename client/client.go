@@ -91,6 +91,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// ListAllClinicians request
+	ListAllClinicians(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListClinicsForClinician request
 	ListClinicsForClinician(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -202,6 +205,18 @@ type ClientInterface interface {
 
 	// DeleteUserFromClinics request
 	DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) ListAllClinicians(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAllCliniciansRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) ListClinicsForClinician(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -696,6 +711,101 @@ func (c *Client) DeleteUserFromClinics(ctx context.Context, userId UserId, reqEd
 	return c.Client.Do(req)
 }
 
+// NewListAllCliniciansRequest generates requests for ListAllClinicians
+func NewListAllCliniciansRequest(server string, params *ListAllCliniciansParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinicians")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryURL.Query()
+
+	if params.Offset != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.Limit != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.CreatedTimeStart != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "createdTimeStart", runtime.ParamLocationQuery, *params.CreatedTimeStart); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.CreatedTimeEnd != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "createdTimeEnd", runtime.ParamLocationQuery, *params.CreatedTimeEnd); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListClinicsForClinicianRequest generates requests for ListClinicsForClinician
 func NewListClinicsForClinicianRequest(server string, userId UserId, params *ListClinicsForClinicianParams) (*http.Request, error) {
 	var err error
@@ -856,6 +966,38 @@ func NewListClinicsRequest(server string, params *ListClinicsParams) (*http.Requ
 	if params.ShareCode != nil {
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "shareCode", runtime.ParamLocationQuery, *params.ShareCode); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.CreatedTimeStart != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "createdTimeStart", runtime.ParamLocationQuery, *params.CreatedTimeStart); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.CreatedTimeEnd != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "createdTimeEnd", runtime.ParamLocationQuery, *params.CreatedTimeEnd); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2269,6 +2411,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// ListAllClinicians request
+	ListAllCliniciansWithResponse(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*ListAllCliniciansResponse, error)
+
 	// ListClinicsForClinician request
 	ListClinicsForClinicianWithResponse(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*ListClinicsForClinicianResponse, error)
 
@@ -2380,6 +2525,28 @@ type ClientWithResponsesInterface interface {
 
 	// DeleteUserFromClinics request
 	DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*DeleteUserFromClinicsResponse, error)
+}
+
+type ListAllCliniciansResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ClinicianClinicRelationship
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAllCliniciansResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAllCliniciansResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type ListClinicsForClinicianResponse struct {
@@ -3039,6 +3206,15 @@ func (r DeleteUserFromClinicsResponse) StatusCode() int {
 	return 0
 }
 
+// ListAllCliniciansWithResponse request returning *ListAllCliniciansResponse
+func (c *ClientWithResponses) ListAllCliniciansWithResponse(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*ListAllCliniciansResponse, error) {
+	rsp, err := c.ListAllClinicians(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAllCliniciansResponse(rsp)
+}
+
 // ListClinicsForClinicianWithResponse request returning *ListClinicsForClinicianResponse
 func (c *ClientWithResponses) ListClinicsForClinicianWithResponse(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*ListClinicsForClinicianResponse, error) {
 	rsp, err := c.ListClinicsForClinician(ctx, userId, params, reqEditors...)
@@ -3395,6 +3571,32 @@ func (c *ClientWithResponses) DeleteUserFromClinicsWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseDeleteUserFromClinicsResponse(rsp)
+}
+
+// ParseListAllCliniciansResponse parses an HTTP response from a ListAllCliniciansWithResponse call
+func ParseListAllCliniciansResponse(rsp *http.Response) (*ListAllCliniciansResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAllCliniciansResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ClinicianClinicRelationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseListClinicsForClinicianResponse parses an HTTP response from a ListClinicsForClinicianWithResponse call

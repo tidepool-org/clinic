@@ -8,7 +8,22 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"time"
 )
+
+func (h *Handler) ListAllClinicians(ec echo.Context, params ListAllCliniciansParams) error {
+	page := pagination(params.Offset, params.Limit)
+	filter := clinicians.Filter{}
+	if params.CreatedTimeStart != nil {
+		start := time.Time(*params.CreatedTimeStart)
+		filter.CreatedTimeStart = &start
+	}
+	if params.CreatedTimeEnd != nil {
+		end := time.Time(*params.CreatedTimeEnd)
+		filter.CreatedTimeEnd = &end
+	}
+	return h.listClinics(ec, filter, page)
+}
 
 func (h *Handler) ListClinicians(ec echo.Context, clinicId ClinicId, params ListCliniciansParams) error {
 	ctx := ec.Request().Context()
@@ -101,29 +116,12 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianI
 }
 
 func (h *Handler) ListClinicsForClinician(ec echo.Context, userId UserId, params ListClinicsForClinicianParams) error {
-	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := clinicians.Filter{
 		UserId: strp(string(userId)),
 	}
 
-	cliniciansList, err := h.clinicians.List(ctx, &filter, page)
-	if err != nil {
-		return err
-	}
-
-	var clinicIds []string
-	for _, clinician := range cliniciansList {
-		clinicIds = append(clinicIds, clinician.ClinicId.Hex())
-	}
-
-	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
-	dtos, err := NewClinicianClinicRelationshipsDto(cliniciansList, clinicList)
-	if err != nil {
-		return err
-	}
-
-	return ec.JSON(http.StatusOK, dtos)
+	return h.listClinics(ec, filter, page)
 }
 
 func (h *Handler) GetInvitedClinician(ec echo.Context, clinicId ClinicId, inviteId InviteId) error {
@@ -173,4 +171,25 @@ func (h *Handler) EnableNewClinicExperience(ec echo.Context, userId string) erro
 	}
 
 	return ec.JSON(http.StatusOK, NewClinicDto(clinic))
+}
+
+func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page store.Pagination) error {
+	ctx := ec.Request().Context()
+	cliniciansList, err := h.clinicians.List(ctx, &filter, page)
+	if err != nil {
+		return err
+	}
+
+	var clinicIds []string
+	for _, clinician := range cliniciansList {
+		clinicIds = append(clinicIds, clinician.ClinicId.Hex())
+	}
+
+	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
+	dtos, err := NewClinicianClinicRelationshipsDto(cliniciansList, clinicList)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, dtos)
 }

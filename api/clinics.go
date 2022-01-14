@@ -9,6 +9,7 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"net/http"
+	"time"
 )
 
 func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
@@ -18,6 +19,14 @@ func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
 	filter := clinics.Filter{}
 	if params.ShareCode != nil {
 		filter.ShareCodes = []string{string(*params.ShareCode)}
+	}
+	if params.CreatedTimeStart != nil {
+		start := time.Time(*params.CreatedTimeStart)
+		filter.CreatedTimeStart = &start
+	}
+	if params.CreatedTimeEnd != nil {
+		end := time.Time(*params.CreatedTimeEnd)
+		filter.CreatedTimeEnd = &end
 	}
 
 	list, err := h.clinics.List(ctx, &filter, page)

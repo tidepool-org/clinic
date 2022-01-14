@@ -90,6 +90,16 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 			"$in": filter.ShareCodes,
 		}
 	}
+	if filter.CreatedTimeStart != nil {
+		selector["createdTime"] = bson.M{
+			"$gte": filter.CreatedTimeStart,
+		}
+	}
+	if filter.CreatedTimeEnd != nil {
+		selector["createdTime"] = bson.M{
+			"$lt": filter.CreatedTimeEnd,
+		}
+	}
 	cursor, err := c.collection.Find(ctx, selector, opts)
 	if err != nil {
 		return nil, fmt.Errorf("error listing clinics: %w", err)

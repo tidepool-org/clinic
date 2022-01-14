@@ -13,6 +13,9 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// List All Clinicians
+	// (GET /v1/clinicians)
+	ListAllClinicians(ctx echo.Context, params ListAllCliniciansParams) error
 	// List Clinics for Clinician
 	// (GET /v1/clinicians/{userId}/clinics)
 	ListClinicsForClinician(ctx echo.Context, userId UserId, params ListClinicsForClinicianParams) error
@@ -110,6 +113,47 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
+// ListAllClinicians converts echo context to params.
+func (w *ServerInterfaceWrapper) ListAllClinicians(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAllCliniciansParams
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "createdTimeStart" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "createdTimeStart", ctx.QueryParams(), &params.CreatedTimeStart)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter createdTimeStart: %s", err))
+	}
+
+	// ------------- Optional query parameter "createdTimeEnd" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "createdTimeEnd", ctx.QueryParams(), &params.CreatedTimeEnd)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter createdTimeEnd: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ListAllClinicians(ctx, params)
+	return err
+}
+
 // ListClinicsForClinician converts echo context to params.
 func (w *ServerInterfaceWrapper) ListClinicsForClinician(ctx echo.Context) error {
 	var err error
@@ -189,6 +233,20 @@ func (w *ServerInterfaceWrapper) ListClinics(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "shareCode", ctx.QueryParams(), &params.ShareCode)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter shareCode: %s", err))
+	}
+
+	// ------------- Optional query parameter "createdTimeStart" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "createdTimeStart", ctx.QueryParams(), &params.CreatedTimeStart)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter createdTimeStart: %s", err))
+	}
+
+	// ------------- Optional query parameter "createdTimeEnd" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "createdTimeEnd", ctx.QueryParams(), &params.CreatedTimeEnd)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter createdTimeEnd: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -906,6 +964,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.GET(baseURL+"/v1/clinicians", wrapper.ListAllClinicians)
 	router.GET(baseURL+"/v1/clinicians/:userId/clinics", wrapper.ListClinicsForClinician)
 	router.POST(baseURL+"/v1/clinicians/:userId/migrate", wrapper.EnableNewClinicExperience)
 	router.GET(baseURL+"/v1/clinics", wrapper.ListClinics)
