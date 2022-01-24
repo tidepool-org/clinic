@@ -118,7 +118,7 @@ func MainLoop() {
 			creator.NewCreator,
 			migration.NewMigrator,
 			migration.NewRepository,
-			auth.NewShorelineAuthenticator,
+			auth.NewAuthenticator,
 			auth.NewRequestAuthorizer,
 			NewHealthCheck,
 			NewHandler,

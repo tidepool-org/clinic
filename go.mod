@@ -8,6 +8,7 @@ require (
 	github.com/getkin/kin-openapi v0.80.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/golang/mock v1.5.0
+	github.com/hashicorp/golang-lru v0.5.3
 	github.com/jaswdr/faker v1.4.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/labstack/echo/v4 v4.2.1
