@@ -103,6 +103,7 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
 		return err
 	}
+	patient.Email = pstrToLower(patient.Email)
 
 	result, err := h.patients.Create(ctx, patient)
 	if err != nil {

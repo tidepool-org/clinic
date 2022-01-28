@@ -106,7 +106,7 @@ func NewClinician(clinician Clinician) *clinicians.Clinician {
 		UserId:   useridpstrp(clinician.Id),
 		InviteId: clinician.InviteId,
 		Roles:    clinician.Roles,
-		Email:    strp(clinician.Email),
+		Email:    strp(strings.ToLower(clinician.Email)),
 	}
 }
 
@@ -136,7 +136,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 
 func NewPatient(dto Patient) patients.Patient {
 	return patients.Patient{
-		Email:         dto.Email,
+		Email:         pstrToLower(dto.Email),
 		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
 		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
@@ -350,6 +350,14 @@ func emailToString(e *Email) *string {
 		return nil
 	}
 	return strp(string(*e))
+}
+
+func pstrToLower(s *string) *string {
+	if s != nil {
+		l := strings.ToLower(*s)
+		return &l
+	}
+	return s
 }
 
 func roleToString(e *Role) *string {
