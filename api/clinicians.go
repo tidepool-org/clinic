@@ -16,7 +16,7 @@ func (h *Handler) ListClinicians(ec echo.Context, clinicId ClinicId, params List
 	filter := clinicians.Filter{
 		ClinicId: strp(string(clinicId)),
 		Search:   searchToString(params.Search),
-		Email:    emailToString(params.Email),
+		Email:    pstrToLower(emailToString(params.Email)),
 		Role:     roleToString(params.Role),
 	}
 
