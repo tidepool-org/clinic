@@ -48,6 +48,13 @@ type Clinic struct {
 	IsMigrated         bool                `bson:"isMigrated,omitempty"`
 }
 
+func NewClinic() Clinic {
+	return Clinic{
+		CreatedTime: time.Now(),
+		UpdatedTime: time.Now(),
+	}
+}
+
 func (c *Clinic) HasAllRequiredFields() bool {
 	return c.Id != nil &&
 		isStringSet(c.Address) &&
