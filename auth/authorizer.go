@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
@@ -12,7 +13,7 @@ import (
 	"github.com/tidepool-org/clinic/clinicians"
 	internalErrs "github.com/tidepool-org/clinic/errors"
 	"go.uber.org/zap"
-
+	"io/ioutil"
 	"strings"
 )
 
@@ -63,16 +64,30 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 		return err
 	}
 
+	request := input.RequestValidationInput.Request
+	method := strings.ToUpper(request.Method)
 	in := map[string]interface{}{
-		"auth":   GetAuthData(input.RequestValidationInput.Request.Context()),
+		"auth":   GetAuthData(request.Context()),
 		"path":   e.getSplitPath(input),
-		"method": strings.ToUpper(input.RequestValidationInput.Request.Method),
+		"method": method,
 	}
 
 	if clinician != nil {
 		clinicianStruct := structs.New(*clinician)
 		clinicianStruct.TagName = "bson"
 		in["clinician"] = clinicianStruct.Map()
+	}
+
+	// Pass the body of the request to the authorization policy
+	if request.ContentLength != 0 {
+		raw := json.RawMessage{}
+		if body, err := ioutil.ReadAll(request.Body); err != nil {
+			return err
+		} else if err := json.Unmarshal(body, &raw); err != nil {
+			return err
+		} else {
+			in["body"] = raw
+		}
 	}
 
 	return e.EvaluatePolicy(ctx, in)

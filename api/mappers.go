@@ -111,10 +111,14 @@ func NewClinician(clinician Clinician) *clinicians.Clinician {
 }
 
 func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
-	return clinicians.Clinician{
+	c := clinicians.Clinician{
 		Name:  clinician.Name,
 		Roles: clinician.Roles,
 	}
+	if clinician.Email != "" {
+		c.Email = strp(strings.ToLower(clinician.Email))
+	}
+	return c
 }
 
 func NewPatientDto(patient *patients.Patient) Patient {

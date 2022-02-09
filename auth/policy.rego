@@ -198,13 +198,37 @@ allow {
   input.path = ["v1", "clinics", _, "clinicians"]
 }
 
-# Allow currently authenticated clinician to update or delete a clinician
+# Allow currently authenticated clinician to update or delete other clinicians
 # PUT /v1/clinics/:clinicId/clinicians/:clinicianId
 # DELETE /v1/clinics/:clinicId/clinicians/:clinicianId
 allow {
   allowed_methods := {"PUT", "DELETE"}
   allowed_methods[input.method]
   input.path = ["v1", "clinics", _, "clinicians", _]
+  clinician_has_write_access
+}
+
+# Allow currently authenticated clinic member to update their own clinician record,
+# as long as they are not changing their own roles
+# PUT /v1/clinics/:clinicId/clinicians/:clinicianId
+allow {
+  is_authenticated_user
+  some clinician_id
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "clinicians", clinician_id]
+  sort(input.body.roles) == sort(input.clinician.roles)
+  clinician_id == subject_id
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinic admin to update their own clinician record
+# PUT /v1/clinics/:clinicId/clinicians/:clinicianId
+allow {
+  is_authenticated_user
+  some clinician_id
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "clinicians", clinician_id]
+  clinician_id == subject_id
   clinician_has_write_access
 }
 

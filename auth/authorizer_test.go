@@ -10,10 +10,12 @@ import (
 
 var clinicAdmin = map[string]interface{}{
 	"roles": []string{"CLINIC_ADMIN"},
+	"email": "admin@clinic.org",
 }
 
 var clinicMember = map[string]interface{}{
 	"roles": []string{"CLINIC_MEMBER"},
+	"email": "member@clinic.org",
 }
 
 var _ = Describe("Request Authorizer", func() {
@@ -392,6 +394,83 @@ var _ = Describe("Request Authorizer", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "99999999"},
 				"method": "DELETE",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("it allows currently authenticated clinic member to update their own profile", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "1234567890"},
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+				"body":      clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows currently authenticated clinic admin to change their role to member", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "1234567890"},
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+				"body":      clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows currently authenticated clinic admin to change their own email address", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "1234567890"},
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+				"body": map[string]interface{}{
+					"roles": clinicAdmin["roles"],
+					"email": "new-admin-email@clinic.org",
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it prevents currently authenticated clinic member to change their role to admin", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "1234567890"},
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+				"body":      clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("it prevents currently authenticated clinic member to update profiles of other clinicians", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "99999999"},
+				"method": "PUT",
 				"auth": map[string]interface{}{
 					"subjectId":    "1234567890",
 					"serverAccess": false,

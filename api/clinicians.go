@@ -77,6 +77,7 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianI
 		return err
 	}
 
+
 	authData := auth.GetAuthData(ctx)
 	if authData == nil || authData.SubjectId == "" {
 		return &echo.HTTPError{
@@ -85,11 +86,18 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianI
 		}
 	}
 
+	clinician := NewClinicianUpdate(dto)
+
+	// Ignore email updates when updating other users
+	if authData.SubjectId != string(clinicianId) {
+		clinician.Email = nil
+	}
+
 	update := &clinicians.ClinicianUpdate{
 		UpdatedBy:   authData.SubjectId,
 		ClinicId:    string(clinicId),
 		ClinicianId: string(clinicianId),
-		Clinician:   NewClinicianUpdate(dto),
+		Clinician:   clinician,
 	}
 
 	result, err := h.cliniciansUpdater.Update(ctx, update)

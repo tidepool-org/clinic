@@ -173,14 +173,19 @@ func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clin
 		return nil, err
 	}
 
-	updates := bson.M{
-		"$set": bson.M{
-			"roles":       update.Clinician.Roles,
-			"name":        update.Clinician.Name,
-			"updatedTime": time.Now(),
-		},
+	set := bson.M {
+		"roles":       update.Clinician.Roles,
+		"name":        update.Clinician.Name,
+		"updatedTime": time.Now(),
 	}
 
+	if update.Clinician.Email != nil {
+		set["email"] = update.Clinician.Email
+	}
+
+	updates := bson.M{
+		"$set": set,
+	}
 	if clinician.RolesChanged(update.Clinician.Roles) {
 		// Used for optimistic locking
 		selector["updatedTime"] = clinician.UpdatedTime
