@@ -375,3 +375,18 @@ allow {
   input.method == "DELETE"
   input.path = ["v1", "users", _, "clinics"]
 }
+# Allow backend services to update the status of migrations
+# PATCH /v1/users/:clinicId/clinics
+allow {
+  is_backend_service
+  input.method == "DELETE"
+  input.path = ["v1", "users", _, "clinics"]
+}
+
+# Allow backend services to update user details
+# PATCH /v1/users/:clinicId/clinics
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "users", _, "clinics"]
+}

@@ -205,6 +205,11 @@ type ClientInterface interface {
 
 	// DeleteUserFromClinics request
 	DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateClinicUserDetails request with any body
+	UpdateClinicUserDetailsWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateClinicUserDetails(ctx context.Context, userId UserId, body UpdateClinicUserDetailsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ListAllClinicians(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -701,6 +706,30 @@ func (c *Client) ListClinicsForPatient(ctx context.Context, userId UserId, param
 
 func (c *Client) DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteUserFromClinicsRequest(c.Server, userId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClinicUserDetailsWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClinicUserDetailsRequestWithBody(c.Server, userId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClinicUserDetails(ctx context.Context, userId UserId, body UpdateClinicUserDetailsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClinicUserDetailsRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2368,6 +2397,53 @@ func NewDeleteUserFromClinicsRequest(server string, userId UserId) (*http.Reques
 	return req, nil
 }
 
+// NewUpdateClinicUserDetailsRequest calls the generic UpdateClinicUserDetails builder with application/json body
+func NewUpdateClinicUserDetailsRequest(server string, userId UserId, body UpdateClinicUserDetailsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClinicUserDetailsRequestWithBody(server, userId, "application/json", bodyReader)
+}
+
+// NewUpdateClinicUserDetailsRequestWithBody generates requests for UpdateClinicUserDetails with any type of body
+func NewUpdateClinicUserDetailsRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "userId", runtime.ParamLocationPath, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/users/%s/clinics", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -2525,6 +2601,11 @@ type ClientWithResponsesInterface interface {
 
 	// DeleteUserFromClinics request
 	DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*DeleteUserFromClinicsResponse, error)
+
+	// UpdateClinicUserDetails request with any body
+	UpdateClinicUserDetailsWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClinicUserDetailsResponse, error)
+
+	UpdateClinicUserDetailsWithResponse(ctx context.Context, userId UserId, body UpdateClinicUserDetailsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClinicUserDetailsResponse, error)
 }
 
 type ListAllCliniciansResponse struct {
@@ -3206,6 +3287,27 @@ func (r DeleteUserFromClinicsResponse) StatusCode() int {
 	return 0
 }
 
+type UpdateClinicUserDetailsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClinicUserDetailsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClinicUserDetailsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ListAllCliniciansWithResponse request returning *ListAllCliniciansResponse
 func (c *ClientWithResponses) ListAllCliniciansWithResponse(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*ListAllCliniciansResponse, error) {
 	rsp, err := c.ListAllClinicians(ctx, params, reqEditors...)
@@ -3571,6 +3673,23 @@ func (c *ClientWithResponses) DeleteUserFromClinicsWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseDeleteUserFromClinicsResponse(rsp)
+}
+
+// UpdateClinicUserDetailsWithBodyWithResponse request with arbitrary body returning *UpdateClinicUserDetailsResponse
+func (c *ClientWithResponses) UpdateClinicUserDetailsWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClinicUserDetailsResponse, error) {
+	rsp, err := c.UpdateClinicUserDetailsWithBody(ctx, userId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClinicUserDetailsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClinicUserDetailsWithResponse(ctx context.Context, userId UserId, body UpdateClinicUserDetailsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClinicUserDetailsResponse, error) {
+	rsp, err := c.UpdateClinicUserDetails(ctx, userId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClinicUserDetailsResponse(rsp)
 }
 
 // ParseListAllCliniciansResponse parses an HTTP response from a ListAllCliniciansWithResponse call
@@ -4330,6 +4449,22 @@ func ParseDeleteUserFromClinicsResponse(rsp *http.Response) (*DeleteUserFromClin
 	}
 
 	response := &DeleteUserFromClinicsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClinicUserDetailsResponse parses an HTTP response from a UpdateClinicUserDetailsWithResponse call
+func ParseUpdateClinicUserDetailsResponse(rsp *http.Response) (*UpdateClinicUserDetailsResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClinicUserDetailsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

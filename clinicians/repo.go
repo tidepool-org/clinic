@@ -67,8 +67,8 @@ func (r *Repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetBackground(true).
 				SetUnique(true).
-				SetName("UniqueClinicMemberEmail").
-				SetPartialFilterExpression(bson.D{{"email", bson.M{"$exists": true}}}),
+				SetName("UniqueClinicInviteEmail").
+				SetPartialFilterExpression(bson.D{{"inviteId", bson.M{"$exists": true}}}),
 		},
 		{
 			Keys: bson.D{
@@ -204,6 +204,25 @@ func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clin
 	}
 
 	return r.updateOne(ctx, selector, updates)
+}
+
+func (r *Repository) UpdateAll(ctx context.Context, update *CliniciansUpdate) error {
+	selector := bson.M{
+		"userId": update.UserId,
+	}
+	updates := bson.M{
+		"$set": bson.M{
+			"email":       update.Email,
+			"updatedTime": time.Now(),
+		},
+	}
+
+	result, err := r.collection.UpdateMany(ctx, selector, updates)
+	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
+		err = fmt.Errorf("updated only %v out of %v clinician records: %w", result.ModifiedCount, result.MatchedCount, err)
+	}
+
+	return err
 }
 
 func (r *Repository) Delete(ctx context.Context, clinicId string, userId string) error {

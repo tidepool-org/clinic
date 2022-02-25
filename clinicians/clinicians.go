@@ -22,6 +22,7 @@ type Service interface {
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error)
 	Create(ctx context.Context, clinician *Clinician) (*Clinician, error)
 	Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error)
+	UpdateAll(ctx context.Context, update *CliniciansUpdate) error
 	Delete(ctx context.Context, clinicId string, clinicianId string) error
 	DeleteFromAllClinics(ctx context.Context, clinicianId string) error
 	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
@@ -41,6 +42,12 @@ type ClinicianUpdate struct {
 	ClinicId    string
 	ClinicianId string
 	Clinician   Clinician
+}
+
+// Update multiple clinician records belonging to the same user
+type CliniciansUpdate struct {
+	UserId string
+	Email string
 }
 
 type Clinician struct {
