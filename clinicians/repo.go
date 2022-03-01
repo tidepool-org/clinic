@@ -2,14 +2,15 @@ package clinicians
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -17,9 +18,10 @@ const (
 	cliniciansCollectionName = "clinicians"
 )
 
-func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, error) {
+func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (*Repository, error) {
 	repo := &Repository{
 		collection: db.Collection(cliniciansCollectionName),
+		logger: logger,
 	}
 
 	lifecycle.Append(fx.Hook{
@@ -33,6 +35,7 @@ func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (*Repository, err
 
 type Repository struct {
 	collection *mongo.Collection
+	logger *zap.SugaredLogger
 }
 
 func (r *Repository) Initialize(ctx context.Context) error {
@@ -67,8 +70,8 @@ func (r *Repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetBackground(true).
 				SetUnique(true).
-				SetName("UniqueClinicInviteEmail").
-				SetPartialFilterExpression(bson.D{{"inviteId", bson.M{"$exists": true}}}),
+				SetName("UniqueClinicMemberEmail").
+				SetPartialFilterExpression(bson.D{{"email", bson.M{"$exists": true}}}),
 		},
 		{
 			Keys: bson.D{
@@ -219,7 +222,11 @@ func (r *Repository) UpdateAll(ctx context.Context, update *CliniciansUpdate) er
 
 	result, err := r.collection.UpdateMany(ctx, selector, updates)
 	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
-		err = fmt.Errorf("updated only %v out of %v clinician records: %w", result.ModifiedCount, result.MatchedCount, err)
+		if store.IsDuplicateKeyError(err) {
+			r.logger.Warnw("unable to update all records", "userId", update.UserId, "error", err)
+			err = fmt.Errorf("%w: duplicate email", errors.ConstraintViolation)
+		}
+		err = fmt.Errorf("partially updated %v out of %v clinician records: %w", result.ModifiedCount, result.MatchedCount, err)
 	}
 
 	return err
@@ -338,7 +345,7 @@ func (r *Repository) clinicianExists(ctx context.Context, clinician *Clinician) 
 	}
 
 	if len(or) == 0 {
-		return false, errors.New("invalid clinician selector")
+		return false, fmt.Errorf("invalid clinician selector")
 	}
 
 	count, err := r.collection.CountDocuments(ctx, bson.M{

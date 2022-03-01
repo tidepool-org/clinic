@@ -384,7 +384,7 @@ allow {
 }
 
 # Allow backend services to update user details
-# PATCH /v1/users/:clinicId/clinics
+# POST /v1/users/:clinicId/clinics
 allow {
   is_backend_service
   input.method == "POST"
