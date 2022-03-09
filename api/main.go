@@ -21,9 +21,7 @@ import (
 )
 
 var (
-	Host                = "localhost"
-	Port                = 8080
-	ServerString        = fmt.Sprintf("%s:%d", Host, Port)
+	ServerString        = ":8080"
 	ServerTimeoutAmount = 20
 )
 
