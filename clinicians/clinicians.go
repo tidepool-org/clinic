@@ -90,9 +90,11 @@ func (c *Clinician) RolesChanged(newRoles []string) bool {
 }
 
 type Filter struct {
-	ClinicId *string
-	UserId   *string
-	Search   *string
-	Email    *string
-	Role     *string
+	ClinicId         *string
+	UserId           *string
+	Search           *string
+	Email            *string
+	Role             *string
+	CreatedTimeStart *time.Time
+	CreatedTimeEnd   *time.Time
 }

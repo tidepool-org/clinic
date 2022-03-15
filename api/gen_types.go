@@ -24,6 +24,19 @@ const (
 	ClinicClinicSizeN500999 ClinicClinicSize = "500-999"
 )
 
+// Defines values for ClinicClinicType.
+const (
+	ClinicClinicTypeHealthcareSystem ClinicClinicType = "healthcare_system"
+
+	ClinicClinicTypeOther ClinicClinicType = "other"
+
+	ClinicClinicTypeProviderPractice ClinicClinicType = "provider_practice"
+
+	ClinicClinicTypeResearcher ClinicClinicType = "researcher"
+
+	ClinicClinicTypeVeterinaryClinic ClinicClinicType = "veterinary_clinic"
+)
+
 // Defines values for MigrationStatus.
 const (
 	MigrationStatusCOMPLETED MigrationStatus = "COMPLETED"
@@ -47,7 +60,7 @@ type Clinic struct {
 	// City name.
 	City       *string           `json:"city,omitempty"`
 	ClinicSize *ClinicClinicSize `json:"clinicSize,omitempty"`
-	ClinicType *string           `json:"clinicType,omitempty"`
+	ClinicType *ClinicClinicType `json:"clinicType,omitempty"`
 
 	// Country name.
 	Country     *string   `json:"country,omitempty"`
@@ -76,6 +89,9 @@ type Clinic struct {
 
 // ClinicClinicSize defines model for Clinic.ClinicSize.
 type ClinicClinicSize string
+
+// ClinicClinicType defines model for Clinic.ClinicType.
+type ClinicClinicType string
 
 // The `id` may be empty if the clinician invite has not been accepted.
 type Clinician struct {
@@ -223,6 +239,12 @@ type ClinicId string
 // ClinicianId defines model for clinicianId.
 type ClinicianId string
 
+// CreatedTimeEnd defines model for createdTimeEnd.
+type CreatedTimeEnd time.Time
+
+// CreatedTimeStart defines model for createdTimeStart.
+type CreatedTimeStart time.Time
+
 // Email defines model for email.
 type Email openapi_types.Email
 
@@ -253,6 +275,18 @@ type Sort string
 // String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type UserId TidepoolUserId
 
+// ListAllCliniciansParams defines parameters for ListAllClinicians.
+type ListAllCliniciansParams struct {
+	Offset *Offset `json:"offset,omitempty"`
+	Limit  *Limit  `json:"limit,omitempty"`
+
+	// Return records created after the given date (inclusive)
+	CreatedTimeStart *CreatedTimeStart `json:"createdTimeStart,omitempty"`
+
+	// Return records created before the given date (exclusive)
+	CreatedTimeEnd *CreatedTimeEnd `json:"createdTimeEnd,omitempty"`
+}
+
 // ListClinicsForClinicianParams defines parameters for ListClinicsForClinician.
 type ListClinicsForClinicianParams struct {
 	Offset *Offset `json:"offset,omitempty"`
@@ -264,6 +298,12 @@ type ListClinicsParams struct {
 	Limit     *Limit     `json:"limit,omitempty"`
 	Offset    *Offset    `json:"offset,omitempty"`
 	ShareCode *ShareCode `json:"shareCode,omitempty"`
+
+	// Return records created after the given date (inclusive)
+	CreatedTimeStart *CreatedTimeStart `json:"createdTimeStart,omitempty"`
+
+	// Return records created before the given date (exclusive)
+	CreatedTimeEnd *CreatedTimeEnd `json:"createdTimeEnd,omitempty"`
 }
 
 // CreateClinicJSONBody defines parameters for CreateClinic.
