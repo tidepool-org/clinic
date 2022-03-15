@@ -224,18 +224,6 @@ func (c *Client) ListAllClinicians(ctx context.Context, params *ListAllClinician
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListAllClinicians(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListAllCliniciansRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) ListClinicsForClinician(ctx context.Context, userId UserId, params *ListClinicsForClinicianParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListClinicsForClinicianRequest(c.Server, userId, params)
 	if err != nil {
@@ -2618,28 +2606,6 @@ type ClientWithResponsesInterface interface {
 	UpdateClinicUserDetailsWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClinicUserDetailsResponse, error)
 
 	UpdateClinicUserDetailsWithResponse(ctx context.Context, userId UserId, body UpdateClinicUserDetailsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClinicUserDetailsResponse, error)
-}
-
-type ListAllCliniciansResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *[]ClinicianClinicRelationship
-}
-
-// Status returns HTTPResponse.Status
-func (r ListAllCliniciansResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListAllCliniciansResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
 }
 
 type ListAllCliniciansResponse struct {
