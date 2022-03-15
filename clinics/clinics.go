@@ -45,9 +45,16 @@ type Clinic struct {
 	Website            *string             `bson:"website,omitempty"`
 	ShareCodes         *[]string           `bson:"shareCodes,omitempty"`
 	Admins             *[]string           `bson:"admins,omitempty"`
-	CreatedTime        time.Time           `bson:"createdTime"`
-	UpdatedTime        time.Time           `bson:"updatedTime"`
+	CreatedTime        time.Time           `bson:"createdTime,omitempty"`
+	UpdatedTime        time.Time           `bson:"updatedTime,omitempty"`
 	IsMigrated         bool                `bson:"isMigrated,omitempty"`
+}
+
+func NewClinic() Clinic {
+	return Clinic{
+		CreatedTime: time.Now(),
+		UpdatedTime: time.Now(),
+	}
 }
 
 func (c *Clinic) HasAllRequiredFields() bool {
