@@ -233,6 +233,11 @@ type PhoneNumber struct {
 // String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type TidepoolUserId string
 
+// UpdateUserDetails defines model for UpdateUserDetails.
+type UpdateUserDetails struct {
+	Email *openapi_types.Email `json:"email,omitempty"`
+}
+
 // ClinicId defines model for clinicId.
 type ClinicId string
 
@@ -366,6 +371,9 @@ type ListClinicsForPatientParams struct {
 	Limit  *Limit  `json:"limit,omitempty"`
 }
 
+// UpdateClinicUserDetailsJSONBody defines parameters for UpdateClinicUserDetails.
+type UpdateClinicUserDetailsJSONBody UpdateUserDetails
+
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
 type CreateClinicJSONRequestBody CreateClinicJSONBody
 
@@ -398,4 +406,7 @@ type UpdatePatientJSONRequestBody UpdatePatientJSONBody
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody UpdatePatientPermissionsJSONBody
+
+// UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
+type UpdateClinicUserDetailsJSONRequestBody UpdateClinicUserDetailsJSONBody
 

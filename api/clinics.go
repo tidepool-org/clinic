@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
+	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/creator"
 	"github.com/tidepool-org/clinic/errors"
@@ -182,6 +183,26 @@ func (h *Handler) DeleteUserFromClinics(ec echo.Context, userId UserId) error {
 	}
 	if err := h.clinicians.DeleteFromAllClinics(ctx, string(userId)); err != nil {
 		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) UpdateClinicUserDetails(ec echo.Context, userId UserId) error {
+	ctx := ec.Request().Context()
+	dto := UpdateUserDetails{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	if dto.Email != nil {
+		update := &clinicians.CliniciansUpdate{
+			UserId: string(userId),
+			Email:  string(*dto.Email),
+		}
+		if err := h.clinicians.UpdateAll(ctx, update); err != nil {
+			return err
+		}
 	}
 
 	return ec.NoContent(http.StatusOK)

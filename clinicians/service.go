@@ -79,6 +79,11 @@ func (s service) Update(ctx context.Context, update *ClinicianUpdate) (*Clinicia
 	return result.(*Clinician), nil
 }
 
+
+func (s *service) UpdateAll(ctx context.Context, update *CliniciansUpdate) error {
+	return s.repository.UpdateAll(ctx, update)
+}
+
 func (s service) AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error) {
 	profile, err := s.userService.GetUserProfile(ctx, associate.UserId)
 	if err != nil {
