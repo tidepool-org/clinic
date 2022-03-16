@@ -16,11 +16,15 @@ func (h *Handler) ListAllClinicians(ec echo.Context, params ListAllCliniciansPar
 	filter := clinicians.Filter{}
 	if params.CreatedTimeStart != nil {
 		start := time.Time(*params.CreatedTimeStart)
-		filter.CreatedTimeStart = &start
+		if !start.IsZero() {
+			filter.CreatedTimeStart = &start
+		}
 	}
 	if params.CreatedTimeEnd != nil {
 		end := time.Time(*params.CreatedTimeEnd)
-		filter.CreatedTimeEnd = &end
+		if !end.IsZero() {
+			filter.CreatedTimeEnd = &end
+		}
 	}
 	return h.listClinics(ec, filter, page)
 }

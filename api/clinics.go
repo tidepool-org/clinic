@@ -23,11 +23,15 @@ func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
 	}
 	if params.CreatedTimeStart != nil {
 		start := time.Time(*params.CreatedTimeStart)
-		filter.CreatedTimeStart = &start
+		if !start.IsZero() {
+			filter.CreatedTimeStart = &start
+		}
 	}
 	if params.CreatedTimeEnd != nil {
 		end := time.Time(*params.CreatedTimeEnd)
-		filter.CreatedTimeEnd = &end
+		if !end.IsZero() {
+			filter.CreatedTimeEnd = &end
+		}
 	}
 
 	list, err := h.clinics.List(ctx, &filter, page)
