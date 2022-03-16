@@ -23,11 +23,11 @@ type Service interface {
 }
 
 type Filter struct {
-	Ids        []string
-	Email      *string
-	ShareCodes []string
+	Ids              []string
+	Email            *string
+	ShareCodes       []string
 	CreatedTimeStart *time.Time
-	CreatedTimeEnd *time.Time
+	CreatedTimeEnd   *time.Time
 }
 
 type Clinic struct {
