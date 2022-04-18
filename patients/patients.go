@@ -51,6 +51,7 @@ type Patient struct {
 	CreatedTime        time.Time           `bson:"createdTime,omitempty"`
 	UpdatedTime        time.Time           `bson:"updatedTime,omitempty"`
 	InvitedBy          *string             `bson:"invitedBy,omitempty"`
+	AttestationTime    time.Time           `bson:"attestationTime,omitempty"`
 }
 
 func (p Patient) IsCustodial() bool {

@@ -116,6 +116,14 @@ func (h *Handler) GetClinicByShareCode(ec echo.Context, shareCode string) error 
 }
 
 func (h *Handler) TriggerInitialMigration(ec echo.Context, clinicId string) error {
+	dto := TriggerMigration{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+	if dto.AttestationSubmitted != true {
+		return fmt.Errorf("%w: attestation is required", errors.ConstraintViolation)
+	}
+
 	ctx := ec.Request().Context()
 	migration, err := h.clinicsMigrator.TriggerInitialMigration(ctx, clinicId)
 	if err != nil {

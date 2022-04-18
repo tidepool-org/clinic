@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"time"
 )
 
 func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
@@ -98,6 +99,9 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	}
 	if dto.LegacyClinicianId != nil {
 		patient.LegacyClinicianIds = []string{string(*dto.LegacyClinicianId)}
+	}
+	if dto.AttestationSubmitted != nil && *dto.AttestationSubmitted == true && patient.IsCustodial() {
+		patient.AttestationTime = time.Now()
 	}
 
 	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {

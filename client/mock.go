@@ -695,9 +695,9 @@ func (mr *MockClientInterfaceMockRecorder) MigrateLegacyClinicianPatientsWithBod
 }
 
 // TriggerInitialMigration mocks base method.
-func (m *MockClientInterface) TriggerInitialMigration(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) TriggerInitialMigration(ctx context.Context, clinicId string, body TriggerInitialMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, clinicId}
+	varargs := []interface{}{ctx, clinicId, body}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
@@ -708,10 +708,30 @@ func (m *MockClientInterface) TriggerInitialMigration(ctx context.Context, clini
 }
 
 // TriggerInitialMigration indicates an expected call of TriggerInitialMigration.
-func (mr *MockClientInterfaceMockRecorder) TriggerInitialMigration(ctx, clinicId interface{}, reqEditors ...interface{}) *gomock.Call {
+func (mr *MockClientInterfaceMockRecorder) TriggerInitialMigration(ctx, clinicId, body interface{}, reqEditors ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, clinicId}, reqEditors...)
+	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerInitialMigration", reflect.TypeOf((*MockClientInterface)(nil).TriggerInitialMigration), varargs...)
+}
+
+// TriggerInitialMigrationWithBody mocks base method.
+func (m *MockClientInterface) TriggerInitialMigrationWithBody(ctx context.Context, clinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "TriggerInitialMigrationWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TriggerInitialMigrationWithBody indicates an expected call of TriggerInitialMigrationWithBody.
+func (mr *MockClientInterfaceMockRecorder) TriggerInitialMigrationWithBody(ctx, clinicId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerInitialMigrationWithBody", reflect.TypeOf((*MockClientInterface)(nil).TriggerInitialMigrationWithBody), varargs...)
 }
 
 // UpdateClinic mocks base method.
@@ -1597,10 +1617,30 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) MigrateLegacyClinicianPa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MigrateLegacyClinicianPatientsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).MigrateLegacyClinicianPatientsWithResponse), varargs...)
 }
 
-// TriggerInitialMigrationWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) TriggerInitialMigrationWithResponse(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error) {
+// TriggerInitialMigrationWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) TriggerInitialMigrationWithBodyWithResponse(ctx context.Context, clinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, clinicId}
+	varargs := []interface{}{ctx, clinicId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "TriggerInitialMigrationWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*TriggerInitialMigrationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TriggerInitialMigrationWithBodyWithResponse indicates an expected call of TriggerInitialMigrationWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) TriggerInitialMigrationWithBodyWithResponse(ctx, clinicId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerInitialMigrationWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).TriggerInitialMigrationWithBodyWithResponse), varargs...)
+}
+
+// TriggerInitialMigrationWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) TriggerInitialMigrationWithResponse(ctx context.Context, clinicId string, body TriggerInitialMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, body}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
@@ -1611,9 +1651,9 @@ func (m *MockClientWithResponsesInterface) TriggerInitialMigrationWithResponse(c
 }
 
 // TriggerInitialMigrationWithResponse indicates an expected call of TriggerInitialMigrationWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) TriggerInitialMigrationWithResponse(ctx, clinicId interface{}, reqEditors ...interface{}) *gomock.Call {
+func (mr *MockClientWithResponsesInterfaceMockRecorder) TriggerInitialMigrationWithResponse(ctx, clinicId, body interface{}, reqEditors ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, clinicId}, reqEditors...)
+	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerInitialMigrationWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).TriggerInitialMigrationWithResponse), varargs...)
 }
 

@@ -149,8 +149,10 @@ type ClientInterface interface {
 
 	AssociateClinicianToUser(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// TriggerInitialMigration request
-	TriggerInitialMigration(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// TriggerInitialMigration request with any body
+	TriggerInitialMigrationWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	TriggerInitialMigration(ctx context.Context, clinicId string, body TriggerInitialMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListMigrations request
 	ListMigrations(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -464,8 +466,20 @@ func (c *Client) AssociateClinicianToUser(ctx context.Context, clinicId ClinicId
 	return c.Client.Do(req)
 }
 
-func (c *Client) TriggerInitialMigration(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewTriggerInitialMigrationRequest(c.Server, clinicId)
+func (c *Client) TriggerInitialMigrationWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTriggerInitialMigrationRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) TriggerInitialMigration(ctx context.Context, clinicId string, body TriggerInitialMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTriggerInitialMigrationRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1642,8 +1656,19 @@ func NewAssociateClinicianToUserRequestWithBody(server string, clinicId ClinicId
 	return req, nil
 }
 
-// NewTriggerInitialMigrationRequest generates requests for TriggerInitialMigration
-func NewTriggerInitialMigrationRequest(server string, clinicId string) (*http.Request, error) {
+// NewTriggerInitialMigrationRequest calls the generic TriggerInitialMigration builder with application/json body
+func NewTriggerInitialMigrationRequest(server string, clinicId string, body TriggerInitialMigrationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewTriggerInitialMigrationRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewTriggerInitialMigrationRequestWithBody generates requests for TriggerInitialMigration with any type of body
+func NewTriggerInitialMigrationRequestWithBody(server string, clinicId string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1668,10 +1693,12 @@ func NewTriggerInitialMigrationRequest(server string, clinicId string) (*http.Re
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -2545,8 +2572,10 @@ type ClientWithResponsesInterface interface {
 
 	AssociateClinicianToUserWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AssociateClinicianToUserResponse, error)
 
-	// TriggerInitialMigration request
-	TriggerInitialMigrationWithResponse(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error)
+	// TriggerInitialMigration request with any body
+	TriggerInitialMigrationWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error)
+
+	TriggerInitialMigrationWithResponse(ctx context.Context, clinicId string, body TriggerInitialMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error)
 
 	// ListMigrations request
 	ListMigrationsWithResponse(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*ListMigrationsResponse, error)
@@ -3492,9 +3521,17 @@ func (c *ClientWithResponses) AssociateClinicianToUserWithResponse(ctx context.C
 	return ParseAssociateClinicianToUserResponse(rsp)
 }
 
-// TriggerInitialMigrationWithResponse request returning *TriggerInitialMigrationResponse
-func (c *ClientWithResponses) TriggerInitialMigrationWithResponse(ctx context.Context, clinicId string, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error) {
-	rsp, err := c.TriggerInitialMigration(ctx, clinicId, reqEditors...)
+// TriggerInitialMigrationWithBodyWithResponse request with arbitrary body returning *TriggerInitialMigrationResponse
+func (c *ClientWithResponses) TriggerInitialMigrationWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error) {
+	rsp, err := c.TriggerInitialMigrationWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTriggerInitialMigrationResponse(rsp)
+}
+
+func (c *ClientWithResponses) TriggerInitialMigrationWithResponse(ctx context.Context, clinicId string, body TriggerInitialMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error) {
+	rsp, err := c.TriggerInitialMigration(ctx, clinicId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
