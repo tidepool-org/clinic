@@ -1,10 +1,13 @@
 package api
 
 import (
+	"context"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
@@ -49,6 +52,11 @@ func (h *Handler) ListClinicians(ec echo.Context, clinicId ClinicId, params List
 
 func (h *Handler) DeleteClinician(ec echo.Context, clinicId ClinicId, clinicianId ClinicianId) error {
 	ctx := ec.Request().Context()
+
+	if err := h.assertClinicMigrated(ctx, clinicId); err != nil {
+		return err
+	}
+
 	err := h.clinicians.Delete(ctx, string(clinicId), string(clinicianId))
 	if err != nil {
 		return err
@@ -74,6 +82,10 @@ func (h *Handler) CreateClinician(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
+	if err := h.assertClinicMigrated(ctx, clinicId); err != nil {
+		return err
+	}
+
 	clinicObjId, err := primitive.ObjectIDFromHex(string(clinicId))
 	if err != nil {
 		return ec.JSON(http.StatusBadRequest, "invalid clinic id")
@@ -93,6 +105,10 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianI
 	ctx := ec.Request().Context()
 	dto := Clinician{}
 	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	if err := h.assertClinicMigrated(ctx, clinicId); err != nil {
 		return err
 	}
 
@@ -140,6 +156,11 @@ func (h *Handler) GetInvitedClinician(ec echo.Context, clinicId ClinicId, invite
 
 func (h *Handler) DeleteInvitedClinician(ec echo.Context, clinicId ClinicId, inviteId InviteId) error {
 	ctx := ec.Request().Context()
+
+	if err := h.assertClinicMigrated(ctx, clinicId); err != nil {
+		return err
+	}
+
 	if err := h.clinicians.DeleteInvite(ctx, string(clinicId), string(inviteId)); err != nil {
 		return err
 	}
@@ -154,11 +175,16 @@ func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId ClinicId, i
 		return err
 	}
 
+	if err := h.assertClinicMigrated(ctx, clinicId); err != nil {
+		return err
+	}
+
 	associate := clinicians.AssociateInvite{
 		ClinicId: string(clinicId),
 		InviteId: string(inviteId),
 		UserId:   dto.UserId,
 	}
+
 	clinician, err := h.cliniciansUpdater.AssociateInvite(ctx, associate)
 	if err != nil {
 		return err
@@ -196,4 +222,16 @@ func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page st
 	}
 
 	return ec.JSON(http.StatusOK, dtos)
+}
+
+func (h *Handler) assertClinicMigrated(ctx context.Context, clinicId ClinicId) error {
+	id := string(clinicId)
+	clinic, err := h.clinics.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !clinic.IsMigrated {
+		return fmt.Errorf("%w: clinic is not migrated", errors.ConstraintViolation)
+	}
+	return nil
 }
