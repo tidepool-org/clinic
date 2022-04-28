@@ -13,6 +13,13 @@ const (
 	SessionTokenScopes = "sessionToken.Scopes"
 )
 
+// Defines values for AverageGlucoseUnits.
+const (
+	AverageGlucoseUnitsMgdL AverageGlucoseUnits = "mg/dL"
+
+	AverageGlucoseUnitsMgdl AverageGlucoseUnits = "mg/dl"
+)
+
 // Defines values for ClinicClinicSize.
 const (
 	ClinicClinicSizeN0249 ClinicClinicSize = "0-249"
@@ -50,6 +57,17 @@ const (
 type AssociateClinicianToUser struct {
 	UserId string `json:"userId"`
 }
+
+// Blood glucose value, in `mg/dL`
+type AverageGlucose struct {
+	Units AverageGlucoseUnits `json:"units"`
+
+	// An integer value representing a `mg/dL` value.
+	Value int32 `json:"value"`
+}
+
+// AverageGlucoseUnits defines model for AverageGlucose.Units.
+type AverageGlucoseUnits string
 
 // Clinic
 type Clinic struct {
@@ -133,7 +151,8 @@ type Clinics []Clinic
 
 // CreatePatient defines model for CreatePatient.
 type CreatePatient struct {
-	IsMigrated *bool `json:"isMigrated,omitempty"`
+	AttestationSubmitted *bool `json:"attestationSubmitted,omitempty"`
+	IsMigrated           *bool `json:"isMigrated,omitempty"`
 
 	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	LegacyClinicianId *TidepoolUserId     `json:"legacyClinicianId,omitempty"`
@@ -156,7 +175,8 @@ type Meta struct {
 
 // Migration defines model for Migration.
 type Migration struct {
-	CreatedTime time.Time `json:"createdTime"`
+	AttestationTime time.Time `json:"attestationTime"`
+	CreatedTime     time.Time `json:"createdTime"`
 
 	// The current status of the migration
 	Status      *MigrationStatus `json:"status,omitempty"`
@@ -180,9 +200,10 @@ type Migrations []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	BirthDate   openapi_types.Date `json:"birthDate"`
-	CreatedTime time.Time          `json:"createdTime"`
-	Email       *string            `json:"email,omitempty"`
+	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date `json:"birthDate"`
+	CreatedTime          time.Time          `json:"createdTime"`
+	Email                *string            `json:"email,omitempty"`
 
 	// The full name of the patient
 	FullName string `json:"fullName"`
@@ -193,6 +214,7 @@ type Patient struct {
 	// The medical record number of the patient
 	Mrn           *string             `json:"mrn,omitempty"`
 	Permissions   *PatientPermissions `json:"permissions,omitempty"`
+	Summary       *PatientSummary     `json:"summary,omitempty"`
 	TargetDevices *[]string           `json:"targetDevices,omitempty"`
 	UpdatedTime   time.Time           `json:"updatedTime"`
 }
@@ -215,6 +237,26 @@ type PatientPermissions struct {
 	View      *map[string]interface{} `json:"view,omitempty"`
 }
 
+// PatientSummary defines model for PatientSummary.
+type PatientSummary struct {
+	// Blood glucose value, in `mg/dL`
+	AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
+	FirstData                  *time.Time      `json:"firstData,omitempty"`
+	GlucoseManagementIndicator *float32        `json:"glucoseManagementIndicator,omitempty"`
+	HighGlucoseThreshold       *float32        `json:"highGlucoseThreshold,omitempty"`
+	LastData                   *time.Time      `json:"lastData,omitempty"`
+	LastUpdated                *time.Time      `json:"lastUpdated,omitempty"`
+	LastUpload                 *time.Time      `json:"lastUpload,omitempty"`
+	LowGlucoseThreshold        *float32        `json:"lowGlucoseThreshold,omitempty"`
+	OutdatedSince              *time.Time      `json:"outdatedSince,omitempty"`
+	TimeAboveRange             *float32        `json:"timeAboveRange,omitempty"`
+	TimeBelowRange             *float32        `json:"timeBelowRange,omitempty"`
+	TimeCGMUse                 *float32        `json:"timeCGMUse,omitempty"`
+	TimeInRange                *float32        `json:"timeInRange,omitempty"`
+	TimeVeryAboveRange         *float32        `json:"timeVeryAboveRange,omitempty"`
+	TimeVeryBelowRange         *float32        `json:"timeVeryBelowRange,omitempty"`
+}
+
 // Patients defines model for Patients.
 type Patients []Patient
 
@@ -232,6 +274,11 @@ type PhoneNumber struct {
 
 // String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type TidepoolUserId string
+
+// TriggerMigration defines model for TriggerMigration.
+type TriggerMigration struct {
+	AttestationSubmitted bool `json:"attestationSubmitted"`
+}
 
 // UpdateUserDetails defines model for UpdateUserDetails.
 type UpdateUserDetails struct {
@@ -336,6 +383,9 @@ type UpdateClinicianJSONBody Clinician
 // AssociateClinicianToUserJSONBody defines parameters for AssociateClinicianToUser.
 type AssociateClinicianToUserJSONBody AssociateClinicianToUser
 
+// TriggerInitialMigrationJSONBody defines parameters for TriggerInitialMigration.
+type TriggerInitialMigrationJSONBody TriggerMigration
+
 // MigrateLegacyClinicianPatientsJSONBody defines parameters for MigrateLegacyClinicianPatients.
 type MigrateLegacyClinicianPatientsJSONBody Migration
 
@@ -351,6 +401,27 @@ type ListPatientsParams struct {
 
 	// Sort order and attribute (e.g. +name or -name)
 	Sort *Sort `json:"sort,omitempty"`
+
+	// Percentage of time below 54 mg/dL
+	SummaryTimeVeryBelowRange *string `json:"summary.timeVeryBelowRange,omitempty"`
+
+	// Percentage of time in range 54-70 mg/dL
+	SummaryTimeBelowRange *string `json:"summary.timeBelowRange,omitempty"`
+
+	// Percentage of time in range 70-180 mg/dL
+	SummaryTimeInRange *string `json:"summary.timeInRange,omitempty"`
+
+	// Percentage of time in range 180-250 mg/dL
+	SummaryTimeAboveRange *string `json:"summary.timeAboveRange,omitempty"`
+
+	// Percentage of time above range 250 mg/dL
+	SummaryTimeVeryAboveRange *string `json:"summary.timeVeryAboveRange,omitempty"`
+
+	// Inclusive
+	SummaryLastUploadFrom *time.Time `json:"summary.lastUploadFrom,omitempty"`
+
+	// Exclusive
+	SummaryLastUploadTo *time.Time `json:"summary.lastUploadTo,omitempty"`
 }
 
 // CreatePatientAccountJSONBody defines parameters for CreatePatientAccount.
@@ -388,6 +459,9 @@ type UpdateClinicianJSONRequestBody UpdateClinicianJSONBody
 
 // AssociateClinicianToUserJSONRequestBody defines body for AssociateClinicianToUser for application/json ContentType.
 type AssociateClinicianToUserJSONRequestBody AssociateClinicianToUserJSONBody
+
+// TriggerInitialMigrationJSONRequestBody defines body for TriggerInitialMigration for application/json ContentType.
+type TriggerInitialMigrationJSONRequestBody TriggerInitialMigrationJSONBody
 
 // MigrateLegacyClinicianPatientsJSONRequestBody defines body for MigrateLegacyClinicianPatients for application/json ContentType.
 type MigrateLegacyClinicianPatientsJSONRequestBody MigrateLegacyClinicianPatientsJSONBody

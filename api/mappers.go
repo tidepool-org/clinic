@@ -9,6 +9,8 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -127,6 +129,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		TargetDevices: patient.TargetDevices,
 		CreatedTime:   patient.CreatedTime,
 		UpdatedTime:   patient.UpdatedTime,
+		Summary:       NewSummaryDto(patient.Summary),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -141,6 +144,67 @@ func NewPatient(dto Patient) patients.Patient {
 		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
+	}
+}
+
+func NewSummary(dto *PatientSummary) *patients.Summary {
+	if dto == nil {
+		return nil
+	}
+
+	var avgGlucose *patients.AvgGlucose
+	if dto.AverageGlucose != nil {
+		avgGlucose = &patients.AvgGlucose{
+			Units: string(dto.AverageGlucose.Units),
+			Value: int(dto.AverageGlucose.Value),
+		}
+	}
+	return &patients.Summary{
+		AverageGlucose:             avgGlucose,
+		FirstData:                  dto.FirstData,
+		GlucoseManagementIndicator: dto.GlucoseManagementIndicator,
+		HighGlucoseThreshold:       dto.HighGlucoseThreshold,
+		LastData:                   dto.LastData,
+		LastUpdated:                dto.LastUpdated,
+		LastUpload:                 dto.LastUpload,
+		LowGlucoseThreshold:        dto.LowGlucoseThreshold,
+		OutdatedSince:              dto.OutdatedSince,
+		TimeAboveRange:             dto.TimeAboveRange,
+		TimeBelowRange:             dto.TimeBelowRange,
+		TimeCGMUse:                 dto.TimeCGMUse,
+		TimeInRange:                dto.TimeInRange,
+		TimeVeryAboveRange:         dto.TimeVeryAboveRange,
+		TimeVeryBelowRange:         dto.TimeVeryBelowRange,
+	}
+}
+
+func NewSummaryDto(summary *patients.Summary) *PatientSummary {
+	if summary == nil {
+		return nil
+	}
+	var avgGlucose *AverageGlucose
+	if summary.AverageGlucose != nil {
+		avgGlucose = &AverageGlucose{
+			Units: AverageGlucoseUnits(summary.AverageGlucose.Units),
+			Value: int32(summary.AverageGlucose.Value),
+		}
+	}
+	return &PatientSummary{
+		AverageGlucose:             avgGlucose,
+		FirstData:                  summary.FirstData,
+		GlucoseManagementIndicator: summary.GlucoseManagementIndicator,
+		HighGlucoseThreshold:       summary.HighGlucoseThreshold,
+		LastData:                   summary.LastData,
+		LastUpdated:                summary.LastUpdated,
+		LastUpload:                 summary.LastUpload,
+		LowGlucoseThreshold:        summary.LowGlucoseThreshold,
+		OutdatedSince:              summary.OutdatedSince,
+		TimeAboveRange:             summary.TimeAboveRange,
+		TimeBelowRange:             summary.TimeBelowRange,
+		TimeCGMUse:                 summary.TimeCGMUse,
+		TimeInRange:                summary.TimeInRange,
+		TimeVeryAboveRange:         summary.TimeVeryAboveRange,
+		TimeVeryBelowRange:         summary.TimeVeryBelowRange,
 	}
 }
 
@@ -397,4 +461,34 @@ func stringToClinicType(s *string) *ClinicClinicType {
 	return &size
 }
 
+var rangeFilterRegex = regexp.MustCompile("^(<|<=|>|>=)(\\d\\.\\d?\\d?)$")
 
+func parseRangeFilter(filter string) (cmp *string, val float64, err error) {
+	matches := rangeFilterRegex.FindStringSubmatch(filter)
+	if len(matches) != 3 {
+		err = fmt.Errorf("%w: couldn't parse range filter", errors.BadRequest)
+		return
+	}
+	if _, ok := validCmps[matches[1]]; !ok {
+		err = fmt.Errorf("%w: invalid comparator", errors.BadRequest)
+		return
+	}
+
+	value, e := strconv.ParseFloat(matches[2], 64)
+	if e != nil {
+		err = fmt.Errorf("%w: invalid value", errors.BadRequest)
+		return
+	}
+
+	cmp = &matches[1]
+	val = value
+	err = nil
+	return
+}
+
+var validCmps = map[string]struct{}{
+	">":  {},
+	">=": {},
+	"<":  {},
+	"<=": {},
+}

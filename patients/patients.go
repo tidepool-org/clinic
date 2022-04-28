@@ -51,16 +51,31 @@ type Patient struct {
 	CreatedTime        time.Time           `bson:"createdTime,omitempty"`
 	UpdatedTime        time.Time           `bson:"updatedTime,omitempty"`
 	InvitedBy          *string             `bson:"invitedBy,omitempty"`
+	Summary            *Summary            `bson:"summary,omitempty`
 }
+
+// PatientSummary defines model for PatientSummary.
 
 func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
 }
 
 type Filter struct {
-	ClinicId *string
-	UserId   *string
-	Search   *string
+	ClinicId                *string
+	UserId                  *string
+	Search                  *string
+	LastUploadFrom          *time.Time
+	LastUploadTo            *time.Time
+	TimeVeryBelowRangeCmp   *string
+	TimeVeryBelowRangeValue float64
+	TimeBelowRangeCmp       *string
+	TimeBelowRangeValue     float64
+	TimeInRangeCmp          *string
+	TimeInRangeValue        float64
+	TimeAboveRangeCmp       *string
+	TimeAboveRangeValue     float64
+	TimeVeryAboveRangeCmp   *string
+	TimeVeryAboveRangeValue float64
 }
 
 type Permission = map[string]interface{}
@@ -88,4 +103,27 @@ type PatientUpdate struct {
 	UserId    string
 	Patient   Patient
 	UpdatedBy string
+}
+
+type Summary struct {
+	AverageGlucose             *AvgGlucose `bson:"averageGlucose,omitempty"`
+	FirstData                  *time.Time  `bson:"firstData,omitempty"`
+	GlucoseManagementIndicator *float32    `bson:"glucoseManagementIndicator,omitempty"`
+	HighGlucoseThreshold       *float32    `bson:"highGlucoseThreshold,omitempty"`
+	LastData                   *time.Time  `bson:"lastData,omitempty"`
+	LastUpdated                *time.Time  `bson:"lastUpdated,omitempty"`
+	LastUpload                 *time.Time  `bson:"lastUpload,omitempty"`
+	LowGlucoseThreshold        *float32    `bson:"lowGlucoseThreshold,omitempty"`
+	OutdatedSince              *time.Time  `bson:"outdatedSince,omitempty"`
+	TimeAboveRange             *float32    `bson:"timeAboveRange,omitempty"`
+	TimeBelowRange             *float32    `bson:"timeBelowRange,omitempty"`
+	TimeCGMUse                 *float32    `bson:"timeCGMUse,omitempty"`
+	TimeInRange                *float32    `bson:"timeInRange,omitempty"`
+	TimeVeryAboveRange         *float32    `bson:"timeVeryAboveRange,omitempty"`
+	TimeVeryBelowRange         *float32    `bson:"timeVeryBelowRange,omitempty"`
+}
+
+type AvgGlucose struct {
+	Units string `bson:"units"`
+	Value int    `bson:"value"`
 }

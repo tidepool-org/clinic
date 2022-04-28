@@ -14,9 +14,52 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId: strp(string(clinicId)),
-		Search:   searchToString(params.Search),
+		ClinicId:       strp(string(clinicId)),
+		Search:         searchToString(params.Search),
+		LastUploadFrom: params.SummaryLastUploadFrom,
+		LastUploadTo:   params.SummaryLastUploadTo,
 	}
+	if params.SummaryTimeVeryBelowRange != nil && *params.SummaryTimeVeryBelowRange != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryTimeVeryBelowRange)
+		if err != nil {
+			return err
+		}
+		filter.TimeVeryBelowRangeCmp = cmp
+		filter.TimeVeryBelowRangeValue = value
+	}
+	if params.SummaryTimeBelowRange != nil && *params.SummaryTimeBelowRange != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryTimeBelowRange)
+		if err != nil {
+			return err
+		}
+		filter.TimeBelowRangeCmp = cmp
+		filter.TimeBelowRangeValue = value
+	}
+	if params.SummaryTimeInRange != nil && *params.SummaryTimeInRange != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryTimeBelowRange)
+		if err != nil {
+			return err
+		}
+		filter.TimeInRangeCmp = cmp
+		filter.TimeInRangeValue = value
+	}
+	if params.SummaryTimeAboveRange != nil && *params.SummaryTimeAboveRange != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryTimeAboveRange)
+		if err != nil {
+			return err
+		}
+		filter.TimeAboveRangeCmp = cmp
+		filter.TimeAboveRangeValue = value
+	}
+	if params.SummaryTimeVeryAboveRange != nil && *params.SummaryTimeAboveRange != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryTimeVeryAboveRange)
+		if err != nil {
+			return err
+		}
+		filter.TimeVeryAboveRangeCmp = cmp
+		filter.TimeVeryAboveRangeValue = value
+	}
+
 	sort, err := ParseSort(params.Sort)
 	if err != nil {
 		return err

@@ -109,6 +109,78 @@ func (r *repository) Initialize(ctx context.Context) error {
 					"birthDate": 1,
 				}),
 		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.lastUpload", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryLastUpload"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.timeCGMUse", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeCGMUse"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.glucoseManagementIndicator", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryGMI"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.timeVeryBelowRange", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryVeryBelowRange"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.timeBelowRange", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryBelowRange"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.timeInRange", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryInRange"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.timeAboveRange", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryAboveRange"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.timeVeryAboveRange", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryVeryAboveRange"),
+		},
 	})
 	return err
 }
@@ -365,24 +437,45 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			bson.M{"birthDate": filter},
 		}
 	}
+	if filter.LastUploadFrom != nil {
+		selector["summary.lastUpload"] = bson.M{"$gte": filter.LastUploadFrom}
+	}
+	if filter.LastUploadTo != nil {
+		selector["summary.lastUpload"] = bson.M{"$lt": filter.LastUploadTo}
+	}
+	if f, ok := cmpToMongoFilter(filter.TimeVeryBelowRangeCmp); ok {
+		selector["summary.timeVeryBelowRange"] = bson.M{f: filter.TimeVeryBelowRangeValue}
+	}
+	if f, ok := cmpToMongoFilter(filter.TimeBelowRangeCmp); ok {
+		selector["summary.timeBelowRange"] = bson.M{f: filter.TimeBelowRangeValue}
+	}
+	if f, ok := cmpToMongoFilter(filter.TimeInRangeCmp); ok {
+		selector["summary.timeInRange"] = bson.M{f: filter.TimeInRangeValue}
+	}
+	if f, ok := cmpToMongoFilter(filter.TimeAboveRangeCmp); ok {
+		selector["summary.timeAboveRange"] = bson.M{f: filter.TimeAboveRangeValue}
+	}
+	if f, ok := cmpToMongoFilter(filter.TimeVeryAboveRangeCmp); ok {
+		selector["summary.timeVeryAboveRange"] = bson.M{f: filter.TimeVeryAboveRangeValue}
+	}
+
 	return selector
+}
+
+func isSortAttributeValid(attribute string) bool {
+	_, ok := validSortAttributes[attribute]
+	return ok
 }
 
 func generateListSortStage(sort *store.Sort) bson.D {
 	var s bson.D
-	if sort != nil {
-		if sort.Attribute == "fullName" {
-			s = append(s, bson.E{Key: "fullName", Value: sort.Order()})
-		} else if sort.Attribute == "birthDate" {
-			s = append(s, bson.E{Key: "birthDate", Value: sort.Order()})
-		}
+	if sort != nil && isSortAttributeValid(sort.Attribute) {
+		s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
+	} else {
+		s = append(s, bson.E{Key: "fullName", Value: 1})
 	}
 
-	if len(s) == 0 {
-		s = bson.D{bson.E{Key: "fullName", Value: 1}}
-	}
-
-	// Including _id in the sort query ensure $skip aggregation works correctly
+	// Including _id in the sort query ensures that $skip aggregation works correctly
 	// See https://docs.mongodb.com/manual/reference/operator/aggregation/skip/
 	// for more details
 	s = append(s, bson.E{Key: "_id", Value: 1})
@@ -391,14 +484,6 @@ func generateListSortStage(sort *store.Sort) bson.D {
 }
 
 func generatePaginationFacetStages(pagination store.Pagination) []bson.M {
-	data := []bson.M{
-		{"$match": bson.M{}},
-		{"$skip": pagination.Offset},
-	}
-	if pagination.Limit != 0 {
-		data = append(data, bson.M{"$limit": pagination.Limit})
-	}
-
 	return []bson.M{
 		{
 			"$facet": bson.M{
@@ -437,4 +522,28 @@ func generatePaginationFacetStages(pagination store.Pagination) []bson.M {
 			},
 		},
 	}
+}
+
+var cmpToFilter = map[string]string{
+	">":  "$gt",
+	">=": "$gte",
+	"<":  "$lt",
+	"<=": "$lte",
+}
+
+func cmpToMongoFilter(cmp *string) (string, bool) {
+	if cmp == nil {
+		return "", false
+	}
+
+	f, ok := cmpToFilter[*cmp]
+	return f, ok
+}
+
+var validSortAttributes = map[string]struct{}{
+	"fullName":                           {},
+	"birthDate":                          {},
+	"summary.lastUpload":                 {},
+	"summary.timeCGMUse":                 {},
+	"summary.glucoseManagementIndicator": {},
 }

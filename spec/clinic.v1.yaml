@@ -242,6 +242,53 @@ paths:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/sort'
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\d?\d?$
+            example: '>=70'
+          in: query
+          name: summary.timeVeryBelowRange
+          description: Percentage of time below 54 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\d?\d?$
+            example: '>=70'
+          in: query
+          name: summary.timeBelowRange
+          description: Percentage of time in range 54-70 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\d?\d?$
+            example: '>=70'
+          in: query
+          name: summary.timeInRange
+          description: Percentage of time in range 70-180 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\d?\d?$
+            example: '>=70'
+          in: query
+          name: summary.timeAboveRange
+          description: Percentage of time in range 180-250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\d?\d?$
+            example: '>=70'
+          in: query
+          name: summary.timeVeryAboveRange
+          description: Percentage of time above range 250 mg/dL
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: summary.lastUploadFrom
+          description: Inclusive
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: summary.lastUploadTo
+          description: Exclusive
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
@@ -784,6 +831,11 @@ paths:
       operationId: TriggerInitialMigration
       description: Trigger the initial migration
       x-internal: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerMigration'
   '/v1/clinics/{clinicId}/migrations/{userId}':
     parameters:
       - description: Clinic ID
@@ -1064,6 +1116,10 @@ components:
           type: string
           format: date-time
           readOnly: true
+        attestationSubmitted:
+          type: boolean
+        summary:
+          $ref: '#/components/schemas/PatientSummary'
       required:
         - id
         - fullName
@@ -1171,6 +1227,8 @@ components:
           type: boolean
         legacyClinicianId:
           $ref: '#/components/schemas/TidepoolUserId'
+        attestationSubmitted:
+          type: boolean
     AssociateClinicianToUser:
       title: Associate Clinician
       type: object
@@ -1213,10 +1271,15 @@ components:
           type: string
           format: date-time
           readOnly: true
+        attestationTime:
+          type: string
+          format: date-time
+          readOnly: true
       required:
         - userId
         - createdTime
         - updatedTime
+        - attestationTime
     Migrations:
       title: Migrations
       type: array
@@ -1260,6 +1323,84 @@ components:
           type: string
           format: email
           minLength: 1
+    TriggerMigration:
+      title: TriggerMigration
+      type: object
+      properties:
+        attestationSubmitted:
+          type: boolean
+      required:
+        - attestationSubmitted
+    PatientSummary:
+      type: object
+      title: patientsummary.v1
+      description: ''
+      properties:
+        lastUpdated:
+          type: string
+          format: date-time
+        firstData:
+          type: string
+          format: date-time
+        lastData:
+          type: string
+          format: date-time
+        lastUpload:
+          type: string
+          format: date-time
+        outdatedSince:
+          type: string
+          format: date-time
+        averageGlucose:
+          $ref: '#/components/schemas/AverageGlucose'
+        glucoseManagementIndicator:
+          type: number
+        timeInRange:
+          type: number
+        timeAboveRange:
+          type: number
+        timeVeryAboveRange:
+          type: number
+        timeBelowRange:
+          type: number
+        timeVeryBelowRange:
+          type: number
+        timeCGMUse:
+          type: number
+        highGlucoseThreshold:
+          type: number
+        lowGlucoseThreshold:
+          type: number
+      readOnly: true
+    AverageGlucose:
+      title: Blood Glucose (mg/dL)
+      description: 'Blood glucose value, in `mg/dL`'
+      type: object
+      properties:
+        units:
+          title: Blood Unit (mg/dL)
+          type: string
+          enum:
+            - mg/dL
+            - mg/dl
+          example: mg/dL
+          x-tags:
+            - Data
+        value:
+          title: Blood Value (mg/dL)
+          description: An integer value representing a `mg/dL` value.
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000
+          example: 105
+          x-tags:
+            - Data
+      required:
+        - units
+        - value
+      x-tags:
+        - Data
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

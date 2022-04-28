@@ -537,5 +537,6 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"UpdatedTime":        Ignore(),
 		"CreatedTime":        Ignore(),
 		"InvitedBy":          Ignore(),
+		"Summary":            Ignore(),
 	})
 }

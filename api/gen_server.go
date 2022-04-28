@@ -700,6 +700,55 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sort: %s", err))
 	}
 
+	// ------------- Optional query parameter "summary.timeVeryBelowRange" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.timeVeryBelowRange", ctx.QueryParams(), &params.SummaryTimeVeryBelowRange)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.timeVeryBelowRange: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.timeBelowRange" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.timeBelowRange", ctx.QueryParams(), &params.SummaryTimeBelowRange)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.timeBelowRange: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.timeInRange" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.timeInRange", ctx.QueryParams(), &params.SummaryTimeInRange)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.timeInRange: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.timeAboveRange" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.timeAboveRange", ctx.QueryParams(), &params.SummaryTimeAboveRange)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.timeAboveRange: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.timeVeryAboveRange" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.timeVeryAboveRange", ctx.QueryParams(), &params.SummaryTimeVeryAboveRange)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.timeVeryAboveRange: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.lastUploadFrom" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.lastUploadFrom", ctx.QueryParams(), &params.SummaryLastUploadFrom)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.lastUploadFrom: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.lastUploadTo" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.lastUploadTo", ctx.QueryParams(), &params.SummaryLastUploadTo)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.lastUploadTo: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListPatients(ctx, clinicId, params)
 	return err
