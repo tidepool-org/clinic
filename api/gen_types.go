@@ -436,6 +436,9 @@ type UpdatePatientJSONBody Patient
 // UpdatePatientPermissionsJSONBody defines parameters for UpdatePatientPermissions.
 type UpdatePatientPermissionsJSONBody PatientPermissions
 
+// UpdatePatientSummaryJSONBody defines parameters for UpdatePatientSummary.
+type UpdatePatientSummaryJSONBody PatientSummary
+
 // ListClinicsForPatientParams defines parameters for ListClinicsForPatient.
 type ListClinicsForPatientParams struct {
 	Offset *Offset `json:"offset,omitempty"`
@@ -480,6 +483,9 @@ type UpdatePatientJSONRequestBody UpdatePatientJSONBody
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody UpdatePatientPermissionsJSONBody
+
+// UpdatePatientSummaryJSONRequestBody defines body for UpdatePatientSummary for application/json ContentType.
+type UpdatePatientSummaryJSONRequestBody UpdatePatientSummaryJSONBody
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody UpdateClinicUserDetailsJSONBody

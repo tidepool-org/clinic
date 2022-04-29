@@ -34,6 +34,7 @@ type Service interface {
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
 	DeleteFromAllClinics(ctx context.Context, userId string) error
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
+	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 }
 
 type Patient struct {

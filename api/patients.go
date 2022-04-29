@@ -252,3 +252,21 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 
 	return ec.NoContent(http.StatusNoContent)
 }
+
+func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) error {
+	ctx := ec.Request().Context()
+	var dto *PatientSummary
+	if ec.Request().ContentLength != 0 {
+		dto = &PatientSummary{}
+		if err := ec.Bind(dto); err != nil {
+			return err
+		}
+	}
+
+	err := h.patients.UpdateSummaryInAllClinics(ctx, string(patientId), NewSummary(dto))
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}

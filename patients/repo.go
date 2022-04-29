@@ -390,6 +390,35 @@ func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, cli
 	return err
 }
 
+func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{}
+	if summary == nil {
+		update["$unset"] = bson.M{
+			"summary":     "",
+			"updatedTime": time.Now(),
+		}
+	} else {
+		update["$set"] = bson.M{
+			"summary":     summary,
+			"updatedTime": time.Now(),
+		}
+	}
+
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return ErrNotFound
+		}
+		return fmt.Errorf("error updating patient: %w", err)
+	}
+
+	return nil
+}
+
 func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patient) error {
 	selector := bson.M{
 		"clinicId": patient.ClinicId,
