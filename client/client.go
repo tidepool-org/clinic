@@ -1971,9 +1971,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryTimeVeryBelowRange != nil {
+	if params.SummaryPercentTimeInVeryLow != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeVeryBelowRange", runtime.ParamLocationQuery, *params.SummaryTimeVeryBelowRange); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInVeryLow", runtime.ParamLocationQuery, *params.SummaryPercentTimeInVeryLow); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -1987,9 +1987,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryTimeBelowRange != nil {
+	if params.SummaryPercentTimeInLow != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeBelowRange", runtime.ParamLocationQuery, *params.SummaryTimeBelowRange); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInLow", runtime.ParamLocationQuery, *params.SummaryPercentTimeInLow); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2003,9 +2003,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryTimeInRange != nil {
+	if params.SummaryPercentTimeInTarget != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeInRange", runtime.ParamLocationQuery, *params.SummaryTimeInRange); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInTarget", runtime.ParamLocationQuery, *params.SummaryPercentTimeInTarget); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2019,9 +2019,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryTimeAboveRange != nil {
+	if params.SummaryPercentTimeInHigh != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeAboveRange", runtime.ParamLocationQuery, *params.SummaryTimeAboveRange); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInHigh", runtime.ParamLocationQuery, *params.SummaryPercentTimeInHigh); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2035,9 +2035,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryTimeVeryAboveRange != nil {
+	if params.SummaryPercentTimeInVeryHigh != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeVeryAboveRange", runtime.ParamLocationQuery, *params.SummaryTimeVeryAboveRange); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInVeryHigh", runtime.ParamLocationQuery, *params.SummaryPercentTimeInVeryHigh); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2051,9 +2051,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryLastUploadFrom != nil {
+	if params.SummaryLastUploadDateFrom != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.lastUploadFrom", runtime.ParamLocationQuery, *params.SummaryLastUploadFrom); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.lastUploadDateFrom", runtime.ParamLocationQuery, *params.SummaryLastUploadDateFrom); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2067,9 +2067,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryLastUploadTo != nil {
+	if params.SummaryLastUploadDateTo != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.lastUploadTo", runtime.ParamLocationQuery, *params.SummaryLastUploadTo); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.lastUploadDateTo", runtime.ParamLocationQuery, *params.SummaryLastUploadDateTo); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

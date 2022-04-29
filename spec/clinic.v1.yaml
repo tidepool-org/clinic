@@ -244,50 +244,50 @@ paths:
         - $ref: '#/components/parameters/sort'
         - schema:
             type: string
-            pattern: ^(>=|>|<=|<)\d\d?\d?$
-            example: '>=70'
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
           in: query
-          name: summary.timeVeryBelowRange
+          name: summary.percentTimeInVeryLow
           description: Percentage of time below 54 mg/dL
         - schema:
             type: string
-            pattern: ^(>=|>|<=|<)\d\d?\d?$
-            example: '>=70'
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
           in: query
-          name: summary.timeBelowRange
+          name: summary.percentTimeInLow
           description: Percentage of time in range 54-70 mg/dL
         - schema:
             type: string
-            pattern: ^(>=|>|<=|<)\d\d?\d?$
-            example: '>=70'
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
           in: query
-          name: summary.timeInRange
+          name: summary.percentTimeInTarget
           description: Percentage of time in range 70-180 mg/dL
         - schema:
             type: string
-            pattern: ^(>=|>|<=|<)\d\d?\d?$
-            example: '>=70'
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
           in: query
-          name: summary.timeAboveRange
+          name: summary.percentTimeInHigh
           description: Percentage of time in range 180-250 mg/dL
         - schema:
             type: string
-            pattern: ^(>=|>|<=|<)\d\d?\d?$
-            example: '>=70'
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
           in: query
-          name: summary.timeVeryAboveRange
+          name: summary.percentTimeInVeryHigh
           description: Percentage of time above range 250 mg/dL
         - schema:
             type: string
             format: date-time
           in: query
-          name: summary.lastUploadFrom
+          name: summary.lastUploadDateFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: summary.lastUploadTo
+          name: summary.lastUploadDateTo
           description: Exclusive
       description: Retrieve a list of patients of a clinic
     post:
@@ -1336,7 +1336,7 @@ components:
       title: patientsummary.v1
       description: ''
       properties:
-        lastUpdated:
+        lastUpdatedDate:
           type: string
           format: date-time
         firstData:
@@ -1345,7 +1345,7 @@ components:
         lastData:
           type: string
           format: date-time
-        lastUpload:
+        lastUploadDate:
           type: string
           format: date-time
         outdatedSince:
@@ -1355,17 +1355,17 @@ components:
           $ref: '#/components/schemas/AverageGlucose'
         glucoseManagementIndicator:
           type: number
-        timeInRange:
+        percentTimeInTarget:
           type: number
-        timeAboveRange:
+        percentTimeInHigh:
           type: number
-        timeVeryAboveRange:
+        percentTimeInVeryHigh:
           type: number
-        timeBelowRange:
+        percentTimeInLow:
           type: number
-        timeVeryBelowRange:
+        percentTimeInVeryLow:
           type: number
-        timeCGMUse:
+        percentTimeCGMUse:
           type: number
         highGlucoseThreshold:
           type: number

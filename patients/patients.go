@@ -61,21 +61,21 @@ func (p Patient) IsCustodial() bool {
 }
 
 type Filter struct {
-	ClinicId                *string
-	UserId                  *string
-	Search                  *string
-	LastUploadFrom          *time.Time
-	LastUploadTo            *time.Time
-	TimeVeryBelowRangeCmp   *string
-	TimeVeryBelowRangeValue float64
-	TimeBelowRangeCmp       *string
-	TimeBelowRangeValue     float64
-	TimeInRangeCmp          *string
-	TimeInRangeValue        float64
-	TimeAboveRangeCmp       *string
-	TimeAboveRangeValue     float64
-	TimeVeryAboveRangeCmp   *string
-	TimeVeryAboveRangeValue float64
+	ClinicId                   *string
+	UserId                     *string
+	Search                     *string
+	LastUploadDateFrom         *time.Time
+	LastUploadDateTo           *time.Time
+	PercentTimeInVeryLowCmp    *string
+	PercentTimeInVeryLowValue  float64
+	PercentTimeInLowCmp        *string
+	PercentTimeInLowValue      float64
+	PercentTimeInTargetCmp     *string
+	PercentTimeInTargetValue   float64
+	PercentTimeInHighCmp       *string
+	PercentTimeInHighValue     float64
+	PercentTimeInVeryHighCmp   *string
+	PercentTimeInVeryHighValue float64
 }
 
 type Permission = map[string]interface{}
@@ -111,16 +111,16 @@ type Summary struct {
 	GlucoseManagementIndicator *float32    `bson:"glucoseManagementIndicator,omitempty"`
 	HighGlucoseThreshold       *float32    `bson:"highGlucoseThreshold,omitempty"`
 	LastData                   *time.Time  `bson:"lastData,omitempty"`
-	LastUpdated                *time.Time  `bson:"lastUpdated,omitempty"`
-	LastUpload                 *time.Time  `bson:"lastUpload,omitempty"`
+	LastUpdatedDate            *time.Time  `bson:"lastUpdatedDate,omitempty"`
+	LastUploadDate             *time.Time  `bson:"lastUploadDate,omitempty"`
 	LowGlucoseThreshold        *float32    `bson:"lowGlucoseThreshold,omitempty"`
 	OutdatedSince              *time.Time  `bson:"outdatedSince,omitempty"`
-	TimeAboveRange             *float32    `bson:"timeAboveRange,omitempty"`
-	TimeBelowRange             *float32    `bson:"timeBelowRange,omitempty"`
-	TimeCGMUse                 *float32    `bson:"timeCGMUse,omitempty"`
-	TimeInRange                *float32    `bson:"timeInRange,omitempty"`
-	TimeVeryAboveRange         *float32    `bson:"timeVeryAboveRange,omitempty"`
-	TimeVeryBelowRange         *float32    `bson:"timeVeryBelowRange,omitempty"`
+	PercentTimeCGMUse          *float32    `bson:"percentTimeCGMUse,omitempty"`
+	PercentTimeInVeryLow       *float32    `bson:"percentTimeInVeryLow,omitempty"`
+	PercentTimeInLow           *float32    `bson:"percentTimeInLow,omitempty"`
+	PercentTimeInTarget        *float32    `bson:"percentTimeInTarget,omitempty"`
+	PercentTimeInHigh          *float32    `bson:"percentTimeInHigh,omitempty"`
+	PercentTimeInVeryHigh      *float32    `bson:"percentTimeInVeryHigh,omitempty"`
 }
 
 type AvgGlucose struct {

@@ -14,50 +14,50 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId:       strp(string(clinicId)),
-		Search:         searchToString(params.Search),
-		LastUploadFrom: params.SummaryLastUploadFrom,
-		LastUploadTo:   params.SummaryLastUploadTo,
+		ClinicId:           strp(string(clinicId)),
+		Search:             searchToString(params.Search),
+		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
+		LastUploadDateTo:   params.SummaryLastUploadDateTo,
 	}
-	if params.SummaryTimeVeryBelowRange != nil && *params.SummaryTimeVeryBelowRange != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeVeryBelowRange)
+	if params.SummaryPercentTimeInVeryLow != nil && *params.SummaryPercentTimeInVeryLow != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPercentTimeInVeryLow)
 		if err != nil {
 			return err
 		}
-		filter.TimeVeryBelowRangeCmp = cmp
-		filter.TimeVeryBelowRangeValue = value
+		filter.PercentTimeInVeryLowCmp = cmp
+		filter.PercentTimeInVeryLowValue = value
 	}
-	if params.SummaryTimeBelowRange != nil && *params.SummaryTimeBelowRange != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeBelowRange)
+	if params.SummaryPercentTimeInLow != nil && *params.SummaryPercentTimeInLow != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPercentTimeInLow)
 		if err != nil {
 			return err
 		}
-		filter.TimeBelowRangeCmp = cmp
-		filter.TimeBelowRangeValue = value
+		filter.PercentTimeInLowCmp = cmp
+		filter.PercentTimeInLowValue = value
 	}
-	if params.SummaryTimeInRange != nil && *params.SummaryTimeInRange != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeBelowRange)
+	if params.SummaryPercentTimeInTarget != nil && *params.SummaryPercentTimeInTarget != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPercentTimeInTarget)
 		if err != nil {
 			return err
 		}
-		filter.TimeInRangeCmp = cmp
-		filter.TimeInRangeValue = value
+		filter.PercentTimeInTargetCmp = cmp
+		filter.PercentTimeInTargetValue = value
 	}
-	if params.SummaryTimeAboveRange != nil && *params.SummaryTimeAboveRange != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeAboveRange)
+	if params.SummaryPercentTimeInHigh != nil && *params.SummaryPercentTimeInHigh != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPercentTimeInHigh)
 		if err != nil {
 			return err
 		}
-		filter.TimeAboveRangeCmp = cmp
-		filter.TimeAboveRangeValue = value
+		filter.PercentTimeInHighCmp = cmp
+		filter.PercentTimeInHighValue = value
 	}
-	if params.SummaryTimeVeryAboveRange != nil && *params.SummaryTimeAboveRange != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeVeryAboveRange)
+	if params.SummaryPercentTimeInVeryHigh != nil && *params.SummaryPercentTimeInVeryHigh != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPercentTimeInVeryHigh)
 		if err != nil {
 			return err
 		}
-		filter.TimeVeryAboveRangeCmp = cmp
-		filter.TimeVeryAboveRangeValue = value
+		filter.PercentTimeInVeryHighCmp = cmp
+		filter.PercentTimeInVeryHighValue = value
 	}
 
 	sort, err := ParseSort(params.Sort)

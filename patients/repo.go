@@ -437,29 +437,50 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			bson.M{"birthDate": filter},
 		}
 	}
-	if filter.LastUploadFrom != nil {
-		selector["summary.lastUpload"] = bson.M{"$gte": filter.LastUploadFrom}
+	if filter.LastUploadDateFrom != nil {
+		selector["summary.lastUploadDate"] = bson.M{"$gte": filter.LastUploadDateFrom}
 	}
-	if filter.LastUploadTo != nil {
-		selector["summary.lastUpload"] = bson.M{"$lt": filter.LastUploadTo}
-	}
-	if f, ok := cmpToMongoFilter(filter.TimeVeryBelowRangeCmp); ok {
-		selector["summary.timeVeryBelowRange"] = bson.M{f: filter.TimeVeryBelowRangeValue}
-	}
-	if f, ok := cmpToMongoFilter(filter.TimeBelowRangeCmp); ok {
-		selector["summary.timeBelowRange"] = bson.M{f: filter.TimeBelowRangeValue}
-	}
-	if f, ok := cmpToMongoFilter(filter.TimeInRangeCmp); ok {
-		selector["summary.timeInRange"] = bson.M{f: filter.TimeInRangeValue}
-	}
-	if f, ok := cmpToMongoFilter(filter.TimeAboveRangeCmp); ok {
-		selector["summary.timeAboveRange"] = bson.M{f: filter.TimeAboveRangeValue}
-	}
-	if f, ok := cmpToMongoFilter(filter.TimeVeryAboveRangeCmp); ok {
-		selector["summary.timeVeryAboveRange"] = bson.M{f: filter.TimeVeryAboveRangeValue}
+	if filter.LastUploadDateTo != nil {
+		selector["summary.lastUploadDate"] = bson.M{"$lt": filter.LastUploadDateTo}
 	}
 
+	MaybeApplyRangeFilter(selector,
+		"summary.percentTimeInVeryLow",
+		filter.PercentTimeInVeryLowCmp,
+		filter.PercentTimeInVeryLowValue,
+	)
+
+	MaybeApplyRangeFilter(selector,
+		"summary.percentTimeInLow",
+		filter.PercentTimeInLowCmp,
+		filter.PercentTimeInLowValue,
+	)
+
+	MaybeApplyRangeFilter(selector,
+		"summary.percentTimeInTarget",
+		filter.PercentTimeInTargetCmp,
+		filter.PercentTimeInTargetValue,
+	)
+
+	MaybeApplyRangeFilter(selector,
+		"summary.percentTimeInHigh",
+		filter.PercentTimeInHighCmp,
+		filter.PercentTimeInHighValue,
+	)
+
+	MaybeApplyRangeFilter(selector,
+		"summary.percentTimeInVeryHigh",
+		filter.PercentTimeInVeryHighCmp,
+		filter.PercentTimeInVeryHighValue,
+	)
+
 	return selector
+}
+
+func MaybeApplyRangeFilter(selector bson.M, field string, cmp *string, value float64) {
+	if f, ok := cmpToMongoFilter(cmp); ok {
+		selector[field] = bson.M{f: value}
+	}
 }
 
 func isSortAttributeValid(attribute string) bool {

@@ -245,16 +245,16 @@ type PatientSummary struct {
 	GlucoseManagementIndicator *float32        `json:"glucoseManagementIndicator,omitempty"`
 	HighGlucoseThreshold       *float32        `json:"highGlucoseThreshold,omitempty"`
 	LastData                   *time.Time      `json:"lastData,omitempty"`
-	LastUpdated                *time.Time      `json:"lastUpdated,omitempty"`
-	LastUpload                 *time.Time      `json:"lastUpload,omitempty"`
+	LastUpdatedDate            *time.Time      `json:"lastUpdatedDate,omitempty"`
+	LastUploadDate             *time.Time      `json:"lastUploadDate,omitempty"`
 	LowGlucoseThreshold        *float32        `json:"lowGlucoseThreshold,omitempty"`
 	OutdatedSince              *time.Time      `json:"outdatedSince,omitempty"`
-	TimeAboveRange             *float32        `json:"timeAboveRange,omitempty"`
-	TimeBelowRange             *float32        `json:"timeBelowRange,omitempty"`
-	TimeCGMUse                 *float32        `json:"timeCGMUse,omitempty"`
-	TimeInRange                *float32        `json:"timeInRange,omitempty"`
-	TimeVeryAboveRange         *float32        `json:"timeVeryAboveRange,omitempty"`
-	TimeVeryBelowRange         *float32        `json:"timeVeryBelowRange,omitempty"`
+	PercentTimeCGMUse          *float32        `json:"percentTimeCGMUse,omitempty"`
+	PercentTimeInHigh          *float32        `json:"percentTimeInHigh,omitempty"`
+	PercentTimeInLow           *float32        `json:"percentTimeInLow,omitempty"`
+	PercentTimeInTarget        *float32        `json:"percentTimeInTarget,omitempty"`
+	PercentTimeInVeryHigh      *float32        `json:"percentTimeInVeryHigh,omitempty"`
+	PercentTimeInVeryLow       *float32        `json:"percentTimeInVeryLow,omitempty"`
 }
 
 // Patients defines model for Patients.
@@ -403,25 +403,25 @@ type ListPatientsParams struct {
 	Sort *Sort `json:"sort,omitempty"`
 
 	// Percentage of time below 54 mg/dL
-	SummaryTimeVeryBelowRange *string `json:"summary.timeVeryBelowRange,omitempty"`
+	SummaryPercentTimeInVeryLow *string `json:"summary.percentTimeInVeryLow,omitempty"`
 
 	// Percentage of time in range 54-70 mg/dL
-	SummaryTimeBelowRange *string `json:"summary.timeBelowRange,omitempty"`
+	SummaryPercentTimeInLow *string `json:"summary.percentTimeInLow,omitempty"`
 
 	// Percentage of time in range 70-180 mg/dL
-	SummaryTimeInRange *string `json:"summary.timeInRange,omitempty"`
+	SummaryPercentTimeInTarget *string `json:"summary.percentTimeInTarget,omitempty"`
 
 	// Percentage of time in range 180-250 mg/dL
-	SummaryTimeAboveRange *string `json:"summary.timeAboveRange,omitempty"`
+	SummaryPercentTimeInHigh *string `json:"summary.percentTimeInHigh,omitempty"`
 
 	// Percentage of time above range 250 mg/dL
-	SummaryTimeVeryAboveRange *string `json:"summary.timeVeryAboveRange,omitempty"`
+	SummaryPercentTimeInVeryHigh *string `json:"summary.percentTimeInVeryHigh,omitempty"`
 
 	// Inclusive
-	SummaryLastUploadFrom *time.Time `json:"summary.lastUploadFrom,omitempty"`
+	SummaryLastUploadDateFrom *time.Time `json:"summary.lastUploadDateFrom,omitempty"`
 
 	// Exclusive
-	SummaryLastUploadTo *time.Time `json:"summary.lastUploadTo,omitempty"`
+	SummaryLastUploadDateTo *time.Time `json:"summary.lastUploadDateTo,omitempty"`
 }
 
 // CreatePatientAccountJSONBody defines parameters for CreatePatientAccount.
