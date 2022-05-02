@@ -109,19 +109,19 @@ type PatientUpdate struct {
 type Summary struct {
 	AverageGlucose             *AvgGlucose `bson:"averageGlucose,omitempty"`
 	FirstData                  *time.Time  `bson:"firstData,omitempty"`
-	GlucoseManagementIndicator *float32    `bson:"glucoseManagementIndicator,omitempty"`
-	HighGlucoseThreshold       *float32    `bson:"highGlucoseThreshold,omitempty"`
+	GlucoseManagementIndicator *float64    `bson:"glucoseManagementIndicator,omitempty"`
+	HighGlucoseThreshold       *float64    `bson:"highGlucoseThreshold,omitempty"`
 	LastData                   *time.Time  `bson:"lastData,omitempty"`
 	LastUpdatedDate            *time.Time  `bson:"lastUpdatedDate,omitempty"`
 	LastUploadDate             *time.Time  `bson:"lastUploadDate,omitempty"`
-	LowGlucoseThreshold        *float32    `bson:"lowGlucoseThreshold,omitempty"`
+	LowGlucoseThreshold        *float64    `bson:"lowGlucoseThreshold,omitempty"`
 	OutdatedSince              *time.Time  `bson:"outdatedSince,omitempty"`
-	PercentTimeCGMUse          *float32    `bson:"percentTimeCGMUse,omitempty"`
-	PercentTimeInVeryLow       *float32    `bson:"percentTimeInVeryLow,omitempty"`
-	PercentTimeInLow           *float32    `bson:"percentTimeInLow,omitempty"`
-	PercentTimeInTarget        *float32    `bson:"percentTimeInTarget,omitempty"`
-	PercentTimeInHigh          *float32    `bson:"percentTimeInHigh,omitempty"`
-	PercentTimeInVeryHigh      *float32    `bson:"percentTimeInVeryHigh,omitempty"`
+	PercentTimeCGMUse          *float64    `bson:"percentTimeCGMUse,omitempty"`
+	PercentTimeInVeryLow       *float64    `bson:"percentTimeInVeryLow,omitempty"`
+	PercentTimeInLow           *float64    `bson:"percentTimeInLow,omitempty"`
+	PercentTimeInTarget        *float64    `bson:"percentTimeInTarget,omitempty"`
+	PercentTimeInHigh          *float64    `bson:"percentTimeInHigh,omitempty"`
+	PercentTimeInVeryHigh      *float64    `bson:"percentTimeInVeryHigh,omitempty"`
 }
 
 type AvgGlucose struct {

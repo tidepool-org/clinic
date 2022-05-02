@@ -11,6 +11,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 	"strings"
 
 	"github.com/tidepool-org/clinic/patients"
@@ -29,7 +30,7 @@ var _ = Describe("Patients Repository", func() {
 		database = dbTest.GetTestDatabase()
 		collection = database.Collection("patients")
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repo, err = patients.NewRepository(database, lifecycle)
+		repo, err = patients.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repo).ToNot(BeNil())
 		lifecycle.RequireStart()

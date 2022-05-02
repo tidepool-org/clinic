@@ -242,19 +242,19 @@ type PatientSummary struct {
 	// Blood glucose value, in `mg/dL`
 	AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
 	FirstData                  *time.Time      `json:"firstData,omitempty"`
-	GlucoseManagementIndicator *float32        `json:"glucoseManagementIndicator,omitempty"`
-	HighGlucoseThreshold       *float32        `json:"highGlucoseThreshold,omitempty"`
+	GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
+	HighGlucoseThreshold       *float64        `json:"highGlucoseThreshold,omitempty"`
 	LastData                   *time.Time      `json:"lastData,omitempty"`
 	LastUpdatedDate            *time.Time      `json:"lastUpdatedDate,omitempty"`
 	LastUploadDate             *time.Time      `json:"lastUploadDate,omitempty"`
-	LowGlucoseThreshold        *float32        `json:"lowGlucoseThreshold,omitempty"`
+	LowGlucoseThreshold        *float64        `json:"lowGlucoseThreshold,omitempty"`
 	OutdatedSince              *time.Time      `json:"outdatedSince,omitempty"`
-	PercentTimeCGMUse          *float32        `json:"percentTimeCGMUse,omitempty"`
-	PercentTimeInHigh          *float32        `json:"percentTimeInHigh,omitempty"`
-	PercentTimeInLow           *float32        `json:"percentTimeInLow,omitempty"`
-	PercentTimeInTarget        *float32        `json:"percentTimeInTarget,omitempty"`
-	PercentTimeInVeryHigh      *float32        `json:"percentTimeInVeryHigh,omitempty"`
-	PercentTimeInVeryLow       *float32        `json:"percentTimeInVeryLow,omitempty"`
+	PercentTimeCGMUse          *float64        `json:"percentTimeCGMUse,omitempty"`
+	PercentTimeInHigh          *float64        `json:"percentTimeInHigh,omitempty"`
+	PercentTimeInLow           *float64        `json:"percentTimeInLow,omitempty"`
+	PercentTimeInTarget        *float64        `json:"percentTimeInTarget,omitempty"`
+	PercentTimeInVeryHigh      *float64        `json:"percentTimeInVeryHigh,omitempty"`
+	PercentTimeInVeryLow       *float64        `json:"percentTimeInVeryLow,omitempty"`
 }
 
 // Patients defines model for Patients.
