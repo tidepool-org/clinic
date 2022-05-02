@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"regexp"
 	"time"
 )
@@ -23,9 +24,10 @@ type Repository interface {
 	Service
 }
 
-func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Repository, error) {
+func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Repository, error) {
 	repo := &repository{
 		collection: db.Collection(patientsCollectionName),
+		logger:     logger,
 	}
 
 	lifecycle.Append(fx.Hook{
@@ -39,6 +41,7 @@ func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Repository, erro
 
 type repository struct {
 	collection *mongo.Collection
+	logger     *zap.SugaredLogger
 }
 
 func (r *repository) Initialize(ctx context.Context) error {
@@ -229,6 +232,8 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		{"$sort": generateListSortStage(sort)},
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
+
+	r.logger.Debugw("retrieving list of patients", "pipeline", pipeline)
 
 	cursor, err := r.collection.Aggregate(ctx, pipeline)
 	if err != nil {
