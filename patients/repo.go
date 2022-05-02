@@ -471,10 +471,10 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			bson.M{"birthDate": filter},
 		}
 	}
-	if filter.LastUploadDateFrom != nil {
+	if filter.LastUploadDateFrom != nil && !filter.LastUploadDateFrom.IsZero() {
 		selector["summary.lastUploadDate"] = bson.M{"$gte": filter.LastUploadDateFrom}
 	}
-	if filter.LastUploadDateTo != nil {
+	if filter.LastUploadDateTo != nil && !filter.LastUploadDateTo.IsZero() {
 		selector["summary.lastUploadDate"] = bson.M{"$lt": filter.LastUploadDateTo}
 	}
 
@@ -598,7 +598,7 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 var validSortAttributes = map[string]struct{}{
 	"fullName":                           {},
 	"birthDate":                          {},
-	"summary.lastUpload":                 {},
+	"summary.lastUploadDate":             {},
 	"summary.timeCGMUse":                 {},
 	"summary.glucoseManagementIndicator": {},
 }
