@@ -64,6 +64,14 @@ allow {
   input.path = ["v1", "patients", _, "clinics"]
 }
 
+# Allow backend services update patient summaries
+# GET /v1/patients/:patientId/clinics
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "patients", _, "summary"]
+}
+
 # Allow backend services to remove custodial permission
 # DELETE /v1/clinics/:clinicId/patients/:patientId/permissions/custodian
 allow {
