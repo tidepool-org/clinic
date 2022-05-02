@@ -115,11 +115,11 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.lastUpload", Value: 1},
+				{Key: "summary.lastUploadDate", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryLastUpload"),
+				SetName("PatientSummaryLastUploadDate"),
 		},
 		{
 			Keys: bson.D{
@@ -142,47 +142,47 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.timeVeryBelowRange", Value: 1},
+				{Key: "summary.percentTimeInVeryLow", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryVeryBelowRange"),
+				SetName("PatientSummaryTimeInVeryLow"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.timeBelowRange", Value: 1},
+				{Key: "summary.percentTimeInLow", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryBelowRange"),
+				SetName("PatientSummaryTimeInLow"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.timeInRange", Value: 1},
+				{Key: "summary.percentTimeInTarget", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryInRange"),
+				SetName("PatientSummaryTimeInTarget"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.timeAboveRange", Value: 1},
+				{Key: "summary.percentTimeInHigh", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryAboveRange"),
+				SetName("PatientSummaryTimeInHigh"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.timeVeryAboveRange", Value: 1},
+				{Key: "summary.percentTimeInVeryHigh", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryVeryAboveRange"),
+				SetName("PatientSummaryTimeInVeryHigh"),
 		},
 	})
 	return err
