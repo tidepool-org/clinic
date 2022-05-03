@@ -41,21 +41,28 @@ func NewClinic(c Clinic) *clinics.Clinic {
 }
 
 func NewClinicDto(c *clinics.Clinic) Clinic {
+	tier := clinics.DefaultTier
+	if c.Tier != "" {
+		tier = c.Tier
+	}
+
 	dto := Clinic{
-		Id:          Id(c.Id.Hex()),
-		Name:        pstr(c.Name),
-		ShareCode:   pstr(c.CanonicalShareCode),
-		CanMigrate:  c.CanMigrate(),
-		ClinicType:  stringToClinicType(c.ClinicType),
-		ClinicSize:  stringToClinicSize(c.ClinicSize),
-		Address:     c.Address,
-		City:        c.City,
-		PostalCode:  c.PostalCode,
-		State:       c.State,
-		Country:     c.Country,
-		Website:     c.Website,
-		CreatedTime: c.CreatedTime,
-		UpdatedTime: c.UpdatedTime,
+		Id:              Id(c.Id.Hex()),
+		Name:            pstr(c.Name),
+		ShareCode:       pstr(c.CanonicalShareCode),
+		CanMigrate:      c.CanMigrate(),
+		ClinicType:      stringToClinicType(c.ClinicType),
+		ClinicSize:      stringToClinicSize(c.ClinicSize),
+		Address:         c.Address,
+		City:            c.City,
+		PostalCode:      c.PostalCode,
+		State:           c.State,
+		Country:         c.Country,
+		Website:         c.Website,
+		CreatedTime:     c.CreatedTime,
+		UpdatedTime:     c.UpdatedTime,
+		Tier:            Tier(tier),
+		TierDescription: clinics.GetTierDescription(tier),
 	}
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber

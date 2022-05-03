@@ -972,6 +972,24 @@ paths:
                   highGlucoseThreshold: 0
                   lowGlucoseThreshold: 0
         description: ''
+  '/v1/clinics/{clinicId}/tier':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      summary: Update Tier
+      operationId: UpdateTier
+      responses:
+        '200':
+          description: OK
+      description: Internal endpoint to update clinic service tier
+      x-internal: true
+      tags:
+        - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTier'
 components:
   schemas:
     Error:
@@ -1072,6 +1090,13 @@ components:
           type: string
           format: date-time
           readOnly: true
+        tierDescription:
+          type: string
+          minLength: 1
+          example: Free
+        tier:
+          $ref: '#/components/schemas/Tier'
+          readOnly: true
       required:
         - id
         - name
@@ -1079,6 +1104,8 @@ components:
         - canMigrate
         - createdTime
         - updatedTime
+        - tier
+        - tierDescription
     Clinics:
       type: array
       items:
@@ -1450,6 +1477,23 @@ components:
         - value
       x-tags:
         - Data
+    UpdateTier:
+      title: UpdateTier
+      type: object
+      properties:
+        tier:
+          $ref: '#/components/schemas/Tier'
+      required:
+        - tier
+    Tier:
+      type: string
+      title: Clinic Service Tier
+      enum:
+        - tier0100
+        - tier0200
+        - tier0300
+        - tier0400
+      example: tier0100
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

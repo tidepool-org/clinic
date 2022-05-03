@@ -100,6 +100,9 @@ type ServerInterface interface {
 	// Delete Patient Permission
 	// (DELETE /v1/clinics/{clinicId}/patients/{patientId}/permissions/{permission})
 	DeletePatientPermission(ctx echo.Context, clinicId ClinicId, patientId PatientId, permission string) error
+	// Update Tier
+	// (POST /v1/clinics/{clinicId}/tier)
+	UpdateTier(ctx echo.Context, clinicId ClinicId) error
 	// UpdatePatientSummary
 	// (POST /v1/patients/{patientId}/summary)
 	UpdatePatientSummary(ctx echo.Context, patientId PatientId) error
@@ -939,6 +942,24 @@ func (w *ServerInterfaceWrapper) DeletePatientPermission(ctx echo.Context) error
 	return err
 }
 
+// UpdateTier converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateTier(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateTier(ctx, clinicId)
+	return err
+}
+
 // UpdatePatientSummary converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdatePatientSummary(ctx echo.Context) error {
 	var err error
@@ -1084,6 +1105,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
+	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)

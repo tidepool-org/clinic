@@ -199,6 +199,22 @@ func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string, al
 	return nil
 }
 
+func (c *repository) UpdateTier(ctx context.Context, id, tier string) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"updatedTime": time.Now(),
+		"tier":        tier,
+	}
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err == mongo.ErrNoDocuments {
+		return ErrNotFound
+	}
+
+	return err
+}
+
 func canRemoveAdmin(clinic Clinic, clinicianId string) bool {
 	var adminsPostUpdate []string
 	if clinic.Admins != nil {

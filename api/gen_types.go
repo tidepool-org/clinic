@@ -53,6 +53,17 @@ const (
 	MigrationStatusRUNNING MigrationStatus = "RUNNING"
 )
 
+// Defines values for Tier.
+const (
+	TierTier0100 Tier = "tier0100"
+
+	TierTier0200 Tier = "tier0200"
+
+	TierTier0300 Tier = "tier0300"
+
+	TierTier0400 Tier = "tier0400"
+)
+
 // AssociateClinicianToUser defines model for AssociateClinicianToUser.
 type AssociateClinicianToUser struct {
 	UserId string `json:"userId"`
@@ -100,9 +111,11 @@ type Clinic struct {
 	ShareCode string `json:"shareCode"`
 
 	// State or province. In the U.S., typically something like `CA` or `California`.
-	State       *string   `json:"state,omitempty"`
-	UpdatedTime time.Time `json:"updatedTime"`
-	Website     *string   `json:"website,omitempty"`
+	State           *string   `json:"state,omitempty"`
+	Tier            Tier      `json:"tier"`
+	TierDescription string    `json:"tierDescription"`
+	UpdatedTime     time.Time `json:"updatedTime"`
+	Website         *string   `json:"website,omitempty"`
 }
 
 // ClinicClinicSize defines model for Clinic.ClinicSize.
@@ -275,9 +288,17 @@ type PhoneNumber struct {
 // String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type TidepoolUserId string
 
+// Tier defines model for Tier.
+type Tier string
+
 // TriggerMigration defines model for TriggerMigration.
 type TriggerMigration struct {
 	AttestationSubmitted bool `json:"attestationSubmitted"`
+}
+
+// UpdateTier defines model for UpdateTier.
+type UpdateTier struct {
+	Tier Tier `json:"tier"`
 }
 
 // UpdateUserDetails defines model for UpdateUserDetails.
@@ -436,6 +457,9 @@ type UpdatePatientJSONBody Patient
 // UpdatePatientPermissionsJSONBody defines parameters for UpdatePatientPermissions.
 type UpdatePatientPermissionsJSONBody PatientPermissions
 
+// UpdateTierJSONBody defines parameters for UpdateTier.
+type UpdateTierJSONBody UpdateTier
+
 // UpdatePatientSummaryJSONBody defines parameters for UpdatePatientSummary.
 type UpdatePatientSummaryJSONBody PatientSummary
 
@@ -483,6 +507,9 @@ type UpdatePatientJSONRequestBody UpdatePatientJSONBody
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody UpdatePatientPermissionsJSONBody
+
+// UpdateTierJSONRequestBody defines body for UpdateTier for application/json ContentType.
+type UpdateTierJSONRequestBody UpdateTierJSONBody
 
 // UpdatePatientSummaryJSONRequestBody defines body for UpdatePatientSummary for application/json ContentType.
 type UpdatePatientSummaryJSONRequestBody UpdatePatientSummaryJSONBody

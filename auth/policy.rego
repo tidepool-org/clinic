@@ -158,6 +158,14 @@ allow {
   clinician_has_write_access
 }
 
+# Allow backend services to update clinic tiers
+# POST /v1/clinics/:clinicId/tier
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "tier"]
+}
+
 # Allow currently authenticated clinician to list clinicians
 # GET /v1/clinics/:clinicId/clinicians
 allow {
