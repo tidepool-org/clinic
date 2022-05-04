@@ -204,8 +204,10 @@ func (c *repository) UpdateTier(ctx context.Context, id, tier string) error {
 	selector := bson.M{"_id": clinicId}
 
 	update := bson.M{
-		"updatedTime": time.Now(),
-		"tier":        tier,
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+			"tier":        tier,
+		},
 	}
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err == mongo.ErrNoDocuments {
