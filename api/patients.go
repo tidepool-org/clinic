@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"time"
 )
 
 func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
@@ -181,6 +182,39 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		ClinicId:  string(clinicId),
 		UserId:    string(patientId),
 		Patient:   NewPatient(dto),
+		UpdatedBy: authData.SubjectId,
+	}
+	patient, err := h.patients.Update(ctx, update)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+}
+
+func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	update := patients.PatientUpdate{
+		ClinicId: string(clinicId),
+		UserId:   string(patientId),
+		Patient: patients.Patient{
+			LastUploadReminderTime: time.Now(),
+		},
 		UpdatedBy: authData.SubjectId,
 	}
 	patient, err := h.patients.Update(ctx, update)

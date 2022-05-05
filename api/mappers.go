@@ -61,7 +61,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		Website:         c.Website,
 		CreatedTime:     c.CreatedTime,
 		UpdatedTime:     c.UpdatedTime,
-		Tier:            Tier(tier),
+		Tier:            tier,
 		TierDescription: clinics.GetTierDescription(tier),
 	}
 	if c.PhoneNumbers != nil {

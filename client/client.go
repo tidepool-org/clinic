@@ -202,6 +202,9 @@ type ClientInterface interface {
 	// DeletePatientPermission request
 	DeletePatientPermission(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SendUploadReminder request
+	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdateTier request with any body
 	UpdateTierWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -706,6 +709,18 @@ func (c *Client) UpdatePatientPermissions(ctx context.Context, clinicId ClinicId
 
 func (c *Client) DeletePatientPermission(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeletePatientPermissionRequest(c.Server, clinicId, patientId, permission)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendUploadReminderRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -2490,6 +2505,47 @@ func NewDeletePatientPermissionRequest(server string, clinicId ClinicId, patient
 	return req, nil
 }
 
+// NewSendUploadReminderRequest generates requests for SendUploadReminder
+func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/upload_reminder", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdateTierRequest calls the generic UpdateTier builder with application/json body
 func NewUpdateTierRequest(server string, clinicId ClinicId, body UpdateTierJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -2888,6 +2944,9 @@ type ClientWithResponsesInterface interface {
 
 	// DeletePatientPermission request
 	DeletePatientPermissionWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*DeletePatientPermissionResponse, error)
+
+	// SendUploadReminder request
+	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
 
 	// UpdateTier request with any body
 	UpdateTierWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTierResponse, error)
@@ -3547,6 +3606,27 @@ func (r DeletePatientPermissionResponse) StatusCode() int {
 	return 0
 }
 
+type SendUploadReminderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r SendUploadReminderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SendUploadReminderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdateTierResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4008,6 +4088,15 @@ func (c *ClientWithResponses) DeletePatientPermissionWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseDeletePatientPermissionResponse(rsp)
+}
+
+// SendUploadReminderWithResponse request returning *SendUploadReminderResponse
+func (c *ClientWithResponses) SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error) {
+	rsp, err := c.SendUploadReminder(ctx, clinicId, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSendUploadReminderResponse(rsp)
 }
 
 // UpdateTierWithBodyWithResponse request with arbitrary body returning *UpdateTierResponse
@@ -4794,6 +4883,22 @@ func ParseDeletePatientPermissionResponse(rsp *http.Response) (*DeletePatientPer
 	}
 
 	response := &DeletePatientPermissionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseSendUploadReminderResponse parses an HTTP response from a SendUploadReminderWithResponse call
+func ParseSendUploadReminderResponse(rsp *http.Response) (*SendUploadReminderResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SendUploadReminderResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

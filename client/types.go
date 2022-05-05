@@ -222,7 +222,8 @@ type Patient struct {
 	FullName string `json:"fullName"`
 
 	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id TidepoolUserId `json:"id"`
+	Id                     TidepoolUserId `json:"id"`
+	LastUploadReminderTime *time.Time     `json:"lastUploadReminderTime,omitempty"`
 
 	// The medical record number of the patient
 	Mrn           *string             `json:"mrn,omitempty"`
