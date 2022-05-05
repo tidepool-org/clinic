@@ -288,6 +288,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow currently authenticated clinician to send an upload reminder
+# POST /v1/clinics/:clinicId/patients
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "upload_reminder"]
+  clinician_has_read_access
+}
+
 # Allow currently authenticated clinician to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
