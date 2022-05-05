@@ -112,7 +112,7 @@ type Clinic struct {
 
 	// State or province. In the U.S., typically something like `CA` or `California`.
 	State           *string   `json:"state,omitempty"`
-	Tier            Tier      `json:"tier"`
+	Tier            string    `json:"tier"`
 	TierDescription string    `json:"tierDescription"`
 	UpdatedTime     time.Time `json:"updatedTime"`
 	Website         *string   `json:"website,omitempty"`

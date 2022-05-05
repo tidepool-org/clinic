@@ -1095,7 +1095,9 @@ components:
           minLength: 1
           example: Free
         tier:
-          $ref: '#/components/schemas/Tier'
+          type: string
+          example: tier0100
+          minLength: 1
           readOnly: true
       required:
         - id
@@ -1104,8 +1106,8 @@ components:
         - canMigrate
         - createdTime
         - updatedTime
-        - tier
         - tierDescription
+        - tier
     Clinics:
       type: array
       items:
