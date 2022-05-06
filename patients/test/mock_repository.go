@@ -153,6 +153,21 @@ func (mr *MockRepositoryMockRecorder) Update(ctx, update interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepository)(nil).Update), ctx, update)
 }
 
+// UpdateLastUploadReminderTime mocks base method.
+func (m *MockRepository) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastUploadReminderTime", ctx, update)
+	ret0, _ := ret[0].(*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateLastUploadReminderTime indicates an expected call of UpdateLastUploadReminderTime.
+func (mr *MockRepositoryMockRecorder) UpdateLastUploadReminderTime(ctx, update interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastUploadReminderTime", reflect.TypeOf((*MockRepository)(nil).UpdateLastUploadReminderTime), ctx, update)
+}
+
 // UpdatePermissions mocks base method.
 func (m *MockRepository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *patients.Permissions) (*patients.Patient, error) {
 	m.ctrl.T.Helper()

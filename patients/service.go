@@ -130,6 +130,11 @@ func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, 
 	return s.repo.UpdateSummaryInAllClinics(ctx, userId, summary)
 }
 
+func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error) {
+	s.logger.Infow("updating last upload reminder time for user", "clinicId", update.ClinicId, "userId", update.UserId)
+	return s.repo.UpdateLastUploadReminderTime(ctx, update)
+}
+
 func shouldRemovePatientFromClinic(patient *Patient) bool {
 	if patient != nil {
 		return patient.Permissions == nil || patient.Permissions.Empty()

@@ -424,6 +424,30 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 	return nil
 }
 
+func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId":   update.UserId,
+	}
+
+	mongoUpdate := bson.M{
+		"$set": bson.M{
+			"lastUploadReminderTime": update.Time,
+			"updatedTime":            time.Now(),
+		},
+	}
+	err := r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("error updating patient: %w", err)
+	}
+
+	return r.Get(ctx, update.ClinicId, update.UserId)
+}
+
 func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patient) error {
 	selector := bson.M{
 		"clinicId": patient.ClinicId,

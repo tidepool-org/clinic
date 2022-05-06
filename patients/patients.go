@@ -35,6 +35,7 @@ type Service interface {
 	DeleteFromAllClinics(ctx context.Context, userId string) error
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
+	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 }
 
 type Patient struct {
@@ -105,6 +106,13 @@ type PatientUpdate struct {
 	UserId    string
 	Patient   Patient
 	UpdatedBy string
+}
+
+type UploadReminderUpdate struct {
+	ClinicId  string
+	UserId    string
+	UpdatedBy string
+	Time      time.Time
 }
 
 type Summary struct {

@@ -209,15 +209,12 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 		}
 	}
 
-	update := patients.PatientUpdate{
+	update := patients.UploadReminderUpdate{
 		ClinicId: string(clinicId),
 		UserId:   string(patientId),
-		Patient: patients.Patient{
-			LastUploadReminderTime: time.Now(),
-		},
-		UpdatedBy: authData.SubjectId,
+		Time:     time.Now(),
 	}
-	patient, err := h.patients.Update(ctx, update)
+	patient, err := h.patients.UpdateLastUploadReminderTime(ctx, &update)
 	if err != nil {
 		return err
 	}
