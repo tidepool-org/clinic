@@ -141,6 +141,9 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
 	}
+	if !patient.LastUploadReminderTime.IsZero() {
+		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
+	}
 	return dto
 }
 
