@@ -134,6 +134,6 @@ type Summary struct {
 }
 
 type AvgGlucose struct {
-	Units string `bson:"units"`
-	Value int    `bson:"value"`
+	Units string  `bson:"units"`
+	Value float64 `bson:"value"`
 }

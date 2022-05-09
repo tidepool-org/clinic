@@ -166,7 +166,7 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 	if dto.AverageGlucose != nil {
 		avgGlucose = &patients.AvgGlucose{
 			Units: string(dto.AverageGlucose.Units),
-			Value: int(dto.AverageGlucose.Value),
+			Value: float64(dto.AverageGlucose.Value),
 		}
 	}
 	return &patients.Summary{
@@ -196,7 +196,7 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	if summary.AverageGlucose != nil {
 		avgGlucose = &AverageGlucose{
 			Units: AverageGlucoseUnits(summary.AverageGlucose.Units),
-			Value: int32(summary.AverageGlucose.Value),
+			Value: float32(summary.AverageGlucose.Value),
 		}
 	}
 	return &PatientSummary{

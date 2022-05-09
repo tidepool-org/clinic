@@ -15,9 +15,9 @@ const (
 
 // Defines values for AverageGlucoseUnits.
 const (
-	AverageGlucoseUnitsMgdL AverageGlucoseUnits = "mg/dL"
+	AverageGlucoseUnitsMmolL AverageGlucoseUnits = "mmol/L"
 
-	AverageGlucoseUnitsMgdl AverageGlucoseUnits = "mg/dl"
+	AverageGlucoseUnitsMmoll AverageGlucoseUnits = "mmol/l"
 )
 
 // Defines values for ClinicClinicSize.
@@ -69,12 +69,12 @@ type AssociateClinicianToUser struct {
 	UserId string `json:"userId"`
 }
 
-// Blood glucose value, in `mg/dL`
+// Blood glucose value, in `mmol/L`
 type AverageGlucose struct {
 	Units AverageGlucoseUnits `json:"units"`
 
-	// An integer value representing a `mg/dL` value.
-	Value int32 `json:"value"`
+	// A floating point value representing a `mmol/L` value.
+	Value float32 `json:"value"`
 }
 
 // AverageGlucoseUnits defines model for AverageGlucose.Units.
@@ -253,7 +253,7 @@ type PatientPermissions struct {
 
 // PatientSummary defines model for PatientSummary.
 type PatientSummary struct {
-	// Blood glucose value, in `mg/dL`
+	// Blood glucose value, in `mmol/L`
 	AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
 	FirstData                  *time.Time      `json:"firstData,omitempty"`
 	GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`

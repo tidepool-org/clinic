@@ -1468,27 +1468,27 @@ components:
           type: number
           x-go-type: float64
     AverageGlucose:
-      title: Blood Glucose (mg/dL)
-      description: 'Blood glucose value, in `mg/dL`'
+      title: Blood Glucose (mmol/L)
+      description: 'Blood glucose value, in `mmol/L`'
       type: object
       properties:
         units:
-          title: Blood Unit (mg/dL)
+          title: Blood Unit (mmol/L)
           type: string
           enum:
-            - mg/dL
-            - mg/dl
-          example: mg/dL
+            - mmol/L
+            - mmol/l
+          example: mmol/L
           x-tags:
             - Data
         value:
-          title: Blood Value (mg/dL)
-          description: An integer value representing a `mg/dL` value.
-          type: integer
-          format: int32
+          title: Blood Value (mmol/L)
+          description: A floating point value representing a `mmol/L` value.
+          type: number
+          format: float
           minimum: 0
-          maximum: 1000
-          example: 105
+          maximum: 55
+          example: 5.5
           x-tags:
             - Data
       required:
