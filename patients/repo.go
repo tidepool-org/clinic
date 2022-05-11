@@ -633,6 +633,6 @@ var validSortAttributes = map[string]struct{}{
 	"fullName":                           {},
 	"birthDate":                          {},
 	"summary.lastUploadDate":             {},
-	"summary.timeCGMUse":                 {},
+	"summary.percentTimeCGMUse":          {},
 	"summary.glucoseManagementIndicator": {},
 }
