@@ -69,6 +69,8 @@ type Filter struct {
 	Search                     *string
 	LastUploadDateFrom         *time.Time
 	LastUploadDateTo           *time.Time
+	PercentTimeCGMUseCmp       *string
+	PercentTimeCGMUseValue     float64
 	PercentTimeInVeryLowCmp    *string
 	PercentTimeInVeryLowValue  float64
 	PercentTimeInLowCmp        *string

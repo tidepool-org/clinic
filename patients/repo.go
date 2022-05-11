@@ -495,38 +495,48 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			bson.M{"birthDate": filter},
 		}
 	}
+	lastUploadDate := bson.M{}
 	if filter.LastUploadDateFrom != nil && !filter.LastUploadDateFrom.IsZero() {
-		selector["summary.lastUploadDate"] = bson.M{"$gte": filter.LastUploadDateFrom}
+		lastUploadDate = bson.M{"$gte": filter.LastUploadDateFrom}
 	}
 	if filter.LastUploadDateTo != nil && !filter.LastUploadDateTo.IsZero() {
-		selector["summary.lastUploadDate"] = bson.M{"$lt": filter.LastUploadDateTo}
+		lastUploadDate = bson.M{"$lt": filter.LastUploadDateTo}
+	}
+	if len(lastUploadDate) > 0 {
+		selector["summary.lastUploadDate"] = lastUploadDate
 	}
 
-	MaybeApplyRangeFilter(selector,
+	MaybeApplyNumericFilter(selector,
+		"summary.percentTimeCGMUse",
+		filter.PercentTimeCGMUseCmp,
+		filter.PercentTimeCGMUseValue,
+	)
+
+	MaybeApplyNumericFilter(selector,
 		"summary.percentTimeInVeryLow",
 		filter.PercentTimeInVeryLowCmp,
 		filter.PercentTimeInVeryLowValue,
 	)
 
-	MaybeApplyRangeFilter(selector,
+	MaybeApplyNumericFilter(selector,
 		"summary.percentTimeInLow",
 		filter.PercentTimeInLowCmp,
 		filter.PercentTimeInLowValue,
 	)
 
-	MaybeApplyRangeFilter(selector,
+	MaybeApplyNumericFilter(selector,
 		"summary.percentTimeInTarget",
 		filter.PercentTimeInTargetCmp,
 		filter.PercentTimeInTargetValue,
 	)
 
-	MaybeApplyRangeFilter(selector,
+	MaybeApplyNumericFilter(selector,
 		"summary.percentTimeInHigh",
 		filter.PercentTimeInHighCmp,
 		filter.PercentTimeInHighValue,
 	)
 
-	MaybeApplyRangeFilter(selector,
+	MaybeApplyNumericFilter(selector,
 		"summary.percentTimeInVeryHigh",
 		filter.PercentTimeInVeryHighCmp,
 		filter.PercentTimeInVeryHighValue,
@@ -535,7 +545,7 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	return selector
 }
 
-func MaybeApplyRangeFilter(selector bson.M, field string, cmp *string, value float64) {
+func MaybeApplyNumericFilter(selector bson.M, field string, cmp *string, value float64) {
 	if f, ok := cmpToMongoFilter(cmp); ok {
 		selector[field] = bson.M{f: value}
 	}

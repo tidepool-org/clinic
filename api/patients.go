@@ -20,6 +20,14 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
 		LastUploadDateTo:   params.SummaryLastUploadDateTo,
 	}
+	if params.SummaryPercentTimeCGMUse != nil && *params.SummaryPercentTimeCGMUse != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPercentTimeCGMUse)
+		if err != nil {
+			return err
+		}
+		filter.PercentTimeCGMUseCmp = cmp
+		filter.PercentTimeCGMUseValue = value
+	}
 	if params.SummaryPercentTimeInVeryLow != nil && *params.SummaryPercentTimeInVeryLow != "" {
 		cmp, value, err := parseRangeFilter(*params.SummaryPercentTimeInVeryLow)
 		if err != nil {

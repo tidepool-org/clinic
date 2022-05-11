@@ -2044,6 +2044,22 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
+	if params.SummaryPercentTimeCGMUse != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeCGMUse", runtime.ParamLocationQuery, *params.SummaryPercentTimeCGMUse); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
 	if params.SummaryPercentTimeInVeryLow != nil {
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInVeryLow", runtime.ParamLocationQuery, *params.SummaryPercentTimeInVeryLow); err != nil {

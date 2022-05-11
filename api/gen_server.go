@@ -709,6 +709,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sort: %s", err))
 	}
 
+	// ------------- Optional query parameter "summary.percentTimeCGMUse" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.percentTimeCGMUse", ctx.QueryParams(), &params.SummaryPercentTimeCGMUse)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.percentTimeCGMUse: %s", err))
+	}
+
 	// ------------- Optional query parameter "summary.percentTimeInVeryLow" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "summary.percentTimeInVeryLow", ctx.QueryParams(), &params.SummaryPercentTimeInVeryLow)

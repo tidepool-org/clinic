@@ -424,6 +424,9 @@ type ListPatientsParams struct {
 	// Sort order and attribute (e.g. +name or -name)
 	Sort *Sort `json:"sort,omitempty"`
 
+	// Percentage of time of CGM use
+	SummaryPercentTimeCGMUse *string `json:"summary.percentTimeCGMUse,omitempty"`
+
 	// Percentage of time below 54 mg/dL
 	SummaryPercentTimeInVeryLow *string `json:"summary.percentTimeInVeryLow,omitempty"`
 
