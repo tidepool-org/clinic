@@ -124,7 +124,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.timeCGMUse", Value: 1},
+				{Key: "summary.percentTimeCGMUse", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
