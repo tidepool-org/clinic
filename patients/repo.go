@@ -497,10 +497,10 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 	lastUploadDate := bson.M{}
 	if filter.LastUploadDateFrom != nil && !filter.LastUploadDateFrom.IsZero() {
-		lastUploadDate = bson.M{"$gte": filter.LastUploadDateFrom}
+		lastUploadDate["$gte"] = filter.LastUploadDateFrom
 	}
 	if filter.LastUploadDateTo != nil && !filter.LastUploadDateTo.IsZero() {
-		lastUploadDate = bson.M{"$lt": filter.LastUploadDateTo}
+		lastUploadDate["$lt"] = filter.LastUploadDateTo
 	}
 	if len(lastUploadDate) > 0 {
 		selector["summary.lastUploadDate"] = lastUploadDate
