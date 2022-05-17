@@ -413,12 +413,11 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		}
 	}
 
-	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	res, err := r.collection.UpdateMany(ctx, selector, update)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return ErrNotFound
-		}
 		return fmt.Errorf("error updating patient: %w", err)
+	} else if res.ModifiedCount == 0 {
+		return ErrNotFound
 	}
 
 	return nil
