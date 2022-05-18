@@ -1120,6 +1120,11 @@ components:
           example: tier0100
           minLength: 1
           readOnly: true
+        preferredBgUnits:
+          type: string
+          enum:
+            - mg/dl
+            - mmol/l
       required:
         - id
         - name
@@ -1129,6 +1134,7 @@ components:
         - updatedTime
         - tierDescription
         - tier
+        - preferredBgUnits
     Clinics:
       type: array
       items:

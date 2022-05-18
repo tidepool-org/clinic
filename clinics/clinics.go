@@ -50,6 +50,7 @@ type Clinic struct {
 	UpdatedTime        time.Time           `bson:"updatedTime,omitempty"`
 	IsMigrated         bool                `bson:"isMigrated,omitempty"`
 	Tier               string              `bson:"tier,omitempty"`
+	PreferredBgUnits   string              `bson:"PreferredBgUnits,omitempty"`
 }
 
 func NewClinic() Clinic {
@@ -69,6 +70,7 @@ func (c *Clinic) HasAllRequiredFields() bool {
 		isStringSet(c.Name) &&
 		isStringSet(c.PostalCode) &&
 		isStringSet(c.State) &&
+		isStringSet(&c.PreferredBgUnits) &&
 		c.Id != nil &&
 		c.PhoneNumbers != nil &&
 		hasValidPhoneNumber(*c.PhoneNumbers)

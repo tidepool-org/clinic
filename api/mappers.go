@@ -27,16 +27,17 @@ func NewClinic(c Clinic) *clinics.Clinic {
 	}
 
 	return &clinics.Clinic{
-		Name:         &c.Name,
-		ClinicType:   clinicTypeToString(c.ClinicType),
-		ClinicSize:   clinicSizeToString(c.ClinicSize),
-		Address:      c.Address,
-		City:         c.City,
-		Country:      c.Country,
-		PostalCode:   c.PostalCode,
-		State:        c.State,
-		PhoneNumbers: &phoneNumbers,
-		Website:      c.Website,
+		Name:             &c.Name,
+		ClinicType:       clinicTypeToString(c.ClinicType),
+		ClinicSize:       clinicSizeToString(c.ClinicSize),
+		Address:          c.Address,
+		City:             c.City,
+		Country:          c.Country,
+		PostalCode:       c.PostalCode,
+		State:            c.State,
+		PhoneNumbers:     &phoneNumbers,
+		Website:          c.Website,
+		PreferredBgUnits: string(c.PreferredBgUnits),
 	}
 }
 
@@ -46,23 +47,28 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		tier = c.Tier
 	}
 
+	units := ClinicPreferredBgUnitsMgdl
+	if c.PreferredBgUnits != "" {
+		units = ClinicPreferredBgUnits(c.PreferredBgUnits)
+	}
 	dto := Clinic{
-		Id:              Id(c.Id.Hex()),
-		Name:            pstr(c.Name),
-		ShareCode:       pstr(c.CanonicalShareCode),
-		CanMigrate:      c.CanMigrate(),
-		ClinicType:      stringToClinicType(c.ClinicType),
-		ClinicSize:      stringToClinicSize(c.ClinicSize),
-		Address:         c.Address,
-		City:            c.City,
-		PostalCode:      c.PostalCode,
-		State:           c.State,
-		Country:         c.Country,
-		Website:         c.Website,
-		CreatedTime:     c.CreatedTime,
-		UpdatedTime:     c.UpdatedTime,
-		Tier:            tier,
-		TierDescription: clinics.GetTierDescription(tier),
+		Id:               Id(c.Id.Hex()),
+		Name:             pstr(c.Name),
+		ShareCode:        pstr(c.CanonicalShareCode),
+		CanMigrate:       c.CanMigrate(),
+		ClinicType:       stringToClinicType(c.ClinicType),
+		ClinicSize:       stringToClinicSize(c.ClinicSize),
+		Address:          c.Address,
+		City:             c.City,
+		PostalCode:       c.PostalCode,
+		State:            c.State,
+		Country:          c.Country,
+		Website:          c.Website,
+		CreatedTime:      c.CreatedTime,
+		UpdatedTime:      c.UpdatedTime,
+		Tier:             tier,
+		TierDescription:  clinics.GetTierDescription(tier),
+		PreferredBgUnits: units,
 	}
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber

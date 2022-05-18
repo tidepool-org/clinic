@@ -44,6 +44,13 @@ const (
 	ClinicClinicTypeVeterinaryClinic ClinicClinicType = "veterinary_clinic"
 )
 
+// Defines values for ClinicPreferredBgUnits.
+const (
+	ClinicPreferredBgUnitsMgdl ClinicPreferredBgUnits = "mg/dl"
+
+	ClinicPreferredBgUnitsMmoll ClinicPreferredBgUnits = "mmol/l"
+)
+
 // Defines values for MigrationStatus.
 const (
 	MigrationStatusCOMPLETED MigrationStatus = "COMPLETED"
@@ -105,7 +112,8 @@ type Clinic struct {
 	PhoneNumbers *[]PhoneNumber `json:"phoneNumbers,omitempty"`
 
 	// Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
-	PostalCode *string `json:"postalCode,omitempty"`
+	PostalCode       *string                `json:"postalCode,omitempty"`
+	PreferredBgUnits ClinicPreferredBgUnits `json:"preferredBgUnits"`
 
 	// Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
 	ShareCode string `json:"shareCode"`
@@ -123,6 +131,9 @@ type ClinicClinicSize string
 
 // ClinicClinicType defines model for Clinic.ClinicType.
 type ClinicClinicType string
+
+// ClinicPreferredBgUnits defines model for Clinic.PreferredBgUnits.
+type ClinicPreferredBgUnits string
 
 // The `id` may be empty if the clinician invite has not been accepted.
 type Clinician struct {
