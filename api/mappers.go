@@ -47,7 +47,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		tier = c.Tier
 	}
 
-	units := ClinicPreferredBgUnitsMgdl
+	units := ClinicPreferredBgUnitsMgdL
 	if c.PreferredBgUnits != "" {
 		units = ClinicPreferredBgUnits(c.PreferredBgUnits)
 	}

@@ -46,9 +46,9 @@ const (
 
 // Defines values for ClinicPreferredBgUnits.
 const (
-	ClinicPreferredBgUnitsMgdl ClinicPreferredBgUnits = "mg/dl"
+	ClinicPreferredBgUnitsMgdL ClinicPreferredBgUnits = "mg/dL"
 
-	ClinicPreferredBgUnitsMmoll ClinicPreferredBgUnits = "mmol/l"
+	ClinicPreferredBgUnitsMmolL ClinicPreferredBgUnits = "mmol/L"
 )
 
 // Defines values for MigrationStatus.
