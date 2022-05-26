@@ -459,22 +459,22 @@ type ListPatientsParams struct {
 	Sort *Sort `json:"sort,omitempty"`
 
 	// Percentage of time of CGM use
-	SummaryPercentTimeCGMUse *string `json:"summary.percentTimeCGMUse,omitempty"`
+	SummaryTimeCGMUsePercent *string `json:"summary.timeCGMUsePercent,omitempty"`
 
 	// Percentage of time below 54 mg/dL
-	SummaryPercentTimeInVeryLow *string `json:"summary.percentTimeInVeryLow,omitempty"`
+	SummaryTimeInVeryLowPercent *string `json:"summary.timeInVeryLowPercent,omitempty"`
 
 	// Percentage of time in range 54-70 mg/dL
-	SummaryPercentTimeInLow *string `json:"summary.percentTimeInLow,omitempty"`
+	SummaryTimeInLowPercent *string `json:"summary.timeInLowPercent,omitempty"`
 
 	// Percentage of time in range 70-180 mg/dL
-	SummaryPercentTimeInTarget *string `json:"summary.percentTimeInTarget,omitempty"`
+	SummaryTimeInTargetPercent *string `json:"summary.timeInTargetPercent,omitempty"`
 
 	// Percentage of time in range 180-250 mg/dL
-	SummaryPercentTimeInHigh *string `json:"summary.percentTimeInHigh,omitempty"`
+	SummaryTimeInHighPercent *string `json:"summary.timeInHighPercent,omitempty"`
 
 	// Percentage of time above range 250 mg/dL
-	SummaryPercentTimeInVeryHigh *string `json:"summary.percentTimeInVeryHigh,omitempty"`
+	SummaryTimeInVeryHighPercent *string `json:"summary.timeInVeryHighPercent,omitempty"`
 
 	// Inclusive
 	SummaryLastUploadDateFrom *time.Time `json:"summary.lastUploadDateFrom,omitempty"`

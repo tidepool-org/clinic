@@ -2044,9 +2044,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryPercentTimeCGMUse != nil {
+	if params.SummaryTimeCGMUsePercent != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeCGMUse", runtime.ParamLocationQuery, *params.SummaryPercentTimeCGMUse); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeCGMUsePercent", runtime.ParamLocationQuery, *params.SummaryTimeCGMUsePercent); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2060,9 +2060,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryPercentTimeInVeryLow != nil {
+	if params.SummaryTimeInVeryLowPercent != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInVeryLow", runtime.ParamLocationQuery, *params.SummaryPercentTimeInVeryLow); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeInVeryLowPercent", runtime.ParamLocationQuery, *params.SummaryTimeInVeryLowPercent); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2076,9 +2076,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryPercentTimeInLow != nil {
+	if params.SummaryTimeInLowPercent != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInLow", runtime.ParamLocationQuery, *params.SummaryPercentTimeInLow); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeInLowPercent", runtime.ParamLocationQuery, *params.SummaryTimeInLowPercent); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2092,9 +2092,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryPercentTimeInTarget != nil {
+	if params.SummaryTimeInTargetPercent != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInTarget", runtime.ParamLocationQuery, *params.SummaryPercentTimeInTarget); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeInTargetPercent", runtime.ParamLocationQuery, *params.SummaryTimeInTargetPercent); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2108,9 +2108,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryPercentTimeInHigh != nil {
+	if params.SummaryTimeInHighPercent != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInHigh", runtime.ParamLocationQuery, *params.SummaryPercentTimeInHigh); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeInHighPercent", runtime.ParamLocationQuery, *params.SummaryTimeInHighPercent); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -2124,9 +2124,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SummaryPercentTimeInVeryHigh != nil {
+	if params.SummaryTimeInVeryHighPercent != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.percentTimeInVeryHigh", runtime.ParamLocationQuery, *params.SummaryPercentTimeInVeryHigh); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.timeInVeryHighPercent", runtime.ParamLocationQuery, *params.SummaryTimeInVeryHighPercent); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

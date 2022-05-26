@@ -69,18 +69,18 @@ type Filter struct {
 	Search                     *string
 	LastUploadDateFrom         *time.Time
 	LastUploadDateTo           *time.Time
-	PercentTimeCGMUseCmp       *string
-	PercentTimeCGMUseValue     float64
-	PercentTimeInVeryLowCmp    *string
-	PercentTimeInVeryLowValue  float64
-	PercentTimeInLowCmp        *string
-	PercentTimeInLowValue      float64
-	PercentTimeInTargetCmp     *string
-	PercentTimeInTargetValue   float64
-	PercentTimeInHighCmp       *string
-	PercentTimeInHighValue     float64
-	PercentTimeInVeryHighCmp   *string
-	PercentTimeInVeryHighValue float64
+	TimeCGMUsePercentCmp       *string
+	TimeCGMUsePercentValue     float64
+	TimeInVeryLowPercentCmp    *string
+	TimeInVeryLowPercentValue  float64
+	TimeInLowPercentCmp        *string
+	TimeInLowPercentValue      float64
+	TimeInTargetPercentCmp     *string
+	TimeInTargetPercentValue   float64
+	TimeInHighPercentCmp       *string
+	TimeInHighPercentValue     float64
+	TimeInVeryHighPercentCmp   *string
+	TimeInVeryHighPercentValue float64
 }
 
 type Permission = map[string]interface{}
@@ -118,30 +118,30 @@ type UploadReminderUpdate struct {
 }
 
 type Period struct {
-	PercentTimeCGMUse *float64 `bson:"percentTimeCGMUse,omitempty"`
+	TimeCGMUsePercent *float64 `bson:"timeCGMUsePercent,omitempty"`
 	TimeCGMUseMinutes *int     `bson:"timeCGMUseMinutes,omitempty"`
 	TimeCGMUseRecords *int     `bson:"timeCGMUseRecords,omitempty"`
 
 	AverageGlucose             *AvgGlucose `bson:"avgGlucose,omitempty"`
 	GlucoseManagementIndicator *float64    `bson:"glucoseManagementIndicator,omitempty"`
 
-	PercentTimeInTarget *float64 `bson:"percentTimeInTarget,omitempty"`
+	TimeInTargetPercent *float64 `bson:"timeInTargetPercent,omitempty"`
 	TimeInTargetMinutes *int     `bson:"timeInTargetMinutes,omitempty"`
 	TimeInTargetRecords *int     `bson:"timeInTargetRecords,omitempty"`
 
-	PercentTimeInLow *float64 `bson:"percentTimeInLow,omitempty"`
+	TimeInLowPercent *float64 `bson:"timeInLowPercent,omitempty"`
 	TimeInLowMinutes *int     `bson:"timeInLowMinutes,omitempty"`
 	TimeInLowRecords *int     `bson:"timeInLowRecords,omitempty"`
 
-	PercentTimeInVeryLow *float64 `bson:"percentTimeInVeryLow"`
+	TimeInVeryLowPercent *float64 `bson:"timeInVeryLowPercent"`
 	TimeInVeryLowMinutes *int     `bson:"timeInVeryLowMinutes"`
 	TimeInVeryLowRecords *int     `bson:"timeInVeryLowRecords"`
 
-	PercentTimeInHigh *float64 `bson:"percentTimeInHigh,omitempty"`
+	TimeInHighPercent *float64 `bson:"timeInHighPercent,omitempty"`
 	TimeInHighMinutes *int     `bson:"timeInHighMinutes,omitempty"`
 	TimeInHighRecords *int     `bson:"timeInHighRecords,omitempty"`
 
-	PercentTimeInVeryHigh *float64 `bson:"percentTimeInVeryHigh,omitempty"`
+	TimeInVeryHighPercent *float64 `bson:"timeInVeryHighPercent,omitempty"`
 	TimeInVeryHighMinutes *int     `bson:"timeInVeryHighMinutes,omitempty"`
 	TimeInVeryHighRecords *int     `bson:"timeInVeryHighRecords,omitempty"`
 }
