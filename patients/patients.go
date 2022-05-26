@@ -117,22 +117,49 @@ type UploadReminderUpdate struct {
 	Time      time.Time
 }
 
-type Summary struct {
-	AverageGlucose             *AvgGlucose `bson:"averageGlucose,omitempty"`
-	FirstData                  *time.Time  `bson:"firstData,omitempty"`
+type Period struct {
+	PercentTimeCGMUse *float64 `bson:"percentTimeCGMUse,omitempty"`
+	TimeCGMUseMinutes *int     `bson:"timeCGMUseMinutes,omitempty"`
+	TimeCGMUseRecords *int     `bson:"timeCGMUseRecords,omitempty"`
+
+	AverageGlucose             *AvgGlucose `bson:"avgGlucose,omitempty"`
 	GlucoseManagementIndicator *float64    `bson:"glucoseManagementIndicator,omitempty"`
-	HighGlucoseThreshold       *float64    `bson:"highGlucoseThreshold,omitempty"`
-	LastData                   *time.Time  `bson:"lastData,omitempty"`
-	LastUpdatedDate            *time.Time  `bson:"lastUpdatedDate,omitempty"`
-	LastUploadDate             *time.Time  `bson:"lastUploadDate,omitempty"`
-	LowGlucoseThreshold        *float64    `bson:"lowGlucoseThreshold,omitempty"`
-	OutdatedSince              *time.Time  `bson:"outdatedSince,omitempty"`
-	PercentTimeCGMUse          *float64    `bson:"percentTimeCGMUse,omitempty"`
-	PercentTimeInVeryLow       *float64    `bson:"percentTimeInVeryLow,omitempty"`
-	PercentTimeInLow           *float64    `bson:"percentTimeInLow,omitempty"`
-	PercentTimeInTarget        *float64    `bson:"percentTimeInTarget,omitempty"`
-	PercentTimeInHigh          *float64    `bson:"percentTimeInHigh,omitempty"`
-	PercentTimeInVeryHigh      *float64    `bson:"percentTimeInVeryHigh,omitempty"`
+
+	PercentTimeInTarget *float64 `bson:"percentTimeInTarget,omitempty"`
+	TimeInTargetMinutes *int     `bson:"timeInTargetMinutes,omitempty"`
+	TimeInTargetRecords *int     `bson:"timeInTargetRecords,omitempty"`
+
+	PercentTimeInLow *float64 `bson:"percentTimeInLow,omitempty"`
+	TimeInLowMinutes *int     `bson:"timeInLowMinutes,omitempty"`
+	TimeInLowRecords *int     `bson:"timeInLowRecords,omitempty"`
+
+	PercentTimeInVeryLow *float64 `bson:"percentTimeInVeryLow"`
+	TimeInVeryLowMinutes *int     `bson:"timeInVeryLowMinutes"`
+	TimeInVeryLowRecords *int     `bson:"timeInVeryLowRecords"`
+
+	PercentTimeInHigh *float64 `bson:"percentTimeInHigh,omitempty"`
+	TimeInHighMinutes *int     `bson:"timeInHighMinutes,omitempty"`
+	TimeInHighRecords *int     `bson:"timeInHighRecords,omitempty"`
+
+	PercentTimeInVeryHigh *float64 `bson:"percentTimeInVeryHigh,omitempty"`
+	TimeInVeryHighMinutes *int     `bson:"timeInVeryHighMinutes,omitempty"`
+	TimeInVeryHighRecords *int     `bson:"timeInVeryHighRecords,omitempty"`
+}
+
+type Summary struct {
+	Periods map[string]*Period `bson:"periods,omitempty"`
+
+	FirstData       *time.Time `bson:"firstData,omitempty"`
+	LastData        *time.Time `bson:"lastData,omitempty"`
+	LastUpdatedDate *time.Time `bson:"lastUpdatedDate,omitempty"`
+	LastUploadDate  *time.Time `bson:"lastUploadDate,omitempty"`
+	OutdatedSince   *time.Time `bson:"outdatedSince,omitempty"`
+	TotalDays       *int       `bson:"totalDays,omitempty"`
+
+	HighGlucoseThreshold     *float64 `bson:"highGlucoseThreshold"`
+	VeryHighGlucoseThreshold *float64 `bson:"veryHighGlucoseThreshold"`
+	LowGlucoseThreshold      *float64 `bson:"lowGlucoseThreshold"`
+	VeryLowGlucoseThreshold  *float64 `bson:"VeryLowGlucoseThreshold"`
 }
 
 type AvgGlucose struct {
