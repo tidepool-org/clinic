@@ -4,8 +4,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
 
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
@@ -266,43 +264,47 @@ type PatientPermissions struct {
 
 // PatientSummary defines model for PatientSummary.
 type PatientSummary struct {
-	FirstData                *time.Time              `json:"firstData,omitempty"`
-	HighGlucoseThreshold     *float64                `json:"highGlucoseThreshold,omitempty"`
-	LastData                 *time.Time              `json:"lastData,omitempty"`
-	LastUpdatedDate          *time.Time              `json:"lastUpdatedDate,omitempty"`
-	LastUploadDate           *time.Time              `json:"lastUploadDate,omitempty"`
-	LowGlucoseThreshold      *float64                `json:"lowGlucoseThreshold,omitempty"`
-	OutdatedSince            *time.Time              `json:"outdatedSince,omitempty"`
-	Periods                  *PatientSummary_Periods `json:"periods,omitempty"`
-	VeryHighGlucoseThreshold *float64                `json:"veryHighGlucoseThreshold,omitempty"`
-	VeryLowGlucoseThreshold  *float64                `json:"veryLowGlucoseThreshold,omitempty"`
+	FirstData                *time.Time             `json:"firstData,omitempty"`
+	HighGlucoseThreshold     *float64               `json:"highGlucoseThreshold,omitempty"`
+	LastData                 *time.Time             `json:"lastData,omitempty"`
+	LastUpdatedDate          *time.Time             `json:"lastUpdatedDate,omitempty"`
+	LastUploadDate           *time.Time             `json:"lastUploadDate,omitempty"`
+	LowGlucoseThreshold      *float64               `json:"lowGlucoseThreshold,omitempty"`
+	OutdatedSince            *time.Time             `json:"outdatedSince,omitempty"`
+	Periods                  *PatientSummaryPeriods `json:"periods,omitempty"`
+	TotalDays                *int                   `json:"totalDays,omitempty"`
+	VeryHighGlucoseThreshold *float64               `json:"veryHighGlucoseThreshold,omitempty"`
+	VeryLowGlucoseThreshold  *float64               `json:"veryLowGlucoseThreshold,omitempty"`
 }
 
-// PatientSummary_Periods defines model for PatientSummary.Periods.
-type PatientSummary_Periods struct {
-	AdditionalProperties map[string]struct {
-		// Blood glucose value, in `mmol/L`
-		AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-		GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-		TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
-		TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
-		TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
-		TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
-		TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
-		TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
-		TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
-		TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
-		TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
-		TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
-		TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
-		TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
-		TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
-		TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
-		TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
-		TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
-		TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
-		TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
-	} `json:"-"`
+// PatientSummaryPeriod defines model for PatientSummaryPeriod.
+type PatientSummaryPeriod struct {
+	// Blood glucose value, in `mmol/L`
+	AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
+	GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
+	TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
+	TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
+	TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
+	TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
+	TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
+	TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
+	TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
+	TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
+	TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
+	TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
+	TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
+	TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
+	TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
+	TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
+	TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
+	TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
+	TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
+	TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
+}
+
+// PatientSummaryPeriods defines model for PatientSummaryPeriods.
+type PatientSummaryPeriods struct {
+	N14d *PatientSummaryPeriod `json:"14d,omitempty"`
 }
 
 // Patients defines model for Patients.
@@ -459,22 +461,22 @@ type ListPatientsParams struct {
 	Sort *Sort `json:"sort,omitempty"`
 
 	// Percentage of time of CGM use
-	SummaryTimeCGMUsePercent *string `json:"summary.timeCGMUsePercent,omitempty"`
+	Summary14dTimeCGMUsePercent *string `json:"summary.14d.timeCGMUsePercent,omitempty"`
 
 	// Percentage of time below 54 mg/dL
-	SummaryTimeInVeryLowPercent *string `json:"summary.timeInVeryLowPercent,omitempty"`
+	Summary14dTimeInVeryLowPercent *string `json:"summary.14d.timeInVeryLowPercent,omitempty"`
 
 	// Percentage of time in range 54-70 mg/dL
-	SummaryTimeInLowPercent *string `json:"summary.timeInLowPercent,omitempty"`
+	Summary14dTimeInLowPercent *string `json:"summary.14d.timeInLowPercent,omitempty"`
 
 	// Percentage of time in range 70-180 mg/dL
-	SummaryTimeInTargetPercent *string `json:"summary.timeInTargetPercent,omitempty"`
+	Summary14dTimeInTargetPercent *string `json:"summary.14d.timeInTargetPercent,omitempty"`
 
 	// Percentage of time in range 180-250 mg/dL
-	SummaryTimeInHighPercent *string `json:"summary.timeInHighPercent,omitempty"`
+	Summary14dTimeInHighPercent *string `json:"summary.14d.timeInHighPercent,omitempty"`
 
 	// Percentage of time above range 250 mg/dL
-	SummaryTimeInVeryHighPercent *string `json:"summary.timeInVeryHighPercent,omitempty"`
+	Summary14dTimeInVeryHighPercent *string `json:"summary.14d.timeInVeryHighPercent,omitempty"`
 
 	// Inclusive
 	SummaryLastUploadDateFrom *time.Time `json:"summary.lastUploadDateFrom,omitempty"`
@@ -554,167 +556,4 @@ type UpdatePatientSummaryJSONRequestBody UpdatePatientSummaryJSONBody
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody UpdateClinicUserDetailsJSONBody
-
-// Getter for additional properties for PatientSummary_Periods. Returns the specified
-// element and whether it was found
-func (a PatientSummary_Periods) Get(fieldName string) (value struct {
-	// Blood glucose value, in `mmol/L`
-	AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-	GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-	TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
-	TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
-	TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
-	TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
-	TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
-	TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
-	TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
-	TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
-	TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
-	TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
-	TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
-	TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
-	TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
-	TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
-	TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
-	TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
-	TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
-	TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
-}, found bool) {
-	if a.AdditionalProperties != nil {
-		value, found = a.AdditionalProperties[fieldName]
-	}
-	return
-}
-
-// Setter for additional properties for PatientSummary_Periods
-func (a *PatientSummary_Periods) Set(fieldName string, value struct {
-	// Blood glucose value, in `mmol/L`
-	AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-	GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-	TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
-	TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
-	TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
-	TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
-	TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
-	TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
-	TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
-	TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
-	TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
-	TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
-	TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
-	TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
-	TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
-	TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
-	TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
-	TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
-	TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
-	TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
-}) {
-	if a.AdditionalProperties == nil {
-		a.AdditionalProperties = make(map[string]struct {
-			// Blood glucose value, in `mmol/L`
-			AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-			GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-			TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
-			TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
-			TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
-			TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
-			TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
-			TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
-			TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
-			TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
-			TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
-			TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
-			TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
-			TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
-			TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
-			TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
-			TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
-			TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
-			TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
-			TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
-		})
-	}
-	a.AdditionalProperties[fieldName] = value
-}
-
-// Override default JSON handling for PatientSummary_Periods to handle AdditionalProperties
-func (a *PatientSummary_Periods) UnmarshalJSON(b []byte) error {
-	object := make(map[string]json.RawMessage)
-	err := json.Unmarshal(b, &object)
-	if err != nil {
-		return err
-	}
-
-	if len(object) != 0 {
-		a.AdditionalProperties = make(map[string]struct {
-			// Blood glucose value, in `mmol/L`
-			AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-			GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-			TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
-			TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
-			TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
-			TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
-			TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
-			TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
-			TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
-			TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
-			TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
-			TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
-			TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
-			TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
-			TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
-			TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
-			TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
-			TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
-			TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
-			TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
-		})
-		for fieldName, fieldBuf := range object {
-			var fieldVal struct {
-				// Blood glucose value, in `mmol/L`
-				AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-				GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-				TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
-				TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
-				TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
-				TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
-				TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
-				TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
-				TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
-				TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
-				TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
-				TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
-				TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
-				TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
-				TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
-				TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
-				TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
-				TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
-				TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
-				TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
-			}
-			err := json.Unmarshal(fieldBuf, &fieldVal)
-			if err != nil {
-				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
-			}
-			a.AdditionalProperties[fieldName] = fieldVal
-		}
-	}
-	return nil
-}
-
-// Override default JSON handling for PatientSummary_Periods to handle AdditionalProperties
-func (a PatientSummary_Periods) MarshalJSON() ([]byte, error) {
-	var err error
-	object := make(map[string]json.RawMessage)
-
-	for fieldName, field := range a.AdditionalProperties {
-		object[fieldName], err = json.Marshal(field)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
-		}
-	}
-	return json.Marshal(object)
-}
 

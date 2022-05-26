@@ -20,48 +20,48 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
 		LastUploadDateTo:   params.SummaryLastUploadDateTo,
 	}
-	if params.SummaryTimeCGMUsePercent != nil && *params.SummaryTimeCGMUsePercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeCGMUsePercent)
+	if params.Summary14dTimeCGMUsePercent != nil && *params.Summary14dTimeCGMUsePercent != "" {
+		cmp, value, err := parseRangeFilter(*params.Summary14dTimeCGMUsePercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeCGMUsePercentCmp = cmp
 		filter.TimeCGMUsePercentValue = value
 	}
-	if params.SummaryTimeInVeryLowPercent != nil && *params.SummaryTimeInVeryLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeInVeryLowPercent)
+	if params.Summary14dTimeInVeryLowPercent != nil && *params.Summary14dTimeInVeryLowPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInVeryLowPercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeInVeryLowPercentCmp = cmp
 		filter.TimeInVeryLowPercentValue = value
 	}
-	if params.SummaryTimeInLowPercent != nil && *params.SummaryTimeInLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeInLowPercent)
+	if params.Summary14dTimeInLowPercent != nil && *params.Summary14dTimeInLowPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInLowPercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeInLowPercentCmp = cmp
 		filter.TimeInLowPercentValue = value
 	}
-	if params.SummaryTimeInTargetPercent != nil && *params.SummaryTimeInTargetPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeInTargetPercent)
+	if params.Summary14dTimeInTargetPercent != nil && *params.Summary14dTimeInTargetPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInTargetPercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeInTargetPercentCmp = cmp
 		filter.TimeInTargetPercentValue = value
 	}
-	if params.SummaryTimeInHighPercent != nil && *params.SummaryTimeInHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeInHighPercent)
+	if params.Summary14dTimeInHighPercent != nil && *params.Summary14dTimeInHighPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInHighPercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeInHighPercentCmp = cmp
 		filter.TimeInHighPercentValue = value
 	}
-	if params.SummaryTimeInVeryHighPercent != nil && *params.SummaryTimeInVeryHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryTimeInVeryHighPercent)
+	if params.Summary14dTimeInVeryHighPercent != nil && *params.Summary14dTimeInVeryHighPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInVeryHighPercent)
 		if err != nil {
 			return err
 		}

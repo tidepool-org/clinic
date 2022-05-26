@@ -169,40 +169,40 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 	}
 
 	var avgGlucose *patients.AvgGlucose
-	if dto.Periods.AdditionalProperties["14"].AverageGlucose != nil {
+	if dto.Periods.N14d.AverageGlucose != nil {
 		avgGlucose = &patients.AvgGlucose{
-			Units: string(dto.Periods.AdditionalProperties["14"].AverageGlucose.Units),
-			Value: float64(dto.Periods.AdditionalProperties["14"].AverageGlucose.Value),
+			Units: string(dto.Periods.N14d.AverageGlucose.Units),
+			Value: float64(dto.Periods.N14d.AverageGlucose.Value),
 		}
 	}
 
 	var periods map[string]*patients.Period
 	periods["14"] = &patients.Period{
-		TimeCGMUsePercent: dto.Periods.AdditionalProperties["14"].TimeCGMUsePercent,
-		TimeCGMUseMinutes: dto.Periods.AdditionalProperties["14"].TimeCGMUseMinutes,
-		TimeCGMUseRecords: dto.Periods.AdditionalProperties["14"].TimeCGMUseRecords,
+		TimeCGMUsePercent: dto.Periods.N14d.TimeCGMUsePercent,
+		TimeCGMUseMinutes: dto.Periods.N14d.TimeCGMUseMinutes,
+		TimeCGMUseRecords: dto.Periods.N14d.TimeCGMUseRecords,
 
-		TimeInVeryLowPercent: dto.Periods.AdditionalProperties["14"].TimeInVeryLowPercent,
-		TimeInVeryLowMinutes: dto.Periods.AdditionalProperties["14"].TimeInVeryLowMinutes,
-		TimeInVeryLowRecords: dto.Periods.AdditionalProperties["14"].TimeInVeryLowRecords,
+		TimeInVeryLowPercent: dto.Periods.N14d.TimeInVeryLowPercent,
+		TimeInVeryLowMinutes: dto.Periods.N14d.TimeInVeryLowMinutes,
+		TimeInVeryLowRecords: dto.Periods.N14d.TimeInVeryLowRecords,
 
-		TimeInLowPercent: dto.Periods.AdditionalProperties["14"].TimeInLowPercent,
-		TimeInLowMinutes: dto.Periods.AdditionalProperties["14"].TimeInLowMinutes,
-		TimeInLowRecords: dto.Periods.AdditionalProperties["14"].TimeInLowRecords,
+		TimeInLowPercent: dto.Periods.N14d.TimeInLowPercent,
+		TimeInLowMinutes: dto.Periods.N14d.TimeInLowMinutes,
+		TimeInLowRecords: dto.Periods.N14d.TimeInLowRecords,
 
-		TimeInTargetPercent: dto.Periods.AdditionalProperties["14"].TimeInTargetPercent,
-		TimeInTargetMinutes: dto.Periods.AdditionalProperties["14"].TimeInTargetMinutes,
-		TimeInTargetRecords: dto.Periods.AdditionalProperties["14"].TimeInTargetRecords,
+		TimeInTargetPercent: dto.Periods.N14d.TimeInTargetPercent,
+		TimeInTargetMinutes: dto.Periods.N14d.TimeInTargetMinutes,
+		TimeInTargetRecords: dto.Periods.N14d.TimeInTargetRecords,
 
-		TimeInHighPercent: dto.Periods.AdditionalProperties["14"].TimeInHighPercent,
-		TimeInHighMinutes: dto.Periods.AdditionalProperties["14"].TimeInHighMinutes,
-		TimeInHighRecords: dto.Periods.AdditionalProperties["14"].TimeInHighRecords,
+		TimeInHighPercent: dto.Periods.N14d.TimeInHighPercent,
+		TimeInHighMinutes: dto.Periods.N14d.TimeInHighMinutes,
+		TimeInHighRecords: dto.Periods.N14d.TimeInHighRecords,
 
-		TimeInVeryHighPercent: dto.Periods.AdditionalProperties["14"].TimeInVeryHighPercent,
-		TimeInVeryHighMinutes: dto.Periods.AdditionalProperties["14"].TimeInVeryHighMinutes,
-		TimeInVeryHighRecords: dto.Periods.AdditionalProperties["14"].TimeInVeryHighRecords,
+		TimeInVeryHighPercent: dto.Periods.N14d.TimeInVeryHighPercent,
+		TimeInVeryHighMinutes: dto.Periods.N14d.TimeInVeryHighMinutes,
+		TimeInVeryHighRecords: dto.Periods.N14d.TimeInVeryHighRecords,
 
-		GlucoseManagementIndicator: dto.Periods.AdditionalProperties["14"].GlucoseManagementIndicator,
+		GlucoseManagementIndicator: dto.Periods.N14d.GlucoseManagementIndicator,
 		AverageGlucose:             avgGlucose,
 	}
 
@@ -241,82 +241,31 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		LastUploadDate:       summary.LastUploadDate,
 		LowGlucoseThreshold:  summary.LowGlucoseThreshold,
 		OutdatedSince:        summary.OutdatedSince,
+		TotalDays:            summary.TotalDays,
 	}
 
-	patientSummary.Periods.AdditionalProperties = make(map[string]struct {
-		AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-		GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-		TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
-		TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
-		TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
-		TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
-		TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
-		TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
-		TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
-		TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
-		TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
-		TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
-		TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
-		TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
-		TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
-		TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
-		TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
-		TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
-		TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
-		TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
-	})
-
-	var period struct {
-		AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-		GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-		TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
-		TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
-		TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
-		TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
-		TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
-		TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
-		TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
-		TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
-		TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
-		TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
-		TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
-		TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
-		TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
-		TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
-		TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
-		TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
-		TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
-		TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
+	patientSummary.Periods.N14d = &PatientSummaryPeriod{
+		AverageGlucose:             avgGlucose,
+		GlucoseManagementIndicator: summary.Periods["14"].GlucoseManagementIndicator,
+		TimeCGMUseMinutes:          summary.Periods["14"].TimeCGMUseMinutes,
+		TimeCGMUsePercent:          summary.Periods["14"].TimeCGMUsePercent,
+		TimeCGMUseRecords:          summary.Periods["14"].TimeCGMUseRecords,
+		TimeInHighMinutes:          summary.Periods["14"].TimeInHighMinutes,
+		TimeInHighPercent:          summary.Periods["14"].TimeInHighPercent,
+		TimeInHighRecords:          summary.Periods["14"].TimeInHighRecords,
+		TimeInLowMinutes:           summary.Periods["14"].TimeInLowMinutes,
+		TimeInLowPercent:           summary.Periods["14"].TimeInLowPercent,
+		TimeInLowRecords:           summary.Periods["14"].TimeInLowRecords,
+		TimeInTargetMinutes:        summary.Periods["14"].TimeInTargetMinutes,
+		TimeInTargetPercent:        summary.Periods["14"].TimeInTargetPercent,
+		TimeInTargetRecords:        summary.Periods["14"].TimeInTargetRecords,
+		TimeInVeryHighMinutes:      summary.Periods["14"].TimeInVeryHighMinutes,
+		TimeInVeryHighPercent:      summary.Periods["14"].TimeInVeryHighPercent,
+		TimeInVeryHighRecords:      summary.Periods["14"].TimeInVeryHighRecords,
+		TimeInVeryLowMinutes:       summary.Periods["14"].TimeInVeryLowMinutes,
+		TimeInVeryLowPercent:       summary.Periods["14"].TimeInVeryLowPercent,
+		TimeInVeryLowRecords:       summary.Periods["14"].TimeInVeryLowRecords,
 	}
-
-	period.AverageGlucose = avgGlucose
-	period.GlucoseManagementIndicator = summary.Periods["14"].GlucoseManagementIndicator
-
-	period.TimeCGMUsePercent = summary.Periods["14"].TimeCGMUsePercent
-	period.TimeCGMUseMinutes = summary.Periods["14"].TimeCGMUseMinutes
-	period.TimeCGMUseRecords = summary.Periods["14"].TimeCGMUseRecords
-
-	period.TimeInVeryLowPercent = summary.Periods["14"].TimeInVeryLowPercent
-	period.TimeInVeryLowMinutes = summary.Periods["14"].TimeInVeryLowMinutes
-	period.TimeInVeryLowRecords = summary.Periods["14"].TimeInVeryLowRecords
-
-	period.TimeInLowPercent = summary.Periods["14"].TimeInLowPercent
-	period.TimeInLowMinutes = summary.Periods["14"].TimeInLowMinutes
-	period.TimeInLowRecords = summary.Periods["14"].TimeInLowRecords
-
-	period.TimeInTargetPercent = summary.Periods["14"].TimeInTargetPercent
-	period.TimeInTargetMinutes = summary.Periods["14"].TimeInTargetMinutes
-	period.TimeInTargetRecords = summary.Periods["14"].TimeInTargetRecords
-
-	period.TimeInHighPercent = summary.Periods["14"].TimeInHighPercent
-	period.TimeInHighMinutes = summary.Periods["14"].TimeInHighMinutes
-	period.TimeInHighRecords = summary.Periods["14"].TimeInHighRecords
-
-	period.TimeInVeryHighPercent = summary.Periods["14"].TimeInVeryHighPercent
-	period.TimeInVeryHighMinutes = summary.Periods["14"].TimeInVeryHighMinutes
-	period.TimeInVeryHighRecords = summary.Periods["14"].TimeInVeryHighRecords
-
-	patientSummary.Periods.AdditionalProperties["14"] = period
 
 	return patientSummary
 }
