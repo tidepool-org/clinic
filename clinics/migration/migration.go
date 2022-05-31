@@ -20,11 +20,12 @@ const (
 var ErrAlreadyMigrated = fmt.Errorf("%w: clinic is already migrated", internalErrs.ConstraintViolation)
 
 type Migration struct {
-	ClinicId    *primitive.ObjectID `json:"clinicId" bson:"clinicId"`
-	UserId      string              `json:"userId" bson:"userId"`
-	Status      string              `json:"status" bson:"status"`
-	CreatedTime time.Time           `json:"createdTime" bson:"createdTime"`
-	UpdatedTime time.Time           `json:"updatedTime" bson:"updatedTime"`
+	ClinicId        *primitive.ObjectID `json:"clinicId" bson:"clinicId"`
+	UserId          string              `json:"userId" bson:"userId"`
+	Status          string              `json:"status" bson:"status"`
+	CreatedTime     time.Time           `json:"createdTime" bson:"createdTime"`
+	UpdatedTime     time.Time           `json:"updatedTime" bson:"updatedTime"`
+	AttestationTime time.Time           `json:"attestationTime,omitempty" bson:"attestationTime,omitempty"`
 }
 
 func NewMigration(clinicId, userId string) *Migration {
@@ -33,12 +34,14 @@ func NewMigration(clinicId, userId string) *Migration {
 		panic(err)
 	}
 
+	now := time.Now()
 	return &Migration{
-		UserId:      userId,
-		ClinicId:    &clinicObjId,
-		Status:      StatusPending,
-		CreatedTime: time.Now(),
-		UpdatedTime: time.Now(),
+		UserId:          userId,
+		ClinicId:        &clinicObjId,
+		Status:          StatusPending,
+		CreatedTime:     now,
+		UpdatedTime:     now,
+		AttestationTime: now,
 	}
 }
 

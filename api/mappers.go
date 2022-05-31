@@ -128,6 +128,10 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		CreatedTime:   patient.CreatedTime,
 		UpdatedTime:   patient.UpdatedTime,
 	}
+	if !patient.AttestationTime.IsZero() {
+		attestationSubmitted := true
+		dto.AttestationSubmitted = &attestationSubmitted
+	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
 	}
@@ -135,13 +139,17 @@ func NewPatientDto(patient *patients.Patient) Patient {
 }
 
 func NewPatient(dto Patient) patients.Patient {
-	return patients.Patient{
+	p := patients.Patient{
 		Email:         pstrToLower(dto.Email),
 		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
 		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
 	}
+	if dto.AttestationSubmitted != nil && *dto.AttestationSubmitted == true {
+		p.AttestationTime = time.Now()
+	}
+	return p
 }
 
 func NewPermissions(dto *PatientPermissions) *patients.Permissions {
@@ -250,9 +258,10 @@ func NewMigrationDto(migration *migration.Migration) *Migration {
 	}
 
 	result := &Migration{
-		CreatedTime: migration.CreatedTime,
-		UpdatedTime: migration.UpdatedTime,
-		UserId:      migration.UserId,
+		CreatedTime:     migration.CreatedTime,
+		UpdatedTime:     migration.UpdatedTime,
+		UserId:          migration.UserId,
+		AttestationTime: migration.AttestationTime,
 	}
 	if migration.Status != "" {
 		status := MigrationStatus(strings.ToUpper(migration.Status))
@@ -396,5 +405,3 @@ func stringToClinicType(s *string) *ClinicClinicType {
 	size := ClinicClinicType(*s)
 	return &size
 }
-
-

@@ -133,7 +133,8 @@ type Clinics []Clinic
 
 // CreatePatient defines model for CreatePatient.
 type CreatePatient struct {
-	IsMigrated *bool `json:"isMigrated,omitempty"`
+	AttestationSubmitted *bool `json:"attestationSubmitted,omitempty"`
+	IsMigrated           *bool `json:"isMigrated,omitempty"`
 
 	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	LegacyClinicianId *TidepoolUserId     `json:"legacyClinicianId,omitempty"`
@@ -156,7 +157,8 @@ type Meta struct {
 
 // Migration defines model for Migration.
 type Migration struct {
-	CreatedTime time.Time `json:"createdTime"`
+	AttestationTime time.Time `json:"attestationTime"`
+	CreatedTime     time.Time `json:"createdTime"`
 
 	// The current status of the migration
 	Status      *MigrationStatus `json:"status,omitempty"`
@@ -180,9 +182,10 @@ type Migrations []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	BirthDate   openapi_types.Date `json:"birthDate"`
-	CreatedTime time.Time          `json:"createdTime"`
-	Email       *string            `json:"email,omitempty"`
+	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date `json:"birthDate"`
+	CreatedTime          time.Time          `json:"createdTime"`
+	Email                *string            `json:"email,omitempty"`
 
 	// The full name of the patient
 	FullName string `json:"fullName"`
@@ -232,6 +235,11 @@ type PhoneNumber struct {
 
 // String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type TidepoolUserId string
+
+// TriggerMigration defines model for TriggerMigration.
+type TriggerMigration struct {
+	AttestationSubmitted bool `json:"attestationSubmitted"`
+}
 
 // UpdateUserDetails defines model for UpdateUserDetails.
 type UpdateUserDetails struct {
@@ -336,6 +344,9 @@ type UpdateClinicianJSONBody Clinician
 // AssociateClinicianToUserJSONBody defines parameters for AssociateClinicianToUser.
 type AssociateClinicianToUserJSONBody AssociateClinicianToUser
 
+// TriggerInitialMigrationJSONBody defines parameters for TriggerInitialMigration.
+type TriggerInitialMigrationJSONBody TriggerMigration
+
 // MigrateLegacyClinicianPatientsJSONBody defines parameters for MigrateLegacyClinicianPatients.
 type MigrateLegacyClinicianPatientsJSONBody Migration
 
@@ -388,6 +399,9 @@ type UpdateClinicianJSONRequestBody UpdateClinicianJSONBody
 
 // AssociateClinicianToUserJSONRequestBody defines body for AssociateClinicianToUser for application/json ContentType.
 type AssociateClinicianToUserJSONRequestBody AssociateClinicianToUserJSONBody
+
+// TriggerInitialMigrationJSONRequestBody defines body for TriggerInitialMigration for application/json ContentType.
+type TriggerInitialMigrationJSONRequestBody TriggerInitialMigrationJSONBody
 
 // MigrateLegacyClinicianPatientsJSONRequestBody defines body for MigrateLegacyClinicianPatients for application/json ContentType.
 type MigrateLegacyClinicianPatientsJSONRequestBody MigrateLegacyClinicianPatientsJSONBody

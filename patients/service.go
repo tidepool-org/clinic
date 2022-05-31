@@ -2,7 +2,8 @@ package patients
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
 )
@@ -32,18 +33,24 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
-	// Only create new accounts if the custodial user doesn't exist already (i.e. we are not migrating it)
-	if patient.IsCustodial() && patient.UserId == nil {
-		s.logger.Infow("creating custodial account", "clinicId", patient.ClinicId.Hex())
-		userId, err := s.custodialService.CreateAccount(ctx, patient)
-		if err != nil {
-			return nil, err
+	if patient.IsCustodial() {
+		// Only create new accounts if the custodial user doesn't exist already (i.e. we are not migrating it)
+		if patient.UserId == nil {
+			if patient.AttestationTime.IsZero() {
+				return nil, fmt.Errorf("%w: attestation is required", errors.ConstraintViolation)
+			}
+
+			s.logger.Infow("creating custodial account", "clinicId", patient.ClinicId.Hex())
+			userId, err := s.custodialService.CreateAccount(ctx, patient)
+			if err != nil {
+				return nil, err
+			}
+			patient.UserId = &userId
 		}
-		patient.UserId = &userId
 	}
 
 	if patient.UserId == nil {
-		return nil, errors.New("user id is missing")
+		return nil, fmt.Errorf("user id is missing")
 	}
 
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", patient.ClinicId.Hex())
