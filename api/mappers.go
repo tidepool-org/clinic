@@ -168,45 +168,7 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		return nil
 	}
 
-	var avgGlucose *patients.AvgGlucose
-	if dto.Periods.N14d.AverageGlucose != nil {
-		avgGlucose = &patients.AvgGlucose{
-			Units: string(dto.Periods.N14d.AverageGlucose.Units),
-			Value: float64(dto.Periods.N14d.AverageGlucose.Value),
-		}
-	}
-
-	var periods map[string]*patients.Period
-	periods["14"] = &patients.Period{
-		TimeCGMUsePercent: dto.Periods.N14d.TimeCGMUsePercent,
-		TimeCGMUseMinutes: dto.Periods.N14d.TimeCGMUseMinutes,
-		TimeCGMUseRecords: dto.Periods.N14d.TimeCGMUseRecords,
-
-		TimeInVeryLowPercent: dto.Periods.N14d.TimeInVeryLowPercent,
-		TimeInVeryLowMinutes: dto.Periods.N14d.TimeInVeryLowMinutes,
-		TimeInVeryLowRecords: dto.Periods.N14d.TimeInVeryLowRecords,
-
-		TimeInLowPercent: dto.Periods.N14d.TimeInLowPercent,
-		TimeInLowMinutes: dto.Periods.N14d.TimeInLowMinutes,
-		TimeInLowRecords: dto.Periods.N14d.TimeInLowRecords,
-
-		TimeInTargetPercent: dto.Periods.N14d.TimeInTargetPercent,
-		TimeInTargetMinutes: dto.Periods.N14d.TimeInTargetMinutes,
-		TimeInTargetRecords: dto.Periods.N14d.TimeInTargetRecords,
-
-		TimeInHighPercent: dto.Periods.N14d.TimeInHighPercent,
-		TimeInHighMinutes: dto.Periods.N14d.TimeInHighMinutes,
-		TimeInHighRecords: dto.Periods.N14d.TimeInHighRecords,
-
-		TimeInVeryHighPercent: dto.Periods.N14d.TimeInVeryHighPercent,
-		TimeInVeryHighMinutes: dto.Periods.N14d.TimeInVeryHighMinutes,
-		TimeInVeryHighRecords: dto.Periods.N14d.TimeInVeryHighRecords,
-
-		GlucoseManagementIndicator: dto.Periods.N14d.GlucoseManagementIndicator,
-		AverageGlucose:             avgGlucose,
-	}
-
-	return &patients.Summary{
+	patientSummary := &patients.Summary{
 		FirstData:                dto.FirstData,
 		HighGlucoseThreshold:     dto.HighGlucoseThreshold,
 		VeryHighGlucoseThreshold: dto.VeryHighGlucoseThreshold,
@@ -216,9 +178,61 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		LastUpdatedDate:          dto.LastUpdatedDate,
 		LastUploadDate:           dto.LastUploadDate,
 		OutdatedSince:            dto.OutdatedSince,
-
-		Periods: periods,
 	}
+
+	var periods map[string]*patients.Period
+
+	var periodExists = false
+	var period14dExists = false
+	if dto.Periods != nil {
+		periodExists = true
+		if dto.Periods.N14d != nil {
+			period14dExists = true
+		}
+	}
+
+	if periodExists && period14dExists {
+		var avgGlucose *patients.AvgGlucose
+		if dto.Periods.N14d.AverageGlucose != nil {
+			avgGlucose = &patients.AvgGlucose{
+				Units: string(dto.Periods.N14d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N14d.AverageGlucose.Value),
+			}
+		}
+
+		periods["14d"] = &patients.Period{
+			TimeCGMUsePercent: dto.Periods.N14d.TimeCGMUsePercent,
+			TimeCGMUseMinutes: dto.Periods.N14d.TimeCGMUseMinutes,
+			TimeCGMUseRecords: dto.Periods.N14d.TimeCGMUseRecords,
+
+			TimeInVeryLowPercent: dto.Periods.N14d.TimeInVeryLowPercent,
+			TimeInVeryLowMinutes: dto.Periods.N14d.TimeInVeryLowMinutes,
+			TimeInVeryLowRecords: dto.Periods.N14d.TimeInVeryLowRecords,
+
+			TimeInLowPercent: dto.Periods.N14d.TimeInLowPercent,
+			TimeInLowMinutes: dto.Periods.N14d.TimeInLowMinutes,
+			TimeInLowRecords: dto.Periods.N14d.TimeInLowRecords,
+
+			TimeInTargetPercent: dto.Periods.N14d.TimeInTargetPercent,
+			TimeInTargetMinutes: dto.Periods.N14d.TimeInTargetMinutes,
+			TimeInTargetRecords: dto.Periods.N14d.TimeInTargetRecords,
+
+			TimeInHighPercent: dto.Periods.N14d.TimeInHighPercent,
+			TimeInHighMinutes: dto.Periods.N14d.TimeInHighMinutes,
+			TimeInHighRecords: dto.Periods.N14d.TimeInHighRecords,
+
+			TimeInVeryHighPercent: dto.Periods.N14d.TimeInVeryHighPercent,
+			TimeInVeryHighMinutes: dto.Periods.N14d.TimeInVeryHighMinutes,
+			TimeInVeryHighRecords: dto.Periods.N14d.TimeInVeryHighRecords,
+
+			GlucoseManagementIndicator: dto.Periods.N14d.GlucoseManagementIndicator,
+			AverageGlucose:             avgGlucose,
+		}
+
+		patientSummary.Periods = periods
+	}
+
+	return patientSummary
 }
 
 func NewSummaryDto(summary *patients.Summary) *PatientSummary {
