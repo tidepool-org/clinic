@@ -225,13 +225,6 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	if summary == nil {
 		return nil
 	}
-	var avgGlucose *AverageGlucose
-	if summary.Periods["14"].AverageGlucose != nil {
-		avgGlucose = &AverageGlucose{
-			Units: AverageGlucoseUnits(summary.Periods["14"].AverageGlucose.Units),
-			Value: float32(summary.Periods["14"].AverageGlucose.Value),
-		}
-	}
 
 	patientSummary := &PatientSummary{
 		FirstData:            summary.FirstData,
@@ -244,27 +237,44 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		TotalDays:            summary.TotalDays,
 	}
 
-	patientSummary.Periods.N14d = &PatientSummaryPeriod{
-		AverageGlucose:             avgGlucose,
-		GlucoseManagementIndicator: summary.Periods["14"].GlucoseManagementIndicator,
-		TimeCGMUseMinutes:          summary.Periods["14"].TimeCGMUseMinutes,
-		TimeCGMUsePercent:          summary.Periods["14"].TimeCGMUsePercent,
-		TimeCGMUseRecords:          summary.Periods["14"].TimeCGMUseRecords,
-		TimeInHighMinutes:          summary.Periods["14"].TimeInHighMinutes,
-		TimeInHighPercent:          summary.Periods["14"].TimeInHighPercent,
-		TimeInHighRecords:          summary.Periods["14"].TimeInHighRecords,
-		TimeInLowMinutes:           summary.Periods["14"].TimeInLowMinutes,
-		TimeInLowPercent:           summary.Periods["14"].TimeInLowPercent,
-		TimeInLowRecords:           summary.Periods["14"].TimeInLowRecords,
-		TimeInTargetMinutes:        summary.Periods["14"].TimeInTargetMinutes,
-		TimeInTargetPercent:        summary.Periods["14"].TimeInTargetPercent,
-		TimeInTargetRecords:        summary.Periods["14"].TimeInTargetRecords,
-		TimeInVeryHighMinutes:      summary.Periods["14"].TimeInVeryHighMinutes,
-		TimeInVeryHighPercent:      summary.Periods["14"].TimeInVeryHighPercent,
-		TimeInVeryHighRecords:      summary.Periods["14"].TimeInVeryHighRecords,
-		TimeInVeryLowMinutes:       summary.Periods["14"].TimeInVeryLowMinutes,
-		TimeInVeryLowPercent:       summary.Periods["14"].TimeInVeryLowPercent,
-		TimeInVeryLowRecords:       summary.Periods["14"].TimeInVeryLowRecords,
+	var periodExists = false
+	var period14dExists = false
+	if summary.Periods != nil {
+		periodExists = true
+		_, period14dExists = summary.Periods["14d"]
+	}
+
+	if periodExists && period14dExists {
+		var avgGlucose *AverageGlucose
+		if summary.Periods["14d"].AverageGlucose != nil {
+			avgGlucose = &AverageGlucose{
+				Units: AverageGlucoseUnits(summary.Periods["14d"].AverageGlucose.Units),
+				Value: float32(summary.Periods["14d"].AverageGlucose.Value),
+			}
+		}
+
+		patientSummary.Periods.N14d = &PatientSummaryPeriod{
+			AverageGlucose:             avgGlucose,
+			GlucoseManagementIndicator: summary.Periods["14d"].GlucoseManagementIndicator,
+			TimeCGMUseMinutes:          summary.Periods["14d"].TimeCGMUseMinutes,
+			TimeCGMUsePercent:          summary.Periods["14d"].TimeCGMUsePercent,
+			TimeCGMUseRecords:          summary.Periods["14d"].TimeCGMUseRecords,
+			TimeInHighMinutes:          summary.Periods["14d"].TimeInHighMinutes,
+			TimeInHighPercent:          summary.Periods["14d"].TimeInHighPercent,
+			TimeInHighRecords:          summary.Periods["14d"].TimeInHighRecords,
+			TimeInLowMinutes:           summary.Periods["14d"].TimeInLowMinutes,
+			TimeInLowPercent:           summary.Periods["14d"].TimeInLowPercent,
+			TimeInLowRecords:           summary.Periods["14d"].TimeInLowRecords,
+			TimeInTargetMinutes:        summary.Periods["14d"].TimeInTargetMinutes,
+			TimeInTargetPercent:        summary.Periods["14d"].TimeInTargetPercent,
+			TimeInTargetRecords:        summary.Periods["14d"].TimeInTargetRecords,
+			TimeInVeryHighMinutes:      summary.Periods["14d"].TimeInVeryHighMinutes,
+			TimeInVeryHighPercent:      summary.Periods["14d"].TimeInVeryHighPercent,
+			TimeInVeryHighRecords:      summary.Periods["14d"].TimeInVeryHighRecords,
+			TimeInVeryLowMinutes:       summary.Periods["14d"].TimeInVeryLowMinutes,
+			TimeInVeryLowPercent:       summary.Periods["14d"].TimeInVeryLowPercent,
+			TimeInVeryLowRecords:       summary.Periods["14d"].TimeInVeryLowRecords,
+		}
 	}
 
 	return patientSummary
