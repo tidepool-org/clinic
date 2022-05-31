@@ -119,7 +119,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryLastUploadDate14"),
+				SetName("PatientSummaryLastUploadDate"),
 		},
 		{
 			Keys: bson.D{
