@@ -178,9 +178,8 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		LastUpdatedDate:          dto.LastUpdatedDate,
 		LastUploadDate:           dto.LastUploadDate,
 		OutdatedSince:            dto.OutdatedSince,
+		Periods:                  make(map[string]*patients.Period),
 	}
-
-	var periods map[string]*patients.Period
 
 	var periodExists = false
 	var period14dExists = false
@@ -200,7 +199,7 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			}
 		}
 
-		periods["14d"] = &patients.Period{
+		patientSummary.Periods["14d"] = &patients.Period{
 			TimeCGMUsePercent: dto.Periods.N14d.TimeCGMUsePercent,
 			TimeCGMUseMinutes: dto.Periods.N14d.TimeCGMUseMinutes,
 			TimeCGMUseRecords: dto.Periods.N14d.TimeCGMUseRecords,
@@ -228,8 +227,6 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			GlucoseManagementIndicator: dto.Periods.N14d.GlucoseManagementIndicator,
 			AverageGlucose:             avgGlucose,
 		}
-
-		patientSummary.Periods = periods
 	}
 
 	return patientSummary
@@ -249,6 +246,7 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		LowGlucoseThreshold:  summary.LowGlucoseThreshold,
 		OutdatedSince:        summary.OutdatedSince,
 		TotalDays:            summary.TotalDays,
+		Periods:              &PatientSummaryPeriods{},
 	}
 
 	var periodExists = false
