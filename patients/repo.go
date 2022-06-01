@@ -629,9 +629,9 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 }
 
 var validSortAttributes = map[string]struct{}{
-	"fullName":                               {},
-	"birthDate":                              {},
-	"summary.lastUploadDate":                 {},
-	"summary.14d.timeCGMUsePercent":          {},
-	"summary.14d.glucoseManagementIndicator": {},
+	"fullName":                              {},
+	"birthDate":                             {},
+	"summary.lastUploadDate":                {},
+	"summary.periods.14d.timeCGMUsePercent": {},
+	"summary.periods.14d.glucoseManagementIndicator": {},
 }

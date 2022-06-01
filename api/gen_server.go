@@ -709,46 +709,46 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sort: %s", err))
 	}
 
-	// ------------- Optional query parameter "summary.14d.timeCGMUsePercent" -------------
+	// ------------- Optional query parameter "summary.periods.14d.timeCGMUsePercent" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "summary.14d.timeCGMUsePercent", ctx.QueryParams(), &params.Summary14dTimeCGMUsePercent)
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeCGMUsePercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeCGMUsePercent)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.14d.timeCGMUsePercent: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeCGMUsePercent: %s", err))
 	}
 
-	// ------------- Optional query parameter "summary.14d.timeInVeryLowPercent" -------------
+	// ------------- Optional query parameter "summary.periods.14d.timeInVeryLowPercent" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "summary.14d.timeInVeryLowPercent", ctx.QueryParams(), &params.Summary14dTimeInVeryLowPercent)
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInVeryLowPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInVeryLowPercent)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.14d.timeInVeryLowPercent: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInVeryLowPercent: %s", err))
 	}
 
-	// ------------- Optional query parameter "summary.14d.timeInLowPercent" -------------
+	// ------------- Optional query parameter "summary.periods.14d.timeInLowPercent" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "summary.14d.timeInLowPercent", ctx.QueryParams(), &params.Summary14dTimeInLowPercent)
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInLowPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInLowPercent)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.14d.timeInLowPercent: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInLowPercent: %s", err))
 	}
 
-	// ------------- Optional query parameter "summary.14d.timeInTargetPercent" -------------
+	// ------------- Optional query parameter "summary.periods.14d.timeInTargetPercent" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "summary.14d.timeInTargetPercent", ctx.QueryParams(), &params.Summary14dTimeInTargetPercent)
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInTargetPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInTargetPercent)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.14d.timeInTargetPercent: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInTargetPercent: %s", err))
 	}
 
-	// ------------- Optional query parameter "summary.14d.timeInHighPercent" -------------
+	// ------------- Optional query parameter "summary.periods.14d.timeInHighPercent" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "summary.14d.timeInHighPercent", ctx.QueryParams(), &params.Summary14dTimeInHighPercent)
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInHighPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInHighPercent)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.14d.timeInHighPercent: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInHighPercent: %s", err))
 	}
 
-	// ------------- Optional query parameter "summary.14d.timeInVeryHighPercent" -------------
+	// ------------- Optional query parameter "summary.periods.14d.timeInVeryHighPercent" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "summary.14d.timeInVeryHighPercent", ctx.QueryParams(), &params.Summary14dTimeInVeryHighPercent)
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInVeryHighPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInVeryHighPercent)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.14d.timeInVeryHighPercent: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInVeryHighPercent: %s", err))
 	}
 
 	// ------------- Optional query parameter "summary.lastUploadDateFrom" -------------

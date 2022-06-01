@@ -20,48 +20,48 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
 		LastUploadDateTo:   params.SummaryLastUploadDateTo,
 	}
-	if params.Summary14dTimeCGMUsePercent != nil && *params.Summary14dTimeCGMUsePercent != "" {
-		cmp, value, err := parseRangeFilter(*params.Summary14dTimeCGMUsePercent)
+	if params.SummaryPeriods14dTimeCGMUsePercent != nil && *params.SummaryPeriods14dTimeCGMUsePercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeCGMUsePercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeCGMUsePercentCmp14d = cmp
 		filter.TimeCGMUsePercentValue14d = value
 	}
-	if params.Summary14dTimeInVeryLowPercent != nil && *params.Summary14dTimeInVeryLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInVeryLowPercent)
+	if params.SummaryPeriods14dTimeInVeryLowPercent != nil && *params.SummaryPeriods14dTimeInVeryLowPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInVeryLowPercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeInVeryLowPercentCmp14d = cmp
 		filter.TimeInVeryLowPercentValue14d = value
 	}
-	if params.Summary14dTimeInLowPercent != nil && *params.Summary14dTimeInLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInLowPercent)
+	if params.SummaryPeriods14dTimeInLowPercent != nil && *params.SummaryPeriods14dTimeInLowPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInLowPercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeInLowPercentCmp14d = cmp
 		filter.TimeInLowPercentValue14d = value
 	}
-	if params.Summary14dTimeInTargetPercent != nil && *params.Summary14dTimeInTargetPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInTargetPercent)
+	if params.SummaryPeriods14dTimeInTargetPercent != nil && *params.SummaryPeriods14dTimeInTargetPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInTargetPercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeInTargetPercentCmp14d = cmp
 		filter.TimeInTargetPercentValue14d = value
 	}
-	if params.Summary14dTimeInHighPercent != nil && *params.Summary14dTimeInHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInHighPercent)
+	if params.SummaryPeriods14dTimeInHighPercent != nil && *params.SummaryPeriods14dTimeInHighPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInHighPercent)
 		if err != nil {
 			return err
 		}
 		filter.TimeInHighPercentCmp14d = cmp
 		filter.TimeInHighPercentValue14d = value
 	}
-	if params.Summary14dTimeInVeryHighPercent != nil && *params.Summary14dTimeInVeryHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInVeryHighPercent)
+	if params.SummaryPeriods14dTimeInVeryHighPercent != nil && *params.SummaryPeriods14dTimeInVeryHighPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInVeryHighPercent)
 		if err != nil {
 			return err
 		}

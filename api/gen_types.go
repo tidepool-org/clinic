@@ -461,22 +461,22 @@ type ListPatientsParams struct {
 	Sort *Sort `json:"sort,omitempty"`
 
 	// Percentage of time of CGM use
-	Summary14dTimeCGMUsePercent *string `json:"summary.14d.timeCGMUsePercent,omitempty"`
+	SummaryPeriods14dTimeCGMUsePercent *string `json:"summary.periods.14d.timeCGMUsePercent,omitempty"`
 
 	// Percentage of time below 54 mg/dL
-	Summary14dTimeInVeryLowPercent *string `json:"summary.14d.timeInVeryLowPercent,omitempty"`
+	SummaryPeriods14dTimeInVeryLowPercent *string `json:"summary.periods.14d.timeInVeryLowPercent,omitempty"`
 
 	// Percentage of time in range 54-70 mg/dL
-	Summary14dTimeInLowPercent *string `json:"summary.14d.timeInLowPercent,omitempty"`
+	SummaryPeriods14dTimeInLowPercent *string `json:"summary.periods.14d.timeInLowPercent,omitempty"`
 
 	// Percentage of time in range 70-180 mg/dL
-	Summary14dTimeInTargetPercent *string `json:"summary.14d.timeInTargetPercent,omitempty"`
+	SummaryPeriods14dTimeInTargetPercent *string `json:"summary.periods.14d.timeInTargetPercent,omitempty"`
 
 	// Percentage of time in range 180-250 mg/dL
-	Summary14dTimeInHighPercent *string `json:"summary.14d.timeInHighPercent,omitempty"`
+	SummaryPeriods14dTimeInHighPercent *string `json:"summary.periods.14d.timeInHighPercent,omitempty"`
 
 	// Percentage of time above range 250 mg/dL
-	Summary14dTimeInVeryHighPercent *string `json:"summary.14d.timeInVeryHighPercent,omitempty"`
+	SummaryPeriods14dTimeInVeryHighPercent *string `json:"summary.periods.14d.timeInVeryHighPercent,omitempty"`
 
 	// Inclusive
 	SummaryLastUploadDateFrom *time.Time `json:"summary.lastUploadDateFrom,omitempty"`
