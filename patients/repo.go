@@ -124,65 +124,65 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14.percentTimeCGMUse", Value: 1},
+				{Key: "summary.periods.14d.percentTimeCGMUse", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeCGMUse14"),
+				SetName("PatientSummaryTimeCGMUse14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14.glucoseManagementIndicator", Value: 1},
+				{Key: "summary.periods.14d.glucoseManagementIndicator", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryGMI14"),
+				SetName("PatientSummaryGMI14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14.percentTimeInVeryLow", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInVeryLow", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryLow14"),
+				SetName("PatientSummaryTimeInVeryLow14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14.percentTimeInLow", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInLow", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInLow14"),
+				SetName("PatientSummaryTimeInLow14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14.percentTimeInTarget", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInTarget", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInTarget14"),
+				SetName("PatientSummaryTimeInTarget14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14.percentTimeInHigh", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInHigh", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInHigh14"),
+				SetName("PatientSummaryTimeInHigh14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14.percentTimeInVeryHigh", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInVeryHigh", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryHigh14"),
+				SetName("PatientSummaryTimeInVeryHigh14d"),
 		},
 	})
 	return err
@@ -506,39 +506,39 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14.timeCGMUsePercent",
-		filter.TimeCGMUsePercentCmp,
-		filter.TimeCGMUsePercentValue,
+		"summary.periods.14d.timeCGMUsePercent",
+		filter.TimeCGMUsePercentCmp14d,
+		filter.TimeCGMUsePercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14.timeInVeryLowPercent",
-		filter.TimeInVeryLowPercentCmp,
-		filter.TimeInVeryLowPercentValue,
+		"summary.periods.14d.timeInVeryLowPercent",
+		filter.TimeInVeryLowPercentCmp14d,
+		filter.TimeInVeryLowPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14.timeInLowPercent",
-		filter.TimeInLowPercentCmp,
-		filter.TimeInLowPercentValue,
+		"summary.periods.14d.timeInLowPercent",
+		filter.TimeInLowPercentCmp14d,
+		filter.TimeInLowPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14.timeInTargetPercent",
-		filter.TimeInTargetPercentCmp,
-		filter.TimeInTargetPercentValue,
+		"summary.periods.14d.timeInTargetPercent",
+		filter.TimeInTargetPercentCmp14d,
+		filter.TimeInTargetPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14.timeInHighPercent",
-		filter.TimeInHighPercentCmp,
-		filter.TimeInHighPercentValue,
+		"summary.periods.14d.timeInHighPercent",
+		filter.TimeInHighPercentCmp14d,
+		filter.TimeInHighPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14.timeInVeryHighPercent",
-		filter.TimeInVeryHighPercentCmp,
-		filter.TimeInVeryHighPercentValue,
+		"summary.periods.14d.timeInVeryHighPercent",
+		filter.TimeInVeryHighPercentCmp14d,
+		filter.TimeInVeryHighPercentValue14d,
 	)
 
 	return selector
@@ -629,9 +629,9 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 }
 
 var validSortAttributes = map[string]struct{}{
-	"fullName":                           {},
-	"birthDate":                          {},
-	"summary.lastUploadDate":             {},
-	"summary.percentTimeCGMUse":          {},
-	"summary.glucoseManagementIndicator": {},
+	"fullName":                               {},
+	"birthDate":                              {},
+	"summary.lastUploadDate":                 {},
+	"summary.14d.timeCGMUsePercent":          {},
+	"summary.14d.glucoseManagementIndicator": {},
 }

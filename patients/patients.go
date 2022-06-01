@@ -64,23 +64,23 @@ func (p Patient) IsCustodial() bool {
 }
 
 type Filter struct {
-	ClinicId                   *string
-	UserId                     *string
-	Search                     *string
-	LastUploadDateFrom         *time.Time
-	LastUploadDateTo           *time.Time
-	TimeCGMUsePercentCmp       *string
-	TimeCGMUsePercentValue     float64
-	TimeInVeryLowPercentCmp    *string
-	TimeInVeryLowPercentValue  float64
-	TimeInLowPercentCmp        *string
-	TimeInLowPercentValue      float64
-	TimeInTargetPercentCmp     *string
-	TimeInTargetPercentValue   float64
-	TimeInHighPercentCmp       *string
-	TimeInHighPercentValue     float64
-	TimeInVeryHighPercentCmp   *string
-	TimeInVeryHighPercentValue float64
+	ClinicId                      *string
+	UserId                        *string
+	Search                        *string
+	LastUploadDateFrom            *time.Time
+	LastUploadDateTo              *time.Time
+	TimeCGMUsePercentCmp14d       *string
+	TimeCGMUsePercentValue14d     float64
+	TimeInVeryLowPercentCmp14d    *string
+	TimeInVeryLowPercentValue14d  float64
+	TimeInLowPercentCmp14d        *string
+	TimeInLowPercentValue14d      float64
+	TimeInTargetPercentCmp14d     *string
+	TimeInTargetPercentValue14d   float64
+	TimeInHighPercentCmp14d       *string
+	TimeInHighPercentValue14d     float64
+	TimeInVeryHighPercentCmp14d   *string
+	TimeInVeryHighPercentValue14d float64
 }
 
 type Permission = map[string]interface{}

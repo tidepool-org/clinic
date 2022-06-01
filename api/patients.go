@@ -25,48 +25,48 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		if err != nil {
 			return err
 		}
-		filter.TimeCGMUsePercentCmp = cmp
-		filter.TimeCGMUsePercentValue = value
+		filter.TimeCGMUsePercentCmp14d = cmp
+		filter.TimeCGMUsePercentValue14d = value
 	}
 	if params.Summary14dTimeInVeryLowPercent != nil && *params.Summary14dTimeInVeryLowPercent != "" {
 		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInVeryLowPercent)
 		if err != nil {
 			return err
 		}
-		filter.TimeInVeryLowPercentCmp = cmp
-		filter.TimeInVeryLowPercentValue = value
+		filter.TimeInVeryLowPercentCmp14d = cmp
+		filter.TimeInVeryLowPercentValue14d = value
 	}
 	if params.Summary14dTimeInLowPercent != nil && *params.Summary14dTimeInLowPercent != "" {
 		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInLowPercent)
 		if err != nil {
 			return err
 		}
-		filter.TimeInLowPercentCmp = cmp
-		filter.TimeInLowPercentValue = value
+		filter.TimeInLowPercentCmp14d = cmp
+		filter.TimeInLowPercentValue14d = value
 	}
 	if params.Summary14dTimeInTargetPercent != nil && *params.Summary14dTimeInTargetPercent != "" {
 		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInTargetPercent)
 		if err != nil {
 			return err
 		}
-		filter.TimeInTargetPercentCmp = cmp
-		filter.TimeInTargetPercentValue = value
+		filter.TimeInTargetPercentCmp14d = cmp
+		filter.TimeInTargetPercentValue14d = value
 	}
 	if params.Summary14dTimeInHighPercent != nil && *params.Summary14dTimeInHighPercent != "" {
 		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInHighPercent)
 		if err != nil {
 			return err
 		}
-		filter.TimeInHighPercentCmp = cmp
-		filter.TimeInHighPercentValue = value
+		filter.TimeInHighPercentCmp14d = cmp
+		filter.TimeInHighPercentValue14d = value
 	}
 	if params.Summary14dTimeInVeryHighPercent != nil && *params.Summary14dTimeInVeryHighPercent != "" {
 		cmp, value, err := parseRangeFilter(*params.Summary14dTimeInVeryHighPercent)
 		if err != nil {
 			return err
 		}
-		filter.TimeInVeryHighPercentCmp = cmp
-		filter.TimeInVeryHighPercentValue = value
+		filter.TimeInVeryHighPercentCmp14d = cmp
+		filter.TimeInVeryHighPercentValue14d = value
 	}
 
 	sort, err := ParseSort(params.Sort)
