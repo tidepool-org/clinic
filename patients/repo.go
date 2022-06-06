@@ -18,6 +18,9 @@ const (
 	patientsCollectionName = "patients"
 )
 
+// Collation to use for string fields
+var collation = options.Collation{Locale: "en", Strength: 1}
+
 //go:generate mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
 
 type Repository interface {
@@ -63,7 +66,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientFullName"),
+				SetName("PatientFullNameEn").
+				SetCollation(&collation),
 		},
 		{
 			Keys: bson.D{
@@ -91,26 +95,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetBackground(true).
 				SetName("PatientMRN"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "fullName", Value: "text"},
-				{Key: "email", Value: "text"},
-				{Key: "mrn", Value: "text"},
-				{Key: "birthDate", Value: "text"},
-				{Key: "firstName", Value: "text"},
-				{Key: "lastName", Value: "text"},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSearch").
-				SetWeights(bson.M{
-					"fullName":  3,
-					"email":     2,
-					"mrn":       1,
-					"birthDate": 1,
-				}),
 		},
 		{
 			Keys: bson.D{
@@ -233,9 +217,15 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
+	var opts *options.AggregateOptions
+	if sort == nil || sort.Attribute == "fullName" {
+		// Case insensitive sorting when sorting by fullName
+		opts = options.Aggregate().SetCollation(&collation)
+	}
+
 	r.logger.Debugw("retrieving list of patients", "pipeline", pipeline)
 
-	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	cursor, err := r.collection.Aggregate(ctx, pipeline, opts)
 	if err != nil {
 		return nil, fmt.Errorf("error listing patients: %w", err)
 	}
