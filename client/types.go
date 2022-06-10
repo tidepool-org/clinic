@@ -264,22 +264,47 @@ type PatientPermissions struct {
 
 // PatientSummary defines model for PatientSummary.
 type PatientSummary struct {
+	FirstData                *time.Time             `json:"firstData,omitempty"`
+	HighGlucoseThreshold     *float64               `json:"highGlucoseThreshold,omitempty"`
+	LastData                 *time.Time             `json:"lastData,omitempty"`
+	LastUpdatedDate          *time.Time             `json:"lastUpdatedDate,omitempty"`
+	LastUploadDate           *time.Time             `json:"lastUploadDate,omitempty"`
+	LowGlucoseThreshold      *float64               `json:"lowGlucoseThreshold,omitempty"`
+	OutdatedSince            *time.Time             `json:"outdatedSince,omitempty"`
+	Periods                  *PatientSummaryPeriods `json:"periods,omitempty"`
+	TotalDays                *int                   `json:"totalDays,omitempty"`
+	VeryHighGlucoseThreshold *float64               `json:"veryHighGlucoseThreshold,omitempty"`
+	VeryLowGlucoseThreshold  *float64               `json:"veryLowGlucoseThreshold,omitempty"`
+}
+
+// PatientSummaryPeriod defines model for PatientSummaryPeriod.
+type PatientSummaryPeriod struct {
 	// Blood glucose value, in `mmol/L`
 	AverageGlucose             *AverageGlucose `json:"averageGlucose,omitempty"`
-	FirstData                  *time.Time      `json:"firstData,omitempty"`
 	GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator,omitempty"`
-	HighGlucoseThreshold       *float64        `json:"highGlucoseThreshold,omitempty"`
-	LastData                   *time.Time      `json:"lastData,omitempty"`
-	LastUpdatedDate            *time.Time      `json:"lastUpdatedDate,omitempty"`
-	LastUploadDate             *time.Time      `json:"lastUploadDate,omitempty"`
-	LowGlucoseThreshold        *float64        `json:"lowGlucoseThreshold,omitempty"`
-	OutdatedSince              *time.Time      `json:"outdatedSince,omitempty"`
-	PercentTimeCGMUse          *float64        `json:"percentTimeCGMUse,omitempty"`
-	PercentTimeInHigh          *float64        `json:"percentTimeInHigh,omitempty"`
-	PercentTimeInLow           *float64        `json:"percentTimeInLow,omitempty"`
-	PercentTimeInTarget        *float64        `json:"percentTimeInTarget,omitempty"`
-	PercentTimeInVeryHigh      *float64        `json:"percentTimeInVeryHigh,omitempty"`
-	PercentTimeInVeryLow       *float64        `json:"percentTimeInVeryLow,omitempty"`
+	TimeCGMUseMinutes          *int            `json:"timeCGMUseMinutes,omitempty"`
+	TimeCGMUsePercent          *float64        `json:"timeCGMUsePercent,omitempty"`
+	TimeCGMUseRecords          *int            `json:"timeCGMUseRecords,omitempty"`
+	TimeInHighMinutes          *int            `json:"timeInHighMinutes,omitempty"`
+	TimeInHighPercent          *float64        `json:"timeInHighPercent,omitempty"`
+	TimeInHighRecords          *int            `json:"timeInHighRecords,omitempty"`
+	TimeInLowMinutes           *int            `json:"timeInLowMinutes,omitempty"`
+	TimeInLowPercent           *float64        `json:"timeInLowPercent,omitempty"`
+	TimeInLowRecords           *int            `json:"timeInLowRecords,omitempty"`
+	TimeInTargetMinutes        *int            `json:"timeInTargetMinutes,omitempty"`
+	TimeInTargetPercent        *float64        `json:"timeInTargetPercent,omitempty"`
+	TimeInTargetRecords        *int            `json:"timeInTargetRecords,omitempty"`
+	TimeInVeryHighMinutes      *int            `json:"timeInVeryHighMinutes,omitempty"`
+	TimeInVeryHighPercent      *float64        `json:"timeInVeryHighPercent,omitempty"`
+	TimeInVeryHighRecords      *int            `json:"timeInVeryHighRecords,omitempty"`
+	TimeInVeryLowMinutes       *int            `json:"timeInVeryLowMinutes,omitempty"`
+	TimeInVeryLowPercent       *float64        `json:"timeInVeryLowPercent,omitempty"`
+	TimeInVeryLowRecords       *int            `json:"timeInVeryLowRecords,omitempty"`
+}
+
+// PatientSummaryPeriods defines model for PatientSummaryPeriods.
+type PatientSummaryPeriods struct {
+	N14d *PatientSummaryPeriod `json:"14d,omitempty"`
 }
 
 // Patients defines model for Patients.
@@ -436,22 +461,22 @@ type ListPatientsParams struct {
 	Sort *Sort `json:"sort,omitempty"`
 
 	// Percentage of time of CGM use
-	SummaryPercentTimeCGMUse *string `json:"summary.percentTimeCGMUse,omitempty"`
+	SummaryPeriods14dTimeCGMUsePercent *string `json:"summary.periods.14d.timeCGMUsePercent,omitempty"`
 
 	// Percentage of time below 54 mg/dL
-	SummaryPercentTimeInVeryLow *string `json:"summary.percentTimeInVeryLow,omitempty"`
+	SummaryPeriods14dTimeInVeryLowPercent *string `json:"summary.periods.14d.timeInVeryLowPercent,omitempty"`
 
 	// Percentage of time in range 54-70 mg/dL
-	SummaryPercentTimeInLow *string `json:"summary.percentTimeInLow,omitempty"`
+	SummaryPeriods14dTimeInLowPercent *string `json:"summary.periods.14d.timeInLowPercent,omitempty"`
 
 	// Percentage of time in range 70-180 mg/dL
-	SummaryPercentTimeInTarget *string `json:"summary.percentTimeInTarget,omitempty"`
+	SummaryPeriods14dTimeInTargetPercent *string `json:"summary.periods.14d.timeInTargetPercent,omitempty"`
 
 	// Percentage of time in range 180-250 mg/dL
-	SummaryPercentTimeInHigh *string `json:"summary.percentTimeInHigh,omitempty"`
+	SummaryPeriods14dTimeInHighPercent *string `json:"summary.periods.14d.timeInHighPercent,omitempty"`
 
 	// Percentage of time above range 250 mg/dL
-	SummaryPercentTimeInVeryHigh *string `json:"summary.percentTimeInVeryHigh,omitempty"`
+	SummaryPeriods14dTimeInVeryHighPercent *string `json:"summary.periods.14d.timeInVeryHighPercent,omitempty"`
 
 	// Inclusive
 	SummaryLastUploadDateFrom *time.Time `json:"summary.lastUploadDateFrom,omitempty"`

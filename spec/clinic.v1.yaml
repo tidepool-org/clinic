@@ -247,42 +247,42 @@ paths:
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.5'
           in: query
-          name: summary.percentTimeCGMUse
+          name: summary.periods.14d.timeCGMUsePercent
           description: Percentage of time of CGM use
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.7'
           in: query
-          name: summary.percentTimeInVeryLow
+          name: summary.periods.14d.timeInVeryLowPercent
           description: Percentage of time below 54 mg/dL
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.7'
           in: query
-          name: summary.percentTimeInLow
+          name: summary.periods.14d.timeInLowPercent
           description: Percentage of time in range 54-70 mg/dL
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.7'
           in: query
-          name: summary.percentTimeInTarget
+          name: summary.periods.14d.timeInTargetPercent
           description: Percentage of time in range 70-180 mg/dL
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.7'
           in: query
-          name: summary.percentTimeInHigh
+          name: summary.periods.14d.timeInHighPercent
           description: Percentage of time in range 180-250 mg/dL
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.7'
           in: query
-          name: summary.percentTimeInVeryHigh
+          name: summary.periods.14d.timeInVeryHighPercent
           description: Percentage of time above range 250 mg/dL
         - schema:
             type: string
@@ -1452,35 +1452,96 @@ components:
         outdatedSince:
           type: string
           format: date-time
-        averageGlucose:
-          $ref: '#/components/schemas/AverageGlucose'
-        glucoseManagementIndicator:
+        totalDays:
           type: number
-          x-go-type: float64
-        percentTimeInTarget:
-          type: number
-          x-go-type: float64
-        percentTimeInHigh:
-          type: number
-          x-go-type: float64
-        percentTimeInVeryHigh:
-          type: number
-          x-go-type: float64
-        percentTimeInLow:
-          type: number
-          x-go-type: float64
-        percentTimeInVeryLow:
-          type: number
-          x-go-type: float64
-        percentTimeCGMUse:
-          type: number
-          x-go-type: float64
+          x-go-type: int
         highGlucoseThreshold:
+          type: number
+          x-go-type: float64
+        veryHighGlucoseThreshold:
           type: number
           x-go-type: float64
         lowGlucoseThreshold:
           type: number
           x-go-type: float64
+        veryLowGlucoseThreshold:
+          type: number
+          x-go-type: float64
+        periods:
+          $ref: '#/components/schemas/PatientSummaryPeriods'
+    PatientSummaryPeriods:
+      type: object
+      x-stoplight:
+        id: i99fgumcbrwph
+      title: patientsummaryperiods.v1
+      description: ''
+      properties:
+        14d:
+          $ref: '#/components/schemas/PatientSummaryPeriod'
+    PatientSummaryPeriod:
+      type: object
+      title: patientsummaryperiod.v1
+      description: ''
+      properties:
+        averageGlucose:
+          $ref: '#/components/schemas/AverageGlucose'
+        glucoseManagementIndicator:
+          type: number
+          x-go-type: float64
+        timeInTargetPercent:
+          type: number
+          x-go-type: float64
+        timeInTargetMinutes:
+          type: number
+          x-go-type: int
+        timeInTargetRecords:
+          type: number
+          x-go-type: int
+        timeInHighPercent:
+          type: number
+          x-go-type: float64
+        timeInHighMinutes:
+          type: number
+          x-go-type: int
+        timeInHighRecords:
+          type: number
+          x-go-type: int
+        timeInVeryHighPercent:
+          type: number
+          x-go-type: float64
+        timeInVeryHighMinutes:
+          type: number
+          x-go-type: int
+        timeInVeryHighRecords:
+          type: number
+          x-go-type: int
+        timeInLowPercent:
+          type: number
+          x-go-type: float64
+        timeInLowMinutes:
+          type: number
+          x-go-type: int
+        timeInLowRecords:
+          type: number
+          x-go-type: int
+        timeInVeryLowPercent:
+          type: number
+          x-go-type: float64
+        timeInVeryLowMinutes:
+          type: number
+          x-go-type: int
+        timeInVeryLowRecords:
+          type: number
+          x-go-type: int
+        timeCGMUsePercent:
+          type: number
+          x-go-type: float64
+        timeCGMUseMinutes:
+          type: number
+          x-go-type: int
+        timeCGMUseRecords:
+          type: number
+          x-go-type: int
     AverageGlucose:
       title: Blood Glucose (mmol/L)
       description: 'Blood glucose value, in `mmol/L`'

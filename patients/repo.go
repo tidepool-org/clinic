@@ -18,6 +18,9 @@ const (
 	patientsCollectionName = "patients"
 )
 
+// Collation to use for string fields
+var collation = options.Collation{Locale: "en", Strength: 1}
+
 //go:generate mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
 
 type Repository interface {
@@ -63,7 +66,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientFullName"),
+				SetName("PatientFullNameEn").
+				SetCollation(&collation),
 		},
 		{
 			Keys: bson.D{
@@ -95,26 +99,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "fullName", Value: "text"},
-				{Key: "email", Value: "text"},
-				{Key: "mrn", Value: "text"},
-				{Key: "birthDate", Value: "text"},
-				{Key: "firstName", Value: "text"},
-				{Key: "lastName", Value: "text"},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSearch").
-				SetWeights(bson.M{
-					"fullName":  3,
-					"email":     2,
-					"mrn":       1,
-					"birthDate": 1,
-				}),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
 				{Key: "summary.lastUploadDate", Value: 1},
 			},
 			Options: options.Index().
@@ -124,65 +108,65 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.percentTimeCGMUse", Value: 1},
+				{Key: "summary.periods.14d.percentTimeCGMUse", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeCGMUse"),
+				SetName("PatientSummaryTimeCGMUse14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.glucoseManagementIndicator", Value: 1},
+				{Key: "summary.periods.14d.glucoseManagementIndicator", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryGMI"),
+				SetName("PatientSummaryGMI14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.percentTimeInVeryLow", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInVeryLow", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryLow"),
+				SetName("PatientSummaryTimeInVeryLow14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.percentTimeInLow", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInLow", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInLow"),
+				SetName("PatientSummaryTimeInLow14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.percentTimeInTarget", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInTarget", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInTarget"),
+				SetName("PatientSummaryTimeInTarget14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.percentTimeInHigh", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInHigh", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInHigh"),
+				SetName("PatientSummaryTimeInHigh14d"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.percentTimeInVeryHigh", Value: 1},
+				{Key: "summary.periods.14d.percentTimeInVeryHigh", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryHigh"),
+				SetName("PatientSummaryTimeInVeryHigh14d"),
 		},
 	})
 	return err
@@ -233,9 +217,15 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
+	var opts *options.AggregateOptions
+	if sort == nil || sort.Attribute == "fullName" {
+		// Case insensitive sorting when sorting by fullName
+		opts = options.Aggregate().SetCollation(&collation)
+	}
+
 	r.logger.Debugw("retrieving list of patients", "pipeline", pipeline)
 
-	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	cursor, err := r.collection.Aggregate(ctx, pipeline, opts)
 	if err != nil {
 		return nil, fmt.Errorf("error listing patients: %w", err)
 	}
@@ -506,39 +496,39 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 
 	MaybeApplyNumericFilter(selector,
-		"summary.percentTimeCGMUse",
-		filter.PercentTimeCGMUseCmp,
-		filter.PercentTimeCGMUseValue,
+		"summary.periods.14d.timeCGMUsePercent",
+		filter.TimeCGMUsePercentCmp14d,
+		filter.TimeCGMUsePercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.percentTimeInVeryLow",
-		filter.PercentTimeInVeryLowCmp,
-		filter.PercentTimeInVeryLowValue,
+		"summary.periods.14d.timeInVeryLowPercent",
+		filter.TimeInVeryLowPercentCmp14d,
+		filter.TimeInVeryLowPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.percentTimeInLow",
-		filter.PercentTimeInLowCmp,
-		filter.PercentTimeInLowValue,
+		"summary.periods.14d.timeInLowPercent",
+		filter.TimeInLowPercentCmp14d,
+		filter.TimeInLowPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.percentTimeInTarget",
-		filter.PercentTimeInTargetCmp,
-		filter.PercentTimeInTargetValue,
+		"summary.periods.14d.timeInTargetPercent",
+		filter.TimeInTargetPercentCmp14d,
+		filter.TimeInTargetPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.percentTimeInHigh",
-		filter.PercentTimeInHighCmp,
-		filter.PercentTimeInHighValue,
+		"summary.periods.14d.timeInHighPercent",
+		filter.TimeInHighPercentCmp14d,
+		filter.TimeInHighPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.percentTimeInVeryHigh",
-		filter.PercentTimeInVeryHighCmp,
-		filter.PercentTimeInVeryHighValue,
+		"summary.periods.14d.timeInVeryHighPercent",
+		filter.TimeInVeryHighPercentCmp14d,
+		filter.TimeInVeryHighPercentValue14d,
 	)
 
 	return selector
@@ -629,9 +619,9 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 }
 
 var validSortAttributes = map[string]struct{}{
-	"fullName":                           {},
-	"birthDate":                          {},
-	"summary.lastUploadDate":             {},
-	"summary.percentTimeCGMUse":          {},
-	"summary.glucoseManagementIndicator": {},
+	"fullName":                              {},
+	"birthDate":                             {},
+	"summary.lastUploadDate":                {},
+	"summary.periods.14d.timeCGMUsePercent": {},
+	"summary.periods.14d.glucoseManagementIndicator": {},
 }
