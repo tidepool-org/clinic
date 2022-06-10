@@ -20,6 +20,7 @@ type Service interface {
 	Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error)
 	UpsertAdmin(ctx context.Context, clinicId, clinicianId string) error
 	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
+	UpdateTier(ctx context.Context, clinicId, tier string) error
 }
 
 type Filter struct {
@@ -48,6 +49,8 @@ type Clinic struct {
 	CreatedTime        time.Time           `bson:"createdTime,omitempty"`
 	UpdatedTime        time.Time           `bson:"updatedTime,omitempty"`
 	IsMigrated         bool                `bson:"isMigrated,omitempty"`
+	Tier               string              `bson:"tier,omitempty"`
+	PreferredBgUnits   string              `bson:"PreferredBgUnits,omitempty"`
 }
 
 func NewClinic() Clinic {
@@ -67,6 +70,7 @@ func (c *Clinic) HasAllRequiredFields() bool {
 		isStringSet(c.Name) &&
 		isStringSet(c.PostalCode) &&
 		isStringSet(c.State) &&
+		isStringSet(&c.PreferredBgUnits) &&
 		c.Id != nil &&
 		c.PhoneNumbers != nil &&
 		hasValidPhoneNumber(*c.PhoneNumbers)

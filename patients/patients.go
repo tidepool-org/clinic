@@ -34,33 +34,53 @@ type Service interface {
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
 	DeleteFromAllClinics(ctx context.Context, userId string) error
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
+	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
+	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 }
 
 type Patient struct {
-	Id                 *primitive.ObjectID `bson:"_id,omitempty"`
-	ClinicId           *primitive.ObjectID `bson:"clinicId,omitempty"`
-	UserId             *string             `bson:"userId,omitempty"`
-	BirthDate          *string             `bson:"birthDate"`
-	Email              *string             `bson:"email"`
-	FullName           *string             `bson:"fullName"`
-	Mrn                *string             `bson:"mrn"`
-	TargetDevices      *[]string           `bson:"targetDevices"`
-	Permissions        *Permissions        `bson:"permissions,omitempty"`
-	IsMigrated         bool                `bson:"isMigrated,omitempty"`
-	LegacyClinicianIds []string            `bson:"legacyClinicianIds,omitempty"`
-	CreatedTime        time.Time           `bson:"createdTime,omitempty"`
-	UpdatedTime        time.Time           `bson:"updatedTime,omitempty"`
-	InvitedBy          *string             `bson:"invitedBy,omitempty"`
+	Id                     *primitive.ObjectID `bson:"_id,omitempty"`
+	ClinicId               *primitive.ObjectID `bson:"clinicId,omitempty"`
+	UserId                 *string             `bson:"userId,omitempty"`
+	BirthDate              *string             `bson:"birthDate"`
+	Email                  *string             `bson:"email"`
+	FullName               *string             `bson:"fullName"`
+	Mrn                    *string             `bson:"mrn"`
+	TargetDevices          *[]string           `bson:"targetDevices"`
+	Permissions            *Permissions        `bson:"permissions,omitempty"`
+	IsMigrated             bool                `bson:"isMigrated,omitempty"`
+	LegacyClinicianIds     []string            `bson:"legacyClinicianIds,omitempty"`
+	CreatedTime            time.Time           `bson:"createdTime,omitempty"`
+	UpdatedTime            time.Time           `bson:"updatedTime,omitempty"`
+	InvitedBy              *string             `bson:"invitedBy,omitempty"`
+	Summary                *Summary            `bson:"summary,omitempty"`
+	LastUploadReminderTime time.Time           `bson:"lastUploadReminderTime,omitempty"`
 }
+
+// PatientSummary defines model for PatientSummary.
 
 func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
 }
 
 type Filter struct {
-	ClinicId *string
-	UserId   *string
-	Search   *string
+	ClinicId                      *string
+	UserId                        *string
+	Search                        *string
+	LastUploadDateFrom            *time.Time
+	LastUploadDateTo              *time.Time
+	TimeCGMUsePercentCmp14d       *string
+	TimeCGMUsePercentValue14d     float64
+	TimeInVeryLowPercentCmp14d    *string
+	TimeInVeryLowPercentValue14d  float64
+	TimeInLowPercentCmp14d        *string
+	TimeInLowPercentValue14d      float64
+	TimeInTargetPercentCmp14d     *string
+	TimeInTargetPercentValue14d   float64
+	TimeInHighPercentCmp14d       *string
+	TimeInHighPercentValue14d     float64
+	TimeInVeryHighPercentCmp14d   *string
+	TimeInVeryHighPercentValue14d float64
 }
 
 type Permission = map[string]interface{}
@@ -88,4 +108,61 @@ type PatientUpdate struct {
 	UserId    string
 	Patient   Patient
 	UpdatedBy string
+}
+
+type UploadReminderUpdate struct {
+	ClinicId  string
+	UserId    string
+	UpdatedBy string
+	Time      time.Time
+}
+
+type Period struct {
+	TimeCGMUsePercent *float64 `bson:"timeCGMUsePercent,omitempty"`
+	TimeCGMUseMinutes *int     `bson:"timeCGMUseMinutes,omitempty"`
+	TimeCGMUseRecords *int     `bson:"timeCGMUseRecords,omitempty"`
+
+	AverageGlucose             *AvgGlucose `bson:"avgGlucose,omitempty"`
+	GlucoseManagementIndicator *float64    `bson:"glucoseManagementIndicator,omitempty"`
+
+	TimeInTargetPercent *float64 `bson:"timeInTargetPercent,omitempty"`
+	TimeInTargetMinutes *int     `bson:"timeInTargetMinutes,omitempty"`
+	TimeInTargetRecords *int     `bson:"timeInTargetRecords,omitempty"`
+
+	TimeInLowPercent *float64 `bson:"timeInLowPercent,omitempty"`
+	TimeInLowMinutes *int     `bson:"timeInLowMinutes,omitempty"`
+	TimeInLowRecords *int     `bson:"timeInLowRecords,omitempty"`
+
+	TimeInVeryLowPercent *float64 `bson:"timeInVeryLowPercent"`
+	TimeInVeryLowMinutes *int     `bson:"timeInVeryLowMinutes"`
+	TimeInVeryLowRecords *int     `bson:"timeInVeryLowRecords"`
+
+	TimeInHighPercent *float64 `bson:"timeInHighPercent,omitempty"`
+	TimeInHighMinutes *int     `bson:"timeInHighMinutes,omitempty"`
+	TimeInHighRecords *int     `bson:"timeInHighRecords,omitempty"`
+
+	TimeInVeryHighPercent *float64 `bson:"timeInVeryHighPercent,omitempty"`
+	TimeInVeryHighMinutes *int     `bson:"timeInVeryHighMinutes,omitempty"`
+	TimeInVeryHighRecords *int     `bson:"timeInVeryHighRecords,omitempty"`
+}
+
+type Summary struct {
+	Periods map[string]*Period `bson:"periods,omitempty"`
+
+	FirstData       *time.Time `bson:"firstData,omitempty"`
+	LastData        *time.Time `bson:"lastData,omitempty"`
+	LastUpdatedDate *time.Time `bson:"lastUpdatedDate,omitempty"`
+	LastUploadDate  *time.Time `bson:"lastUploadDate,omitempty"`
+	OutdatedSince   *time.Time `bson:"outdatedSince,omitempty"`
+	TotalDays       *int       `bson:"totalDays,omitempty"`
+
+	HighGlucoseThreshold     *float64 `bson:"highGlucoseThreshold"`
+	VeryHighGlucoseThreshold *float64 `bson:"veryHighGlucoseThreshold"`
+	LowGlucoseThreshold      *float64 `bson:"lowGlucoseThreshold"`
+	VeryLowGlucoseThreshold  *float64 `bson:"VeryLowGlucoseThreshold"`
+}
+
+type AvgGlucose struct {
+	Units string  `bson:"units"`
+	Value float64 `bson:"value"`
 }

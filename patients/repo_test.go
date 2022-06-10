@@ -11,6 +11,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 	"strings"
 
 	"github.com/tidepool-org/clinic/patients"
@@ -29,7 +30,7 @@ var _ = Describe("Patients Repository", func() {
 		database = dbTest.GetTestDatabase()
 		collection = database.Collection("patients")
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repo, err = patients.NewRepository(database, lifecycle)
+		repo, err = patients.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repo).ToNot(BeNil())
 		lifecycle.RequireStart()
@@ -523,19 +524,21 @@ var _ = Describe("Patients Repository", func() {
 
 func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 	return MatchAllFields(Fields{
-		"Id":                 PointTo(Not(BeEmpty())),
-		"UserId":             PointTo(Equal(*patient.UserId)),
-		"ClinicId":           PointTo(Equal(*patient.ClinicId)),
-		"BirthDate":          PointTo(Equal(*patient.BirthDate)),
-		"Email":              PointTo(Equal(*patient.Email)),
-		"FullName":           PointTo(Equal(*patient.FullName)),
-		"Mrn":                PointTo(Equal(*patient.Mrn)),
-		"TargetDevices":      PointTo(Equal(*patient.TargetDevices)),
-		"Permissions":        PointTo(Equal(*patient.Permissions)),
-		"IsMigrated":         Equal(patient.IsMigrated),
-		"LegacyClinicianIds": ConsistOf(patient.LegacyClinicianIds),
-		"UpdatedTime":        Ignore(),
-		"CreatedTime":        Ignore(),
-		"InvitedBy":          Ignore(),
+		"Id":                     PointTo(Not(BeEmpty())),
+		"UserId":                 PointTo(Equal(*patient.UserId)),
+		"ClinicId":               PointTo(Equal(*patient.ClinicId)),
+		"BirthDate":              PointTo(Equal(*patient.BirthDate)),
+		"Email":                  PointTo(Equal(*patient.Email)),
+		"FullName":               PointTo(Equal(*patient.FullName)),
+		"Mrn":                    PointTo(Equal(*patient.Mrn)),
+		"TargetDevices":          PointTo(Equal(*patient.TargetDevices)),
+		"Permissions":            PointTo(Equal(*patient.Permissions)),
+		"IsMigrated":             Equal(patient.IsMigrated),
+		"LegacyClinicianIds":     ConsistOf(patient.LegacyClinicianIds),
+		"UpdatedTime":            Ignore(),
+		"CreatedTime":            Ignore(),
+		"InvitedBy":              Ignore(),
+		"Summary":                Ignore(),
+		"LastUploadReminderTime": Equal(patient.LastUploadReminderTime),
 	})
 }

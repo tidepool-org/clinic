@@ -64,6 +64,14 @@ allow {
   input.path = ["v1", "patients", _, "clinics"]
 }
 
+# Allow backend services update patient summaries
+# GET /v1/patients/:patientId/clinics
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "patients", _, "summary"]
+}
+
 # Allow backend services to remove custodial permission
 # DELETE /v1/clinics/:clinicId/patients/:patientId/permissions/custodian
 allow {
@@ -148,6 +156,14 @@ allow {
   input.method == "PUT"
   input.path = ["v1", "clinics", _]
   clinician_has_write_access
+}
+
+# Allow backend services to update clinic tiers
+# POST /v1/clinics/:clinicId/tier
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "tier"]
 }
 
 # Allow currently authenticated clinician to list clinicians
@@ -269,6 +285,14 @@ allow {
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients"]
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinician to send an upload reminder
+# POST /v1/clinics/:clinicId/patients
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "upload_reminder"]
   clinician_has_read_access
 }
 

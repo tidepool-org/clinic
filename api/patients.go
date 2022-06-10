@@ -8,15 +8,67 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"time"
 )
 
 func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId: strp(string(clinicId)),
-		Search:   searchToString(params.Search),
+		ClinicId:           strp(string(clinicId)),
+		Search:             searchToString(params.Search),
+		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
+		LastUploadDateTo:   params.SummaryLastUploadDateTo,
 	}
+	if params.SummaryPeriods14dTimeCGMUsePercent != nil && *params.SummaryPeriods14dTimeCGMUsePercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeCGMUsePercent)
+		if err != nil {
+			return err
+		}
+		filter.TimeCGMUsePercentCmp14d = cmp
+		filter.TimeCGMUsePercentValue14d = value
+	}
+	if params.SummaryPeriods14dTimeInVeryLowPercent != nil && *params.SummaryPeriods14dTimeInVeryLowPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInVeryLowPercent)
+		if err != nil {
+			return err
+		}
+		filter.TimeInVeryLowPercentCmp14d = cmp
+		filter.TimeInVeryLowPercentValue14d = value
+	}
+	if params.SummaryPeriods14dTimeInLowPercent != nil && *params.SummaryPeriods14dTimeInLowPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInLowPercent)
+		if err != nil {
+			return err
+		}
+		filter.TimeInLowPercentCmp14d = cmp
+		filter.TimeInLowPercentValue14d = value
+	}
+	if params.SummaryPeriods14dTimeInTargetPercent != nil && *params.SummaryPeriods14dTimeInTargetPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInTargetPercent)
+		if err != nil {
+			return err
+		}
+		filter.TimeInTargetPercentCmp14d = cmp
+		filter.TimeInTargetPercentValue14d = value
+	}
+	if params.SummaryPeriods14dTimeInHighPercent != nil && *params.SummaryPeriods14dTimeInHighPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInHighPercent)
+		if err != nil {
+			return err
+		}
+		filter.TimeInHighPercentCmp14d = cmp
+		filter.TimeInHighPercentValue14d = value
+	}
+	if params.SummaryPeriods14dTimeInVeryHighPercent != nil && *params.SummaryPeriods14dTimeInVeryHighPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInVeryHighPercent)
+		if err != nil {
+			return err
+		}
+		filter.TimeInVeryHighPercentCmp14d = cmp
+		filter.TimeInVeryHighPercentValue14d = value
+	}
+
 	sort, err := ParseSort(params.Sort)
 	if err != nil {
 		return err
@@ -148,6 +200,36 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
+func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	update := patients.UploadReminderUpdate{
+		ClinicId: string(clinicId),
+		UserId:   string(patientId),
+		Time:     time.Now(),
+	}
+	patient, err := h.patients.UpdateLastUploadReminderTime(ctx, &update)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+}
+
 func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := PatientPermissions{}
@@ -208,4 +290,22 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 	}
 
 	return ec.NoContent(http.StatusNoContent)
+}
+
+func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) error {
+	ctx := ec.Request().Context()
+	var dto *PatientSummary
+	if ec.Request().ContentLength != 0 {
+		dto = &PatientSummary{}
+		if err := ec.Bind(dto); err != nil {
+			return err
+		}
+	}
+
+	err := h.patients.UpdateSummaryInAllClinics(ctx, string(patientId), NewSummary(dto))
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
 }

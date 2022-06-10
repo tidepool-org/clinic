@@ -100,6 +100,15 @@ type ServerInterface interface {
 	// Delete Patient Permission
 	// (DELETE /v1/clinics/{clinicId}/patients/{patientId}/permissions/{permission})
 	DeletePatientPermission(ctx echo.Context, clinicId ClinicId, patientId PatientId, permission string) error
+	// Send Upload Reminder
+	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
+	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+	// Update Tier
+	// (POST /v1/clinics/{clinicId}/tier)
+	UpdateTier(ctx echo.Context, clinicId ClinicId) error
+	// UpdatePatientSummary
+	// (POST /v1/patients/{patientId}/summary)
+	UpdatePatientSummary(ctx echo.Context, patientId PatientId) error
 	// List Clinics for Patient
 	// (GET /v1/patients/{userId}/clinics)
 	ListClinicsForPatient(ctx echo.Context, userId UserId, params ListClinicsForPatientParams) error
@@ -700,6 +709,62 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sort: %s", err))
 	}
 
+	// ------------- Optional query parameter "summary.periods.14d.timeCGMUsePercent" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeCGMUsePercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeCGMUsePercent)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeCGMUsePercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.periods.14d.timeInVeryLowPercent" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInVeryLowPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInVeryLowPercent)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInVeryLowPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.periods.14d.timeInLowPercent" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInLowPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInLowPercent)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInLowPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.periods.14d.timeInTargetPercent" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInTargetPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInTargetPercent)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInTargetPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.periods.14d.timeInHighPercent" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInHighPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInHighPercent)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInHighPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.periods.14d.timeInVeryHighPercent" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.periods.14d.timeInVeryHighPercent", ctx.QueryParams(), &params.SummaryPeriods14dTimeInVeryHighPercent)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.periods.14d.timeInVeryHighPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.lastUploadDateFrom" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.lastUploadDateFrom", ctx.QueryParams(), &params.SummaryLastUploadDateFrom)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.lastUploadDateFrom: %s", err))
+	}
+
+	// ------------- Optional query parameter "summary.lastUploadDateTo" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "summary.lastUploadDateTo", ctx.QueryParams(), &params.SummaryLastUploadDateTo)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.lastUploadDateTo: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListPatients(ctx, clinicId, params)
 	return err
@@ -887,6 +952,68 @@ func (w *ServerInterfaceWrapper) DeletePatientPermission(ctx echo.Context) error
 	return err
 }
 
+// SendUploadReminder converts echo context to params.
+func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "patientId", runtime.ParamLocationPath, ctx.Param("patientId"), &patientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.SendUploadReminder(ctx, clinicId, patientId)
+	return err
+}
+
+// UpdateTier converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateTier(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateTier(ctx, clinicId)
+	return err
+}
+
+// UpdatePatientSummary converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdatePatientSummary(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "patientId", runtime.ParamLocationPath, ctx.Param("patientId"), &patientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdatePatientSummary(ctx, patientId)
+	return err
+}
+
 // ListClinicsForPatient converts echo context to params.
 func (w *ServerInterfaceWrapper) ListClinicsForPatient(ctx echo.Context) error {
 	var err error
@@ -1014,6 +1141,9 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
+	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
+	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)

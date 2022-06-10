@@ -9,6 +9,8 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -25,35 +27,48 @@ func NewClinic(c Clinic) *clinics.Clinic {
 	}
 
 	return &clinics.Clinic{
-		Name:         &c.Name,
-		ClinicType:   clinicTypeToString(c.ClinicType),
-		ClinicSize:   clinicSizeToString(c.ClinicSize),
-		Address:      c.Address,
-		City:         c.City,
-		Country:      c.Country,
-		PostalCode:   c.PostalCode,
-		State:        c.State,
-		PhoneNumbers: &phoneNumbers,
-		Website:      c.Website,
+		Name:             &c.Name,
+		ClinicType:       clinicTypeToString(c.ClinicType),
+		ClinicSize:       clinicSizeToString(c.ClinicSize),
+		Address:          c.Address,
+		City:             c.City,
+		Country:          c.Country,
+		PostalCode:       c.PostalCode,
+		State:            c.State,
+		PhoneNumbers:     &phoneNumbers,
+		Website:          c.Website,
+		PreferredBgUnits: string(c.PreferredBgUnits),
 	}
 }
 
 func NewClinicDto(c *clinics.Clinic) Clinic {
+	tier := clinics.DefaultTier
+	if c.Tier != "" {
+		tier = c.Tier
+	}
+
+	units := ClinicPreferredBgUnitsMgdL
+	if c.PreferredBgUnits != "" {
+		units = ClinicPreferredBgUnits(c.PreferredBgUnits)
+	}
 	dto := Clinic{
-		Id:          Id(c.Id.Hex()),
-		Name:        pstr(c.Name),
-		ShareCode:   pstr(c.CanonicalShareCode),
-		CanMigrate:  c.CanMigrate(),
-		ClinicType:  stringToClinicType(c.ClinicType),
-		ClinicSize:  stringToClinicSize(c.ClinicSize),
-		Address:     c.Address,
-		City:        c.City,
-		PostalCode:  c.PostalCode,
-		State:       c.State,
-		Country:     c.Country,
-		Website:     c.Website,
-		CreatedTime: c.CreatedTime,
-		UpdatedTime: c.UpdatedTime,
+		Id:               Id(c.Id.Hex()),
+		Name:             pstr(c.Name),
+		ShareCode:        pstr(c.CanonicalShareCode),
+		CanMigrate:       c.CanMigrate(),
+		ClinicType:       stringToClinicType(c.ClinicType),
+		ClinicSize:       stringToClinicSize(c.ClinicSize),
+		Address:          c.Address,
+		City:             c.City,
+		PostalCode:       c.PostalCode,
+		State:            c.State,
+		Country:          c.Country,
+		Website:          c.Website,
+		CreatedTime:      c.CreatedTime,
+		UpdatedTime:      c.UpdatedTime,
+		Tier:             tier,
+		TierDescription:  clinics.GetTierDescription(tier),
+		PreferredBgUnits: units,
 	}
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber
@@ -127,9 +142,13 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		TargetDevices: patient.TargetDevices,
 		CreatedTime:   patient.CreatedTime,
 		UpdatedTime:   patient.UpdatedTime,
+		Summary:       NewSummaryDto(patient.Summary),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
+	}
+	if !patient.LastUploadReminderTime.IsZero() {
+		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
 	}
 	return dto
 }
@@ -142,6 +161,135 @@ func NewPatient(dto Patient) patients.Patient {
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
 	}
+}
+
+func NewSummary(dto *PatientSummary) *patients.Summary {
+	if dto == nil {
+		return nil
+	}
+
+	patientSummary := &patients.Summary{
+		FirstData:                dto.FirstData,
+		HighGlucoseThreshold:     dto.HighGlucoseThreshold,
+		VeryHighGlucoseThreshold: dto.VeryHighGlucoseThreshold,
+		LowGlucoseThreshold:      dto.LowGlucoseThreshold,
+		VeryLowGlucoseThreshold:  dto.VeryLowGlucoseThreshold,
+		LastData:                 dto.LastData,
+		LastUpdatedDate:          dto.LastUpdatedDate,
+		LastUploadDate:           dto.LastUploadDate,
+		OutdatedSince:            dto.OutdatedSince,
+		Periods:                  make(map[string]*patients.Period),
+	}
+
+	var periodExists = false
+	var period14dExists = false
+	if dto.Periods != nil {
+		periodExists = true
+		if dto.Periods.N14d != nil {
+			period14dExists = true
+		}
+	}
+
+	if periodExists && period14dExists {
+		var avgGlucose *patients.AvgGlucose
+		if dto.Periods.N14d.AverageGlucose != nil {
+			avgGlucose = &patients.AvgGlucose{
+				Units: string(dto.Periods.N14d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N14d.AverageGlucose.Value),
+			}
+		}
+
+		patientSummary.Periods["14d"] = &patients.Period{
+			TimeCGMUsePercent: dto.Periods.N14d.TimeCGMUsePercent,
+			TimeCGMUseMinutes: dto.Periods.N14d.TimeCGMUseMinutes,
+			TimeCGMUseRecords: dto.Periods.N14d.TimeCGMUseRecords,
+
+			TimeInVeryLowPercent: dto.Periods.N14d.TimeInVeryLowPercent,
+			TimeInVeryLowMinutes: dto.Periods.N14d.TimeInVeryLowMinutes,
+			TimeInVeryLowRecords: dto.Periods.N14d.TimeInVeryLowRecords,
+
+			TimeInLowPercent: dto.Periods.N14d.TimeInLowPercent,
+			TimeInLowMinutes: dto.Periods.N14d.TimeInLowMinutes,
+			TimeInLowRecords: dto.Periods.N14d.TimeInLowRecords,
+
+			TimeInTargetPercent: dto.Periods.N14d.TimeInTargetPercent,
+			TimeInTargetMinutes: dto.Periods.N14d.TimeInTargetMinutes,
+			TimeInTargetRecords: dto.Periods.N14d.TimeInTargetRecords,
+
+			TimeInHighPercent: dto.Periods.N14d.TimeInHighPercent,
+			TimeInHighMinutes: dto.Periods.N14d.TimeInHighMinutes,
+			TimeInHighRecords: dto.Periods.N14d.TimeInHighRecords,
+
+			TimeInVeryHighPercent: dto.Periods.N14d.TimeInVeryHighPercent,
+			TimeInVeryHighMinutes: dto.Periods.N14d.TimeInVeryHighMinutes,
+			TimeInVeryHighRecords: dto.Periods.N14d.TimeInVeryHighRecords,
+
+			GlucoseManagementIndicator: dto.Periods.N14d.GlucoseManagementIndicator,
+			AverageGlucose:             avgGlucose,
+		}
+	}
+
+	return patientSummary
+}
+
+func NewSummaryDto(summary *patients.Summary) *PatientSummary {
+	if summary == nil {
+		return nil
+	}
+
+	patientSummary := &PatientSummary{
+		FirstData:            summary.FirstData,
+		HighGlucoseThreshold: summary.HighGlucoseThreshold,
+		LastData:             summary.LastData,
+		LastUpdatedDate:      summary.LastUpdatedDate,
+		LastUploadDate:       summary.LastUploadDate,
+		LowGlucoseThreshold:  summary.LowGlucoseThreshold,
+		OutdatedSince:        summary.OutdatedSince,
+		TotalDays:            summary.TotalDays,
+		Periods:              &PatientSummaryPeriods{},
+	}
+
+	var periodExists = false
+	var period14dExists = false
+	if summary.Periods != nil {
+		periodExists = true
+		_, period14dExists = summary.Periods["14d"]
+	}
+
+	if periodExists && period14dExists {
+		var avgGlucose *AverageGlucose
+		if summary.Periods["14d"].AverageGlucose != nil {
+			avgGlucose = &AverageGlucose{
+				Units: AverageGlucoseUnits(summary.Periods["14d"].AverageGlucose.Units),
+				Value: float32(summary.Periods["14d"].AverageGlucose.Value),
+			}
+		}
+
+		patientSummary.Periods.N14d = &PatientSummaryPeriod{
+			AverageGlucose:             avgGlucose,
+			GlucoseManagementIndicator: summary.Periods["14d"].GlucoseManagementIndicator,
+			TimeCGMUseMinutes:          summary.Periods["14d"].TimeCGMUseMinutes,
+			TimeCGMUsePercent:          summary.Periods["14d"].TimeCGMUsePercent,
+			TimeCGMUseRecords:          summary.Periods["14d"].TimeCGMUseRecords,
+			TimeInHighMinutes:          summary.Periods["14d"].TimeInHighMinutes,
+			TimeInHighPercent:          summary.Periods["14d"].TimeInHighPercent,
+			TimeInHighRecords:          summary.Periods["14d"].TimeInHighRecords,
+			TimeInLowMinutes:           summary.Periods["14d"].TimeInLowMinutes,
+			TimeInLowPercent:           summary.Periods["14d"].TimeInLowPercent,
+			TimeInLowRecords:           summary.Periods["14d"].TimeInLowRecords,
+			TimeInTargetMinutes:        summary.Periods["14d"].TimeInTargetMinutes,
+			TimeInTargetPercent:        summary.Periods["14d"].TimeInTargetPercent,
+			TimeInTargetRecords:        summary.Periods["14d"].TimeInTargetRecords,
+			TimeInVeryHighMinutes:      summary.Periods["14d"].TimeInVeryHighMinutes,
+			TimeInVeryHighPercent:      summary.Periods["14d"].TimeInVeryHighPercent,
+			TimeInVeryHighRecords:      summary.Periods["14d"].TimeInVeryHighRecords,
+			TimeInVeryLowMinutes:       summary.Periods["14d"].TimeInVeryLowMinutes,
+			TimeInVeryLowPercent:       summary.Periods["14d"].TimeInVeryLowPercent,
+			TimeInVeryLowRecords:       summary.Periods["14d"].TimeInVeryLowRecords,
+		}
+	}
+
+	return patientSummary
 }
 
 func NewPermissions(dto *PatientPermissions) *patients.Permissions {
@@ -397,4 +545,34 @@ func stringToClinicType(s *string) *ClinicClinicType {
 	return &size
 }
 
+var rangeFilterRegex = regexp.MustCompile("^(<|<=|>|>=)(\\d\\.\\d?\\d?)$")
 
+func parseRangeFilter(filter string) (cmp *string, val float64, err error) {
+	matches := rangeFilterRegex.FindStringSubmatch(filter)
+	if len(matches) != 3 {
+		err = fmt.Errorf("%w: couldn't parse range filter", errors.BadRequest)
+		return
+	}
+	if _, ok := validCmps[matches[1]]; !ok {
+		err = fmt.Errorf("%w: invalid comparator", errors.BadRequest)
+		return
+	}
+
+	value, e := strconv.ParseFloat(matches[2], 64)
+	if e != nil {
+		err = fmt.Errorf("%w: invalid value", errors.BadRequest)
+		return
+	}
+
+	cmp = &matches[1]
+	val = value
+	err = nil
+	return
+}
+
+var validCmps = map[string]struct{}{
+	">":  {},
+	">=": {},
+	"<":  {},
+	"<=": {},
+}

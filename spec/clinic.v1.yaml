@@ -242,6 +242,60 @@ paths:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/sort'
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.5'
+          in: query
+          name: summary.periods.14d.timeCGMUsePercent
+          description: Percentage of time of CGM use
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.14d.timeInVeryLowPercent
+          description: Percentage of time below 54 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.14d.timeInLowPercent
+          description: Percentage of time in range 54-70 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.14d.timeInTargetPercent
+          description: Percentage of time in range 70-180 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.14d.timeInHighPercent
+          description: Percentage of time in range 180-250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.14d.timeInVeryHighPercent
+          description: Percentage of time above range 250 mg/dL
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: summary.lastUploadDateFrom
+          description: Inclusive
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: summary.lastUploadDateTo
+          description: Exclusive
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
@@ -784,6 +838,11 @@ paths:
       operationId: TriggerInitialMigration
       description: Trigger the initial migration
       x-internal: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerMigration'
   '/v1/clinics/{clinicId}/migrations/{userId}':
     parameters:
       - description: Clinic ID
@@ -879,6 +938,78 @@ paths:
         - $ref: '#/components/parameters/createdTimeEnd'
       description: Returns list of all clinician/clinic relationships in the system. Internal endpoint used for reporting purposes.
       x-internal: true
+  '/v1/patients/{patientId}/summary':
+    parameters:
+      - $ref: '#/components/parameters/patientId'
+    post:
+      summary: UpdatePatientSummary
+      operationId: UpdatePatientSummary
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
+      description: Internal endpoint which updates the summary in all patient records which match the user id.
+      x-internal: true
+      tags:
+        - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientSummary'
+            examples:
+              example-1:
+                value:
+                  lastUpdatedDate: '2019-08-24T14:15:22Z'
+                  firstData: '2019-08-24T14:15:22Z'
+                  lastData: '2019-08-24T14:15:22Z'
+                  lastUploadDate: '2019-08-24T14:15:22Z'
+                  outdatedSince: '2019-08-24T14:15:22Z'
+                  averageGlucose:
+                    units: mmol/l
+                    value: 105
+                  glucoseManagementIndicator: 0.06
+                  percentTimeInTarget: 0.7
+                  percentTimeInHigh: 0.1
+                  percentTimeInVeryHigh: 0.1
+                  percentTimeInLow: 0.05
+                  percentTimeInVeryLow: 0.05
+                  percentTimeCGMUse: 0.9
+                  highGlucoseThreshold: 0
+                  lowGlucoseThreshold: 0
+        description: ''
+  '/v1/clinics/{clinicId}/tier':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      summary: Update Tier
+      operationId: UpdateTier
+      responses:
+        '200':
+          description: OK
+      description: Internal endpoint to update clinic service tier
+      x-internal: true
+      tags:
+        - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTier'
+  '/v1/clinics/{clinicId}/patients/{patientId}/upload_reminder':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    post:
+      summary: Send Upload Reminder
+      operationId: SendUploadReminder
+      responses:
+        '200':
+          description: OK
+      description: Sends upload reminder to the patient
+      tags:
+        - clinic
 components:
   schemas:
     Error:
@@ -979,6 +1110,21 @@ components:
           type: string
           format: date-time
           readOnly: true
+        tierDescription:
+          type: string
+          minLength: 1
+          example: Free
+          readOnly: true
+        tier:
+          type: string
+          example: tier0100
+          minLength: 1
+          readOnly: true
+        preferredBgUnits:
+          type: string
+          enum:
+            - mg/dL
+            - mmol/L
       required:
         - id
         - name
@@ -986,6 +1132,9 @@ components:
         - canMigrate
         - createdTime
         - updatedTime
+        - tierDescription
+        - tier
+        - preferredBgUnits
     Clinics:
       type: array
       items:
@@ -1061,6 +1210,14 @@ components:
           format: date-time
           readOnly: true
         updatedTime:
+          type: string
+          format: date-time
+          readOnly: true
+        attestationSubmitted:
+          type: boolean
+        summary:
+          $ref: '#/components/schemas/PatientSummary'
+        lastUploadReminderTime:
           type: string
           format: date-time
           readOnly: true
@@ -1171,6 +1328,8 @@ components:
           type: boolean
         legacyClinicianId:
           $ref: '#/components/schemas/TidepoolUserId'
+        attestationSubmitted:
+          type: boolean
     AssociateClinicianToUser:
       title: Associate Clinician
       type: object
@@ -1213,10 +1372,15 @@ components:
           type: string
           format: date-time
           readOnly: true
+        attestationTime:
+          type: string
+          format: date-time
+          readOnly: true
       required:
         - userId
         - createdTime
         - updatedTime
+        - attestationTime
     Migrations:
       title: Migrations
       type: array
@@ -1260,6 +1424,170 @@ components:
           type: string
           format: email
           minLength: 1
+    TriggerMigration:
+      title: TriggerMigration
+      type: object
+      properties:
+        attestationSubmitted:
+          type: boolean
+      required:
+        - attestationSubmitted
+    PatientSummary:
+      type: object
+      title: patientsummary.v1
+      description: ''
+      properties:
+        lastUpdatedDate:
+          type: string
+          format: date-time
+        firstData:
+          type: string
+          format: date-time
+        lastData:
+          type: string
+          format: date-time
+        lastUploadDate:
+          type: string
+          format: date-time
+        outdatedSince:
+          type: string
+          format: date-time
+        totalDays:
+          type: number
+          x-go-type: int
+        highGlucoseThreshold:
+          type: number
+          x-go-type: float64
+        veryHighGlucoseThreshold:
+          type: number
+          x-go-type: float64
+        lowGlucoseThreshold:
+          type: number
+          x-go-type: float64
+        veryLowGlucoseThreshold:
+          type: number
+          x-go-type: float64
+        periods:
+          $ref: '#/components/schemas/PatientSummaryPeriods'
+    PatientSummaryPeriods:
+      type: object
+      x-stoplight:
+        id: i99fgumcbrwph
+      title: patientsummaryperiods.v1
+      description: ''
+      properties:
+        14d:
+          $ref: '#/components/schemas/PatientSummaryPeriod'
+    PatientSummaryPeriod:
+      type: object
+      title: patientsummaryperiod.v1
+      description: ''
+      properties:
+        averageGlucose:
+          $ref: '#/components/schemas/AverageGlucose'
+        glucoseManagementIndicator:
+          type: number
+          x-go-type: float64
+        timeInTargetPercent:
+          type: number
+          x-go-type: float64
+        timeInTargetMinutes:
+          type: number
+          x-go-type: int
+        timeInTargetRecords:
+          type: number
+          x-go-type: int
+        timeInHighPercent:
+          type: number
+          x-go-type: float64
+        timeInHighMinutes:
+          type: number
+          x-go-type: int
+        timeInHighRecords:
+          type: number
+          x-go-type: int
+        timeInVeryHighPercent:
+          type: number
+          x-go-type: float64
+        timeInVeryHighMinutes:
+          type: number
+          x-go-type: int
+        timeInVeryHighRecords:
+          type: number
+          x-go-type: int
+        timeInLowPercent:
+          type: number
+          x-go-type: float64
+        timeInLowMinutes:
+          type: number
+          x-go-type: int
+        timeInLowRecords:
+          type: number
+          x-go-type: int
+        timeInVeryLowPercent:
+          type: number
+          x-go-type: float64
+        timeInVeryLowMinutes:
+          type: number
+          x-go-type: int
+        timeInVeryLowRecords:
+          type: number
+          x-go-type: int
+        timeCGMUsePercent:
+          type: number
+          x-go-type: float64
+        timeCGMUseMinutes:
+          type: number
+          x-go-type: int
+        timeCGMUseRecords:
+          type: number
+          x-go-type: int
+    AverageGlucose:
+      title: Blood Glucose (mmol/L)
+      description: 'Blood glucose value, in `mmol/L`'
+      type: object
+      properties:
+        units:
+          title: Blood Unit (mmol/L)
+          type: string
+          enum:
+            - mmol/L
+            - mmol/l
+          example: mmol/L
+          x-tags:
+            - Data
+        value:
+          title: Blood Value (mmol/L)
+          description: A floating point value representing a `mmol/L` value.
+          type: number
+          format: float
+          minimum: 0
+          maximum: 55
+          example: 5.5
+          x-tags:
+            - Data
+      required:
+        - units
+        - value
+      x-tags:
+        - Data
+    UpdateTier:
+      title: UpdateTier
+      type: object
+      properties:
+        tier:
+          $ref: '#/components/schemas/Tier'
+      required:
+        - tier
+    Tier:
+      type: string
+      title: Clinic Service Tier
+      enum:
+        - tier0100
+        - tier0200
+        - tier0300
+        - tier0400
+      example: tier0100
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

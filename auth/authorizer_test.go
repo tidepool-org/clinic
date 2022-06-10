@@ -535,6 +535,60 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("it allows orca to update clinic service tier", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "tier"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "clinic-worker",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it prevents members to update clinic service tier", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "tier"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("it prevents admins to update clinic service tier", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "tier"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("it prevents users to update clinic service tier", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "tier"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
 		It("it prevents users from triggering deletion", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "users", "1234567890", "clinics"},

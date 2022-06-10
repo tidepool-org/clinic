@@ -211,3 +211,17 @@ func (h *Handler) UpdateClinicUserDetails(ec echo.Context, userId UserId) error 
 
 	return ec.NoContent(http.StatusOK)
 }
+
+func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := UpdateTier{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	if err := h.clinics.UpdateTier(ctx, string(clinicId), string(dto.Tier)); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
