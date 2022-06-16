@@ -1380,7 +1380,6 @@ components:
         - userId
         - createdTime
         - updatedTime
-        - attestationTime
     Migrations:
       title: Migrations
       type: array
@@ -1430,8 +1429,6 @@ components:
       properties:
         attestationSubmitted:
           type: boolean
-      required:
-        - attestationSubmitted
     PatientSummary:
       type: object
       title: patientsummary.v1

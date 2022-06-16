@@ -196,6 +196,53 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("Update", func() {
+			var update patients.PatientUpdate
+
+			BeforeEach(func() {
+				update = patientsTest.RandomPatientUpdate()
+				expected := patients.Patient{
+					Id:            randomPatient.Id,
+					ClinicId:      randomPatient.ClinicId,
+					UserId:        randomPatient.UserId,
+					BirthDate:     randomPatient.BirthDate,
+					Email:         update.Patient.Email,
+					FullName:      randomPatient.FullName,
+					Mrn:           randomPatient.Mrn,
+					TargetDevices: randomPatient.TargetDevices,
+					Permissions:   randomPatient.Permissions,
+					IsMigrated:    randomPatient.IsMigrated,
+				}
+				matchPatientFields = patientFieldsMatcher(expected)
+			})
+
+			It("updates the email", func() {
+				update.UserId = *randomPatient.UserId
+				err := repo.UpdateEmail(nil, *randomPatient.UserId, update.Patient.Email)
+				Expect(err).ToNot(HaveOccurred())
+
+				var updated patients.Patient
+				err = collection.FindOne(nil, primitive.M{
+					"userId": randomPatient.UserId,
+				}).Decode(&updated)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(updated).To(matchPatientFields)
+			})
+
+			It("removes the email", func() {
+				update.UserId = *randomPatient.UserId
+				err := repo.UpdateEmail(nil, *randomPatient.UserId, nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				var updated patients.Patient
+				err = collection.FindOne(nil, primitive.M{
+					"userId": randomPatient.UserId,
+				}).Decode(&updated)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(updated.Email).To(BeNil())
+			})
+		})
+
 		Describe("Remove", func() {
 			It("removes the correct patient from the collection", func() {
 				err := repo.Remove(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId)
