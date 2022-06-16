@@ -325,14 +325,15 @@ func (r *repository) UpdateEmail(ctx context.Context, userId string, email *stri
 		}
 	}
 
-	res, err := r.collection.UpdateMany(ctx, selector, update)
+	result, err := r.collection.UpdateMany(ctx, selector, update)
+	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
+		err = fmt.Errorf("partially updated %v out of %v clinician records: %w", result.ModifiedCount, result.MatchedCount, err)
+	}
 	if err != nil {
-		return fmt.Errorf("error updating patient email: %w", err)
-	} else if res.ModifiedCount > 0 {
-		r.logger.Infow(fmt.Sprintf("successfully updated %v patient emails", res.ModifiedCount), "userId", userId)
+		r.logger.Errorw("error updating patient emails", "error", err, "userId", userId)
 	}
 
-	return nil
+	return err
 }
 
 func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
