@@ -199,8 +199,8 @@ type Meta struct {
 
 // Migration defines model for Migration.
 type Migration struct {
-	AttestationTime time.Time `json:"attestationTime"`
-	CreatedTime     time.Time `json:"createdTime"`
+	AttestationTime *time.Time `json:"attestationTime,omitempty"`
+	CreatedTime     time.Time  `json:"createdTime"`
 
 	// The current status of the migration
 	Status      *MigrationStatus `json:"status,omitempty"`
@@ -330,7 +330,7 @@ type Tier string
 
 // TriggerMigration defines model for TriggerMigration.
 type TriggerMigration struct {
-	AttestationSubmitted bool `json:"attestationSubmitted"`
+	AttestationSubmitted *bool `json:"attestationSubmitted,omitempty"`
 }
 
 // UpdateTier defines model for UpdateTier.

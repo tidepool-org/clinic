@@ -29,6 +29,7 @@ type Service interface {
 	List(ctx context.Context, filter *Filter, pagination store.Pagination, sort *store.Sort) (*ListResult, error)
 	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, update PatientUpdate) (*Patient, error)
+	UpdateEmail(ctx context.Context, userId string, email *string) error
 	Remove(ctx context.Context, clinicId string, userId string) error
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)

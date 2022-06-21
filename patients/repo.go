@@ -305,6 +305,37 @@ func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*
 	return r.Get(ctx, patientUpdate.ClinicId, patientUpdate.UserId)
 }
 
+func (r *repository) UpdateEmail(ctx context.Context, userId string, email *string) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{}
+	if email == nil || *email == "" {
+		update["$unset"] = bson.M{
+			"email": "",
+		}
+		update["$set"] = bson.M{
+			"updatedTime": time.Now(),
+		}
+	} else {
+		update["$set"] = bson.M{
+			"email":       *email,
+			"updatedTime": time.Now(),
+		}
+	}
+
+	result, err := r.collection.UpdateMany(ctx, selector, update)
+	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
+		err = fmt.Errorf("partially updated %v out of %v clinician records: %w", result.ModifiedCount, result.MatchedCount, err)
+	}
+	if err != nil {
+		r.logger.Errorw("error updating patient emails", "error", err, "userId", userId)
+	}
+
+	return err
+}
+
 func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
@@ -316,6 +347,8 @@ func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 	if permissions == nil {
 		update["$unset"] = bson.M{
 			"permissions": "",
+		}
+		update["$set"] = bson.M{
 			"updatedTime": time.Now(),
 		}
 	} else {

@@ -153,6 +153,20 @@ func (mr *MockRepositoryMockRecorder) Update(ctx, update interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepository)(nil).Update), ctx, update)
 }
 
+// UpdateEmail mocks base method.
+func (m *MockRepository) UpdateEmail(ctx context.Context, userId string, email *string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEmail", ctx, userId, email)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateEmail indicates an expected call of UpdateEmail.
+func (mr *MockRepositoryMockRecorder) UpdateEmail(ctx, userId, email interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmail", reflect.TypeOf((*MockRepository)(nil).UpdateEmail), ctx, userId, email)
+}
+
 // UpdateLastUploadReminderTime mocks base method.
 func (m *MockRepository) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	m.ctrl.T.Helper()

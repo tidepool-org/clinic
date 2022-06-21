@@ -199,14 +199,22 @@ func (h *Handler) UpdateClinicUserDetails(ec echo.Context, userId UserId) error 
 		return err
 	}
 
+	id := string(userId)
+
+	var email *string
 	if dto.Email != nil {
+		email = strp(string(*dto.Email))
 		update := &clinicians.CliniciansUpdate{
-			UserId: string(userId),
-			Email:  string(*dto.Email),
+			UserId: id,
+			Email:  *email,
 		}
 		if err := h.clinicians.UpdateAll(ctx, update); err != nil {
 			return err
 		}
+	}
+
+	if err := h.patients.UpdateEmail(ctx, id, email); err != nil {
+		return err
 	}
 
 	return ec.NoContent(http.StatusOK)
