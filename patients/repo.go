@@ -496,6 +496,7 @@ func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patie
 
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
+	orQuery := []bson.M{}
 	if filter.ClinicId != nil {
 		clinicId := *filter.ClinicId
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
@@ -510,12 +511,12 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			Pattern: search,
 			Options: "i",
 		}}
-		selector["$or"] = bson.A{
+		orQuery = append(orQuery,
 			bson.M{"fullName": filter},
 			bson.M{"email": filter},
 			bson.M{"mrn": filter},
 			bson.M{"birthDate": filter},
-		}
+		)
 	}
 	lastUploadDate := bson.M{}
 	if filter.LastUploadDateFrom != nil && !filter.LastUploadDateFrom.IsZero() {
@@ -528,48 +529,52 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		selector["summary.lastUploadDate"] = lastUploadDate
 	}
 
-	MaybeApplyNumericFilter(selector,
+	MaybeApplyNumericFilter(orQuery,
 		"summary.periods.14d.timeCGMUsePercent",
 		filter.TimeCGMUsePercentCmp14d,
 		filter.TimeCGMUsePercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(selector,
+	MaybeApplyNumericFilter(orQuery,
 		"summary.periods.14d.timeInVeryLowPercent",
 		filter.TimeInVeryLowPercentCmp14d,
 		filter.TimeInVeryLowPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(selector,
+	MaybeApplyNumericFilter(orQuery,
 		"summary.periods.14d.timeInLowPercent",
 		filter.TimeInLowPercentCmp14d,
 		filter.TimeInLowPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(selector,
+	MaybeApplyNumericFilter(orQuery,
 		"summary.periods.14d.timeInTargetPercent",
 		filter.TimeInTargetPercentCmp14d,
 		filter.TimeInTargetPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(selector,
+	MaybeApplyNumericFilter(orQuery,
 		"summary.periods.14d.timeInHighPercent",
 		filter.TimeInHighPercentCmp14d,
 		filter.TimeInHighPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(selector,
+	MaybeApplyNumericFilter(orQuery,
 		"summary.periods.14d.timeInVeryHighPercent",
 		filter.TimeInVeryHighPercentCmp14d,
 		filter.TimeInVeryHighPercentValue14d,
 	)
 
+	if(len(orQuery) > 0){
+		selector["$or"] = orQuery;
+	}
+
 	return selector
 }
 
-func MaybeApplyNumericFilter(selector bson.M, field string, cmp *string, value float64) {
+func MaybeApplyNumericFilter(orQuery []bson.M, field string, cmp *string, value float64) {
 	if f, ok := cmpToMongoFilter(cmp); ok {
-		selector[field] = bson.M{f: value}
+		orQuery = append(orQuery, bson.M{f: value})
 	}
 }
 
