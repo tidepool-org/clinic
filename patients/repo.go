@@ -574,7 +574,7 @@ func generateListFilterQuery(filter *Filter) bson.M {
 
 func MaybeApplyNumericFilter(orQuery []bson.M, field string, cmp *string, value float64) {
 	if f, ok := cmpToMongoFilter(cmp); ok {
-		orQuery = append(orQuery, bson.M{f: value})
+		orQuery = append(orQuery, bson.M{field: bson.M{f: value}})
 	}
 }
 
