@@ -531,37 +531,37 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		selector["summary.lastUploadDate"] = lastUploadDate
 	}
 
-	MaybeApplyNumericFilter(orSummaryQuery,
+	orSummaryQuery = MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeCGMUsePercent",
 		filter.TimeCGMUsePercentCmp14d,
 		filter.TimeCGMUsePercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orSummaryQuery,
+	orSummaryQuery = MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInVeryLowPercent",
 		filter.TimeInVeryLowPercentCmp14d,
 		filter.TimeInVeryLowPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orSummaryQuery,
+	orSummaryQuery = MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInLowPercent",
 		filter.TimeInLowPercentCmp14d,
 		filter.TimeInLowPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orSummaryQuery,
+	orSummaryQuery = MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInTargetPercent",
 		filter.TimeInTargetPercentCmp14d,
 		filter.TimeInTargetPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orSummaryQuery,
+	orSummaryQuery = MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInHighPercent",
 		filter.TimeInHighPercentCmp14d,
 		filter.TimeInHighPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orSummaryQuery,
+	orSummaryQuery = MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInVeryHighPercent",
 		filter.TimeInVeryHighPercentCmp14d,
 		filter.TimeInVeryHighPercentValue14d,
@@ -582,10 +582,11 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	return selector
 }
 
-func MaybeApplyNumericFilter(orSummaryQuery bson.A, field string, cmp *string, value float64) {
+func MaybeApplyNumericFilter(orSummaryQuery bson.A, field string, cmp *string, value float64) bson.A {
 	if f, ok := cmpToMongoFilter(cmp); ok {
 		orSummaryQuery = append(orSummaryQuery, bson.M{field: bson.M{f: value}})
 	}
+	return orSummaryQuery
 }
 
 func isSortAttributeValid(attribute string) bool {
