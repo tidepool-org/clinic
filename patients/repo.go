@@ -496,7 +496,9 @@ func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patie
 
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
-	orQuery := []bson.M{}
+	orSearchQuery := bson.A{}
+	orSummaryQuery := bson.A{}
+	andQuery := bson.A{}
 	if filter.ClinicId != nil {
 		clinicId := *filter.ClinicId
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
@@ -511,7 +513,7 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			Pattern: search,
 			Options: "i",
 		}}
-		orQuery = append(orQuery,
+		orSearchQuery = append(orSearchQuery,
 			bson.M{"fullName": filter},
 			bson.M{"email": filter},
 			bson.M{"mrn": filter},
@@ -529,52 +531,60 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		selector["summary.lastUploadDate"] = lastUploadDate
 	}
 
-	MaybeApplyNumericFilter(orQuery,
+	MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeCGMUsePercent",
 		filter.TimeCGMUsePercentCmp14d,
 		filter.TimeCGMUsePercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orQuery,
+	MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInVeryLowPercent",
 		filter.TimeInVeryLowPercentCmp14d,
 		filter.TimeInVeryLowPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orQuery,
+	MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInLowPercent",
 		filter.TimeInLowPercentCmp14d,
 		filter.TimeInLowPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orQuery,
+	MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInTargetPercent",
 		filter.TimeInTargetPercentCmp14d,
 		filter.TimeInTargetPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orQuery,
+	MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInHighPercent",
 		filter.TimeInHighPercentCmp14d,
 		filter.TimeInHighPercentValue14d,
 	)
 
-	MaybeApplyNumericFilter(orQuery,
+	MaybeApplyNumericFilter(orSummaryQuery,
 		"summary.periods.14d.timeInVeryHighPercent",
 		filter.TimeInVeryHighPercentCmp14d,
 		filter.TimeInVeryHighPercentValue14d,
 	)
 
-	if(len(orQuery) > 0){
-		selector["$or"] = orQuery;
+	if(len(orSearchQuery) > 0){
+		andQuery = append(andQuery, bson.M{"$or":orSearchQuery})
+	}
+
+	if(len(orSummaryQuery) > 0){
+		andQuery = append(andQuery, bson.M{"$or":orSummaryQuery})
+	}
+
+	if(len(andQuery) > 0){
+		selector["$and"] = andQuery;
 	}
 
 	return selector
 }
 
-func MaybeApplyNumericFilter(orQuery []bson.M, field string, cmp *string, value float64) {
+func MaybeApplyNumericFilter(orSummaryQuery bson.A, field string, cmp *string, value float64) {
 	if f, ok := cmpToMongoFilter(cmp); ok {
-		orQuery = append(orQuery, bson.M{field: bson.M{f: value}})
+		orSummaryQuery = append(orSummaryQuery, bson.M{field: bson.M{f: value}})
 	}
 }
 
