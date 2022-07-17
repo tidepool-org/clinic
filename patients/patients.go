@@ -195,7 +195,7 @@ type Summary struct {
 	LastUpdatedDate *time.Time `bson:"lastUpdatedDate,omitempty"`
 	LastUploadDate  *time.Time `bson:"lastUploadDate,omitempty"`
 	OutdatedSince   *time.Time `bson:"outdatedSince,omitempty"`
-	TotalDays       *int       `bson:"totalDays,omitempty"`
+	TotalHours      *int       `bson:"totalHours,omitempty"`
 
 	HighGlucoseThreshold     *float64 `bson:"highGlucoseThreshold"`
 	VeryHighGlucoseThreshold *float64 `bson:"veryHighGlucoseThreshold"`

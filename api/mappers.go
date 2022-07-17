@@ -182,11 +182,100 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 	}
 
 	var periodExists = false
+	var period1dExists = false
+	var period7dExists = false
 	var period14dExists = false
+	var period30dExists = false
 	if dto.Periods != nil {
 		periodExists = true
+		if dto.Periods.N1d != nil {
+			period1dExists = true
+		}
+		if dto.Periods.N7d != nil {
+			period7dExists = true
+		}
 		if dto.Periods.N14d != nil {
 			period14dExists = true
+		}
+		if dto.Periods.N30d != nil {
+			period30dExists = true
+		}
+	}
+
+	if periodExists && period1dExists {
+		var avgGlucose *patients.AvgGlucose
+		if dto.Periods.N1d.AverageGlucose != nil {
+			avgGlucose = &patients.AvgGlucose{
+				Units: string(dto.Periods.N1d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N1d.AverageGlucose.Value),
+			}
+		}
+
+		patientSummary.Periods["1d"] = &patients.Period{
+			TimeCGMUsePercent: dto.Periods.N1d.TimeCGMUsePercent,
+			TimeCGMUseMinutes: dto.Periods.N1d.TimeCGMUseMinutes,
+			TimeCGMUseRecords: dto.Periods.N1d.TimeCGMUseRecords,
+
+			TimeInVeryLowPercent: dto.Periods.N1d.TimeInVeryLowPercent,
+			TimeInVeryLowMinutes: dto.Periods.N1d.TimeInVeryLowMinutes,
+			TimeInVeryLowRecords: dto.Periods.N1d.TimeInVeryLowRecords,
+
+			TimeInLowPercent: dto.Periods.N1d.TimeInLowPercent,
+			TimeInLowMinutes: dto.Periods.N1d.TimeInLowMinutes,
+			TimeInLowRecords: dto.Periods.N1d.TimeInLowRecords,
+
+			TimeInTargetPercent: dto.Periods.N1d.TimeInTargetPercent,
+			TimeInTargetMinutes: dto.Periods.N1d.TimeInTargetMinutes,
+			TimeInTargetRecords: dto.Periods.N1d.TimeInTargetRecords,
+
+			TimeInHighPercent: dto.Periods.N1d.TimeInHighPercent,
+			TimeInHighMinutes: dto.Periods.N1d.TimeInHighMinutes,
+			TimeInHighRecords: dto.Periods.N1d.TimeInHighRecords,
+
+			TimeInVeryHighPercent: dto.Periods.N1d.TimeInVeryHighPercent,
+			TimeInVeryHighMinutes: dto.Periods.N1d.TimeInVeryHighMinutes,
+			TimeInVeryHighRecords: dto.Periods.N1d.TimeInVeryHighRecords,
+
+			GlucoseManagementIndicator: dto.Periods.N1d.GlucoseManagementIndicator,
+			AverageGlucose:             avgGlucose,
+		}
+	}
+
+	if periodExists && period7dExists {
+		var avgGlucose *patients.AvgGlucose
+		if dto.Periods.N7d.AverageGlucose != nil {
+			avgGlucose = &patients.AvgGlucose{
+				Units: string(dto.Periods.N7d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N7d.AverageGlucose.Value),
+			}
+		}
+		patientSummary.Periods["7d"] = &patients.Period{
+			TimeCGMUsePercent: dto.Periods.N7d.TimeCGMUsePercent,
+			TimeCGMUseMinutes: dto.Periods.N7d.TimeCGMUseMinutes,
+			TimeCGMUseRecords: dto.Periods.N7d.TimeCGMUseRecords,
+
+			TimeInVeryLowPercent: dto.Periods.N7d.TimeInVeryLowPercent,
+			TimeInVeryLowMinutes: dto.Periods.N7d.TimeInVeryLowMinutes,
+			TimeInVeryLowRecords: dto.Periods.N7d.TimeInVeryLowRecords,
+
+			TimeInLowPercent: dto.Periods.N7d.TimeInLowPercent,
+			TimeInLowMinutes: dto.Periods.N7d.TimeInLowMinutes,
+			TimeInLowRecords: dto.Periods.N7d.TimeInLowRecords,
+
+			TimeInTargetPercent: dto.Periods.N7d.TimeInTargetPercent,
+			TimeInTargetMinutes: dto.Periods.N7d.TimeInTargetMinutes,
+			TimeInTargetRecords: dto.Periods.N7d.TimeInTargetRecords,
+
+			TimeInHighPercent: dto.Periods.N7d.TimeInHighPercent,
+			TimeInHighMinutes: dto.Periods.N7d.TimeInHighMinutes,
+			TimeInHighRecords: dto.Periods.N7d.TimeInHighRecords,
+
+			TimeInVeryHighPercent: dto.Periods.N7d.TimeInVeryHighPercent,
+			TimeInVeryHighMinutes: dto.Periods.N7d.TimeInVeryHighMinutes,
+			TimeInVeryHighRecords: dto.Periods.N7d.TimeInVeryHighRecords,
+
+			GlucoseManagementIndicator: dto.Periods.N7d.GlucoseManagementIndicator,
+			AverageGlucose:             avgGlucose,
 		}
 	}
 
@@ -229,6 +318,45 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		}
 	}
 
+	if periodExists && period30dExists {
+		var avgGlucose *patients.AvgGlucose
+		if dto.Periods.N30d.AverageGlucose != nil {
+			avgGlucose = &patients.AvgGlucose{
+				Units: string(dto.Periods.N30d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N30d.AverageGlucose.Value),
+			}
+		}
+
+		patientSummary.Periods["30d"] = &patients.Period{
+			TimeCGMUsePercent: dto.Periods.N30d.TimeCGMUsePercent,
+			TimeCGMUseMinutes: dto.Periods.N30d.TimeCGMUseMinutes,
+			TimeCGMUseRecords: dto.Periods.N30d.TimeCGMUseRecords,
+
+			TimeInVeryLowPercent: dto.Periods.N30d.TimeInVeryLowPercent,
+			TimeInVeryLowMinutes: dto.Periods.N30d.TimeInVeryLowMinutes,
+			TimeInVeryLowRecords: dto.Periods.N30d.TimeInVeryLowRecords,
+
+			TimeInLowPercent: dto.Periods.N30d.TimeInLowPercent,
+			TimeInLowMinutes: dto.Periods.N30d.TimeInLowMinutes,
+			TimeInLowRecords: dto.Periods.N30d.TimeInLowRecords,
+
+			TimeInTargetPercent: dto.Periods.N30d.TimeInTargetPercent,
+			TimeInTargetMinutes: dto.Periods.N30d.TimeInTargetMinutes,
+			TimeInTargetRecords: dto.Periods.N30d.TimeInTargetRecords,
+
+			TimeInHighPercent: dto.Periods.N30d.TimeInHighPercent,
+			TimeInHighMinutes: dto.Periods.N30d.TimeInHighMinutes,
+			TimeInHighRecords: dto.Periods.N30d.TimeInHighRecords,
+
+			TimeInVeryHighPercent: dto.Periods.N30d.TimeInVeryHighPercent,
+			TimeInVeryHighMinutes: dto.Periods.N30d.TimeInVeryHighMinutes,
+			TimeInVeryHighRecords: dto.Periods.N30d.TimeInVeryHighRecords,
+
+			GlucoseManagementIndicator: dto.Periods.N30d.GlucoseManagementIndicator,
+			AverageGlucose:             avgGlucose,
+		}
+	}
+
 	return patientSummary
 }
 
@@ -245,7 +373,7 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		LastUploadDate:       summary.LastUploadDate,
 		LowGlucoseThreshold:  summary.LowGlucoseThreshold,
 		OutdatedSince:        summary.OutdatedSince,
-		TotalDays:            summary.TotalDays,
+		TotalHours:           summary.TotalHours,
 		Periods:              &PatientSummaryPeriods{},
 	}
 
@@ -263,6 +391,52 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 				Units: AverageGlucoseUnits(summary.Periods["14d"].AverageGlucose.Units),
 				Value: float32(summary.Periods["14d"].AverageGlucose.Value),
 			}
+		}
+
+		patientSummary.Periods.N1d = &PatientSummaryPeriod{
+			AverageGlucose:             avgGlucose,
+			GlucoseManagementIndicator: summary.Periods["1d"].GlucoseManagementIndicator,
+			TimeCGMUseMinutes:          summary.Periods["1d"].TimeCGMUseMinutes,
+			TimeCGMUsePercent:          summary.Periods["1d"].TimeCGMUsePercent,
+			TimeCGMUseRecords:          summary.Periods["1d"].TimeCGMUseRecords,
+			TimeInHighMinutes:          summary.Periods["1d"].TimeInHighMinutes,
+			TimeInHighPercent:          summary.Periods["1d"].TimeInHighPercent,
+			TimeInHighRecords:          summary.Periods["1d"].TimeInHighRecords,
+			TimeInLowMinutes:           summary.Periods["1d"].TimeInLowMinutes,
+			TimeInLowPercent:           summary.Periods["1d"].TimeInLowPercent,
+			TimeInLowRecords:           summary.Periods["1d"].TimeInLowRecords,
+			TimeInTargetMinutes:        summary.Periods["1d"].TimeInTargetMinutes,
+			TimeInTargetPercent:        summary.Periods["1d"].TimeInTargetPercent,
+			TimeInTargetRecords:        summary.Periods["1d"].TimeInTargetRecords,
+			TimeInVeryHighMinutes:      summary.Periods["1d"].TimeInVeryHighMinutes,
+			TimeInVeryHighPercent:      summary.Periods["1d"].TimeInVeryHighPercent,
+			TimeInVeryHighRecords:      summary.Periods["1d"].TimeInVeryHighRecords,
+			TimeInVeryLowMinutes:       summary.Periods["1d"].TimeInVeryLowMinutes,
+			TimeInVeryLowPercent:       summary.Periods["1d"].TimeInVeryLowPercent,
+			TimeInVeryLowRecords:       summary.Periods["1d"].TimeInVeryLowRecords,
+		}
+
+		patientSummary.Periods.N7d = &PatientSummaryPeriod{
+			AverageGlucose:             avgGlucose,
+			GlucoseManagementIndicator: summary.Periods["7d"].GlucoseManagementIndicator,
+			TimeCGMUseMinutes:          summary.Periods["7d"].TimeCGMUseMinutes,
+			TimeCGMUsePercent:          summary.Periods["7d"].TimeCGMUsePercent,
+			TimeCGMUseRecords:          summary.Periods["7d"].TimeCGMUseRecords,
+			TimeInHighMinutes:          summary.Periods["7d"].TimeInHighMinutes,
+			TimeInHighPercent:          summary.Periods["7d"].TimeInHighPercent,
+			TimeInHighRecords:          summary.Periods["7d"].TimeInHighRecords,
+			TimeInLowMinutes:           summary.Periods["7d"].TimeInLowMinutes,
+			TimeInLowPercent:           summary.Periods["7d"].TimeInLowPercent,
+			TimeInLowRecords:           summary.Periods["7d"].TimeInLowRecords,
+			TimeInTargetMinutes:        summary.Periods["7d"].TimeInTargetMinutes,
+			TimeInTargetPercent:        summary.Periods["7d"].TimeInTargetPercent,
+			TimeInTargetRecords:        summary.Periods["7d"].TimeInTargetRecords,
+			TimeInVeryHighMinutes:      summary.Periods["7d"].TimeInVeryHighMinutes,
+			TimeInVeryHighPercent:      summary.Periods["7d"].TimeInVeryHighPercent,
+			TimeInVeryHighRecords:      summary.Periods["7d"].TimeInVeryHighRecords,
+			TimeInVeryLowMinutes:       summary.Periods["7d"].TimeInVeryLowMinutes,
+			TimeInVeryLowPercent:       summary.Periods["7d"].TimeInVeryLowPercent,
+			TimeInVeryLowRecords:       summary.Periods["7d"].TimeInVeryLowRecords,
 		}
 
 		patientSummary.Periods.N14d = &PatientSummaryPeriod{
@@ -286,6 +460,29 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 			TimeInVeryLowMinutes:       summary.Periods["14d"].TimeInVeryLowMinutes,
 			TimeInVeryLowPercent:       summary.Periods["14d"].TimeInVeryLowPercent,
 			TimeInVeryLowRecords:       summary.Periods["14d"].TimeInVeryLowRecords,
+		}
+
+		patientSummary.Periods.N30d = &PatientSummaryPeriod{
+			AverageGlucose:             avgGlucose,
+			GlucoseManagementIndicator: summary.Periods["30d"].GlucoseManagementIndicator,
+			TimeCGMUseMinutes:          summary.Periods["30d"].TimeCGMUseMinutes,
+			TimeCGMUsePercent:          summary.Periods["30d"].TimeCGMUsePercent,
+			TimeCGMUseRecords:          summary.Periods["30d"].TimeCGMUseRecords,
+			TimeInHighMinutes:          summary.Periods["30d"].TimeInHighMinutes,
+			TimeInHighPercent:          summary.Periods["30d"].TimeInHighPercent,
+			TimeInHighRecords:          summary.Periods["30d"].TimeInHighRecords,
+			TimeInLowMinutes:           summary.Periods["30d"].TimeInLowMinutes,
+			TimeInLowPercent:           summary.Periods["30d"].TimeInLowPercent,
+			TimeInLowRecords:           summary.Periods["30d"].TimeInLowRecords,
+			TimeInTargetMinutes:        summary.Periods["30d"].TimeInTargetMinutes,
+			TimeInTargetPercent:        summary.Periods["30d"].TimeInTargetPercent,
+			TimeInTargetRecords:        summary.Periods["30d"].TimeInTargetRecords,
+			TimeInVeryHighMinutes:      summary.Periods["30d"].TimeInVeryHighMinutes,
+			TimeInVeryHighPercent:      summary.Periods["30d"].TimeInVeryHighPercent,
+			TimeInVeryHighRecords:      summary.Periods["30d"].TimeInVeryHighRecords,
+			TimeInVeryLowMinutes:       summary.Periods["30d"].TimeInVeryLowMinutes,
+			TimeInVeryLowPercent:       summary.Periods["30d"].TimeInVeryLowPercent,
+			TimeInVeryLowRecords:       summary.Periods["30d"].TimeInVeryLowRecords,
 		}
 	}
 
