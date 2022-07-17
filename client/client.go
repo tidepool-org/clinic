@@ -2044,6 +2044,198 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
+	if params.SummaryPeriods1dTimeCGMUsePercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.1d.timeCGMUsePercent", runtime.ParamLocationQuery, *params.SummaryPeriods1dTimeCGMUsePercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods1dTimeInVeryLowPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.1d.timeInVeryLowPercent", runtime.ParamLocationQuery, *params.SummaryPeriods1dTimeInVeryLowPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods1dTimeInLowPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.1d.timeInLowPercent", runtime.ParamLocationQuery, *params.SummaryPeriods1dTimeInLowPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods1dTimeInTargetPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.1d.timeInTargetPercent", runtime.ParamLocationQuery, *params.SummaryPeriods1dTimeInTargetPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods1dTimeInHighPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.1d.timeInHighPercent", runtime.ParamLocationQuery, *params.SummaryPeriods1dTimeInHighPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods1dTimeInVeryHighPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.1d.timeInVeryHighPercent", runtime.ParamLocationQuery, *params.SummaryPeriods1dTimeInVeryHighPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods7dTimeCGMUsePercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.7d.timeCGMUsePercent", runtime.ParamLocationQuery, *params.SummaryPeriods7dTimeCGMUsePercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods7dTimeInVeryLowPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.7d.timeInVeryLowPercent", runtime.ParamLocationQuery, *params.SummaryPeriods7dTimeInVeryLowPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods7dTimeInLowPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.7d.timeInLowPercent", runtime.ParamLocationQuery, *params.SummaryPeriods7dTimeInLowPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods7dTimeInTargetPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.7d.timeInTargetPercent", runtime.ParamLocationQuery, *params.SummaryPeriods7dTimeInTargetPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods7dTimeInHighPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.7d.timeInHighPercent", runtime.ParamLocationQuery, *params.SummaryPeriods7dTimeInHighPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods7dTimeInVeryHighPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.7d.timeInVeryHighPercent", runtime.ParamLocationQuery, *params.SummaryPeriods7dTimeInVeryHighPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
 	if params.SummaryPeriods14dTimeCGMUsePercent != nil {
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.14d.timeCGMUsePercent", runtime.ParamLocationQuery, *params.SummaryPeriods14dTimeCGMUsePercent); err != nil {
@@ -2127,6 +2319,102 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 	if params.SummaryPeriods14dTimeInVeryHighPercent != nil {
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.14d.timeInVeryHighPercent", runtime.ParamLocationQuery, *params.SummaryPeriods14dTimeInVeryHighPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods30dTimeCGMUsePercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.30d.timeCGMUsePercent", runtime.ParamLocationQuery, *params.SummaryPeriods30dTimeCGMUsePercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods30dTimeInVeryLowPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.30d.timeInVeryLowPercent", runtime.ParamLocationQuery, *params.SummaryPeriods30dTimeInVeryLowPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods30dTimeInLowPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.30d.timeInLowPercent", runtime.ParamLocationQuery, *params.SummaryPeriods30dTimeInLowPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods30dTimeInTargetPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.30d.timeInTargetPercent", runtime.ParamLocationQuery, *params.SummaryPeriods30dTimeInTargetPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods30dTimeInHighPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.30d.timeInHighPercent", runtime.ParamLocationQuery, *params.SummaryPeriods30dTimeInHighPercent); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.SummaryPeriods30dTimeInVeryHighPercent != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary.periods.30d.timeInVeryHighPercent", runtime.ParamLocationQuery, *params.SummaryPeriods30dTimeInVeryHighPercent); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

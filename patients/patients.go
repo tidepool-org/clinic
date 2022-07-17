@@ -65,11 +65,38 @@ func (p Patient) IsCustodial() bool {
 }
 
 type Filter struct {
-	ClinicId                      *string
-	UserId                        *string
-	Search                        *string
-	LastUploadDateFrom            *time.Time
-	LastUploadDateTo              *time.Time
+	ClinicId           *string
+	UserId             *string
+	Search             *string
+	LastUploadDateFrom *time.Time
+	LastUploadDateTo   *time.Time
+
+	TimeCGMUsePercentCmp1d       *string
+	TimeCGMUsePercentValue1d     float64
+	TimeInVeryLowPercentCmp1d    *string
+	TimeInVeryLowPercentValue1d  float64
+	TimeInLowPercentCmp1d        *string
+	TimeInLowPercentValue1d      float64
+	TimeInTargetPercentCmp1d     *string
+	TimeInTargetPercentValue1d   float64
+	TimeInHighPercentCmp1d       *string
+	TimeInHighPercentValue1d     float64
+	TimeInVeryHighPercentCmp1d   *string
+	TimeInVeryHighPercentValue1d float64
+
+	TimeCGMUsePercentCmp7d       *string
+	TimeCGMUsePercentValue7d     float64
+	TimeInVeryLowPercentCmp7d    *string
+	TimeInVeryLowPercentValue7d  float64
+	TimeInLowPercentCmp7d        *string
+	TimeInLowPercentValue7d      float64
+	TimeInTargetPercentCmp7d     *string
+	TimeInTargetPercentValue7d   float64
+	TimeInHighPercentCmp7d       *string
+	TimeInHighPercentValue7d     float64
+	TimeInVeryHighPercentCmp7d   *string
+	TimeInVeryHighPercentValue7d float64
+
 	TimeCGMUsePercentCmp14d       *string
 	TimeCGMUsePercentValue14d     float64
 	TimeInVeryLowPercentCmp14d    *string
@@ -82,6 +109,19 @@ type Filter struct {
 	TimeInHighPercentValue14d     float64
 	TimeInVeryHighPercentCmp14d   *string
 	TimeInVeryHighPercentValue14d float64
+
+	TimeCGMUsePercentCmp30d       *string
+	TimeCGMUsePercentValue30d     float64
+	TimeInVeryLowPercentCmp30d    *string
+	TimeInVeryLowPercentValue30d  float64
+	TimeInLowPercentCmp30d        *string
+	TimeInLowPercentValue30d      float64
+	TimeInTargetPercentCmp30d     *string
+	TimeInTargetPercentValue30d   float64
+	TimeInHighPercentCmp30d       *string
+	TimeInHighPercentValue30d     float64
+	TimeInVeryHighPercentCmp30d   *string
+	TimeInVeryHighPercentValue30d float64
 }
 
 type Permission = map[string]interface{}

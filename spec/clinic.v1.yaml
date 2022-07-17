@@ -247,6 +247,90 @@ paths:
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.5'
           in: query
+          name: summary.periods.1d.timeCGMUsePercent
+          description: Percentage of time of CGM use
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.1d.timeInVeryLowPercent
+          description: Percentage of time below 54 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.1d.timeInLowPercent
+          description: Percentage of time in range 54-70 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.1d.timeInTargetPercent
+          description: Percentage of time in range 70-180 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.1d.timeInHighPercent
+          description: Percentage of time in range 180-250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.1d.timeInVeryHighPercent
+          description: Percentage of time above range 250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.5'
+          in: query
+          name: summary.periods.7d.timeCGMUsePercent
+          description: Percentage of time of CGM use
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.7d.timeInVeryLowPercent
+          description: Percentage of time below 54 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.7d.timeInLowPercent
+          description: Percentage of time in range 54-70 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.7d.timeInTargetPercent
+          description: Percentage of time in range 70-180 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.7d.timeInHighPercent
+          description: Percentage of time in range 180-250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.7d.timeInVeryHighPercent
+          description: Percentage of time above range 250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.5'
+          in: query
           name: summary.periods.14d.timeCGMUsePercent
           description: Percentage of time of CGM use
         - schema:
@@ -283,6 +367,48 @@ paths:
             example: '>=0.7'
           in: query
           name: summary.periods.14d.timeInVeryHighPercent
+          description: Percentage of time above range 250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.5'
+          in: query
+          name: summary.periods.30d.timeCGMUsePercent
+          description: Percentage of time of CGM use
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.30d.timeInVeryLowPercent
+          description: Percentage of time below 54 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.30d.timeInLowPercent
+          description: Percentage of time in range 54-70 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.30d.timeInTargetPercent
+          description: Percentage of time in range 70-180 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.30d.timeInHighPercent
+          description: Percentage of time in range 180-250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: summary.periods.30d.timeInVeryHighPercent
           description: Percentage of time above range 250 mg/dL
         - schema:
             type: string
@@ -1449,7 +1575,7 @@ components:
         outdatedSince:
           type: string
           format: date-time
-        totalDays:
+        totalHours:
           type: number
           x-go-type: int
         highGlucoseThreshold:
@@ -1466,6 +1592,64 @@ components:
           x-go-type: float64
         periods:
           $ref: '#/components/schemas/PatientSummaryPeriods'
+        hourlyStats:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatientSummaryStat'
+    PatientSummaryStat:
+      type: object
+      x-stoplight:
+        id: rul58weln9wr3
+      title: summaryperiod.v1
+      description: ''
+      properties:
+        deviceId:
+          type: string
+        date:
+          type: string
+          format: date-time
+        lastRecordTime:
+          type: string
+          format: date-time
+        timeInTargetMinutes:
+          type: number
+          x-go-type: int
+        timeInTargetRecords:
+          type: number
+          x-go-type: int
+        timeInHighMinutes:
+          type: number
+          x-go-type: int
+        timeInHighRecords:
+          type: number
+          x-go-type: int
+        timeInVeryHighMinutes:
+          type: number
+          x-go-type: int
+        timeInVeryHighRecords:
+          type: number
+          x-go-type: int
+        timeInLowMinutes:
+          type: number
+          x-go-type: int
+        timeInLowRecords:
+          type: number
+          x-go-type: int
+        timeInVeryLowMinutes:
+          type: number
+          x-go-type: int
+        timeInVeryLowRecords:
+          type: number
+          x-go-type: int
+        totalGlucose:
+          type: number
+          x-go-type: float64
+        timeCGMUseMinutes:
+          type: number
+          x-go-type: int
+        timeCGMUseRecords:
+          type: number
+          x-go-type: int
     PatientSummaryPeriods:
       type: object
       x-stoplight:
@@ -1473,7 +1657,13 @@ components:
       title: patientsummaryperiods.v1
       description: ''
       properties:
+        1d:
+          $ref: '#/components/schemas/PatientSummaryPeriod'
+        7d:
+          $ref: '#/components/schemas/PatientSummaryPeriod'
         14d:
+          $ref: '#/components/schemas/PatientSummaryPeriod'
+        30d:
           $ref: '#/components/schemas/PatientSummaryPeriod'
     PatientSummaryPeriod:
       type: object
