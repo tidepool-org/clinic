@@ -105,6 +105,135 @@ func (r *repository) Initialize(ctx context.Context) error {
 				SetBackground(true).
 				SetName("PatientSummaryLastUploadDate"),
 		},
+
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.percentTimeCGMUse", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeCGMUse1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.glucoseManagementIndicator", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryGMI1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.percentTimeInVeryLow", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInVeryLow1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.percentTimeInLow", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInLow1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.percentTimeInTarget", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInTarget1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.percentTimeInHigh", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInHigh1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.percentTimeInVeryHigh", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInVeryHigh1d"),
+		},
+
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.7d.percentTimeCGMUse", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeCGMUse7d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.7d.glucoseManagementIndicator", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryGMI7d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.7d.percentTimeInVeryLow", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInVeryLow7d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.7d.percentTimeInLow", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInLow7d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.7d.percentTimeInTarget", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInTarget7d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.7d.percentTimeInHigh", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInHigh7d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.7d.percentTimeInVeryHigh", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInVeryHigh7d"),
+		},
+
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
@@ -167,6 +296,70 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetBackground(true).
 				SetName("PatientSummaryTimeInVeryHigh14d"),
+		},
+
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.30d.percentTimeCGMUse", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeCGMUse30d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.30d.glucoseManagementIndicator", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryGMI30d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.30d.percentTimeInVeryLow", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInVeryLow30d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.30d.percentTimeInLow", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInLow30d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.30d.percentTimeInTarget", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInTarget30d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.30d.percentTimeInHigh", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInHigh30d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.30d.percentTimeInVeryHigh", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInVeryHigh30d"),
 		},
 	})
 	return err
