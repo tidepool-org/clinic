@@ -164,7 +164,6 @@ func NewPatient(dto Patient) patients.Patient {
 }
 
 func NewSummary(dto *PatientSummary) *patients.Summary {
-	var avgGlucose *patients.AvgGlucose
 	if dto == nil {
 		return nil
 	}
