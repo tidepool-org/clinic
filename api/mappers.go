@@ -164,6 +164,7 @@ func NewPatient(dto Patient) patients.Patient {
 }
 
 func NewSummary(dto *PatientSummary) *patients.Summary {
+	var avgGlucose *patients.AvgGlucose
 	if dto == nil {
 		return nil
 	}
@@ -178,39 +179,11 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		LastUpdatedDate:          dto.LastUpdatedDate,
 		LastUploadDate:           dto.LastUploadDate,
 		OutdatedSince:            dto.OutdatedSince,
+		TotalHours:               dto.TotalHours,
 		Periods:                  make(map[string]*patients.Period),
 	}
 
-	var periodExists = false
-	var period1dExists = false
-	var period7dExists = false
-	var period14dExists = false
-	var period30dExists = false
 	if dto.Periods != nil {
-		periodExists = true
-		if dto.Periods.N1d != nil {
-			period1dExists = true
-		}
-		if dto.Periods.N7d != nil {
-			period7dExists = true
-		}
-		if dto.Periods.N14d != nil {
-			period14dExists = true
-		}
-		if dto.Periods.N30d != nil {
-			period30dExists = true
-		}
-	}
-
-	if periodExists && period1dExists {
-		var avgGlucose *patients.AvgGlucose
-		if dto.Periods.N1d.AverageGlucose != nil {
-			avgGlucose = &patients.AvgGlucose{
-				Units: string(dto.Periods.N1d.AverageGlucose.Units),
-				Value: float64(dto.Periods.N1d.AverageGlucose.Value),
-			}
-		}
-
 		patientSummary.Periods["1d"] = &patients.Period{
 			TimeCGMUsePercent: dto.Periods.N1d.TimeCGMUsePercent,
 			TimeCGMUseMinutes: dto.Periods.N1d.TimeCGMUseMinutes,
@@ -237,18 +210,12 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			TimeInVeryHighRecords: dto.Periods.N1d.TimeInVeryHighRecords,
 
 			GlucoseManagementIndicator: dto.Periods.N1d.GlucoseManagementIndicator,
-			AverageGlucose:             avgGlucose,
+			AverageGlucose: &patients.AvgGlucose{
+				Units: string(dto.Periods.N1d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N1d.AverageGlucose.Value),
+			},
 		}
-	}
 
-	if periodExists && period7dExists {
-		var avgGlucose *patients.AvgGlucose
-		if dto.Periods.N7d.AverageGlucose != nil {
-			avgGlucose = &patients.AvgGlucose{
-				Units: string(dto.Periods.N7d.AverageGlucose.Units),
-				Value: float64(dto.Periods.N7d.AverageGlucose.Value),
-			}
-		}
 		patientSummary.Periods["7d"] = &patients.Period{
 			TimeCGMUsePercent: dto.Periods.N7d.TimeCGMUsePercent,
 			TimeCGMUseMinutes: dto.Periods.N7d.TimeCGMUseMinutes,
@@ -275,17 +242,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			TimeInVeryHighRecords: dto.Periods.N7d.TimeInVeryHighRecords,
 
 			GlucoseManagementIndicator: dto.Periods.N7d.GlucoseManagementIndicator,
-			AverageGlucose:             avgGlucose,
-		}
-	}
-
-	if periodExists && period14dExists {
-		var avgGlucose *patients.AvgGlucose
-		if dto.Periods.N14d.AverageGlucose != nil {
-			avgGlucose = &patients.AvgGlucose{
-				Units: string(dto.Periods.N14d.AverageGlucose.Units),
-				Value: float64(dto.Periods.N14d.AverageGlucose.Value),
-			}
+			AverageGlucose: &patients.AvgGlucose{
+				Units: string(dto.Periods.N7d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N7d.AverageGlucose.Value),
+			},
 		}
 
 		patientSummary.Periods["14d"] = &patients.Period{
@@ -314,17 +274,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			TimeInVeryHighRecords: dto.Periods.N14d.TimeInVeryHighRecords,
 
 			GlucoseManagementIndicator: dto.Periods.N14d.GlucoseManagementIndicator,
-			AverageGlucose:             avgGlucose,
-		}
-	}
-
-	if periodExists && period30dExists {
-		var avgGlucose *patients.AvgGlucose
-		if dto.Periods.N30d.AverageGlucose != nil {
-			avgGlucose = &patients.AvgGlucose{
-				Units: string(dto.Periods.N30d.AverageGlucose.Units),
-				Value: float64(dto.Periods.N30d.AverageGlucose.Value),
-			}
+			AverageGlucose: &patients.AvgGlucose{
+				Units: string(dto.Periods.N14d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N14d.AverageGlucose.Value),
+			},
 		}
 
 		patientSummary.Periods["30d"] = &patients.Period{
@@ -353,7 +306,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			TimeInVeryHighRecords: dto.Periods.N30d.TimeInVeryHighRecords,
 
 			GlucoseManagementIndicator: dto.Periods.N30d.GlucoseManagementIndicator,
-			AverageGlucose:             avgGlucose,
+			AverageGlucose: &patients.AvgGlucose{
+				Units: string(dto.Periods.N30d.AverageGlucose.Units),
+				Value: float64(dto.Periods.N30d.AverageGlucose.Value),
+			},
 		}
 	}
 
