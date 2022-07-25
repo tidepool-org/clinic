@@ -177,6 +177,7 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		LastData:                 dto.LastData,
 		LastUpdatedDate:          dto.LastUpdatedDate,
 		LastUploadDate:           dto.LastUploadDate,
+		HasLastUploadDate:        dto.HasLastUploadDate,
 		OutdatedSince:            dto.OutdatedSince,
 		TotalHours:               dto.TotalHours,
 		Periods:                  make(map[string]*patients.Period),
@@ -184,9 +185,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 
 	if dto.Periods != nil {
 		patientSummary.Periods["1d"] = &patients.Period{
-			TimeCGMUsePercent: dto.Periods.N1d.TimeCGMUsePercent,
-			TimeCGMUseMinutes: dto.Periods.N1d.TimeCGMUseMinutes,
-			TimeCGMUseRecords: dto.Periods.N1d.TimeCGMUseRecords,
+			TimeCGMUsePercent:    dto.Periods.N1d.TimeCGMUsePercent,
+			HasTimeCGMUsePercent: dto.Periods.N1d.HasTimeCGMUsePercent,
+			TimeCGMUseMinutes:    dto.Periods.N1d.TimeCGMUseMinutes,
+			TimeCGMUseRecords:    dto.Periods.N1d.TimeCGMUseRecords,
 
 			TimeInVeryLowPercent: dto.Periods.N1d.TimeInVeryLowPercent,
 			TimeInVeryLowMinutes: dto.Periods.N1d.TimeInVeryLowMinutes,
@@ -208,7 +210,8 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			TimeInVeryHighMinutes: dto.Periods.N1d.TimeInVeryHighMinutes,
 			TimeInVeryHighRecords: dto.Periods.N1d.TimeInVeryHighRecords,
 
-			GlucoseManagementIndicator: dto.Periods.N1d.GlucoseManagementIndicator,
+			GlucoseManagementIndicator:    dto.Periods.N1d.GlucoseManagementIndicator,
+			HasGlucoseManagementIndicator: dto.Periods.N1d.HasGlucoseManagementIndicator,
 			AverageGlucose: &patients.AvgGlucose{
 				Units: string(dto.Periods.N1d.AverageGlucose.Units),
 				Value: float64(dto.Periods.N1d.AverageGlucose.Value),
@@ -216,9 +219,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		}
 
 		patientSummary.Periods["7d"] = &patients.Period{
-			TimeCGMUsePercent: dto.Periods.N7d.TimeCGMUsePercent,
-			TimeCGMUseMinutes: dto.Periods.N7d.TimeCGMUseMinutes,
-			TimeCGMUseRecords: dto.Periods.N7d.TimeCGMUseRecords,
+			TimeCGMUsePercent:    dto.Periods.N7d.TimeCGMUsePercent,
+			HasTimeCGMUsePercent: dto.Periods.N7d.HasTimeCGMUsePercent,
+			TimeCGMUseMinutes:    dto.Periods.N7d.TimeCGMUseMinutes,
+			TimeCGMUseRecords:    dto.Periods.N7d.TimeCGMUseRecords,
 
 			TimeInVeryLowPercent: dto.Periods.N7d.TimeInVeryLowPercent,
 			TimeInVeryLowMinutes: dto.Periods.N7d.TimeInVeryLowMinutes,
@@ -240,7 +244,8 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			TimeInVeryHighMinutes: dto.Periods.N7d.TimeInVeryHighMinutes,
 			TimeInVeryHighRecords: dto.Periods.N7d.TimeInVeryHighRecords,
 
-			GlucoseManagementIndicator: dto.Periods.N7d.GlucoseManagementIndicator,
+			GlucoseManagementIndicator:    dto.Periods.N7d.GlucoseManagementIndicator,
+			HasGlucoseManagementIndicator: dto.Periods.N7d.HasGlucoseManagementIndicator,
 			AverageGlucose: &patients.AvgGlucose{
 				Units: string(dto.Periods.N7d.AverageGlucose.Units),
 				Value: float64(dto.Periods.N7d.AverageGlucose.Value),
@@ -248,9 +253,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		}
 
 		patientSummary.Periods["14d"] = &patients.Period{
-			TimeCGMUsePercent: dto.Periods.N14d.TimeCGMUsePercent,
-			TimeCGMUseMinutes: dto.Periods.N14d.TimeCGMUseMinutes,
-			TimeCGMUseRecords: dto.Periods.N14d.TimeCGMUseRecords,
+			TimeCGMUsePercent:    dto.Periods.N14d.TimeCGMUsePercent,
+			HasTimeCGMUsePercent: dto.Periods.N14d.HasTimeCGMUsePercent,
+			TimeCGMUseMinutes:    dto.Periods.N14d.TimeCGMUseMinutes,
+			TimeCGMUseRecords:    dto.Periods.N14d.TimeCGMUseRecords,
 
 			TimeInVeryLowPercent: dto.Periods.N14d.TimeInVeryLowPercent,
 			TimeInVeryLowMinutes: dto.Periods.N14d.TimeInVeryLowMinutes,
@@ -272,7 +278,8 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			TimeInVeryHighMinutes: dto.Periods.N14d.TimeInVeryHighMinutes,
 			TimeInVeryHighRecords: dto.Periods.N14d.TimeInVeryHighRecords,
 
-			GlucoseManagementIndicator: dto.Periods.N14d.GlucoseManagementIndicator,
+			GlucoseManagementIndicator:    dto.Periods.N14d.GlucoseManagementIndicator,
+			HasGlucoseManagementIndicator: dto.Periods.N14d.HasGlucoseManagementIndicator,
 			AverageGlucose: &patients.AvgGlucose{
 				Units: string(dto.Periods.N14d.AverageGlucose.Units),
 				Value: float64(dto.Periods.N14d.AverageGlucose.Value),
@@ -280,9 +287,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		}
 
 		patientSummary.Periods["30d"] = &patients.Period{
-			TimeCGMUsePercent: dto.Periods.N30d.TimeCGMUsePercent,
-			TimeCGMUseMinutes: dto.Periods.N30d.TimeCGMUseMinutes,
-			TimeCGMUseRecords: dto.Periods.N30d.TimeCGMUseRecords,
+			TimeCGMUsePercent:    dto.Periods.N30d.TimeCGMUsePercent,
+			HasTimeCGMUsePercent: dto.Periods.N30d.HasTimeCGMUsePercent,
+			TimeCGMUseMinutes:    dto.Periods.N30d.TimeCGMUseMinutes,
+			TimeCGMUseRecords:    dto.Periods.N30d.TimeCGMUseRecords,
 
 			TimeInVeryLowPercent: dto.Periods.N30d.TimeInVeryLowPercent,
 			TimeInVeryLowMinutes: dto.Periods.N30d.TimeInVeryLowMinutes,
@@ -304,7 +312,8 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 			TimeInVeryHighMinutes: dto.Periods.N30d.TimeInVeryHighMinutes,
 			TimeInVeryHighRecords: dto.Periods.N30d.TimeInVeryHighRecords,
 
-			GlucoseManagementIndicator: dto.Periods.N30d.GlucoseManagementIndicator,
+			GlucoseManagementIndicator:    dto.Periods.N30d.GlucoseManagementIndicator,
+			HasGlucoseManagementIndicator: dto.Periods.N30d.HasGlucoseManagementIndicator,
 			AverageGlucose: &patients.AvgGlucose{
 				Units: string(dto.Periods.N30d.AverageGlucose.Units),
 				Value: float64(dto.Periods.N30d.AverageGlucose.Value),

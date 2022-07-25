@@ -159,12 +159,14 @@ type UploadReminderUpdate struct {
 }
 
 type Period struct {
-	TimeCGMUsePercent *float64 `bson:"timeCGMUsePercent,omitempty"`
-	TimeCGMUseMinutes *int     `bson:"timeCGMUseMinutes,omitempty"`
-	TimeCGMUseRecords *int     `bson:"timeCGMUseRecords,omitempty"`
+	TimeCGMUsePercent    *float64 `bson:"timeCGMUsePercent,omitempty"`
+	HasTimeCGMUsePercent *bool    `bson:"hasTimeCGMUsePercent,omitempty"`
+	TimeCGMUseMinutes    *int     `bson:"timeCGMUseMinutes,omitempty"`
+	TimeCGMUseRecords    *int     `bson:"timeCGMUseRecords,omitempty"`
 
-	AverageGlucose             *AvgGlucose `bson:"avgGlucose,omitempty"`
-	GlucoseManagementIndicator *float64    `bson:"glucoseManagementIndicator,omitempty"`
+	AverageGlucose                *AvgGlucose `bson:"avgGlucose,omitempty"`
+	GlucoseManagementIndicator    *float64    `bson:"glucoseManagementIndicator,omitempty"`
+	HasGlucoseManagementIndicator *bool       `bson:"hasGlucoseManagementIndicator,omitempty"`
 
 	TimeInTargetPercent *float64 `bson:"timeInTargetPercent,omitempty"`
 	TimeInTargetMinutes *int     `bson:"timeInTargetMinutes,omitempty"`
@@ -190,12 +192,13 @@ type Period struct {
 type Summary struct {
 	Periods map[string]*Period `bson:"periods,omitempty"`
 
-	FirstData       *time.Time `bson:"firstData,omitempty"`
-	LastData        *time.Time `bson:"lastData,omitempty"`
-	LastUpdatedDate *time.Time `bson:"lastUpdatedDate,omitempty"`
-	LastUploadDate  *time.Time `bson:"lastUploadDate,omitempty"`
-	OutdatedSince   *time.Time `bson:"outdatedSince,omitempty"`
-	TotalHours      *int       `bson:"totalHours,omitempty"`
+	FirstData         *time.Time `bson:"firstData,omitempty"`
+	LastData          *time.Time `bson:"lastData,omitempty"`
+	LastUpdatedDate   *time.Time `bson:"lastUpdatedDate,omitempty"`
+	LastUploadDate    *time.Time `bson:"lastUploadDate,omitempty"`
+	HasLastUploadDate *bool      `bson:"hasLastUploadDate,omitempty"`
+	OutdatedSince     *time.Time `bson:"outdatedSince,omitempty"`
+	TotalHours        *int       `bson:"totalHours,omitempty"`
 
 	HighGlucoseThreshold     *float64 `bson:"highGlucoseThreshold"`
 	VeryHighGlucoseThreshold *float64 `bson:"veryHighGlucoseThreshold"`
