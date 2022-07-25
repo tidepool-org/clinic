@@ -109,7 +109,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.1d.percentTimeCGMUse", Value: 1},
+				{Key: "summary.periods.1d.timeCGMUsePercent", Value: 1},
+				{Key: "summary.periods.1d.hasTimeCGMUsePercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -119,6 +120,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.1d.glucoseManagementIndicator", Value: 1},
+				{Key: "summary.periods.1d.hasGlucoseManagementIndicator", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -127,7 +129,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.1d.percentTimeInVeryLow", Value: 1},
+				{Key: "summary.periods.1d.timeInVeryLowPercent", Value: 1},
+				{Key: "summary.periods.1d.hasTimeInVeryLowPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -136,7 +139,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.1d.percentTimeInLow", Value: 1},
+				{Key: "summary.periods.1d.timeInLowPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -145,7 +148,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.1d.percentTimeInTarget", Value: 1},
+				{Key: "summary.periods.1d.timeInTargetPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -154,7 +157,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.1d.percentTimeInHigh", Value: 1},
+				{Key: "summary.periods.1d.timeInHighPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -163,7 +166,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.1d.percentTimeInVeryHigh", Value: 1},
+				{Key: "summary.periods.1d.timeInVeryHighPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -173,7 +176,75 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.7d.percentTimeCGMUse", Value: 1},
+				{Key: "summary.periods.1d.timeCGMUsePercent", Value: 1},
+				{Key: "summary.periods.1d.hasTimeCGMUsePercent", Value: -1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeCGMUse1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.glucoseManagementIndicator", Value: 1},
+				{Key: "summary.periods.1d.hasGlucoseManagementIndicator", Value: -1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryGMI1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.timeInVeryLowPercent", Value: 1},
+				{Key: "summary.periods.1d.hasTimeInVeryLowPercent", Value: -1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInVeryLow1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.timeInLowPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInLow1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInTarget1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.timeInHighPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInHigh1d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.1d.timeInVeryHighPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientSummaryTimeInVeryHigh1d"),
+		},
+
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "summary.periods.7d.timeCGMUsePercent", Value: 1},
+				{Key: "summary.periods.7d.hasTimeCGMUsePercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -183,6 +254,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.7d.glucoseManagementIndicator", Value: 1},
+				{Key: "summary.periods.7d.hasGlucoseManagementIndicator", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -191,7 +263,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.7d.percentTimeInVeryLow", Value: 1},
+				{Key: "summary.periods.7d.timeInVeryLowPercent", Value: 1},
+				{Key: "summary.periods.7d.hasTimeInVeryLowPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -200,7 +273,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.7d.percentTimeInLow", Value: 1},
+				{Key: "summary.periods.7d.timeInLowPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -209,7 +282,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.7d.percentTimeInTarget", Value: 1},
+				{Key: "summary.periods.7d.timeInTargetPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -218,7 +291,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.7d.percentTimeInHigh", Value: 1},
+				{Key: "summary.periods.7d.timeInHighPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -227,7 +300,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.7d.percentTimeInVeryHigh", Value: 1},
+				{Key: "summary.periods.7d.timeInVeryHighPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -237,7 +310,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeCGMUse", Value: 1},
+				{Key: "summary.periods.14d.timeCGMUsePercent", Value: 1},
+				{Key: "summary.periods.14d.hasTimeCGMUsePercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -247,6 +321,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.14d.glucoseManagementIndicator", Value: 1},
+				{Key: "summary.periods.14d.hasGlucoseManagementIndicator", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -255,7 +330,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInVeryLow", Value: 1},
+				{Key: "summary.periods.14d.timeInVeryLowPercent", Value: 1},
+				{Key: "summary.periods.14d.hasTimeInVeryLowPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -264,7 +340,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInLow", Value: 1},
+				{Key: "summary.periods.14d.timeInLowPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -273,7 +349,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInTarget", Value: 1},
+				{Key: "summary.periods.14d.timeInTargetPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -282,7 +358,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInHigh", Value: 1},
+				{Key: "summary.periods.14d.timeInHighPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -291,7 +367,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInVeryHigh", Value: 1},
+				{Key: "summary.periods.14d.timeInVeryHighPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -301,7 +377,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.30d.percentTimeCGMUse", Value: 1},
+				{Key: "summary.periods.30d.timeCGMUsePercent", Value: 1},
+				{Key: "summary.periods.30d.hasTimeCGMUsePercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -311,6 +388,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.30d.glucoseManagementIndicator", Value: 1},
+				{Key: "summary.periods.30d.hasGlucoseManagementIndicator", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -319,7 +397,8 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.30d.percentTimeInVeryLow", Value: 1},
+				{Key: "summary.periods.30d.timeInVeryLowPercent", Value: 1},
+				{Key: "summary.periods.30d.hasTimeInVeryLowPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -328,7 +407,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.30d.percentTimeInLow", Value: 1},
+				{Key: "summary.periods.30d.timeInLowPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -337,7 +416,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.30d.percentTimeInTarget", Value: 1},
+				{Key: "summary.periods.30d.timeInTargetPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -346,7 +425,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.30d.percentTimeInHigh", Value: 1},
+				{Key: "summary.periods.30d.timeInHighPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -355,7 +434,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.30d.percentTimeInVeryHigh", Value: 1},
+				{Key: "summary.periods.30d.timeInVeryHighPercent", Value: 1},
 			},
 			Options: options.Index().
 				SetBackground(true).
