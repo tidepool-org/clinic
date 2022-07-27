@@ -413,17 +413,24 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string)
 	return nil
 }
 
-func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination, sort *store.Sort) (*ListResult, error) {
+func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination, sorts []*store.Sort) (*ListResult, error) {
 	// We use an aggregation pipeline with facet in order to get the count
 	// and the patients from a single query
 	pipeline := []bson.M{
 		{"$match": generateListFilterQuery(filter)},
-		{"$sort": generateListSortStage(sort)},
+		{"$sort": generateListSortStage(sorts)},
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
+	var hasFullNameSort = false
+	for _, sort := range sorts {
+		if sort.Attribute == "fullName" {
+			hasFullNameSort = true
+		}
+	}
+
 	var opts *options.AggregateOptions
-	if sort == nil || sort.Attribute == "fullName" {
+	if len(sorts) == 0 || hasFullNameSort {
 		// Case insensitive sorting when sorting by fullName
 		opts = options.Aggregate().SetCollation(&collation)
 	}
@@ -891,11 +898,15 @@ func isSortAttributeValid(attribute string) bool {
 	return ok
 }
 
-func generateListSortStage(sort *store.Sort) bson.D {
+func generateListSortStage(sorts []*store.Sort) bson.D {
 	var s bson.D
-	if sort != nil && isSortAttributeValid(sort.Attribute) {
-		s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
-	} else {
+	for _, sort := range sorts {
+		if sort != nil && isSortAttributeValid(sort.Attribute) {
+			s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
+		}
+	}
+
+	if len(s) == 0 {
 		s = append(s, bson.E{Key: "fullName", Value: 1})
 	}
 
@@ -965,9 +976,24 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 }
 
 var validSortAttributes = map[string]struct{}{
-	"fullName":                              {},
-	"birthDate":                             {},
-	"summary.lastUploadDate":                {},
-	"summary.periods.14d.timeCGMUsePercent": {},
-	"summary.periods.14d.glucoseManagementIndicator": {},
+	"fullName":                                          {},
+	"birthDate":                                         {},
+	"summary.lastUploadDate":                            {},
+	"summary.hasLastUploadDate":                         {},
+	"summary.periods.1d.timeCGMUsePercent":              {},
+	"summary.periods.1d.hasTimeCGMUsePercent":           {},
+	"summary.periods.1d.glucoseManagementIndicator":     {},
+	"summary.periods.1d.hasGlucoseManagementIndicator":  {},
+	"summary.periods.7d.timeCGMUsePercent":              {},
+	"summary.periods.7d.hasTimeCGMUsePercent":           {},
+	"summary.periods.7d.glucoseManagementIndicator":     {},
+	"summary.periods.7d.hasGlucoseManagementIndicator":  {},
+	"summary.periods.14d.timeCGMUsePercent":             {},
+	"summary.periods.14d.hasTimeCGMUsePercent":          {},
+	"summary.periods.14d.glucoseManagementIndicator":    {},
+	"summary.periods.14d.hasGlucoseManagementIndicator": {},
+	"summary.periods.30d.timeCGMUsePercent":             {},
+	"summary.periods.30d.hasTimeCGMUsePercent":          {},
+	"summary.periods.30d.glucoseManagementIndicator":    {},
+	"summary.periods.30d.hasGlucoseManagementIndicator": {},
 }

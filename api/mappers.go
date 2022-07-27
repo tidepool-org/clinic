@@ -583,12 +583,12 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
-func ParseSort(sort *Sort) (*store.Sort, error) {
+func ParseSort(sort *Sort) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil
 	}
 	str := string(*sort)
-	result := store.Sort{}
+	var result store.Sort
 
 	if strings.HasPrefix(str, "+") {
 		result.Ascending = true
@@ -603,7 +603,24 @@ func ParseSort(sort *Sort) (*store.Sort, error) {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort attribute", errors.BadRequest)
 	}
 
-	return &result, nil
+	var extraSort = map[string]string{
+		"summary.lastUploadDate":                         "summary.hasLastUploadDate",
+		"summary.periods.1d.timeCGMUsePercent":           "summary.periods.1d.hasTimeCGMUsePercent",
+		"summary.periods.1d.glucoseManagementIndicator":  "summary.periods.1d.hasGlucoseManagementIndicator",
+		"summary.periods.7d.timeCGMUsePercent":           "summary.periods.7d.hasTimeCGMUsePercent",
+		"summary.periods.7d.glucoseManagementIndicator":  "summary.periods.7d.hasGlucoseManagementIndicator",
+		"summary.periods.14d.timeCGMUsePercent":          "summary.periods.14d.hasTimeCGMUsePercent",
+		"summary.periods.14d.glucoseManagementIndicator": "summary.periods.14d.hasGlucoseManagementIndicator",
+		"summary.periods.30d.timeCGMUsePercent":          "summary.periods.30d.hasTimeCGMUsePercent",
+		"summary.periods.30d.glucoseManagementIndicator": "summary.periods.30d.hasGlucoseManagementIndicator",
+	}
+
+	var sorts = []*store.Sort{&result}
+	if value, exists := extraSort[result.Attribute]; exists {
+		sorts = append([]*store.Sort{{Ascending: false, Attribute: value}}, sorts...)
+	}
+
+	return sorts, nil
 }
 
 const dateFormat = "2006-01-02"

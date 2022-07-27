@@ -21,6 +21,8 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		LastUploadDateTo:   params.SummaryLastUploadDateTo,
 	}
 
+	var sorts []*store.Sort
+
 	if params.SummaryPeriods1dTimeCGMUsePercent != nil && *params.SummaryPeriods1dTimeCGMUsePercent != "" {
 		cmp, value, err := parseRangeFilter(*params.SummaryPeriods1dTimeCGMUsePercent)
 		if err != nil {
@@ -217,12 +219,12 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		filter.TimeInVeryHighPercentValue30d = value
 	}
 
-	sort, err := ParseSort(params.Sort)
+	sorts, err := ParseSort(params.Sort)
 	if err != nil {
 		return err
 	}
 
-	list, err := h.patients.List(ctx, &filter, page, sort)
+	list, err := h.patients.List(ctx, &filter, page, sorts)
 	if err != nil {
 		return err
 	}
