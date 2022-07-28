@@ -641,11 +641,6 @@ func ParseSort(sort *Sort) ([]*store.Sort, error) {
 		sorts = append([]*store.Sort{{Ascending: false, Attribute: value}}, sorts...)
 	}
 
-	fmt.Println("sorts generated:")
-	for _, s := range sorts {
-		fmt.Println(s)
-	}
-
 	return sorts, nil
 }
 
