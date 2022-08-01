@@ -307,7 +307,7 @@ type PatientSummary struct {
 // Summary of a specific time period (currently: 1d, 7d, 14d, 30d)
 type PatientSummaryPeriod struct {
 	// Blood glucose value, in `mmol/L`
-	AverageGlucose *AverageGlucose `json:"AverageGlucose,omitempty"`
+	AverageGlucose *AverageGlucose `json:"averageGlucose,omitempty"`
 
 	// A derived value which emulates A1C
 	GlucoseManagementIndicator    *float64 `json:"glucoseManagementIndicator,omitempty"`
