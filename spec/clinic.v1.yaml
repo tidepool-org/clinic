@@ -1557,56 +1557,65 @@ components:
           type: boolean
     PatientSummary:
       type: object
-      title: patientsummary.v1
-      description: ''
+      title: summary.v1
+      description: A summary of a users recent glucose values
       properties:
         lastUpdatedDate:
+          description: Date of the last calculation
           type: string
           format: date-time
         firstData:
+          description: Date of the first included value
           type: string
           format: date-time
         lastData:
+          description: Date of the last calculated value
           type: string
           format: date-time
         lastUploadDate:
+          description: Created date of the last calculated value
           type: string
           format: date-time
         hasLastUploadDate:
           type: boolean
         outdatedSince:
+          description: 'Date of the first user upload after lastData, removed when calculated'
           type: string
           format: date-time
         totalHours:
+          description: Total hours represented in the houly stats
           type: number
           x-go-type: int
         highGlucoseThreshold:
+          description: Threshold used for determining if a value is high
           type: number
           x-go-type: float64
         veryHighGlucoseThreshold:
+          description: Threshold used for determining if a value is very high
           type: number
           x-go-type: float64
         lowGlucoseThreshold:
+          description: Threshold used for determining if a value is low
           type: number
           x-go-type: float64
         veryLowGlucoseThreshold:
+          description: Threshold used for determining if a value is very low
           type: number
           x-go-type: float64
         periods:
           $ref: '#/components/schemas/PatientSummaryPeriods'
         hourlyStats:
           type: array
+          description: Rotating list containing the stats for each currently tracked hour in order
           items:
             $ref: '#/components/schemas/PatientSummaryStat'
     PatientSummaryStat:
       type: object
       x-stoplight:
         id: rul58weln9wr3
-      title: summaryperiod.v1
-      description: ''
+      title: summarystat.v1
+      description: Series of counters which represent one hour of a users data
       properties:
-        deviceId:
-          type: string
         date:
           type: string
           format: date-time
@@ -1614,50 +1623,74 @@ components:
           type: string
           format: date-time
         timeInTargetMinutes:
+          description: Counter of minutes spent in target glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInTargetRecords:
+          description: Counter of records in target glucose range
           type: number
+          example: 10
           x-go-type: int
         timeInHighMinutes:
+          description: Counter of minutes spent in high glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInHighRecords:
+          description: Counter of records in high glucose range
           type: number
+          example: 10
           x-go-type: int
         timeInVeryHighMinutes:
+          description: Counter of minutes spent in very high glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInVeryHighRecords:
+          description: Counter of records in very high glucose range
           type: number
+          example: 10
           x-go-type: int
         timeInLowMinutes:
+          description: Counter of minutes spent in low glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInLowRecords:
+          description: Counter of records in low glucose range
           type: number
+          example: 10
           x-go-type: int
         timeInVeryLowMinutes:
+          description: Counter of minutes spent in very low glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInVeryLowRecords:
+          description: Counter of records in very low glucose range
           type: number
+          example: 10
           x-go-type: int
         totalGlucose:
           type: number
           x-go-type: float64
+          description: Total value of all glucose records
+          example: 1234.56
         timeCGMUseMinutes:
+          description: Counter of minutes using a cgm
           type: number
+          example: 200
           x-go-type: int
         timeCGMUseRecords:
+          description: Counter of records wearing a cgm
           type: number
+          example: 10
           x-go-type: int
     PatientSummaryPeriods:
       type: object
-      x-stoplight:
-        id: i99fgumcbrwph
-      title: patientsummaryperiods.v1
-      description: ''
+      title: summaryperiods.v1
+      description: A map to each supported summary period
       properties:
         1d:
           $ref: '#/components/schemas/PatientSummaryPeriod'
@@ -1669,71 +1702,109 @@ components:
           $ref: '#/components/schemas/PatientSummaryPeriod'
     PatientSummaryPeriod:
       type: object
-      title: patientsummaryperiod.v1
-      description: ''
+      title: summaryperiod.v1
+      description: 'Summary of a specific time period (currently: 1d, 7d, 14d, 30d)'
       properties:
-        averageGlucose:
+        AverageGlucose:
           $ref: '#/components/schemas/AverageGlucose'
         glucoseManagementIndicator:
           type: number
           x-go-type: float64
+          description: A derived value which emulates A1C
+          example: 7.5
         hasGlucoseManagementIndicator:
           type: boolean
         timeInTargetPercent:
+          description: Percentage of time spent in target glucose range
           type: number
+          example: 0.35
           x-go-type: float64
         timeInTargetMinutes:
+          description: Counter of minutes spent in target glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInTargetRecords:
+          description: Counter of records in target glucose range
           type: number
+          example: 10
           x-go-type: int
         timeInHighPercent:
+          description: Percentage of time spent in high glucose range
           type: number
+          example: 0.35
           x-go-type: float64
         timeInHighMinutes:
+          description: Counter of minutes spent in high glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInHighRecords:
+          description: Counter of records in high glucose range
           type: number
+          example: 10
           x-go-type: int
         timeInVeryHighPercent:
+          description: Percentage of time spent in very high glucose range
           type: number
+          example: 0.35
           x-go-type: float64
         timeInVeryHighMinutes:
+          description: Counter of minutes spent in very high glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInVeryHighRecords:
+          description: Counter of records in very high glucose range
           type: number
+          example: 10
           x-go-type: int
         timeInLowPercent:
+          description: Percentage of time spent in low glucose range
           type: number
+          example: 0.35
           x-go-type: float64
         timeInLowMinutes:
+          description: Counter of minutes spent in low glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInLowRecords:
+          description: Counter of records in low glucose range
           type: number
+          example: 10
           x-go-type: int
         timeInVeryLowPercent:
+          description: Percentage of time spent in very low glucose range
           type: number
+          example: 0.35
           x-go-type: float64
         timeInVeryLowMinutes:
+          description: Counter of minutes spent in very low glucose range
           type: number
+          example: 200
           x-go-type: int
         timeInVeryLowRecords:
+          description: Counter of records in very low glucose range
           type: number
+          example: 10
           x-go-type: int
         timeCGMUsePercent:
+          description: Percentage of time spent wearing a cgm
           type: number
+          example: 0.35
           x-go-type: float64
         hasTimeCGMUsePercent:
           type: boolean
         timeCGMUseMinutes:
+          description: Counter of minutes spent wearing a cgm
           type: number
+          example: 200
           x-go-type: int
         timeCGMUseRecords:
+          description: Counter of minutes spent wearing a cgm
           type: number
+          example: 10
           x-go-type: int
     AverageGlucose:
       title: Blood Glucose (mmol/L)
