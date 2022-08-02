@@ -260,19 +260,19 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	if summary.Periods != nil {
 		// this is bad, but it's better than copy and pasting the copy code N times
 		destPeriods := map[string]*PatientSummaryPeriod{}
-		if patientSummary.Periods.N1d != nil {
+		if _, exists := summary.Periods["1d"]; exists {
 			patientSummary.Periods.N1d = &PatientSummaryPeriod{}
 			destPeriods["1d"] = patientSummary.Periods.N1d
 		}
-		if patientSummary.Periods.N7d != nil {
+		if _, exists := summary.Periods["7d"]; exists {
 			patientSummary.Periods.N7d = &PatientSummaryPeriod{}
 			destPeriods["7d"] = patientSummary.Periods.N7d
 		}
-		if patientSummary.Periods.N14d != nil {
+		if _, exists := summary.Periods["14d"]; exists {
 			patientSummary.Periods.N14d = &PatientSummaryPeriod{}
 			destPeriods["14d"] = patientSummary.Periods.N14d
 		}
-		if patientSummary.Periods.N30d != nil {
+		if _, exists := summary.Periods["30d"]; exists {
 			patientSummary.Periods.N30d = &PatientSummaryPeriod{}
 			destPeriods["30d"] = patientSummary.Periods.N30d
 		}
