@@ -1707,6 +1707,8 @@ components:
       properties:
         averageGlucose:
           $ref: '#/components/schemas/AverageGlucose'
+        hasAverageGlucose:
+          type: boolean
         glucoseManagementIndicator:
           type: number
           x-go-type: float64
@@ -1719,6 +1721,8 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        hasTimeInTargetPercent:
+          type: boolean
         timeInTargetMinutes:
           description: Counter of minutes spent in target glucose range
           type: number
@@ -1734,6 +1738,8 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        hasTimeInHighPercent:
+          type: boolean
         timeInHighMinutes:
           description: Counter of minutes spent in high glucose range
           type: number
@@ -1749,6 +1755,8 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        hasTimeInVeryHighPercent:
+          type: boolean
         timeInVeryHighMinutes:
           description: Counter of minutes spent in very high glucose range
           type: number
@@ -1764,6 +1772,8 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        hasTimeInLowPercent:
+          type: boolean
         timeInLowMinutes:
           description: Counter of minutes spent in low glucose range
           type: number
@@ -1779,6 +1789,8 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        hasTimeInVeryLowPercent:
+          type: boolean
         timeInVeryLowMinutes:
           description: Counter of minutes spent in very low glucose range
           type: number

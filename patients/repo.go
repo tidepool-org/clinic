@@ -140,6 +140,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.1d.timeInLowPercent", Value: 1},
+				{Key: "summary.periods.1d.hasTimeInLowPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -149,6 +150,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.1d.timeInTargetPercent", Value: 1},
+				{Key: "summary.periods.1d.hasTimeInTargetPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -158,6 +160,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.1d.timeInHighPercent", Value: 1},
+				{Key: "summary.periods.1d.hasTimeInHighPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -167,6 +170,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.1d.timeInVeryHighPercent", Value: 1},
+				{Key: "summary.periods.1d.hasTimeInVeryHighPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -207,6 +211,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.7d.timeInLowPercent", Value: 1},
+				{Key: "summary.periods.7d.hasTimeInLowPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -216,6 +221,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.7d.timeInTargetPercent", Value: 1},
+				{Key: "summary.periods.7d.hasTimeInTargetPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -225,6 +231,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.7d.timeInHighPercent", Value: 1},
+				{Key: "summary.periods.7d.hasTimeInHighPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -234,6 +241,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.7d.timeInVeryHighPercent", Value: 1},
+				{Key: "summary.periods.7d.hasTimeInVeryHighPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -274,6 +282,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.14d.timeInLowPercent", Value: 1},
+				{Key: "summary.periods.14d.hasTimeInLowPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -283,6 +292,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.14d.timeInTargetPercent", Value: 1},
+				{Key: "summary.periods.14d.hasTimeInTargetPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -292,6 +302,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.14d.timeInHighPercent", Value: 1},
+				{Key: "summary.periods.14d.hasTimeInHighPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -301,6 +312,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.14d.timeInVeryHighPercent", Value: 1},
+				{Key: "summary.periods.14d.hasTimeInVeryHighPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -341,6 +353,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.30d.timeInLowPercent", Value: 1},
+				{Key: "summary.periods.30d.hasTimeInLowPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -350,6 +363,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.30d.timeInTargetPercent", Value: 1},
+				{Key: "summary.periods.30d.hasTimeInTargetPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -359,6 +373,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.30d.timeInHighPercent", Value: 1},
+				{Key: "summary.periods.30d.hasTimeInHighPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -368,6 +383,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "summary.periods.30d.timeInVeryHighPercent", Value: 1},
+				{Key: "summary.periods.30d.hasTimeInVeryHighPercent", Value: -1},
 			},
 			Options: options.Index().
 				SetBackground(true).
@@ -976,24 +992,52 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 }
 
 var validSortAttributes = map[string]struct{}{
-	"fullName":                                          {},
-	"birthDate":                                         {},
-	"summary.lastUploadDate":                            {},
-	"summary.hasLastUploadDate":                         {},
-	"summary.periods.1d.timeCGMUsePercent":              {},
-	"summary.periods.1d.hasTimeCGMUsePercent":           {},
-	"summary.periods.1d.glucoseManagementIndicator":     {},
-	"summary.periods.1d.hasGlucoseManagementIndicator":  {},
-	"summary.periods.7d.timeCGMUsePercent":              {},
-	"summary.periods.7d.hasTimeCGMUsePercent":           {},
-	"summary.periods.7d.glucoseManagementIndicator":     {},
-	"summary.periods.7d.hasGlucoseManagementIndicator":  {},
+	"fullName":                  {},
+	"birthDate":                 {},
+	"summary.lastUploadDate":    {},
+	"summary.hasLastUploadDate": {},
+
+	"summary.periods.1d.timeCGMUsePercent":             {},
+	"summary.periods.1d.hasTimeCGMUsePercent":          {},
+	"summary.periods.1d.glucoseManagementIndicator":    {},
+	"summary.periods.1d.hasGlucoseManagementIndicator": {},
+	"summary.periods.1d.hasAverageGlucose":             {},
+	"summary.periods.1d.hasTimeInLowPercent":           {},
+	"summary.periods.1d.hasTimeInVeryLowPercent":       {},
+	"summary.periods.1d.hasTimeInHighPercent":          {},
+	"summary.periods.1d.hasTimeInVeryHighPercent":      {},
+	"summary.periods.1d.hasTimeInTargetPercent":        {},
+
+	"summary.periods.7d.timeCGMUsePercent":             {},
+	"summary.periods.7d.hasTimeCGMUsePercent":          {},
+	"summary.periods.7d.glucoseManagementIndicator":    {},
+	"summary.periods.7d.hasGlucoseManagementIndicator": {},
+	"summary.periods.7d.hasAverageGlucose":             {},
+	"summary.periods.7d.hasTimeInLowPercent":           {},
+	"summary.periods.7d.hasTimeInVeryLowPercent":       {},
+	"summary.periods.7d.hasTimeInHighPercent":          {},
+	"summary.periods.7d.hasTimeInVeryHighPercent":      {},
+	"summary.periods.7d.hasTimeInTargetPercent":        {},
+
 	"summary.periods.14d.timeCGMUsePercent":             {},
 	"summary.periods.14d.hasTimeCGMUsePercent":          {},
 	"summary.periods.14d.glucoseManagementIndicator":    {},
 	"summary.periods.14d.hasGlucoseManagementIndicator": {},
+	"summary.periods.14d.hasAverageGlucose":             {},
+	"summary.periods.14d.hasTimeInLowPercent":           {},
+	"summary.periods.14d.hasTimeInVeryLowPercent":       {},
+	"summary.periods.14d.hasTimeInHighPercent":          {},
+	"summary.periods.14d.hasTimeInVeryHighPercent":      {},
+	"summary.periods.14d.hasTimeInTargetPercent":        {},
+
 	"summary.periods.30d.timeCGMUsePercent":             {},
 	"summary.periods.30d.hasTimeCGMUsePercent":          {},
 	"summary.periods.30d.glucoseManagementIndicator":    {},
 	"summary.periods.30d.hasGlucoseManagementIndicator": {},
+	"summary.periods.30d.hasAverageGlucose":             {},
+	"summary.periods.30d.hasTimeInLowPercent":           {},
+	"summary.periods.30d.hasTimeInVeryLowPercent":       {},
+	"summary.periods.30d.hasTimeInHighPercent":          {},
+	"summary.periods.30d.hasTimeInVeryHighPercent":      {},
+	"summary.periods.30d.hasTimeInTargetPercent":        {},
 }

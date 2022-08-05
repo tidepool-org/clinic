@@ -184,6 +184,7 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 	}
 
 	if dto.Periods != nil {
+		var averageGlucose *patients.AverageGlucose
 		// this is bad, but it's better than copy and pasting the copy code N times
 		sourcePeriods := map[string]*PatientSummaryPeriod{}
 		if dto.Periods.N1d != nil {
@@ -200,38 +201,48 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		}
 
 		for i := range sourcePeriods {
+			if sourcePeriods[i].AverageGlucose != nil {
+				averageGlucose = &patients.AverageGlucose{
+					Units: string(sourcePeriods[i].AverageGlucose.Units),
+					Value: float64(sourcePeriods[i].AverageGlucose.Value),
+				}
+			}
+
 			patientSummary.Periods[i] = &patients.Period{
 				TimeCGMUsePercent:    sourcePeriods[i].TimeCGMUsePercent,
 				HasTimeCGMUsePercent: sourcePeriods[i].HasTimeCGMUsePercent,
 				TimeCGMUseMinutes:    sourcePeriods[i].TimeCGMUseMinutes,
 				TimeCGMUseRecords:    sourcePeriods[i].TimeCGMUseRecords,
 
-				TimeInVeryLowPercent: sourcePeriods[i].TimeInVeryLowPercent,
-				TimeInVeryLowMinutes: sourcePeriods[i].TimeInVeryLowMinutes,
-				TimeInVeryLowRecords: sourcePeriods[i].TimeInVeryLowRecords,
+				TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
+				HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
+				TimeInVeryLowMinutes:    sourcePeriods[i].TimeInVeryLowMinutes,
+				TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
 
-				TimeInLowPercent: sourcePeriods[i].TimeInLowPercent,
-				TimeInLowMinutes: sourcePeriods[i].TimeInLowMinutes,
-				TimeInLowRecords: sourcePeriods[i].TimeInLowRecords,
+				TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
+				HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
+				TimeInLowMinutes:    sourcePeriods[i].TimeInLowMinutes,
+				TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
 
-				TimeInTargetPercent: sourcePeriods[i].TimeInTargetPercent,
-				TimeInTargetMinutes: sourcePeriods[i].TimeInTargetMinutes,
-				TimeInTargetRecords: sourcePeriods[i].TimeInTargetRecords,
+				TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
+				HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
+				TimeInTargetMinutes:    sourcePeriods[i].TimeInTargetMinutes,
+				TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
 
-				TimeInHighPercent: sourcePeriods[i].TimeInHighPercent,
-				TimeInHighMinutes: sourcePeriods[i].TimeInHighMinutes,
-				TimeInHighRecords: sourcePeriods[i].TimeInHighRecords,
+				TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
+				HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
+				TimeInHighMinutes:    sourcePeriods[i].TimeInHighMinutes,
+				TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
 
-				TimeInVeryHighPercent: sourcePeriods[i].TimeInVeryHighPercent,
-				TimeInVeryHighMinutes: sourcePeriods[i].TimeInVeryHighMinutes,
-				TimeInVeryHighRecords: sourcePeriods[i].TimeInVeryHighRecords,
+				TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
+				HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
+				TimeInVeryHighMinutes:    sourcePeriods[i].TimeInVeryHighMinutes,
+				TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
 
 				GlucoseManagementIndicator:    sourcePeriods[i].GlucoseManagementIndicator,
 				HasGlucoseManagementIndicator: sourcePeriods[i].HasGlucoseManagementIndicator,
-				AverageGlucose: &patients.AvgGlucose{
-					Units: string(sourcePeriods[i].AverageGlucose.Units),
-					Value: float64(sourcePeriods[i].AverageGlucose.Value),
-				},
+				AverageGlucose:                averageGlucose,
+				HasAverageGlucose:             sourcePeriods[i].HasAverageGlucose,
 			}
 		}
 	}
@@ -278,9 +289,12 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		}
 
 		for i := range destPeriods {
-			destPeriods[i].AverageGlucose = &AverageGlucose{
-				Value: float32(summary.Periods[i].AverageGlucose.Value),
-				Units: AverageGlucoseUnits(summary.Periods[i].AverageGlucose.Units)}
+			if summary.Periods[i].AverageGlucose != nil {
+				destPeriods[i].AverageGlucose = &AverageGlucose{
+					Value: float32(summary.Periods[i].AverageGlucose.Value),
+					Units: AverageGlucoseUnits(summary.Periods[i].AverageGlucose.Units)}
+			}
+			destPeriods[i].HasAverageGlucose = summary.Periods[i].HasAverageGlucose
 
 			destPeriods[i].GlucoseManagementIndicator = summary.Periods[i].GlucoseManagementIndicator
 			destPeriods[i].HasGlucoseManagementIndicator = summary.Periods[i].HasGlucoseManagementIndicator
@@ -292,22 +306,27 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 			destPeriods[i].TimeInHighMinutes = summary.Periods[i].TimeInHighMinutes
 			destPeriods[i].TimeInHighPercent = summary.Periods[i].TimeInHighPercent
+			destPeriods[i].HasTimeInHighPercent = summary.Periods[i].HasTimeInHighPercent
 			destPeriods[i].TimeInHighRecords = summary.Periods[i].TimeInHighRecords
 
 			destPeriods[i].TimeInLowMinutes = summary.Periods[i].TimeInLowMinutes
 			destPeriods[i].TimeInLowPercent = summary.Periods[i].TimeInLowPercent
+			destPeriods[i].HasTimeInLowPercent = summary.Periods[i].HasTimeInLowPercent
 			destPeriods[i].TimeInLowRecords = summary.Periods[i].TimeInLowRecords
 
 			destPeriods[i].TimeInTargetMinutes = summary.Periods[i].TimeInTargetMinutes
 			destPeriods[i].TimeInTargetPercent = summary.Periods[i].TimeInTargetPercent
+			destPeriods[i].HasTimeInTargetPercent = summary.Periods[i].HasTimeInTargetPercent
 			destPeriods[i].TimeInTargetRecords = summary.Periods[i].TimeInTargetRecords
 
 			destPeriods[i].TimeInVeryHighMinutes = summary.Periods[i].TimeInVeryHighMinutes
 			destPeriods[i].TimeInVeryHighPercent = summary.Periods[i].TimeInVeryHighPercent
+			destPeriods[i].HasTimeInVeryHighPercent = summary.Periods[i].HasTimeInVeryHighPercent
 			destPeriods[i].TimeInVeryHighRecords = summary.Periods[i].TimeInVeryHighRecords
 
 			destPeriods[i].TimeInVeryLowMinutes = summary.Periods[i].TimeInVeryLowMinutes
 			destPeriods[i].TimeInVeryLowPercent = summary.Periods[i].TimeInVeryLowPercent
+			destPeriods[i].HasTimeInVeryLowPercent = summary.Periods[i].HasTimeInVeryLowPercent
 			destPeriods[i].TimeInVeryLowRecords = summary.Periods[i].TimeInVeryLowRecords
 		}
 	}
@@ -466,15 +485,43 @@ func ParseSort(sort *Sort) ([]*store.Sort, error) {
 	}
 
 	var extraSort = map[string]string{
-		"summary.lastUploadDate":                         "summary.hasLastUploadDate",
-		"summary.periods.1d.timeCGMUsePercent":           "summary.periods.1d.hasTimeCGMUsePercent",
-		"summary.periods.1d.glucoseManagementIndicator":  "summary.periods.1d.hasGlucoseManagementIndicator",
-		"summary.periods.7d.timeCGMUsePercent":           "summary.periods.7d.hasTimeCGMUsePercent",
-		"summary.periods.7d.glucoseManagementIndicator":  "summary.periods.7d.hasGlucoseManagementIndicator",
+		"summary.lastUploadDate": "summary.hasLastUploadDate",
+
+		"summary.periods.1d.timeCGMUsePercent":          "summary.periods.1d.hasTimeCGMUsePercent",
+		"summary.periods.1d.glucoseManagementIndicator": "summary.periods.1d.hasGlucoseManagementIndicator",
+		"summary.periods.1d.averageGlucose.value":       "summary.periods.1d.hasAverageGlucose",
+		"summary.periods.1d.timeInTargetPercent":        "summary.periods.1d.hasTimeInTargetPercent",
+		"summary.periods.1d.timeInLowPercent":           "summary.periods.1d.hasTimeInLowPercent",
+		"summary.periods.1d.timeInVeryLowPercent":       "summary.periods.1d.hasTimeInVeryLowPercent",
+		"summary.periods.1d.timeInHighPercent":          "summary.periods.1d.hasTimeInHighPercent",
+		"summary.periods.1d.timeInVeryHighPercent":      "summary.periods.1d.hasTimeInVeryHighPercent",
+
+		"summary.periods.7d.timeCGMUsePercent":          "summary.periods.7d.hasTimeCGMUsePercent",
+		"summary.periods.7d.glucoseManagementIndicator": "summary.periods.7d.hasGlucoseManagementIndicator",
+		"summary.periods.7d.averageGlucose.value":       "summary.periods.7d.hasAverageGlucose",
+		"summary.periods.7d.timeInTargetPercent":        "summary.periods.7d.hasTimeInTargetPercent",
+		"summary.periods.7d.timeInLowPercent":           "summary.periods.7d.hasTimeInLowPercent",
+		"summary.periods.7d.timeInVeryLowPercent":       "summary.periods.7d.hasTimeInVeryLowPercent",
+		"summary.periods.7d.timeInHighPercent":          "summary.periods.7d.hasTimeInHighPercent",
+		"summary.periods.7d.timeInVeryHighPercent":      "summary.periods.7d.hasTimeInVeryHighPercent",
+
 		"summary.periods.14d.timeCGMUsePercent":          "summary.periods.14d.hasTimeCGMUsePercent",
 		"summary.periods.14d.glucoseManagementIndicator": "summary.periods.14d.hasGlucoseManagementIndicator",
+		"summary.periods.14d.averageGlucose.value":       "summary.periods.14d.hasAverageGlucose",
+		"summary.periods.14d.timeInTargetPercent":        "summary.periods.14d.hasTimeInTargetPercent",
+		"summary.periods.14d.timeInLowPercent":           "summary.periods.14d.hasTimeInLowPercent",
+		"summary.periods.14d.timeInVeryLowPercent":       "summary.periods.14d.hasTimeInVeryLowPercent",
+		"summary.periods.14d.timeInHighPercent":          "summary.periods.14d.hasTimeInHighPercent",
+		"summary.periods.14d.timeInVeryHighPercent":      "summary.periods.14d.hasTimeInVeryHighPercent",
+
 		"summary.periods.30d.timeCGMUsePercent":          "summary.periods.30d.hasTimeCGMUsePercent",
 		"summary.periods.30d.glucoseManagementIndicator": "summary.periods.30d.hasGlucoseManagementIndicator",
+		"summary.periods.30d.averageGlucose.value":       "summary.periods.30d.hasAverageGlucose",
+		"summary.periods.30d.timeInTargetPercent":        "summary.periods.30d.hasTimeInTargetPercent",
+		"summary.periods.30d.timeInLowPercent":           "summary.periods.30d.hasTimeInLowPercent",
+		"summary.periods.30d.timeInVeryLowPercent":       "summary.periods.30d.hasTimeInVeryLowPercent",
+		"summary.periods.30d.timeInHighPercent":          "summary.periods.30d.hasTimeInHighPercent",
+		"summary.periods.30d.timeInVeryHighPercent":      "summary.periods.30d.hasTimeInVeryHighPercent",
 	}
 
 	var sorts = []*store.Sort{&result}

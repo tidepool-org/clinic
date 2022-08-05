@@ -164,29 +164,36 @@ type Period struct {
 	TimeCGMUseMinutes    *int     `bson:"timeCGMUseMinutes,omitempty"`
 	TimeCGMUseRecords    *int     `bson:"timeCGMUseRecords,omitempty"`
 
-	AverageGlucose                *AvgGlucose `bson:"avgGlucose,omitempty"`
-	GlucoseManagementIndicator    *float64    `bson:"glucoseManagementIndicator,omitempty"`
-	HasGlucoseManagementIndicator *bool       `bson:"hasGlucoseManagementIndicator,omitempty"`
+	AverageGlucose    *AverageGlucose `bson:"averageGlucose,omitempty"`
+	HasAverageGlucose *bool           `bson:"hasAverageGlucose,omitempty"`
 
-	TimeInTargetPercent *float64 `bson:"timeInTargetPercent,omitempty"`
-	TimeInTargetMinutes *int     `bson:"timeInTargetMinutes,omitempty"`
-	TimeInTargetRecords *int     `bson:"timeInTargetRecords,omitempty"`
+	GlucoseManagementIndicator    *float64 `bson:"glucoseManagementIndicator,omitempty"`
+	HasGlucoseManagementIndicator *bool    `bson:"hasGlucoseManagementIndicator,omitempty"`
 
-	TimeInLowPercent *float64 `bson:"timeInLowPercent,omitempty"`
-	TimeInLowMinutes *int     `bson:"timeInLowMinutes,omitempty"`
-	TimeInLowRecords *int     `bson:"timeInLowRecords,omitempty"`
+	TimeInTargetPercent    *float64 `bson:"timeInTargetPercent,omitempty"`
+	HasTimeInTargetPercent *bool    `bson:"hasTimeInTargetPercent,omitempty"`
+	TimeInTargetMinutes    *int     `bson:"timeInTargetMinutes,omitempty"`
+	TimeInTargetRecords    *int     `bson:"timeInTargetRecords,omitempty"`
 
-	TimeInVeryLowPercent *float64 `bson:"timeInVeryLowPercent"`
-	TimeInVeryLowMinutes *int     `bson:"timeInVeryLowMinutes"`
-	TimeInVeryLowRecords *int     `bson:"timeInVeryLowRecords"`
+	TimeInLowPercent    *float64 `bson:"timeInLowPercent,omitempty"`
+	HasTimeInLowPercent *bool    `bson:"hasTimeInLowPercent,omitempty"`
+	TimeInLowMinutes    *int     `bson:"timeInLowMinutes,omitempty"`
+	TimeInLowRecords    *int     `bson:"timeInLowRecords,omitempty"`
 
-	TimeInHighPercent *float64 `bson:"timeInHighPercent,omitempty"`
-	TimeInHighMinutes *int     `bson:"timeInHighMinutes,omitempty"`
-	TimeInHighRecords *int     `bson:"timeInHighRecords,omitempty"`
+	TimeInVeryLowPercent    *float64 `bson:"timeInVeryLowPercent"`
+	HasTimeInVeryLowPercent *bool    `bson:"hasTimeInVeryLowPercent,omitempty"`
+	TimeInVeryLowMinutes    *int     `bson:"timeInVeryLowMinutes"`
+	TimeInVeryLowRecords    *int     `bson:"timeInVeryLowRecords"`
 
-	TimeInVeryHighPercent *float64 `bson:"timeInVeryHighPercent,omitempty"`
-	TimeInVeryHighMinutes *int     `bson:"timeInVeryHighMinutes,omitempty"`
-	TimeInVeryHighRecords *int     `bson:"timeInVeryHighRecords,omitempty"`
+	TimeInHighPercent    *float64 `bson:"timeInHighPercent,omitempty"`
+	HasTimeInHighPercent *bool    `bson:"hasTimeInHighPercent,omitempty"`
+	TimeInHighMinutes    *int     `bson:"timeInHighMinutes,omitempty"`
+	TimeInHighRecords    *int     `bson:"timeInHighRecords,omitempty"`
+
+	TimeInVeryHighPercent    *float64 `bson:"timeInVeryHighPercent,omitempty"`
+	HasTimeInVeryHighPercent *bool    `bson:"hasTimeInVeryHighPercent,omitempty"`
+	TimeInVeryHighMinutes    *int     `bson:"timeInVeryHighMinutes,omitempty"`
+	TimeInVeryHighRecords    *int     `bson:"timeInVeryHighRecords,omitempty"`
 }
 
 type Summary struct {
@@ -206,7 +213,7 @@ type Summary struct {
 	VeryLowGlucoseThreshold  *float64 `bson:"VeryLowGlucoseThreshold"`
 }
 
-type AvgGlucose struct {
+type AverageGlucose struct {
 	Units string  `bson:"units"`
 	Value float64 `bson:"value"`
 }
