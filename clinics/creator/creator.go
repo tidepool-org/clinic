@@ -3,6 +3,7 @@ package creator
 import (
 	"context"
 	"fmt"
+
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -17,7 +18,7 @@ const (
 )
 
 type Config struct {
-	ClinicDemoPatientUserId string `envconfig:"CLINIC_DEMO_PATIENT_USER_ID"`
+	ClinicDemoPatientUserId string `envconfig:"DEMO_CLINIC_USER_ID"`
 }
 
 func NewConfig() (*Config, error) {
@@ -53,6 +54,7 @@ type Params struct {
 	CliniciansRepository *clinicians.Repository
 	Config               *Config
 	DbClient             *mongo.Client
+	PatientsService      patients.Service
 	ShareCodeGenerator   clinics.ShareCodeGenerator
 	UserService          patients.UserService
 }
@@ -63,6 +65,7 @@ func NewCreator(cp Params) (Creator, error) {
 		cliniciansRepository: cp.CliniciansRepository,
 		config:               cp.Config,
 		dbClient:             cp.DbClient,
+		patientsService:      cp.PatientsService,
 		shareCodeGenerator:   cp.ShareCodeGenerator,
 		userService:          cp.UserService,
 	}, nil
