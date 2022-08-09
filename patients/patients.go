@@ -54,7 +54,7 @@ type Patient struct {
 	CreatedTime            time.Time           `bson:"createdTime,omitempty"`
 	UpdatedTime            time.Time           `bson:"updatedTime,omitempty"`
 	InvitedBy              *string             `bson:"invitedBy,omitempty"`
-	Summary                *Summary            `bson:"summary,omitempty"`
+	Summary                *Summary            `bson:"summary"`
 	LastUploadReminderTime time.Time           `bson:"lastUploadReminderTime,omitempty"`
 }
 
@@ -159,53 +159,53 @@ type UploadReminderUpdate struct {
 }
 
 type Period struct {
-	TimeCGMUsePercent    *float64 `bson:"timeCGMUsePercent,omitempty"`
-	HasTimeCGMUsePercent *bool    `bson:"hasTimeCGMUsePercent,omitempty"`
-	TimeCGMUseMinutes    *int     `bson:"timeCGMUseMinutes,omitempty"`
-	TimeCGMUseRecords    *int     `bson:"timeCGMUseRecords,omitempty"`
+	TimeCGMUsePercent    *float64 `bson:"timeCGMUsePercent"`
+	HasTimeCGMUsePercent *bool    `bson:"hasTimeCGMUsePercent"`
+	TimeCGMUseMinutes    *int     `bson:"timeCGMUseMinutes"`
+	TimeCGMUseRecords    *int     `bson:"timeCGMUseRecords"`
 
-	AverageGlucose    *AverageGlucose `bson:"averageGlucose,omitempty"`
-	HasAverageGlucose *bool           `bson:"hasAverageGlucose,omitempty"`
+	AverageGlucose    *AverageGlucose `bson:"averageGlucose"`
+	HasAverageGlucose *bool           `bson:"hasAverageGlucose"`
 
-	GlucoseManagementIndicator    *float64 `bson:"glucoseManagementIndicator,omitempty"`
-	HasGlucoseManagementIndicator *bool    `bson:"hasGlucoseManagementIndicator,omitempty"`
+	GlucoseManagementIndicator    *float64 `bson:"glucoseManagementIndicator"`
+	HasGlucoseManagementIndicator *bool    `bson:"hasGlucoseManagementIndicator"`
 
-	TimeInTargetPercent    *float64 `bson:"timeInTargetPercent,omitempty"`
-	HasTimeInTargetPercent *bool    `bson:"hasTimeInTargetPercent,omitempty"`
-	TimeInTargetMinutes    *int     `bson:"timeInTargetMinutes,omitempty"`
-	TimeInTargetRecords    *int     `bson:"timeInTargetRecords,omitempty"`
+	TimeInTargetPercent    *float64 `bson:"timeInTargetPercent"`
+	HasTimeInTargetPercent *bool    `bson:"hasTimeInTargetPercent"`
+	TimeInTargetMinutes    *int     `bson:"timeInTargetMinutes"`
+	TimeInTargetRecords    *int     `bson:"timeInTargetRecords"`
 
-	TimeInLowPercent    *float64 `bson:"timeInLowPercent,omitempty"`
-	HasTimeInLowPercent *bool    `bson:"hasTimeInLowPercent,omitempty"`
-	TimeInLowMinutes    *int     `bson:"timeInLowMinutes,omitempty"`
-	TimeInLowRecords    *int     `bson:"timeInLowRecords,omitempty"`
+	TimeInLowPercent    *float64 `bson:"timeInLowPercent"`
+	HasTimeInLowPercent *bool    `bson:"hasTimeInLowPercent"`
+	TimeInLowMinutes    *int     `bson:"timeInLowMinutes"`
+	TimeInLowRecords    *int     `bson:"timeInLowRecords"`
 
 	TimeInVeryLowPercent    *float64 `bson:"timeInVeryLowPercent"`
-	HasTimeInVeryLowPercent *bool    `bson:"hasTimeInVeryLowPercent,omitempty"`
+	HasTimeInVeryLowPercent *bool    `bson:"hasTimeInVeryLowPercent"`
 	TimeInVeryLowMinutes    *int     `bson:"timeInVeryLowMinutes"`
 	TimeInVeryLowRecords    *int     `bson:"timeInVeryLowRecords"`
 
-	TimeInHighPercent    *float64 `bson:"timeInHighPercent,omitempty"`
-	HasTimeInHighPercent *bool    `bson:"hasTimeInHighPercent,omitempty"`
-	TimeInHighMinutes    *int     `bson:"timeInHighMinutes,omitempty"`
-	TimeInHighRecords    *int     `bson:"timeInHighRecords,omitempty"`
+	TimeInHighPercent    *float64 `bson:"timeInHighPercent"`
+	HasTimeInHighPercent *bool    `bson:"hasTimeInHighPercent"`
+	TimeInHighMinutes    *int     `bson:"timeInHighMinutes"`
+	TimeInHighRecords    *int     `bson:"timeInHighRecords"`
 
-	TimeInVeryHighPercent    *float64 `bson:"timeInVeryHighPercent,omitempty"`
-	HasTimeInVeryHighPercent *bool    `bson:"hasTimeInVeryHighPercent,omitempty"`
-	TimeInVeryHighMinutes    *int     `bson:"timeInVeryHighMinutes,omitempty"`
-	TimeInVeryHighRecords    *int     `bson:"timeInVeryHighRecords,omitempty"`
+	TimeInVeryHighPercent    *float64 `bson:"timeInVeryHighPercent"`
+	HasTimeInVeryHighPercent *bool    `bson:"hasTimeInVeryHighPercent"`
+	TimeInVeryHighMinutes    *int     `bson:"timeInVeryHighMinutes"`
+	TimeInVeryHighRecords    *int     `bson:"timeInVeryHighRecords"`
 }
 
 type Summary struct {
-	Periods map[string]*Period `bson:"periods,omitempty"`
+	Periods map[string]*Period `bson:"periods"`
 
-	FirstData         *time.Time `bson:"firstData,omitempty"`
-	LastData          *time.Time `bson:"lastData,omitempty"`
-	LastUpdatedDate   *time.Time `bson:"lastUpdatedDate,omitempty"`
-	LastUploadDate    *time.Time `bson:"lastUploadDate,omitempty"`
-	HasLastUploadDate *bool      `bson:"hasLastUploadDate,omitempty"`
-	OutdatedSince     *time.Time `bson:"outdatedSince,omitempty"`
-	TotalHours        *int       `bson:"totalHours,omitempty"`
+	FirstData         *time.Time `bson:"firstData"`
+	LastData          *time.Time `bson:"lastData"`
+	LastUpdatedDate   *time.Time `bson:"lastUpdatedDate"`
+	LastUploadDate    *time.Time `bson:"lastUploadDate"`
+	HasLastUploadDate *bool      `bson:"hasLastUploadDate"`
+	OutdatedSince     *time.Time `bson:"outdatedSince"`
+	TotalHours        *int       `bson:"totalHours"`
 
 	HighGlucoseThreshold     *float64 `bson:"highGlucoseThreshold"`
 	VeryHighGlucoseThreshold *float64 `bson:"veryHighGlucoseThreshold"`
