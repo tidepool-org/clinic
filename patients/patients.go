@@ -54,7 +54,7 @@ type Patient struct {
 	CreatedTime            time.Time           `bson:"createdTime,omitempty"`
 	UpdatedTime            time.Time           `bson:"updatedTime,omitempty"`
 	InvitedBy              *string             `bson:"invitedBy,omitempty"`
-	Summary                *Summary            `bson:"summary"`
+	Summary                *Summary            `bson:"summary,omitempty"`
 	LastUploadReminderTime time.Time           `bson:"lastUploadReminderTime,omitempty"`
 }
 
