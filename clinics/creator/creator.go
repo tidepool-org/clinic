@@ -97,6 +97,10 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 		// Set initial admins
 		create.Clinic.AddAdmin(create.CreatorUserId)
 
+		// Set new clinic migration status to true.
+		// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
+		create.Clinic.IsMigrated = true
+
 		// Add the clinic to the collection
 		clinic, err := c.createClinicObject(sessionCtx, create)
 		if err != nil {
