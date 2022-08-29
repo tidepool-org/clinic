@@ -18,7 +18,7 @@ const (
 )
 
 type Config struct {
-	ClinicDemoPatientUserId string `envconfig:"DEMO_CLINIC_USER_ID"`
+	ClinicDemoPatientUserId string `envconfig:"CLINIC_DEMO_PATIENT_USER_ID"`
 }
 
 func NewConfig() (*Config, error) {
