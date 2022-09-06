@@ -3,6 +3,7 @@ package creator
 import (
 	"context"
 	"fmt"
+
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -53,6 +54,7 @@ type Params struct {
 	CliniciansRepository *clinicians.Repository
 	Config               *Config
 	DbClient             *mongo.Client
+	PatientsService      patients.Service
 	ShareCodeGenerator   clinics.ShareCodeGenerator
 	UserService          patients.UserService
 }
@@ -63,6 +65,7 @@ func NewCreator(cp Params) (Creator, error) {
 		cliniciansRepository: cp.CliniciansRepository,
 		config:               cp.Config,
 		dbClient:             cp.DbClient,
+		patientsService:      cp.PatientsService,
 		shareCodeGenerator:   cp.ShareCodeGenerator,
 		userService:          cp.UserService,
 	}, nil
@@ -93,6 +96,10 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
 		// Set initial admins
 		create.Clinic.AddAdmin(create.CreatorUserId)
+
+		// Set new clinic migration status to true.
+		// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
+		create.Clinic.IsMigrated = true
 
 		// Add the clinic to the collection
 		clinic, err := c.createClinicObject(sessionCtx, create)
