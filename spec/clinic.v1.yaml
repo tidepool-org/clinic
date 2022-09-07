@@ -315,6 +315,36 @@ paths:
               $ref: '#/components/schemas/Patient'
       tags:
         - clinic
+  '/v1/clinics/{clinicId}/patientTags':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: List Patient Tags
+      tags:
+        - clinic
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientTags'
+      operationId: ListPatientTags
+      description: Retrieve the list of clinic patient tags
+    post:
+      summary: Create Patient Tag
+      operationId: CreatePatientTag
+      responses:
+        '200':
+          description: OK
+      description: Create a new patient tag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientTag'
+      tags:
+        - clinic
   '/v1/clinics/{clinicId}/clinicians/{clinicianId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -415,6 +445,33 @@ paths:
         '204':
           description: No Content
       description: Deletes patient from a clinic. Requires the request to be made by a clinic admin or the currently authenticated user id to match the patient id.
+      tags:
+        - clinic
+  '/v1/clinics/{clinicId}/patientTags/{patientTagId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientTagId'
+    put:
+      summary: Update Patient Tag
+      operationId: UpdatePatientTag
+      responses:
+        '200':
+          description: OK
+      description: Update existing patient tag
+      tags:
+        - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientTag'
+    delete:
+      summary: Delete Patient Tag
+      operationId: DeletePatientTag
+      responses:
+        '200':
+          description: OK
+      description: Removes a patient tag from a clinic and tagged patients
       tags:
         - clinic
   '/v1/clinics/{clinicId}/invites/clinicians':
@@ -893,7 +950,7 @@ paths:
         - clinic
       x-internal: true
       description: |-
-        Internal endpoint that deletes any user associations with clinics they are a patient or a member of. 
+        Internal endpoint that deletes any user associations with clinics they are a patient or a member of.
 
         If the user is a patient of a clinic the service will delete the patient-clinic relationship.
 
@@ -1231,6 +1288,24 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Patient'
+    PatientTag:
+      type: object
+      title: Patient Tag
+      description: ''
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          type: string
+          description: The tag display name
+          minLength: 1
+      required:
+        - id
+        - name
+    PatientTags:
+      type: array
+      items:
+        $ref: '#/components/schemas/PatientTags'
     InviteClinician:
       title: Invite Clinician
       type: object
