@@ -235,14 +235,6 @@ func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
 	return ec.NoContent(http.StatusOK)
 }
 
-func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
-	return ec.NoContent(http.StatusOK)
-}
-
-func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
-	return ec.NoContent(http.StatusOK)
-}
-
 func (h *Handler) ListPatientTags(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 	fmt.Println("clinicId", clinicId)
@@ -254,6 +246,44 @@ func (h *Handler) ListPatientTags(ec echo.Context, clinicId ClinicId) error {
 	return ec.JSON(http.StatusOK, NewClinicDto(clinic).PatientTags)
 }
 
+func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := clinics.PatientTag{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	// TODO: prior to creating, ensure patient tags length < 10
+
+	if err := h.clinics.CreatePatientTag(ctx, string(clinicId), dto.Name); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK) // TODO: return patientTags
+}
+
 func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
-	return ec.NoContent(http.StatusOK)
+	ctx := ec.Request().Context()
+	dto := clinics.PatientTag{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	if err := h.clinics.UpdatePatientTag(ctx, string(clinicId), string(patientTagId), dto.Name); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK) // TODO: return patientTags
+}
+
+func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	ctx := ec.Request().Context()
+
+	if err := h.clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId)); err != nil {
+		return err
+	}
+
+	// TODO: delete tag from patients as well
+
+	return ec.NoContent(http.StatusOK) // TODO: return patientTags
 }

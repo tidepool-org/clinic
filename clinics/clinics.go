@@ -26,6 +26,9 @@ type Service interface {
 	UpsertAdmin(ctx context.Context, clinicId, clinicianId string) error
 	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
 	UpdateTier(ctx context.Context, clinicId, tier string) error
+	CreatePatientTag(ctx context.Context, clinicId, tagName string) error
+	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) error
+	DeletePatientTag(ctx context.Context, clinicId, tagId string) error
 }
 
 type Filter struct {
@@ -123,6 +126,7 @@ func hasValidPhoneNumber(phoneNumbers []PhoneNumber) bool {
 
 func hasValidPatientTags(patientTags []PatientTag) bool {
 	for _, p := range patientTags {
+		// TODO: validate length and format of tag based on ticket requirements?
 		if !isStringSet(&p.Name) {
 			return false
 		}

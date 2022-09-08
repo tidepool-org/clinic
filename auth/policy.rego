@@ -415,11 +415,34 @@ allow {
   input.path = ["v1", "users", _, "clinics"]
 }
 
-
 # Allow currently authenticated clinician to fetch patient tags
 # GET /v1/clinics/:clinicId/patient_tags
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "patient_tags"]
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinician to create a patient tag
+# POST /v1/clinics/:clinicId/patient_tags
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patient_tags"]
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinician to update a patient tag
+# PUT /v1/clinics/:clinicId/patient_tags/:patientTagId
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patient_tags", _]
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinician to delete a patient tag
+# DELETE /v1/clinics/:clinicId/patient_tags/:patientTagId
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patient_tags", _]
   clinician_has_read_access
 }

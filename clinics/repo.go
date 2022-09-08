@@ -3,13 +3,14 @@ package clinics
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
-	"time"
 )
 
 const (
@@ -257,4 +258,58 @@ func createUpdateDocument(clinic *Clinic) bson.M {
 	}
 
 	return update
+}
+
+func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+	tagId := primitive.NewObjectID()
+
+	tag := PatientTag{
+		Id:   &tagId,
+		Name: tagName,
+	}
+
+	update := bson.M{
+		"$addToSet": bson.M{
+			"patientTags": tag,
+		},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+
+	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+}
+
+func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+	selector := bson.M{"_id": clinicId, "patientTags._id": patientTagId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"patientTags.$.name": tagName,
+			"updatedTime":        time.Now(),
+		},
+	}
+
+	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+}
+
+func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"patientTags": bson.M{"_id": patientTagId},
+		},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+
+	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 }
