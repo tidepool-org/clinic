@@ -244,7 +244,14 @@ func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 }
 
 func (h *Handler) ListPatientTags(ec echo.Context, clinicId ClinicId) error {
-	return ec.NoContent(http.StatusOK)
+	ctx := ec.Request().Context()
+	fmt.Println("clinicId", clinicId)
+	clinic, err := h.clinics.Get(ctx, string(clinicId))
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewClinicDto(clinic).PatientTags)
 }
 
 func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {

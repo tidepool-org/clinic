@@ -79,8 +79,8 @@ func (c *Clinic) HasAllRequiredFields() bool {
 		isStringSet(&c.PreferredBgUnits) &&
 		c.Id != nil &&
 		c.PhoneNumbers != nil &&
-		hasValidPhoneNumber(*c.PhoneNumbers)
-
+		hasValidPhoneNumber(*c.PhoneNumbers) &&
+		hasValidPatientTags(*c.PatientTags)
 }
 
 func (c *Clinic) AddAdmin(userId string) {
@@ -119,6 +119,15 @@ func hasValidPhoneNumber(phoneNumbers []PhoneNumber) bool {
 		}
 	}
 	return false
+}
+
+func hasValidPatientTags(patientTags []PatientTag) bool {
+	for _, p := range patientTags {
+		if !isStringSet(&p.Name) {
+			return false
+		}
+	}
+	return true
 }
 
 func isStringSet(s *string) bool {

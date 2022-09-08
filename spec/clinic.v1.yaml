@@ -315,7 +315,7 @@ paths:
               $ref: '#/components/schemas/Patient'
       tags:
         - clinic
-  '/v1/clinics/{clinicId}/patientTags':
+  '/v1/clinics/{clinicId}/patient_tags':
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -447,7 +447,7 @@ paths:
       description: Deletes patient from a clinic. Requires the request to be made by a clinic admin or the currently authenticated user id to match the patient id.
       tags:
         - clinic
-  '/v1/clinics/{clinicId}/patientTags/{patientTagId}':
+  '/v1/clinics/{clinicId}/patient_tags/{patientTagId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientTagId'
@@ -1118,6 +1118,10 @@ components:
           type: string
           minLength: 1
           example: USA
+        patientTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatientTag'
         phoneNumbers:
           title: Phone phoneNumbers
           description: An array of phone numbers.
@@ -1294,7 +1298,13 @@ components:
       description: ''
       properties:
         id:
-          $ref: '#/components/schemas/Id'
+          title: Object Id
+          type: string
+          description: String representation of a resource id
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+          readOnly: true
         name:
           type: string
           description: The tag display name
@@ -1305,7 +1315,7 @@ components:
     PatientTags:
       type: array
       items:
-        $ref: '#/components/schemas/PatientTags'
+        $ref: '#/components/schemas/PatientTag'
     InviteClinician:
       title: Invite Clinician
       type: object
@@ -1701,6 +1711,13 @@ components:
       schema:
         type: string
         pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
+    patientTagId:
+      name: patientTagId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-f0-9]{24}$'
     userId:
       name: userId
       in: path

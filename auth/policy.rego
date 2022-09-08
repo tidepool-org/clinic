@@ -21,7 +21,7 @@ write_access_roles := {
 clinician_roles := { x | x = input.clinician.roles[_] }
 
 clinician_has_read_access {
-    count(clinician_roles & read_access_roles) > 0
+  count(clinician_roles & read_access_roles) > 0
 }
 
 clinician_has_write_access {
@@ -413,4 +413,13 @@ allow {
   is_backend_service
   input.method == "POST"
   input.path = ["v1", "users", _, "clinics"]
+}
+
+
+# Allow currently authenticated clinician to fetch patient tags
+# GET /v1/clinics/:clinicId/patient_tags
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patient_tags"]
+  clinician_has_read_access
 }

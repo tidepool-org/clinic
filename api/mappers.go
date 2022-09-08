@@ -2,6 +2,11 @@ package api
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -9,10 +14,6 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func NewClinic(c Clinic) *clinics.Clinic {
@@ -79,6 +80,16 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 			})
 		}
 		dto.PhoneNumbers = &phoneNumbers
+	}
+	if c.PatientTags != nil {
+		var patientTags []PatientTag
+		for _, n := range *c.PatientTags {
+			patientTags = append(patientTags, PatientTag{
+				Id:   n.Id.Hex(),
+				Name: n.Name,
+			})
+		}
+		dto.PatientTags = &patientTags
 	}
 
 	return dto
