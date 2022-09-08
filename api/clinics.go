@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -9,8 +12,6 @@ import (
 	"github.com/tidepool-org/clinic/clinics/creator"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"net/http"
-	"time"
 )
 
 func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
@@ -231,5 +232,21 @@ func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) ListPatientTags(ec echo.Context, clinicId ClinicId) error {
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	return ec.NoContent(http.StatusOK)
 }

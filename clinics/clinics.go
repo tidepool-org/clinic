@@ -3,15 +3,20 @@ package clinics
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"time"
 )
 
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
 var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin", errors.ConstraintViolation)
+
+const (
+	tagsMaximumSize = 10
+)
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -39,6 +44,7 @@ type Clinic struct {
 	ClinicSize         *string             `bson:"clinicSize,omitempty"`
 	Country            *string             `bson:"country,omitempty"`
 	Name               *string             `bson:"name,omitempty"`
+	PatientTags        *[]PatientTag       `bson:"patientTags,omitempty"`
 	PhoneNumbers       *[]PhoneNumber      `bson:"phoneNumbers,omitempty"`
 	PostalCode         *string             `bson:"postalCode,omitempty"`
 	State              *string             `bson:"state,omitempty"`
@@ -99,6 +105,11 @@ type PhoneNumber struct {
 
 func (p *PhoneNumber) HasAllRequiredFields() bool {
 	return isStringSet(&p.Number)
+}
+
+type PatientTag struct {
+	Id   *primitive.ObjectID `bson:"_id,omitempty"`
+	Name string              `bson:"name,omitempty"`
 }
 
 func hasValidPhoneNumber(phoneNumbers []PhoneNumber) bool {
