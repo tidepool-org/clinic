@@ -3,6 +3,7 @@ package clinics
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/tidepool-org/clinic/store"
@@ -262,12 +263,12 @@ func createUpdateDocument(clinic *Clinic) bson.M {
 
 func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*Clinic, error) {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
-	selector := bson.M{"_id": clinicId}
 	tagId := primitive.NewObjectID()
+	selector := bson.M{"_id": clinicId}
 
 	tag := PatientTag{
 		Id:   &tagId,
-		Name: tagName,
+		Name: strings.TrimSpace(tagName),
 	}
 
 	update := bson.M{
@@ -297,7 +298,7 @@ func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 
 	update := bson.M{
 		"$set": bson.M{
-			"patientTags.$.name": tagName,
+			"patientTags.$.name": strings.TrimSpace(tagName),
 			"updatedTime":        time.Now(),
 		},
 	}
@@ -305,7 +306,7 @@ func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, ErrNotFound
+			return nil, ErrPatientTagNotFound
 		}
 		return nil, err
 	}

@@ -11,6 +11,8 @@ import (
 )
 
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
+var ErrPatientTagNotFound = fmt.Errorf("patient tag %w", errors.NotFound)
+var ErrDuplicatePatientTagName = fmt.Errorf("%w patient tag", errors.Duplicate)
 var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin", errors.ConstraintViolation)
 var MaximumPatientTags = 10
@@ -113,6 +115,11 @@ type PatientTag struct {
 	Name string              `bson:"name,omitempty"`
 }
 
+func (p *PatientTag) HasAllRequiredFields() bool {
+	return p.Id != nil &&
+		isStringSet(&p.Name)
+}
+
 func hasValidPhoneNumber(phoneNumbers []PhoneNumber) bool {
 	for _, p := range phoneNumbers {
 		if p.HasAllRequiredFields() {
@@ -124,8 +131,7 @@ func hasValidPhoneNumber(phoneNumbers []PhoneNumber) bool {
 
 func hasValidPatientTags(patientTags []PatientTag) bool {
 	for _, p := range patientTags {
-		// TODO: validate length and format of tag based on ticket requirements?
-		if !isStringSet(&p.Name) {
+		if !p.HasAllRequiredFields() {
 			return false
 		}
 	}

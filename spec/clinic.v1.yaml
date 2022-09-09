@@ -1309,6 +1309,8 @@ components:
           type: string
           description: The tag display name
           minLength: 1
+          maxLength: 20
+          pattern: '^[\x21-\x7E]{1}[\x21-\x7E\s]*$'
       required:
         - id
         - name
