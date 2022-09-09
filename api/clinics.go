@@ -237,7 +237,6 @@ func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) ListPatientTags(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	fmt.Println("clinicId", clinicId)
 	clinic, err := h.clinics.Get(ctx, string(clinicId))
 	if err != nil {
 		return err
@@ -253,13 +252,21 @@ func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	// TODO: prior to creating, ensure patient tags length < 10
-
-	if err := h.clinics.CreatePatientTag(ctx, string(clinicId), dto.Name); err != nil {
+	clinic, err := h.clinics.Get(ctx, string(clinicId))
+	if err != nil {
 		return err
 	}
 
-	return ec.NoContent(http.StatusOK) // TODO: return patientTags
+	if len(*clinic.PatientTags) >= clinics.MaximumPatientTags {
+		return clinics.ErrMaximumPatientTagsExceeded
+	}
+
+	updated, err := h.clinics.CreatePatientTag(ctx, string(clinicId), dto.Name)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
 }
 
 func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
@@ -269,21 +276,22 @@ func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 		return err
 	}
 
-	if err := h.clinics.UpdatePatientTag(ctx, string(clinicId), string(patientTagId), dto.Name); err != nil {
+	updated, err := h.clinics.UpdatePatientTag(ctx, string(clinicId), string(patientTagId), dto.Name)
+	if err != nil {
 		return err
 	}
 
-	return ec.NoContent(http.StatusOK) // TODO: return patientTags
+	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
 }
 
 func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	if err := h.clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId)); err != nil {
+	updated, err := h.clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId))
+	if err != nil {
 		return err
 	}
 
 	// TODO: delete tag from patients as well
-
-	return ec.NoContent(http.StatusOK) // TODO: return patientTags
+	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
 }

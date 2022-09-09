@@ -13,10 +13,8 @@ import (
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
 var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin", errors.ConstraintViolation)
-
-const (
-	tagsMaximumSize = 10
-)
+var MaximumPatientTags = 10
+var ErrMaximumPatientTagsExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %v patient tags", errors.ConstraintViolation, MaximumPatientTags)
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -26,9 +24,9 @@ type Service interface {
 	UpsertAdmin(ctx context.Context, clinicId, clinicianId string) error
 	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
 	UpdateTier(ctx context.Context, clinicId, tier string) error
-	CreatePatientTag(ctx context.Context, clinicId, tagName string) error
-	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) error
-	DeletePatientTag(ctx context.Context, clinicId, tagId string) error
+	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*Clinic, error)
+	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*Clinic, error)
+	DeletePatientTag(ctx context.Context, clinicId, tagId string) (*Clinic, error)
 }
 
 type Filter struct {

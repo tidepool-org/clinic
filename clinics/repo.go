@@ -260,7 +260,7 @@ func createUpdateDocument(clinic *Clinic) bson.M {
 	return update
 }
 
-func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) error {
+func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*Clinic, error) {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 	tagId := primitive.NewObjectID()
@@ -279,10 +279,18 @@ func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) e
 		},
 	}
 
-	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return c.Get(ctx, id)
 }
 
-func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) error {
+func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*Clinic, error) {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
 	selector := bson.M{"_id": clinicId, "patientTags._id": patientTagId}
@@ -294,10 +302,18 @@ func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 		},
 	}
 
-	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return c.Get(ctx, id)
 }
 
-func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) error {
+func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*Clinic, error) {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
 	selector := bson.M{"_id": clinicId}
@@ -311,5 +327,13 @@ func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) err
 		},
 	}
 
-	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return c.Get(ctx, id)
 }
