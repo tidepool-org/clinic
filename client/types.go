@@ -317,9 +317,6 @@ type PatientTag struct {
 	Name string `json:"name"`
 }
 
-// PatientTags defines model for PatientTags.
-type PatientTags []PatientTag
-
 // Patients defines model for Patients.
 type Patients []Patient
 

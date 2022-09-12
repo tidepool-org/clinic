@@ -170,9 +170,6 @@ type ClientInterface interface {
 
 	UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListPatientTags request
-	ListPatientTags(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// CreatePatientTag request with any body
 	CreatePatientTagWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -581,18 +578,6 @@ func (c *Client) UpdateMigrationWithBody(ctx context.Context, clinicId Id, userI
 
 func (c *Client) UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateMigrationRequest(c.Server, clinicId, userId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ListPatientTags(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListPatientTagsRequest(c.Server, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -2040,40 +2025,6 @@ func NewUpdateMigrationRequestWithBody(server string, clinicId Id, userId UserId
 	return req, nil
 }
 
-// NewListPatientTagsRequest generates requests for ListPatientTags
-func NewListPatientTagsRequest(server string, clinicId ClinicId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/v1/clinics/%s/patient_tags", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewCreatePatientTagRequest calls the generic CreatePatientTag builder with application/json body
 func NewCreatePatientTagRequest(server string, clinicId ClinicId, body CreatePatientTagJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -3193,9 +3144,6 @@ type ClientWithResponsesInterface interface {
 
 	UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error)
 
-	// ListPatientTags request
-	ListPatientTagsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListPatientTagsResponse, error)
-
 	// CreatePatientTag request with any body
 	CreatePatientTagWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePatientTagResponse, error)
 
@@ -3722,28 +3670,6 @@ func (r UpdateMigrationResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateMigrationResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ListPatientTagsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *PatientTags
-}
-
-// Status returns HTTPResponse.Status
-func (r ListPatientTagsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListPatientTagsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4365,15 +4291,6 @@ func (c *ClientWithResponses) UpdateMigrationWithResponse(ctx context.Context, c
 		return nil, err
 	}
 	return ParseUpdateMigrationResponse(rsp)
-}
-
-// ListPatientTagsWithResponse request returning *ListPatientTagsResponse
-func (c *ClientWithResponses) ListPatientTagsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListPatientTagsResponse, error) {
-	rsp, err := c.ListPatientTags(ctx, clinicId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListPatientTagsResponse(rsp)
 }
 
 // CreatePatientTagWithBodyWithResponse request with arbitrary body returning *CreatePatientTagResponse
@@ -5125,32 +5042,6 @@ func ParseUpdateMigrationResponse(rsp *http.Response) (*UpdateMigrationResponse,
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Migration
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListPatientTagsResponse parses an HTTP response from a ListPatientTagsWithResponse call
-func ParseListPatientTagsResponse(rsp *http.Response) (*ListPatientTagsResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListPatientTagsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientTags
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

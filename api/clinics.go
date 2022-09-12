@@ -236,16 +236,6 @@ func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
 	return ec.NoContent(http.StatusOK)
 }
 
-func (h *Handler) ListPatientTags(ec echo.Context, clinicId ClinicId) error {
-	ctx := ec.Request().Context()
-	clinic, err := h.clinics.Get(ctx, string(clinicId))
-	if err != nil {
-		return err
-	}
-
-	return ec.JSON(http.StatusOK, NewClinicDto(clinic).PatientTags)
-}
-
 func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 	dto := clinics.PatientTag{}
