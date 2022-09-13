@@ -248,11 +248,11 @@ func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	if len(*clinic.PatientTags) >= clinics.MaximumPatientTags {
+	if len(clinic.PatientTags) >= clinics.MaximumPatientTags {
 		return clinics.ErrMaximumPatientTagsExceeded
 	}
 
-	for _, p := range *clinic.PatientTags {
+	for _, p := range clinic.PatientTags {
 		trimmedName := strings.TrimSpace(dto.Name)
 		if p.Name == trimmedName {
 			return clinics.ErrDuplicatePatientTagName

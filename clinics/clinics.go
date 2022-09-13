@@ -47,7 +47,7 @@ type Clinic struct {
 	ClinicSize         *string             `bson:"clinicSize,omitempty"`
 	Country            *string             `bson:"country,omitempty"`
 	Name               *string             `bson:"name,omitempty"`
-	PatientTags        *[]PatientTag       `bson:"patientTags,omitempty"`
+	PatientTags        []PatientTag        `bson:"patientTags,omitempty"`
 	PhoneNumbers       *[]PhoneNumber      `bson:"phoneNumbers,omitempty"`
 	PostalCode         *string             `bson:"postalCode,omitempty"`
 	State              *string             `bson:"state,omitempty"`
@@ -83,7 +83,7 @@ func (c *Clinic) HasAllRequiredFields() bool {
 		c.Id != nil &&
 		c.PhoneNumbers != nil &&
 		hasValidPhoneNumber(*c.PhoneNumbers) &&
-		hasValidPatientTags(*c.PatientTags)
+		hasValidPatientTags(c.PatientTags)
 }
 
 func (c *Clinic) AddAdmin(userId string) {

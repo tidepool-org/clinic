@@ -83,7 +83,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 	}
 	if c.PatientTags != nil {
 		var patientTags []PatientTag
-		for _, n := range *c.PatientTags {
+		for _, n := range c.PatientTags {
 			patientTags = append(patientTags, PatientTag{
 				Id:   n.Id.Hex(),
 				Name: n.Name,
