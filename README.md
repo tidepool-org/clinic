@@ -1,4 +1,4 @@
-# Clinic Service
+# Clinic Service 
 ### Overview
 
 The Clinic Service manages Clinics and their patients and clinicians.
