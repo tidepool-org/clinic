@@ -444,5 +444,5 @@ allow {
 allow {
   input.method == "DELETE"
   input.path = ["v1", "clinics", _, "patient_tags", _]
-  clinician_has_read_access
+  clinician_has_write_access
 }
