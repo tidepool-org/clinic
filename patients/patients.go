@@ -41,23 +41,23 @@ type Service interface {
 }
 
 type Patient struct {
-	Id                     *primitive.ObjectID    `bson:"_id,omitempty"`
-	ClinicId               *primitive.ObjectID    `bson:"clinicId,omitempty"`
-	UserId                 *string                `bson:"userId,omitempty"`
-	BirthDate              *string                `bson:"birthDate"`
-	Email                  *string                `bson:"email"`
-	FullName               *string                `bson:"fullName"`
-	Mrn                    *string                `bson:"mrn"`
-	TargetDevices          *[]string              `bson:"targetDevices"`
-	Tags                   *[]*primitive.ObjectID `bson:"tags,omitempty"`
-	Permissions            *Permissions           `bson:"permissions,omitempty"`
-	IsMigrated             bool                   `bson:"isMigrated,omitempty"`
-	LegacyClinicianIds     []string               `bson:"legacyClinicianIds,omitempty"`
-	CreatedTime            time.Time              `bson:"createdTime,omitempty"`
-	UpdatedTime            time.Time              `bson:"updatedTime,omitempty"`
-	InvitedBy              *string                `bson:"invitedBy,omitempty"`
-	Summary                *Summary               `bson:"summary,omitempty"`
-	LastUploadReminderTime time.Time              `bson:"lastUploadReminderTime,omitempty"`
+	Id                     *primitive.ObjectID   `bson:"_id,omitempty"`
+	ClinicId               *primitive.ObjectID   `bson:"clinicId,omitempty"`
+	UserId                 *string               `bson:"userId,omitempty"`
+	BirthDate              *string               `bson:"birthDate"`
+	Email                  *string               `bson:"email"`
+	FullName               *string               `bson:"fullName"`
+	Mrn                    *string               `bson:"mrn"`
+	TargetDevices          *[]string             `bson:"targetDevices"`
+	Tags                   *[]primitive.ObjectID `bson:"tags,omitempty"`
+	Permissions            *Permissions          `bson:"permissions,omitempty"`
+	IsMigrated             bool                  `bson:"isMigrated,omitempty"`
+	LegacyClinicianIds     []string              `bson:"legacyClinicianIds,omitempty"`
+	CreatedTime            time.Time             `bson:"createdTime,omitempty"`
+	UpdatedTime            time.Time             `bson:"updatedTime,omitempty"`
+	InvitedBy              *string               `bson:"invitedBy,omitempty"`
+	Summary                *Summary              `bson:"summary,omitempty"`
+	LastUploadReminderTime time.Time             `bson:"lastUploadReminderTime,omitempty"`
 }
 
 // PatientSummary defines model for PatientSummary.
