@@ -1,11 +1,12 @@
 package test
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"math/rand"
-	"time"
 )
 
 var permissions = []string{"view", "upload", "note", "custodian"}
@@ -17,6 +18,7 @@ func strp(s string) *string {
 func RandomPatient() patients.Patient {
 	clinicId := primitive.NewObjectID()
 	devices := []string{test.Faker.Company().Name(), test.Faker.Company().Name(), test.Faker.Company().Name()}
+	tags := []primitive.ObjectID{primitive.NewObjectID()}
 	permissions := RandomPermissions()
 	return patients.Patient{
 		ClinicId:      &clinicId,
@@ -25,6 +27,7 @@ func RandomPatient() patients.Patient {
 		Email:         strp(test.Faker.Internet().Email()),
 		FullName:      strp(test.Faker.Person().Name()),
 		Mrn:           strp(test.Faker.UUID().V4()),
+		Tags:          &tags,
 		TargetDevices: &devices,
 		Permissions:   &permissions,
 		IsMigrated:    test.Faker.Bool(),
@@ -34,11 +37,12 @@ func RandomPatient() patients.Patient {
 func RandomPatientUpdate() patients.PatientUpdate {
 	patient := RandomPatient()
 	return patients.PatientUpdate{
-		Patient:   patients.Patient{
+		Patient: patients.Patient{
 			BirthDate:     patient.BirthDate,
 			Email:         patient.Email,
 			FullName:      patient.FullName,
 			Mrn:           patient.Mrn,
+			Tags:          patient.Tags,
 			TargetDevices: patient.TargetDevices,
 			Permissions:   patient.Permissions,
 		},

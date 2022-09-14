@@ -2,6 +2,8 @@ package patients_test
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/globalsign/mgo/bson"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -12,7 +14,6 @@ import (
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-	"strings"
 
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
@@ -166,6 +167,7 @@ var _ = Describe("Patients Repository", func() {
 					Email:         update.Patient.Email,
 					FullName:      update.Patient.FullName,
 					Mrn:           update.Patient.Mrn,
+					Tags:          update.Patient.Tags,
 					TargetDevices: update.Patient.TargetDevices,
 					Permissions:   update.Patient.Permissions,
 					IsMigrated:    randomPatient.IsMigrated,
@@ -209,6 +211,7 @@ var _ = Describe("Patients Repository", func() {
 					Email:         update.Patient.Email,
 					FullName:      randomPatient.FullName,
 					Mrn:           randomPatient.Mrn,
+					Tags:          randomPatient.Tags,
 					TargetDevices: randomPatient.TargetDevices,
 					Permissions:   randomPatient.Permissions,
 					IsMigrated:    randomPatient.IsMigrated,
@@ -578,6 +581,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"Email":                  PointTo(Equal(*patient.Email)),
 		"FullName":               PointTo(Equal(*patient.FullName)),
 		"Mrn":                    PointTo(Equal(*patient.Mrn)),
+		"Tags":                   PointTo(Equal(*patient.Tags)),
 		"TargetDevices":          PointTo(Equal(*patient.TargetDevices)),
 		"Permissions":            PointTo(Equal(*patient.Permissions)),
 		"IsMigrated":             Equal(patient.IsMigrated),

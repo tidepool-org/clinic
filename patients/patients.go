@@ -48,8 +48,8 @@ type Patient struct {
 	Email                  *string               `bson:"email"`
 	FullName               *string               `bson:"fullName"`
 	Mrn                    *string               `bson:"mrn"`
-	TargetDevices          *[]string             `bson:"targetDevices"`
 	Tags                   *[]primitive.ObjectID `bson:"tags,omitempty"`
+	TargetDevices          *[]string             `bson:"targetDevices"`
 	Permissions            *Permissions          `bson:"permissions,omitempty"`
 	IsMigrated             bool                  `bson:"isMigrated,omitempty"`
 	LegacyClinicianIds     []string              `bson:"legacyClinicianIds,omitempty"`
