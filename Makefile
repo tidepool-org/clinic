@@ -17,7 +17,7 @@ go-flags:
 
 ginkgo:
 ifeq ($(shell which ginkgo),)
-	go get -u github.com/onsi/ginkgo/ginkgo
+	go install github.com/onsi/ginkgo/ginkgo
 endif
 
 # Runs tests
