@@ -503,6 +503,9 @@ type ListPatientsParams struct {
 
 	// Exclusive
 	SummaryLastUploadDateTo *time.Time `json:"summary.lastUploadDateTo,omitempty"`
+
+	// Comma-separated list of patient tag IDs
+	Tags *[]string `json:"tags,omitempty"`
 }
 
 // CreatePatientAccountJSONBody defines parameters for CreatePatientAccount.

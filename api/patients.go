@@ -1,14 +1,15 @@
 package api
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/http"
-	"time"
 )
 
 func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
@@ -19,6 +20,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		Search:             searchToString(params.Search),
 		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
 		LastUploadDateTo:   params.SummaryLastUploadDateTo,
+		Tags:               params.Tags,
 	}
 	if params.SummaryPeriods14dTimeCGMUsePercent != nil && *params.SummaryPeriods14dTimeCGMUsePercent != "" {
 		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeCGMUsePercent)

@@ -844,6 +844,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.lastUploadDateTo: %s", err))
 	}
 
+	// ------------- Optional query parameter "tags" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "tags", ctx.QueryParams(), &params.Tags)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListPatients(ctx, clinicId, params)
 	return err

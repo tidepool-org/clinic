@@ -296,6 +296,16 @@ paths:
           in: query
           name: summary.lastUploadDateTo
           description: Exclusive
+        - schema:
+            type: array
+            items:
+              type: string
+              format: '^[a-f0-9]{24}$'
+          in: query
+          name: tags
+          description: Comma-separated list of patient tag IDs
+          style: form
+          explode: false
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account

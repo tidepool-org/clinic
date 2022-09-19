@@ -72,6 +72,7 @@ type Filter struct {
 	Search                        *string
 	LastUploadDateFrom            *time.Time
 	LastUploadDateTo              *time.Time
+	Tags                          *[]string
 	TimeCGMUsePercentCmp14d       *string
 	TimeCGMUsePercentValue14d     float64
 	TimeInVeryLowPercentCmp14d    *string

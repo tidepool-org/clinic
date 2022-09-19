@@ -3,6 +3,9 @@ package patients
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"time"
+
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -10,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"regexp"
-	"time"
 )
 
 const (
@@ -526,6 +527,11 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 	if len(lastUploadDate) > 0 {
 		selector["summary.lastUploadDate"] = lastUploadDate
+	}
+	if filter.Tags != nil {
+		selector["tags"] = bson.M{
+			"$in": store.ObjectIDSFromStringArray(*filter.Tags),
+		}
 	}
 
 	MaybeApplyNumericFilter(selector,

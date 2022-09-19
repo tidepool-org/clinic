@@ -2387,6 +2387,22 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
+	if params.Tags != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "tags", runtime.ParamLocationQuery, *params.Tags); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
 	queryURL.RawQuery = queryValues.Encode()
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
