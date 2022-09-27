@@ -219,6 +219,132 @@ func (c *repository) UpdateTier(ctx context.Context, id, tier string) error {
 	return err
 }
 
+func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*Clinic, error) {
+	clinic, err := c.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	tagId := primitive.NewObjectID()
+	tag := PatientTag{
+		Id:   &tagId,
+		Name: strings.TrimSpace(tagName),
+	}
+
+	canAdd, err := canAddPatientTag(*clinic, tag)
+	if !canAdd {
+		return nil, err
+	}
+
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$addToSet": bson.M{
+			"patientTags": tag,
+		},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+
+	updateErr := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if updateErr != nil {
+		if updateErr == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, updateErr
+	}
+
+	return c.Get(ctx, id)
+}
+
+func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*Clinic, error) {
+	clinic, err := c.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	tagObjectId, _ := primitive.ObjectIDFromHex(tagId)
+	tag := PatientTag{
+		Id:   &tagObjectId,
+		Name: strings.TrimSpace(tagName),
+	}
+
+	if isDuplicatePatientTag(*clinic, tag) {
+		return nil, ErrDuplicatePatientTagName
+	}
+
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+	selector := bson.M{"_id": clinicId, "patientTags._id": patientTagId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"patientTags.$.name": strings.TrimSpace(tagName),
+			"updatedTime":        time.Now(),
+		},
+	}
+
+	updateErr := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if updateErr != nil {
+		if updateErr == mongo.ErrNoDocuments {
+			return nil, ErrPatientTagNotFound
+		}
+		return nil, updateErr
+	}
+
+	return c.Get(ctx, id)
+}
+
+func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*Clinic, error) {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"patientTags": bson.M{"_id": patientTagId},
+		},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return c.Get(ctx, id)
+}
+
+func canAddPatientTag(clinic Clinic, tag PatientTag) (bool, error) {
+	if len(clinic.PatientTags) >= MaximumPatientTags {
+		return false, ErrMaximumPatientTagsExceeded
+	}
+
+	if isDuplicatePatientTag(clinic, tag) {
+		return false, ErrDuplicatePatientTagName
+	}
+
+	return true, nil
+}
+
+func isDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
+	for _, p := range clinic.PatientTags {
+		trimmedName := strings.TrimSpace(tag.Name)
+		if p.Name == trimmedName {
+			return true
+		}
+	}
+
+	return false
+}
+
 func canRemoveAdmin(clinic Clinic, clinicianId string) bool {
 	var adminsPostUpdate []string
 	if clinic.Admins != nil {
@@ -259,82 +385,4 @@ func createUpdateDocument(clinic *Clinic) bson.M {
 	}
 
 	return update
-}
-
-func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*Clinic, error) {
-	clinicId, _ := primitive.ObjectIDFromHex(id)
-	tagId := primitive.NewObjectID()
-	selector := bson.M{"_id": clinicId}
-
-	tag := PatientTag{
-		Id:   &tagId,
-		Name: strings.TrimSpace(tagName),
-	}
-
-	update := bson.M{
-		"$addToSet": bson.M{
-			"patientTags": tag,
-		},
-		"$set": bson.M{
-			"updatedTime": time.Now(),
-		},
-	}
-
-	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return c.Get(ctx, id)
-}
-
-func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*Clinic, error) {
-	clinicId, _ := primitive.ObjectIDFromHex(id)
-	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
-	selector := bson.M{"_id": clinicId, "patientTags._id": patientTagId}
-
-	update := bson.M{
-		"$set": bson.M{
-			"patientTags.$.name": strings.TrimSpace(tagName),
-			"updatedTime":        time.Now(),
-		},
-	}
-
-	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, ErrPatientTagNotFound
-		}
-		return nil, err
-	}
-
-	return c.Get(ctx, id)
-}
-
-func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*Clinic, error) {
-	clinicId, _ := primitive.ObjectIDFromHex(id)
-	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
-	selector := bson.M{"_id": clinicId}
-
-	update := bson.M{
-		"$pull": bson.M{
-			"patientTags": bson.M{"_id": patientTagId},
-		},
-		"$set": bson.M{
-			"updatedTime": time.Now(),
-		},
-	}
-
-	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-
-	return c.Get(ctx, id)
 }

@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -241,22 +240,6 @@ func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
 	dto := clinics.PatientTag{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
-	}
-
-	clinic, err := h.clinics.Get(ctx, string(clinicId))
-	if err != nil {
-		return err
-	}
-
-	if len(clinic.PatientTags) >= clinics.MaximumPatientTags {
-		return clinics.ErrMaximumPatientTagsExceeded
-	}
-
-	for _, p := range clinic.PatientTags {
-		trimmedName := strings.TrimSpace(dto.Name)
-		if p.Name == trimmedName {
-			return clinics.ErrDuplicatePatientTagName
-		}
 	}
 
 	updated, err := h.clinics.CreatePatientTag(ctx, string(clinicId), dto.Name)
