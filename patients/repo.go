@@ -169,6 +169,14 @@ func (r *repository) Initialize(ctx context.Context) error {
 				SetBackground(true).
 				SetName("PatientSummaryTimeInVeryHigh14d"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "tags", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientTags"),
+		},
 	})
 	return err
 }
