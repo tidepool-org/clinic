@@ -503,6 +503,32 @@ func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patie
 	return nil
 }
 
+func (r *repository) DeletePatientTagFromAllPatients(ctx context.Context, tagId string) error {
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+
+	selector := bson.M{
+		"tags": patientTagId,
+	}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"tags": patientTagId,
+		},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+
+	res, err := r.collection.UpdateMany(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error updating patient: %w", err)
+	} else if res.ModifiedCount == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
 	if filter.ClinicId != nil {

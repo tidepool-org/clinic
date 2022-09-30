@@ -273,6 +273,8 @@ func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 		return err
 	}
 
-	// TODO: delete tag from patients as well
+	// TODO: delete tag from patients via clinic-worker
+	h.patients.DeletePatientTagFromAllPatients(ctx, string(patientTagId))
+
 	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
 }
