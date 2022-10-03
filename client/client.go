@@ -2498,7 +2498,7 @@ func NewDeletePatientTagFromClinicPatientsRequest(server string, clinicId Clinic
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/deleteTag/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/delete_tag/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}

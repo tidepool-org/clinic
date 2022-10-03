@@ -1064,7 +1064,7 @@ paths:
       description: Sends upload reminder to the patient
       tags:
         - clinic
-  '/v1/clinics/{clinicId}/patients/deleteTag/{patientTagId}':
+  '/v1/clinics/{clinicId}/patients/delete_tag/{patientTagId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientTagId'
@@ -1075,6 +1075,7 @@ paths:
         '200':
           description: OK
       description: Delete a patient tag from all clinic patients
+      x-internal: true
       tags:
         - clinic
 components:

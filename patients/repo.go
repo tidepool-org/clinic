@@ -522,11 +522,9 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 		},
 	}
 
-	res, err := r.collection.UpdateMany(ctx, selector, update)
+	_, err := r.collection.UpdateMany(ctx, selector, update)
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
-	} else if res.ModifiedCount == 0 {
-		return ErrNotFound
 	}
 
 	return nil
