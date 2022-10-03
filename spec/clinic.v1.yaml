@@ -1064,6 +1064,19 @@ paths:
       description: Sends upload reminder to the patient
       tags:
         - clinic
+  '/v1/clinics/{clinicId}/patients/deleteTag/{patientTagId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientTagId'
+    post:
+      summary: Delete Patient Tag From Clinic Patients
+      operationId: DeletePatientTagFromClinicPatients
+      responses:
+        '200':
+          description: OK
+      description: Delete a patient tag from all clinic patients
+      tags:
+        - clinic
 components:
   schemas:
     Error:
@@ -1119,6 +1132,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PatientTag'
+        lastDeletedPatientTag:
+          $ref: '#/components/schemas/PatientTag'
         phoneNumbers:
           title: Phone phoneNumbers
           description: An array of phone numbers.

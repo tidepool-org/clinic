@@ -307,7 +307,8 @@ func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*C
 			"patientTags": bson.M{"_id": patientTagId},
 		},
 		"$set": bson.M{
-			"updatedTime": time.Now(),
+			"updatedTime":           time.Now(),
+			"lastDeletedPatientTag": patientTagId,
 		},
 	}
 

@@ -38,7 +38,7 @@ type Service interface {
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
-	DeletePatientTagFromAllPatients(ctx context.Context, tagId string) error
+	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error
 }
 
 type Patient struct {

@@ -103,7 +103,8 @@ type Clinic struct {
 	CreatedTime time.Time `json:"createdTime"`
 
 	// Clinic identifier.
-	Id Id `json:"id"`
+	Id                    Id          `json:"id"`
+	LastDeletedPatientTag *PatientTag `json:"lastDeletedPatientTag,omitempty"`
 
 	// Name of the clinic.
 	Name        string        `json:"name"`

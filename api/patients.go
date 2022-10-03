@@ -311,3 +311,15 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 
 	return ec.NoContent(http.StatusOK)
 }
+
+func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	ctx := ec.Request().Context()
+
+	err := h.patients.DeletePatientTagFromClinicPatients(ctx, string(clinicId), string(patientTagId))
+
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}

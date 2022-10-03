@@ -504,11 +504,13 @@ func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patie
 	return nil
 }
 
-func (r *repository) DeletePatientTagFromAllPatients(ctx context.Context, tagId string) error {
+func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
 
 	selector := bson.M{
-		"tags": patientTagId,
+		"clinicId": clinicObjId,
+		"tags":     patientTagId,
 	}
 
 	update := bson.M{

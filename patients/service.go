@@ -141,9 +141,9 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *Uplo
 	return s.repo.UpdateLastUploadReminderTime(ctx, update)
 }
 
-func (s *service) DeletePatientTagFromAllPatients(ctx context.Context, tagId string) error {
-	s.logger.Infow("deleting tag from all patients", "tagId", tagId)
-	return s.repo.DeletePatientTagFromAllPatients(ctx, tagId)
+func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
+	s.logger.Infow("deleting tag from all patients", "clinicId", clinicId, "tagId", tagId)
+	return s.repo.DeletePatientTagFromClinicPatients(ctx, clinicId, tagId)
 }
 
 func shouldRemovePatientFromClinic(patient *Patient) bool {
