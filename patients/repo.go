@@ -524,7 +524,7 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 
 	_, err := r.collection.UpdateMany(ctx, selector, update)
 	if err != nil {
-		return fmt.Errorf("error updating patient: %w", err)
+		return fmt.Errorf("error removing patient tag from patients: %w", err)
 	}
 
 	return nil
