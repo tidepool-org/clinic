@@ -55,7 +55,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "userId", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetUnique(true).
 				SetName("UniquePatient"),
 		},
@@ -65,7 +64,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "fullName", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientFullNameEn").
 				SetCollation(&collation),
 		},
@@ -75,7 +73,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "birthDate", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientBirthDate"),
 		},
 		{
@@ -84,7 +81,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "email", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientEmail"),
 		},
 		{
@@ -93,7 +89,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "mrn", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientMRN"),
 		},
 		{
@@ -102,292 +97,123 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "summary.lastUploadDate", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientSummaryLastUploadDate"),
 		},
 
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.1d.timeCGMUsePercent", Value: 1},
 				{Key: "summary.periods.1d.hasTimeCGMUsePercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeCGMUse1d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.1d.glucoseManagementIndicator", Value: 1},
 				{Key: "summary.periods.1d.hasGlucoseManagementIndicator", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryGMI1d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.1d.timeInVeryLowPercent", Value: 1},
 				{Key: "summary.periods.1d.hasTimeInVeryLowPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryLow1d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.1d.timeInLowPercent", Value: 1},
 				{Key: "summary.periods.1d.hasTimeInLowPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInLow1d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.1d.timeInTargetPercent", Value: 1},
 				{Key: "summary.periods.1d.hasTimeInTargetPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInTarget1d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.1d.timeInHighPercent", Value: 1},
 				{Key: "summary.periods.1d.hasTimeInHighPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInHigh1d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.1d.timeInVeryHighPercent", Value: 1},
 				{Key: "summary.periods.1d.hasTimeInVeryHighPercent", Value: -1},
 			},
 			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryHigh1d"),
+				SetName("PatientSummaryCGM1d"),
 		},
 
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.7d.timeCGMUsePercent", Value: 1},
 				{Key: "summary.periods.7d.hasTimeCGMUsePercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeCGMUse7d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.7d.glucoseManagementIndicator", Value: 1},
 				{Key: "summary.periods.7d.hasGlucoseManagementIndicator", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryGMI7d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.7d.timeInVeryLowPercent", Value: 1},
 				{Key: "summary.periods.7d.hasTimeInVeryLowPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryLow7d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.7d.timeInLowPercent", Value: 1},
 				{Key: "summary.periods.7d.hasTimeInLowPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInLow7d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.7d.timeInTargetPercent", Value: 1},
 				{Key: "summary.periods.7d.hasTimeInTargetPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInTarget7d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.7d.timeInHighPercent", Value: 1},
 				{Key: "summary.periods.7d.hasTimeInHighPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInHigh7d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.7d.timeInVeryHighPercent", Value: 1},
 				{Key: "summary.periods.7d.hasTimeInVeryHighPercent", Value: -1},
 			},
 			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryHigh7d"),
+				SetName("PatientSummaryCGM7d"),
 		},
 
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.14d.timeCGMUsePercent", Value: 1},
 				{Key: "summary.periods.14d.hasTimeCGMUsePercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeCGMUse14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.14d.glucoseManagementIndicator", Value: 1},
 				{Key: "summary.periods.14d.hasGlucoseManagementIndicator", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryGMI14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.14d.timeInVeryLowPercent", Value: 1},
 				{Key: "summary.periods.14d.hasTimeInVeryLowPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryLow14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.14d.timeInLowPercent", Value: 1},
 				{Key: "summary.periods.14d.hasTimeInLowPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInLow14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.14d.timeInTargetPercent", Value: 1},
 				{Key: "summary.periods.14d.hasTimeInTargetPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInTarget14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.14d.timeInHighPercent", Value: 1},
 				{Key: "summary.periods.14d.hasTimeInHighPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInHigh14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.14d.timeInVeryHighPercent", Value: 1},
 				{Key: "summary.periods.14d.hasTimeInVeryHighPercent", Value: -1},
 			},
 			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryHigh14d"),
+				SetName("PatientSummaryCGM14d"),
 		},
 
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.30d.timeCGMUsePercent", Value: 1},
 				{Key: "summary.periods.30d.hasTimeCGMUsePercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeCGMUse30d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.30d.glucoseManagementIndicator", Value: 1},
 				{Key: "summary.periods.30d.hasGlucoseManagementIndicator", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryGMI30d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.30d.timeInVeryLowPercent", Value: 1},
 				{Key: "summary.periods.30d.hasTimeInVeryLowPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryLow30d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.30d.timeInLowPercent", Value: 1},
 				{Key: "summary.periods.30d.hasTimeInLowPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInLow30d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.30d.timeInTargetPercent", Value: 1},
 				{Key: "summary.periods.30d.hasTimeInTargetPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInTarget30d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.30d.timeInHighPercent", Value: 1},
 				{Key: "summary.periods.30d.hasTimeInHighPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInHigh30d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
+
 				{Key: "summary.periods.30d.timeInVeryHighPercent", Value: 1},
 				{Key: "summary.periods.30d.hasTimeInVeryHighPercent", Value: -1},
 			},
 			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryHigh30d"),
+				SetName("PatientSummaryCGM30d"),
 		},
 	})
 	return err
