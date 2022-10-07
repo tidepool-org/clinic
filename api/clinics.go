@@ -58,8 +58,13 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		}
 	}
 
+	clinic := *NewClinic(dto)
+
+	// Set new clinic migration status to true.
+	// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
+	clinic.IsMigrated = true
 	create := creator.CreateClinic{
-		Clinic:            *NewClinic(dto),
+		Clinic:            clinic,
 		CreatorUserId:     authData.SubjectId,
 		CreateDemoPatient: true,
 	}
