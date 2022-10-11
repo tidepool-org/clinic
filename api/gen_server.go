@@ -92,7 +92,7 @@ type ServerInterface interface {
 	// (POST /v1/clinics/{clinicId}/patients)
 	CreatePatientAccount(ctx echo.Context, clinicId ClinicId) error
 	// Delete Patient Tag From Clinic Patients
-	// (POST /v1/clinics/{clinicId}/patients/delete_tag/{patientTagId})
+	// (DELETE /v1/clinics/{clinicId}/patients/delete_tag/{patientTagId})
 	DeletePatientTagFromClinicPatients(ctx echo.Context, clinicId ClinicId, patientTagId PatientTagId) error
 	// Delete Patient
 	// (DELETE /v1/clinics/{clinicId}/patients/{patientId})
@@ -1253,7 +1253,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.UpdatePatientTag)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients", wrapper.ListPatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients", wrapper.CreatePatientAccount)
-	router.POST(baseURL+"/v1/clinics/:clinicId/patients/delete_tag/:patientTagId", wrapper.DeletePatientTagFromClinicPatients)
+	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/delete_tag/:patientTagId", wrapper.DeletePatientTagFromClinicPatients)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.DeletePatient)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.GetPatient)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.CreatePatientFromUser)

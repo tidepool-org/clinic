@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"context"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/auth"
@@ -601,5 +602,74 @@ var _ = Describe("Request Authorizer", func() {
 			err := authorizer.EvaluatePolicy(context.Background(), input)
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
+	})
+
+	It("it allows currently authenticated clinic member to create patient tags", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patient_tags"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it allows currently authenticated clinic member to update patient tags", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patient_tags", "6066fbabc6f484277200ac65"},
+			"method": "PUT",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it allows currently authenticated clinic admin to delete patient tags", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patient_tags", "6066fbabc6f484277200ac65"},
+			"method": "DELETE",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it prevents currently authenticated clinic non-admin member from deleting patient tags", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patient_tags", "6066fbabc6f484277200ac65"},
+			"method": "DELETE",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("it allows clinic-worker to remove a tag from all matching patients", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "delete_tag", "6066fbabc6f484277200ac65"},
+			"method": "DELETE",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinic-worker",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
 	})
 })

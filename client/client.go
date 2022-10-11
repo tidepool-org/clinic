@@ -2508,7 +2508,7 @@ func NewDeletePatientTagFromClinicPatientsRequest(server string, clinicId Clinic
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}

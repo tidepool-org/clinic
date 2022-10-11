@@ -442,7 +442,7 @@ allow {
 # Allow currently authenticated clinician to delete a patient tag from all clinic patients
 # POST /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
 allow {
-  input.method == "POST"
+  input.method == "DELETE"
   input.path = ["v1", "clinics", _, "patients", "delete_tag", _]
   is_backend_service
 }
