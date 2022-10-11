@@ -435,6 +435,26 @@ var _ = Describe("Patients Repository", func() {
 				}
 			})
 
+			It("filters by patient tag correctly", func() {
+				randomPatientTags := *randomPatient.Tags
+				tags := []string{randomPatientTags[0].Hex()}
+				filter := patients.Filter{
+					Tags: &tags,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					patientTags := *patient.Tags
+					Expect(patientTags).To(ContainElement(randomPatientTags[0]))
+				}
+			})
+
 			It("supports searching by mrn", func() {
 				clinicId := randomPatient.ClinicId.Hex()
 				filter := patients.Filter{
