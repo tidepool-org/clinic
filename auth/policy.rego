@@ -415,7 +415,7 @@ allow {
   input.path = ["v1", "users", _, "clinics"]
 }
 
-# Allow currently authenticated clinician to create a patient tag
+# Allow currently authenticated clinic member to create a patient tag
 # POST /v1/clinics/:clinicId/patient_tags
 allow {
   input.method == "POST"
@@ -423,7 +423,7 @@ allow {
   clinician_has_read_access
 }
 
-# Allow currently authenticated clinician to update a patient tag
+# Allow currently authenticated clinic member to update a patient tag
 # PUT /v1/clinics/:clinicId/patient_tags/:patientTagId
 allow {
   input.method == "PUT"
@@ -431,7 +431,7 @@ allow {
   clinician_has_read_access
 }
 
-# Allow currently authenticated clinician to delete a patient tag
+# Allow currently authenticated clinic admin to delete a patient tag
 # DELETE /v1/clinics/:clinicId/patient_tags/:patientTagId
 allow {
   input.method == "DELETE"
@@ -439,7 +439,7 @@ allow {
   clinician_has_write_access
 }
 
-# Allow currently authenticated clinician to delete a patient tag from all clinic patients
+# Allow backend services to delete a patient tag from all clinic patients
 # POST /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
 allow {
   input.method == "DELETE"
