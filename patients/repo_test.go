@@ -288,6 +288,50 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("Delete tag from all clinic patients", func() {
+			It("deletes the correct patient tags", func() {
+				newPatientTag := primitive.NewObjectID()
+				clinicId := primitive.NewObjectID()
+
+				// Add new patient tag and set common clinic ID for all patients
+				for _, patient := range allPatients {
+					selector := bson.M{
+						"clinicId": patient.ClinicId,
+						"userId":   patient.UserId,
+					}
+
+					newTags := append(*patient.Tags, newPatientTag)
+					update := bson.M{
+						"$set": bson.M{
+							"tags":     append(newTags, newPatientTag),
+							"clinicId": clinicId,
+						},
+					}
+
+					_, err := collection.UpdateOne(nil, selector, update)
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				selector := bson.M{
+					"tags": newPatientTag,
+				}
+
+				// All patients should be returned when querying for the new tag
+				res, err := collection.CountDocuments(nil, selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(count)))
+
+				// Perform the delete operation
+				err = repo.DeletePatientTagFromClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex())
+				Expect(err).ToNot(HaveOccurred())
+
+				// No patients should have matching tag
+				res, err = collection.CountDocuments(nil, selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(0)))
+			})
+		})
+
 		Describe("Delete non-custodial patients", func() {
 			var clinicId primitive.ObjectID
 			custodial := make([]interface{}, 5)
