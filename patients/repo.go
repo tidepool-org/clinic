@@ -583,145 +583,169 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.1d.timeCGMUsePercent",
+		"1d",
+		"timeCGMUsePercent",
 		filter.TimeCGMUsePercentCmp1d,
 		filter.TimeCGMUsePercentValue1d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.1d.timeInVeryLowPercent",
+		"1d",
+		"timeInVeryLowPercent",
 		filter.TimeInVeryLowPercentCmp1d,
 		filter.TimeInVeryLowPercentValue1d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.1d.timeInLowPercent",
+		"1d",
+		"timeInLowPercent",
 		filter.TimeInLowPercentCmp1d,
 		filter.TimeInLowPercentValue1d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.1d.timeInTargetPercent",
+		"1d",
+		"timeInTargetPercent",
 		filter.TimeInTargetPercentCmp1d,
 		filter.TimeInTargetPercentValue1d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.1d.timeInHighPercent",
+		"1d",
+		"timeInHighPercent",
 		filter.TimeInHighPercentCmp1d,
 		filter.TimeInHighPercentValue1d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.1d.timeInVeryHighPercent",
+		"1d",
+		"timeInVeryHighPercent",
 		filter.TimeInVeryHighPercentCmp1d,
 		filter.TimeInVeryHighPercentValue1d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeCGMUsePercent",
+		"7d",
+		"timeCGMUsePercent",
 		filter.TimeCGMUsePercentCmp7d,
 		filter.TimeCGMUsePercentValue7d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.7d.timeInVeryLowPercent",
+		"7d",
+		"timeInVeryLowPercent",
 		filter.TimeInVeryLowPercentCmp7d,
 		filter.TimeInVeryLowPercentValue7d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.7d.timeInLowPercent",
+		"7d",
+		"timeInLowPercent",
 		filter.TimeInLowPercentCmp7d,
 		filter.TimeInLowPercentValue7d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.7d.timeInTargetPercent",
+		"7d",
+		"timeInTargetPercent",
 		filter.TimeInTargetPercentCmp7d,
 		filter.TimeInTargetPercentValue7d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.7d.timeInHighPercent",
+		"7d",
+		"timeInHighPercent",
 		filter.TimeInHighPercentCmp7d,
 		filter.TimeInHighPercentValue7d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.7d.timeInVeryHighPercent",
+		"7d",
+		"timeInVeryHighPercent",
 		filter.TimeInVeryHighPercentCmp7d,
 		filter.TimeInVeryHighPercentValue7d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeCGMUsePercent",
+		"14d",
+		"timeCGMUsePercent",
 		filter.TimeCGMUsePercentCmp14d,
 		filter.TimeCGMUsePercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInVeryLowPercent",
+		"14d",
+		"timeInVeryLowPercent",
 		filter.TimeInVeryLowPercentCmp14d,
 		filter.TimeInVeryLowPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInLowPercent",
+		"14d",
+		"timeInLowPercent",
 		filter.TimeInLowPercentCmp14d,
 		filter.TimeInLowPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInTargetPercent",
+		"14d",
+		"timeInTargetPercent",
 		filter.TimeInTargetPercentCmp14d,
 		filter.TimeInTargetPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInHighPercent",
+		"14d",
+		"timeInHighPercent",
 		filter.TimeInHighPercentCmp14d,
 		filter.TimeInHighPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInVeryHighPercent",
+		"14d",
+		"timeInVeryHighPercent",
 		filter.TimeInVeryHighPercentCmp14d,
 		filter.TimeInVeryHighPercentValue14d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.30d.timeCGMUsePercent",
+		"30d",
+		"timeCGMUsePercent",
 		filter.TimeCGMUsePercentCmp30d,
 		filter.TimeCGMUsePercentValue30d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.30d.timeInVeryLowPercent",
+		"30d",
+		"timeInVeryLowPercent",
 		filter.TimeInVeryLowPercentCmp30d,
 		filter.TimeInVeryLowPercentValue30d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.30d.timeInLowPercent",
+		"30d",
+		"timeInLowPercent",
 		filter.TimeInLowPercentCmp30d,
 		filter.TimeInLowPercentValue30d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.30d.timeInTargetPercent",
+		"30d",
+		"timeInTargetPercent",
 		filter.TimeInTargetPercentCmp30d,
 		filter.TimeInTargetPercentValue30d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.30d.timeInHighPercent",
+		"30d",
+		"timeInHighPercent",
 		filter.TimeInHighPercentCmp30d,
 		filter.TimeInHighPercentValue30d,
 	)
 
 	MaybeApplyNumericFilter(selector,
-		"summary.periods.30d.timeInVeryHighPercent",
+		"30d",
+		"timeInVeryHighPercent",
 		filter.TimeInVeryHighPercentCmp30d,
 		filter.TimeInVeryHighPercentValue30d,
 	)
@@ -729,9 +753,16 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	return selector
 }
 
-func MaybeApplyNumericFilter(selector bson.M, field string, cmp *string, value float64) {
-	if f, ok := cmpToMongoFilter(cmp); ok {
-		selector[field] = bson.M{f: value}
+func MaybeApplyNumericFilter(selector bson.M, period string, field string, cmp *string, value float64) {
+	if operator, ok := cmpToMongoFilter(cmp); ok {
+		// ugly, but needed to ensure index prefix
+		for _, filterable := range filterablePeriodFields {
+			if _, exists := selector["summary.periods."+period+"."+filterable]; !exists {
+				selector["summary.periods."+period+".timeInVeryHighPercent"] = bson.M{"$ne": -1111}
+			}
+		}
+
+		selector["summary.periods."+period+"."+field] = bson.M{operator: value}
 	}
 }
 
@@ -866,4 +897,13 @@ var validSortAttributes = map[string]struct{}{
 	"summary.periods.30d.hasTimeInHighPercent":          {},
 	"summary.periods.30d.hasTimeInVeryHighPercent":      {},
 	"summary.periods.30d.hasTimeInTargetPercent":        {},
+}
+
+var filterablePeriodFields = []string{
+	"timeCGMUsePercent",
+	"timeInVeryHighPercent",
+	"timeInHighPercent",
+	"timeInTargetPercent",
+	"timeInLowPercent",
+	"timeInVeryLowPercent",
 }
