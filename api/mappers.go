@@ -169,35 +169,50 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 	}
 
 	patientSummary := &patients.Summary{
-		FirstData:                dto.FirstData,
-		HighGlucoseThreshold:     dto.HighGlucoseThreshold,
-		VeryHighGlucoseThreshold: dto.VeryHighGlucoseThreshold,
-		LowGlucoseThreshold:      dto.LowGlucoseThreshold,
-		VeryLowGlucoseThreshold:  dto.VeryLowGlucoseThreshold,
-		LastData:                 dto.LastData,
-		LastUpdatedDate:          dto.LastUpdatedDate,
-		LastUploadDate:           dto.LastUploadDate,
-		HasLastUploadDate:        dto.HasLastUploadDate,
-		OutdatedSince:            dto.OutdatedSince,
-		TotalHours:               dto.TotalHours,
-		Periods:                  map[string]*patients.Period{},
+		CGM: patients.CGMSummary{
+			Periods:           make(map[string]*patients.CGMPeriod),
+			TotalHours:        dto.CgmSummary.TotalHours,
+			HasLastUploadDate: dto.CgmSummary.HasLastUploadDate,
+			LastUploadDate:    dto.CgmSummary.LastUploadDate,
+			LastUpdatedDate:   dto.CgmSummary.LastUpdatedDate,
+			FirstData:         dto.CgmSummary.FirstData,
+			LastData:          dto.CgmSummary.LastData,
+			OutdatedSince:     dto.CgmSummary.OutdatedSince,
+		},
+		BGM: patients.BGMSummary{
+			Periods:           make(map[string]*patients.BGMPeriod),
+			TotalHours:        dto.BgmSummary.TotalHours,
+			HasLastUploadDate: dto.BgmSummary.HasLastUploadDate,
+			LastUploadDate:    dto.BgmSummary.LastUploadDate,
+			LastUpdatedDate:   dto.BgmSummary.LastUpdatedDate,
+			OutdatedSince:     dto.BgmSummary.OutdatedSince,
+			FirstData:         dto.BgmSummary.FirstData,
+			LastData:          dto.BgmSummary.LastData,
+		},
+		Config: patients.Config{
+			SchemaVersion:            dto.Config.SchemaVersion,
+			HighGlucoseThreshold:     dto.Config.HighGlucoseThreshold,
+			VeryHighGlucoseThreshold: dto.Config.VeryLowGlucoseThreshold,
+			LowGlucoseThreshold:      dto.Config.LowGlucoseThreshold,
+			VeryLowGlucoseThreshold:  dto.Config.VeryLowGlucoseThreshold,
+		},
 	}
 
-	if dto.Periods != nil {
+	if dto.CgmSummary.Periods != nil {
 		var averageGlucose *patients.AverageGlucose
 		// this is bad, but it's better than copy and pasting the copy code N times
-		sourcePeriods := map[string]*PatientSummaryPeriod{}
-		if dto.Periods.N1d != nil {
-			sourcePeriods["1d"] = dto.Periods.N1d
+		sourcePeriods := map[string]*PatientCGMPeriod{}
+		if dto.CgmSummary.Periods.N1d != nil {
+			sourcePeriods["1d"] = dto.CgmSummary.Periods.N1d
 		}
-		if dto.Periods.N7d != nil {
-			sourcePeriods["7d"] = dto.Periods.N7d
+		if dto.CgmSummary.Periods.N7d != nil {
+			sourcePeriods["7d"] = dto.CgmSummary.Periods.N7d
 		}
-		if dto.Periods.N14d != nil {
-			sourcePeriods["14d"] = dto.Periods.N14d
+		if dto.CgmSummary.Periods.N14d != nil {
+			sourcePeriods["14d"] = dto.CgmSummary.Periods.N14d
 		}
-		if dto.Periods.N30d != nil {
-			sourcePeriods["30d"] = dto.Periods.N30d
+		if dto.CgmSummary.Periods.N30d != nil {
+			sourcePeriods["30d"] = dto.CgmSummary.Periods.N30d
 		}
 
 		for i := range sourcePeriods {
@@ -208,7 +223,7 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				}
 			}
 
-			patientSummary.Periods[i] = &patients.Period{
+			patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
 				TimeCGMUsePercent:    sourcePeriods[i].TimeCGMUsePercent,
 				HasTimeCGMUsePercent: sourcePeriods[i].HasTimeCGMUsePercent,
 				TimeCGMUseMinutes:    sourcePeriods[i].TimeCGMUseMinutes,
@@ -247,6 +262,58 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		}
 	}
 
+	if dto.BgmSummary.Periods != nil {
+		var averageGlucose *patients.AverageGlucose
+		// this is bad, but it's better than copy and pasting the copy code N times
+		sourcePeriods := map[string]*PatientBGMPeriod{}
+		if dto.CgmSummary.Periods.N1d != nil {
+			sourcePeriods["1d"] = dto.BgmSummary.Periods.N1d
+		}
+		if dto.CgmSummary.Periods.N7d != nil {
+			sourcePeriods["7d"] = dto.BgmSummary.Periods.N7d
+		}
+		if dto.CgmSummary.Periods.N14d != nil {
+			sourcePeriods["14d"] = dto.BgmSummary.Periods.N14d
+		}
+		if dto.CgmSummary.Periods.N30d != nil {
+			sourcePeriods["30d"] = dto.BgmSummary.Periods.N30d
+		}
+
+		for i := range sourcePeriods {
+			if sourcePeriods[i].AverageGlucose != nil {
+				averageGlucose = &patients.AverageGlucose{
+					Units: string(sourcePeriods[i].AverageGlucose.Units),
+					Value: float64(sourcePeriods[i].AverageGlucose.Value),
+				}
+			}
+
+			patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
+				TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
+				HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
+				TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
+
+				TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
+				HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
+				TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
+
+				TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
+				HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
+				TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
+
+				TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
+				HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
+				TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
+
+				TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
+				HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
+				TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
+
+				AverageGlucose:    averageGlucose,
+				HasAverageGlucose: sourcePeriods[i].HasAverageGlucose,
+			}
+		}
+	}
+
 	return patientSummary
 }
 
@@ -256,78 +323,145 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	}
 
 	patientSummary := &PatientSummary{
-		FirstData:            summary.FirstData,
-		HighGlucoseThreshold: summary.HighGlucoseThreshold,
-		LastData:             summary.LastData,
-		LastUpdatedDate:      summary.LastUpdatedDate,
-		LastUploadDate:       summary.LastUploadDate,
-		HasLastUploadDate:    summary.HasLastUploadDate,
-		LowGlucoseThreshold:  summary.LowGlucoseThreshold,
-		OutdatedSince:        summary.OutdatedSince,
-		TotalHours:           summary.TotalHours,
-		Periods:              &PatientSummaryPeriods{},
+		BgmSummary: &PatientBGMSummary{
+			FirstData:         summary.BGM.FirstData,
+			HasLastUploadDate: summary.BGM.HasLastUploadDate,
+			LastData:          summary.BGM.LastData,
+			LastUpdatedDate:   summary.BGM.LastUpdatedDate,
+			LastUploadDate:    summary.BGM.LastUploadDate,
+			OutdatedSince:     summary.BGM.OutdatedSince,
+			Periods:           &PatientBGMPeriods{},
+			TotalHours:        summary.BGM.TotalHours,
+		},
+		CgmSummary: &PatientCGMSummary{
+			FirstData:         summary.CGM.FirstData,
+			HasLastUploadDate: summary.CGM.HasLastUploadDate,
+			LastData:          summary.CGM.LastData,
+			LastUpdatedDate:   summary.CGM.LastUpdatedDate,
+			LastUploadDate:    summary.CGM.LastUploadDate,
+			OutdatedSince:     summary.CGM.OutdatedSince,
+			Periods:           &PatientCGMPeriods{},
+			TotalHours:        summary.CGM.TotalHours,
+		},
+		Config: &PatientSummaryConfig{
+			SchemaVersion:            summary.Config.SchemaVersion,
+			HighGlucoseThreshold:     summary.Config.HighGlucoseThreshold,
+			VeryHighGlucoseThreshold: summary.Config.VeryHighGlucoseThreshold,
+			LowGlucoseThreshold:      summary.Config.LowGlucoseThreshold,
+			VeryLowGlucoseThreshold:  summary.Config.VeryLowGlucoseThreshold,
+		},
 	}
 
-	if summary.Periods != nil {
+	if summary.CGM.Periods != nil {
 		// this is bad, but it's better than copy and pasting the copy code N times
-		destPeriods := map[string]*PatientSummaryPeriod{}
-		if _, exists := summary.Periods["1d"]; exists {
-			patientSummary.Periods.N1d = &PatientSummaryPeriod{}
-			destPeriods["1d"] = patientSummary.Periods.N1d
+		destPeriods := map[string]*PatientCGMPeriod{}
+		if _, exists := summary.CGM.Periods["1d"]; exists {
+			patientSummary.CgmSummary.Periods.N1d = &PatientCGMPeriod{}
+			destPeriods["1d"] = patientSummary.CgmSummary.Periods.N1d
 		}
-		if _, exists := summary.Periods["7d"]; exists {
-			patientSummary.Periods.N7d = &PatientSummaryPeriod{}
-			destPeriods["7d"] = patientSummary.Periods.N7d
+		if _, exists := summary.CGM.Periods["7d"]; exists {
+			patientSummary.CgmSummary.Periods.N7d = &PatientCGMPeriod{}
+			destPeriods["7d"] = patientSummary.CgmSummary.Periods.N7d
 		}
-		if _, exists := summary.Periods["14d"]; exists {
-			patientSummary.Periods.N14d = &PatientSummaryPeriod{}
-			destPeriods["14d"] = patientSummary.Periods.N14d
+		if _, exists := summary.CGM.Periods["14d"]; exists {
+			patientSummary.CgmSummary.Periods.N14d = &PatientCGMPeriod{}
+			destPeriods["14d"] = patientSummary.CgmSummary.Periods.N14d
 		}
-		if _, exists := summary.Periods["30d"]; exists {
-			patientSummary.Periods.N30d = &PatientSummaryPeriod{}
-			destPeriods["30d"] = patientSummary.Periods.N30d
+		if _, exists := summary.CGM.Periods["30d"]; exists {
+			patientSummary.CgmSummary.Periods.N30d = &PatientCGMPeriod{}
+			destPeriods["30d"] = patientSummary.CgmSummary.Periods.N30d
 		}
 
 		for i := range destPeriods {
-			if summary.Periods[i].AverageGlucose != nil {
+			if summary.CGM.Periods[i].AverageGlucose != nil {
 				destPeriods[i].AverageGlucose = &AverageGlucose{
-					Value: float32(summary.Periods[i].AverageGlucose.Value),
-					Units: AverageGlucoseUnits(summary.Periods[i].AverageGlucose.Units)}
+					Value: float32(summary.CGM.Periods[i].AverageGlucose.Value),
+					Units: AverageGlucoseUnits(summary.CGM.Periods[i].AverageGlucose.Units)}
 			}
-			destPeriods[i].HasAverageGlucose = summary.Periods[i].HasAverageGlucose
+			destPeriods[i].HasAverageGlucose = summary.CGM.Periods[i].HasAverageGlucose
 
-			destPeriods[i].GlucoseManagementIndicator = summary.Periods[i].GlucoseManagementIndicator
-			destPeriods[i].HasGlucoseManagementIndicator = summary.Periods[i].HasGlucoseManagementIndicator
+			destPeriods[i].GlucoseManagementIndicator = summary.CGM.Periods[i].GlucoseManagementIndicator
+			destPeriods[i].HasGlucoseManagementIndicator = summary.CGM.Periods[i].HasGlucoseManagementIndicator
 
-			destPeriods[i].TimeCGMUseMinutes = summary.Periods[i].TimeCGMUseMinutes
-			destPeriods[i].TimeCGMUsePercent = summary.Periods[i].TimeCGMUsePercent
-			destPeriods[i].HasTimeCGMUsePercent = summary.Periods[i].HasTimeCGMUsePercent
-			destPeriods[i].TimeCGMUseRecords = summary.Periods[i].TimeCGMUseRecords
+			destPeriods[i].TimeCGMUseMinutes = summary.CGM.Periods[i].TimeCGMUseMinutes
+			destPeriods[i].TimeCGMUsePercent = summary.CGM.Periods[i].TimeCGMUsePercent
+			destPeriods[i].HasTimeCGMUsePercent = summary.CGM.Periods[i].HasTimeCGMUsePercent
+			destPeriods[i].TimeCGMUseRecords = summary.CGM.Periods[i].TimeCGMUseRecords
 
-			destPeriods[i].TimeInHighMinutes = summary.Periods[i].TimeInHighMinutes
-			destPeriods[i].TimeInHighPercent = summary.Periods[i].TimeInHighPercent
-			destPeriods[i].HasTimeInHighPercent = summary.Periods[i].HasTimeInHighPercent
-			destPeriods[i].TimeInHighRecords = summary.Periods[i].TimeInHighRecords
+			destPeriods[i].TimeInHighMinutes = summary.CGM.Periods[i].TimeInHighMinutes
+			destPeriods[i].TimeInHighPercent = summary.CGM.Periods[i].TimeInHighPercent
+			destPeriods[i].HasTimeInHighPercent = summary.CGM.Periods[i].HasTimeInHighPercent
+			destPeriods[i].TimeInHighRecords = summary.CGM.Periods[i].TimeInHighRecords
 
-			destPeriods[i].TimeInLowMinutes = summary.Periods[i].TimeInLowMinutes
-			destPeriods[i].TimeInLowPercent = summary.Periods[i].TimeInLowPercent
-			destPeriods[i].HasTimeInLowPercent = summary.Periods[i].HasTimeInLowPercent
-			destPeriods[i].TimeInLowRecords = summary.Periods[i].TimeInLowRecords
+			destPeriods[i].TimeInLowMinutes = summary.CGM.Periods[i].TimeInLowMinutes
+			destPeriods[i].TimeInLowPercent = summary.CGM.Periods[i].TimeInLowPercent
+			destPeriods[i].HasTimeInLowPercent = summary.CGM.Periods[i].HasTimeInLowPercent
+			destPeriods[i].TimeInLowRecords = summary.CGM.Periods[i].TimeInLowRecords
 
-			destPeriods[i].TimeInTargetMinutes = summary.Periods[i].TimeInTargetMinutes
-			destPeriods[i].TimeInTargetPercent = summary.Periods[i].TimeInTargetPercent
-			destPeriods[i].HasTimeInTargetPercent = summary.Periods[i].HasTimeInTargetPercent
-			destPeriods[i].TimeInTargetRecords = summary.Periods[i].TimeInTargetRecords
+			destPeriods[i].TimeInTargetMinutes = summary.CGM.Periods[i].TimeInTargetMinutes
+			destPeriods[i].TimeInTargetPercent = summary.CGM.Periods[i].TimeInTargetPercent
+			destPeriods[i].HasTimeInTargetPercent = summary.CGM.Periods[i].HasTimeInTargetPercent
+			destPeriods[i].TimeInTargetRecords = summary.CGM.Periods[i].TimeInTargetRecords
 
-			destPeriods[i].TimeInVeryHighMinutes = summary.Periods[i].TimeInVeryHighMinutes
-			destPeriods[i].TimeInVeryHighPercent = summary.Periods[i].TimeInVeryHighPercent
-			destPeriods[i].HasTimeInVeryHighPercent = summary.Periods[i].HasTimeInVeryHighPercent
-			destPeriods[i].TimeInVeryHighRecords = summary.Periods[i].TimeInVeryHighRecords
+			destPeriods[i].TimeInVeryHighMinutes = summary.CGM.Periods[i].TimeInVeryHighMinutes
+			destPeriods[i].TimeInVeryHighPercent = summary.CGM.Periods[i].TimeInVeryHighPercent
+			destPeriods[i].HasTimeInVeryHighPercent = summary.CGM.Periods[i].HasTimeInVeryHighPercent
+			destPeriods[i].TimeInVeryHighRecords = summary.CGM.Periods[i].TimeInVeryHighRecords
 
-			destPeriods[i].TimeInVeryLowMinutes = summary.Periods[i].TimeInVeryLowMinutes
-			destPeriods[i].TimeInVeryLowPercent = summary.Periods[i].TimeInVeryLowPercent
-			destPeriods[i].HasTimeInVeryLowPercent = summary.Periods[i].HasTimeInVeryLowPercent
-			destPeriods[i].TimeInVeryLowRecords = summary.Periods[i].TimeInVeryLowRecords
+			destPeriods[i].TimeInVeryLowMinutes = summary.CGM.Periods[i].TimeInVeryLowMinutes
+			destPeriods[i].TimeInVeryLowPercent = summary.CGM.Periods[i].TimeInVeryLowPercent
+			destPeriods[i].HasTimeInVeryLowPercent = summary.CGM.Periods[i].HasTimeInVeryLowPercent
+			destPeriods[i].TimeInVeryLowRecords = summary.CGM.Periods[i].TimeInVeryLowRecords
+		}
+	}
+
+	if summary.BGM.Periods != nil {
+		// this is bad, but it's better than copy and pasting the copy code N times
+		destPeriods := map[string]*PatientBGMPeriod{}
+		if _, exists := summary.BGM.Periods["1d"]; exists {
+			patientSummary.BgmSummary.Periods.N1d = &PatientBGMPeriod{}
+			destPeriods["1d"] = patientSummary.BgmSummary.Periods.N1d
+		}
+		if _, exists := summary.BGM.Periods["7d"]; exists {
+			patientSummary.BgmSummary.Periods.N7d = &PatientBGMPeriod{}
+			destPeriods["7d"] = patientSummary.BgmSummary.Periods.N7d
+		}
+		if _, exists := summary.BGM.Periods["14d"]; exists {
+			patientSummary.BgmSummary.Periods.N14d = &PatientBGMPeriod{}
+			destPeriods["14d"] = patientSummary.BgmSummary.Periods.N14d
+		}
+		if _, exists := summary.BGM.Periods["30d"]; exists {
+			patientSummary.BgmSummary.Periods.N30d = &PatientBGMPeriod{}
+			destPeriods["30d"] = patientSummary.BgmSummary.Periods.N30d
+		}
+
+		for i := range destPeriods {
+			if summary.BGM.Periods[i].AverageGlucose != nil {
+				destPeriods[i].AverageGlucose = &AverageGlucose{
+					Value: float32(summary.BGM.Periods[i].AverageGlucose.Value),
+					Units: AverageGlucoseUnits(summary.BGM.Periods[i].AverageGlucose.Units)}
+			}
+			destPeriods[i].HasAverageGlucose = summary.BGM.Periods[i].HasAverageGlucose
+
+			destPeriods[i].TimeInHighPercent = summary.BGM.Periods[i].TimeInHighPercent
+			destPeriods[i].HasTimeInHighPercent = summary.BGM.Periods[i].HasTimeInHighPercent
+			destPeriods[i].TimeInHighRecords = summary.BGM.Periods[i].TimeInHighRecords
+
+			destPeriods[i].TimeInLowPercent = summary.BGM.Periods[i].TimeInLowPercent
+			destPeriods[i].HasTimeInLowPercent = summary.BGM.Periods[i].HasTimeInLowPercent
+			destPeriods[i].TimeInLowRecords = summary.BGM.Periods[i].TimeInLowRecords
+
+			destPeriods[i].TimeInTargetPercent = summary.BGM.Periods[i].TimeInTargetPercent
+			destPeriods[i].HasTimeInTargetPercent = summary.BGM.Periods[i].HasTimeInTargetPercent
+			destPeriods[i].TimeInTargetRecords = summary.BGM.Periods[i].TimeInTargetRecords
+
+			destPeriods[i].TimeInVeryHighPercent = summary.BGM.Periods[i].TimeInVeryHighPercent
+			destPeriods[i].HasTimeInVeryHighPercent = summary.BGM.Periods[i].HasTimeInVeryHighPercent
+			destPeriods[i].TimeInVeryHighRecords = summary.BGM.Periods[i].TimeInVeryHighRecords
+
+			destPeriods[i].TimeInVeryLowPercent = summary.BGM.Periods[i].TimeInVeryLowPercent
+			destPeriods[i].HasTimeInVeryLowPercent = summary.BGM.Periods[i].HasTimeInVeryLowPercent
+			destPeriods[i].TimeInVeryLowRecords = summary.BGM.Periods[i].TimeInVeryLowRecords
 		}
 	}
 
