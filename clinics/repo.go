@@ -336,11 +336,12 @@ func canAddPatientTag(clinic Clinic, tag PatientTag) (bool, error) {
 }
 
 func isDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
-	for _, p := range clinic.PatientTags {
-		trimmedExistingTagName := strings.ReplaceAll(p.Name, " ", "")
-		trimmedNewTagName := strings.ReplaceAll(tag.Name, " ", "")
+	trimmedNewTagName := strings.ToLower(strings.ReplaceAll(tag.Name, " ", ""))
 
-		if strings.ToLower(trimmedExistingTagName) == strings.ToLower(trimmedNewTagName) {
+	for _, p := range clinic.PatientTags {
+		trimmedExistingTagName := strings.ToLower(strings.ReplaceAll(p.Name, " ", ""))
+
+		if trimmedExistingTagName == trimmedNewTagName {
 			return true
 		}
 	}
