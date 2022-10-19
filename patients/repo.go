@@ -565,7 +565,7 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 	if filter.Tags != nil {
 		selector["tags"] = bson.M{
-			"$in": store.ObjectIDSFromStringArray(*filter.Tags),
+			"$all": store.ObjectIDSFromStringArray(*filter.Tags),
 		}
 	}
 
