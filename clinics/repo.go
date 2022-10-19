@@ -339,10 +339,13 @@ func isDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
 	trimmedNewTagName := strings.ToLower(strings.ReplaceAll(tag.Name, " ", ""))
 
 	for _, p := range clinic.PatientTags {
-		trimmedExistingTagName := strings.ToLower(strings.ReplaceAll(p.Name, " ", ""))
+		// We only check for duplication against other tags
+		if p.Id.Hex() != tag.Id.Hex() {
+			trimmedExistingTagName := strings.ToLower(strings.ReplaceAll(p.Name, " ", ""))
 
-		if trimmedExistingTagName == trimmedNewTagName {
-			return true
+			if trimmedExistingTagName == trimmedNewTagName {
+				return true
+			}
 		}
 	}
 
