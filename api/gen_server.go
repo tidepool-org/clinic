@@ -76,12 +76,24 @@ type ServerInterface interface {
 	// Update Migration
 	// (PATCH /v1/clinics/{clinicId}/migrations/{userId})
 	UpdateMigration(ctx echo.Context, clinicId Id, userId UserId) error
+	// Create Patient Tag
+	// (POST /v1/clinics/{clinicId}/patient_tags)
+	CreatePatientTag(ctx echo.Context, clinicId ClinicId) error
+	// Delete Patient Tag
+	// (DELETE /v1/clinics/{clinicId}/patient_tags/{patientTagId})
+	DeletePatientTag(ctx echo.Context, clinicId ClinicId, patientTagId PatientTagId) error
+	// Update Patient Tag
+	// (PUT /v1/clinics/{clinicId}/patient_tags/{patientTagId})
+	UpdatePatientTag(ctx echo.Context, clinicId ClinicId, patientTagId PatientTagId) error
 	// List Patients
 	// (GET /v1/clinics/{clinicId}/patients)
 	ListPatients(ctx echo.Context, clinicId ClinicId, params ListPatientsParams) error
 	// Create Patient Account
 	// (POST /v1/clinics/{clinicId}/patients)
 	CreatePatientAccount(ctx echo.Context, clinicId ClinicId) error
+	// Delete Patient Tag From Clinic Patients
+	// (DELETE /v1/clinics/{clinicId}/patients/delete_tag/{patientTagId})
+	DeletePatientTagFromClinicPatients(ctx echo.Context, clinicId ClinicId, patientTagId PatientTagId) error
 	// Delete Patient
 	// (DELETE /v1/clinics/{clinicId}/patients/{patientId})
 	DeletePatient(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
@@ -666,6 +678,76 @@ func (w *ServerInterfaceWrapper) UpdateMigration(ctx echo.Context) error {
 	return err
 }
 
+// CreatePatientTag converts echo context to params.
+func (w *ServerInterfaceWrapper) CreatePatientTag(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.CreatePatientTag(ctx, clinicId)
+	return err
+}
+
+// DeletePatientTag converts echo context to params.
+func (w *ServerInterfaceWrapper) DeletePatientTag(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientTagId" -------------
+	var patientTagId PatientTagId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "patientTagId", runtime.ParamLocationPath, ctx.Param("patientTagId"), &patientTagId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientTagId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeletePatientTag(ctx, clinicId, patientTagId)
+	return err
+}
+
+// UpdatePatientTag converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdatePatientTag(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientTagId" -------------
+	var patientTagId PatientTagId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "patientTagId", runtime.ParamLocationPath, ctx.Param("patientTagId"), &patientTagId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientTagId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdatePatientTag(ctx, clinicId, patientTagId)
+	return err
+}
+
 // ListPatients converts echo context to params.
 func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	var err error
@@ -765,6 +847,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summary.lastUploadDateTo: %s", err))
 	}
 
+	// ------------- Optional query parameter "tags" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "tags", ctx.QueryParams(), &params.Tags)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListPatients(ctx, clinicId, params)
 	return err
@@ -785,6 +874,32 @@ func (w *ServerInterfaceWrapper) CreatePatientAccount(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.CreatePatientAccount(ctx, clinicId)
+	return err
+}
+
+// DeletePatientTagFromClinicPatients converts echo context to params.
+func (w *ServerInterfaceWrapper) DeletePatientTagFromClinicPatients(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientTagId" -------------
+	var patientTagId PatientTagId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "patientTagId", runtime.ParamLocationPath, ctx.Param("patientTagId"), &patientTagId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientTagId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeletePatientTagFromClinicPatients(ctx, clinicId, patientTagId)
 	return err
 }
 
@@ -1133,8 +1248,12 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/clinics/:clinicId/migrations", wrapper.MigrateLegacyClinicianPatients)
 	router.GET(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.GetMigration)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.UpdateMigration)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patient_tags", wrapper.CreatePatientTag)
+	router.DELETE(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.DeletePatientTag)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.UpdatePatientTag)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients", wrapper.ListPatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients", wrapper.CreatePatientAccount)
+	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/delete_tag/:patientTagId", wrapper.DeletePatientTagFromClinicPatients)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.DeletePatient)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.GetPatient)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.CreatePatientFromUser)

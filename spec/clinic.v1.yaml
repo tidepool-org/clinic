@@ -296,6 +296,16 @@ paths:
           in: query
           name: summary.lastUploadDateTo
           description: Exclusive
+        - schema:
+            type: array
+            items:
+              type: string
+              format: '^[a-f0-9]{24}$'
+          in: query
+          name: tags
+          description: Comma-separated list of patient tag IDs
+          style: form
+          explode: false
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
@@ -313,6 +323,23 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Patient'
+      tags:
+        - clinic
+  '/v1/clinics/{clinicId}/patient_tags':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      summary: Create Patient Tag
+      operationId: CreatePatientTag
+      responses:
+        '200':
+          description: OK
+      description: Create a new patient tag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientTag'
       tags:
         - clinic
   '/v1/clinics/{clinicId}/clinicians/{clinicianId}':
@@ -415,6 +442,33 @@ paths:
         '204':
           description: No Content
       description: Deletes patient from a clinic. Requires the request to be made by a clinic admin or the currently authenticated user id to match the patient id.
+      tags:
+        - clinic
+  '/v1/clinics/{clinicId}/patient_tags/{patientTagId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientTagId'
+    put:
+      summary: Update Patient Tag
+      operationId: UpdatePatientTag
+      responses:
+        '200':
+          description: OK
+      description: Update existing patient tag
+      tags:
+        - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientTag'
+    delete:
+      summary: Delete Patient Tag
+      operationId: DeletePatientTag
+      responses:
+        '200':
+          description: OK
+      description: Removes a patient tag from a clinic and tagged patients
       tags:
         - clinic
   '/v1/clinics/{clinicId}/invites/clinicians':
@@ -893,7 +947,7 @@ paths:
         - clinic
       x-internal: true
       description: |-
-        Internal endpoint that deletes any user associations with clinics they are a patient or a member of. 
+        Internal endpoint that deletes any user associations with clinics they are a patient or a member of.
 
         If the user is a patient of a clinic the service will delete the patient-clinic relationship.
 
@@ -1010,6 +1064,20 @@ paths:
       description: Sends upload reminder to the patient
       tags:
         - clinic
+  '/v1/clinics/{clinicId}/patients/delete_tag/{patientTagId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientTagId'
+    delete:
+      summary: Delete Patient Tag From Clinic Patients
+      operationId: DeletePatientTagFromClinicPatients
+      responses:
+        '200':
+          description: OK
+      description: Delete a patient tag from all clinic patients
+      x-internal: true
+      tags:
+        - clinic
 components:
   schemas:
     Error:
@@ -1061,6 +1129,12 @@ components:
           type: string
           minLength: 1
           example: USA
+        patientTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatientTag'
+        lastDeletedPatientTag:
+          $ref: '#/components/schemas/PatientTag'
         phoneNumbers:
           title: Phone phoneNumbers
           description: An array of phone numbers.
@@ -1199,6 +1273,17 @@ components:
           type: string
           description: The medical record number of the patient
           minLength: 1
+        tags:
+          type: array
+          uniqueItems: true
+          items:
+            title: Patient Tag ID
+            description: Patient Tag identifier.
+            type: string
+            minLength: 24
+            maxLength: 24
+            pattern: '^[a-f0-9]{24}$'
+            readOnly: true
         targetDevices:
           type: array
           items:
@@ -1231,6 +1316,32 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Patient'
+    PatientTag:
+      type: object
+      title: Patient Tag
+      description: ''
+      properties:
+        id:
+          title: Object Id
+          type: string
+          description: String representation of a resource id
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+          readOnly: true
+        name:
+          type: string
+          description: The tag display name
+          minLength: 1
+          maxLength: 20
+          pattern: '^[\p{L}\p{N}_+><-]{1}[\p{L}\p{N}\s_+><-]*$'
+      required:
+        - id
+        - name
+    PatientTags:
+      type: array
+      items:
+        $ref: '#/components/schemas/PatientTag'
     InviteClinician:
       title: Invite Clinician
       type: object
@@ -1626,6 +1737,13 @@ components:
       schema:
         type: string
         pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
+    patientTagId:
+      name: patientTagId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-f0-9]{24}$'
     userId:
       name: userId
       in: path

@@ -2,6 +2,8 @@ package patients_test
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/globalsign/mgo/bson"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -12,7 +14,6 @@ import (
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-	"strings"
 
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
@@ -166,6 +167,7 @@ var _ = Describe("Patients Repository", func() {
 					Email:         update.Patient.Email,
 					FullName:      update.Patient.FullName,
 					Mrn:           update.Patient.Mrn,
+					Tags:          update.Patient.Tags,
 					TargetDevices: update.Patient.TargetDevices,
 					Permissions:   update.Patient.Permissions,
 					IsMigrated:    randomPatient.IsMigrated,
@@ -209,6 +211,7 @@ var _ = Describe("Patients Repository", func() {
 					Email:         update.Patient.Email,
 					FullName:      randomPatient.FullName,
 					Mrn:           randomPatient.Mrn,
+					Tags:          randomPatient.Tags,
 					TargetDevices: randomPatient.TargetDevices,
 					Permissions:   randomPatient.Permissions,
 					IsMigrated:    randomPatient.IsMigrated,
@@ -279,6 +282,50 @@ var _ = Describe("Patients Repository", func() {
 						{"$and": []bson.M{{"userId": randomPatient.UserId}, {"clinicId": randomPatient.ClinicId}}},
 					},
 				}
+				res, err = collection.CountDocuments(nil, selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(0)))
+			})
+		})
+
+		Describe("Delete tag from all clinic patients", func() {
+			It("deletes the correct patient tags", func() {
+				newPatientTag := primitive.NewObjectID()
+				clinicId := primitive.NewObjectID()
+
+				// Add new patient tag and set common clinic ID for all patients
+				for _, patient := range allPatients {
+					selector := bson.M{
+						"clinicId": patient.ClinicId,
+						"userId":   patient.UserId,
+					}
+
+					newTags := append(*patient.Tags, newPatientTag)
+					update := bson.M{
+						"$set": bson.M{
+							"tags":     append(newTags, newPatientTag),
+							"clinicId": clinicId,
+						},
+					}
+
+					_, err := collection.UpdateOne(nil, selector, update)
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				selector := bson.M{
+					"tags": newPatientTag,
+				}
+
+				// All patients should be returned when querying for the new tag
+				res, err := collection.CountDocuments(nil, selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(count)))
+
+				// Perform the delete operation
+				err = repo.DeletePatientTagFromClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex())
+				Expect(err).ToNot(HaveOccurred())
+
+				// No patients should have matching tag
 				res, err = collection.CountDocuments(nil, selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(0)))
@@ -432,6 +479,26 @@ var _ = Describe("Patients Repository", func() {
 				}
 			})
 
+			It("filters by patient tag correctly", func() {
+				randomPatientTags := *randomPatient.Tags
+				tags := []string{randomPatientTags[0].Hex()}
+				filter := patients.Filter{
+					Tags: &tags,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					patientTags := *patient.Tags
+					Expect(patientTags).To(ContainElement(randomPatientTags[0]))
+				}
+			})
+
 			It("supports searching by mrn", func() {
 				clinicId := randomPatient.ClinicId.Hex()
 				filter := patients.Filter{
@@ -578,6 +645,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"Email":                  PointTo(Equal(*patient.Email)),
 		"FullName":               PointTo(Equal(*patient.FullName)),
 		"Mrn":                    PointTo(Equal(*patient.Mrn)),
+		"Tags":                   PointTo(Equal(*patient.Tags)),
 		"TargetDevices":          PointTo(Equal(*patient.TargetDevices)),
 		"Permissions":            PointTo(Equal(*patient.Permissions)),
 		"IsMigrated":             Equal(patient.IsMigrated),

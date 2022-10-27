@@ -3,6 +3,9 @@ package patients
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"time"
+
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -10,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"regexp"
-	"time"
 )
 
 const (
@@ -167,6 +168,15 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetBackground(true).
 				SetName("PatientSummaryTimeInVeryHigh14d"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "tags", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("PatientTags"),
 		},
 	})
 	return err
@@ -494,6 +504,32 @@ func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patie
 	return nil
 }
 
+func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"tags":     patientTagId,
+	}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"tags": patientTagId,
+		},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+
+	_, err := r.collection.UpdateMany(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error removing patient tag from patients: %w", err)
+	}
+
+	return nil
+}
+
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
 	if filter.ClinicId != nil {
@@ -526,6 +562,11 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 	if len(lastUploadDate) > 0 {
 		selector["summary.lastUploadDate"] = lastUploadDate
+	}
+	if filter.Tags != nil {
+		selector["tags"] = bson.M{
+			"$all": store.ObjectIDSFromStringArray(*filter.Tags),
+		}
 	}
 
 	MaybeApplyNumericFilter(selector,

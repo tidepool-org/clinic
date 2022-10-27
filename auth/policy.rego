@@ -21,7 +21,7 @@ write_access_roles := {
 clinician_roles := { x | x = input.clinician.roles[_] }
 
 clinician_has_read_access {
-    count(clinician_roles & read_access_roles) > 0
+  count(clinician_roles & read_access_roles) > 0
 }
 
 clinician_has_write_access {
@@ -413,4 +413,36 @@ allow {
   is_backend_service
   input.method == "POST"
   input.path = ["v1", "users", _, "clinics"]
+}
+
+# Allow currently authenticated clinic member to create a patient tag
+# POST /v1/clinics/:clinicId/patient_tags
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patient_tags"]
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinic member to update a patient tag
+# PUT /v1/clinics/:clinicId/patient_tags/:patientTagId
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patient_tags", _]
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinic admin to delete a patient tag
+# DELETE /v1/clinics/:clinicId/patient_tags/:patientTagId
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patient_tags", _]
+  clinician_has_write_access
+}
+
+# Allow backend services to delete a patient tag from all clinic patients
+# POST /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patients", "delete_tag", _]
+  is_backend_service
 }

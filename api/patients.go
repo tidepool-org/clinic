@@ -1,14 +1,15 @@
 package api
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/http"
-	"time"
 )
 
 func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
@@ -19,6 +20,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		Search:             searchToString(params.Search),
 		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
 		LastUploadDateTo:   params.SummaryLastUploadDateTo,
+		Tags:               params.Tags,
 	}
 	if params.SummaryPeriods14dTimeCGMUsePercent != nil && *params.SummaryPeriods14dTimeCGMUsePercent != "" {
 		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeCGMUsePercent)
@@ -303,6 +305,18 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 	}
 
 	err := h.patients.UpdateSummaryInAllClinics(ctx, string(patientId), NewSummary(dto))
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	ctx := ec.Request().Context()
+
+	err := h.patients.DeletePatientTagFromClinicPatients(ctx, string(clinicId), string(patientTagId))
+
 	if err != nil {
 		return err
 	}

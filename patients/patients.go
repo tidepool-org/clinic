@@ -3,10 +3,11 @@ package patients
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"time"
 )
 
 var (
@@ -37,25 +38,27 @@ type Service interface {
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
+	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error
 }
 
 type Patient struct {
-	Id                     *primitive.ObjectID `bson:"_id,omitempty"`
-	ClinicId               *primitive.ObjectID `bson:"clinicId,omitempty"`
-	UserId                 *string             `bson:"userId,omitempty"`
-	BirthDate              *string             `bson:"birthDate"`
-	Email                  *string             `bson:"email"`
-	FullName               *string             `bson:"fullName"`
-	Mrn                    *string             `bson:"mrn"`
-	TargetDevices          *[]string           `bson:"targetDevices"`
-	Permissions            *Permissions        `bson:"permissions,omitempty"`
-	IsMigrated             bool                `bson:"isMigrated,omitempty"`
-	LegacyClinicianIds     []string            `bson:"legacyClinicianIds,omitempty"`
-	CreatedTime            time.Time           `bson:"createdTime,omitempty"`
-	UpdatedTime            time.Time           `bson:"updatedTime,omitempty"`
-	InvitedBy              *string             `bson:"invitedBy,omitempty"`
-	Summary                *Summary            `bson:"summary,omitempty"`
-	LastUploadReminderTime time.Time           `bson:"lastUploadReminderTime,omitempty"`
+	Id                     *primitive.ObjectID   `bson:"_id,omitempty"`
+	ClinicId               *primitive.ObjectID   `bson:"clinicId,omitempty"`
+	UserId                 *string               `bson:"userId,omitempty"`
+	BirthDate              *string               `bson:"birthDate"`
+	Email                  *string               `bson:"email"`
+	FullName               *string               `bson:"fullName"`
+	Mrn                    *string               `bson:"mrn"`
+	Tags                   *[]primitive.ObjectID `bson:"tags,omitempty"`
+	TargetDevices          *[]string             `bson:"targetDevices"`
+	Permissions            *Permissions          `bson:"permissions,omitempty"`
+	IsMigrated             bool                  `bson:"isMigrated,omitempty"`
+	LegacyClinicianIds     []string              `bson:"legacyClinicianIds,omitempty"`
+	CreatedTime            time.Time             `bson:"createdTime,omitempty"`
+	UpdatedTime            time.Time             `bson:"updatedTime,omitempty"`
+	InvitedBy              *string               `bson:"invitedBy,omitempty"`
+	Summary                *Summary              `bson:"summary,omitempty"`
+	LastUploadReminderTime time.Time             `bson:"lastUploadReminderTime,omitempty"`
 }
 
 // PatientSummary defines model for PatientSummary.
@@ -70,6 +73,7 @@ type Filter struct {
 	Search                        *string
 	LastUploadDateFrom            *time.Time
 	LastUploadDateTo              *time.Time
+	Tags                          *[]string
 	TimeCGMUsePercentCmp14d       *string
 	TimeCGMUsePercentValue14d     float64
 	TimeInVeryLowPercentCmp14d    *string

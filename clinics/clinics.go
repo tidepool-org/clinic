@@ -3,15 +3,20 @@ package clinics
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"time"
 )
 
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
+var ErrPatientTagNotFound = fmt.Errorf("patient tag %w", errors.NotFound)
+var ErrDuplicatePatientTagName = fmt.Errorf("%w patient tag", errors.Duplicate)
 var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin", errors.ConstraintViolation)
+var MaximumPatientTags = 10
+var ErrMaximumPatientTagsExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %v patient tags", errors.ConstraintViolation, MaximumPatientTags)
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -21,6 +26,9 @@ type Service interface {
 	UpsertAdmin(ctx context.Context, clinicId, clinicianId string) error
 	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
 	UpdateTier(ctx context.Context, clinicId, tier string) error
+	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*Clinic, error)
+	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*Clinic, error)
+	DeletePatientTag(ctx context.Context, clinicId, tagId string) (*Clinic, error)
 }
 
 type Filter struct {
@@ -39,6 +47,7 @@ type Clinic struct {
 	ClinicSize         *string             `bson:"clinicSize,omitempty"`
 	Country            *string             `bson:"country,omitempty"`
 	Name               *string             `bson:"name,omitempty"`
+	PatientTags        []PatientTag        `bson:"patientTags,omitempty"`
 	PhoneNumbers       *[]PhoneNumber      `bson:"phoneNumbers,omitempty"`
 	PostalCode         *string             `bson:"postalCode,omitempty"`
 	State              *string             `bson:"state,omitempty"`
@@ -73,8 +82,8 @@ func (c *Clinic) HasAllRequiredFields() bool {
 		isStringSet(&c.PreferredBgUnits) &&
 		c.Id != nil &&
 		c.PhoneNumbers != nil &&
-		hasValidPhoneNumber(*c.PhoneNumbers)
-
+		hasValidPhoneNumber(*c.PhoneNumbers) &&
+		hasValidPatientTags(c.PatientTags)
 }
 
 func (c *Clinic) AddAdmin(userId string) {
@@ -101,6 +110,16 @@ func (p *PhoneNumber) HasAllRequiredFields() bool {
 	return isStringSet(&p.Number)
 }
 
+type PatientTag struct {
+	Id   *primitive.ObjectID `bson:"_id,omitempty"`
+	Name string              `bson:"name,omitempty"`
+}
+
+func (p *PatientTag) HasAllRequiredFields() bool {
+	return p.Id != nil &&
+		isStringSet(&p.Name)
+}
+
 func hasValidPhoneNumber(phoneNumbers []PhoneNumber) bool {
 	for _, p := range phoneNumbers {
 		if p.HasAllRequiredFields() {
@@ -108,6 +127,15 @@ func hasValidPhoneNumber(phoneNumbers []PhoneNumber) bool {
 		}
 	}
 	return false
+}
+
+func hasValidPatientTags(patientTags []PatientTag) bool {
+	for _, p := range patientTags {
+		if !p.HasAllRequiredFields() {
+			return false
+		}
+	}
+	return true
 }
 
 func isStringSet(s *string) bool {

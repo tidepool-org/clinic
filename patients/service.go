@@ -3,6 +3,7 @@ package patients
 import (
 	"context"
 	"errors"
+
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
 )
@@ -138,6 +139,11 @@ func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, 
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error) {
 	s.logger.Infow("updating last upload reminder time for user", "clinicId", update.ClinicId, "userId", update.UserId)
 	return s.repo.UpdateLastUploadReminderTime(ctx, update)
+}
+
+func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
+	s.logger.Infow("deleting tag from all patients", "clinicId", clinicId, "tagId", tagId)
+	return s.repo.DeletePatientTagFromClinicPatients(ctx, clinicId, tagId)
 }
 
 func shouldRemovePatientFromClinic(patient *Patient) bool {

@@ -2,6 +2,11 @@ package api
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -9,10 +14,7 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func NewClinic(c Clinic) *clinics.Clinic {
@@ -80,6 +82,16 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		}
 		dto.PhoneNumbers = &phoneNumbers
 	}
+	if c.PatientTags != nil {
+		var patientTags []PatientTag
+		for _, n := range c.PatientTags {
+			patientTags = append(patientTags, PatientTag{
+				Id:   n.Id.Hex(),
+				Name: n.Name,
+			})
+		}
+		dto.PatientTags = &patientTags
+	}
 
 	return dto
 }
@@ -139,6 +151,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		Id:            *strpuseridp(patient.UserId),
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
+		Tags:          NewPatientTagsDto(patient.Tags),
 		TargetDevices: patient.TargetDevices,
 		CreatedTime:   patient.CreatedTime,
 		UpdatedTime:   patient.UpdatedTime,
@@ -154,13 +167,20 @@ func NewPatientDto(patient *patients.Patient) Patient {
 }
 
 func NewPatient(dto Patient) patients.Patient {
-	return patients.Patient{
+	patient := patients.Patient{
 		Email:         pstrToLower(dto.Email),
 		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
 		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
 	}
+
+	if dto.Tags != nil {
+		tags := store.ObjectIDSFromStringArray(*dto.Tags)
+		patient.Tags = &tags
+	}
+
+	return patient
 }
 
 func NewSummary(dto *PatientSummary) *patients.Summary {
@@ -331,6 +351,16 @@ func NewPermissionsDto(dto *patients.Permissions) *PatientPermissions {
 		}
 	}
 	return permissions
+}
+
+func NewPatientTagsDto(tags *[]primitive.ObjectID) *[]string {
+	var tagIds []string
+	if tags != nil {
+		for _, id := range *tags {
+			tagIds = append(tagIds, id.Hex())
+		}
+	}
+	return &tagIds
 }
 
 func NewPatientsDto(patients []*patients.Patient) []Patient {
@@ -575,4 +605,16 @@ var validCmps = map[string]struct{}{
 	">=": {},
 	"<":  {},
 	"<=": {},
+}
+
+func patientTagsToObjectIds(tags *[]PatientTagId) *[]primitive.ObjectID {
+	var tagIds []primitive.ObjectID
+	if tags != nil {
+		for _, id := range *tags {
+			if tagId, err := primitive.ObjectIDFromHex(string(id)); err == nil {
+				tagIds = append(tagIds, tagId)
+			}
+		}
+	}
+	return &tagIds
 }
