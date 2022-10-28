@@ -1275,6 +1275,7 @@ components:
           minLength: 1
         tags:
           type: array
+          nullable: true
           uniqueItems: true
           items:
             title: Patient Tag ID
