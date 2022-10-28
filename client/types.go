@@ -242,7 +242,7 @@ type Patient struct {
 	Mrn           *string             `json:"mrn,omitempty"`
 	Permissions   *PatientPermissions `json:"permissions,omitempty"`
 	Summary       *PatientSummary     `json:"summary,omitempty"`
-	Tags          *[]string           `json:"tags,omitempty"`
+	Tags          *[]string           `json:"tags"`
 	TargetDevices *[]string           `json:"targetDevices,omitempty"`
 	UpdatedTime   time.Time           `json:"updatedTime"`
 }
