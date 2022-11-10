@@ -50,6 +50,7 @@ type Patient struct {
 	FullName               *string               `bson:"fullName"`
 	Mrn                    *string               `bson:"mrn"`
 	Tags                   *[]primitive.ObjectID `bson:"tags,omitempty"`
+	DexcomConnectState     *string               `bson:"dexcomConnectState,omitempty"`
 	TargetDevices          *[]string             `bson:"targetDevices"`
 	Permissions            *Permissions          `bson:"permissions,omitempty"`
 	IsMigrated             bool                  `bson:"isMigrated,omitempty"`

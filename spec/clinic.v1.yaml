@@ -1301,6 +1301,13 @@ components:
           readOnly: true
         attestationSubmitted:
           type: boolean
+        dexcomConnectState:
+          type: string
+          enum:
+            - pending
+            - connected
+            - disconnected
+            - error
         summary:
           $ref: '#/components/schemas/PatientSummary'
         lastUploadReminderTime:

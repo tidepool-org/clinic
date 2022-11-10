@@ -60,6 +60,17 @@ const (
 	MigrationStatusRUNNING MigrationStatus = "RUNNING"
 )
 
+// Defines values for PatientDexcomConnectState.
+const (
+	PatientDexcomConnectStateConnected PatientDexcomConnectState = "connected"
+
+	PatientDexcomConnectStateDisconnected PatientDexcomConnectState = "disconnected"
+
+	PatientDexcomConnectStateError PatientDexcomConnectState = "error"
+
+	PatientDexcomConnectStatePending PatientDexcomConnectState = "pending"
+)
+
 // Defines values for Tier.
 const (
 	TierTier0100 Tier = "tier0100"
@@ -226,10 +237,11 @@ type Migrations []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date `json:"birthDate"`
-	CreatedTime          time.Time          `json:"createdTime"`
-	Email                *string            `json:"email,omitempty"`
+	AttestationSubmitted *bool                      `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date         `json:"birthDate"`
+	CreatedTime          time.Time                  `json:"createdTime"`
+	DexcomConnectState   *PatientDexcomConnectState `json:"dexcomConnectState,omitempty"`
+	Email                *string                    `json:"email,omitempty"`
 
 	// The full name of the patient
 	FullName string `json:"fullName"`
@@ -246,6 +258,9 @@ type Patient struct {
 	TargetDevices *[]string           `json:"targetDevices,omitempty"`
 	UpdatedTime   time.Time           `json:"updatedTime"`
 }
+
+// PatientDexcomConnectState defines model for Patient.DexcomConnectState.
+type PatientDexcomConnectState string
 
 // PatientClinicRelationship defines model for PatientClinicRelationship.
 type PatientClinicRelationship struct {

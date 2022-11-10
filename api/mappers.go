@@ -146,16 +146,17 @@ func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
 
 func NewPatientDto(patient *patients.Patient) Patient {
 	dto := Patient{
-		Email:         patient.Email,
-		FullName:      pstr(patient.FullName),
-		Id:            *strpuseridp(patient.UserId),
-		Mrn:           patient.Mrn,
-		Permissions:   NewPermissionsDto(patient.Permissions),
-		Tags:          NewPatientTagsDto(patient.Tags),
-		TargetDevices: patient.TargetDevices,
-		CreatedTime:   patient.CreatedTime,
-		UpdatedTime:   patient.UpdatedTime,
-		Summary:       NewSummaryDto(patient.Summary),
+		Email:              patient.Email,
+		FullName:           pstr(patient.FullName),
+		Id:                 *strpuseridp(patient.UserId),
+		Mrn:                patient.Mrn,
+		Permissions:        NewPermissionsDto(patient.Permissions),
+		Tags:               NewPatientTagsDto(patient.Tags),
+		DexcomConnectState: (*PatientDexcomConnectState)(patient.DexcomConnectState),
+		TargetDevices:      patient.TargetDevices,
+		CreatedTime:        patient.CreatedTime,
+		UpdatedTime:        patient.UpdatedTime,
+		Summary:            NewSummaryDto(patient.Summary),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -168,11 +169,12 @@ func NewPatientDto(patient *patients.Patient) Patient {
 
 func NewPatient(dto Patient) patients.Patient {
 	patient := patients.Patient{
-		Email:         pstrToLower(dto.Email),
-		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
-		FullName:      &dto.FullName,
-		Mrn:           dto.Mrn,
-		TargetDevices: dto.TargetDevices,
+		Email:              pstrToLower(dto.Email),
+		BirthDate:          strp(dto.BirthDate.Format(dateFormat)),
+		FullName:           &dto.FullName,
+		Mrn:                dto.Mrn,
+		TargetDevices:      dto.TargetDevices,
+		DexcomConnectState: strp(string(*dto.DexcomConnectState)),
 	}
 
 	if dto.Tags != nil {
