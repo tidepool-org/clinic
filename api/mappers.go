@@ -146,17 +146,17 @@ func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
 
 func NewPatientDto(patient *patients.Patient) Patient {
 	dto := Patient{
-		Email:              patient.Email,
-		FullName:           pstr(patient.FullName),
-		Id:                 *strpuseridp(patient.UserId),
-		Mrn:                patient.Mrn,
-		Permissions:        NewPermissionsDto(patient.Permissions),
-		Tags:               NewPatientTagsDto(patient.Tags),
-		DexcomConnectState: (*PatientDexcomConnectState)(patient.DexcomConnectState),
-		TargetDevices:      patient.TargetDevices,
-		CreatedTime:        patient.CreatedTime,
-		UpdatedTime:        patient.UpdatedTime,
-		Summary:            NewSummaryDto(patient.Summary),
+		Email:         patient.Email,
+		FullName:      pstr(patient.FullName),
+		Id:            *strpuseridp(patient.UserId),
+		Mrn:           patient.Mrn,
+		Permissions:   NewPermissionsDto(patient.Permissions),
+		Tags:          NewPatientTagsDto(patient.Tags),
+		DataSources:   NewPatientDataSourcesDto(patient.DataSources),
+		TargetDevices: patient.TargetDevices,
+		CreatedTime:   patient.CreatedTime,
+		UpdatedTime:   patient.UpdatedTime,
+		Summary:       NewSummaryDto(patient.Summary),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -169,17 +169,35 @@ func NewPatientDto(patient *patients.Patient) Patient {
 
 func NewPatient(dto Patient) patients.Patient {
 	patient := patients.Patient{
-		Email:              pstrToLower(dto.Email),
-		BirthDate:          strp(dto.BirthDate.Format(dateFormat)),
-		FullName:           &dto.FullName,
-		Mrn:                dto.Mrn,
-		TargetDevices:      dto.TargetDevices,
-		DexcomConnectState: strp(string(*dto.DexcomConnectState)),
+		Email:         pstrToLower(dto.Email),
+		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
+		FullName:      &dto.FullName,
+		Mrn:           dto.Mrn,
+		TargetDevices: dto.TargetDevices,
 	}
 
 	if dto.Tags != nil {
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
+	}
+
+	if dto.DataSources != nil {
+		var dataSources []patients.DataSource
+		for _, d := range *dto.DataSources {
+			newDataSource := patients.DataSource{
+				DataSourceId: d.DataSourceId,
+				ProviderName: string(d.ProviderName),
+				State:        string(d.State),
+			}
+
+			if d.UpdatedTime != nil {
+				updatedTime, _ := time.Parse(time.RFC3339, *d.UpdatedTime)
+				newDataSource.UpdatedTime = &updatedTime
+			}
+
+			dataSources = append(dataSources, newDataSource)
+		}
+		patient.DataSources = &dataSources
 	}
 
 	return patient
@@ -363,6 +381,32 @@ func NewPatientTagsDto(tags *[]primitive.ObjectID) *[]string {
 		}
 	}
 	return &tagIds
+}
+
+func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource {
+	if dataSources == nil {
+		return nil
+	}
+
+	dtos := make([]DataSource, 0)
+
+	if dataSources != nil {
+		for _, d := range *dataSources {
+			newDataSource := DataSource{
+				DataSourceId: d.DataSourceId,
+				ProviderName: d.ProviderName,
+				State:        DataSourceState(d.State),
+			}
+
+			if d.UpdatedTime != nil {
+				newDataSource.UpdatedTime = strp((d.UpdatedTime.String()))
+			}
+
+			dtos = append(dtos, newDataSource)
+		}
+	}
+
+	return &dtos
 }
 
 func NewPatientsDto(patients []*patients.Patient) []Patient {

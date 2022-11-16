@@ -39,6 +39,7 @@ type Service interface {
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error
+	UpdatePatientDataSource(ctx context.Context, userId, providerName string, DataSource *DataSource) error
 }
 
 type Patient struct {
@@ -50,7 +51,7 @@ type Patient struct {
 	FullName               *string               `bson:"fullName"`
 	Mrn                    *string               `bson:"mrn"`
 	Tags                   *[]primitive.ObjectID `bson:"tags,omitempty"`
-	DexcomConnectState     *string               `bson:"dexcomConnectState,omitempty"`
+	DataSources            *[]DataSource         `bson:"dataSources,omitempty"`
 	TargetDevices          *[]string             `bson:"targetDevices"`
 	Permissions            *Permissions          `bson:"permissions,omitempty"`
 	IsMigrated             bool                  `bson:"isMigrated,omitempty"`
@@ -171,4 +172,10 @@ type Summary struct {
 type AvgGlucose struct {
 	Units string  `bson:"units"`
 	Value float64 `bson:"value"`
+}
+type DataSource struct {
+	DataSourceId *string    `bson:"dataSourceId,omitempty"`
+	UpdatedTime  *time.Time `bson:"updatedTime,omitempty"`
+	ProviderName string     `bson:"providerName"`
+	State        string     `bson:"state"`
 }

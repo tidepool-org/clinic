@@ -440,9 +440,17 @@ allow {
 }
 
 # Allow backend services to delete a patient tag from all clinic patients
-# POST /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
+# DELETE /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
 allow {
   input.method == "DELETE"
   input.path = ["v1", "clinics", _, "patients", "delete_tag", _]
+  is_backend_service
+}
+
+# Allow backend services to update a user data source for all associated clinic patient records
+# PUT /v1/patients/:patientId/data_sources/:providerName
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "patients", _, "data_sources", _]
   is_backend_service
 }

@@ -530,6 +530,37 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 	return nil
 }
 
+func (r *repository) UpdatePatientDataSource(ctx context.Context, userId, providerName string, dataSource *DataSource) error {
+	userObjId, _ := primitive.ObjectIDFromHex(userId)
+
+	selector := bson.M{
+		"userId": userObjId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"dataSources.$[elem]": dataSource,
+			"updatedTime":         time.Now(),
+		},
+	}
+
+	upsert := true
+	updateOpts := options.UpdateOptions{
+		Upsert: &upsert,
+		ArrayFilters: &options.ArrayFilters{
+			Filters: []interface{}{bson.M{"elem.providerName": providerName}},
+		},
+	}
+
+	// Update data source if found on a patient
+	_, err := r.collection.UpdateMany(ctx, selector, update, &updateOpts)
+	if err != nil {
+		return fmt.Errorf("error updating data source for patients: %w", err)
+	}
+
+	return nil
+}
+
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
 	if filter.ClinicId != nil {

@@ -51,6 +51,17 @@ const (
 	ClinicPreferredBgUnitsMmolL ClinicPreferredBgUnits = "mmol/L"
 )
 
+// Defines values for DataSourceState.
+const (
+	DataSourceStateConnected DataSourceState = "connected"
+
+	DataSourceStateDisconnected DataSourceState = "disconnected"
+
+	DataSourceStateError DataSourceState = "error"
+
+	DataSourceStatePending DataSourceState = "pending"
+)
+
 // Defines values for MigrationStatus.
 const (
 	MigrationStatusCOMPLETED MigrationStatus = "COMPLETED"
@@ -58,17 +69,6 @@ const (
 	MigrationStatusPENDING MigrationStatus = "PENDING"
 
 	MigrationStatusRUNNING MigrationStatus = "RUNNING"
-)
-
-// Defines values for PatientDexcomConnectState.
-const (
-	PatientDexcomConnectStateConnected PatientDexcomConnectState = "connected"
-
-	PatientDexcomConnectStateDisconnected PatientDexcomConnectState = "disconnected"
-
-	PatientDexcomConnectStateError PatientDexcomConnectState = "error"
-
-	PatientDexcomConnectStatePending PatientDexcomConnectState = "pending"
 )
 
 // Defines values for Tier.
@@ -196,6 +196,19 @@ type CreatePatient struct {
 	Permissions       *PatientPermissions `json:"permissions,omitempty"`
 }
 
+// DataSource defines model for DataSource.
+type DataSource struct {
+	DataSourceId *string         `json:"dataSourceId,omitempty"`
+	ProviderName string          `json:"providerName"`
+	State        DataSourceState `json:"state"`
+
+	// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	UpdatedTime *string `json:"updatedTime,omitempty"`
+}
+
+// DataSourceState defines model for DataSource.State.
+type DataSourceState string
+
 // Error defines model for Error.
 type Error struct {
 	Code    int    `json:"code"`
@@ -237,11 +250,11 @@ type Migrations []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	AttestationSubmitted *bool                      `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date         `json:"birthDate"`
-	CreatedTime          time.Time                  `json:"createdTime"`
-	DexcomConnectState   *PatientDexcomConnectState `json:"dexcomConnectState,omitempty"`
-	Email                *string                    `json:"email,omitempty"`
+	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date `json:"birthDate"`
+	CreatedTime          time.Time          `json:"createdTime"`
+	DataSources          *[]DataSource      `json:"dataSources"`
+	Email                *string            `json:"email,omitempty"`
 
 	// The full name of the patient
 	FullName string `json:"fullName"`
@@ -258,9 +271,6 @@ type Patient struct {
 	TargetDevices *[]string           `json:"targetDevices,omitempty"`
 	UpdatedTime   time.Time           `json:"updatedTime"`
 }
-
-// PatientDexcomConnectState defines model for Patient.DexcomConnectState.
-type PatientDexcomConnectState string
 
 // PatientClinicRelationship defines model for PatientClinicRelationship.
 type PatientClinicRelationship struct {
@@ -539,6 +549,9 @@ type UpdatePatientPermissionsJSONBody PatientPermissions
 // UpdateTierJSONBody defines parameters for UpdateTier.
 type UpdateTierJSONBody UpdateTier
 
+// UpdatePatientDataSourceJSONBody defines parameters for UpdatePatientDataSource.
+type UpdatePatientDataSourceJSONBody DataSource
+
 // UpdatePatientSummaryJSONBody defines parameters for UpdatePatientSummary.
 type UpdatePatientSummaryJSONBody PatientSummary
 
@@ -595,6 +608,9 @@ type UpdatePatientPermissionsJSONRequestBody UpdatePatientPermissionsJSONBody
 
 // UpdateTierJSONRequestBody defines body for UpdateTier for application/json ContentType.
 type UpdateTierJSONRequestBody UpdateTierJSONBody
+
+// UpdatePatientDataSourceJSONRequestBody defines body for UpdatePatientDataSource for application/json ContentType.
+type UpdatePatientDataSourceJSONRequestBody UpdatePatientDataSourceJSONBody
 
 // UpdatePatientSummaryJSONRequestBody defines body for UpdatePatientSummary for application/json ContentType.
 type UpdatePatientSummaryJSONRequestBody UpdatePatientSummaryJSONBody
