@@ -1390,14 +1390,13 @@ components:
           maxLength: 100
           example: dexcom
         dataSourceId:
-          title: Data Source ID
+          title: Data Source Object Id
           type: string
-          minLength: 32
-          maxLength: 32
-          pattern: '^[0-9a-f]{32}$'
-          example: c0ce05326529c6b35b0f4a568a344026
-          x-tags:
-            - Data
+          description: String representation of a resource id
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+          readOnly: true
         modifiedTime:
           title: Date/Time
           description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'

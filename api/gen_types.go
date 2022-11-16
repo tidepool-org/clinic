@@ -198,6 +198,7 @@ type CreatePatient struct {
 
 // DataSource defines model for DataSource.
 type DataSource struct {
+	// String representation of a resource id
 	DataSourceId *string `json:"dataSourceId,omitempty"`
 
 	// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information

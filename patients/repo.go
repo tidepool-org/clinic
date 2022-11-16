@@ -2,6 +2,7 @@ package patients
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"time"
@@ -532,10 +533,8 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 }
 
 func (r *repository) UpdatePatientDataSource(ctx context.Context, userId, providerName string, dataSource *DataSource) error {
-	userObjId, _ := primitive.ObjectIDFromHex(userId)
-
 	selector := bson.M{
-		"userId": userObjId,
+		"userId": userId,
 	}
 
 	update := bson.M{
@@ -545,19 +544,24 @@ func (r *repository) UpdatePatientDataSource(ctx context.Context, userId, provid
 		},
 	}
 
-	upsert := true
 	updateOpts := options.UpdateOptions{
-		Upsert: &upsert,
 		ArrayFilters: &options.ArrayFilters{
-			Filters: []interface{}{bson.M{"elem.providerName": providerName}},
+			Filters: bson.A{
+				bson.M{"elem.providerName": providerName},
+			},
 		},
 	}
+	s, _ := json.MarshalIndent(dataSource, "", "\t")
+	fmt.Println(string(s))
 
 	// Update data source if found on a patient
-	_, err := r.collection.UpdateMany(ctx, selector, update, &updateOpts)
+	result, err := r.collection.UpdateMany(ctx, selector, update, &updateOpts)
 	if err != nil {
 		return fmt.Errorf("error updating data source for patients: %w", err)
 	}
+
+	s, _ = json.MarshalIndent(result, "", "\t")
+	fmt.Println(string(s))
 
 	return nil
 }
