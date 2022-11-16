@@ -175,7 +175,7 @@ type AvgGlucose struct {
 }
 type DataSource struct {
 	DataSourceId *string    `bson:"dataSourceId,omitempty"`
-	UpdatedTime  *time.Time `bson:"updatedTime,omitempty"`
+	ModifiedTime *time.Time `bson:"modifiedTime,omitempty"`
 	ProviderName string     `bson:"providerName"`
 	State        string     `bson:"state"`
 }

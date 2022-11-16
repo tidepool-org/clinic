@@ -190,9 +190,9 @@ func NewPatient(dto Patient) patients.Patient {
 				State:        string(d.State),
 			}
 
-			if d.UpdatedTime != nil {
-				updatedTime, _ := time.Parse(time.RFC3339, *d.UpdatedTime)
-				newDataSource.UpdatedTime = &updatedTime
+			if d.ModifiedTime != nil {
+				updatedTime, _ := time.Parse(time.RFC3339, *d.ModifiedTime)
+				newDataSource.ModifiedTime = &updatedTime
 			}
 
 			dataSources = append(dataSources, newDataSource)
@@ -398,8 +398,8 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 				State:        DataSourceState(d.State),
 			}
 
-			if d.UpdatedTime != nil {
-				newDataSource.UpdatedTime = strp((d.UpdatedTime.String()))
+			if d.ModifiedTime != nil {
+				newDataSource.ModifiedTime = strp((d.ModifiedTime.String()))
 			}
 
 			dtos = append(dtos, newDataSource)
