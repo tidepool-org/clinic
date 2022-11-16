@@ -549,9 +549,6 @@ type UpdatePatientPermissionsJSONBody PatientPermissions
 // UpdateTierJSONBody defines parameters for UpdateTier.
 type UpdateTierJSONBody UpdateTier
 
-// UpdatePatientDataSourceJSONBody defines parameters for UpdatePatientDataSource.
-type UpdatePatientDataSourceJSONBody DataSource
-
 // UpdatePatientSummaryJSONBody defines parameters for UpdatePatientSummary.
 type UpdatePatientSummaryJSONBody PatientSummary
 
@@ -560,6 +557,9 @@ type ListClinicsForPatientParams struct {
 	Offset *Offset `json:"offset,omitempty"`
 	Limit  *Limit  `json:"limit,omitempty"`
 }
+
+// UpdatePatientDataSourceJSONBody defines parameters for UpdatePatientDataSource.
+type UpdatePatientDataSourceJSONBody DataSource
 
 // UpdateClinicUserDetailsJSONBody defines parameters for UpdateClinicUserDetails.
 type UpdateClinicUserDetailsJSONBody UpdateUserDetails
@@ -609,11 +609,11 @@ type UpdatePatientPermissionsJSONRequestBody UpdatePatientPermissionsJSONBody
 // UpdateTierJSONRequestBody defines body for UpdateTier for application/json ContentType.
 type UpdateTierJSONRequestBody UpdateTierJSONBody
 
-// UpdatePatientDataSourceJSONRequestBody defines body for UpdatePatientDataSource for application/json ContentType.
-type UpdatePatientDataSourceJSONRequestBody UpdatePatientDataSourceJSONBody
-
 // UpdatePatientSummaryJSONRequestBody defines body for UpdatePatientSummary for application/json ContentType.
 type UpdatePatientSummaryJSONRequestBody UpdatePatientSummaryJSONBody
+
+// UpdatePatientDataSourceJSONRequestBody defines body for UpdatePatientDataSource for application/json ContentType.
+type UpdatePatientDataSourceJSONRequestBody UpdatePatientDataSourceJSONBody
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody UpdateClinicUserDetailsJSONBody

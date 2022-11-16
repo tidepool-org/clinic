@@ -1028,9 +1028,9 @@ paths:
                   highGlucoseThreshold: 0
                   lowGlucoseThreshold: 0
         description: ''
-  '/v1/patients/{patientId}/data_sources/{providerName}':
+  '/v1/patients/{userId}/data_sources/{providerName}':
     parameters:
-      - $ref: '#/components/parameters/patientId'
+      - $ref: '#/components/parameters/userId'
       - schema:
           type: string
           minLength: 1

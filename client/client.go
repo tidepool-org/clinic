@@ -226,11 +226,6 @@ type ClientInterface interface {
 
 	UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateTierJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UpdatePatientDataSource request with any body
-	UpdatePatientDataSourceWithBody(ctx context.Context, patientId PatientId, providerName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdatePatientDataSource(ctx context.Context, patientId PatientId, providerName string, body UpdatePatientDataSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// UpdatePatientSummary request with any body
 	UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -238,6 +233,11 @@ type ClientInterface interface {
 
 	// ListClinicsForPatient request
 	ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdatePatientDataSource request with any body
+	UpdatePatientDataSourceWithBody(ctx context.Context, userId UserId, providerName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdatePatientDataSource(ctx context.Context, userId UserId, providerName string, body UpdatePatientDataSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteUserFromClinics request
 	DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -848,30 +848,6 @@ func (c *Client) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateT
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePatientDataSourceWithBody(ctx context.Context, patientId PatientId, providerName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePatientDataSourceRequestWithBody(c.Server, patientId, providerName, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdatePatientDataSource(ctx context.Context, patientId PatientId, providerName string, body UpdatePatientDataSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePatientDataSourceRequest(c.Server, patientId, providerName, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientSummaryRequestWithBody(c.Server, patientId, contentType, body)
 	if err != nil {
@@ -898,6 +874,30 @@ func (c *Client) UpdatePatientSummary(ctx context.Context, patientId PatientId, 
 
 func (c *Client) ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListClinicsForPatientRequest(c.Server, userId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePatientDataSourceWithBody(ctx context.Context, userId UserId, providerName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientDataSourceRequestWithBody(c.Server, userId, providerName, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePatientDataSource(ctx context.Context, userId UserId, providerName string, body UpdatePatientDataSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientDataSourceRequest(c.Server, userId, providerName, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2925,60 +2925,6 @@ func NewUpdateTierRequestWithBody(server string, clinicId ClinicId, contentType 
 	return req, nil
 }
 
-// NewUpdatePatientDataSourceRequest calls the generic UpdatePatientDataSource builder with application/json body
-func NewUpdatePatientDataSourceRequest(server string, patientId PatientId, providerName string, body UpdatePatientDataSourceJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdatePatientDataSourceRequestWithBody(server, patientId, providerName, "application/json", bodyReader)
-}
-
-// NewUpdatePatientDataSourceRequestWithBody generates requests for UpdatePatientDataSource with any type of body
-func NewUpdatePatientDataSourceRequestWithBody(server string, patientId PatientId, providerName string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "providerName", runtime.ParamLocationPath, providerName)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/v1/patients/%s/data_sources/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewUpdatePatientSummaryRequest calls the generic UpdatePatientSummary builder with application/json body
 func NewUpdatePatientSummaryRequest(server string, patientId PatientId, body UpdatePatientSummaryJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -3092,6 +3038,60 @@ func NewListClinicsForPatientRequest(server string, userId UserId, params *ListC
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewUpdatePatientDataSourceRequest calls the generic UpdatePatientDataSource builder with application/json body
+func NewUpdatePatientDataSourceRequest(server string, userId UserId, providerName string, body UpdatePatientDataSourceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdatePatientDataSourceRequestWithBody(server, userId, providerName, "application/json", bodyReader)
+}
+
+// NewUpdatePatientDataSourceRequestWithBody generates requests for UpdatePatientDataSource with any type of body
+func NewUpdatePatientDataSourceRequestWithBody(server string, userId UserId, providerName string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "userId", runtime.ParamLocationPath, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "providerName", runtime.ParamLocationPath, providerName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/patients/%s/data_sources/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -3355,11 +3355,6 @@ type ClientWithResponsesInterface interface {
 
 	UpdateTierWithResponse(ctx context.Context, clinicId ClinicId, body UpdateTierJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTierResponse, error)
 
-	// UpdatePatientDataSource request with any body
-	UpdatePatientDataSourceWithBodyWithResponse(ctx context.Context, patientId PatientId, providerName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourceResponse, error)
-
-	UpdatePatientDataSourceWithResponse(ctx context.Context, patientId PatientId, providerName string, body UpdatePatientDataSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourceResponse, error)
-
 	// UpdatePatientSummary request with any body
 	UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error)
 
@@ -3367,6 +3362,11 @@ type ClientWithResponsesInterface interface {
 
 	// ListClinicsForPatient request
 	ListClinicsForPatientWithResponse(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*ListClinicsForPatientResponse, error)
+
+	// UpdatePatientDataSource request with any body
+	UpdatePatientDataSourceWithBodyWithResponse(ctx context.Context, userId UserId, providerName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourceResponse, error)
+
+	UpdatePatientDataSourceWithResponse(ctx context.Context, userId UserId, providerName string, body UpdatePatientDataSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourceResponse, error)
 
 	// DeleteUserFromClinics request
 	DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*DeleteUserFromClinicsResponse, error)
@@ -4139,27 +4139,6 @@ func (r UpdateTierResponse) StatusCode() int {
 	return 0
 }
 
-type UpdatePatientDataSourceResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdatePatientDataSourceResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdatePatientDataSourceResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type UpdatePatientSummaryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4197,6 +4176,27 @@ func (r ListClinicsForPatientResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ListClinicsForPatientResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdatePatientDataSourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdatePatientDataSourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdatePatientDataSourceResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4680,23 +4680,6 @@ func (c *ClientWithResponses) UpdateTierWithResponse(ctx context.Context, clinic
 	return ParseUpdateTierResponse(rsp)
 }
 
-// UpdatePatientDataSourceWithBodyWithResponse request with arbitrary body returning *UpdatePatientDataSourceResponse
-func (c *ClientWithResponses) UpdatePatientDataSourceWithBodyWithResponse(ctx context.Context, patientId PatientId, providerName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourceResponse, error) {
-	rsp, err := c.UpdatePatientDataSourceWithBody(ctx, patientId, providerName, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdatePatientDataSourceResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdatePatientDataSourceWithResponse(ctx context.Context, patientId PatientId, providerName string, body UpdatePatientDataSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourceResponse, error) {
-	rsp, err := c.UpdatePatientDataSource(ctx, patientId, providerName, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdatePatientDataSourceResponse(rsp)
-}
-
 // UpdatePatientSummaryWithBodyWithResponse request with arbitrary body returning *UpdatePatientSummaryResponse
 func (c *ClientWithResponses) UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error) {
 	rsp, err := c.UpdatePatientSummaryWithBody(ctx, patientId, contentType, body, reqEditors...)
@@ -4721,6 +4704,23 @@ func (c *ClientWithResponses) ListClinicsForPatientWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseListClinicsForPatientResponse(rsp)
+}
+
+// UpdatePatientDataSourceWithBodyWithResponse request with arbitrary body returning *UpdatePatientDataSourceResponse
+func (c *ClientWithResponses) UpdatePatientDataSourceWithBodyWithResponse(ctx context.Context, userId UserId, providerName string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourceResponse, error) {
+	rsp, err := c.UpdatePatientDataSourceWithBody(ctx, userId, providerName, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePatientDataSourceResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdatePatientDataSourceWithResponse(ctx context.Context, userId UserId, providerName string, body UpdatePatientDataSourceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourceResponse, error) {
+	rsp, err := c.UpdatePatientDataSource(ctx, userId, providerName, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePatientDataSourceResponse(rsp)
 }
 
 // DeleteUserFromClinicsWithResponse request returning *DeleteUserFromClinicsResponse
@@ -5567,22 +5567,6 @@ func ParseUpdateTierResponse(rsp *http.Response) (*UpdateTierResponse, error) {
 	return response, nil
 }
 
-// ParseUpdatePatientDataSourceResponse parses an HTTP response from a UpdatePatientDataSourceWithResponse call
-func ParseUpdatePatientDataSourceResponse(rsp *http.Response) (*UpdatePatientDataSourceResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdatePatientDataSourceResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
 // ParseUpdatePatientSummaryResponse parses an HTTP response from a UpdatePatientSummaryWithResponse call
 func ParseUpdatePatientSummaryResponse(rsp *http.Response) (*UpdatePatientSummaryResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
@@ -5620,6 +5604,22 @@ func ParseListClinicsForPatientResponse(rsp *http.Response) (*ListClinicsForPati
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseUpdatePatientDataSourceResponse parses an HTTP response from a UpdatePatientDataSourceWithResponse call
+func ParseUpdatePatientDataSourceResponse(rsp *http.Response) (*UpdatePatientDataSourceResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdatePatientDataSourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

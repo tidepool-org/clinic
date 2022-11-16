@@ -324,14 +324,14 @@ func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId C
 	return ec.NoContent(http.StatusOK)
 }
 
-func (h *Handler) UpdatePatientDataSource(ec echo.Context, patientId PatientId, providerName string) error {
+func (h *Handler) UpdatePatientDataSource(ec echo.Context, userId UserId, providerName string) error {
 	ctx := ec.Request().Context()
 	dto := patients.DataSource{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	err := h.patients.UpdatePatientDataSource(ctx, string(patientId), providerName, &dto)
+	err := h.patients.UpdatePatientDataSource(ctx, string(userId), providerName, &dto)
 	if err != nil {
 		// TODO: 404 if not found in any clinics?
 		return err

@@ -178,6 +178,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 				SetBackground(true).
 				SetName("PatientTags"),
 		},
+		// TODO: Indexes for providerName and state?
 	})
 	return err
 }
