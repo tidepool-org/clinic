@@ -549,9 +549,9 @@ paths:
                   creatorId:
                     $ref: '#/components/schemas/TidepoolUserId'
                   created:
-                    $ref: '#/components/schemas/DataSource/properties/updatedTime'
+                    $ref: '#/components/schemas/DataSource/properties/modifiedTime'
                   modified:
-                    $ref: '#/components/schemas/DataSource/properties/updatedTime'
+                    $ref: '#/components/schemas/DataSource/properties/modifiedTime'
                   creator:
                     title: Creator
                     type: object
@@ -1398,7 +1398,7 @@ components:
           example: c0ce05326529c6b35b0f4a568a344026
           x-tags:
             - Data
-        updatedTime:
+        modifiedTime:
           title: Date/Time
           description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
           type: string

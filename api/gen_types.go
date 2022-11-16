@@ -198,12 +198,12 @@ type CreatePatient struct {
 
 // DataSource defines model for DataSource.
 type DataSource struct {
-	DataSourceId *string         `json:"dataSourceId,omitempty"`
-	ProviderName string          `json:"providerName"`
-	State        DataSourceState `json:"state"`
+	DataSourceId *string `json:"dataSourceId,omitempty"`
 
 	// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	UpdatedTime *string `json:"updatedTime,omitempty"`
+	ModifiedTime *string         `json:"modifiedTime,omitempty"`
+	ProviderName string          `json:"providerName"`
+	State        DataSourceState `json:"state"`
 }
 
 // DataSourceState defines model for DataSource.State.
