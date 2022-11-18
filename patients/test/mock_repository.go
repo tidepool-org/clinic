@@ -196,18 +196,18 @@ func (mr *MockRepositoryMockRecorder) UpdateLastUploadReminderTime(ctx, update i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastUploadReminderTime", reflect.TypeOf((*MockRepository)(nil).UpdateLastUploadReminderTime), ctx, update)
 }
 
-// UpdatePatientDataSource mocks base method.
-func (m *MockRepository) UpdatePatientDataSource(ctx context.Context, userId, providerName string, DataSource *patients.DataSource) error {
+// UpdatePatientDataSources mocks base method.
+func (m *MockRepository) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *patients.DataSources) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdatePatientDataSource", ctx, userId, providerName, DataSource)
+	ret := m.ctrl.Call(m, "UpdatePatientDataSources", ctx, userId, dataSources)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdatePatientDataSource indicates an expected call of UpdatePatientDataSource.
-func (mr *MockRepositoryMockRecorder) UpdatePatientDataSource(ctx, userId, providerName, DataSource interface{}) *gomock.Call {
+// UpdatePatientDataSources indicates an expected call of UpdatePatientDataSources.
+func (mr *MockRepositoryMockRecorder) UpdatePatientDataSources(ctx, userId, dataSources interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientDataSource", reflect.TypeOf((*MockRepository)(nil).UpdatePatientDataSource), ctx, userId, providerName, DataSource)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientDataSources", reflect.TypeOf((*MockRepository)(nil).UpdatePatientDataSources), ctx, userId, dataSources)
 }
 
 // UpdatePermissions mocks base method.

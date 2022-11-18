@@ -146,9 +146,9 @@ func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinic
 	return s.repo.DeletePatientTagFromClinicPatients(ctx, clinicId, tagId)
 }
 
-func (s *service) UpdatePatientDataSource(ctx context.Context, userId, providerName string, DataSource *DataSource) error {
-	s.logger.Infow("updating data source for clinic patient", "userId", userId, "providerName", providerName)
-	return s.repo.UpdatePatientDataSource(ctx, userId, providerName, DataSource)
+func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error {
+	s.logger.Infow("updating data sources for clinic patients", "userId", userId)
+	return s.repo.UpdatePatientDataSources(ctx, userId, dataSources)
 }
 
 func shouldRemovePatientFromClinic(patient *Patient) bool {

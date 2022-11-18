@@ -531,90 +531,25 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 	return nil
 }
 
-func (r *repository) UpdatePatientDataSource(ctx context.Context, userId, providerName string, dataSource *DataSource) error {
-	pipeline := []bson.M{
-		{
-			"$match": bson.M{
-				"userId": userId,
-			},
-		},
-		{
-			"$addFields": bson.M{
-				"dataSources": bson.M{
-					"$ifNull": bson.A{"$dataSources", bson.A{}},
-				},
-			},
-		},
-		{
-			"$project": bson.M{
-				"dataSources": bson.M{
-					"$filter": bson.M{
-						"input": "$dataSources",
-						"as":    "source",
-						"cond":  bson.M{"$ne": bson.A{"$$source.providerName", providerName}},
-					},
-				},
-			},
-		},
-		{
-			"$addFields": bson.M{
-				"dataSources": bson.M{
-					"$concatArrays": bson.A{
-						"$dataSources",
-						bson.A{dataSource},
-					},
-				},
-			},
+func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error {
+	userObjId, _ := primitive.ObjectIDFromHex(userId)
+
+	selector := bson.M{
+		"userId": userObjId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"dataSources": dataSources,
 		},
 	}
 
-	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	result, err := r.collection.UpdateMany(ctx, selector, update)
+	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
+		err = fmt.Errorf("partially updated %v out of %v patient records: %w", result.ModifiedCount, result.MatchedCount, err)
+	}
 	if err != nil {
-		return fmt.Errorf("error ensuring dataSources property for patients: %w", err)
-	}
-	if !cursor.Next(ctx) {
-		return fmt.Errorf("error getting pipeline result")
-	}
-
-	// Update the patients
-	var patients []*Patient
-	if err = cursor.All(ctx, &patients); err != nil {
-		return fmt.Errorf("error decoding matching patients list: %w", err)
-	}
-
-	for _, patient := range patients {
-		update := PatientUpdate{
-			ClinicId: patient.ClinicId.Hex(),
-			UserId:   *patient.UserId,
-			Patient:  *patient,
-		}
-
-		r.Update(ctx, update)
-
-		// selector := bson.M{
-		// 	"_id": patient.Id,
-		// }
-
-		// update := bson.M{
-		// 	"$set": bson.M{
-		// 		"dataSources": patient.DataSources,
-		// 		"updatedTime": time.Now(),
-		// 	},
-		// }
-
-		// s, _ := json.MarshalIndent(selector, "", "\t")
-		// fmt.Println("selector", string(s))
-
-		// s, _ = json.MarshalIndent(update, "", "\t")
-		// fmt.Println("update", string(s))
-
-		// result, err := r.collection.UpdateMany(ctx, selector, update)
-		// if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
-		// 	err = fmt.Errorf("partially updated %v out of %v patient records: %w", result.ModifiedCount, result.MatchedCount, err)
-		// }
-		// if err != nil {
-		// 	r.logger.Errorw("error updating patient data sources", "error", err, "userId", userId)
-		// }
+		r.logger.Errorw("error updating patient data sources", "error", err, "userId", userId)
 	}
 
 	return nil

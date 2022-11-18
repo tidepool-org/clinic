@@ -1028,19 +1028,12 @@ paths:
                   highGlucoseThreshold: 0
                   lowGlucoseThreshold: 0
         description: ''
-  '/v1/patients/{userId}/data_sources/{providerName}':
+  '/v1/patients/{userId}/data_sources':
     parameters:
       - $ref: '#/components/parameters/userId'
-      - schema:
-          type: string
-          minLength: 1
-          maxLength: 100
-        name: providerName
-        in: path
-        required: true
     put:
       summary: Create or update a data source for a patient
-      operationId: UpdatePatientDataSource
+      operationId: UpdatePatientDataSources
       responses:
         '200':
           description: OK
@@ -1054,7 +1047,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DataSource'
+              $ref: '#/components/schemas/DataSources'
   '/v1/clinics/{clinicId}/tier':
     parameters:
       - $ref: '#/components/parameters/clinicId'

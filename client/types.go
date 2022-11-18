@@ -196,6 +196,9 @@ type DataSource struct {
 	State        string  `json:"state"`
 }
 
+// DataSources defines model for DataSources.
+type DataSources []DataSource
+
 // Error defines model for Error.
 type Error struct {
 	Code    int    `json:"code"`
@@ -545,8 +548,8 @@ type ListClinicsForPatientParams struct {
 	Limit  *Limit  `json:"limit,omitempty"`
 }
 
-// UpdatePatientDataSourceJSONBody defines parameters for UpdatePatientDataSource.
-type UpdatePatientDataSourceJSONBody DataSource
+// UpdatePatientDataSourcesJSONBody defines parameters for UpdatePatientDataSources.
+type UpdatePatientDataSourcesJSONBody DataSources
 
 // UpdateClinicUserDetailsJSONBody defines parameters for UpdateClinicUserDetails.
 type UpdateClinicUserDetailsJSONBody UpdateUserDetails
@@ -599,8 +602,8 @@ type UpdateTierJSONRequestBody UpdateTierJSONBody
 // UpdatePatientSummaryJSONRequestBody defines body for UpdatePatientSummary for application/json ContentType.
 type UpdatePatientSummaryJSONRequestBody UpdatePatientSummaryJSONBody
 
-// UpdatePatientDataSourceJSONRequestBody defines body for UpdatePatientDataSource for application/json ContentType.
-type UpdatePatientDataSourceJSONRequestBody UpdatePatientDataSourceJSONBody
+// UpdatePatientDataSourcesJSONRequestBody defines body for UpdatePatientDataSources for application/json ContentType.
+type UpdatePatientDataSourcesJSONRequestBody UpdatePatientDataSourcesJSONBody
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody UpdateClinicUserDetailsJSONBody

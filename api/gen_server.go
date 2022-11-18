@@ -125,8 +125,8 @@ type ServerInterface interface {
 	// (GET /v1/patients/{userId}/clinics)
 	ListClinicsForPatient(ctx echo.Context, userId UserId, params ListClinicsForPatientParams) error
 	// Create or update a data source for a patient
-	// (PUT /v1/patients/{userId}/data_sources/{providerName})
-	UpdatePatientDataSource(ctx echo.Context, userId UserId, providerName string) error
+	// (PUT /v1/patients/{userId}/data_sources)
+	UpdatePatientDataSources(ctx echo.Context, userId UserId) error
 
 	// (DELETE /v1/users/{userId}/clinics)
 	DeleteUserFromClinics(ctx echo.Context, userId UserId) error
@@ -1166,8 +1166,8 @@ func (w *ServerInterfaceWrapper) ListClinicsForPatient(ctx echo.Context) error {
 	return err
 }
 
-// UpdatePatientDataSource converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdatePatientDataSource(ctx echo.Context) error {
+// UpdatePatientDataSources converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdatePatientDataSources(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
 	var userId UserId
@@ -1177,18 +1177,10 @@ func (w *ServerInterfaceWrapper) UpdatePatientDataSource(ctx echo.Context) error
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
 	}
 
-	// ------------- Path parameter "providerName" -------------
-	var providerName string
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "providerName", runtime.ParamLocationPath, ctx.Param("providerName"), &providerName)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter providerName: %s", err))
-	}
-
 	ctx.Set(SessionTokenScopes, []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.UpdatePatientDataSource(ctx, userId, providerName)
+	err = w.Handler.UpdatePatientDataSources(ctx, userId)
 	return err
 }
 
@@ -1293,7 +1285,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
-	router.PUT(baseURL+"/v1/patients/:userId/data_sources/:providerName", wrapper.UpdatePatientDataSource)
+	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
 

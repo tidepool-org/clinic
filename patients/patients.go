@@ -39,7 +39,7 @@ type Service interface {
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error
-	UpdatePatientDataSource(ctx context.Context, userId, providerName string, DataSource *DataSource) error
+	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 }
 
 type Patient struct {
@@ -173,6 +173,8 @@ type AvgGlucose struct {
 	Units string  `bson:"units"`
 	Value float64 `bson:"value"`
 }
+
+type DataSources []DataSource
 type DataSource struct {
 	DataSourceId *primitive.ObjectID `bson:"dataSourceId,omitempty"`
 	ModifiedTime *time.Time          `bson:"modifiedTime,omitempty"`
