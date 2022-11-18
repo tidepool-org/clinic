@@ -184,10 +184,15 @@ func NewPatient(dto Patient) patients.Patient {
 	if dto.DataSources != nil {
 		var dataSources []patients.DataSource
 		for _, d := range *dto.DataSources {
+
 			newDataSource := patients.DataSource{
-				DataSourceId: d.DataSourceId,
 				ProviderName: string(d.ProviderName),
 				State:        string(d.State),
+			}
+
+			if d.DataSourceId != nil {
+				dataSourceObjectId, _ := primitive.ObjectIDFromHex(*d.DataSourceId)
+				newDataSource.DataSourceId = &dataSourceObjectId
 			}
 
 			if d.ModifiedTime != nil {
@@ -393,9 +398,13 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 	if dataSources != nil {
 		for _, d := range *dataSources {
 			newDataSource := DataSource{
-				DataSourceId: d.DataSourceId,
 				ProviderName: d.ProviderName,
-				State:        DataSourceState(d.State),
+				State:        d.State,
+			}
+
+			if d.DataSourceId != nil {
+				dataSourceId := d.DataSourceId.Hex()
+				newDataSource.DataSourceId = &dataSourceId
 			}
 
 			if d.ModifiedTime != nil {

@@ -51,17 +51,6 @@ const (
 	ClinicPreferredBgUnitsMmolL ClinicPreferredBgUnits = "mmol/L"
 )
 
-// Defines values for DataSourceState.
-const (
-	DataSourceStateConnected DataSourceState = "connected"
-
-	DataSourceStateDisconnected DataSourceState = "disconnected"
-
-	DataSourceStateError DataSourceState = "error"
-
-	DataSourceStatePending DataSourceState = "pending"
-)
-
 // Defines values for MigrationStatus.
 const (
 	MigrationStatusCOMPLETED MigrationStatus = "COMPLETED"
@@ -202,13 +191,10 @@ type DataSource struct {
 	DataSourceId *string `json:"dataSourceId,omitempty"`
 
 	// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	ModifiedTime *string         `json:"modifiedTime,omitempty"`
-	ProviderName string          `json:"providerName"`
-	State        DataSourceState `json:"state"`
+	ModifiedTime *string `json:"modifiedTime,omitempty"`
+	ProviderName string  `json:"providerName"`
+	State        string  `json:"state"`
 }
-
-// DataSourceState defines model for DataSource.State.
-type DataSourceState string
 
 // Error defines model for Error.
 type Error struct {

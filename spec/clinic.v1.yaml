@@ -1377,11 +1377,6 @@ components:
         state:
           type: string
           title: Data source connection state
-          enum:
-            - pending
-            - connected
-            - disconnected
-            - error
           example: connected
         providerName:
           title: Provider Name
