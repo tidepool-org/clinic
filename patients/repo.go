@@ -532,10 +532,8 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 }
 
 func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error {
-	userObjId, _ := primitive.ObjectIDFromHex(userId)
-
 	selector := bson.M{
-		"userId": userObjId,
+		"userId": userId,
 	}
 
 	update := bson.M{

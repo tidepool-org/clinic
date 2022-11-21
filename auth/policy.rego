@@ -448,9 +448,9 @@ allow {
 }
 
 # Allow backend services to update a user data source for all associated clinic patient records
-# PUT /v1/patients/:patientId/data_sources/:providerName
+# PUT /v1/patients/:patientId/data_sources
 allow {
   input.method == "PUT"
-  input.path = ["v1", "patients", _, "data_sources", _]
+  input.path = ["v1", "patients", _, "data_sources"]
   is_backend_service
 }

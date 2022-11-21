@@ -399,7 +399,7 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 		for _, d := range *dataSources {
 			newDataSource := DataSource{
 				ProviderName: d.ProviderName,
-				State:        d.State,
+				State:        DataSourceState(d.State),
 			}
 
 			if d.DataSourceId != nil {
