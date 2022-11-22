@@ -199,7 +199,7 @@ func NewPatient(dto Patient) patients.Patient {
 			}
 
 			if d.ModifiedTime != nil {
-				updatedTime, _ := time.Parse(time.RFC3339, *d.ModifiedTime)
+				updatedTime, _ := time.Parse(time.RFC3339Nano, *d.ModifiedTime)
 				newDataSource.ModifiedTime = &updatedTime
 			}
 
@@ -411,7 +411,7 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 			}
 
 			if d.ModifiedTime != nil {
-				newDataSource.ModifiedTime = strp((d.ModifiedTime.String()))
+				newDataSource.ModifiedTime = strp((d.ModifiedTime.Format(time.RFC3339Nano)))
 			}
 
 			dtos = append(dtos, newDataSource)
