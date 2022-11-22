@@ -1323,6 +1323,10 @@ components:
             $ref: '#/components/schemas/DataSource'
         summary:
           $ref: '#/components/schemas/PatientSummary'
+        lastRequestDexcomConnectTime:
+          type: string
+          format: date-time
+          readOnly: true
         lastUploadReminderTime:
           type: string
           format: date-time

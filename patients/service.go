@@ -3,6 +3,7 @@ package patients
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
@@ -67,6 +68,10 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		if err = s.custodialService.UpdateAccount(ctx, update.Patient); err != nil {
 			return nil, err
 		}
+	}
+
+	if shouldSetLastRequestDexcomConnectionTime(*existing, update) {
+		update.Patient.LastRequestDexcomConnectTime = time.Now()
 	}
 
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
@@ -162,6 +167,17 @@ func shouldUpdateInvitedBy(existing Patient, update PatientUpdate) bool {
 	return (existing.Email == nil && update.Patient.Email != nil) ||
 		(existing.Email != nil && update.Patient.Email == nil) ||
 		(existing.Email != nil && update.Patient.Email != nil && *existing.Email != *update.Patient.Email)
+}
+
+func shouldSetLastRequestDexcomConnectionTime(existing Patient, update PatientUpdate) bool {
+	if existing.LastRequestDexcomConnectTime.IsZero() {
+		for _, source := range *update.Patient.DataSources {
+			if source.ProviderName == "dexcom" && source.State == "pending" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func getUpdatedBy(update PatientUpdate) *string {
