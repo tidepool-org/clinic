@@ -70,8 +70,11 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		}
 	}
 
-	if shouldSetLastRequestDexcomConnectionTime(*existing, update) {
-		update.Patient.LastRequestDexcomConnectTime = time.Now()
+	if shouldSetLastRequestedDexcomConnect(*existing, update) {
+		var updatedDexcomConnect LastRequestedDexcomConnect
+		updatedDexcomConnect.Time = time.Now()
+		updatedDexcomConnect.ClinicianId = &update.UpdatedBy
+		update.Patient.LastRequestedDexcomConnect = &updatedDexcomConnect
 	}
 
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
@@ -169,8 +172,8 @@ func shouldUpdateInvitedBy(existing Patient, update PatientUpdate) bool {
 		(existing.Email != nil && update.Patient.Email != nil && *existing.Email != *update.Patient.Email)
 }
 
-func shouldSetLastRequestDexcomConnectionTime(existing Patient, update PatientUpdate) bool {
-	if existing.LastRequestDexcomConnectTime.IsZero() {
+func shouldSetLastRequestedDexcomConnect(existing Patient, update PatientUpdate) bool {
+	if existing.LastRequestedDexcomConnect == nil {
 		for _, source := range *update.Patient.DataSources {
 			if source.ProviderName == "dexcom" && source.State == "pending" {
 				return true

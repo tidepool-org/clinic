@@ -1323,10 +1323,8 @@ components:
             $ref: '#/components/schemas/DataSource'
         summary:
           $ref: '#/components/schemas/PatientSummary'
-        lastRequestDexcomConnectTime:
-          type: string
-          format: date-time
-          readOnly: true
+        lastRequestedDexcomConnect:
+          $ref: '#/components/schemas/RequestedDataSourceConnect'
         lastUploadReminderTime:
           type: string
           format: date-time
@@ -1408,6 +1406,17 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/DataSource'
+    RequestedDataSourceConnect:
+      type: object
+      title: requestedDataSourceConnect.v1
+      description: Request for a patient to connect a data source
+      properties:
+        time:
+          type: string
+          format: date-time
+          readOnly: true
+        clinicianId:
+          $ref: '#/components/schemas/TidepoolUserId'
     InviteClinician:
       title: Invite Clinician
       type: object
