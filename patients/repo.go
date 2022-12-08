@@ -178,7 +178,24 @@ func (r *repository) Initialize(ctx context.Context) error {
 				SetBackground(true).
 				SetName("PatientTags"),
 		},
-		// TODO: Indexes for providerName and state?
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "dataSources.providerName", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("DataSourcesProviderName"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "dataSources.state", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("DataSourcesState"),
+		},
 	})
 	return err
 }
