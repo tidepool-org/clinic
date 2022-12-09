@@ -62,6 +62,7 @@ type Patient struct {
 	Summary                    *Summary                    `bson:"summary,omitempty"`
 	LastUploadReminderTime     time.Time                   `bson:"lastUploadReminderTime,omitempty"`
 	LastRequestedDexcomConnect *LastRequestedDexcomConnect `bson:"lastRequestedDexcomConnect,omitempty"`
+	ResendConnectDexcomRequest bool                        `bson:"-"`
 }
 
 // PatientSummary defines model for PatientSummary.
@@ -184,6 +185,7 @@ type DataSource struct {
 }
 
 type LastRequestedDexcomConnect struct {
-	Time        time.Time `bson:"time,omitempty"`
-	ClinicianId *string   `bson:"clinicianId,omitempty"`
+	Time          time.Time `bson:"time,omitempty"`
+	ClinicianId   *string   `bson:"clinicianId,omitempty"`
+	ResendRequest *bool     `bson:"-"`
 }

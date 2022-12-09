@@ -182,6 +182,10 @@ func NewPatient(dto Patient) patients.Patient {
 		patient.Tags = &tags
 	}
 
+	if dto.LastRequestedDexcomConnect != nil && dto.LastRequestedDexcomConnect.ResendRequest != nil {
+		patient.ResendConnectDexcomRequest = *dto.LastRequestedDexcomConnect.ResendRequest
+	}
+
 	if dto.DataSources != nil {
 		var dataSources []patients.DataSource
 		for _, d := range *dto.DataSources {

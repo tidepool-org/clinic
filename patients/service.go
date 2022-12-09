@@ -180,7 +180,7 @@ func shouldSetLastRequestedDexcomConnect(existing Patient, update PatientUpdate)
 			}
 		}
 	}
-	return false
+	return update.Patient.ResendConnectDexcomRequest
 }
 
 func getUpdatedBy(update PatientUpdate) *string {
