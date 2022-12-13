@@ -333,7 +333,6 @@ func (h *Handler) UpdatePatientDataSources(ec echo.Context, userId UserId) error
 
 	err := h.patients.UpdatePatientDataSources(ctx, string(userId), &dto)
 	if err != nil {
-		// TODO: 404 if not found in any clinics?
 		return err
 	}
 
