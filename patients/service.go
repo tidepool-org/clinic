@@ -69,13 +69,6 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		}
 	}
 
-	// if shouldSetLastRequestedDexcomConnect(*existing, update) {
-	// 	var updatedDexcomConnect LastRequestedDexcomConnect
-	// 	updatedDexcomConnect.Time = time.Now()
-	// 	updatedDexcomConnect.ClinicianId = &update.UpdatedBy
-	// 	update.Patient.LastRequestedDexcomConnect = &updatedDexcomConnect
-	// }
-
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
 	return s.repo.Update(ctx, update)
 }
@@ -175,17 +168,6 @@ func shouldUpdateInvitedBy(existing Patient, update PatientUpdate) bool {
 		(existing.Email != nil && update.Patient.Email == nil) ||
 		(existing.Email != nil && update.Patient.Email != nil && *existing.Email != *update.Patient.Email)
 }
-
-// func shouldSetLastRequestedDexcomConnect(existing Patient, update PatientUpdate) bool {
-// 	if existing.LastRequestedDexcomConnect == nil {
-// 		for _, source := range *update.Patient.DataSources {
-// 			if source.ProviderName == "dexcom" && source.State == "pending" {
-// 				return true
-// 			}
-// 		}
-// 	}
-// 	return update.Patient.ResendConnectDexcomRequest
-// }
 
 func getUpdatedBy(update PatientUpdate) *string {
 	if update.Patient.Email == nil {
