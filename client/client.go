@@ -816,7 +816,7 @@ func (c *Client) DeletePatientPermission(ctx context.Context, clinicId ClinicId,
 }
 
 func (c *Client) SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSendDexcomConnectReminderRequest(c.Server, clinicId, patientId)
+	req, err := NewSendDexcomConnectRequestRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -2852,8 +2852,8 @@ func NewDeletePatientPermissionRequest(server string, clinicId ClinicId, patient
 	return req, nil
 }
 
-// NewSendDexcomConnectReminderRequest generates requests for SendDexcomConnectRequest
-func NewSendDexcomConnectReminderRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+// NewSendDexcomConnectRequestRequest generates requests for SendDexcomConnectRequest
+func NewSendDexcomConnectRequestRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -3397,7 +3397,7 @@ type ClientWithResponsesInterface interface {
 	DeletePatientPermissionWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*DeletePatientPermissionResponse, error)
 
 	// SendDexcomConnectRequest request
-	SendDexcomConnectReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectReminderResponse, error)
+	SendDexcomConnectRequestWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectRequestResponse, error)
 
 	// SendUploadReminder request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
@@ -4149,14 +4149,14 @@ func (r DeletePatientPermissionResponse) StatusCode() int {
 	return 0
 }
 
-type SendDexcomConnectReminderResponse struct {
+type SendDexcomConnectRequestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *Patient
 }
 
 // Status returns HTTPResponse.Status
-func (r SendDexcomConnectReminderResponse) Status() string {
+func (r SendDexcomConnectRequestResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -4164,7 +4164,7 @@ func (r SendDexcomConnectReminderResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r SendDexcomConnectReminderResponse) StatusCode() int {
+func (r SendDexcomConnectRequestResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4728,13 +4728,13 @@ func (c *ClientWithResponses) DeletePatientPermissionWithResponse(ctx context.Co
 	return ParseDeletePatientPermissionResponse(rsp)
 }
 
-// SendDexcomConnectReminderWithResponse request returning *SendDexcomConnectReminderResponse
-func (c *ClientWithResponses) SendDexcomConnectReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectReminderResponse, error) {
+// SendDexcomConnectRequestWithResponse request returning *SendDexcomConnectRequestResponse
+func (c *ClientWithResponses) SendDexcomConnectRequestWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectRequestResponse, error) {
 	rsp, err := c.SendDexcomConnectRequest(ctx, clinicId, patientId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSendDexcomConnectReminderResponse(rsp)
+	return ParseSendDexcomConnectRequestResponse(rsp)
 }
 
 // SendUploadReminderWithResponse request returning *SendUploadReminderResponse
@@ -5618,15 +5618,15 @@ func ParseDeletePatientPermissionResponse(rsp *http.Response) (*DeletePatientPer
 	return response, nil
 }
 
-// ParseSendDexcomConnectReminderResponse parses an HTTP response from a SendDexcomConnectReminderWithResponse call
-func ParseSendDexcomConnectReminderResponse(rsp *http.Response) (*SendDexcomConnectReminderResponse, error) {
+// ParseSendDexcomConnectRequestResponse parses an HTTP response from a SendDexcomConnectRequestWithResponse call
+func ParseSendDexcomConnectRequestResponse(rsp *http.Response) (*SendDexcomConnectRequestResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &SendDexcomConnectReminderResponse{
+	response := &SendDexcomConnectRequestResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

@@ -1977,24 +1977,24 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) MigrateLegacyClinicianPa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MigrateLegacyClinicianPatientsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).MigrateLegacyClinicianPatientsWithResponse), varargs...)
 }
 
-// SendDexcomConnectReminderWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) SendDexcomConnectReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectReminderResponse, error) {
+// SendDexcomConnectRequestWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) SendDexcomConnectRequestWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectRequestResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "SendDexcomConnectReminderWithResponse", varargs...)
-	ret0, _ := ret[0].(*SendDexcomConnectReminderResponse)
+	ret := m.ctrl.Call(m, "SendDexcomConnectRequestWithResponse", varargs...)
+	ret0, _ := ret[0].(*SendDexcomConnectRequestResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SendDexcomConnectReminderWithResponse indicates an expected call of SendDexcomConnectReminderWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) SendDexcomConnectReminderWithResponse(ctx, clinicId, patientId interface{}, reqEditors ...interface{}) *gomock.Call {
+// SendDexcomConnectRequestWithResponse indicates an expected call of SendDexcomConnectRequestWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) SendDexcomConnectRequestWithResponse(ctx, clinicId, patientId interface{}, reqEditors ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId, patientId}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendDexcomConnectReminderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SendDexcomConnectReminderWithResponse), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendDexcomConnectRequestWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SendDexcomConnectRequestWithResponse), varargs...)
 }
 
 // SendUploadReminderWithResponse mocks base method.
