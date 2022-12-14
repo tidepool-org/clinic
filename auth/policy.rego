@@ -297,10 +297,10 @@ allow {
 }
 
 # Allow currently authenticated clinician to send a dexcom connect reminder
-# POST /v1/clinics/:clinicId/patients/:patientId/resend_dexcom_connect
+# POST /v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request
 allow {
   input.method == "POST"
-  input.path = ["v1", "clinics", _, "patients", _, "resend_dexcom_connect"]
+  input.path = ["v1", "clinics", _, "patients", _, "send_dexcom_connect_request"]
   clinician_has_read_access
 }
 

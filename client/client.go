@@ -218,8 +218,8 @@ type ClientInterface interface {
 	// DeletePatientPermission request
 	DeletePatientPermission(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SendDexcomConnectReminder request
-	SendDexcomConnectReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SendDexcomConnectRequest request
+	SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -815,7 +815,7 @@ func (c *Client) DeletePatientPermission(ctx context.Context, clinicId ClinicId,
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendDexcomConnectReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendDexcomConnectReminderRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
@@ -2852,7 +2852,7 @@ func NewDeletePatientPermissionRequest(server string, clinicId ClinicId, patient
 	return req, nil
 }
 
-// NewSendDexcomConnectReminderRequest generates requests for SendDexcomConnectReminder
+// NewSendDexcomConnectReminderRequest generates requests for SendDexcomConnectRequest
 func NewSendDexcomConnectReminderRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
 	var err error
 
@@ -2875,7 +2875,7 @@ func NewSendDexcomConnectReminderRequest(server string, clinicId ClinicId, patie
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/resend_dexcom_connect", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/send_dexcom_connect_request", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3396,7 +3396,7 @@ type ClientWithResponsesInterface interface {
 	// DeletePatientPermission request
 	DeletePatientPermissionWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*DeletePatientPermissionResponse, error)
 
-	// SendDexcomConnectReminder request
+	// SendDexcomConnectRequest request
 	SendDexcomConnectReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectReminderResponse, error)
 
 	// SendUploadReminder request
@@ -4730,7 +4730,7 @@ func (c *ClientWithResponses) DeletePatientPermissionWithResponse(ctx context.Co
 
 // SendDexcomConnectReminderWithResponse request returning *SendDexcomConnectReminderResponse
 func (c *ClientWithResponses) SendDexcomConnectReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectReminderResponse, error) {
-	rsp, err := c.SendDexcomConnectReminder(ctx, clinicId, patientId, reqEditors...)
+	rsp, err := c.SendDexcomConnectRequest(ctx, clinicId, patientId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

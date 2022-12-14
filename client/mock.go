@@ -774,24 +774,24 @@ func (mr *MockClientInterfaceMockRecorder) MigrateLegacyClinicianPatientsWithBod
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MigrateLegacyClinicianPatientsWithBody", reflect.TypeOf((*MockClientInterface)(nil).MigrateLegacyClinicianPatientsWithBody), varargs...)
 }
 
-// SendDexcomConnectReminder mocks base method.
-func (m *MockClientInterface) SendDexcomConnectReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// SendDexcomConnectRequest mocks base method.
+func (m *MockClientInterface) SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, clinicId, patientId}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "SendDexcomConnectReminder", varargs...)
+	ret := m.ctrl.Call(m, "SendDexcomConnectRequest", varargs...)
 	ret0, _ := ret[0].(*http.Response)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SendDexcomConnectReminder indicates an expected call of SendDexcomConnectReminder.
-func (mr *MockClientInterfaceMockRecorder) SendDexcomConnectReminder(ctx, clinicId, patientId interface{}, reqEditors ...interface{}) *gomock.Call {
+// SendDexcomConnectRequest indicates an expected call of SendDexcomConnectRequest.
+func (mr *MockClientInterfaceMockRecorder) SendDexcomConnectRequest(ctx, clinicId, patientId interface{}, reqEditors ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId, patientId}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendDexcomConnectReminder", reflect.TypeOf((*MockClientInterface)(nil).SendDexcomConnectReminder), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendDexcomConnectRequest", reflect.TypeOf((*MockClientInterface)(nil).SendDexcomConnectRequest), varargs...)
 }
 
 // SendUploadReminder mocks base method.

@@ -232,7 +232,7 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
-func (h *Handler) SendDexcomConnectReminder(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 
 	authData := auth.GetAuthData(ctx)
