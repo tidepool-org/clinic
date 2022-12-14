@@ -181,6 +181,21 @@ func (mr *MockRepositoryMockRecorder) UpdateEmail(ctx, userId, email interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmail", reflect.TypeOf((*MockRepository)(nil).UpdateEmail), ctx, userId, email)
 }
 
+// UpdateLastRequestedDexcomConnectTime mocks base method.
+func (m *MockRepository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *patients.LastRequestedDexcomConnectUpdate) (*patients.Patient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastRequestedDexcomConnectTime", ctx, update)
+	ret0, _ := ret[0].(*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateLastRequestedDexcomConnectTime indicates an expected call of UpdateLastRequestedDexcomConnectTime.
+func (mr *MockRepositoryMockRecorder) UpdateLastRequestedDexcomConnectTime(ctx, update interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastRequestedDexcomConnectTime", reflect.TypeOf((*MockRepository)(nil).UpdateLastRequestedDexcomConnectTime), ctx, update)
+}
+
 // UpdateLastUploadReminderTime mocks base method.
 func (m *MockRepository) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	m.ctrl.T.Helper()

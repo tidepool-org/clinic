@@ -38,31 +38,32 @@ type Service interface {
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
+	UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error)
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 }
 
 type Patient struct {
-	Id                         *primitive.ObjectID         `bson:"_id,omitempty"`
-	ClinicId                   *primitive.ObjectID         `bson:"clinicId,omitempty"`
-	UserId                     *string                     `bson:"userId,omitempty"`
-	BirthDate                  *string                     `bson:"birthDate"`
-	Email                      *string                     `bson:"email"`
-	FullName                   *string                     `bson:"fullName"`
-	Mrn                        *string                     `bson:"mrn"`
-	Tags                       *[]primitive.ObjectID       `bson:"tags,omitempty"`
-	DataSources                *[]DataSource               `bson:"dataSources,omitempty"`
-	TargetDevices              *[]string                   `bson:"targetDevices"`
-	Permissions                *Permissions                `bson:"permissions,omitempty"`
-	IsMigrated                 bool                        `bson:"isMigrated,omitempty"`
-	LegacyClinicianIds         []string                    `bson:"legacyClinicianIds,omitempty"`
-	CreatedTime                time.Time                   `bson:"createdTime,omitempty"`
-	UpdatedTime                time.Time                   `bson:"updatedTime,omitempty"`
-	InvitedBy                  *string                     `bson:"invitedBy,omitempty"`
-	Summary                    *Summary                    `bson:"summary,omitempty"`
-	LastUploadReminderTime     time.Time                   `bson:"lastUploadReminderTime,omitempty"`
-	LastRequestedDexcomConnect *LastRequestedDexcomConnect `bson:"lastRequestedDexcomConnect,omitempty"`
-	ResendConnectDexcomRequest bool                        `bson:"-"`
+	Id                             *primitive.ObjectID   `bson:"_id,omitempty"`
+	ClinicId                       *primitive.ObjectID   `bson:"clinicId,omitempty"`
+	UserId                         *string               `bson:"userId,omitempty"`
+	BirthDate                      *string               `bson:"birthDate"`
+	Email                          *string               `bson:"email"`
+	FullName                       *string               `bson:"fullName"`
+	Mrn                            *string               `bson:"mrn"`
+	Tags                           *[]primitive.ObjectID `bson:"tags,omitempty"`
+	DataSources                    *[]DataSource         `bson:"dataSources,omitempty"`
+	TargetDevices                  *[]string             `bson:"targetDevices"`
+	Permissions                    *Permissions          `bson:"permissions,omitempty"`
+	IsMigrated                     bool                  `bson:"isMigrated,omitempty"`
+	LegacyClinicianIds             []string              `bson:"legacyClinicianIds,omitempty"`
+	CreatedTime                    time.Time             `bson:"createdTime,omitempty"`
+	UpdatedTime                    time.Time             `bson:"updatedTime,omitempty"`
+	InvitedBy                      *string               `bson:"invitedBy,omitempty"`
+	Summary                        *Summary              `bson:"summary,omitempty"`
+	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
+	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
+	ResendConnectDexcomRequest     bool                  `bson:"-"`
 }
 
 // PatientSummary defines model for PatientSummary.
@@ -126,6 +127,13 @@ type UploadReminderUpdate struct {
 	Time      time.Time
 }
 
+type LastRequestedDexcomConnectUpdate struct {
+	ClinicId  string
+	UserId    string
+	UpdatedBy string
+	Time      time.Time
+}
+
 type Period struct {
 	TimeCGMUsePercent *float64 `bson:"timeCGMUsePercent,omitempty"`
 	TimeCGMUseMinutes *int     `bson:"timeCGMUseMinutes,omitempty"`
@@ -182,10 +190,4 @@ type DataSource struct {
 	ModifiedTime *time.Time          `bson:"modifiedTime,omitempty"`
 	ProviderName string              `bson:"providerName"`
 	State        string              `bson:"state"`
-}
-
-type LastRequestedDexcomConnect struct {
-	Time          time.Time `bson:"time,omitempty"`
-	ClinicianId   *string   `bson:"clinicianId,omitempty"`
-	ResendRequest *bool     `bson:"-"`
 }

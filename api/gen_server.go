@@ -112,6 +112,9 @@ type ServerInterface interface {
 	// Delete Patient Permission
 	// (DELETE /v1/clinics/{clinicId}/patients/{patientId}/permissions/{permission})
 	DeletePatientPermission(ctx echo.Context, clinicId ClinicId, patientId PatientId, permission string) error
+	// Resend dexcom connect request email
+	// (POST /v1/clinics/{clinicId}/patients/{patientId}/resend_dexcom_connect)
+	SendDexcomConnectReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Send Upload Reminder
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
 	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
@@ -1070,6 +1073,32 @@ func (w *ServerInterfaceWrapper) DeletePatientPermission(ctx echo.Context) error
 	return err
 }
 
+// SendDexcomConnectReminder converts echo context to params.
+func (w *ServerInterfaceWrapper) SendDexcomConnectReminder(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "patientId", runtime.ParamLocationPath, ctx.Param("patientId"), &patientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.SendDexcomConnectReminder(ctx, clinicId, patientId)
+	return err
+}
+
 // SendUploadReminder converts echo context to params.
 func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
 	var err error
@@ -1281,6 +1310,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/resend_dexcom_connect", wrapper.SendDexcomConnectReminder)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)

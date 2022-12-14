@@ -146,24 +146,26 @@ func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
 
 func NewPatientDto(patient *patients.Patient) Patient {
 	dto := Patient{
-		Email:                      patient.Email,
-		FullName:                   pstr(patient.FullName),
-		Id:                         *strpuseridp(patient.UserId),
-		Mrn:                        patient.Mrn,
-		Permissions:                NewPermissionsDto(patient.Permissions),
-		Tags:                       NewPatientTagsDto(patient.Tags),
-		DataSources:                NewPatientDataSourcesDto(patient.DataSources),
-		TargetDevices:              patient.TargetDevices,
-		CreatedTime:                patient.CreatedTime,
-		UpdatedTime:                patient.UpdatedTime,
-		Summary:                    NewSummaryDto(patient.Summary),
-		LastRequestedDexcomConnect: NewLastRequestedDexcomConnectDto(patient.LastRequestedDexcomConnect),
+		Email:         patient.Email,
+		FullName:      pstr(patient.FullName),
+		Id:            *strpuseridp(patient.UserId),
+		Mrn:           patient.Mrn,
+		Permissions:   NewPermissionsDto(patient.Permissions),
+		Tags:          NewPatientTagsDto(patient.Tags),
+		DataSources:   NewPatientDataSourcesDto(patient.DataSources),
+		TargetDevices: patient.TargetDevices,
+		CreatedTime:   patient.CreatedTime,
+		UpdatedTime:   patient.UpdatedTime,
+		Summary:       NewSummaryDto(patient.Summary),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
 	}
 	if !patient.LastUploadReminderTime.IsZero() {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
+	}
+	if !patient.LastRequestedDexcomConnectTime.IsZero() {
+		dto.LastRequestedDexcomConnectTime = &patient.LastRequestedDexcomConnectTime
 	}
 	return dto
 }
@@ -180,10 +182,6 @@ func NewPatient(dto Patient) patients.Patient {
 	if dto.Tags != nil {
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
-	}
-
-	if dto.LastRequestedDexcomConnect != nil && dto.LastRequestedDexcomConnect.ResendRequest != nil {
-		patient.ResendConnectDexcomRequest = *dto.LastRequestedDexcomConnect.ResendRequest
 	}
 
 	if dto.DataSources != nil {
@@ -421,18 +419,6 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 	}
 
 	return &dtos
-}
-
-func NewLastRequestedDexcomConnectDto(dto *patients.LastRequestedDexcomConnect) *RequestedDataSourceConnect {
-	var lastRequestedDexcomConnect RequestedDataSourceConnect
-
-	if dto != nil && !dto.Time.IsZero() {
-		clinicianId := TidepoolUserId(pstr(dto.ClinicianId))
-		lastRequestedDexcomConnect.Time = &dto.Time
-		lastRequestedDexcomConnect.ClinicianId = &clinicianId
-	}
-
-	return &lastRequestedDexcomConnect
 }
 
 func NewPatientsDto(patients []*patients.Patient) []Patient {

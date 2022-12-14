@@ -218,6 +218,9 @@ type ClientInterface interface {
 	// DeletePatientPermission request
 	DeletePatientPermission(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SendDexcomConnectReminder request
+	SendDexcomConnectReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -802,6 +805,18 @@ func (c *Client) UpdatePatientPermissions(ctx context.Context, clinicId ClinicId
 
 func (c *Client) DeletePatientPermission(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeletePatientPermissionRequest(c.Server, clinicId, patientId, permission)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SendDexcomConnectReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendDexcomConnectReminderRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -2837,6 +2852,47 @@ func NewDeletePatientPermissionRequest(server string, clinicId ClinicId, patient
 	return req, nil
 }
 
+// NewSendDexcomConnectReminderRequest generates requests for SendDexcomConnectReminder
+func NewSendDexcomConnectReminderRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/resend_dexcom_connect", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSendUploadReminderRequest generates requests for SendUploadReminder
 func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
 	var err error
@@ -3339,6 +3395,9 @@ type ClientWithResponsesInterface interface {
 
 	// DeletePatientPermission request
 	DeletePatientPermissionWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, permission string, reqEditors ...RequestEditorFn) (*DeletePatientPermissionResponse, error)
+
+	// SendDexcomConnectReminder request
+	SendDexcomConnectReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectReminderResponse, error)
 
 	// SendUploadReminder request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
@@ -4090,6 +4149,28 @@ func (r DeletePatientPermissionResponse) StatusCode() int {
 	return 0
 }
 
+type SendDexcomConnectReminderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Patient
+}
+
+// Status returns HTTPResponse.Status
+func (r SendDexcomConnectReminderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SendDexcomConnectReminderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SendUploadReminderResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4645,6 +4726,15 @@ func (c *ClientWithResponses) DeletePatientPermissionWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseDeletePatientPermissionResponse(rsp)
+}
+
+// SendDexcomConnectReminderWithResponse request returning *SendDexcomConnectReminderResponse
+func (c *ClientWithResponses) SendDexcomConnectReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectReminderResponse, error) {
+	rsp, err := c.SendDexcomConnectReminder(ctx, clinicId, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSendDexcomConnectReminderResponse(rsp)
 }
 
 // SendUploadReminderWithResponse request returning *SendUploadReminderResponse
@@ -5523,6 +5613,32 @@ func ParseDeletePatientPermissionResponse(rsp *http.Response) (*DeletePatientPer
 	response := &DeletePatientPermissionResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseSendDexcomConnectReminderResponse parses an HTTP response from a SendDexcomConnectReminderWithResponse call
+func ParseSendDexcomConnectReminderResponse(rsp *http.Response) (*SendDexcomConnectReminderResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SendDexcomConnectReminderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Patient
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

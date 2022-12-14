@@ -3,7 +3,6 @@ package patients
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
@@ -68,13 +67,6 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		if err = s.custodialService.UpdateAccount(ctx, update.Patient); err != nil {
 			return nil, err
 		}
-	}
-
-	if shouldSetLastRequestedDexcomConnect(*existing, update) {
-		var updatedDexcomConnect LastRequestedDexcomConnect
-		updatedDexcomConnect.Time = time.Now()
-		updatedDexcomConnect.ClinicianId = &update.UpdatedBy
-		update.Patient.LastRequestedDexcomConnect = &updatedDexcomConnect
 	}
 
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
@@ -149,6 +141,11 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *Uplo
 	return s.repo.UpdateLastUploadReminderTime(ctx, update)
 }
 
+func (s *service) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
+	s.logger.Infow("updating last requested dexcom connect time for user", "clinicId", update.ClinicId, "userId", update.UserId)
+	return s.repo.UpdateLastRequestedDexcomConnectTime(ctx, update)
+}
+
 func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
 	s.logger.Infow("deleting tag from all patients", "clinicId", clinicId, "tagId", tagId)
 	return s.repo.DeletePatientTagFromClinicPatients(ctx, clinicId, tagId)
@@ -172,16 +169,16 @@ func shouldUpdateInvitedBy(existing Patient, update PatientUpdate) bool {
 		(existing.Email != nil && update.Patient.Email != nil && *existing.Email != *update.Patient.Email)
 }
 
-func shouldSetLastRequestedDexcomConnect(existing Patient, update PatientUpdate) bool {
-	if existing.LastRequestedDexcomConnect == nil {
-		for _, source := range *update.Patient.DataSources {
-			if source.ProviderName == "dexcom" && source.State == "pending" {
-				return true
-			}
-		}
-	}
-	return update.Patient.ResendConnectDexcomRequest
-}
+// func shouldSetLastRequestedDexcomConnect(existing Patient, update PatientUpdate) bool {
+// 	if existing.LastRequestedDexcomConnect == nil {
+// 		for _, source := range *update.Patient.DataSources {
+// 			if source.ProviderName == "dexcom" && source.State == "pending" {
+// 				return true
+// 			}
+// 		}
+// 	}
+// 	return update.Patient.ResendConnectDexcomRequest
+// }
 
 func getUpdatedBy(update PatientUpdate) *string {
 	if update.Patient.Email == nil {

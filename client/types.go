@@ -264,11 +264,9 @@ type Patient struct {
 	FullName string `json:"fullName"`
 
 	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id TidepoolUserId `json:"id"`
-
-	// Request for a patient to connect a data source
-	LastRequestedDexcomConnect *RequestedDataSourceConnect `json:"lastRequestedDexcomConnect,omitempty"`
-	LastUploadReminderTime     *time.Time                  `json:"lastUploadReminderTime,omitempty"`
+	Id                             TidepoolUserId `json:"id"`
+	LastRequestedDexcomConnectTime *time.Time     `json:"lastRequestedDexcomConnectTime,omitempty"`
+	LastUploadReminderTime         *time.Time     `json:"lastUploadReminderTime,omitempty"`
 
 	// The medical record number of the patient
 	Mrn           *string             `json:"mrn,omitempty"`
@@ -364,14 +362,6 @@ type PatientsResponse struct {
 type PhoneNumber struct {
 	Number string  `json:"number"`
 	Type   *string `json:"type,omitempty"`
-}
-
-// Request for a patient to connect a data source
-type RequestedDataSourceConnect struct {
-	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	ClinicianId   *TidepoolUserId `json:"clinicianId,omitempty"`
-	ResendRequest *bool           `json:"resendRequest,omitempty"`
-	Time          *time.Time      `json:"time,omitempty"`
 }
 
 // String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
