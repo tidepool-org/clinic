@@ -63,7 +63,6 @@ type Patient struct {
 	Summary                        *Summary              `bson:"summary,omitempty"`
 	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
 	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
-	ResendConnectDexcomRequest     bool                  `bson:"-"`
 }
 
 // PatientSummary defines model for PatientSummary.
