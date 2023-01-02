@@ -38,6 +38,7 @@ type Service interface {
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
+	UpdateLastDeclinedDexcomConnectTime(ctx context.Context, update *LastDeclinedDexcomConnectUpdate) error
 	UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error)
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
@@ -62,6 +63,7 @@ type Patient struct {
 	InvitedBy                      *string               `bson:"invitedBy,omitempty"`
 	Summary                        *Summary              `bson:"summary,omitempty"`
 	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
+	LastDeclinedDexcomConnectTime  time.Time             `bson:"lastDeclinedDexcomConnectTime,omitempty"`
 	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
 }
 
@@ -124,6 +126,11 @@ type UploadReminderUpdate struct {
 	UserId    string
 	UpdatedBy string
 	Time      time.Time
+}
+
+type LastDeclinedDexcomConnectUpdate struct {
+	UserId string
+	Time   time.Time
 }
 
 type LastRequestedDexcomConnectUpdate struct {

@@ -314,6 +314,26 @@ func (mr *MockClientInterfaceMockRecorder) CreatePatientTagWithBody(ctx, clinicI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePatientTagWithBody", reflect.TypeOf((*MockClientInterface)(nil).CreatePatientTagWithBody), varargs...)
 }
 
+// DeclineDexcomConnectRequest mocks base method.
+func (m *MockClientInterface) DeclineDexcomConnectRequest(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, userId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeclineDexcomConnectRequest", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeclineDexcomConnectRequest indicates an expected call of DeclineDexcomConnectRequest.
+func (mr *MockClientInterfaceMockRecorder) DeclineDexcomConnectRequest(ctx, userId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, userId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeclineDexcomConnectRequest", reflect.TypeOf((*MockClientInterface)(nil).DeclineDexcomConnectRequest), varargs...)
+}
+
 // DeleteClinician mocks base method.
 func (m *MockClientInterface) DeleteClinician(ctx context.Context, clinicId ClinicId, clinicianId ClinicianId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1515,6 +1535,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) CreatePatientTagWithResp
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePatientTagWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).CreatePatientTagWithResponse), varargs...)
+}
+
+// DeclineDexcomConnectRequestWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) DeclineDexcomConnectRequestWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*DeclineDexcomConnectRequestResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, userId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeclineDexcomConnectRequestWithResponse", varargs...)
+	ret0, _ := ret[0].(*DeclineDexcomConnectRequestResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeclineDexcomConnectRequestWithResponse indicates an expected call of DeclineDexcomConnectRequestWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) DeclineDexcomConnectRequestWithResponse(ctx, userId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, userId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeclineDexcomConnectRequestWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeclineDexcomConnectRequestWithResponse), varargs...)
 }
 
 // DeleteClinicianWithResponse mocks base method.

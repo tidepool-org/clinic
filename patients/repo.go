@@ -498,6 +498,31 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
+func (r *repository) UpdateLastDeclinedDexcomConnectTime(ctx context.Context, update *LastDeclinedDexcomConnectUpdate) error {
+	selector := bson.M{
+		"userId": update.UserId,
+	}
+
+	mongoUpdate := bson.M{
+		"$set": bson.M{
+			"lastDeclinedDexcomConnectTime": update.Time,
+			"updatedTime":                   time.Now(),
+		},
+	}
+
+	result, err := r.collection.UpdateMany(ctx, selector, mongoUpdate)
+	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
+		err = fmt.Errorf("partially updated %v out of %v patient records: %w", result.ModifiedCount, result.MatchedCount, err)
+	}
+	if err != nil {
+		r.logger.Errorw("error updating patient lastDeclinedDexcomConnectTime", "error", err, "userId", update.UserId)
+	} else if result.ModifiedCount == 0 {
+		return ErrNotFound
+	}
+
+	return err
+}
+
 func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
 	selector := bson.M{
@@ -589,9 +614,11 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	}
 	if err != nil {
 		r.logger.Errorw("error updating patient data sources", "error", err, "userId", userId)
+	} else if result.ModifiedCount == 0 {
+		return ErrNotFound
 	}
 
-	return nil
+	return err
 }
 
 func generateListFilterQuery(filter *Filter) bson.M {

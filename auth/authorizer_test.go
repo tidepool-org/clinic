@@ -672,4 +672,17 @@ var _ = Describe("Request Authorizer", func() {
 		err := authorizer.EvaluatePolicy(context.Background(), input)
 		Expect(err).ToNot(HaveOccurred())
 	})
+
+	It("it allows auth to decline a dexcom connect request for all matching patients", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "users", "99c290f838", "decline_dexcom_connect_request"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "auth",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
 })

@@ -171,6 +171,7 @@ var _ = Describe("Patients Repository", func() {
 					TargetDevices:                  update.Patient.TargetDevices,
 					Permissions:                    update.Patient.Permissions,
 					IsMigrated:                     randomPatient.IsMigrated,
+					LastDeclinedDexcomConnectTime:  update.Patient.LastDeclinedDexcomConnectTime,
 					LastRequestedDexcomConnectTime: update.Patient.LastRequestedDexcomConnectTime,
 					DataSources:                    update.Patient.DataSources,
 				}
@@ -659,6 +660,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"Summary":                        Ignore(),
 		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
 		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
+		"LastDeclinedDexcomConnectTime":  Equal(patient.LastDeclinedDexcomConnectTime),
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
 	})
 }

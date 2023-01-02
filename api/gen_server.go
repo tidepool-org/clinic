@@ -136,6 +136,9 @@ type ServerInterface interface {
 	// Update User Details
 	// (POST /v1/users/{userId}/clinics)
 	UpdateClinicUserDetails(ctx echo.Context, userId UserId) error
+	// Decline a Dexcom Connection Request For User
+	// (POST /v1/users/{userId}/decline_dexcom_connect_request)
+	DeclineDexcomConnectRequest(ctx echo.Context, userId UserId) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1249,6 +1252,24 @@ func (w *ServerInterfaceWrapper) UpdateClinicUserDetails(ctx echo.Context) error
 	return err
 }
 
+// DeclineDexcomConnectRequest converts echo context to params.
+func (w *ServerInterfaceWrapper) DeclineDexcomConnectRequest(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "userId", runtime.ParamLocationPath, ctx.Param("userId"), &userId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeclineDexcomConnectRequest(ctx, userId)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -1318,6 +1339,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
+	router.POST(baseURL+"/v1/users/:userId/decline_dexcom_connect_request", wrapper.DeclineDexcomConnectRequest)
 
 }
 

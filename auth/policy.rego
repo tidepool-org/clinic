@@ -400,15 +400,8 @@ allow {
   input.path = ["v1", "clinics", _, "migrations", _]
 }
 
-# Allow backend services to update the status of migrations
-# PATCH /v1/users/:clinicId/clinics
-allow {
-  is_backend_service
-  input.method == "DELETE"
-  input.path = ["v1", "users", _, "clinics"]
-}
-# Allow backend services to update the status of migrations
-# PATCH /v1/users/:clinicId/clinics
+# Allow backend services to delete any user associations with clinics they are a patient or a member of
+# DELETE /v1/users/:userId/clinics
 allow {
   is_backend_service
   input.method == "DELETE"
@@ -416,11 +409,19 @@ allow {
 }
 
 # Allow backend services to update user details
-# POST /v1/users/:clinicId/clinics
+# POST /v1/users/:userId/clinics
 allow {
   is_backend_service
   input.method == "POST"
   input.path = ["v1", "users", _, "clinics"]
+}
+
+# Allow backend services to decline user dexcom connect requests
+# POST /v1/users/:userId/decline_dexcom_connect_request
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "users", _, "decline_dexcom_connect_request"]
 }
 
 # Allow currently authenticated clinic member to create a patient tag

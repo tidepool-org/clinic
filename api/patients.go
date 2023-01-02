@@ -232,6 +232,29 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
+func (h *Handler) DeclineDexcomConnectRequest(ec echo.Context, userId UserId) error {
+	ctx := ec.Request().Context()
+
+	authData := auth.GetAuthData(ctx)
+	if !authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected server access token",
+		}
+	}
+
+	update := patients.LastDeclinedDexcomConnectUpdate{
+		Time:   time.Now(),
+		UserId: string(userId),
+	}
+	err := h.patients.UpdateLastDeclinedDexcomConnectTime(ctx, &update)
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
+}
+
 func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 

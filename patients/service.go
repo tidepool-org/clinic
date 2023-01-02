@@ -141,6 +141,11 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *Uplo
 	return s.repo.UpdateLastUploadReminderTime(ctx, update)
 }
 
+func (s *service) UpdateLastDeclinedDexcomConnectTime(ctx context.Context, update *LastDeclinedDexcomConnectUpdate) error {
+	s.logger.Infow("updating last requested dexcom connect time for user", "userId", update.UserId)
+	return s.repo.UpdateLastDeclinedDexcomConnectTime(ctx, update)
+}
+
 func (s *service) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
 	s.logger.Infow("updating last requested dexcom connect time for user", "clinicId", update.ClinicId, "userId", update.UserId)
 	return s.repo.UpdateLastRequestedDexcomConnectTime(ctx, update)

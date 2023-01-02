@@ -167,6 +167,9 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	if !patient.LastRequestedDexcomConnectTime.IsZero() {
 		dto.LastRequestedDexcomConnectTime = &patient.LastRequestedDexcomConnectTime
 	}
+	if !patient.LastDeclinedDexcomConnectTime.IsZero() {
+		dto.LastDeclinedDexcomConnectTime = &patient.LastDeclinedDexcomConnectTime
+	}
 	return dto
 }
 
