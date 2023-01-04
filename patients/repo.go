@@ -605,6 +605,7 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	update := bson.M{
 		"$set": bson.M{
 			"dataSources": dataSources,
+			"updatedTime": time.Now(),
 		},
 	}
 
