@@ -417,11 +417,11 @@ allow {
 }
 
 # Allow backend services to decline user dexcom connect requests
-# POST /v1/users/:userId/decline_dexcom_connect_request
+# POST /v1/patients/:userId/decline_dexcom_connect_request
 allow {
   is_backend_service
   input.method == "POST"
-  input.path = ["v1", "users", _, "decline_dexcom_connect_request"]
+  input.path = ["v1", "patients", _, "decline_dexcom_connect_request"]
 }
 
 # Allow currently authenticated clinic member to create a patient tag

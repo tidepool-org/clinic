@@ -130,15 +130,15 @@ type ServerInterface interface {
 	// Create or update a data source for a patient
 	// (PUT /v1/patients/{userId}/data_sources)
 	UpdatePatientDataSources(ctx echo.Context, userId UserId) error
+	// Decline a Dexcom Connection Request For User
+	// (POST /v1/patients/{userId}/decline_dexcom_connect_request)
+	DeclineDexcomConnectRequest(ctx echo.Context, userId UserId) error
 
 	// (DELETE /v1/users/{userId}/clinics)
 	DeleteUserFromClinics(ctx echo.Context, userId UserId) error
 	// Update User Details
 	// (POST /v1/users/{userId}/clinics)
 	UpdateClinicUserDetails(ctx echo.Context, userId UserId) error
-	// Decline a Dexcom Connection Request For User
-	// (POST /v1/users/{userId}/decline_dexcom_connect_request)
-	DeclineDexcomConnectRequest(ctx echo.Context, userId UserId) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1216,6 +1216,24 @@ func (w *ServerInterfaceWrapper) UpdatePatientDataSources(ctx echo.Context) erro
 	return err
 }
 
+// DeclineDexcomConnectRequest converts echo context to params.
+func (w *ServerInterfaceWrapper) DeclineDexcomConnectRequest(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "userId", runtime.ParamLocationPath, ctx.Param("userId"), &userId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeclineDexcomConnectRequest(ctx, userId)
+	return err
+}
+
 // DeleteUserFromClinics converts echo context to params.
 func (w *ServerInterfaceWrapper) DeleteUserFromClinics(ctx echo.Context) error {
 	var err error
@@ -1249,24 +1267,6 @@ func (w *ServerInterfaceWrapper) UpdateClinicUserDetails(ctx echo.Context) error
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.UpdateClinicUserDetails(ctx, userId)
-	return err
-}
-
-// DeclineDexcomConnectRequest converts echo context to params.
-func (w *ServerInterfaceWrapper) DeclineDexcomConnectRequest(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "userId" -------------
-	var userId UserId
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "userId", runtime.ParamLocationPath, ctx.Param("userId"), &userId)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
-	}
-
-	ctx.Set(SessionTokenScopes, []string{""})
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeclineDexcomConnectRequest(ctx, userId)
 	return err
 }
 
@@ -1337,9 +1337,9 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)
+	router.POST(baseURL+"/v1/patients/:userId/decline_dexcom_connect_request", wrapper.DeclineDexcomConnectRequest)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
-	router.POST(baseURL+"/v1/users/:userId/decline_dexcom_connect_request", wrapper.DeclineDexcomConnectRequest)
 
 }
 
