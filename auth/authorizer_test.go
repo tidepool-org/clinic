@@ -675,7 +675,7 @@ var _ = Describe("Request Authorizer", func() {
 
 	It("it allows auth to decline a dexcom connect request for all matching patients", func() {
 		input := map[string]interface{}{
-			"path":   []string{"v1", "users", "99c290f838", "decline_dexcom_connect_request"},
+			"path":   []string{"v1", "patients", "99c290f838", "decline_dexcom_connect_request"},
 			"method": "POST",
 			"auth": map[string]interface{}{
 				"subjectId":    "auth",
