@@ -500,10 +500,16 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 
 func (r *repository) UpdateLastDeclinedDexcomConnectTime(ctx context.Context, update *LastDeclinedDexcomConnectUpdate) error {
 	selector := bson.M{
-		"userId": update.UserId,
+		"userId":                   update.UserId,
+		"dataSources.providerName": "dexcom",
 	}
 
 	mongoUpdate := bson.M{
+		"$pull": bson.M{
+			"dataSources": bson.M{
+				"providerName": "dexcom",
+			},
+		},
 		"$set": bson.M{
 			"lastDeclinedDexcomConnectTime": update.Time,
 			"updatedTime":                   time.Now(),
