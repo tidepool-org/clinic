@@ -3,12 +3,13 @@ package patients
 import (
 	"context"
 	errs "errors"
+	"net/http"
+
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
 	"go.uber.org/fx"
-	"net/http"
 )
 
 var UserServiceModule = fx.Provide(
@@ -17,6 +18,7 @@ var UserServiceModule = fx.Provide(
 	shorelineProvider,
 	gatekeeperProvider,
 	seagullProvider,
+	dataProvider,
 	NewUserService,
 )
 
@@ -34,6 +36,7 @@ type userService struct {
 	shorelineClient shoreline.Client
 	seagull         clients.Seagull
 	gatekeeper      clients.Gatekeeper
+	data            clients.DataClient
 }
 
 var _ UserService = &userService{}
@@ -44,6 +47,7 @@ type UserServiceParams struct {
 	ShorelineClient shoreline.Client
 	Seagull         clients.Seagull
 	Gatekeeper      clients.Gatekeeper
+	Data            clients.DataClient
 }
 
 func NewUserService(p UserServiceParams) (UserService, error) {
@@ -51,6 +55,7 @@ func NewUserService(p UserServiceParams) (UserService, error) {
 		shorelineClient: p.ShorelineClient,
 		seagull:         p.Seagull,
 		gatekeeper:      p.Gatekeeper,
+		data:            p.Data,
 	}, nil
 }
 
@@ -125,6 +130,23 @@ func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *P
 		patient.BirthDate = &birthDate
 	}
 
+	sources, err := s.GetUserDataSources(ctx, *patient.UserId)
+	if err != nil {
+		return err
+	}
+
+	if len(sources) > 0 {
+		var dataSources DataSources
+		for _, source := range sources {
+			dataSources = append(dataSources, DataSource{
+				ModifiedTime: source.ModifiedTime,
+				ProviderName: *source.ProviderName,
+				State:        *source.State,
+			})
+		}
+
+		patient.DataSources = (*[]DataSource)(&dataSources)
+	}
 	return nil
 }
 
@@ -136,4 +158,12 @@ func (s *userService) GetUserProfile(ctx context.Context, userId string) (*Profi
 		return nil, err
 	}
 	return &profile, nil
+}
+
+func (s *userService) GetUserDataSources(ctx context.Context, userId string) (clients.DataSourceArray, error) {
+	sources, err := s.data.ListSources(string(userId))
+	if err != nil {
+		return nil, err
+	}
+	return sources, nil
 }
