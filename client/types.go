@@ -202,7 +202,10 @@ type DataSource struct {
 	DataSourceId *string `json:"dataSourceId,omitempty"`
 
 	// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	ModifiedTime *string         `json:"modifiedTime,omitempty"`
+	ExpirationTime *DateTime `json:"expirationTime,omitempty"`
+
+	// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	ModifiedTime *DateTime       `json:"modifiedTime,omitempty"`
 	ProviderName string          `json:"providerName"`
 	State        DataSourceState `json:"state"`
 }
@@ -212,6 +215,9 @@ type DataSourceState string
 
 // DataSources defines model for DataSources.
 type DataSources []DataSource
+
+// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+type DateTime string
 
 // Error defines model for Error.
 type Error struct {

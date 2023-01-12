@@ -501,16 +501,22 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
 	selector := bson.M{
-		"clinicId": clinicObjId,
-		"userId":   update.UserId,
+		"clinicId":                 clinicObjId,
+		"userId":                   update.UserId,
+		"dataSources.providerName": "dexcom",
 	}
 
+	currentTime := time.Now()
 	mongoUpdate := bson.M{
 		"$set": bson.M{
 			"lastRequestedDexcomConnectTime": update.Time,
-			"updatedTime":                    time.Now(),
+			"updatedTime":                    currentTime,
+			"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
+			"dataSources.$.modifiedTime":     currentTime,
+			"dataSources.$.state":            "pending",
 		},
 	}
+
 	err := r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

@@ -549,9 +549,9 @@ paths:
                   creatorId:
                     $ref: '#/components/schemas/TidepoolUserId'
                   created:
-                    $ref: '#/components/schemas/DataSource/properties/modifiedTime'
+                    $ref: '#/components/schemas/DateTime'
                   modified:
-                    $ref: '#/components/schemas/DataSource/properties/modifiedTime'
+                    $ref: '#/components/schemas/DateTime'
                   creator:
                     title: Creator
                     type: object
@@ -1384,6 +1384,13 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/PatientTag'
+    DateTime:
+      title: Date/Time
+      description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
+      type: string
+      format: date-time
+      example: '2017-02-06T02:37:46Z'
+      x-go-type: string
     DataSource:
       type: object
       title: Patient data source
@@ -1412,12 +1419,9 @@ components:
           pattern: '^[a-f0-9]{24}$'
           readOnly: true
         modifiedTime:
-          title: Date/Time
-          description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
-          type: string
-          format: date-time
-          example: '2017-02-06T02:37:46Z'
-          x-go-type: string
+          $ref: '#/components/schemas/DateTime'
+        expirationTime:
+          $ref: '#/components/schemas/DateTime'
       required:
         - state
         - providerName

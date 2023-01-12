@@ -199,8 +199,13 @@ func NewPatient(dto Patient) patients.Patient {
 			}
 
 			if d.ModifiedTime != nil {
-				updatedTime, _ := time.Parse(time.RFC3339Nano, *d.ModifiedTime)
-				newDataSource.ModifiedTime = &updatedTime
+				modifiedTime, _ := time.Parse(time.RFC3339Nano, string(*d.ModifiedTime))
+				newDataSource.ModifiedTime = &modifiedTime
+			}
+
+			if d.ExpirationTime != nil {
+				expirationTime, _ := time.Parse(time.RFC3339Nano, string(*d.ExpirationTime))
+				newDataSource.ExpirationTime = &expirationTime
 			}
 
 			dataSources = append(dataSources, newDataSource)
@@ -411,7 +416,13 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 			}
 
 			if d.ModifiedTime != nil {
-				newDataSource.ModifiedTime = strp((d.ModifiedTime.Format(time.RFC3339Nano)))
+				modifiedTime := DateTime(d.ModifiedTime.Format(time.RFC3339Nano))
+				newDataSource.ModifiedTime = &modifiedTime
+			}
+
+			if d.ExpirationTime != nil {
+				expirationTime := DateTime(d.ExpirationTime.Format(time.RFC3339Nano))
+				newDataSource.ExpirationTime = &expirationTime
 			}
 
 			dtos = append(dtos, newDataSource)
