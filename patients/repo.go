@@ -524,6 +524,7 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 		"dataSources.providerName": DexcomDataSourceProviderName,
 	}
 
+	// Default update for inital connection requests
 	mongoUpdate := bson.M{
 		"$set": bson.M{
 			"lastRequestedDexcomConnectTime": update.Time,
@@ -533,7 +534,8 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 		},
 	}
 
-	if !patientDexcomDataSource.ModifiedTime.IsZero() {
+	// Update for previously connected requests
+	if patientDexcomDataSource.ModifiedTime != nil {
 		mongoUpdate = bson.M{
 			"$set": bson.M{
 				"lastRequestedDexcomConnectTime": update.Time,
