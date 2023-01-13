@@ -17,6 +17,9 @@ var (
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
 
 	PendingDexcomDataSourceExpirationDuration = time.Hour * 24 * 30
+	DexcomDataSourceProviderName              = "dexcom"
+	DataSourceStatePending                    = "pending"
+	DataSourceStatePendingReconnect           = "pendingReconnect"
 
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{

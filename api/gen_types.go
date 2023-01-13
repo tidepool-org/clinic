@@ -60,6 +60,8 @@ const (
 	DataSourceStateError DataSourceState = "error"
 
 	DataSourceStatePending DataSourceState = "pending"
+
+	DataSourceStatePendingReconnect DataSourceState = "pendingReconnect"
 )
 
 // Defines values for MigrationStatus.
