@@ -500,18 +500,54 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 
 func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
-	selector := bson.M{
-		"clinicId": clinicObjId,
-		"userId":   update.UserId,
+	currentTime := time.Now()
+
+	// We fetch the current dexcom data source to determine if we are requesting an initial connection
+	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
+	patient, err := r.Get(ctx, update.ClinicId, update.UserId)
+	if err != nil {
+		return nil, fmt.Errorf("error finding patient: %w", err)
 	}
 
+	var patientDexcomDataSource DataSource
+	if patient.DataSources != nil {
+		for _, source := range *patient.DataSources {
+			if source.ProviderName == DexcomDataSourceProviderName {
+				patientDexcomDataSource = source
+			}
+		}
+	}
+
+	selector := bson.M{
+		"clinicId":                 clinicObjId,
+		"userId":                   update.UserId,
+		"dataSources.providerName": DexcomDataSourceProviderName,
+	}
+
+	// Default update for inital connection requests
 	mongoUpdate := bson.M{
 		"$set": bson.M{
 			"lastRequestedDexcomConnectTime": update.Time,
-			"updatedTime":                    time.Now(),
+			"updatedTime":                    currentTime,
+			"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
+			"dataSources.$.state":            DataSourceStatePending,
 		},
 	}
-	err := r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
+
+	// Update for previously connected requests
+	if patientDexcomDataSource.ModifiedTime != nil {
+		mongoUpdate = bson.M{
+			"$set": bson.M{
+				"lastRequestedDexcomConnectTime": update.Time,
+				"updatedTime":                    currentTime,
+				"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
+				"dataSources.$.modifiedTime":     currentTime,
+				"dataSources.$.state":            DataSourceStatePendingReconnect,
+			},
+		}
+	}
+
+	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, ErrNotFound
@@ -580,6 +616,7 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	update := bson.M{
 		"$set": bson.M{
 			"dataSources": dataSources,
+			"updatedTime": time.Now(),
 		},
 	}
 

@@ -16,6 +16,11 @@ var (
 	ErrDuplicatePatient   = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
 
+	PendingDexcomDataSourceExpirationDuration = time.Hour * 24 * 30
+	DexcomDataSourceProviderName              = "dexcom"
+	DataSourceStatePending                    = "pending"
+	DataSourceStatePendingReconnect           = "pendingReconnect"
+
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,
@@ -185,8 +190,9 @@ type AvgGlucose struct {
 
 type DataSources []DataSource
 type DataSource struct {
-	DataSourceId *primitive.ObjectID `bson:"dataSourceId,omitempty"`
-	ModifiedTime *time.Time          `bson:"modifiedTime,omitempty"`
-	ProviderName string              `bson:"providerName"`
-	State        string              `bson:"state"`
+	DataSourceId   *primitive.ObjectID `bson:"dataSourceId,omitempty"`
+	ModifiedTime   *time.Time          `bson:"modifiedTime,omitempty"`
+	ExpirationTime *time.Time          `bson:"expirationTime,omitempty"`
+	ProviderName   string              `bson:"providerName"`
+	State          string              `bson:"state"`
 }
