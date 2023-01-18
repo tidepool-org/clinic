@@ -15,7 +15,7 @@ var ErrPatientTagNotFound = fmt.Errorf("patient tag %w", errors.NotFound)
 var ErrDuplicatePatientTagName = fmt.Errorf("%w patient tag", errors.Duplicate)
 var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin", errors.ConstraintViolation)
-var MaximumPatientTags = 10
+var MaximumPatientTags = 20
 var ErrMaximumPatientTagsExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %v patient tags", errors.ConstraintViolation, MaximumPatientTags)
 
 type Service interface {
