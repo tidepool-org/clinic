@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/jaswdr/faker v1.4.2
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/labstack/echo/v4 v4.7.2
+	github.com/labstack/echo/v4 v4.9.0
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/open-policy-agent/opa v0.27.1
