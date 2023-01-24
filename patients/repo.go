@@ -178,6 +178,24 @@ func (r *repository) Initialize(ctx context.Context) error {
 				SetBackground(true).
 				SetName("PatientTags"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "dataSources.providerName", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("DataSourcesProviderName"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "dataSources.state", Value: 1},
+			},
+			Options: options.Index().
+				SetBackground(true).
+				SetName("DataSourcesState"),
+		},
 	})
 	return err
 }
@@ -480,6 +498,66 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
+func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
+	currentTime := time.Now()
+
+	// We fetch the current dexcom data source to determine if we are requesting an initial connection
+	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
+	patient, err := r.Get(ctx, update.ClinicId, update.UserId)
+	if err != nil {
+		return nil, fmt.Errorf("error finding patient: %w", err)
+	}
+
+	var patientDexcomDataSource DataSource
+	if patient.DataSources != nil {
+		for _, source := range *patient.DataSources {
+			if source.ProviderName == DexcomDataSourceProviderName {
+				patientDexcomDataSource = source
+			}
+		}
+	}
+
+	selector := bson.M{
+		"clinicId":                 clinicObjId,
+		"userId":                   update.UserId,
+		"dataSources.providerName": DexcomDataSourceProviderName,
+	}
+
+	// Default update for inital connection requests
+	mongoUpdate := bson.M{
+		"$set": bson.M{
+			"lastRequestedDexcomConnectTime": update.Time,
+			"updatedTime":                    currentTime,
+			"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
+			"dataSources.$.state":            DataSourceStatePending,
+		},
+	}
+
+	// Update for previously connected requests
+	if patientDexcomDataSource.ModifiedTime != nil {
+		mongoUpdate = bson.M{
+			"$set": bson.M{
+				"lastRequestedDexcomConnectTime": update.Time,
+				"updatedTime":                    currentTime,
+				"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
+				"dataSources.$.modifiedTime":     currentTime,
+				"dataSources.$.state":            DataSourceStatePendingReconnect,
+			},
+		}
+	}
+
+	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("error updating patient: %w", err)
+	}
+
+	return r.Get(ctx, update.ClinicId, update.UserId)
+}
+
 func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patient) error {
 	selector := bson.M{
 		"clinicId": patient.ClinicId,
@@ -525,6 +603,29 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 	_, err := r.collection.UpdateMany(ctx, selector, update)
 	if err != nil {
 		return fmt.Errorf("error removing patient tag from patients: %w", err)
+	}
+
+	return nil
+}
+
+func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"dataSources": dataSources,
+			"updatedTime": time.Now(),
+		},
+	}
+
+	result, err := r.collection.UpdateMany(ctx, selector, update)
+	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
+		err = fmt.Errorf("partially updated %v out of %v patient records: %w", result.ModifiedCount, result.MatchedCount, err)
+	}
+	if err != nil {
+		r.logger.Errorw("error updating patient data sources", "error", err, "userId", userId)
 	}
 
 	return nil

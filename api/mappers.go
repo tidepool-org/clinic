@@ -152,6 +152,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
 		Tags:          NewPatientTagsDto(patient.Tags),
+		DataSources:   NewPatientDataSourcesDto(patient.DataSources),
 		TargetDevices: patient.TargetDevices,
 		CreatedTime:   patient.CreatedTime,
 		UpdatedTime:   patient.UpdatedTime,
@@ -162,6 +163,9 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	}
 	if !patient.LastUploadReminderTime.IsZero() {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
+	}
+	if !patient.LastRequestedDexcomConnectTime.IsZero() {
+		dto.LastRequestedDexcomConnectTime = &patient.LastRequestedDexcomConnectTime
 	}
 	return dto
 }
@@ -178,6 +182,35 @@ func NewPatient(dto Patient) patients.Patient {
 	if dto.Tags != nil {
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
+	}
+
+	if dto.DataSources != nil {
+		var dataSources []patients.DataSource
+		for _, d := range *dto.DataSources {
+
+			newDataSource := patients.DataSource{
+				ProviderName: string(d.ProviderName),
+				State:        string(d.State),
+			}
+
+			if d.DataSourceId != nil {
+				dataSourceObjectId, _ := primitive.ObjectIDFromHex(*d.DataSourceId)
+				newDataSource.DataSourceId = &dataSourceObjectId
+			}
+
+			if d.ModifiedTime != nil {
+				modifiedTime, _ := time.Parse(time.RFC3339Nano, string(*d.ModifiedTime))
+				newDataSource.ModifiedTime = &modifiedTime
+			}
+
+			if d.ExpirationTime != nil {
+				expirationTime, _ := time.Parse(time.RFC3339Nano, string(*d.ExpirationTime))
+				newDataSource.ExpirationTime = &expirationTime
+			}
+
+			dataSources = append(dataSources, newDataSource)
+		}
+		patient.DataSources = &dataSources
 	}
 
 	return patient
@@ -361,6 +394,42 @@ func NewPatientTagsDto(tags *[]primitive.ObjectID) *[]string {
 		}
 	}
 	return &tagIds
+}
+
+func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource {
+	if dataSources == nil {
+		return nil
+	}
+
+	dtos := make([]DataSource, 0)
+
+	if dataSources != nil {
+		for _, d := range *dataSources {
+			newDataSource := DataSource{
+				ProviderName: d.ProviderName,
+				State:        DataSourceState(d.State),
+			}
+
+			if d.DataSourceId != nil {
+				dataSourceId := d.DataSourceId.Hex()
+				newDataSource.DataSourceId = &dataSourceId
+			}
+
+			if d.ModifiedTime != nil {
+				modifiedTime := DateTime(d.ModifiedTime.Format(time.RFC3339Nano))
+				newDataSource.ModifiedTime = &modifiedTime
+			}
+
+			if d.ExpirationTime != nil {
+				expirationTime := DateTime(d.ExpirationTime.Format(time.RFC3339Nano))
+				newDataSource.ExpirationTime = &expirationTime
+			}
+
+			dtos = append(dtos, newDataSource)
+		}
+	}
+
+	return &dtos
 }
 
 func NewPatientsDto(patients []*patients.Patient) []Patient {

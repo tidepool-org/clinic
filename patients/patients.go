@@ -16,6 +16,11 @@ var (
 	ErrDuplicatePatient   = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
 
+	PendingDexcomDataSourceExpirationDuration = time.Hour * 24 * 30
+	DexcomDataSourceProviderName              = "dexcom"
+	DataSourceStatePending                    = "pending"
+	DataSourceStatePendingReconnect           = "pendingReconnect"
+
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,
@@ -38,27 +43,31 @@ type Service interface {
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
+	UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error)
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error
+	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 }
 
 type Patient struct {
-	Id                     *primitive.ObjectID   `bson:"_id,omitempty"`
-	ClinicId               *primitive.ObjectID   `bson:"clinicId,omitempty"`
-	UserId                 *string               `bson:"userId,omitempty"`
-	BirthDate              *string               `bson:"birthDate"`
-	Email                  *string               `bson:"email"`
-	FullName               *string               `bson:"fullName"`
-	Mrn                    *string               `bson:"mrn"`
-	Tags                   *[]primitive.ObjectID `bson:"tags,omitempty"`
-	TargetDevices          *[]string             `bson:"targetDevices"`
-	Permissions            *Permissions          `bson:"permissions,omitempty"`
-	IsMigrated             bool                  `bson:"isMigrated,omitempty"`
-	LegacyClinicianIds     []string              `bson:"legacyClinicianIds,omitempty"`
-	CreatedTime            time.Time             `bson:"createdTime,omitempty"`
-	UpdatedTime            time.Time             `bson:"updatedTime,omitempty"`
-	InvitedBy              *string               `bson:"invitedBy,omitempty"`
-	Summary                *Summary              `bson:"summary,omitempty"`
-	LastUploadReminderTime time.Time             `bson:"lastUploadReminderTime,omitempty"`
+	Id                             *primitive.ObjectID   `bson:"_id,omitempty"`
+	ClinicId                       *primitive.ObjectID   `bson:"clinicId,omitempty"`
+	UserId                         *string               `bson:"userId,omitempty"`
+	BirthDate                      *string               `bson:"birthDate"`
+	Email                          *string               `bson:"email"`
+	FullName                       *string               `bson:"fullName"`
+	Mrn                            *string               `bson:"mrn"`
+	Tags                           *[]primitive.ObjectID `bson:"tags,omitempty"`
+	DataSources                    *[]DataSource         `bson:"dataSources,omitempty"`
+	TargetDevices                  *[]string             `bson:"targetDevices"`
+	Permissions                    *Permissions          `bson:"permissions,omitempty"`
+	IsMigrated                     bool                  `bson:"isMigrated,omitempty"`
+	LegacyClinicianIds             []string              `bson:"legacyClinicianIds,omitempty"`
+	CreatedTime                    time.Time             `bson:"createdTime,omitempty"`
+	UpdatedTime                    time.Time             `bson:"updatedTime,omitempty"`
+	InvitedBy                      *string               `bson:"invitedBy,omitempty"`
+	Summary                        *Summary              `bson:"summary,omitempty"`
+	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
+	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
 }
 
 // PatientSummary defines model for PatientSummary.
@@ -122,6 +131,13 @@ type UploadReminderUpdate struct {
 	Time      time.Time
 }
 
+type LastRequestedDexcomConnectUpdate struct {
+	ClinicId  string
+	UserId    string
+	UpdatedBy string
+	Time      time.Time
+}
+
 type Period struct {
 	TimeCGMUsePercent *float64 `bson:"timeCGMUsePercent,omitempty"`
 	TimeCGMUseMinutes *int     `bson:"timeCGMUseMinutes,omitempty"`
@@ -170,4 +186,13 @@ type Summary struct {
 type AvgGlucose struct {
 	Units string  `bson:"units"`
 	Value float64 `bson:"value"`
+}
+
+type DataSources []DataSource
+type DataSource struct {
+	DataSourceId   *primitive.ObjectID `bson:"dataSourceId,omitempty"`
+	ModifiedTime   *time.Time          `bson:"modifiedTime,omitempty"`
+	ExpirationTime *time.Time          `bson:"expirationTime,omitempty"`
+	ProviderName   string              `bson:"providerName"`
+	State          string              `bson:"state"`
 }

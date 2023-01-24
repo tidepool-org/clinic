@@ -232,6 +232,37 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
+func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	update := patients.LastRequestedDexcomConnectUpdate{
+		ClinicId:  string(clinicId),
+		Time:      time.Now(),
+		UserId:    string(patientId),
+		UpdatedBy: authData.SubjectId,
+	}
+	patient, err := h.patients.UpdateLastRequestedDexcomConnectTime(ctx, &update)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+}
+
 func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := PatientPermissions{}
@@ -317,6 +348,21 @@ func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId C
 
 	err := h.patients.DeletePatientTagFromClinicPatients(ctx, string(clinicId), string(patientTagId))
 
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) UpdatePatientDataSources(ec echo.Context, userId UserId) error {
+	ctx := ec.Request().Context()
+	dto := patients.DataSources{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	err := h.patients.UpdatePatientDataSources(ctx, string(userId), &dto)
 	if err != nil {
 		return err
 	}

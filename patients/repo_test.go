@@ -160,17 +160,19 @@ var _ = Describe("Patients Repository", func() {
 			BeforeEach(func() {
 				update = patientsTest.RandomPatientUpdate()
 				expected := patients.Patient{
-					Id:            randomPatient.Id,
-					ClinicId:      randomPatient.ClinicId,
-					UserId:        randomPatient.UserId,
-					BirthDate:     update.Patient.BirthDate,
-					Email:         update.Patient.Email,
-					FullName:      update.Patient.FullName,
-					Mrn:           update.Patient.Mrn,
-					Tags:          update.Patient.Tags,
-					TargetDevices: update.Patient.TargetDevices,
-					Permissions:   update.Patient.Permissions,
-					IsMigrated:    randomPatient.IsMigrated,
+					Id:                             randomPatient.Id,
+					ClinicId:                       randomPatient.ClinicId,
+					UserId:                         randomPatient.UserId,
+					BirthDate:                      update.Patient.BirthDate,
+					Email:                          update.Patient.Email,
+					FullName:                       update.Patient.FullName,
+					Mrn:                            update.Patient.Mrn,
+					Tags:                           update.Patient.Tags,
+					TargetDevices:                  update.Patient.TargetDevices,
+					Permissions:                    update.Patient.Permissions,
+					IsMigrated:                     randomPatient.IsMigrated,
+					LastRequestedDexcomConnectTime: update.Patient.LastRequestedDexcomConnectTime,
+					DataSources:                    update.Patient.DataSources,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -215,6 +217,7 @@ var _ = Describe("Patients Repository", func() {
 					TargetDevices: randomPatient.TargetDevices,
 					Permissions:   randomPatient.Permissions,
 					IsMigrated:    randomPatient.IsMigrated,
+					DataSources:   randomPatient.DataSources,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -638,22 +641,24 @@ var _ = Describe("Patients Repository", func() {
 
 func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 	return MatchAllFields(Fields{
-		"Id":                     PointTo(Not(BeEmpty())),
-		"UserId":                 PointTo(Equal(*patient.UserId)),
-		"ClinicId":               PointTo(Equal(*patient.ClinicId)),
-		"BirthDate":              PointTo(Equal(*patient.BirthDate)),
-		"Email":                  PointTo(Equal(*patient.Email)),
-		"FullName":               PointTo(Equal(*patient.FullName)),
-		"Mrn":                    PointTo(Equal(*patient.Mrn)),
-		"Tags":                   PointTo(Equal(*patient.Tags)),
-		"TargetDevices":          PointTo(Equal(*patient.TargetDevices)),
-		"Permissions":            PointTo(Equal(*patient.Permissions)),
-		"IsMigrated":             Equal(patient.IsMigrated),
-		"LegacyClinicianIds":     ConsistOf(patient.LegacyClinicianIds),
-		"UpdatedTime":            Ignore(),
-		"CreatedTime":            Ignore(),
-		"InvitedBy":              Ignore(),
-		"Summary":                Ignore(),
-		"LastUploadReminderTime": Equal(patient.LastUploadReminderTime),
+		"Id":                             PointTo(Not(BeEmpty())),
+		"UserId":                         PointTo(Equal(*patient.UserId)),
+		"ClinicId":                       PointTo(Equal(*patient.ClinicId)),
+		"BirthDate":                      PointTo(Equal(*patient.BirthDate)),
+		"Email":                          PointTo(Equal(*patient.Email)),
+		"FullName":                       PointTo(Equal(*patient.FullName)),
+		"Mrn":                            PointTo(Equal(*patient.Mrn)),
+		"Tags":                           PointTo(Equal(*patient.Tags)),
+		"TargetDevices":                  PointTo(Equal(*patient.TargetDevices)),
+		"Permissions":                    PointTo(Equal(*patient.Permissions)),
+		"IsMigrated":                     Equal(patient.IsMigrated),
+		"LegacyClinicianIds":             ConsistOf(patient.LegacyClinicianIds),
+		"UpdatedTime":                    Ignore(),
+		"CreatedTime":                    Ignore(),
+		"InvitedBy":                      Ignore(),
+		"Summary":                        Ignore(),
+		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
+		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
+		"DataSources":                    PointTo(Equal(*patient.DataSources)),
 	})
 }

@@ -20,12 +20,13 @@ require (
 	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/fx v1.13.1
 	go.uber.org/zap v1.13.0
-	golang.org/x/exp v0.0.0-20190121172915-509febef88a4
 )
 
 require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/aws/aws-sdk-go v1.34.28 // indirect
+	github.com/bytecodealliance/wasmtime-go v0.24.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
@@ -57,16 +58,21 @@ require (
 	go.uber.org/atomic v1.5.0 // indirect
 	go.uber.org/dig v1.10.0 // indirect
 	go.uber.org/multierr v1.4.0 // indirect
+	go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
+	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306 // indirect
+	golang.org/x/tools v0.1.10 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
 )
 
 replace github.com/tidepool-org/clinic/client => ./client

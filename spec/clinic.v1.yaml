@@ -549,14 +549,9 @@ paths:
                   creatorId:
                     $ref: '#/components/schemas/TidepoolUserId'
                   created:
-                    title: Date/Time
-                    description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
-                    type: string
-                    format: date-time
-                    example: '2017-02-06T02:37:46Z'
-                    x-go-type: string
+                    $ref: '#/components/schemas/DateTime'
                   modified:
-                    $ref: '#/paths/~1v1~1clinics~1%7BclinicId%7D~1invites~1clinicians~1%7BinviteId%7D/get/responses/200/content/application~1json/schema/properties/created'
+                    $ref: '#/components/schemas/DateTime'
                   creator:
                     title: Creator
                     type: object
@@ -1033,6 +1028,26 @@ paths:
                   highGlucoseThreshold: 0
                   lowGlucoseThreshold: 0
         description: ''
+  '/v1/patients/{userId}/data_sources':
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    put:
+      summary: Create or update a data source for a patient
+      operationId: UpdatePatientDataSources
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
+      description: Internal endpoint to upsert patient data source provider details in all their associated clinic records.
+      x-internal: true
+      tags:
+        - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSources'
   '/v1/clinics/{clinicId}/tier':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1062,6 +1077,23 @@ paths:
         '200':
           description: OK
       description: Sends upload reminder to the patient
+      tags:
+        - clinic
+  '/v1/clinics/{clinicId}/patients/{patientId}/send_dexcom_connect_request':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    post:
+      summary: Resend dexcom connect request email
+      operationId: SendDexcomConnectRequest
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+      description: Resend dexcom connect request to the email address of the patient
       tags:
         - clinic
   '/v1/clinics/{clinicId}/patients/delete_tag/{patientTagId}':
@@ -1301,8 +1333,17 @@ components:
           readOnly: true
         attestationSubmitted:
           type: boolean
+        dataSources:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/DataSource'
         summary:
           $ref: '#/components/schemas/PatientSummary'
+        lastRequestedDexcomConnectTime:
+          type: string
+          format: date-time
+          readOnly: true
         lastUploadReminderTime:
           type: string
           format: date-time
@@ -1343,6 +1384,52 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/PatientTag'
+    DateTime:
+      title: Date/Time
+      description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
+      type: string
+      format: date-time
+      example: '2017-02-06T02:37:46Z'
+      x-go-type: string
+    DataSource:
+      type: object
+      title: Patient data source
+      properties:
+        state:
+          type: string
+          title: Data source connection state
+          enum:
+            - pending
+            - pendingReconnect
+            - connected
+            - disconnected
+            - error
+          example: connected
+        providerName:
+          title: Provider Name
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: dexcom
+        dataSourceId:
+          title: Data Source Object Id
+          type: string
+          description: String representation of a resource id
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+          readOnly: true
+        modifiedTime:
+          $ref: '#/components/schemas/DateTime'
+        expirationTime:
+          $ref: '#/components/schemas/DateTime'
+      required:
+        - state
+        - providerName
+    DataSources:
+      type: array
+      items:
+        $ref: '#/components/schemas/DataSource'
     InviteClinician:
       title: Invite Clinician
       type: object
