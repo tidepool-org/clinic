@@ -296,6 +296,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow currently authenticated clinician to send a dexcom connect reminder
+# POST /v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "send_dexcom_connect_request"]
+  clinician_has_read_access
+}
+
 # Allow currently authenticated clinician to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
@@ -440,9 +448,17 @@ allow {
 }
 
 # Allow backend services to delete a patient tag from all clinic patients
-# POST /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
+# DELETE /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
 allow {
   input.method == "DELETE"
   input.path = ["v1", "clinics", _, "patients", "delete_tag", _]
+  is_backend_service
+}
+
+# Allow backend services to update a user data source for all associated clinic patient records
+# PUT /v1/patients/:patientId/data_sources
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "patients", _, "data_sources"]
   is_backend_service
 }

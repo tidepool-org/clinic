@@ -112,6 +112,9 @@ type ServerInterface interface {
 	// Delete Patient Permission
 	// (DELETE /v1/clinics/{clinicId}/patients/{patientId}/permissions/{permission})
 	DeletePatientPermission(ctx echo.Context, clinicId ClinicId, patientId PatientId, permission string) error
+	// Resend dexcom connect request email
+	// (POST /v1/clinics/{clinicId}/patients/{patientId}/send_dexcom_connect_request)
+	SendDexcomConnectRequest(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Send Upload Reminder
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
 	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
@@ -124,6 +127,9 @@ type ServerInterface interface {
 	// List Clinics for Patient
 	// (GET /v1/patients/{userId}/clinics)
 	ListClinicsForPatient(ctx echo.Context, userId UserId, params ListClinicsForPatientParams) error
+	// Create or update a data source for a patient
+	// (PUT /v1/patients/{userId}/data_sources)
+	UpdatePatientDataSources(ctx echo.Context, userId UserId) error
 
 	// (DELETE /v1/users/{userId}/clinics)
 	DeleteUserFromClinics(ctx echo.Context, userId UserId) error
@@ -1067,6 +1073,32 @@ func (w *ServerInterfaceWrapper) DeletePatientPermission(ctx echo.Context) error
 	return err
 }
 
+// SendDexcomConnectRequest converts echo context to params.
+func (w *ServerInterfaceWrapper) SendDexcomConnectRequest(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "patientId", runtime.ParamLocationPath, ctx.Param("patientId"), &patientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.SendDexcomConnectRequest(ctx, clinicId, patientId)
+	return err
+}
+
 // SendUploadReminder converts echo context to params.
 func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
 	var err error
@@ -1160,6 +1192,24 @@ func (w *ServerInterfaceWrapper) ListClinicsForPatient(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListClinicsForPatient(ctx, userId, params)
+	return err
+}
+
+// UpdatePatientDataSources converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdatePatientDataSources(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "userId", runtime.ParamLocationPath, ctx.Param("userId"), &userId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdatePatientDataSources(ctx, userId)
 	return err
 }
 
@@ -1260,10 +1310,12 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request", wrapper.SendDexcomConnectRequest)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
+	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
 

@@ -20,6 +20,7 @@ func RandomPatient() patients.Patient {
 	devices := []string{test.Faker.Company().Name(), test.Faker.Company().Name(), test.Faker.Company().Name()}
 	tags := []primitive.ObjectID{primitive.NewObjectID()}
 	permissions := RandomPermissions()
+	dataSources := RandomDataSources()
 	return patients.Patient{
 		ClinicId:      &clinicId,
 		UserId:        strp(test.Faker.UUID().V4()),
@@ -31,6 +32,7 @@ func RandomPatient() patients.Patient {
 		TargetDevices: &devices,
 		Permissions:   &permissions,
 		IsMigrated:    test.Faker.Bool(),
+		DataSources:   (*[]patients.DataSource)(&dataSources),
 	}
 }
 
@@ -45,6 +47,7 @@ func RandomPatientUpdate() patients.PatientUpdate {
 			Tags:          patient.Tags,
 			TargetDevices: patient.TargetDevices,
 			Permissions:   patient.Permissions,
+			DataSources:   patient.DataSources,
 		},
 	}
 }
@@ -63,6 +66,12 @@ func RandomPermissions() patients.Permissions {
 		setPermission(&permissions, p)
 	}
 	return permissions
+}
+
+func RandomDataSources() patients.DataSources {
+	return []patients.DataSource{
+		{State: test.Faker.RandomStringElement([]string{"pending", "connected"}), ProviderName: test.Faker.Company().Name()},
+	}
 }
 
 func setPermission(permissions *patients.Permissions, p string) {
