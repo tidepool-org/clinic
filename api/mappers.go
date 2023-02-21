@@ -1,6 +1,7 @@
 package api
 
 import (
+	regularError "errors"
 	"fmt"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -9,6 +10,8 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"github.com/tidepool-org/clinic/summary"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"regexp"
 	"strconv"
 	"strings"
@@ -142,13 +145,36 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		TargetDevices: patient.TargetDevices,
 		CreatedTime:   patient.CreatedTime,
 		UpdatedTime:   patient.UpdatedTime,
-		Summary:       NewSummaryDto(patient.Summary),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
 	}
 	if !patient.LastUploadReminderTime.IsZero() {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
+	}
+	return dto
+}
+
+func NewPatientSummaryDto[T summary.Period](patientSummary *summary.Summary[T]) PatientSummary {
+	dto := PatientSummary{
+		Config: &PatientConfig{
+			HighGlucoseThreshold:     nil,
+			LowGlucoseThreshold:      nil,
+			SchemaVersion:            nil,
+			VeryHighGlucoseThreshold: nil,
+			VeryLowGlucoseThreshold:  nil,
+		},
+		Dates: &PatientDates{
+			FirstData:         &time.Time{},
+			HasLastUploadDate: nil,
+			LastData:          &time.Time{},
+			LastUpdatedDate:   &time.Time{},
+			LastUploadDate:    &time.Time{},
+			OutdatedSince:     &time.Time{},
+		},
+		Stats:  nil,
+		Type:   nil,
+		UserId: &patientSummary.UserID,
 	}
 	return dto
 }
@@ -163,173 +189,73 @@ func NewPatient(dto Patient) patients.Patient {
 	}
 }
 
-func NewSummary(dto *PatientSummary) *patients.Summary {
+func NewSummary[T summary.Period](dto *PatientSummary, period string) (*summary.Summary[T], error) {
 	if dto == nil {
-		return nil
+		return nil, nil
+	}
+	if *dto.Type != PatientSummaryType(summary.GetTypeString[T]()) {
+		return nil, regularError.New("dto type does not match target summary type")
 	}
 
-	patientSummary := &patients.Summary{
-		FirstData:                dto.FirstData,
-		HighGlucoseThreshold:     dto.HighGlucoseThreshold,
-		VeryHighGlucoseThreshold: dto.VeryHighGlucoseThreshold,
-		LowGlucoseThreshold:      dto.LowGlucoseThreshold,
-		VeryLowGlucoseThreshold:  dto.VeryLowGlucoseThreshold,
-		LastData:                 dto.LastData,
-		LastUpdatedDate:          dto.LastUpdatedDate,
-		LastUploadDate:           dto.LastUploadDate,
-		HasLastUploadDate:        dto.HasLastUploadDate,
-		OutdatedSince:            dto.OutdatedSince,
-		TotalHours:               dto.TotalHours,
-		Periods:                  map[string]*patients.Period{},
+	// coerce to real map, so we can pull the right period
+	stats := (*dto.Stats).(map[string]interface{})
+
+	patientSummary := &summary.Summary[T]{
+		ID:       primitive.ObjectID{},
+		UserID:   *dto.UserId,
+		Type:     summary.GetTypeString[T](),
+		Period:   period,
+		Patients: nil,
+		Config: summary.Config{
+			SchemaVersion:            *dto.Config.SchemaVersion,
+			HighGlucoseThreshold:     *dto.Config.HighGlucoseThreshold,
+			VeryHighGlucoseThreshold: *dto.Config.VeryHighGlucoseThreshold,
+			LowGlucoseThreshold:      *dto.Config.LowGlucoseThreshold,
+			VeryLowGlucoseThreshold:  *dto.Config.VeryLowGlucoseThreshold,
+		},
+		Dates: summary.Dates{
+			HasLastUploadDate: *dto.Dates.HasLastUploadDate,
+			LastUploadDate:    *dto.Dates.LastUploadDate,
+			LastUpdatedDate:   *dto.Dates.LastUpdatedDate,
+			FirstData:         *dto.Dates.FirstData,
+			LastData:          *dto.Dates.LastData,
+			OutdatedSince:     *dto.Dates.OutdatedSince,
+		},
 	}
 
-	if dto.Periods != nil {
-		var averageGlucose *patients.AverageGlucose
-		// this is bad, but it's better than copy and pasting the copy code N times
-		sourcePeriods := map[string]*PatientSummaryPeriod{}
-		if dto.Periods.N1d != nil {
-			sourcePeriods["1d"] = dto.Periods.N1d
-		}
-		if dto.Periods.N7d != nil {
-			sourcePeriods["7d"] = dto.Periods.N7d
-		}
-		if dto.Periods.N14d != nil {
-			sourcePeriods["14d"] = dto.Periods.N14d
-		}
-		if dto.Periods.N30d != nil {
-			sourcePeriods["30d"] = dto.Periods.N30d
-		}
+	patientSummary.Stats.Populate(stats[period])
 
-		for i := range sourcePeriods {
-			if sourcePeriods[i].AverageGlucose != nil {
-				averageGlucose = &patients.AverageGlucose{
-					Units: string(sourcePeriods[i].AverageGlucose.Units),
-					Value: float64(sourcePeriods[i].AverageGlucose.Value),
-				}
-			}
-
-			patientSummary.Periods[i] = &patients.Period{
-				TimeCGMUsePercent:    sourcePeriods[i].TimeCGMUsePercent,
-				HasTimeCGMUsePercent: sourcePeriods[i].HasTimeCGMUsePercent,
-				TimeCGMUseMinutes:    sourcePeriods[i].TimeCGMUseMinutes,
-				TimeCGMUseRecords:    sourcePeriods[i].TimeCGMUseRecords,
-
-				TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
-				HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
-				TimeInVeryLowMinutes:    sourcePeriods[i].TimeInVeryLowMinutes,
-				TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
-
-				TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
-				HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
-				TimeInLowMinutes:    sourcePeriods[i].TimeInLowMinutes,
-				TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
-
-				TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
-				HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
-				TimeInTargetMinutes:    sourcePeriods[i].TimeInTargetMinutes,
-				TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
-
-				TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
-				HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
-				TimeInHighMinutes:    sourcePeriods[i].TimeInHighMinutes,
-				TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
-
-				TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
-				HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
-				TimeInVeryHighMinutes:    sourcePeriods[i].TimeInVeryHighMinutes,
-				TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
-
-				GlucoseManagementIndicator:    sourcePeriods[i].GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: sourcePeriods[i].HasGlucoseManagementIndicator,
-				AverageGlucose:                averageGlucose,
-				HasAverageGlucose:             sourcePeriods[i].HasAverageGlucose,
-			}
-		}
-	}
-
-	return patientSummary
+	return patientSummary, nil
 }
 
-func NewSummaryDto(summary *patients.Summary) *PatientSummary {
+func NewSummaryDto[T summary.Period](summary *summary.Summary[T]) *PatientSummary {
 	if summary == nil {
 		return nil
 	}
 
+	t := PatientSummaryType(summary.Type)
+
 	patientSummary := &PatientSummary{
-		FirstData:            summary.FirstData,
-		HighGlucoseThreshold: summary.HighGlucoseThreshold,
-		LastData:             summary.LastData,
-		LastUpdatedDate:      summary.LastUpdatedDate,
-		LastUploadDate:       summary.LastUploadDate,
-		HasLastUploadDate:    summary.HasLastUploadDate,
-		LowGlucoseThreshold:  summary.LowGlucoseThreshold,
-		OutdatedSince:        summary.OutdatedSince,
-		TotalHours:           summary.TotalHours,
-		Periods:              &PatientSummaryPeriods{},
+		Config: &PatientConfig{
+			HighGlucoseThreshold:     &summary.Config.HighGlucoseThreshold,
+			LowGlucoseThreshold:      &summary.Config.LowGlucoseThreshold,
+			SchemaVersion:            &summary.Config.SchemaVersion,
+			VeryHighGlucoseThreshold: &summary.Config.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:  &summary.Config.VeryLowGlucoseThreshold,
+		},
+		Dates: &PatientDates{
+			FirstData:         &summary.Dates.FirstData,
+			HasLastUploadDate: &summary.Dates.HasLastUploadDate,
+			LastData:          &summary.Dates.LastData,
+			LastUpdatedDate:   &summary.Dates.LastUpdatedDate,
+			LastUploadDate:    &summary.Dates.LastUploadDate,
+			OutdatedSince:     &summary.Dates.OutdatedSince,
+		},
+		Type:   &t,
+		UserId: &summary.UserID,
 	}
 
-	if summary.Periods != nil {
-		// this is bad, but it's better than copy and pasting the copy code N times
-		destPeriods := map[string]*PatientSummaryPeriod{}
-		if _, exists := summary.Periods["1d"]; exists {
-			patientSummary.Periods.N1d = &PatientSummaryPeriod{}
-			destPeriods["1d"] = patientSummary.Periods.N1d
-		}
-		if _, exists := summary.Periods["7d"]; exists {
-			patientSummary.Periods.N7d = &PatientSummaryPeriod{}
-			destPeriods["7d"] = patientSummary.Periods.N7d
-		}
-		if _, exists := summary.Periods["14d"]; exists {
-			patientSummary.Periods.N14d = &PatientSummaryPeriod{}
-			destPeriods["14d"] = patientSummary.Periods.N14d
-		}
-		if _, exists := summary.Periods["30d"]; exists {
-			patientSummary.Periods.N30d = &PatientSummaryPeriod{}
-			destPeriods["30d"] = patientSummary.Periods.N30d
-		}
-
-		for i := range destPeriods {
-			if summary.Periods[i].AverageGlucose != nil {
-				destPeriods[i].AverageGlucose = &AverageGlucose{
-					Value: float32(summary.Periods[i].AverageGlucose.Value),
-					Units: AverageGlucoseUnits(summary.Periods[i].AverageGlucose.Units)}
-			}
-			destPeriods[i].HasAverageGlucose = summary.Periods[i].HasAverageGlucose
-
-			destPeriods[i].GlucoseManagementIndicator = summary.Periods[i].GlucoseManagementIndicator
-			destPeriods[i].HasGlucoseManagementIndicator = summary.Periods[i].HasGlucoseManagementIndicator
-
-			destPeriods[i].TimeCGMUseMinutes = summary.Periods[i].TimeCGMUseMinutes
-			destPeriods[i].TimeCGMUsePercent = summary.Periods[i].TimeCGMUsePercent
-			destPeriods[i].HasTimeCGMUsePercent = summary.Periods[i].HasTimeCGMUsePercent
-			destPeriods[i].TimeCGMUseRecords = summary.Periods[i].TimeCGMUseRecords
-
-			destPeriods[i].TimeInHighMinutes = summary.Periods[i].TimeInHighMinutes
-			destPeriods[i].TimeInHighPercent = summary.Periods[i].TimeInHighPercent
-			destPeriods[i].HasTimeInHighPercent = summary.Periods[i].HasTimeInHighPercent
-			destPeriods[i].TimeInHighRecords = summary.Periods[i].TimeInHighRecords
-
-			destPeriods[i].TimeInLowMinutes = summary.Periods[i].TimeInLowMinutes
-			destPeriods[i].TimeInLowPercent = summary.Periods[i].TimeInLowPercent
-			destPeriods[i].HasTimeInLowPercent = summary.Periods[i].HasTimeInLowPercent
-			destPeriods[i].TimeInLowRecords = summary.Periods[i].TimeInLowRecords
-
-			destPeriods[i].TimeInTargetMinutes = summary.Periods[i].TimeInTargetMinutes
-			destPeriods[i].TimeInTargetPercent = summary.Periods[i].TimeInTargetPercent
-			destPeriods[i].HasTimeInTargetPercent = summary.Periods[i].HasTimeInTargetPercent
-			destPeriods[i].TimeInTargetRecords = summary.Periods[i].TimeInTargetRecords
-
-			destPeriods[i].TimeInVeryHighMinutes = summary.Periods[i].TimeInVeryHighMinutes
-			destPeriods[i].TimeInVeryHighPercent = summary.Periods[i].TimeInVeryHighPercent
-			destPeriods[i].HasTimeInVeryHighPercent = summary.Periods[i].HasTimeInVeryHighPercent
-			destPeriods[i].TimeInVeryHighRecords = summary.Periods[i].TimeInVeryHighRecords
-
-			destPeriods[i].TimeInVeryLowMinutes = summary.Periods[i].TimeInVeryLowMinutes
-			destPeriods[i].TimeInVeryLowPercent = summary.Periods[i].TimeInVeryLowPercent
-			destPeriods[i].HasTimeInVeryLowPercent = summary.Periods[i].HasTimeInVeryLowPercent
-			destPeriods[i].TimeInVeryLowRecords = summary.Periods[i].TimeInVeryLowRecords
-		}
-	}
+	summary.Stats.Export(*patientSummary)
 
 	return patientSummary
 }
@@ -388,6 +314,24 @@ func NewPatientsDto(patients []*patients.Patient) []Patient {
 func NewPatientsResponseDto(list *patients.ListResult) PatientsResponse {
 	data := Patients(NewPatientsDto(list.Patients))
 	return PatientsResponse{
+		Data: &data,
+		Meta: &Meta{Count: &list.TotalCount},
+	}
+}
+
+func NewPatientSummariesDto[T summary.Period](patientSummaries []*summary.Summary[T]) []PatientSummary {
+	dtos := make([]PatientSummary, 0)
+	for _, p := range patientSummaries {
+		if p != nil {
+			dtos = append(dtos, NewPatientSummaryDto[T](p))
+		}
+	}
+	return dtos
+}
+
+func NewPatientSummariesResponseDto[T summary.Period](list *summary.ListResult[T]) PatientSummariesResponse {
+	data := PatientSummaries(NewPatientSummariesDto(list.Patients))
+	return PatientSummariesResponse{
 		Data: &data,
 		Meta: &Meta{Count: &list.TotalCount},
 	}

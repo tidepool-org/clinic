@@ -7,6 +7,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"github.com/tidepool-org/clinic/summary"
 	"go.uber.org/fx"
 )
 
@@ -17,6 +18,8 @@ type Handler struct {
 	clinicians        clinicians.Service
 	cliniciansUpdater clinicians.Service
 	patients          patients.Service
+	bgmsummaries      summary.Service[summary.BGMPeriod]
+	cgmsummaries      summary.Service[summary.CGMPeriod]
 	users             patients.UserService
 }
 
@@ -31,6 +34,8 @@ type Params struct {
 	Clinicians        clinicians.Service
 	CliniciansUpdater clinicians.Service
 	Patients          patients.Service
+	BGMSummaries      summary.Service[summary.BGMPeriod]
+	CGMSummaries      summary.Service[summary.CGMPeriod]
 	Users             patients.UserService
 }
 

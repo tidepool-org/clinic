@@ -35,7 +35,6 @@ type Service interface {
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
 	DeleteFromAllClinics(ctx context.Context, userId string) error
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
-	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 }
 
@@ -54,7 +53,6 @@ type Patient struct {
 	CreatedTime            time.Time           `bson:"createdTime,omitempty"`
 	UpdatedTime            time.Time           `bson:"updatedTime,omitempty"`
 	InvitedBy              *string             `bson:"invitedBy,omitempty"`
-	Summary                *Summary            `bson:"summary,omitempty"`
 	LastUploadReminderTime time.Time           `bson:"lastUploadReminderTime,omitempty"`
 }
 
@@ -70,58 +68,6 @@ type Filter struct {
 	Search             *string
 	LastUploadDateFrom *time.Time
 	LastUploadDateTo   *time.Time
-
-	TimeCGMUsePercentCmp1d       *string
-	TimeCGMUsePercentValue1d     float64
-	TimeInVeryLowPercentCmp1d    *string
-	TimeInVeryLowPercentValue1d  float64
-	TimeInLowPercentCmp1d        *string
-	TimeInLowPercentValue1d      float64
-	TimeInTargetPercentCmp1d     *string
-	TimeInTargetPercentValue1d   float64
-	TimeInHighPercentCmp1d       *string
-	TimeInHighPercentValue1d     float64
-	TimeInVeryHighPercentCmp1d   *string
-	TimeInVeryHighPercentValue1d float64
-
-	TimeCGMUsePercentCmp7d       *string
-	TimeCGMUsePercentValue7d     float64
-	TimeInVeryLowPercentCmp7d    *string
-	TimeInVeryLowPercentValue7d  float64
-	TimeInLowPercentCmp7d        *string
-	TimeInLowPercentValue7d      float64
-	TimeInTargetPercentCmp7d     *string
-	TimeInTargetPercentValue7d   float64
-	TimeInHighPercentCmp7d       *string
-	TimeInHighPercentValue7d     float64
-	TimeInVeryHighPercentCmp7d   *string
-	TimeInVeryHighPercentValue7d float64
-
-	TimeCGMUsePercentCmp14d       *string
-	TimeCGMUsePercentValue14d     float64
-	TimeInVeryLowPercentCmp14d    *string
-	TimeInVeryLowPercentValue14d  float64
-	TimeInLowPercentCmp14d        *string
-	TimeInLowPercentValue14d      float64
-	TimeInTargetPercentCmp14d     *string
-	TimeInTargetPercentValue14d   float64
-	TimeInHighPercentCmp14d       *string
-	TimeInHighPercentValue14d     float64
-	TimeInVeryHighPercentCmp14d   *string
-	TimeInVeryHighPercentValue14d float64
-
-	TimeCGMUsePercentCmp30d       *string
-	TimeCGMUsePercentValue30d     float64
-	TimeInVeryLowPercentCmp30d    *string
-	TimeInVeryLowPercentValue30d  float64
-	TimeInLowPercentCmp30d        *string
-	TimeInLowPercentValue30d      float64
-	TimeInTargetPercentCmp30d     *string
-	TimeInTargetPercentValue30d   float64
-	TimeInHighPercentCmp30d       *string
-	TimeInHighPercentValue30d     float64
-	TimeInVeryHighPercentCmp30d   *string
-	TimeInVeryHighPercentValue30d float64
 }
 
 type Permission = map[string]interface{}
@@ -156,64 +102,4 @@ type UploadReminderUpdate struct {
 	UserId    string
 	UpdatedBy string
 	Time      time.Time
-}
-
-type Period struct {
-	TimeCGMUsePercent    *float64 `bson:"timeCGMUsePercent"`
-	HasTimeCGMUsePercent *bool    `bson:"hasTimeCGMUsePercent"`
-	TimeCGMUseMinutes    *int     `bson:"timeCGMUseMinutes"`
-	TimeCGMUseRecords    *int     `bson:"timeCGMUseRecords"`
-
-	AverageGlucose    *AverageGlucose `bson:"averageGlucose"`
-	HasAverageGlucose *bool           `bson:"hasAverageGlucose"`
-
-	GlucoseManagementIndicator    *float64 `bson:"glucoseManagementIndicator"`
-	HasGlucoseManagementIndicator *bool    `bson:"hasGlucoseManagementIndicator"`
-
-	TimeInTargetPercent    *float64 `bson:"timeInTargetPercent"`
-	HasTimeInTargetPercent *bool    `bson:"hasTimeInTargetPercent"`
-	TimeInTargetMinutes    *int     `bson:"timeInTargetMinutes"`
-	TimeInTargetRecords    *int     `bson:"timeInTargetRecords"`
-
-	TimeInLowPercent    *float64 `bson:"timeInLowPercent"`
-	HasTimeInLowPercent *bool    `bson:"hasTimeInLowPercent"`
-	TimeInLowMinutes    *int     `bson:"timeInLowMinutes"`
-	TimeInLowRecords    *int     `bson:"timeInLowRecords"`
-
-	TimeInVeryLowPercent    *float64 `bson:"timeInVeryLowPercent"`
-	HasTimeInVeryLowPercent *bool    `bson:"hasTimeInVeryLowPercent"`
-	TimeInVeryLowMinutes    *int     `bson:"timeInVeryLowMinutes"`
-	TimeInVeryLowRecords    *int     `bson:"timeInVeryLowRecords"`
-
-	TimeInHighPercent    *float64 `bson:"timeInHighPercent"`
-	HasTimeInHighPercent *bool    `bson:"hasTimeInHighPercent"`
-	TimeInHighMinutes    *int     `bson:"timeInHighMinutes"`
-	TimeInHighRecords    *int     `bson:"timeInHighRecords"`
-
-	TimeInVeryHighPercent    *float64 `bson:"timeInVeryHighPercent"`
-	HasTimeInVeryHighPercent *bool    `bson:"hasTimeInVeryHighPercent"`
-	TimeInVeryHighMinutes    *int     `bson:"timeInVeryHighMinutes"`
-	TimeInVeryHighRecords    *int     `bson:"timeInVeryHighRecords"`
-}
-
-type Summary struct {
-	Periods map[string]*Period `bson:"periods"`
-
-	FirstData         *time.Time `bson:"firstData"`
-	LastData          *time.Time `bson:"lastData"`
-	LastUpdatedDate   *time.Time `bson:"lastUpdatedDate"`
-	LastUploadDate    *time.Time `bson:"lastUploadDate"`
-	HasLastUploadDate *bool      `bson:"hasLastUploadDate"`
-	OutdatedSince     *time.Time `bson:"outdatedSince"`
-	TotalHours        *int       `bson:"totalHours"`
-
-	HighGlucoseThreshold     *float64 `bson:"highGlucoseThreshold"`
-	VeryHighGlucoseThreshold *float64 `bson:"veryHighGlucoseThreshold"`
-	LowGlucoseThreshold      *float64 `bson:"lowGlucoseThreshold"`
-	VeryLowGlucoseThreshold  *float64 `bson:"VeryLowGlucoseThreshold"`
-}
-
-type AverageGlucose struct {
-	Units string  `bson:"units"`
-	Value float64 `bson:"value"`
 }
