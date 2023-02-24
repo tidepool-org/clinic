@@ -429,43 +429,16 @@ func ParseSort(sort *Sort) ([]*store.Sort, error) {
 	}
 
 	var extraSort = map[string]string{
-		"summary.lastUploadDate": "summary.hasLastUploadDate",
+		"dates.lastUploadDate": "summary.hasLastUploadDate",
 
-		"summary.periods.1d.timeCGMUsePercent":          "summary.periods.1d.hasTimeCGMUsePercent",
-		"summary.periods.1d.glucoseManagementIndicator": "summary.periods.1d.hasGlucoseManagementIndicator",
-		"summary.periods.1d.averageGlucose.value":       "summary.periods.1d.hasAverageGlucose",
-		"summary.periods.1d.timeInTargetPercent":        "summary.periods.1d.hasTimeInTargetPercent",
-		"summary.periods.1d.timeInLowPercent":           "summary.periods.1d.hasTimeInLowPercent",
-		"summary.periods.1d.timeInVeryLowPercent":       "summary.periods.1d.hasTimeInVeryLowPercent",
-		"summary.periods.1d.timeInHighPercent":          "summary.periods.1d.hasTimeInHighPercent",
-		"summary.periods.1d.timeInVeryHighPercent":      "summary.periods.1d.hasTimeInVeryHighPercent",
-
-		"summary.periods.7d.timeCGMUsePercent":          "summary.periods.7d.hasTimeCGMUsePercent",
-		"summary.periods.7d.glucoseManagementIndicator": "summary.periods.7d.hasGlucoseManagementIndicator",
-		"summary.periods.7d.averageGlucose.value":       "summary.periods.7d.hasAverageGlucose",
-		"summary.periods.7d.timeInTargetPercent":        "summary.periods.7d.hasTimeInTargetPercent",
-		"summary.periods.7d.timeInLowPercent":           "summary.periods.7d.hasTimeInLowPercent",
-		"summary.periods.7d.timeInVeryLowPercent":       "summary.periods.7d.hasTimeInVeryLowPercent",
-		"summary.periods.7d.timeInHighPercent":          "summary.periods.7d.hasTimeInHighPercent",
-		"summary.periods.7d.timeInVeryHighPercent":      "summary.periods.7d.hasTimeInVeryHighPercent",
-
-		"summary.periods.14d.timeCGMUsePercent":          "summary.periods.14d.hasTimeCGMUsePercent",
-		"summary.periods.14d.glucoseManagementIndicator": "summary.periods.14d.hasGlucoseManagementIndicator",
-		"summary.periods.14d.averageGlucose.value":       "summary.periods.14d.hasAverageGlucose",
-		"summary.periods.14d.timeInTargetPercent":        "summary.periods.14d.hasTimeInTargetPercent",
-		"summary.periods.14d.timeInLowPercent":           "summary.periods.14d.hasTimeInLowPercent",
-		"summary.periods.14d.timeInVeryLowPercent":       "summary.periods.14d.hasTimeInVeryLowPercent",
-		"summary.periods.14d.timeInHighPercent":          "summary.periods.14d.hasTimeInHighPercent",
-		"summary.periods.14d.timeInVeryHighPercent":      "summary.periods.14d.hasTimeInVeryHighPercent",
-
-		"summary.periods.30d.timeCGMUsePercent":          "summary.periods.30d.hasTimeCGMUsePercent",
-		"summary.periods.30d.glucoseManagementIndicator": "summary.periods.30d.hasGlucoseManagementIndicator",
-		"summary.periods.30d.averageGlucose.value":       "summary.periods.30d.hasAverageGlucose",
-		"summary.periods.30d.timeInTargetPercent":        "summary.periods.30d.hasTimeInTargetPercent",
-		"summary.periods.30d.timeInLowPercent":           "summary.periods.30d.hasTimeInLowPercent",
-		"summary.periods.30d.timeInVeryLowPercent":       "summary.periods.30d.hasTimeInVeryLowPercent",
-		"summary.periods.30d.timeInHighPercent":          "summary.periods.30d.hasTimeInHighPercent",
-		"summary.periods.30d.timeInVeryHighPercent":      "summary.periods.30d.hasTimeInVeryHighPercent",
+		"stats.timeCGMUsePercent":          "stats.hasTimeCGMUsePercent",
+		"stats.glucoseManagementIndicator": "stats.hasGlucoseManagementIndicator",
+		"stats.averageGlucose.value":       "stats.hasAverageGlucose",
+		"stats.timeInTargetPercent":        "stats.hasTimeInTargetPercent",
+		"stats.timeInLowPercent":           "stats.hasTimeInLowPercent",
+		"stats.timeInVeryLowPercent":       "stats.hasTimeInVeryLowPercent",
+		"stats.timeInHighPercent":          "stats.hasTimeInHighPercent",
+		"stats.timeInVeryHighPercent":      "stats.hasTimeInVeryHighPercent",
 	}
 
 	var sorts = []*store.Sort{&result}

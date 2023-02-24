@@ -15,18 +15,16 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId:           strp(string(clinicId)),
-		Search:             searchToString(params.Search),
-		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
-		LastUploadDateTo:   params.SummaryLastUploadDateTo,
+		ClinicId: strp(string(clinicId)),
+		Search:   searchToString(params.Search),
 	}
 
 	var sorts []*store.Sort
 
-	sorts, err := ParseSort(params.Sort)
-	if err != nil {
-		return err
-	}
+	//sorts, err := ParseSort(params.Sort)
+	//if err != nil {
+	//	return err
+	//}
 
 	list, err := h.patients.List(ctx, &filter, page, sorts)
 	if err != nil {

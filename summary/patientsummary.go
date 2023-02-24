@@ -109,7 +109,7 @@ func (BGMPeriod) GetType() string {
 func (BGMPeriod) Populate(interface{}) {
 }
 
-func (s BGMPeriod) Export(statsInt interface{}) {
+func (s BGMPeriod) Export(dest api.PatientSummary) {
 }
 
 func (CGMPeriod) GetType() string {
@@ -268,6 +268,7 @@ type Summary[T Period] struct {
 type Filter struct {
 	ClinicId           *string
 	UserId             *string
+	Type               *string
 	Search             *string
 	LastUploadDateFrom *time.Time
 	LastUploadDateTo   *time.Time
