@@ -2,7 +2,8 @@ package patients
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"github.com/tidepool-org/clinic/errors"
 
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
@@ -44,7 +45,7 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 	}
 
 	if patient.UserId == nil {
-		return nil, errors.New("user id is missing")
+		return nil, fmt.Errorf("user id is missing")
 	}
 
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", patient.ClinicId.Hex())
@@ -80,6 +81,13 @@ func (s *service) UpdateEmail(ctx context.Context, userId string, email *string)
 
 func (s *service) Remove(ctx context.Context, clinicId string, userId string) error {
 	s.logger.Infow("deleting patient from clinic", "userId", userId, "clinicId", clinicId)
+	patient, err := s.repo.Get(ctx, clinicId, userId)
+	if err != nil {
+		return err
+	}
+	if patient.IsCustodial() {
+		return fmt.Errorf("%w: deleting custodial patients is not allowed", errors.BadRequest)
+	}
 	return s.repo.Remove(ctx, clinicId, userId)
 }
 

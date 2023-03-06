@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/patients/test"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +28,24 @@ var _ = Describe("Patients Service", func() {
 		repoCtrl.Finish()
 	})
 
+	Describe("Remove", func() {
+		Context("Custodial patient", func() {
+			perms := patients.CustodialAccountPermissions
+
+			It("fails with error", func() {
+				userId := "1234567890"
+				clinicId := "60d1dc0eac5285751add8f82"
+				repo.EXPECT().
+					Get(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
+					Return(&patients.Patient{Permissions: &perms}, nil)
+
+				err := service.Remove(nil, clinicId, userId)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("bad request: deleting custodial patients is not allowed"))
+			})
+		})
+	})
+
 	Describe("Update Permissions", func() {
 		Context("With non-empty permissions", func() {
 			perms := &patients.Permissions{
@@ -36,6 +55,7 @@ var _ = Describe("Patients Service", func() {
 			It("updates permissions in repository", func() {
 				userId := "1234567890"
 				clinicId := "60d1dc0eac5285751add8f82"
+
 				repo.EXPECT().
 					UpdatePermissions(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Eq(perms)).
 					Return(&patients.Patient{Permissions: perms}, nil)
@@ -53,6 +73,11 @@ var _ = Describe("Patients Service", func() {
 			It("removes the patient from the repository", func() {
 				userId := "1234567890"
 				clinicId := "60d1dc0eac5285751add8f82"
+				clinicObjectId, _ := primitive.ObjectIDFromHex(clinicId)
+				repo.EXPECT().
+					Get(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
+					Return(&patients.Patient{ClinicId: &clinicObjectId, UserId: &userId}, nil)
+
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
 					Return(nil)
@@ -69,6 +94,11 @@ var _ = Describe("Patients Service", func() {
 			It("removes the patient from the repository", func() {
 				userId := "1234567890"
 				clinicId := "60d1dc0eac5285751add8f82"
+				clinicObjectId, _ := primitive.ObjectIDFromHex(clinicId)
+				repo.EXPECT().
+					Get(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
+					Return(&patients.Patient{ClinicId: &clinicObjectId, UserId: &userId}, nil)
+
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
 					Return(nil)
@@ -104,6 +134,11 @@ var _ = Describe("Patients Service", func() {
 				userId := "1234567890"
 				clinicId := "60d1dc0eac5285751add8f82"
 
+				clinicObjectId, _ := primitive.ObjectIDFromHex(clinicId)
+				repo.EXPECT().
+					Get(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
+					Return(&patients.Patient{ClinicId: &clinicObjectId, UserId: &userId}, nil)
+
 				repo.EXPECT().
 					DeletePermission(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Eq(permission)).
 					Return(&patients.Patient{Permissions: &patients.Permissions{}}, nil)
@@ -120,6 +155,10 @@ var _ = Describe("Patients Service", func() {
 			It("doesn't return an error if the patient is already removed", func() {
 				userId := "1234567890"
 				clinicId := "60d1dc0eac5285751add8f82"
+				clinicObjectId, _ := primitive.ObjectIDFromHex(clinicId)
+				repo.EXPECT().
+					Get(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
+					Return(&patients.Patient{ClinicId: &clinicObjectId, UserId: &userId}, nil)
 
 				repo.EXPECT().
 					DeletePermission(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Eq(permission)).
