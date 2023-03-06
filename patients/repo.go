@@ -91,130 +91,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetName("PatientMRN"),
 		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.lastUploadDate", Value: 1},
-			},
-			Options: options.Index().
-				SetName("PatientSummaryLastUploadDate"),
-		},
-
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-
-				{Key: "summary.periods.1d.timeCGMUsePercent", Value: 1},
-				{Key: "summary.periods.1d.hasTimeCGMUsePercent", Value: -1},
-
-				{Key: "summary.periods.1d.glucoseManagementIndicator", Value: 1},
-				{Key: "summary.periods.1d.hasGlucoseManagementIndicator", Value: -1},
-
-				{Key: "summary.periods.1d.timeInVeryLowPercent", Value: 1},
-				{Key: "summary.periods.1d.hasTimeInVeryLowPercent", Value: -1},
-
-				{Key: "summary.periods.1d.timeInLowPercent", Value: 1},
-				{Key: "summary.periods.1d.hasTimeInLowPercent", Value: -1},
-
-				{Key: "summary.periods.1d.timeInTargetPercent", Value: 1},
-				{Key: "summary.periods.1d.hasTimeInTargetPercent", Value: -1},
-
-				{Key: "summary.periods.1d.timeInHighPercent", Value: 1},
-				{Key: "summary.periods.1d.hasTimeInHighPercent", Value: -1},
-
-				{Key: "summary.periods.1d.timeInVeryHighPercent", Value: 1},
-				{Key: "summary.periods.1d.hasTimeInVeryHighPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetName("PatientSummaryCGM1d"),
-		},
-
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-
-				{Key: "summary.periods.7d.timeCGMUsePercent", Value: 1},
-				{Key: "summary.periods.7d.hasTimeCGMUsePercent", Value: -1},
-
-				{Key: "summary.periods.7d.glucoseManagementIndicator", Value: 1},
-				{Key: "summary.periods.7d.hasGlucoseManagementIndicator", Value: -1},
-
-				{Key: "summary.periods.7d.timeInVeryLowPercent", Value: 1},
-				{Key: "summary.periods.7d.hasTimeInVeryLowPercent", Value: -1},
-
-				{Key: "summary.periods.7d.timeInLowPercent", Value: 1},
-				{Key: "summary.periods.7d.hasTimeInLowPercent", Value: -1},
-
-				{Key: "summary.periods.7d.timeInTargetPercent", Value: 1},
-				{Key: "summary.periods.7d.hasTimeInTargetPercent", Value: -1},
-
-				{Key: "summary.periods.7d.timeInHighPercent", Value: 1},
-				{Key: "summary.periods.7d.hasTimeInHighPercent", Value: -1},
-
-				{Key: "summary.periods.7d.timeInVeryHighPercent", Value: 1},
-				{Key: "summary.periods.7d.hasTimeInVeryHighPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetName("PatientSummaryCGM7d"),
-		},
-
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-
-				{Key: "summary.periods.14d.timeCGMUsePercent", Value: 1},
-				{Key: "summary.periods.14d.hasTimeCGMUsePercent", Value: -1},
-
-				{Key: "summary.periods.14d.glucoseManagementIndicator", Value: 1},
-				{Key: "summary.periods.14d.hasGlucoseManagementIndicator", Value: -1},
-
-				{Key: "summary.periods.14d.timeInVeryLowPercent", Value: 1},
-				{Key: "summary.periods.14d.hasTimeInVeryLowPercent", Value: -1},
-
-				{Key: "summary.periods.14d.timeInLowPercent", Value: 1},
-				{Key: "summary.periods.14d.hasTimeInLowPercent", Value: -1},
-
-				{Key: "summary.periods.14d.timeInTargetPercent", Value: 1},
-				{Key: "summary.periods.14d.hasTimeInTargetPercent", Value: -1},
-
-				{Key: "summary.periods.14d.timeInHighPercent", Value: 1},
-				{Key: "summary.periods.14d.hasTimeInHighPercent", Value: -1},
-
-				{Key: "summary.periods.14d.timeInVeryHighPercent", Value: 1},
-				{Key: "summary.periods.14d.hasTimeInVeryHighPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetName("PatientSummaryCGM14d"),
-		},
-
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-
-				{Key: "summary.periods.30d.timeCGMUsePercent", Value: 1},
-				{Key: "summary.periods.30d.hasTimeCGMUsePercent", Value: -1},
-
-				{Key: "summary.periods.30d.glucoseManagementIndicator", Value: 1},
-				{Key: "summary.periods.30d.hasGlucoseManagementIndicator", Value: -1},
-
-				{Key: "summary.periods.30d.timeInVeryLowPercent", Value: 1},
-				{Key: "summary.periods.30d.hasTimeInVeryLowPercent", Value: -1},
-
-				{Key: "summary.periods.30d.timeInLowPercent", Value: 1},
-				{Key: "summary.periods.30d.hasTimeInLowPercent", Value: -1},
-
-				{Key: "summary.periods.30d.timeInTargetPercent", Value: 1},
-				{Key: "summary.periods.30d.hasTimeInTargetPercent", Value: -1},
-
-				{Key: "summary.periods.30d.timeInHighPercent", Value: 1},
-				{Key: "summary.periods.30d.hasTimeInHighPercent", Value: -1},
-
-				{Key: "summary.periods.30d.timeInVeryHighPercent", Value: 1},
-				{Key: "summary.periods.30d.hasTimeInVeryHighPercent", Value: -1},
-			},
-			Options: options.Index().
-				SetName("PatientSummaryCGM30d"),
-		},
 	})
 	return err
 }
@@ -548,6 +424,11 @@ func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patie
 	return nil
 }
 
+type FilterPair struct {
+	Cmp   *string
+	Value float64
+}
+
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
 	if filter.ClinicId != nil {
@@ -571,198 +452,64 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			bson.M{"birthDate": filter},
 		}
 	}
-	lastUploadDate := bson.M{}
-	if filter.LastUploadDateFrom != nil && !filter.LastUploadDateFrom.IsZero() {
-		lastUploadDate["$gte"] = filter.LastUploadDateFrom
-	}
-	if filter.LastUploadDateTo != nil && !filter.LastUploadDateTo.IsZero() {
-		lastUploadDate["$lt"] = filter.LastUploadDateTo
-	}
-	if len(lastUploadDate) > 0 {
-		selector["summary.lastUploadDate"] = lastUploadDate
+	cgmLastUploadDate := bson.M{}
+	if filter.CgmLastUploadDateFrom != nil && !filter.CgmLastUploadDateFrom.IsZero() {
+		cgmLastUploadDate["$gte"] = filter.CgmLastUploadDateFrom
 	}
 
-	MaybeApplyNumericFilter(selector,
-		"1d",
-		"timeCGMUsePercent",
-		filter.TimeCGMUsePercentCmp1d,
-		filter.TimeCGMUsePercentValue1d,
-	)
+	bgmLastUploadDate := bson.M{}
+	if filter.BgmLastUploadDateTo != nil && !filter.BgmLastUploadDateTo.IsZero() {
+		bgmLastUploadDate["$lt"] = filter.BgmLastUploadDateTo
+	}
 
-	MaybeApplyNumericFilter(selector,
-		"1d",
-		"timeInVeryLowPercent",
-		filter.TimeInVeryLowPercentCmp1d,
-		filter.TimeInVeryLowPercentValue1d,
-	)
+	if len(cgmLastUploadDate) > 0 {
+		selector["summary.cgmStats.dates.lastUploadDate"] = cgmLastUploadDate
+	}
 
-	MaybeApplyNumericFilter(selector,
-		"1d",
-		"timeInLowPercent",
-		filter.TimeInLowPercentCmp1d,
-		filter.TimeInLowPercentValue1d,
-	)
+	if len(bgmLastUploadDate) > 0 {
+		selector["summary.bgmStats.dates.lastUploadDate"] = bgmLastUploadDate
+	}
 
-	MaybeApplyNumericFilter(selector,
-		"1d",
-		"timeInTargetPercent",
-		filter.TimeInTargetPercentCmp1d,
-		filter.TimeInTargetPercentValue1d,
-	)
+	if filter.Period != nil && *filter.Period != "" {
 
-	MaybeApplyNumericFilter(selector,
-		"1d",
-		"timeInHighPercent",
-		filter.TimeInHighPercentCmp1d,
-		filter.TimeInHighPercentValue1d,
-	)
+		var filterMap = map[string]map[string]FilterPair{
+			"cgm": {
+				"timeCGMUsePercent":     {filter.CgmTimeCGMUsePercentCmp, filter.CgmTimeCGMUsePercentValue},
+				"timeInVeryLowPercent":  {filter.CgmTimeInVeryLowPercentCmp, filter.CgmTimeInVeryLowPercentValue},
+				"timeInLowPercent":      {filter.CgmTimeInLowPercentCmp, filter.CgmTimeInLowPercentValue},
+				"timeInTargetPercent":   {filter.CgmTimeInTargetPercentCmp, filter.CgmTimeInTargetPercentValue},
+				"timeInHighPercent":     {filter.CgmTimeInHighPercentCmp, filter.CgmTimeInHighPercentValue},
+				"timeInVeryHighPercent": {filter.CgmTimeInVeryHighPercentCmp, filter.CgmTimeInVeryHighPercentValue},
+			},
+			"bgm": {
+				"timeInVeryLowPercent":  {filter.BgmTimeInVeryLowPercentCmp, filter.BgmTimeInVeryLowPercentValue},
+				"timeInLowPercent":      {filter.BgmTimeInLowPercentCmp, filter.BgmTimeInLowPercentValue},
+				"timeInTargetPercent":   {filter.BgmTimeInTargetPercentCmp, filter.BgmTimeInTargetPercentValue},
+				"timeInHighPercent":     {filter.BgmTimeInHighPercentCmp, filter.BgmTimeInHighPercentValue},
+				"timeInVeryHighPercent": {filter.BgmTimeInVeryHighPercentCmp, filter.BgmTimeInVeryHighPercentValue},
+			},
+		}
 
-	MaybeApplyNumericFilter(selector,
-		"1d",
-		"timeInVeryHighPercent",
-		filter.TimeInVeryHighPercentCmp1d,
-		filter.TimeInVeryHighPercentValue1d,
-	)
+		for t, fields := range filterMap {
+			for field, f := range fields {
+				MaybeApplyNumericFilter(selector,
+					*filter.Period,
+					t,
+					field,
+					f.Cmp,
+					f.Value,
+				)
+			}
+		}
 
-	MaybeApplyNumericFilter(selector,
-		"7d",
-		"timeCGMUsePercent",
-		filter.TimeCGMUsePercentCmp7d,
-		filter.TimeCGMUsePercentValue7d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"7d",
-		"timeInVeryLowPercent",
-		filter.TimeInVeryLowPercentCmp7d,
-		filter.TimeInVeryLowPercentValue7d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"7d",
-		"timeInLowPercent",
-		filter.TimeInLowPercentCmp7d,
-		filter.TimeInLowPercentValue7d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"7d",
-		"timeInTargetPercent",
-		filter.TimeInTargetPercentCmp7d,
-		filter.TimeInTargetPercentValue7d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"7d",
-		"timeInHighPercent",
-		filter.TimeInHighPercentCmp7d,
-		filter.TimeInHighPercentValue7d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"7d",
-		"timeInVeryHighPercent",
-		filter.TimeInVeryHighPercentCmp7d,
-		filter.TimeInVeryHighPercentValue7d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"14d",
-		"timeCGMUsePercent",
-		filter.TimeCGMUsePercentCmp14d,
-		filter.TimeCGMUsePercentValue14d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"14d",
-		"timeInVeryLowPercent",
-		filter.TimeInVeryLowPercentCmp14d,
-		filter.TimeInVeryLowPercentValue14d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"14d",
-		"timeInLowPercent",
-		filter.TimeInLowPercentCmp14d,
-		filter.TimeInLowPercentValue14d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"14d",
-		"timeInTargetPercent",
-		filter.TimeInTargetPercentCmp14d,
-		filter.TimeInTargetPercentValue14d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"14d",
-		"timeInHighPercent",
-		filter.TimeInHighPercentCmp14d,
-		filter.TimeInHighPercentValue14d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"14d",
-		"timeInVeryHighPercent",
-		filter.TimeInVeryHighPercentCmp14d,
-		filter.TimeInVeryHighPercentValue14d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"30d",
-		"timeCGMUsePercent",
-		filter.TimeCGMUsePercentCmp30d,
-		filter.TimeCGMUsePercentValue30d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"30d",
-		"timeInVeryLowPercent",
-		filter.TimeInVeryLowPercentCmp30d,
-		filter.TimeInVeryLowPercentValue30d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"30d",
-		"timeInLowPercent",
-		filter.TimeInLowPercentCmp30d,
-		filter.TimeInLowPercentValue30d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"30d",
-		"timeInTargetPercent",
-		filter.TimeInTargetPercentCmp30d,
-		filter.TimeInTargetPercentValue30d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"30d",
-		"timeInHighPercent",
-		filter.TimeInHighPercentCmp30d,
-		filter.TimeInHighPercentValue30d,
-	)
-
-	MaybeApplyNumericFilter(selector,
-		"30d",
-		"timeInVeryHighPercent",
-		filter.TimeInVeryHighPercentCmp30d,
-		filter.TimeInVeryHighPercentValue30d,
-	)
+	}
 
 	return selector
 }
 
-func MaybeApplyNumericFilter(selector bson.M, period string, field string, cmp *string, value float64) {
+func MaybeApplyNumericFilter(selector bson.M, period string, t string, field string, cmp *string, value float64) {
 	if operator, ok := cmpToMongoFilter(cmp); ok {
-		// ugly, but needed to ensure index prefix
-		for _, filterable := range filterablePeriodFields {
-			if _, exists := selector["summary.periods."+period+"."+filterable]; !exists {
-				selector["summary.periods."+period+".timeInVeryHighPercent"] = bson.M{"$ne": -1111}
-			}
-		}
-
-		selector["summary.periods."+period+"."+field] = bson.M{operator: value}
+		selector["summary."+t+"Stats.periods."+period+"."+field] = bson.M{operator: value}
 	}
 }
 
@@ -849,61 +596,83 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 }
 
 var validSortAttributes = map[string]struct{}{
-	"fullName":                  {},
-	"birthDate":                 {},
-	"summary.lastUploadDate":    {},
-	"summary.hasLastUploadDate": {},
+	"fullName":                              {},
+	"birthDate":                             {},
+	"summary.cgmStats.dates.lastUploadDate": {},
+	"summary.cgmStats.dates.hasLastUploadDate": {},
 
-	"summary.periods.1d.timeCGMUsePercent":             {},
-	"summary.periods.1d.hasTimeCGMUsePercent":          {},
-	"summary.periods.1d.glucoseManagementIndicator":    {},
-	"summary.periods.1d.hasGlucoseManagementIndicator": {},
-	"summary.periods.1d.hasAverageGlucose":             {},
-	"summary.periods.1d.hasTimeInLowPercent":           {},
-	"summary.periods.1d.hasTimeInVeryLowPercent":       {},
-	"summary.periods.1d.hasTimeInHighPercent":          {},
-	"summary.periods.1d.hasTimeInVeryHighPercent":      {},
-	"summary.periods.1d.hasTimeInTargetPercent":        {},
+	"summary.bgmStats.dates.lastUploadDate":    {},
+	"summary.bgmStats.dates.hasLastUploadDate": {},
 
-	"summary.periods.7d.timeCGMUsePercent":             {},
-	"summary.periods.7d.hasTimeCGMUsePercent":          {},
-	"summary.periods.7d.glucoseManagementIndicator":    {},
-	"summary.periods.7d.hasGlucoseManagementIndicator": {},
-	"summary.periods.7d.hasAverageGlucose":             {},
-	"summary.periods.7d.hasTimeInLowPercent":           {},
-	"summary.periods.7d.hasTimeInVeryLowPercent":       {},
-	"summary.periods.7d.hasTimeInHighPercent":          {},
-	"summary.periods.7d.hasTimeInVeryHighPercent":      {},
-	"summary.periods.7d.hasTimeInTargetPercent":        {},
+	"summary.cgmStats.periods.1d.timeCGMUsePercent":             {},
+	"summary.cgmStats.periods.1d.hasTimeCGMUsePercent":          {},
+	"summary.cgmStats.periods.1d.glucoseManagementIndicator":    {},
+	"summary.cgmStats.periods.1d.hasGlucoseManagementIndicator": {},
+	"summary.cgmStats.periods.1d.hasAverageGlucose":             {},
+	"summary.cgmStats.periods.1d.hasTimeInLowPercent":           {},
+	"summary.cgmStats.periods.1d.hasTimeInVeryLowPercent":       {},
+	"summary.cgmStats.periods.1d.hasTimeInHighPercent":          {},
+	"summary.cgmStats.periods.1d.hasTimeInVeryHighPercent":      {},
+	"summary.cgmStats.periods.1d.hasTimeInTargetPercent":        {},
 
-	"summary.periods.14d.timeCGMUsePercent":             {},
-	"summary.periods.14d.hasTimeCGMUsePercent":          {},
-	"summary.periods.14d.glucoseManagementIndicator":    {},
-	"summary.periods.14d.hasGlucoseManagementIndicator": {},
-	"summary.periods.14d.hasAverageGlucose":             {},
-	"summary.periods.14d.hasTimeInLowPercent":           {},
-	"summary.periods.14d.hasTimeInVeryLowPercent":       {},
-	"summary.periods.14d.hasTimeInHighPercent":          {},
-	"summary.periods.14d.hasTimeInVeryHighPercent":      {},
-	"summary.periods.14d.hasTimeInTargetPercent":        {},
+	"summary.cgmStats.periods.7d.timeCGMUsePercent":             {},
+	"summary.cgmStats.periods.7d.hasTimeCGMUsePercent":          {},
+	"summary.cgmStats.periods.7d.glucoseManagementIndicator":    {},
+	"summary.cgmStats.periods.7d.hasGlucoseManagementIndicator": {},
+	"summary.cgmStats.periods.7d.hasAverageGlucose":             {},
+	"summary.cgmStats.periods.7d.hasTimeInLowPercent":           {},
+	"summary.cgmStats.periods.7d.hasTimeInVeryLowPercent":       {},
+	"summary.cgmStats.periods.7d.hasTimeInHighPercent":          {},
+	"summary.cgmStats.periods.7d.hasTimeInVeryHighPercent":      {},
+	"summary.cgmStats.periods.7d.hasTimeInTargetPercent":        {},
 
-	"summary.periods.30d.timeCGMUsePercent":             {},
-	"summary.periods.30d.hasTimeCGMUsePercent":          {},
-	"summary.periods.30d.glucoseManagementIndicator":    {},
-	"summary.periods.30d.hasGlucoseManagementIndicator": {},
-	"summary.periods.30d.hasAverageGlucose":             {},
-	"summary.periods.30d.hasTimeInLowPercent":           {},
-	"summary.periods.30d.hasTimeInVeryLowPercent":       {},
-	"summary.periods.30d.hasTimeInHighPercent":          {},
-	"summary.periods.30d.hasTimeInVeryHighPercent":      {},
-	"summary.periods.30d.hasTimeInTargetPercent":        {},
-}
+	"summary.cgmStats.periods.14d.timeCGMUsePercent":             {},
+	"summary.cgmStats.periods.14d.hasTimeCGMUsePercent":          {},
+	"summary.cgmStats.periods.14d.glucoseManagementIndicator":    {},
+	"summary.cgmStats.periods.14d.hasGlucoseManagementIndicator": {},
+	"summary.cgmStats.periods.14d.hasAverageGlucose":             {},
+	"summary.cgmStats.periods.14d.hasTimeInLowPercent":           {},
+	"summary.cgmStats.periods.14d.hasTimeInVeryLowPercent":       {},
+	"summary.cgmStats.periods.14d.hasTimeInHighPercent":          {},
+	"summary.cgmStats.periods.14d.hasTimeInVeryHighPercent":      {},
+	"summary.cgmStats.periods.14d.hasTimeInTargetPercent":        {},
 
-var filterablePeriodFields = []string{
-	"timeCGMUsePercent",
-	"timeInVeryHighPercent",
-	"timeInHighPercent",
-	"timeInTargetPercent",
-	"timeInLowPercent",
-	"timeInVeryLowPercent",
+	"summary.cgmStats.periods.30d.timeCGMUsePercent":             {},
+	"summary.cgmStats.periods.30d.hasTimeCGMUsePercent":          {},
+	"summary.cgmStats.periods.30d.glucoseManagementIndicator":    {},
+	"summary.cgmStats.periods.30d.hasGlucoseManagementIndicator": {},
+	"summary.cgmStats.periods.30d.hasAverageGlucose":             {},
+	"summary.cgmStats.periods.30d.hasTimeInLowPercent":           {},
+	"summary.cgmStats.periods.30d.hasTimeInVeryLowPercent":       {},
+	"summary.cgmStats.periods.30d.hasTimeInHighPercent":          {},
+	"summary.cgmStats.periods.30d.hasTimeInVeryHighPercent":      {},
+	"summary.cgmStats.periods.30d.hasTimeInTargetPercent":        {},
+
+	"summary.bgmStats.periods.1d.hasAverageGlucose":        {},
+	"summary.bgmStats.periods.1d.hasTimeInLowPercent":      {},
+	"summary.bgmStats.periods.1d.hasTimeInVeryLowPercent":  {},
+	"summary.bgmStats.periods.1d.hasTimeInHighPercent":     {},
+	"summary.bgmStats.periods.1d.hasTimeInVeryHighPercent": {},
+	"summary.bgmStats.periods.1d.hasTimeInTargetPercent":   {},
+
+	"summary.bgmStats.periods.7d.hasAverageGlucose":        {},
+	"summary.bgmStats.periods.7d.hasTimeInLowPercent":      {},
+	"summary.bgmStats.periods.7d.hasTimeInVeryLowPercent":  {},
+	"summary.bgmStats.periods.7d.hasTimeInHighPercent":     {},
+	"summary.bgmStats.periods.7d.hasTimeInVeryHighPercent": {},
+	"summary.bgmStats.periods.7d.hasTimeInTargetPercent":   {},
+
+	"summary.bgmStats.periods.14d.hasAverageGlucose":        {},
+	"summary.bgmStats.periods.14d.hasTimeInLowPercent":      {},
+	"summary.bgmStats.periods.14d.hasTimeInVeryLowPercent":  {},
+	"summary.bgmStats.periods.14d.hasTimeInHighPercent":     {},
+	"summary.bgmStats.periods.14d.hasTimeInVeryHighPercent": {},
+	"summary.bgmStats.periods.14d.hasTimeInTargetPercent":   {},
+
+	"summary.bgmStats.periods.30d.hasAverageGlucose":        {},
+	"summary.bgmStats.periods.30d.hasTimeInLowPercent":      {},
+	"summary.bgmStats.periods.30d.hasTimeInVeryLowPercent":  {},
+	"summary.bgmStats.periods.30d.hasTimeInHighPercent":     {},
+	"summary.bgmStats.periods.30d.hasTimeInVeryHighPercent": {},
+	"summary.bgmStats.periods.30d.hasTimeInTargetPercent":   {},
 }

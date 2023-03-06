@@ -65,63 +65,41 @@ func (p Patient) IsCustodial() bool {
 }
 
 type Filter struct {
-	ClinicId           *string
-	UserId             *string
-	Search             *string
-	LastUploadDateFrom *time.Time
-	LastUploadDateTo   *time.Time
+	ClinicId *string
+	UserId   *string
+	Search   *string
 
-	TimeCGMUsePercentCmp1d       *string
-	TimeCGMUsePercentValue1d     float64
-	TimeInVeryLowPercentCmp1d    *string
-	TimeInVeryLowPercentValue1d  float64
-	TimeInLowPercentCmp1d        *string
-	TimeInLowPercentValue1d      float64
-	TimeInTargetPercentCmp1d     *string
-	TimeInTargetPercentValue1d   float64
-	TimeInHighPercentCmp1d       *string
-	TimeInHighPercentValue1d     float64
-	TimeInVeryHighPercentCmp1d   *string
-	TimeInVeryHighPercentValue1d float64
+	CgmLastUploadDateFrom *time.Time
+	CgmLastUploadDateTo   *time.Time
 
-	TimeCGMUsePercentCmp7d       *string
-	TimeCGMUsePercentValue7d     float64
-	TimeInVeryLowPercentCmp7d    *string
-	TimeInVeryLowPercentValue7d  float64
-	TimeInLowPercentCmp7d        *string
-	TimeInLowPercentValue7d      float64
-	TimeInTargetPercentCmp7d     *string
-	TimeInTargetPercentValue7d   float64
-	TimeInHighPercentCmp7d       *string
-	TimeInHighPercentValue7d     float64
-	TimeInVeryHighPercentCmp7d   *string
-	TimeInVeryHighPercentValue7d float64
+	BgmLastUploadDateFrom *time.Time
+	BgmLastUploadDateTo   *time.Time
 
-	TimeCGMUsePercentCmp14d       *string
-	TimeCGMUsePercentValue14d     float64
-	TimeInVeryLowPercentCmp14d    *string
-	TimeInVeryLowPercentValue14d  float64
-	TimeInLowPercentCmp14d        *string
-	TimeInLowPercentValue14d      float64
-	TimeInTargetPercentCmp14d     *string
-	TimeInTargetPercentValue14d   float64
-	TimeInHighPercentCmp14d       *string
-	TimeInHighPercentValue14d     float64
-	TimeInVeryHighPercentCmp14d   *string
-	TimeInVeryHighPercentValue14d float64
+	Period *string
 
-	TimeCGMUsePercentCmp30d       *string
-	TimeCGMUsePercentValue30d     float64
-	TimeInVeryLowPercentCmp30d    *string
-	TimeInVeryLowPercentValue30d  float64
-	TimeInLowPercentCmp30d        *string
-	TimeInLowPercentValue30d      float64
-	TimeInTargetPercentCmp30d     *string
-	TimeInTargetPercentValue30d   float64
-	TimeInHighPercentCmp30d       *string
-	TimeInHighPercentValue30d     float64
-	TimeInVeryHighPercentCmp30d   *string
-	TimeInVeryHighPercentValue30d float64
+	CgmTimeCGMUsePercentCmp       *string
+	CgmTimeCGMUsePercentValue     float64
+	CgmTimeInVeryLowPercentCmp    *string
+	CgmTimeInVeryLowPercentValue  float64
+	CgmTimeInLowPercentCmp        *string
+	CgmTimeInLowPercentValue      float64
+	CgmTimeInTargetPercentCmp     *string
+	CgmTimeInTargetPercentValue   float64
+	CgmTimeInHighPercentCmp       *string
+	CgmTimeInHighPercentValue     float64
+	CgmTimeInVeryHighPercentCmp   *string
+	CgmTimeInVeryHighPercentValue float64
+
+	BgmTimeInVeryLowPercentCmp    *string
+	BgmTimeInVeryLowPercentValue  float64
+	BgmTimeInLowPercentCmp        *string
+	BgmTimeInLowPercentValue      float64
+	BgmTimeInTargetPercentCmp     *string
+	BgmTimeInTargetPercentValue   float64
+	BgmTimeInHighPercentCmp       *string
+	BgmTimeInHighPercentValue     float64
+	BgmTimeInVeryHighPercentCmp   *string
+	BgmTimeInVeryHighPercentValue float64
 }
 
 type Permission = map[string]interface{}
@@ -156,31 +134,6 @@ type UploadReminderUpdate struct {
 	UserId    string
 	UpdatedBy string
 	Time      time.Time
-}
-
-type CGMStats struct {
-	Date *time.Time `json:"date" bson:"date"`
-
-	TargetMinutes *int `json:"targetMinutes" bson:"targetMinutes"`
-	TargetRecords *int `json:"targetRecords" bson:"targetRecords"`
-
-	LowMinutes *int `json:"lowMinutes" bson:"lowMinutes"`
-	LowRecords *int `json:"lowRecords" bson:"lowRecords"`
-
-	VeryLowMinutes *int `json:"veryLowMinutes" bson:"veryLowMinutes"`
-	VeryLowRecords *int `json:"veryLowRecords" bson:"veryLowRecords"`
-
-	HighMinutes *int `json:"highMinutes" bson:"highMinutes"`
-	HighRecords *int `json:"highRecords" bson:"highRecords"`
-
-	VeryHighMinutes *int `json:"veryHighMinutes" bson:"veryHighMinutes"`
-	VeryHighRecords *int `json:"veryHighRecords" bson:"veryHighRecords"`
-
-	TotalGlucose *float64 `json:"totalGlucose" bson:"totalGlucose"`
-	TotalMinutes *int     `json:"totalMinutes" bson:"totalMinutes"`
-	TotalRecords *int     `json:"totalRecords" bson:"totalRecords"`
-
-	LastRecordTime *time.Time `json:"lastRecordTime" bson:"lastRecordTime"`
 }
 
 type CGMPeriod struct {
@@ -222,33 +175,11 @@ type CGMPeriod struct {
 	TimeInVeryHighRecords *int     `json:"timeInVeryHighRecords" bson:"timeInVeryHighRecords"`
 }
 
-type CGMSummary struct {
-	Periods     map[string]*CGMPeriod `json:"periods" bson:"periods"`
-	HourlyStats []*CGMStats           `json:"hourlyStats" bson:"hourlyStats"`
-	TotalHours  *int                  `json:"totalHours" bson:"totalHours"`
-
-	// date tracking
-	HasLastUploadDate *bool      `json:"hasLastUploadDate" bson:"hasLastUploadDate"`
-	LastUploadDate    *time.Time `json:"lastUploadDate" bson:"lastUploadDate"`
-	LastUpdatedDate   *time.Time `json:"lastUpdatedDate" bson:"lastUpdatedDate"`
-	FirstData         *time.Time `json:"firstData" bson:"firstData"`
-	LastData          *time.Time `json:"lastData" bson:"lastData"`
-	OutdatedSince     *time.Time `json:"outdatedSince" bson:"outdatedSince"`
-}
-
-type BGMStats struct {
-	Date time.Time `json:"date" bson:"date"`
-
-	TargetRecords   *int `json:"targetRecords" bson:"targetRecords"`
-	LowRecords      *int `json:"lowRecords" bson:"lowRecords"`
-	VeryLowRecords  *int `json:"veryLowRecords" bson:"veryLowRecords"`
-	HighRecords     *int `json:"highRecords" bson:"highRecords"`
-	VeryHighRecords *int `json:"veryHighRecords" bson:"veryHighRecords"`
-
-	TotalGlucose *float64 `json:"totalGlucose" bson:"totalGlucose"`
-	TotalRecords *int     `json:"totalRecords" bson:"totalRecords"`
-
-	LastRecordTime *time.Time `json:"lastRecordTime" bson:"lastRecordTime"`
+type CGMStats struct {
+	Config     Config                `json:"config" bson:"config"`
+	Dates      Dates                 `json:"dates" bson:"dates"`
+	Periods    map[string]*CGMPeriod `json:"periods" bson:"periods"`
+	TotalHours *int                  `json:"totalHours" bson:"totalHours"`
 }
 
 type BGMPeriod struct {
@@ -278,18 +209,11 @@ type BGMPeriod struct {
 	TimeInVeryHighRecords *int     `json:"timeInVeryHighRecords" bson:"timeInVeryHighRecords"`
 }
 
-type BGMSummary struct {
-	Periods     map[string]*BGMPeriod `json:"periods" bson:"periods"`
-	HourlyStats []*BGMStats           `json:"hourlyStats" bson:"hourlyStats"`
-	TotalHours  *int                  `json:"totalHours" bson:"totalHours"`
-
-	// date tracking
-	HasLastUploadDate *bool      `json:"hasLastUploadDate" bson:"hasLastUploadDate"`
-	LastUploadDate    *time.Time `json:"lastUploadDate" bson:"lastUploadDate"`
-	LastUpdatedDate   *time.Time `json:"lastUpdatedDate" bson:"lastUpdatedDate"`
-	OutdatedSince     *time.Time `json:"outdatedSince" bson:"outdatedSince"`
-	FirstData         *time.Time `json:"firstData" bson:"firstData"`
-	LastData          *time.Time `json:"lastData" bson:"lastData"`
+type BGMStats struct {
+	Config     Config                `json:"config" bson:"config"`
+	Dates      Dates                 `json:"dates" bson:"dates"`
+	Periods    map[string]*BGMPeriod `json:"periods" bson:"periods"`
+	TotalHours *int                  `json:"totalHours" bson:"totalHours"`
 }
 
 type Config struct {
@@ -302,11 +226,18 @@ type Config struct {
 	VeryLowGlucoseThreshold  *float64 `json:"VeryLowGlucoseThreshold" bson:"VeryLowGlucoseThreshold"`
 }
 
-type Summary struct {
-	CGM CGMSummary `json:"cgmSummary" bson:"cgmSummary"`
-	BGM BGMSummary `json:"bgmSummary" bson:"bgmSummary"`
+type Dates struct {
+	HasLastUploadDate *bool      `json:"hasLastUploadDate" bson:"hasLastUploadDate"`
+	LastUploadDate    *time.Time `json:"lastUploadDate" bson:"lastUploadDate"`
+	LastUpdatedDate   *time.Time `json:"lastUpdatedDate" bson:"lastUpdatedDate"`
+	FirstData         *time.Time `json:"firstData" bson:"firstData"`
+	LastData          *time.Time `json:"lastData" bson:"lastData"`
+	OutdatedSince     *time.Time `json:"outdatedSince" bson:"outdatedSince"`
+}
 
-	Config Config `json:"config" bson:"config"`
+type Summary struct {
+	CGM CGMStats `json:"cgmStats" bson:"cgmStats"`
+	BGM BGMStats `json:"bgmStats" bson:"bgmStats"`
 }
 
 type AverageGlucose struct {

@@ -240,7 +240,7 @@ type Patient struct {
 	Mrn         *string             `json:"mrn,omitempty"`
 	Permissions *PatientPermissions `json:"permissions,omitempty"`
 
-	// A summary of a users recent glucose values
+	// A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
 	TargetDevices *[]string       `json:"targetDevices,omitempty"`
 	UpdatedTime   time.Time       `json:"updatedTime"`
@@ -303,50 +303,13 @@ type PatientBGMPeriods struct {
 	N7d *PatientBGMPeriod `json:"7d,omitempty"`
 }
 
-// Series of counters which represent one hour of a users data
-type PatientBGMStats struct {
-	Date           *time.Time `json:"date,omitempty"`
-	LastRecordTime *time.Time `json:"lastRecordTime,omitempty"`
-
-	// Counter of records in high glucose range
-	TimeInHighRecords *int `json:"timeInHighRecords,omitempty"`
-
-	// Counter of records in low glucose range
-	TimeInLowRecords *int `json:"timeInLowRecords,omitempty"`
-
-	// Counter of records in target glucose range
-	TimeInTargetRecords *int `json:"timeInTargetRecords,omitempty"`
-
-	// Counter of records in very high glucose range
-	TimeInVeryHighRecords *int `json:"timeInVeryHighRecords,omitempty"`
-
-	// Counter of records in very low glucose range
-	TimeInVeryLowRecords *int `json:"timeInVeryLowRecords,omitempty"`
-
-	// Total value of all glucose records
-	TotalGlucose *float64 `json:"totalGlucose,omitempty"`
-}
-
 // A summary of a users recent BGM glucose values
-type PatientBGMSummary struct {
-	// Date of the first included value
-	FirstData         *time.Time `json:"firstData,omitempty"`
-	HasLastUploadDate *bool      `json:"hasLastUploadDate,omitempty"`
+type PatientBGMStats struct {
+	// Summary schema version and calculation configuration
+	Config *PatientSummaryConfig `json:"config,omitempty"`
 
-	// Rotating list containing the stats for each currently tracked hour in order
-	HourlyStats *[]PatientBGMStats `json:"hourlyStats,omitempty"`
-
-	// Date of the last calculated value
-	LastData *time.Time `json:"lastData,omitempty"`
-
-	// Date of the last calculation
-	LastUpdatedDate *time.Time `json:"lastUpdatedDate,omitempty"`
-
-	// Created date of the last calculated value
-	LastUploadDate *time.Time `json:"lastUploadDate,omitempty"`
-
-	// Date of the first user upload after lastData, removed when calculated
-	OutdatedSince *time.Time `json:"outdatedSince,omitempty"`
+	// dates tracked for summary calculation
+	Dates *PatientSummaryDates `json:"dates,omitempty"`
 
 	// A map to each supported BGM summary period
 	Periods *PatientBGMPeriods `json:"periods,omitempty"`
@@ -441,71 +404,13 @@ type PatientCGMPeriods struct {
 	N7d *PatientCGMPeriod `json:"7d,omitempty"`
 }
 
-// Series of counters which represent one hour of a users data
-type PatientCGMStats struct {
-	Date           *time.Time `json:"date,omitempty"`
-	LastRecordTime *time.Time `json:"lastRecordTime,omitempty"`
-
-	// Counter of minutes using a cgm
-	TimeCGMUseMinutes *int `json:"timeCGMUseMinutes,omitempty"`
-
-	// Counter of records wearing a cgm
-	TimeCGMUseRecords *int `json:"timeCGMUseRecords,omitempty"`
-
-	// Counter of minutes spent in high glucose range
-	TimeInHighMinutes *int `json:"timeInHighMinutes,omitempty"`
-
-	// Counter of records in high glucose range
-	TimeInHighRecords *int `json:"timeInHighRecords,omitempty"`
-
-	// Counter of minutes spent in low glucose range
-	TimeInLowMinutes *int `json:"timeInLowMinutes,omitempty"`
-
-	// Counter of records in low glucose range
-	TimeInLowRecords *int `json:"timeInLowRecords,omitempty"`
-
-	// Counter of minutes spent in target glucose range
-	TimeInTargetMinutes *int `json:"timeInTargetMinutes,omitempty"`
-
-	// Counter of records in target glucose range
-	TimeInTargetRecords *int `json:"timeInTargetRecords,omitempty"`
-
-	// Counter of minutes spent in very high glucose range
-	TimeInVeryHighMinutes *int `json:"timeInVeryHighMinutes,omitempty"`
-
-	// Counter of records in very high glucose range
-	TimeInVeryHighRecords *int `json:"timeInVeryHighRecords,omitempty"`
-
-	// Counter of minutes spent in very low glucose range
-	TimeInVeryLowMinutes *int `json:"timeInVeryLowMinutes,omitempty"`
-
-	// Counter of records in very low glucose range
-	TimeInVeryLowRecords *int `json:"timeInVeryLowRecords,omitempty"`
-
-	// Total value of all glucose records
-	TotalGlucose *float64 `json:"totalGlucose,omitempty"`
-}
-
 // A summary of a users recent CGM glucose values
-type PatientCGMSummary struct {
-	// Date of the first included value
-	FirstData         *time.Time `json:"firstData,omitempty"`
-	HasLastUploadDate *bool      `json:"hasLastUploadDate,omitempty"`
+type PatientCGMStats struct {
+	// Summary schema version and calculation configuration
+	Config *PatientSummaryConfig `json:"config,omitempty"`
 
-	// Rotating list containing the stats for each currently tracked hour in order
-	HourlyStats *[]PatientCGMStats `json:"hourlyStats,omitempty"`
-
-	// Date of the last calculated value
-	LastData *time.Time `json:"lastData,omitempty"`
-
-	// Date of the last calculation
-	LastUpdatedDate *time.Time `json:"lastUpdatedDate,omitempty"`
-
-	// Created date of the last calculated value
-	LastUploadDate *time.Time `json:"lastUploadDate,omitempty"`
-
-	// Date of the first user upload after lastData, removed when calculated
-	OutdatedSince *time.Time `json:"outdatedSince,omitempty"`
+	// dates tracked for summary calculation
+	Dates *PatientSummaryDates `json:"dates,omitempty"`
 
 	// A map to each supported CGM summary period
 	Periods *PatientCGMPeriods `json:"periods,omitempty"`
@@ -532,16 +437,13 @@ type PatientPermissions struct {
 	View      *map[string]interface{} `json:"view,omitempty"`
 }
 
-// A summary of a users recent glucose values
+// A summary of a patients recent data
 type PatientSummary struct {
 	// A summary of a users recent BGM glucose values
-	BgmSummary *PatientBGMSummary `json:"bgmSummary,omitempty"`
+	BgmStats *PatientBGMStats `json:"bgmStats,omitempty"`
 
 	// A summary of a users recent CGM glucose values
-	CgmSummary *PatientCGMSummary `json:"cgmSummary,omitempty"`
-
-	// Summary schema version and calculation configuration
-	Config *PatientSummaryConfig `json:"config,omitempty"`
+	CgmStats *PatientCGMStats `json:"cgmStats,omitempty"`
 }
 
 // Summary schema version and calculation configuration
@@ -560,6 +462,25 @@ type PatientSummaryConfig struct {
 
 	// Threshold used for determining if a value is very low
 	VeryLowGlucoseThreshold *float64 `json:"veryLowGlucoseThreshold,omitempty"`
+}
+
+// dates tracked for summary calculation
+type PatientSummaryDates struct {
+	// Date of the first included value
+	FirstData         *time.Time `json:"firstData,omitempty"`
+	HasLastUploadDate *bool      `json:"hasLastUploadDate,omitempty"`
+
+	// Date of the last calculated value
+	LastData *time.Time `json:"lastData,omitempty"`
+
+	// Date of the last calculation
+	LastUpdatedDate *time.Time `json:"lastUpdatedDate,omitempty"`
+
+	// Created date of the last calculated value
+	LastUploadDate *time.Time `json:"lastUploadDate,omitempty"`
+
+	// Date of the first user upload after lastData, removed when calculated
+	OutdatedSince *time.Time `json:"outdatedSince,omitempty"`
 }
 
 // Patients defines model for Patients.
@@ -715,83 +636,53 @@ type ListPatientsParams struct {
 	// Sort order and attribute (e.g. +name or -name)
 	Sort *Sort `json:"sort,omitempty"`
 
-	// Percentage of time of CGM use
-	SummaryPeriods1dTimeCGMUsePercent *string `json:"summary.periods.1d.timeCGMUsePercent,omitempty"`
-
-	// Percentage of time below 54 mg/dL
-	SummaryPeriods1dTimeInVeryLowPercent *string `json:"summary.periods.1d.timeInVeryLowPercent,omitempty"`
-
-	// Percentage of time in range 54-70 mg/dL
-	SummaryPeriods1dTimeInLowPercent *string `json:"summary.periods.1d.timeInLowPercent,omitempty"`
-
-	// Percentage of time in range 70-180 mg/dL
-	SummaryPeriods1dTimeInTargetPercent *string `json:"summary.periods.1d.timeInTargetPercent,omitempty"`
-
-	// Percentage of time in range 180-250 mg/dL
-	SummaryPeriods1dTimeInHighPercent *string `json:"summary.periods.1d.timeInHighPercent,omitempty"`
-
-	// Percentage of time above range 250 mg/dL
-	SummaryPeriods1dTimeInVeryHighPercent *string `json:"summary.periods.1d.timeInVeryHighPercent,omitempty"`
+	// Time Period to filter
+	Period *string `json:"period,omitempty"`
 
 	// Percentage of time of CGM use
-	SummaryPeriods7dTimeCGMUsePercent *string `json:"summary.periods.7d.timeCGMUsePercent,omitempty"`
+	CgmTimeCGMUsePercent *string `json:"cgm.timeCGMUsePercent,omitempty"`
 
 	// Percentage of time below 54 mg/dL
-	SummaryPeriods7dTimeInVeryLowPercent *string `json:"summary.periods.7d.timeInVeryLowPercent,omitempty"`
+	CgmTimeInVeryLowPercent *string `json:"cgm.timeInVeryLowPercent,omitempty"`
 
 	// Percentage of time in range 54-70 mg/dL
-	SummaryPeriods7dTimeInLowPercent *string `json:"summary.periods.7d.timeInLowPercent,omitempty"`
+	CgmTimeInLowPercent *string `json:"cgm.timeInLowPercent,omitempty"`
 
 	// Percentage of time in range 70-180 mg/dL
-	SummaryPeriods7dTimeInTargetPercent *string `json:"summary.periods.7d.timeInTargetPercent,omitempty"`
+	CgmTimeInTargetPercent *string `json:"cgm.timeInTargetPercent,omitempty"`
 
 	// Percentage of time in range 180-250 mg/dL
-	SummaryPeriods7dTimeInHighPercent *string `json:"summary.periods.7d.timeInHighPercent,omitempty"`
+	CgmTimeInHighPercent *string `json:"cgm.timeInHighPercent,omitempty"`
 
 	// Percentage of time above range 250 mg/dL
-	SummaryPeriods7dTimeInVeryHighPercent *string `json:"summary.periods.7d.timeInVeryHighPercent,omitempty"`
-
-	// Percentage of time of CGM use
-	SummaryPeriods14dTimeCGMUsePercent *string `json:"summary.periods.14d.timeCGMUsePercent,omitempty"`
-
-	// Percentage of time below 54 mg/dL
-	SummaryPeriods14dTimeInVeryLowPercent *string `json:"summary.periods.14d.timeInVeryLowPercent,omitempty"`
-
-	// Percentage of time in range 54-70 mg/dL
-	SummaryPeriods14dTimeInLowPercent *string `json:"summary.periods.14d.timeInLowPercent,omitempty"`
-
-	// Percentage of time in range 70-180 mg/dL
-	SummaryPeriods14dTimeInTargetPercent *string `json:"summary.periods.14d.timeInTargetPercent,omitempty"`
-
-	// Percentage of time in range 180-250 mg/dL
-	SummaryPeriods14dTimeInHighPercent *string `json:"summary.periods.14d.timeInHighPercent,omitempty"`
-
-	// Percentage of time above range 250 mg/dL
-	SummaryPeriods14dTimeInVeryHighPercent *string `json:"summary.periods.14d.timeInVeryHighPercent,omitempty"`
-
-	// Percentage of time of CGM use
-	SummaryPeriods30dTimeCGMUsePercent *string `json:"summary.periods.30d.timeCGMUsePercent,omitempty"`
-
-	// Percentage of time below 54 mg/dL
-	SummaryPeriods30dTimeInVeryLowPercent *string `json:"summary.periods.30d.timeInVeryLowPercent,omitempty"`
-
-	// Percentage of time in range 54-70 mg/dL
-	SummaryPeriods30dTimeInLowPercent *string `json:"summary.periods.30d.timeInLowPercent,omitempty"`
-
-	// Percentage of time in range 70-180 mg/dL
-	SummaryPeriods30dTimeInTargetPercent *string `json:"summary.periods.30d.timeInTargetPercent,omitempty"`
-
-	// Percentage of time in range 180-250 mg/dL
-	SummaryPeriods30dTimeInHighPercent *string `json:"summary.periods.30d.timeInHighPercent,omitempty"`
-
-	// Percentage of time above range 250 mg/dL
-	SummaryPeriods30dTimeInVeryHighPercent *string `json:"summary.periods.30d.timeInVeryHighPercent,omitempty"`
+	CgmTimeInVeryHighPercent *string `json:"cgm.timeInVeryHighPercent,omitempty"`
 
 	// Inclusive
-	SummaryLastUploadDateFrom *time.Time `json:"summary.lastUploadDateFrom,omitempty"`
+	CgmLastUploadDateFrom *time.Time `json:"cgm.lastUploadDateFrom,omitempty"`
 
 	// Exclusive
-	SummaryLastUploadDateTo *time.Time `json:"summary.lastUploadDateTo,omitempty"`
+	CgmLastUploadDateTo *time.Time `json:"cgm.lastUploadDateTo,omitempty"`
+
+	// Percentage of time below 54 mg/dL
+	BgmTimeInVeryLowPercent *string `json:"bgm.timeInVeryLowPercent,omitempty"`
+
+	// Percentage of time in range 54-70 mg/dL
+	BgmTimeInLowPercent *string `json:"bgm.timeInLowPercent,omitempty"`
+
+	// Percentage of time in range 70-180 mg/dL
+	BgmTimeInTargetPercent *string `json:"bgm.timeInTargetPercent,omitempty"`
+
+	// Percentage of time in range 180-250 mg/dL
+	BgmTimeInHighPercent *string `json:"bgm.timeInHighPercent,omitempty"`
+
+	// Percentage of time above range 250 mg/dL
+	BgmTimeInVeryHighPercent *string `json:"bgm.timeInVeryHighPercent,omitempty"`
+
+	// Inclusive
+	BgmLastUploadDateFrom *time.Time `json:"bgm.lastUploadDateFrom,omitempty"`
+
+	// Exclusive
+	BgmLastUploadDateTo *time.Time `json:"bgm.lastUploadDateTo,omitempty"`
 }
 
 // CreatePatientAccountJSONBody defines parameters for CreatePatientAccount.
