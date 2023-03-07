@@ -10,7 +10,7 @@ import (
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/clinics/creator"
+	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/logger"
@@ -54,7 +54,7 @@ func SetReady(healthCheck *HealthCheck, db *mongo.Database, lifecycle fx.Lifecyc
 			healthCheck.SetReady(true)
 			return nil
 		},
-		OnStop:  nil,
+		OnStop: nil,
 	})
 }
 
@@ -112,8 +112,8 @@ func MainLoop() {
 			clinicians.NewService,
 			clinics.NewRepository,
 			clinics.NewShareCodeGenerator,
-			creator.NewConfig,
-			creator.NewCreator,
+			manager.NewConfig,
+			manager.NewManager,
 			migration.NewMigrator,
 			migration.NewRepository,
 			auth.NewAuthenticator,

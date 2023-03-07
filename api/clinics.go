@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/tidepool-org/clinic/clinics/manager"
 	"net/http"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/clinics/creator"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -63,13 +63,13 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 	// Set new clinic migration status to true.
 	// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
 	clinic.IsMigrated = true
-	create := creator.CreateClinic{
+	create := manager.CreateClinic{
 		Clinic:            clinic,
 		CreatorUserId:     authData.SubjectId,
 		CreateDemoPatient: true,
 	}
 
-	result, err := h.clinicsCreator.CreateClinic(ctx, &create)
+	result, err := h.clinicsManager.CreateClinic(ctx, &create)
 	if err != nil {
 		return err
 	}
@@ -99,6 +99,16 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.JSON(http.StatusOK, NewClinicDto(result))
+}
+
+func (h *Handler) DeleteClinic(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	err := h.clinicsManager.DeleteClinic(ctx, string(clinicId))
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
 }
 
 func (h *Handler) GetClinicByShareCode(ec echo.Context, shareCode string) error {

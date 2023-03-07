@@ -169,6 +169,23 @@ func (c *repository) UpsertAdmin(ctx context.Context, id, clinicianId string) er
 	return c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 }
 
+func (c *repository) Delete(ctx context.Context, clinicId string) error {
+	id, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+
+	selector := bson.M{
+		"_id": id,
+	}
+
+	err = c.collection.FindOneAndDelete(ctx, selector).Err()
+	if err == mongo.ErrNoDocuments {
+		return ErrNotFound
+	}
+
+	return err
+}
 func (c *repository) RemoveAdmin(ctx context.Context, id, clinicianId string, allowOrphaning bool) error {
 	clinic, err := c.Get(ctx, id)
 	if err != nil {

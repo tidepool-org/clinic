@@ -2,9 +2,9 @@ package patients_test
 
 import (
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"strings"
 
-	"github.com/globalsign/mgo/bson"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
