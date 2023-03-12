@@ -513,15 +513,10 @@ func MaybeApplyNumericFilter(selector bson.M, period string, t string, field str
 	}
 }
 
-func isSortAttributeValid(attribute string) bool {
-	_, ok := validSortAttributes[attribute]
-	return ok
-}
-
 func generateListSortStage(sorts []*store.Sort) bson.D {
 	var s bson.D
 	for _, sort := range sorts {
-		if sort != nil && isSortAttributeValid(sort.Attribute) {
+		if sort != nil {
 			s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
 		}
 	}
@@ -593,86 +588,4 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 
 	f, ok := cmpToFilter[*cmp]
 	return f, ok
-}
-
-var validSortAttributes = map[string]struct{}{
-	"fullName":                              {},
-	"birthDate":                             {},
-	"summary.cgmStats.dates.lastUploadDate": {},
-	"summary.cgmStats.dates.hasLastUploadDate": {},
-
-	"summary.bgmStats.dates.lastUploadDate":    {},
-	"summary.bgmStats.dates.hasLastUploadDate": {},
-
-	"summary.cgmStats.periods.1d.timeCGMUsePercent":             {},
-	"summary.cgmStats.periods.1d.hasTimeCGMUsePercent":          {},
-	"summary.cgmStats.periods.1d.glucoseManagementIndicator":    {},
-	"summary.cgmStats.periods.1d.hasGlucoseManagementIndicator": {},
-	"summary.cgmStats.periods.1d.hasAverageGlucose":             {},
-	"summary.cgmStats.periods.1d.hasTimeInLowPercent":           {},
-	"summary.cgmStats.periods.1d.hasTimeInVeryLowPercent":       {},
-	"summary.cgmStats.periods.1d.hasTimeInHighPercent":          {},
-	"summary.cgmStats.periods.1d.hasTimeInVeryHighPercent":      {},
-	"summary.cgmStats.periods.1d.hasTimeInTargetPercent":        {},
-
-	"summary.cgmStats.periods.7d.timeCGMUsePercent":             {},
-	"summary.cgmStats.periods.7d.hasTimeCGMUsePercent":          {},
-	"summary.cgmStats.periods.7d.glucoseManagementIndicator":    {},
-	"summary.cgmStats.periods.7d.hasGlucoseManagementIndicator": {},
-	"summary.cgmStats.periods.7d.hasAverageGlucose":             {},
-	"summary.cgmStats.periods.7d.hasTimeInLowPercent":           {},
-	"summary.cgmStats.periods.7d.hasTimeInVeryLowPercent":       {},
-	"summary.cgmStats.periods.7d.hasTimeInHighPercent":          {},
-	"summary.cgmStats.periods.7d.hasTimeInVeryHighPercent":      {},
-	"summary.cgmStats.periods.7d.hasTimeInTargetPercent":        {},
-
-	"summary.cgmStats.periods.14d.timeCGMUsePercent":             {},
-	"summary.cgmStats.periods.14d.hasTimeCGMUsePercent":          {},
-	"summary.cgmStats.periods.14d.glucoseManagementIndicator":    {},
-	"summary.cgmStats.periods.14d.hasGlucoseManagementIndicator": {},
-	"summary.cgmStats.periods.14d.hasAverageGlucose":             {},
-	"summary.cgmStats.periods.14d.hasTimeInLowPercent":           {},
-	"summary.cgmStats.periods.14d.hasTimeInVeryLowPercent":       {},
-	"summary.cgmStats.periods.14d.hasTimeInHighPercent":          {},
-	"summary.cgmStats.periods.14d.hasTimeInVeryHighPercent":      {},
-	"summary.cgmStats.periods.14d.hasTimeInTargetPercent":        {},
-
-	"summary.cgmStats.periods.30d.timeCGMUsePercent":             {},
-	"summary.cgmStats.periods.30d.hasTimeCGMUsePercent":          {},
-	"summary.cgmStats.periods.30d.glucoseManagementIndicator":    {},
-	"summary.cgmStats.periods.30d.hasGlucoseManagementIndicator": {},
-	"summary.cgmStats.periods.30d.hasAverageGlucose":             {},
-	"summary.cgmStats.periods.30d.hasTimeInLowPercent":           {},
-	"summary.cgmStats.periods.30d.hasTimeInVeryLowPercent":       {},
-	"summary.cgmStats.periods.30d.hasTimeInHighPercent":          {},
-	"summary.cgmStats.periods.30d.hasTimeInVeryHighPercent":      {},
-	"summary.cgmStats.periods.30d.hasTimeInTargetPercent":        {},
-
-	"summary.bgmStats.periods.1d.hasAverageGlucose":        {},
-	"summary.bgmStats.periods.1d.hasTimeInLowPercent":      {},
-	"summary.bgmStats.periods.1d.hasTimeInVeryLowPercent":  {},
-	"summary.bgmStats.periods.1d.hasTimeInHighPercent":     {},
-	"summary.bgmStats.periods.1d.hasTimeInVeryHighPercent": {},
-	"summary.bgmStats.periods.1d.hasTimeInTargetPercent":   {},
-
-	"summary.bgmStats.periods.7d.hasAverageGlucose":        {},
-	"summary.bgmStats.periods.7d.hasTimeInLowPercent":      {},
-	"summary.bgmStats.periods.7d.hasTimeInVeryLowPercent":  {},
-	"summary.bgmStats.periods.7d.hasTimeInHighPercent":     {},
-	"summary.bgmStats.periods.7d.hasTimeInVeryHighPercent": {},
-	"summary.bgmStats.periods.7d.hasTimeInTargetPercent":   {},
-
-	"summary.bgmStats.periods.14d.hasAverageGlucose":        {},
-	"summary.bgmStats.periods.14d.hasTimeInLowPercent":      {},
-	"summary.bgmStats.periods.14d.hasTimeInVeryLowPercent":  {},
-	"summary.bgmStats.periods.14d.hasTimeInHighPercent":     {},
-	"summary.bgmStats.periods.14d.hasTimeInVeryHighPercent": {},
-	"summary.bgmStats.periods.14d.hasTimeInTargetPercent":   {},
-
-	"summary.bgmStats.periods.30d.hasAverageGlucose":        {},
-	"summary.bgmStats.periods.30d.hasTimeInLowPercent":      {},
-	"summary.bgmStats.periods.30d.hasTimeInVeryLowPercent":  {},
-	"summary.bgmStats.periods.30d.hasTimeInHighPercent":     {},
-	"summary.bgmStats.periods.30d.hasTimeInVeryHighPercent": {},
-	"summary.bgmStats.periods.30d.hasTimeInTargetPercent":   {},
 }

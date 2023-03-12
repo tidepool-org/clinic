@@ -248,6 +248,9 @@ type Patient struct {
 
 // Summary of a specific BGM time period (currently: 1d, 7d, 14d, 30d)
 type PatientBGMPeriod struct {
+	// Average daily readings
+	AverageDailyRecords *float64 `json:"averageDailyRecords,omitempty"`
+
 	// Blood glucose value, in `mmol/L`
 	AverageGlucose           *AverageGlucose `json:"averageGlucose,omitempty"`
 	HasAverageGlucose        *bool           `json:"hasAverageGlucose,omitempty"`
@@ -286,6 +289,9 @@ type PatientBGMPeriod struct {
 
 	// Counter of records in very low glucose range
 	TimeInVeryLowRecords *int `json:"timeInVeryLowRecords,omitempty"`
+
+	// Counter of records
+	TotalRecords *int `json:"totalRecords,omitempty"`
 }
 
 // A map to each supported BGM summary period
@@ -320,6 +326,9 @@ type PatientBGMStats struct {
 
 // Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)
 type PatientCGMPeriod struct {
+	// Average daily readings
+	AverageDailyRecords *float64 `json:"averageDailyRecords,omitempty"`
+
 	// Blood glucose value, in `mmol/L`
 	AverageGlucose *AverageGlucose `json:"averageGlucose,omitempty"`
 
@@ -387,6 +396,9 @@ type PatientCGMPeriod struct {
 
 	// Counter of records in very low glucose range
 	TimeInVeryLowRecords *int `json:"timeInVeryLowRecords,omitempty"`
+
+	// Counter of records
+	TotalRecords *int `json:"totalRecords,omitempty"`
 }
 
 // A map to each supported CGM summary period
@@ -635,6 +647,12 @@ type ListPatientsParams struct {
 
 	// Sort order and attribute (e.g. +name or -name)
 	Sort *Sort `json:"sort,omitempty"`
+
+	// Summary type to sort by
+	SortType *string `json:"sortType,omitempty"`
+
+	// Time Period to sort
+	SortPeriod *string `json:"sortPeriod,omitempty"`
 
 	// Time Period to filter
 	Period *string `json:"period,omitempty"`

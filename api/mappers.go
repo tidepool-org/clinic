@@ -620,12 +620,24 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
-func ParseSort(sort *Sort) ([]*store.Sort, error) {
+func ParseSort(sort *Sort, t string, period string) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil
 	}
 	str := string(*sort)
 	var result store.Sort
+
+	if t == "" {
+		return nil, fmt.Errorf("%w: invalid sort parameter, missing type", errors.BadRequest)
+	} else if t != "cgm" || t != "bgm" {
+		return nil, fmt.Errorf("%w: invalid sort parameter, invalid type", errors.BadRequest)
+	}
+
+	if period == "" {
+		return nil, fmt.Errorf("%w: invalid sort parameter, missing period", errors.BadRequest)
+	} else if period != "1d" || period != "7d" || period != "14d" || period != "30d" {
+		return nil, fmt.Errorf("%w: invalid sort parameter, invalid period", errors.BadRequest)
+	}
 
 	if strings.HasPrefix(str, "+") {
 		result.Ascending = true
@@ -638,54 +650,94 @@ func ParseSort(sort *Sort) ([]*store.Sort, error) {
 	result.Attribute = str[1:]
 	if result.Attribute == "" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort attribute", errors.BadRequest)
+	} else if !isSortAttributeValid(result.Attribute, t) {
+		return nil, fmt.Errorf("%w: invalid sort parameter, invalid sort attribute", errors.BadRequest)
+	}
+
+	var expandedSorts = map[string]string{
+		"lastUploadDate":             "summary." + t + "Stats.dates.lastUploadDate",
+		"averageGlucose":             "summary." + t + "Stats.periods." + period + ".averageGlucose.value",
+		"timeCGMUsePercent":          "summary." + t + "Stats.periods." + period + ".timeCGMUsePercent",
+		"glucoseManagementIndicator": "summary." + t + "Stats.periods." + period + ".glucoseManagementIndicator",
+		"timeInTargetPercent":        "summary." + t + "Stats.periods." + period + ".timeInTargetPercent",
+		"timeInLowPercent":           "summary." + t + "Stats.periods." + period + ".timeInLowPercent",
+		"timeInVeryLowPercent":       "summary." + t + "Stats.periods." + period + ".timeInVeryLowPercent",
+		"timeInHighPercent":          "summary." + t + "Stats.periods." + period + ".timeInHighPercent",
+		"timeInVeryHighPercent":      "summary." + t + "Stats.periods." + period + ".timeInVeryHighPercent",
+		"averageDailyRecords":        "summary." + t + "Stats.periods." + period + ".averageDailyRecords",
+
+		"hasLastUploadDate":             "summary." + t + "Stats.periods." + period + ".hasLastUploadDate",
+		"hasTimeCGMUsePercent":          "summary." + t + "Stats.periods." + period + ".hasTimeCGMUsePercent",
+		"hasGlucoseManagementIndicator": "summary." + t + "Stats.periods." + period + ".hasGlucoseManagementIndicator",
+		"hasAverageGlucose":             "summary." + t + "Stats.periods." + period + ".hasAverageGlucose",
+		"hasTimeInTargetPercent":        "summary." + t + "Stats.periods." + period + ".hasTimeInTargetPercent",
+		"hasTimeInLowPercent":           "summary." + t + "Stats.periods." + period + ".hasTimeInLowPercent",
+		"hasTimeInVeryLowPercent":       "summary." + t + "Stats.periods." + period + ".hasTimeInVeryLowPercent",
+		"hasTimeInHighPercent":          "summary." + t + "Stats.periods." + period + ".hasTimeInHighPercent",
+		"hasTimeInVeryHighPercent":      "summary." + t + "Stats.periods." + period + ".hasTimeInVeryHighPercent",
 	}
 
 	var extraSort = map[string]string{
-		"summary.lastUploadDate": "summary.hasLastUploadDate",
-
-		"summary.periods.1d.timeCGMUsePercent":          "summary.periods.1d.hasTimeCGMUsePercent",
-		"summary.periods.1d.glucoseManagementIndicator": "summary.periods.1d.hasGlucoseManagementIndicator",
-		"summary.periods.1d.averageGlucose.value":       "summary.periods.1d.hasAverageGlucose",
-		"summary.periods.1d.timeInTargetPercent":        "summary.periods.1d.hasTimeInTargetPercent",
-		"summary.periods.1d.timeInLowPercent":           "summary.periods.1d.hasTimeInLowPercent",
-		"summary.periods.1d.timeInVeryLowPercent":       "summary.periods.1d.hasTimeInVeryLowPercent",
-		"summary.periods.1d.timeInHighPercent":          "summary.periods.1d.hasTimeInHighPercent",
-		"summary.periods.1d.timeInVeryHighPercent":      "summary.periods.1d.hasTimeInVeryHighPercent",
-
-		"summary.periods.7d.timeCGMUsePercent":          "summary.periods.7d.hasTimeCGMUsePercent",
-		"summary.periods.7d.glucoseManagementIndicator": "summary.periods.7d.hasGlucoseManagementIndicator",
-		"summary.periods.7d.averageGlucose.value":       "summary.periods.7d.hasAverageGlucose",
-		"summary.periods.7d.timeInTargetPercent":        "summary.periods.7d.hasTimeInTargetPercent",
-		"summary.periods.7d.timeInLowPercent":           "summary.periods.7d.hasTimeInLowPercent",
-		"summary.periods.7d.timeInVeryLowPercent":       "summary.periods.7d.hasTimeInVeryLowPercent",
-		"summary.periods.7d.timeInHighPercent":          "summary.periods.7d.hasTimeInHighPercent",
-		"summary.periods.7d.timeInVeryHighPercent":      "summary.periods.7d.hasTimeInVeryHighPercent",
-
-		"summary.periods.14d.timeCGMUsePercent":          "summary.periods.14d.hasTimeCGMUsePercent",
-		"summary.periods.14d.glucoseManagementIndicator": "summary.periods.14d.hasGlucoseManagementIndicator",
-		"summary.periods.14d.averageGlucose.value":       "summary.periods.14d.hasAverageGlucose",
-		"summary.periods.14d.timeInTargetPercent":        "summary.periods.14d.hasTimeInTargetPercent",
-		"summary.periods.14d.timeInLowPercent":           "summary.periods.14d.hasTimeInLowPercent",
-		"summary.periods.14d.timeInVeryLowPercent":       "summary.periods.14d.hasTimeInVeryLowPercent",
-		"summary.periods.14d.timeInHighPercent":          "summary.periods.14d.hasTimeInHighPercent",
-		"summary.periods.14d.timeInVeryHighPercent":      "summary.periods.14d.hasTimeInVeryHighPercent",
-
-		"summary.periods.30d.timeCGMUsePercent":          "summary.periods.30d.hasTimeCGMUsePercent",
-		"summary.periods.30d.glucoseManagementIndicator": "summary.periods.30d.hasGlucoseManagementIndicator",
-		"summary.periods.30d.averageGlucose.value":       "summary.periods.30d.hasAverageGlucose",
-		"summary.periods.30d.timeInTargetPercent":        "summary.periods.30d.hasTimeInTargetPercent",
-		"summary.periods.30d.timeInLowPercent":           "summary.periods.30d.hasTimeInLowPercent",
-		"summary.periods.30d.timeInVeryLowPercent":       "summary.periods.30d.hasTimeInVeryLowPercent",
-		"summary.periods.30d.timeInHighPercent":          "summary.periods.30d.hasTimeInHighPercent",
-		"summary.periods.30d.timeInVeryHighPercent":      "summary.periods.30d.hasTimeInVeryHighPercent",
+		expandedSorts["lastUploadDate"]:             expandedSorts["hasLastUploadDate"],
+		expandedSorts["timeCGMUsePercent"]:          expandedSorts["hasTimeCGMUsePercent"],
+		expandedSorts["glucoseManagementIndicator"]: expandedSorts["hasGlucoseManagementIndicator"],
+		expandedSorts["averageGlucose"]:             expandedSorts["hasAverageGlucose"],
+		expandedSorts["timeInTargetPercent"]:        expandedSorts["hasTimeInTargetPercent"],
+		expandedSorts["timeInLowPercent"]:           expandedSorts["hasTimeInLowPercent"],
+		expandedSorts["timeInVeryLowPercent"]:       expandedSorts["hasTimeInVeryLowPercent"],
+		expandedSorts["timeInHighPercent"]:          expandedSorts["hasTimeInHighPercent"],
+		expandedSorts["timeInVeryHighPercent"]:      expandedSorts["hasTimeInVeryHighPercent"],
 	}
 
+	// expand the original param now that we are done using it as a map key
+	if value, exists := expandedSorts[result.Attribute]; exists {
+		result.Attribute = value
+	}
+
+	// add any extra sort keys needed for a key to work as intended (empty always last)
 	var sorts = []*store.Sort{&result}
 	if value, exists := extraSort[result.Attribute]; exists {
 		sorts = append([]*store.Sort{{Ascending: false, Attribute: value}}, sorts...)
 	}
 
 	return sorts, nil
+}
+
+var validSortAttributes = map[string]map[string]struct{}{
+	"cgm": {
+		"fullName":       {},
+		"birthDate":      {},
+		"lastUploadDate": {},
+
+		"timeCGMUsePercent":          {},
+		"hasTimeCGMUsePercent":       {},
+		"glucoseManagementIndicator": {},
+		"averageGlucose":             {},
+		"timeInLowPercent":           {},
+		"timeInVeryLowPercent":       {},
+		"timeInHighPercent":          {},
+		"timeInVeryHighPercent":      {},
+		"timeInTargetPercent":        {},
+		"averageDailyRecords":        {},
+	},
+	"bgm": {
+		"fullName":       {},
+		"birthDate":      {},
+		"lastUploadDate": {},
+
+		"averageGlucose":        {},
+		"timeInLowPercent":      {},
+		"timeInVeryLowPercent":  {},
+		"timeInHighPercent":     {},
+		"timeInVeryHighPercent": {},
+		"timeInTargetPercent":   {},
+		"averageDailyRecords":   {},
+	},
+}
+
+func isSortAttributeValid(attribute string, t string) bool {
+	_, ok := validSortAttributes[t][attribute]
+	return ok
 }
 
 const dateFormat = "2006-01-02"

@@ -244,6 +244,20 @@ paths:
         - $ref: '#/components/parameters/sort'
         - schema:
             type: string
+            pattern: ^(cgm|bgm)$
+            example: cgm
+          in: query
+          name: sortType
+          description: Summary type to sort by
+        - schema:
+            type: string
+            pattern: ^(1d|7d|14d|30d)$
+            example: 14d
+          in: query
+          name: sortPeriod
+          description: Time Period to sort
+        - schema:
+            type: string
             pattern: ^(1d|7d|14d|30d)$
             example: 7d
           in: query
@@ -1581,6 +1595,16 @@ components:
           type: number
           example: 10
           x-go-type: int
+        totalRecords:
+          description: Counter of records
+          type: number
+          example: 10
+          x-go-type: int
+        averageDailyRecords:
+          description: Average daily readings
+          type: number
+          example: 3.5
+          x-go-type: float64
     PatientBGMPeriods:
       type: object
       title: bgmperiods.v1
@@ -1727,6 +1751,16 @@ components:
           type: number
           example: 10
           x-go-type: int
+        totalRecords:
+          description: Counter of records
+          type: number
+          example: 10
+          x-go-type: int
+        averageDailyRecords:
+          description: Average daily readings
+          type: number
+          example: 3.5
+          x-go-type: float64
     PatientCGMPeriods:
       type: object
       title: cgmperiods.v1
