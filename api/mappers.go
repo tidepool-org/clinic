@@ -629,13 +629,13 @@ func ParseSort(sort *Sort, t string, period string) ([]*store.Sort, error) {
 
 	if t == "" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing type", errors.BadRequest)
-	} else if t != "cgm" || t != "bgm" {
+	} else if t != "cgm" && t != "bgm" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid type", errors.BadRequest)
 	}
 
 	if period == "" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing period", errors.BadRequest)
-	} else if period != "1d" || period != "7d" || period != "14d" || period != "30d" {
+	} else if period != "1d" && period != "7d" && period != "14d" && period != "30d" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid period", errors.BadRequest)
 	}
 
