@@ -2,8 +2,6 @@
 // Use of this source code is governed by an Apache2
 // license that can be found in the LICENSE file.
 
-// +build opa_wasm
-
 package wasm
 
 import (
@@ -11,16 +9,19 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/open-policy-agent/opa/internal/wasm/sdk/opa"
-
 	"github.com/open-policy-agent/opa/ast"
+	"github.com/open-policy-agent/opa/internal/rego/opa"
 	"github.com/open-policy-agent/opa/resolver"
 )
 
 // New creates a new Resolver instance which is using the Wasm module
 // policy for the given entrypoint ref.
 func New(entrypoints []ast.Ref, policy []byte, data interface{}) (*Resolver, error) {
-	o, err := opa.New().
+	e, err := opa.LookupEngine("wasm")
+	if err != nil {
+		return nil, err
+	}
+	o, err := e.New().
 		WithPolicyBytes(policy).
 		WithDataJSON(data).
 		Init()
@@ -63,7 +64,7 @@ func New(entrypoints []ast.Ref, policy []byte, data interface{}) (*Resolver, err
 type Resolver struct {
 	entrypoints   []ast.Ref
 	entrypointIDs *ast.ValueMap
-	o             *opa.OPA
+	o             opa.EvalEngine
 }
 
 // Entrypoints returns a list of entrypoints this resolver is configured to
@@ -120,18 +121,18 @@ func (r *Resolver) Eval(ctx context.Context, input resolver.Input) (resolver.Res
 }
 
 // SetData will update the external data for the Wasm instance.
-func (r *Resolver) SetData(data interface{}) error {
-	return r.o.SetData(data)
+func (r *Resolver) SetData(ctx context.Context, data interface{}) error {
+	return r.o.SetData(ctx, data)
 }
 
 // SetDataPath will set the provided data on the wasm instance at the specified path.
-func (r *Resolver) SetDataPath(path []string, data interface{}) error {
-	return r.o.SetDataPath(path, data)
+func (r *Resolver) SetDataPath(ctx context.Context, path []string, data interface{}) error {
+	return r.o.SetDataPath(ctx, path, data)
 }
 
 // RemoveDataPath will remove any data at the specified path.
-func (r *Resolver) RemoveDataPath(path []string) error {
-	return r.o.RemoveDataPath(path)
+func (r *Resolver) RemoveDataPath(ctx context.Context, path []string) error {
+	return r.o.RemoveDataPath(ctx, path)
 }
 
 func getResult(evalResult *opa.Result) (ast.Value, error) {

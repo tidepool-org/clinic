@@ -7,14 +7,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/open-policy-agent/opa/resolver"
-	"github.com/open-policy-agent/opa/topdown/cache"
-
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/metrics"
+	"github.com/open-policy-agent/opa/resolver"
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/topdown/builtins"
+	"github.com/open-policy-agent/opa/topdown/cache"
 	"github.com/open-policy-agent/opa/topdown/copypropagation"
+	"github.com/open-policy-agent/opa/topdown/print"
+	"github.com/open-policy-agent/opa/tracing"
 )
 
 // QueryResultSet represents a collection of results returned by a query.
@@ -49,8 +50,11 @@ type Query struct {
 	runtime                *ast.Term
 	builtins               map[string]*Builtin
 	indexing               bool
+	earlyExit              bool
 	interQueryBuiltinCache cache.InterQueryCache
 	strictBuiltinErrors    bool
+	printHook              print.Hook
+	tracingOpts            tracing.Options
 }
 
 // Builtin represents a built-in function that queries can call.
@@ -65,6 +69,7 @@ func NewQuery(query ast.Body) *Query {
 		query:        query,
 		genvarprefix: ast.WildcardPrefix,
 		indexing:     true,
+		earlyExit:    true,
 		external:     newResolverTrie(),
 	}
 }
@@ -167,7 +172,7 @@ func (q *Query) WithPartialNamespace(ns string) *Query {
 }
 
 // WithSkipPartialNamespace disables namespacing of saved support rules that are generated
-// from the original policy (rules which are completely syntethic are still namespaced.)
+// from the original policy (rules which are completely synthetic are still namespaced.)
 func (q *Query) WithSkipPartialNamespace(yes bool) *Query {
 	q.skipSaveNamespace = yes
 	return q
@@ -211,6 +216,13 @@ func (q *Query) WithIndexing(enabled bool) *Query {
 	return q
 }
 
+// WithEarlyExit will enable or disable using 'early exit' for the evaluation
+// of the query. The default is enabled.
+func (q *Query) WithEarlyExit(enabled bool) *Query {
+	q.earlyExit = enabled
+	return q
+}
+
 // WithSeed sets a reader that will seed randomization required by built-in functions.
 // If a seed is not provided crypto/rand.Reader is used.
 func (q *Query) WithSeed(r io.Reader) *Query {
@@ -239,6 +251,17 @@ func (q *Query) WithStrictBuiltinErrors(yes bool) *Query {
 // WithResolver configures an external resolver to use for the given ref.
 func (q *Query) WithResolver(ref ast.Ref, r resolver.Resolver) *Query {
 	q.external.Put(ref, r)
+	return q
+}
+
+func (q *Query) WithPrintHook(h print.Hook) *Query {
+	q.printHook = h
+	return q
+}
+
+// WithDistributedTracingOpts sets the options to be used by distributed tracing.
+func (q *Query) WithDistributedTracingOpts(tr tracing.Options) *Query {
+	q.tracingOpts = tr
 	return q
 }
 
@@ -288,6 +311,7 @@ func (q *Query) PartialRun(ctx context.Context) (partials []ast.Body, support []
 		instr:                  q.instr,
 		builtins:               q.builtins,
 		builtinCache:           builtins.Cache{},
+		functionMocks:          newFunctionMocksStack(),
 		interQueryBuiltinCache: q.interQueryBuiltinCache,
 		virtualCache:           newVirtualCache(),
 		comprehensionCache:     newComprehensionCache(),
@@ -302,7 +326,9 @@ func (q *Query) PartialRun(ctx context.Context) (partials []ast.Body, support []
 		genvarprefix:  q.genvarprefix,
 		runtime:       q.runtime,
 		indexing:      q.indexing,
+		earlyExit:     q.earlyExit,
 		builtinErrors: &builtinErrors{},
+		printHook:     q.printHook,
 	}
 
 	if len(q.disableInlining) > 0 {
@@ -314,6 +340,14 @@ func (q *Query) PartialRun(ctx context.Context) (partials []ast.Body, support []
 	defer q.metrics.Timer(metrics.RegoPartialEval).Stop()
 
 	livevars := ast.NewVarSet()
+	for _, t := range q.unknowns {
+		switch v := t.Value.(type) {
+		case ast.Var:
+			livevars.Add(v)
+		case ast.Ref:
+			livevars.Add(v[0].Value.(ast.Var))
+		}
+	}
 
 	ast.WalkVars(q.query, func(x ast.Var) bool {
 		if !x.IsGenerated() {
@@ -336,10 +370,10 @@ func (q *Query) PartialRun(ctx context.Context) (partials []ast.Body, support []
 		// Include bindings as exprs so that when caller evals the result, they
 		// can obtain values for the vars in their query.
 		bindingExprs := []*ast.Expr{}
-		e.bindings.Iter(e.bindings, func(a, b *ast.Term) error {
+		_ = e.bindings.Iter(e.bindings, func(a, b *ast.Term) error {
 			bindingExprs = append(bindingExprs, ast.Equality.Expr(a, b))
 			return nil
-		})
+		}) // cannot return error
 
 		// Sort binding expressions so that results are deterministic.
 		sort.Slice(bindingExprs, func(i, j int) bool {
@@ -368,6 +402,12 @@ func (q *Query) PartialRun(ctx context.Context) (partials []ast.Body, support []
 
 	if q.strictBuiltinErrors && len(e.builtinErrors.errs) > 0 {
 		err = e.builtinErrors.errs[0]
+	}
+
+	for i := range support {
+		sort.Slice(support[i].Rules, func(j, k int) bool {
+			return support[i].Rules[j].Compare(support[i].Rules[k]) < 0
+		})
 	}
 
 	return partials, support, err
@@ -420,22 +460,26 @@ func (q *Query) Iter(ctx context.Context, iter func(QueryResult) error) error {
 		instr:                  q.instr,
 		builtins:               q.builtins,
 		builtinCache:           builtins.Cache{},
+		functionMocks:          newFunctionMocksStack(),
 		interQueryBuiltinCache: q.interQueryBuiltinCache,
 		virtualCache:           newVirtualCache(),
 		comprehensionCache:     newComprehensionCache(),
 		genvarprefix:           q.genvarprefix,
 		runtime:                q.runtime,
 		indexing:               q.indexing,
+		earlyExit:              q.earlyExit,
 		builtinErrors:          &builtinErrors{},
+		printHook:              q.printHook,
+		tracingOpts:            q.tracingOpts,
 	}
 	e.caller = e
 	q.metrics.Timer(metrics.RegoQueryEval).Start()
 	err := e.Run(func(e *eval) error {
 		qr := QueryResult{}
-		e.bindings.Iter(nil, func(k, v *ast.Term) error {
+		_ = e.bindings.Iter(nil, func(k, v *ast.Term) error {
 			qr[k.Value.(ast.Var)] = v
 			return nil
-		})
+		}) // cannot return error
 		return iter(qr)
 	})
 
