@@ -353,20 +353,22 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		"userId": userId,
 	}
 
-	update := bson.M{}
+	set := bson.M{}
+	unset := bson.M{}
 	if summary == nil {
-		update["$unset"] = bson.M{
-			"summary":     "",
-			"updatedTime": time.Now(),
+		unset = bson.M{
+			"summary": "",
 		}
 	} else {
-		update["$set"] = bson.M{
-			"summary":     summary,
-			"updatedTime": time.Now(),
+		if summary.CGM != nil {
+			set["summary.cgmStats"] = summary.CGM
+		}
+		if summary.BGM != nil {
+			set["summary.bgmStats"] = summary.BGM
 		}
 	}
 
-	res, err := r.collection.UpdateMany(ctx, selector, update)
+	res, err := r.collection.UpdateMany(ctx, selector, bson.M{"$set": set, "$unset": unset})
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {

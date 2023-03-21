@@ -168,8 +168,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		return nil
 	}
 
-	patientSummary := &patients.Summary{
-		CGM: patients.CGMStats{
+	patientSummary := &patients.Summary{}
+
+	if dto.CgmStats == nil {
+		patientSummary.CGM = &patients.CGMStats{
 			Periods:    make(map[string]*patients.CGMPeriod),
 			TotalHours: dto.CgmStats.TotalHours,
 			Config: patients.Config{
@@ -187,8 +189,75 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				FirstData:         dto.CgmStats.Dates.FirstData,
 				LastData:          dto.CgmStats.Dates.LastData,
 			},
-		},
-		BGM: patients.BGMStats{
+		}
+
+		if dto.CgmStats.Periods != nil {
+			var averageGlucose *patients.AverageGlucose
+			// this is bad, but it's better than copy and pasting the copy code N times
+			sourcePeriods := map[string]*PatientCGMPeriod{}
+			if dto.CgmStats.Periods.N1d != nil {
+				sourcePeriods["1d"] = dto.CgmStats.Periods.N1d
+			}
+			if dto.CgmStats.Periods.N7d != nil {
+				sourcePeriods["7d"] = dto.CgmStats.Periods.N7d
+			}
+			if dto.CgmStats.Periods.N14d != nil {
+				sourcePeriods["14d"] = dto.CgmStats.Periods.N14d
+			}
+			if dto.CgmStats.Periods.N30d != nil {
+				sourcePeriods["30d"] = dto.CgmStats.Periods.N30d
+			}
+
+			for i := range sourcePeriods {
+				if sourcePeriods[i].AverageGlucose != nil {
+					averageGlucose = &patients.AverageGlucose{
+						Units: string(sourcePeriods[i].AverageGlucose.Units),
+						Value: float64(sourcePeriods[i].AverageGlucose.Value),
+					}
+				}
+
+				patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
+					TimeCGMUsePercent:    sourcePeriods[i].TimeCGMUsePercent,
+					HasTimeCGMUsePercent: sourcePeriods[i].HasTimeCGMUsePercent,
+					TimeCGMUseMinutes:    sourcePeriods[i].TimeCGMUseMinutes,
+					TimeCGMUseRecords:    sourcePeriods[i].TimeCGMUseRecords,
+
+					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
+					HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
+					TimeInVeryLowMinutes:    sourcePeriods[i].TimeInVeryLowMinutes,
+					TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
+
+					TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
+					HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
+					TimeInLowMinutes:    sourcePeriods[i].TimeInLowMinutes,
+					TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
+
+					TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
+					HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
+					TimeInTargetMinutes:    sourcePeriods[i].TimeInTargetMinutes,
+					TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
+
+					TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
+					HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
+					TimeInHighMinutes:    sourcePeriods[i].TimeInHighMinutes,
+					TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
+
+					TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
+					HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
+					TimeInVeryHighMinutes:    sourcePeriods[i].TimeInVeryHighMinutes,
+					TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
+
+					GlucoseManagementIndicator:    sourcePeriods[i].GlucoseManagementIndicator,
+					HasGlucoseManagementIndicator: sourcePeriods[i].HasGlucoseManagementIndicator,
+					AverageGlucose:                averageGlucose,
+					HasAverageGlucose:             sourcePeriods[i].HasAverageGlucose,
+				}
+			}
+		}
+	}
+
+	if dto.BgmStats != nil {
+		patientSummary.BGM = &patients.BGMStats{
 			Periods:    make(map[string]*patients.BGMPeriod),
 			TotalHours: dto.BgmStats.TotalHours,
 			Config: patients.Config{
@@ -206,121 +275,57 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				FirstData:         dto.BgmStats.Dates.FirstData,
 				LastData:          dto.BgmStats.Dates.LastData,
 			},
-		},
-	}
-
-	if dto.CgmStats.Periods != nil {
-		var averageGlucose *patients.AverageGlucose
-		// this is bad, but it's better than copy and pasting the copy code N times
-		sourcePeriods := map[string]*PatientCGMPeriod{}
-		if dto.CgmStats.Periods.N1d != nil {
-			sourcePeriods["1d"] = dto.CgmStats.Periods.N1d
-		}
-		if dto.CgmStats.Periods.N7d != nil {
-			sourcePeriods["7d"] = dto.CgmStats.Periods.N7d
-		}
-		if dto.CgmStats.Periods.N14d != nil {
-			sourcePeriods["14d"] = dto.CgmStats.Periods.N14d
-		}
-		if dto.CgmStats.Periods.N30d != nil {
-			sourcePeriods["30d"] = dto.CgmStats.Periods.N30d
 		}
 
-		for i := range sourcePeriods {
-			if sourcePeriods[i].AverageGlucose != nil {
-				averageGlucose = &patients.AverageGlucose{
-					Units: string(sourcePeriods[i].AverageGlucose.Units),
-					Value: float64(sourcePeriods[i].AverageGlucose.Value),
+		if dto.BgmStats.Periods != nil {
+			var averageGlucose *patients.AverageGlucose
+			// this is bad, but it's better than copy and pasting the copy code N times
+			sourcePeriods := map[string]*PatientBGMPeriod{}
+			if dto.BgmStats.Periods.N1d != nil {
+				sourcePeriods["1d"] = dto.BgmStats.Periods.N1d
+			}
+			if dto.BgmStats.Periods.N7d != nil {
+				sourcePeriods["7d"] = dto.BgmStats.Periods.N7d
+			}
+			if dto.BgmStats.Periods.N14d != nil {
+				sourcePeriods["14d"] = dto.BgmStats.Periods.N14d
+			}
+			if dto.BgmStats.Periods.N30d != nil {
+				sourcePeriods["30d"] = dto.BgmStats.Periods.N30d
+			}
+
+			for i := range sourcePeriods {
+				if sourcePeriods[i].AverageGlucose != nil {
+					averageGlucose = &patients.AverageGlucose{
+						Units: string(sourcePeriods[i].AverageGlucose.Units),
+						Value: float64(sourcePeriods[i].AverageGlucose.Value),
+					}
 				}
-			}
 
-			patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
-				TimeCGMUsePercent:    sourcePeriods[i].TimeCGMUsePercent,
-				HasTimeCGMUsePercent: sourcePeriods[i].HasTimeCGMUsePercent,
-				TimeCGMUseMinutes:    sourcePeriods[i].TimeCGMUseMinutes,
-				TimeCGMUseRecords:    sourcePeriods[i].TimeCGMUseRecords,
+				patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
+					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
+					HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
+					TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
 
-				TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
-				HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
-				TimeInVeryLowMinutes:    sourcePeriods[i].TimeInVeryLowMinutes,
-				TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
+					TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
+					HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
+					TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
 
-				TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
-				HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
-				TimeInLowMinutes:    sourcePeriods[i].TimeInLowMinutes,
-				TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
+					TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
+					HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
+					TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
 
-				TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
-				HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
-				TimeInTargetMinutes:    sourcePeriods[i].TimeInTargetMinutes,
-				TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
+					TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
+					HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
+					TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
 
-				TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
-				HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
-				TimeInHighMinutes:    sourcePeriods[i].TimeInHighMinutes,
-				TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
+					TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
+					HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
+					TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
 
-				TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
-				HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
-				TimeInVeryHighMinutes:    sourcePeriods[i].TimeInVeryHighMinutes,
-				TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
-
-				GlucoseManagementIndicator:    sourcePeriods[i].GlucoseManagementIndicator,
-				HasGlucoseManagementIndicator: sourcePeriods[i].HasGlucoseManagementIndicator,
-				AverageGlucose:                averageGlucose,
-				HasAverageGlucose:             sourcePeriods[i].HasAverageGlucose,
-			}
-		}
-	}
-
-	if dto.BgmStats.Periods != nil {
-		var averageGlucose *patients.AverageGlucose
-		// this is bad, but it's better than copy and pasting the copy code N times
-		sourcePeriods := map[string]*PatientBGMPeriod{}
-		if dto.BgmStats.Periods.N1d != nil {
-			sourcePeriods["1d"] = dto.BgmStats.Periods.N1d
-		}
-		if dto.BgmStats.Periods.N7d != nil {
-			sourcePeriods["7d"] = dto.BgmStats.Periods.N7d
-		}
-		if dto.BgmStats.Periods.N14d != nil {
-			sourcePeriods["14d"] = dto.BgmStats.Periods.N14d
-		}
-		if dto.BgmStats.Periods.N30d != nil {
-			sourcePeriods["30d"] = dto.BgmStats.Periods.N30d
-		}
-
-		for i := range sourcePeriods {
-			if sourcePeriods[i].AverageGlucose != nil {
-				averageGlucose = &patients.AverageGlucose{
-					Units: string(sourcePeriods[i].AverageGlucose.Units),
-					Value: float64(sourcePeriods[i].AverageGlucose.Value),
+					AverageGlucose:    averageGlucose,
+					HasAverageGlucose: sourcePeriods[i].HasAverageGlucose,
 				}
-			}
-
-			patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
-				TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
-				HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
-				TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
-
-				TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
-				HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
-				TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
-
-				TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
-				HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
-				TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
-
-				TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
-				HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
-				TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
-
-				TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
-				HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
-				TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
-
-				AverageGlucose:    averageGlucose,
-				HasAverageGlucose: sourcePeriods[i].HasAverageGlucose,
 			}
 		}
 	}

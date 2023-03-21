@@ -242,8 +242,8 @@ type Dates struct {
 }
 
 type Summary struct {
-	CGM CGMStats `json:"cgmStats" bson:"cgmStats"`
-	BGM BGMStats `json:"bgmStats" bson:"bgmStats"`
+	CGM *CGMStats `json:"cgmStats" bson:"cgmStats"`
+	BGM *BGMStats `json:"bgmStats" bson:"bgmStats"`
 }
 
 type AverageGlucose struct {
