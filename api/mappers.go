@@ -302,7 +302,7 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 					}
 				}
 
-				patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
+				patientSummary.BGM.Periods[i] = &patients.BGMPeriod{
 					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
 					HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
 					TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
