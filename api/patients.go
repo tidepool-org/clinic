@@ -73,7 +73,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		filter.CgmTimeInVeryHighPercentValue = value
 	}
 
-	sorts, err := ParseSort(params.Sort, *params.SortType, *params.SortPeriod)
+	sorts, err := ParseSort(params.Sort, params.SortType, params.SortPeriod)
 	if err != nil {
 		return err
 	}

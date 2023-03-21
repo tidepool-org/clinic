@@ -630,24 +630,25 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
-func ParseSort(sort *Sort, t string, period string) ([]*store.Sort, error) {
+func ParseSort(sort *Sort, t *string, period *string) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil
 	}
-	str := string(*sort)
-	var result store.Sort
 
-	if t == "" {
+	if t == nil {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing type", errors.BadRequest)
-	} else if t != "cgm" && t != "bgm" {
+	} else if *t != "cgm" && *t != "bgm" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid type", errors.BadRequest)
 	}
 
-	if period == "" {
+	if period == nil {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing period", errors.BadRequest)
-	} else if period != "1d" && period != "7d" && period != "14d" && period != "30d" {
+	} else if *period != "1d" && *period != "7d" && *period != "14d" && *period != "30d" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid period", errors.BadRequest)
 	}
+
+	str := string(*sort)
+	var result store.Sort
 
 	if strings.HasPrefix(str, "+") {
 		result.Ascending = true
@@ -660,31 +661,31 @@ func ParseSort(sort *Sort, t string, period string) ([]*store.Sort, error) {
 	result.Attribute = str[1:]
 	if result.Attribute == "" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort attribute", errors.BadRequest)
-	} else if !isSortAttributeValid(result.Attribute, t) {
+	} else if !isSortAttributeValid(result.Attribute, *t) {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid sort attribute", errors.BadRequest)
 	}
 
 	var expandedSorts = map[string]string{
-		"lastUploadDate":             "summary." + t + "Stats.dates.lastUploadDate",
-		"averageGlucose":             "summary." + t + "Stats.periods." + period + ".averageGlucose.value",
-		"timeCGMUsePercent":          "summary." + t + "Stats.periods." + period + ".timeCGMUsePercent",
-		"glucoseManagementIndicator": "summary." + t + "Stats.periods." + period + ".glucoseManagementIndicator",
-		"timeInTargetPercent":        "summary." + t + "Stats.periods." + period + ".timeInTargetPercent",
-		"timeInLowPercent":           "summary." + t + "Stats.periods." + period + ".timeInLowPercent",
-		"timeInVeryLowPercent":       "summary." + t + "Stats.periods." + period + ".timeInVeryLowPercent",
-		"timeInHighPercent":          "summary." + t + "Stats.periods." + period + ".timeInHighPercent",
-		"timeInVeryHighPercent":      "summary." + t + "Stats.periods." + period + ".timeInVeryHighPercent",
-		"averageDailyRecords":        "summary." + t + "Stats.periods." + period + ".averageDailyRecords",
+		"lastUploadDate":             "summary." + *t + "Stats.dates.lastUploadDate",
+		"averageGlucose":             "summary." + *t + "Stats.periods." + *period + ".averageGlucose.value",
+		"timeCGMUsePercent":          "summary." + *t + "Stats.periods." + *period + ".timeCGMUsePercent",
+		"glucoseManagementIndicator": "summary." + *t + "Stats.periods." + *period + ".glucoseManagementIndicator",
+		"timeInTargetPercent":        "summary." + *t + "Stats.periods." + *period + ".timeInTargetPercent",
+		"timeInLowPercent":           "summary." + *t + "Stats.periods." + *period + ".timeInLowPercent",
+		"timeInVeryLowPercent":       "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowPercent",
+		"timeInHighPercent":          "summary." + *t + "Stats.periods." + *period + ".timeInHighPercent",
+		"timeInVeryHighPercent":      "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighPercent",
+		"averageDailyRecords":        "summary." + *t + "Stats.periods." + *period + ".averageDailyRecords",
 
-		"hasLastUploadDate":             "summary." + t + "Stats.periods." + period + ".hasLastUploadDate",
-		"hasTimeCGMUsePercent":          "summary." + t + "Stats.periods." + period + ".hasTimeCGMUsePercent",
-		"hasGlucoseManagementIndicator": "summary." + t + "Stats.periods." + period + ".hasGlucoseManagementIndicator",
-		"hasAverageGlucose":             "summary." + t + "Stats.periods." + period + ".hasAverageGlucose",
-		"hasTimeInTargetPercent":        "summary." + t + "Stats.periods." + period + ".hasTimeInTargetPercent",
-		"hasTimeInLowPercent":           "summary." + t + "Stats.periods." + period + ".hasTimeInLowPercent",
-		"hasTimeInVeryLowPercent":       "summary." + t + "Stats.periods." + period + ".hasTimeInVeryLowPercent",
-		"hasTimeInHighPercent":          "summary." + t + "Stats.periods." + period + ".hasTimeInHighPercent",
-		"hasTimeInVeryHighPercent":      "summary." + t + "Stats.periods." + period + ".hasTimeInVeryHighPercent",
+		"hasLastUploadDate":             "summary." + *t + "Stats.periods." + *period + ".hasLastUploadDate",
+		"hasTimeCGMUsePercent":          "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUsePercent",
+		"hasGlucoseManagementIndicator": "summary." + *t + "Stats.periods." + *period + ".hasGlucoseManagementIndicator",
+		"hasAverageGlucose":             "summary." + *t + "Stats.periods." + *period + ".hasAverageGlucose",
+		"hasTimeInTargetPercent":        "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetPercent",
+		"hasTimeInLowPercent":           "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowPercent",
+		"hasTimeInVeryLowPercent":       "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowPercent",
+		"hasTimeInHighPercent":          "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighPercent",
+		"hasTimeInVeryHighPercent":      "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighPercent",
 	}
 
 	var extraSort = map[string]string{
