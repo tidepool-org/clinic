@@ -179,8 +179,8 @@ type CGMPeriod struct {
 }
 
 type CGMStats struct {
-	Config     Config                `json:"config" bson:"config"`
-	Dates      Dates                 `json:"dates" bson:"dates"`
+	Config     *Config               `json:"config" bson:"config"`
+	Dates      *Dates                `json:"dates" bson:"dates"`
 	Periods    map[string]*CGMPeriod `json:"periods" bson:"periods"`
 	TotalHours *int                  `json:"totalHours" bson:"totalHours"`
 }
@@ -216,8 +216,8 @@ type BGMPeriod struct {
 }
 
 type BGMStats struct {
-	Config     Config                `json:"config" bson:"config"`
-	Dates      Dates                 `json:"dates" bson:"dates"`
+	Config     *Config               `json:"config" bson:"config"`
+	Dates      *Dates                `json:"dates" bson:"dates"`
 	Periods    map[string]*BGMPeriod `json:"periods" bson:"periods"`
 	TotalHours *int                  `json:"totalHours" bson:"totalHours"`
 }

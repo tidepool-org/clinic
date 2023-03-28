@@ -174,21 +174,27 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		patientSummary.CGM = &patients.CGMStats{
 			Periods:    make(map[string]*patients.CGMPeriod),
 			TotalHours: dto.CgmStats.TotalHours,
-			Config: patients.Config{
-				SchemaVersion:            dto.CgmStats.Config.SchemaVersion,
-				HighGlucoseThreshold:     dto.CgmStats.Config.HighGlucoseThreshold,
-				VeryHighGlucoseThreshold: dto.CgmStats.Config.VeryLowGlucoseThreshold,
-				LowGlucoseThreshold:      dto.CgmStats.Config.LowGlucoseThreshold,
-				VeryLowGlucoseThreshold:  dto.CgmStats.Config.VeryLowGlucoseThreshold,
-			},
-			Dates: patients.Dates{
+		}
+
+		if dto.CgmStats.Dates != nil {
+			patientSummary.CGM.Dates = &patients.Dates{
 				HasLastUploadDate: dto.CgmStats.Dates.HasLastUploadDate,
 				LastUploadDate:    dto.CgmStats.Dates.LastUploadDate,
 				LastUpdatedDate:   dto.CgmStats.Dates.LastUpdatedDate,
 				OutdatedSince:     dto.CgmStats.Dates.OutdatedSince,
 				FirstData:         dto.CgmStats.Dates.FirstData,
 				LastData:          dto.CgmStats.Dates.LastData,
-			},
+			}
+		}
+
+		if dto.CgmStats.Config != nil {
+			patientSummary.CGM.Config = &patients.Config{
+				SchemaVersion:            dto.CgmStats.Config.SchemaVersion,
+				HighGlucoseThreshold:     dto.CgmStats.Config.HighGlucoseThreshold,
+				VeryHighGlucoseThreshold: dto.CgmStats.Config.VeryLowGlucoseThreshold,
+				LowGlucoseThreshold:      dto.CgmStats.Config.LowGlucoseThreshold,
+				VeryLowGlucoseThreshold:  dto.CgmStats.Config.VeryLowGlucoseThreshold,
+			}
 		}
 
 		if dto.CgmStats.Periods != nil {
@@ -260,21 +266,26 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		patientSummary.BGM = &patients.BGMStats{
 			Periods:    make(map[string]*patients.BGMPeriod),
 			TotalHours: dto.BgmStats.TotalHours,
-			Config: patients.Config{
+		}
+
+		if dto.BgmStats.Config != nil {
+			patientSummary.BGM.Config = &patients.Config{
 				SchemaVersion:            dto.BgmStats.Config.SchemaVersion,
 				HighGlucoseThreshold:     dto.BgmStats.Config.HighGlucoseThreshold,
 				VeryHighGlucoseThreshold: dto.BgmStats.Config.VeryLowGlucoseThreshold,
 				LowGlucoseThreshold:      dto.BgmStats.Config.LowGlucoseThreshold,
 				VeryLowGlucoseThreshold:  dto.BgmStats.Config.VeryLowGlucoseThreshold,
-			},
-			Dates: patients.Dates{
+			}
+		}
+		if dto.BgmStats.Dates != nil {
+			patientSummary.BGM.Dates = &patients.Dates{
 				HasLastUploadDate: dto.BgmStats.Dates.HasLastUploadDate,
 				LastUploadDate:    dto.BgmStats.Dates.LastUploadDate,
 				LastUpdatedDate:   dto.BgmStats.Dates.LastUpdatedDate,
 				OutdatedSince:     dto.BgmStats.Dates.OutdatedSince,
 				FirstData:         dto.BgmStats.Dates.FirstData,
 				LastData:          dto.BgmStats.Dates.LastData,
-			},
+			}
 		}
 
 		if dto.BgmStats.Periods != nil {
@@ -342,23 +353,29 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 	if summary.CGM != nil {
 		patientSummary.CgmStats = &PatientCGMStats{
-			Config: &PatientSummaryConfig{
+			Periods:    &PatientCGMPeriods{},
+			TotalHours: summary.CGM.TotalHours,
+		}
+
+		if summary.CGM.Config != nil {
+			patientSummary.CgmStats.Config = &PatientSummaryConfig{
 				SchemaVersion:            summary.CGM.Config.SchemaVersion,
 				HighGlucoseThreshold:     summary.CGM.Config.HighGlucoseThreshold,
 				VeryHighGlucoseThreshold: summary.CGM.Config.VeryHighGlucoseThreshold,
 				LowGlucoseThreshold:      summary.CGM.Config.LowGlucoseThreshold,
 				VeryLowGlucoseThreshold:  summary.CGM.Config.VeryLowGlucoseThreshold,
-			},
-			Dates: &PatientSummaryDates{
+			}
+		}
+
+		if summary.CGM.Dates != nil {
+			patientSummary.CgmStats.Dates = &PatientSummaryDates{
 				FirstData:         summary.CGM.Dates.FirstData,
 				HasLastUploadDate: summary.CGM.Dates.HasLastUploadDate,
 				LastData:          summary.CGM.Dates.LastData,
 				LastUpdatedDate:   summary.CGM.Dates.LastUpdatedDate,
 				LastUploadDate:    summary.CGM.Dates.LastUploadDate,
 				OutdatedSince:     summary.CGM.Dates.OutdatedSince,
-			},
-			Periods:    &PatientCGMPeriods{},
-			TotalHours: summary.CGM.TotalHours,
+			}
 		}
 
 		if summary.CGM.Periods != nil {
@@ -427,23 +444,28 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 	if summary.BGM != nil {
 		patientSummary.BgmStats = &PatientBGMStats{
-			Config: &PatientSummaryConfig{
+			Periods:    &PatientBGMPeriods{},
+			TotalHours: summary.BGM.TotalHours,
+		}
+
+		if summary.BGM.Config != nil {
+			patientSummary.BgmStats.Config = &PatientSummaryConfig{
 				SchemaVersion:            summary.BGM.Config.SchemaVersion,
 				HighGlucoseThreshold:     summary.BGM.Config.HighGlucoseThreshold,
 				VeryHighGlucoseThreshold: summary.BGM.Config.VeryHighGlucoseThreshold,
 				LowGlucoseThreshold:      summary.BGM.Config.LowGlucoseThreshold,
 				VeryLowGlucoseThreshold:  summary.BGM.Config.VeryLowGlucoseThreshold,
-			},
-			Dates: &PatientSummaryDates{
+			}
+		}
+		if summary.BGM.Dates != nil {
+			patientSummary.BgmStats.Dates = &PatientSummaryDates{
 				FirstData:         summary.BGM.Dates.FirstData,
 				HasLastUploadDate: summary.BGM.Dates.HasLastUploadDate,
 				LastData:          summary.BGM.Dates.LastData,
 				LastUpdatedDate:   summary.BGM.Dates.LastUpdatedDate,
 				LastUploadDate:    summary.BGM.Dates.LastUploadDate,
 				OutdatedSince:     summary.BGM.Dates.OutdatedSince,
-			},
-			Periods:    &PatientBGMPeriods{},
-			TotalHours: summary.BGM.TotalHours,
+			}
 		}
 
 		if summary.BGM.Periods != nil {
