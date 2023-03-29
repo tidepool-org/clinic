@@ -3,13 +3,15 @@ package clinics
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
-	"time"
 )
 
 const (
@@ -215,6 +217,139 @@ func (c *repository) UpdateTier(ctx context.Context, id, tier string) error {
 	}
 
 	return err
+}
+
+func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*Clinic, error) {
+	clinic, err := c.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	tagId := primitive.NewObjectID()
+	tag := PatientTag{
+		Id:   &tagId,
+		Name: strings.TrimSpace(tagName),
+	}
+
+	canAdd, err := canAddPatientTag(*clinic, tag)
+	if !canAdd {
+		return nil, err
+	}
+
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$addToSet": bson.M{
+			"patientTags": tag,
+		},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+
+	updateErr := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if updateErr != nil {
+		if updateErr == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, updateErr
+	}
+
+	return c.Get(ctx, id)
+}
+
+func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*Clinic, error) {
+	clinic, err := c.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	tagObjectId, _ := primitive.ObjectIDFromHex(tagId)
+	tag := PatientTag{
+		Id:   &tagObjectId,
+		Name: strings.TrimSpace(tagName),
+	}
+
+	if isDuplicatePatientTag(*clinic, tag) {
+		return nil, ErrDuplicatePatientTagName
+	}
+
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+	selector := bson.M{"_id": clinicId, "patientTags._id": patientTagId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"patientTags.$.name": strings.TrimSpace(tagName),
+			"updatedTime":        time.Now(),
+		},
+	}
+
+	updateErr := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if updateErr != nil {
+		if updateErr == mongo.ErrNoDocuments {
+			return nil, ErrPatientTagNotFound
+		}
+		return nil, updateErr
+	}
+
+	return c.Get(ctx, id)
+}
+
+func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*Clinic, error) {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"patientTags": bson.M{"_id": patientTagId},
+		},
+		"$set": bson.M{
+			"updatedTime":           time.Now(),
+			"lastDeletedPatientTag": patientTagId,
+		},
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return c.Get(ctx, id)
+}
+
+func canAddPatientTag(clinic Clinic, tag PatientTag) (bool, error) {
+	if len(clinic.PatientTags) >= MaximumPatientTags {
+		return false, ErrMaximumPatientTagsExceeded
+	}
+
+	if isDuplicatePatientTag(clinic, tag) {
+		return false, ErrDuplicatePatientTagName
+	}
+
+	return true, nil
+}
+
+func isDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
+	trimmedNewTagName := strings.ToLower(strings.ReplaceAll(tag.Name, " ", ""))
+
+	for _, p := range clinic.PatientTags {
+		// We only check for duplication against other tags
+		if p.Id.Hex() != tag.Id.Hex() {
+			trimmedExistingTagName := strings.ToLower(strings.ReplaceAll(p.Name, " ", ""))
+
+			if trimmedExistingTagName == trimmedNewTagName {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func canRemoveAdmin(clinic Clinic, clinicianId string) bool {

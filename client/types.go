@@ -51,6 +51,19 @@ const (
 	ClinicPreferredBgUnitsMmolL ClinicPreferredBgUnits = "mmol/L"
 )
 
+// Defines values for DataSourceState.
+const (
+	DataSourceStateConnected DataSourceState = "connected"
+
+	DataSourceStateDisconnected DataSourceState = "disconnected"
+
+	DataSourceStateError DataSourceState = "error"
+
+	DataSourceStatePending DataSourceState = "pending"
+
+	DataSourceStatePendingReconnect DataSourceState = "pendingReconnect"
+)
+
 // Defines values for MigrationStatus.
 const (
 	MigrationStatusCOMPLETED MigrationStatus = "COMPLETED"
@@ -103,10 +116,12 @@ type Clinic struct {
 	CreatedTime time.Time `json:"createdTime"`
 
 	// Clinic identifier.
-	Id Id `json:"id"`
+	Id                    Id          `json:"id"`
+	LastDeletedPatientTag *PatientTag `json:"lastDeletedPatientTag,omitempty"`
 
 	// Name of the clinic.
-	Name string `json:"name"`
+	Name        string        `json:"name"`
+	PatientTags *[]PatientTag `json:"patientTags,omitempty"`
 
 	// An array of phone numbers.
 	PhoneNumbers *[]PhoneNumber `json:"phoneNumbers,omitempty"`
@@ -183,6 +198,29 @@ type CreatePatient struct {
 	Permissions       *PatientPermissions `json:"permissions,omitempty"`
 }
 
+// DataSource defines model for DataSource.
+type DataSource struct {
+	// String representation of a resource id
+	DataSourceId *string `json:"dataSourceId,omitempty"`
+
+	// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	ExpirationTime *DateTime `json:"expirationTime,omitempty"`
+
+	// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	ModifiedTime *DateTime       `json:"modifiedTime,omitempty"`
+	ProviderName string          `json:"providerName"`
+	State        DataSourceState `json:"state"`
+}
+
+// DataSourceState defines model for DataSource.State.
+type DataSourceState string
+
+// DataSources defines model for DataSources.
+type DataSources []DataSource
+
+// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+type DateTime string
+
 // Error defines model for Error.
 type Error struct {
 	Code    int    `json:"code"`
@@ -227,14 +265,16 @@ type Patient struct {
 	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
 	BirthDate            openapi_types.Date `json:"birthDate"`
 	CreatedTime          time.Time          `json:"createdTime"`
+	DataSources          *[]DataSource      `json:"dataSources"`
 	Email                *string            `json:"email,omitempty"`
 
 	// The full name of the patient
 	FullName string `json:"fullName"`
 
 	// String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id                     TidepoolUserId `json:"id"`
-	LastUploadReminderTime *time.Time     `json:"lastUploadReminderTime,omitempty"`
+	Id                             TidepoolUserId `json:"id"`
+	LastRequestedDexcomConnectTime *time.Time     `json:"lastRequestedDexcomConnectTime,omitempty"`
+	LastUploadReminderTime         *time.Time     `json:"lastUploadReminderTime,omitempty"`
 
 	// The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`
@@ -242,6 +282,7 @@ type Patient struct {
 
 	// A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
+	Tags          *[]string       `json:"tags"`
 	TargetDevices *[]string       `json:"targetDevices,omitempty"`
 	UpdatedTime   time.Time       `json:"updatedTime"`
 }
@@ -495,6 +536,15 @@ type PatientSummaryDates struct {
 	OutdatedSince *time.Time `json:"outdatedSince,omitempty"`
 }
 
+// PatientTag defines model for PatientTag.
+type PatientTag struct {
+	// String representation of a resource id
+	Id string `json:"id"`
+
+	// The tag display name
+	Name string `json:"name"`
+}
+
 // Patients defines model for Patients.
 type Patients []Patient
 
@@ -557,6 +607,9 @@ type Offset int
 
 // PatientId defines model for patientId.
 type PatientId string
+
+// PatientTagId defines model for patientTagId.
+type PatientTagId string
 
 // Role defines model for role.
 type Role string
@@ -638,6 +691,12 @@ type MigrateLegacyClinicianPatientsJSONBody Migration
 // UpdateMigrationJSONBody defines parameters for UpdateMigration.
 type UpdateMigrationJSONBody MigrationUpdate
 
+// CreatePatientTagJSONBody defines parameters for CreatePatientTag.
+type CreatePatientTagJSONBody PatientTag
+
+// UpdatePatientTagJSONBody defines parameters for UpdatePatientTag.
+type UpdatePatientTagJSONBody PatientTag
+
 // ListPatientsParams defines parameters for ListPatients.
 type ListPatientsParams struct {
 	// Full text search query
@@ -701,6 +760,9 @@ type ListPatientsParams struct {
 
 	// Exclusive
 	BgmLastUploadDateTo *time.Time `json:"bgm.lastUploadDateTo,omitempty"`
+
+	// Comma-separated list of patient tag IDs
+	Tags *[]string `json:"tags,omitempty"`
 }
 
 // CreatePatientAccountJSONBody defines parameters for CreatePatientAccount.
@@ -726,6 +788,9 @@ type ListClinicsForPatientParams struct {
 	Offset *Offset `json:"offset,omitempty"`
 	Limit  *Limit  `json:"limit,omitempty"`
 }
+
+// UpdatePatientDataSourcesJSONBody defines parameters for UpdatePatientDataSources.
+type UpdatePatientDataSourcesJSONBody DataSources
 
 // UpdateClinicUserDetailsJSONBody defines parameters for UpdateClinicUserDetails.
 type UpdateClinicUserDetailsJSONBody UpdateUserDetails
@@ -754,6 +819,12 @@ type MigrateLegacyClinicianPatientsJSONRequestBody MigrateLegacyClinicianPatient
 // UpdateMigrationJSONRequestBody defines body for UpdateMigration for application/json ContentType.
 type UpdateMigrationJSONRequestBody UpdateMigrationJSONBody
 
+// CreatePatientTagJSONRequestBody defines body for CreatePatientTag for application/json ContentType.
+type CreatePatientTagJSONRequestBody CreatePatientTagJSONBody
+
+// UpdatePatientTagJSONRequestBody defines body for UpdatePatientTag for application/json ContentType.
+type UpdatePatientTagJSONRequestBody UpdatePatientTagJSONBody
+
 // CreatePatientAccountJSONRequestBody defines body for CreatePatientAccount for application/json ContentType.
 type CreatePatientAccountJSONRequestBody CreatePatientAccountJSONBody
 
@@ -771,6 +842,9 @@ type UpdateTierJSONRequestBody UpdateTierJSONBody
 
 // UpdatePatientSummaryJSONRequestBody defines body for UpdatePatientSummary for application/json ContentType.
 type UpdatePatientSummaryJSONRequestBody UpdatePatientSummaryJSONBody
+
+// UpdatePatientDataSourcesJSONRequestBody defines body for UpdatePatientDataSources for application/json ContentType.
+type UpdatePatientDataSourcesJSONRequestBody UpdatePatientDataSourcesJSONBody
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody UpdateClinicUserDetailsJSONBody

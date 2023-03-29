@@ -1,14 +1,15 @@
 package api
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/http"
-	"time"
 )
 
 func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
@@ -19,7 +20,10 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		Search:                searchToString(params.Search),
 		CgmLastUploadDateFrom: params.CgmLastUploadDateFrom,
 		CgmLastUploadDateTo:   params.CgmLastUploadDateTo,
+		BgmLastUploadDateFrom: params.BgmLastUploadDateFrom,
+		BgmLastUploadDateTo:   params.BgmLastUploadDateTo,
 		Period:                params.Period,
+		Tags:                  params.Tags,
 	}
 
 	var sorts []*store.Sort
@@ -234,6 +238,37 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
+func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	update := patients.LastRequestedDexcomConnectUpdate{
+		ClinicId:  string(clinicId),
+		Time:      time.Now(),
+		UserId:    string(patientId),
+		UpdatedBy: authData.SubjectId,
+	}
+	patient, err := h.patients.UpdateLastRequestedDexcomConnectTime(ctx, &update)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+}
+
 func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := PatientPermissions{}
@@ -307,6 +342,33 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 	}
 
 	err := h.patients.UpdateSummaryInAllClinics(ctx, string(patientId), NewSummary(dto))
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	ctx := ec.Request().Context()
+
+	err := h.patients.DeletePatientTagFromClinicPatients(ctx, string(clinicId), string(patientTagId))
+
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) UpdatePatientDataSources(ec echo.Context, userId UserId) error {
+	ctx := ec.Request().Context()
+	dto := patients.DataSources{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	err := h.patients.UpdatePatientDataSources(ctx, string(userId), &dto)
 	if err != nil {
 		return err
 	}

@@ -21,7 +21,7 @@ write_access_roles := {
 clinician_roles := { x | x = input.clinician.roles[_] }
 
 clinician_has_read_access {
-    count(clinician_roles & read_access_roles) > 0
+  count(clinician_roles & read_access_roles) > 0
 }
 
 clinician_has_write_access {
@@ -296,6 +296,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow currently authenticated clinician to send a dexcom connect reminder
+# POST /v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "send_dexcom_connect_request"]
+  clinician_has_read_access
+}
+
 # Allow currently authenticated clinician to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
@@ -413,4 +421,44 @@ allow {
   is_backend_service
   input.method == "POST"
   input.path = ["v1", "users", _, "clinics"]
+}
+
+# Allow currently authenticated clinic member to create a patient tag
+# POST /v1/clinics/:clinicId/patient_tags
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patient_tags"]
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinic member to update a patient tag
+# PUT /v1/clinics/:clinicId/patient_tags/:patientTagId
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patient_tags", _]
+  clinician_has_read_access
+}
+
+# Allow currently authenticated clinic admin to delete a patient tag
+# DELETE /v1/clinics/:clinicId/patient_tags/:patientTagId
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patient_tags", _]
+  clinician_has_write_access
+}
+
+# Allow backend services to delete a patient tag from all clinic patients
+# DELETE /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patients", "delete_tag", _]
+  is_backend_service
+}
+
+# Allow backend services to update a user data source for all associated clinic patient records
+# PUT /v1/patients/:patientId/data_sources
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "patients", _, "data_sources"]
+  is_backend_service
 }

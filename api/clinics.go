@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -9,8 +12,6 @@ import (
 	"github.com/tidepool-org/clinic/clinics/creator"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"net/http"
-	"time"
 )
 
 func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
@@ -57,8 +58,13 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		}
 	}
 
+	clinic := *NewClinic(dto)
+
+	// Set new clinic migration status to true.
+	// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
+	clinic.IsMigrated = true
 	create := creator.CreateClinic{
-		Clinic:            *NewClinic(dto),
+		Clinic:            clinic,
 		CreatorUserId:     authData.SubjectId,
 		CreateDemoPatient: true,
 	}
@@ -232,4 +238,45 @@ func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := clinics.PatientTag{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	updated, err := h.clinics.CreatePatientTag(ctx, string(clinicId), dto.Name)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+}
+
+func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	ctx := ec.Request().Context()
+	dto := clinics.PatientTag{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	updated, err := h.clinics.UpdatePatientTag(ctx, string(clinicId), string(patientTagId), dto.Name)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+}
+
+func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	ctx := ec.Request().Context()
+
+	updated, err := h.clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId))
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
 }
