@@ -73,10 +73,4 @@ require (
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
 )
 
-require (
-	github.com/aws/aws-sdk-go v1.34.28 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
-)
-
 replace github.com/tidepool-org/clinic/client => ./client

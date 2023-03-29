@@ -4,6 +4,8 @@ github.com/BurntSushi/toml
 # github.com/OneOfOne/xxhash v1.2.8
 ## explicit; go 1.11
 github.com/OneOfOne/xxhash
+# github.com/aws/aws-sdk-go v1.34.28
+## explicit; go 1.11
 # github.com/bytecodealliance/wasmtime-go v0.24.0
 ## explicit; go 1.14
 github.com/bytecodealliance/wasmtime-go
@@ -41,6 +43,8 @@ github.com/go-openapi/jsonpointer
 # github.com/go-openapi/swag v0.21.1
 ## explicit; go 1.11
 github.com/go-openapi/swag
+# github.com/go-stack/stack v1.8.0
+## explicit
 # github.com/gobwas/glob v0.2.3
 ## explicit
 github.com/gobwas/glob
@@ -79,6 +83,8 @@ github.com/hpcloud/tail/winfile
 # github.com/jaswdr/faker v1.4.2
 ## explicit; go 1.11
 github.com/jaswdr/faker
+# github.com/jmespath/go-jmespath v0.4.0
+## explicit; go 1.14
 # github.com/josharian/intern v1.0.0
 ## explicit; go 1.5
 github.com/josharian/intern
