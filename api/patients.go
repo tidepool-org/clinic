@@ -28,7 +28,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 
 	var sorts []*store.Sort
 
-	if params.CgmTimeCGMUsePercent != nil && *params.CgmTimeInTargetPercent != "" {
+	if params.CgmTimeCGMUsePercent != nil && *params.CgmTimeCGMUsePercent != "" {
 		cmp, value, err := parseRangeFilter(*params.CgmTimeCGMUsePercent)
 		if err != nil {
 			return err
@@ -75,6 +75,47 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		}
 		filter.CgmTimeInVeryHighPercentCmp = cmp
 		filter.CgmTimeInVeryHighPercentValue = value
+	}
+
+	if params.BgmTimeInVeryLowPercent != nil && *params.BgmTimeInVeryLowPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.BgmTimeInVeryLowPercent)
+		if err != nil {
+			return err
+		}
+		filter.BgmTimeInVeryLowPercentCmp = cmp
+		filter.BgmTimeInVeryLowPercentValue = value
+	}
+	if params.BgmTimeInLowPercent != nil && *params.BgmTimeInLowPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.BgmTimeInLowPercent)
+		if err != nil {
+			return err
+		}
+		filter.BgmTimeInLowPercentCmp = cmp
+		filter.BgmTimeInLowPercentValue = value
+	}
+	if params.BgmTimeInTargetPercent != nil && *params.BgmTimeInTargetPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.BgmTimeInTargetPercent)
+		if err != nil {
+			return err
+		}
+		filter.BgmTimeInTargetPercentCmp = cmp
+		filter.BgmTimeInTargetPercentValue = value
+	}
+	if params.BgmTimeInHighPercent != nil && *params.BgmTimeInHighPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.BgmTimeInHighPercent)
+		if err != nil {
+			return err
+		}
+		filter.BgmTimeInHighPercentCmp = cmp
+		filter.BgmTimeInHighPercentValue = value
+	}
+	if params.BgmTimeInVeryHighPercent != nil && *params.BgmTimeInVeryHighPercent != "" {
+		cmp, value, err := parseRangeFilter(*params.BgmTimeInVeryHighPercent)
+		if err != nil {
+			return err
+		}
+		filter.BgmTimeInVeryHighPercentCmp = cmp
+		filter.BgmTimeInVeryHighPercentValue = value
 	}
 
 	sorts, err := ParseSort(params.Sort, params.SortType, params.SortPeriod)

@@ -174,7 +174,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 
 	var opts *options.AggregateOptions
 	if len(sorts) == 0 || hasFullNameSort {
-		// Case insensitive sorting when sorting by fullName
+		// Case-insensitive sorting when sorting by fullName
 		opts = options.Aggregate().SetCollation(&collation)
 	}
 
@@ -453,7 +453,7 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 		"dataSources.providerName": DexcomDataSourceProviderName,
 	}
 
-	// Default update for inital connection requests
+	// Default update for initial connection requests
 	mongoUpdate := bson.M{
 		"$set": bson.M{
 			"lastRequestedDexcomConnectTime": update.Time,
@@ -566,6 +566,8 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 }
 
 func generateListFilterQuery(filter *Filter) bson.M {
+	fmt.Println("Starting filter: ", *filter)
+
 	selector := bson.M{}
 	if filter.ClinicId != nil {
 		clinicId := *filter.ClinicId
@@ -588,19 +590,29 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			bson.M{"birthDate": filter},
 		}
 	}
+
 	cgmLastUploadDate := bson.M{}
 	if filter.CgmLastUploadDateFrom != nil && !filter.CgmLastUploadDateFrom.IsZero() {
 		cgmLastUploadDate["$gte"] = filter.CgmLastUploadDateFrom
 	}
+
+	if filter.CgmLastUploadDateTo != nil && !filter.CgmLastUploadDateTo.IsZero() {
+		cgmLastUploadDate["$lt"] = filter.CgmLastUploadDateTo
+	}
+
+	bgmLastUploadDate := bson.M{}
+	if filter.BgmLastUploadDateFrom != nil && !filter.BgmLastUploadDateFrom.IsZero() {
+		bgmLastUploadDate["$gte"] = filter.BgmLastUploadDateFrom
+	}
+
+	if filter.BgmLastUploadDateTo != nil && !filter.BgmLastUploadDateTo.IsZero() {
+		bgmLastUploadDate["$lt"] = filter.BgmLastUploadDateTo
+	}
+
 	if filter.Tags != nil {
 		selector["tags"] = bson.M{
 			"$all": store.ObjectIDSFromStringArray(*filter.Tags),
 		}
-	}
-
-	bgmLastUploadDate := bson.M{}
-	if filter.BgmLastUploadDateTo != nil && !filter.BgmLastUploadDateTo.IsZero() {
-		bgmLastUploadDate["$lt"] = filter.BgmLastUploadDateTo
 	}
 
 	if len(cgmLastUploadDate) > 0 {
@@ -612,6 +624,8 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 
 	if filter.Period != nil && *filter.Period != "" {
+
+		fmt.Println("Period:", *filter.Period)
 
 		var filterMap = map[string]map[string]FilterPair{
 			"cgm": {
@@ -642,8 +656,9 @@ func generateListFilterQuery(filter *Filter) bson.M {
 				)
 			}
 		}
-
 	}
+
+	fmt.Println("generated filter query: ", selector)
 
 	return selector
 }
