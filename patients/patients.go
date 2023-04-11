@@ -175,8 +175,8 @@ type CGMPeriod struct {
 	AverageGlucose             *AverageGlucose `json:"averageGlucose" bson:"averageGlucose"`
 	GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator" bson:"glucoseManagementIndicator"`
 
-	TotalRecords        int     `json:"totalRecords" bson:"totalRecords"`
-	AverageDailyRecords float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
+	TotalRecords        *int     `json:"totalRecords" bson:"totalRecords"`
+	AverageDailyRecords *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
 
 	TimeInTargetPercent *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
 	TimeInTargetMinutes *int     `json:"timeInTargetMinutes" bson:"timeInTargetMinutes"`
@@ -215,10 +215,10 @@ type BGMPeriod struct {
 	HasTimeInVeryLowPercent  *bool `json:"hasTimeInVeryLowPercent" bson:"hasTimeInVeryLowPercent"`
 
 	// actual values
-	AverageGlucose *AverageGlucose `json:"averageGlucose" bson:"avgGlucose"`
+	AverageGlucose *AverageGlucose `json:"averageGlucose" bson:"averageGlucose"`
 
-	TotalRecords        int     `json:"totalRecords" bson:"totalRecords"`
-	AverageDailyRecords float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
+	TotalRecords        *int     `json:"totalRecords" bson:"totalRecords"`
+	AverageDailyRecords *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
 
 	TimeInTargetPercent *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
 	TimeInTargetRecords *int     `json:"timeInTargetRecords" bson:"timeInTargetRecords"`
