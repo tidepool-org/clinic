@@ -630,6 +630,16 @@ func generateListFilterQuery(filter *Filter) bson.M {
 				"timeInTargetPercent":   {filter.CgmTimeInTargetPercentCmp, filter.CgmTimeInTargetPercentValue},
 				"timeInHighPercent":     {filter.CgmTimeInHighPercentCmp, filter.CgmTimeInHighPercentValue},
 				"timeInVeryHighPercent": {filter.CgmTimeInVeryHighPercentCmp, filter.CgmTimeInVeryHighPercentValue},
+
+				"timeCGMUseRecords":     {filter.CgmTimeCGMUseRecordsCmp, filter.CgmTimeCGMUseRecordsValue},
+				"timeInVeryLowRecords":  {filter.CgmTimeInVeryLowRecordsCmp, filter.CgmTimeInVeryLowRecordsValue},
+				"timeInLowRecords":      {filter.CgmTimeInLowRecordsCmp, filter.CgmTimeInLowRecordsValue},
+				"timeInTargetRecords":   {filter.CgmTimeInTargetRecordsCmp, filter.CgmTimeInTargetRecordsValue},
+				"timeInHighRecords":     {filter.CgmTimeInHighRecordsCmp, filter.CgmTimeInHighRecordsValue},
+				"timeInVeryHighRecords": {filter.CgmTimeInVeryHighRecordsCmp, filter.CgmTimeInVeryHighRecordsValue},
+
+				"averageDailyRecords": {filter.CgmAverageDailyRecordsCmp, filter.CgmAverageDailyRecordsValue},
+				"totalRecords":        {filter.CgmTotalRecordsCmp, filter.CgmTotalRecordsValue},
 			},
 			"bgm": {
 				"timeInVeryLowPercent":  {filter.BgmTimeInVeryLowPercentCmp, filter.BgmTimeInVeryLowPercentValue},
@@ -637,6 +647,15 @@ func generateListFilterQuery(filter *Filter) bson.M {
 				"timeInTargetPercent":   {filter.BgmTimeInTargetPercentCmp, filter.BgmTimeInTargetPercentValue},
 				"timeInHighPercent":     {filter.BgmTimeInHighPercentCmp, filter.BgmTimeInHighPercentValue},
 				"timeInVeryHighPercent": {filter.BgmTimeInVeryHighPercentCmp, filter.BgmTimeInVeryHighPercentValue},
+
+				"timeInVeryLowRecords":  {filter.BgmTimeInVeryLowRecordsCmp, filter.BgmTimeInVeryLowRecordsValue},
+				"timeInLowRecords":      {filter.BgmTimeInLowRecordsCmp, filter.BgmTimeInLowRecordsValue},
+				"timeInTargetRecords":   {filter.BgmTimeInTargetRecordsCmp, filter.BgmTimeInTargetRecordsValue},
+				"timeInHighRecords":     {filter.BgmTimeInHighRecordsCmp, filter.BgmTimeInHighRecordsValue},
+				"timeInVeryHighRecords": {filter.BgmTimeInVeryHighRecordsCmp, filter.BgmTimeInVeryHighRecordsValue},
+
+				"averageDailyRecords": {filter.BgmAverageDailyRecordsCmp, filter.BgmAverageDailyRecordsValue},
+				"totalRecords":        {filter.BgmTotalRecordsCmp, filter.BgmTotalRecordsValue},
 			},
 		}
 
