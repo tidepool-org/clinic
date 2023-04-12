@@ -811,11 +811,11 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sortPeriod: %s", err))
 	}
 
-	// ------------- Optional query parameter "period" -------------
+	// ------------- Optional query parameter "filterPeriod" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "period", ctx.QueryParams(), &params.Period)
+	err = runtime.BindQueryParameter("form", true, false, "filterPeriod", ctx.QueryParams(), &params.FilterPeriod)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter period: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterPeriod: %s", err))
 	}
 
 	// ------------- Optional query parameter "cgm.timeCGMUsePercent" -------------
@@ -858,6 +858,62 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryHighPercent", ctx.QueryParams(), &params.CgmTimeInVeryHighPercent)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryHighPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeCGMUseRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeCGMUseRecords", ctx.QueryParams(), &params.CgmTimeCGMUseRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeCGMUseRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryLowRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryLowRecords", ctx.QueryParams(), &params.CgmTimeInVeryLowRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryLowRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInLowRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInLowRecords", ctx.QueryParams(), &params.CgmTimeInLowRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInLowRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInTargetRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInTargetRecords", ctx.QueryParams(), &params.CgmTimeInTargetRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInTargetRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInHighRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInHighRecords", ctx.QueryParams(), &params.CgmTimeInHighRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInHighRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryHighRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryHighRecords", ctx.QueryParams(), &params.CgmTimeInVeryHighRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryHighRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.averageDailyRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.averageDailyRecords", ctx.QueryParams(), &params.CgmAverageDailyRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.averageDailyRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.totalRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.totalRecords", ctx.QueryParams(), &params.CgmTotalRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.totalRecords: %s", err))
 	}
 
 	// ------------- Optional query parameter "cgm.lastUploadDateFrom" -------------
@@ -907,6 +963,55 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryHighPercent", ctx.QueryParams(), &params.BgmTimeInVeryHighPercent)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInVeryHighPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInVeryLowRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryLowRecords", ctx.QueryParams(), &params.BgmTimeInVeryLowRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInVeryLowRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInLowRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInLowRecords", ctx.QueryParams(), &params.BgmTimeInLowRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInLowRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInTargetRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInTargetRecords", ctx.QueryParams(), &params.BgmTimeInTargetRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInTargetRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInHighRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInHighRecords", ctx.QueryParams(), &params.BgmTimeInHighRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInHighRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInVeryHighRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryHighRecords", ctx.QueryParams(), &params.BgmTimeInVeryHighRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInVeryHighRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.averageDailyRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.averageDailyRecords", ctx.QueryParams(), &params.BgmAverageDailyRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.averageDailyRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.totalRecords" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.totalRecords", ctx.QueryParams(), &params.BgmTotalRecords)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.totalRecords: %s", err))
 	}
 
 	// ------------- Optional query parameter "bgm.lastUploadDateFrom" -------------

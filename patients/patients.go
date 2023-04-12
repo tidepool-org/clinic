@@ -89,7 +89,7 @@ type Filter struct {
 	BgmLastUploadDateFrom *time.Time
 	BgmLastUploadDateTo   *time.Time
 
-	Period *string
+	FilterPeriod *string
 
 	CgmTimeCGMUsePercentCmp       *string
 	CgmTimeCGMUsePercentValue     float64
@@ -104,6 +104,24 @@ type Filter struct {
 	CgmTimeInVeryHighPercentCmp   *string
 	CgmTimeInVeryHighPercentValue float64
 
+	CgmTimeCGMUseRecordsCmp       *string
+	CgmTimeCGMUseRecordsValue     float64
+	CgmTimeInVeryLowRecordsCmp    *string
+	CgmTimeInVeryLowRecordsValue  float64
+	CgmTimeInLowRecordsCmp        *string
+	CgmTimeInLowRecordsValue      float64
+	CgmTimeInTargetRecordsCmp     *string
+	CgmTimeInTargetRecordsValue   float64
+	CgmTimeInHighRecordsCmp       *string
+	CgmTimeInHighRecordsValue     float64
+	CgmTimeInVeryHighRecordsCmp   *string
+	CgmTimeInVeryHighRecordsValue float64
+
+	CgmTotalRecordsCmp          *string
+	CgmTotalRecordsValue        float64
+	CgmAverageDailyRecordsCmp   *string
+	CgmAverageDailyRecordsValue float64
+
 	BgmTimeInVeryLowPercentCmp    *string
 	BgmTimeInVeryLowPercentValue  float64
 	BgmTimeInLowPercentCmp        *string
@@ -114,6 +132,22 @@ type Filter struct {
 	BgmTimeInHighPercentValue     float64
 	BgmTimeInVeryHighPercentCmp   *string
 	BgmTimeInVeryHighPercentValue float64
+
+	BgmTimeInVeryLowRecordsCmp    *string
+	BgmTimeInVeryLowRecordsValue  float64
+	BgmTimeInLowRecordsCmp        *string
+	BgmTimeInLowRecordsValue      float64
+	BgmTimeInTargetRecordsCmp     *string
+	BgmTimeInTargetRecordsValue   float64
+	BgmTimeInHighRecordsCmp       *string
+	BgmTimeInHighRecordsValue     float64
+	BgmTimeInVeryHighRecordsCmp   *string
+	BgmTimeInVeryHighRecordsValue float64
+
+	BgmTotalRecordsCmp          *string
+	BgmTotalRecordsValue        float64
+	BgmAverageDailyRecordsCmp   *string
+	BgmAverageDailyRecordsValue float64
 }
 
 type Permission = map[string]interface{}
@@ -158,45 +192,71 @@ type LastRequestedDexcomConnectUpdate struct {
 }
 
 type CGMPeriod struct {
-	HasAverageGlucose             *bool `json:"hasAverageGlucose" bson:"hasAverageGlucose"`
-	HasGlucoseManagementIndicator *bool `json:"hasGlucoseManagementIndicator" bson:"hasGlucoseManagementIndicator"`
-	HasTimeCGMUsePercent          *bool `json:"hasTimeCGMUsePercent" bson:"hasTimeCGMUsePercent"`
-	HasTimeInTargetPercent        *bool `json:"hasTimeInTargetPercent" bson:"hasTimeInTargetPercent"`
-	HasTimeInHighPercent          *bool `json:"hasTimeInHighPercent" bson:"hasTimeInHighPercent"`
-	HasTimeInVeryHighPercent      *bool `json:"hasTimeInVeryHighPercent" bson:"hasTimeInVeryHighPercent"`
-	HasTimeInLowPercent           *bool `json:"hasTimeInLowPercent" bson:"hasTimeInLowPercent"`
-	HasTimeInVeryLowPercent       *bool `json:"hasTimeInVeryLowPercent" bson:"hasTimeInVeryLowPercent"`
+	HasAverageGlucose *bool           `json:"hasAverageGlucose" bson:"hasAverageGlucose"`
+	AverageGlucose    *AverageGlucose `json:"averageGlucose" bson:"averageGlucose"`
 
-	// actual values
-	TimeCGMUsePercent *float64 `json:"timeCGMUsePercent" bson:"timeCGMUsePercent"`
-	TimeCGMUseMinutes *int     `json:"timeCGMUseMinutes" bson:"timeCGMUseMinutes"`
-	TimeCGMUseRecords *int     `json:"timeCGMUseRecords" bson:"timeCGMUseRecords"`
+	HasGlucoseManagementIndicator *bool    `json:"hasGlucoseManagementIndicator" bson:"hasGlucoseManagementIndicator"`
+	GlucoseManagementIndicator    *float64 `json:"glucoseManagementIndicator" bson:"glucoseManagementIndicator"`
 
-	AverageGlucose             *AverageGlucose `json:"averageGlucose" bson:"averageGlucose"`
-	GlucoseManagementIndicator *float64        `json:"glucoseManagementIndicator" bson:"glucoseManagementIndicator"`
+	HasTotalRecords *bool `json:"hasTotalRecords" bson:"hasTotalRecords"`
+	TotalRecords    *int  `json:"totalRecords" bson:"totalRecords"`
 
-	TotalRecords        *int     `json:"totalRecords" bson:"totalRecords"`
-	AverageDailyRecords *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
+	HasAverageDailyRecords *bool    `json:"hasAverageDailyRecords" bson:"hasAverageDailyRecords"`
+	AverageDailyRecords    *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
 
-	TimeInTargetPercent *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
-	TimeInTargetMinutes *int     `json:"timeInTargetMinutes" bson:"timeInTargetMinutes"`
-	TimeInTargetRecords *int     `json:"timeInTargetRecords" bson:"timeInTargetRecords"`
+	HasTimeCGMUsePercent *bool    `json:"hasTimeCGMUsePercent" bson:"hasTimeCGMUsePercent"`
+	TimeCGMUsePercent    *float64 `json:"timeCGMUsePercent" bson:"timeCGMUsePercent"`
 
-	TimeInLowPercent *float64 `json:"timeInLowPercent" bson:"timeInLowPercent"`
-	TimeInLowMinutes *int     `json:"timeInLowMinutes" bson:"timeInLowMinutes"`
-	TimeInLowRecords *int     `json:"timeInLowRecords" bson:"timeInLowRecords"`
+	HasTimeCGMUseMinutes *bool `json:"hasTimeCGMUseMinutes" bson:"hasTimeCGMUseMinutes"`
+	TimeCGMUseMinutes    *int  `json:"timeCGMUseMinutes" bson:"timeCGMUseMinutes"`
 
-	TimeInVeryLowPercent *float64 `json:"timeInVeryLowPercent" bson:"timeInVeryLowPercent"`
-	TimeInVeryLowMinutes *int     `json:"timeInVeryLowMinutes" bson:"timeInVeryLowMinutes"`
-	TimeInVeryLowRecords *int     `json:"timeInVeryLowRecords" bson:"timeInVeryLowRecords"`
+	HasTimeCGMUseRecords *bool `json:"hasTimeCGMUseRecords" bson:"hasTimeCGMUseRecords"`
+	TimeCGMUseRecords    *int  `json:"timeCGMUseRecords" bson:"timeCGMUseRecords"`
 
-	TimeInHighPercent *float64 `json:"timeInHighPercent" bson:"timeInHighPercent"`
-	TimeInHighMinutes *int     `json:"timeInHighMinutes" bson:"timeInHighMinutes"`
-	TimeInHighRecords *int     `json:"timeInHighRecords" bson:"timeInHighRecords"`
+	HasTimeInTargetPercent *bool    `json:"hasTimeInTargetPercent" bson:"hasTimeInTargetPercent"`
+	TimeInTargetPercent    *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
 
-	TimeInVeryHighPercent *float64 `json:"timeInVeryHighPercent" bson:"timeInVeryHighPercent"`
-	TimeInVeryHighMinutes *int     `json:"timeInVeryHighMinutes" bson:"timeInVeryHighMinutes"`
-	TimeInVeryHighRecords *int     `json:"timeInVeryHighRecords" bson:"timeInVeryHighRecords"`
+	HasTimeInTargetMinutes *bool `json:"hasTimeInTargetMinutes" bson:"hasTimeInTargetMinutes"`
+	TimeInTargetMinutes    *int  `json:"timeInTargetMinutes" bson:"timeInTargetMinutes"`
+
+	HasTimeInTargetRecords *bool `json:"hasTimeInTargetRecords" bson:"hasTimeTimeInTargetRecords"`
+	TimeInTargetRecords    *int  `json:"timeInTargetRecords" bson:"timeInTargetRecords"`
+
+	HasTimeInLowPercent *bool    `json:"hasTimeInLowPercent" bson:"hasTimeInLowPercent"`
+	TimeInLowPercent    *float64 `json:"timeInLowPercent" bson:"timeInLowPercent"`
+
+	HasTimeInLowMinutes *bool `json:"hasTimeInLowMinutes" bson:"hasTimeInLowMinutes"`
+	TimeInLowMinutes    *int  `json:"timeInLowMinutes" bson:"timeInLowMinutes"`
+
+	HasTimeInLowRecords *bool `json:"hasTimeInLowRecords" bson:"hasTimeInLowRecords"`
+	TimeInLowRecords    *int  `json:"timeInLowRecords" bson:"timeInLowRecords"`
+
+	HasTimeInVeryLowPercent *bool    `json:"hasTimeInVeryLowPercent" bson:"hasTimeInVeryLowPercent"`
+	TimeInVeryLowPercent    *float64 `json:"timeInVeryLowPercent" bson:"timeInVeryLowPercent"`
+
+	HasTimeInVeryLowMinutes *bool `json:"hasTimeInVeryLowMinutes" bson:"hasTimeInVeryLowMinutes"`
+	TimeInVeryLowMinutes    *int  `json:"timeInVeryLowMinutes" bson:"timeInVeryLowMinutes"`
+
+	HasTimeInVeryLowRecords *bool `json:"hasTimeInVeryLowRecords" bson:"hasTimeInVeryLowRecords"`
+	TimeInVeryLowRecords    *int  `json:"timeInVeryLowRecords" bson:"timeInVeryLowRecords"`
+
+	HasTimeInHighPercent *bool    `json:"hasTimeInHighPercent" bson:"hasTimeInHighPercent"`
+	TimeInHighPercent    *float64 `json:"timeInHighPercent" bson:"timeInHighPercent"`
+
+	HasTimeInHighMinutes *bool `json:"hasTimeInHighMinutes" bson:"hasTimeInHighMinutes"`
+	TimeInHighMinutes    *int  `json:"timeInHighMinutes" bson:"timeInHighMinutes"`
+
+	HasTimeInHighRecords *bool `json:"hasTimeInHighRecords" bson:"hasTimeInHighRecords"`
+	TimeInHighRecords    *int  `json:"timeInHighRecords" bson:"timeInHighRecords"`
+
+	HasTimeInVeryHighPercent *bool    `json:"hasTimeInVeryHighPercent" bson:"hasTimeInVeryHighPercent"`
+	TimeInVeryHighPercent    *float64 `json:"timeInVeryHighPercent" bson:"timeInVeryHighPercent"`
+
+	HasTimeInVeryHighMinutes *bool `json:"hasTimeInVeryHighMinutes" bson:"hasTimeInVeryHighMinutes"`
+	TimeInVeryHighMinutes    *int  `json:"timeInVeryHighMinutes" bson:"timeInVeryHighMinutes"`
+
+	HasTimeInVeryHighRecords *bool `json:"hasTimeInVeryHighRecords" bson:"hasTimeInVeryHighRecords"`
+	TimeInVeryHighRecords    *int  `json:"timeInVeryHighRecords" bson:"timeInVeryHighRecords"`
 }
 
 type CGMStats struct {
@@ -207,33 +267,50 @@ type CGMStats struct {
 }
 
 type BGMPeriod struct {
-	HasAverageGlucose        *bool `json:"hasAverageGlucose" bson:"hasAverageGlucose"`
-	HasTimeInTargetPercent   *bool `json:"hasTimeInTargetPercent" bson:"hasTimeInTargetPercent"`
-	HasTimeInHighPercent     *bool `json:"hasTimeInHighPercent" bson:"hasTimeInHighPercent"`
-	HasTimeInVeryHighPercent *bool `json:"hasTimeInVeryHighPercent" bson:"hasTimeInVeryHighPercent"`
-	HasTimeInLowPercent      *bool `json:"hasTimeInLowPercent" bson:"hasTimeInLowPercent"`
-	HasTimeInVeryLowPercent  *bool `json:"hasTimeInVeryLowPercent" bson:"hasTimeInVeryLowPercent"`
+	HasAverageGlucose *bool           `json:"hasAverageGlucose" bson:"hasAverageGlucose"`
+	AverageGlucose    *AverageGlucose `json:"averageGlucose" bson:"averageGlucose"`
 
-	// actual values
-	AverageGlucose *AverageGlucose `json:"averageGlucose" bson:"averageGlucose"`
+	HasTotalRecords *bool `json:"hasTotalRecords" bson:"hasTotalRecords"`
+	TotalRecords    *int  `json:"totalRecords" bson:"totalRecords"`
 
-	TotalRecords        *int     `json:"totalRecords" bson:"totalRecords"`
-	AverageDailyRecords *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
+	HasAverageDailyRecords *bool    `json:"hasAverageDailyRecords" bson:"hasAverageDailyRecords"`
+	AverageDailyRecords    *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
 
-	TimeInTargetPercent *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
-	TimeInTargetRecords *int     `json:"timeInTargetRecords" bson:"timeInTargetRecords"`
+	HasTimeCGMUsePercent *bool    `json:"hasTimeCGMUsePercent" bson:"hasTimeCGMUsePercent"`
+	TimeCGMUsePercent    *float64 `json:"timeCGMUsePercent" bson:"timeCGMUsePercent"`
 
-	TimeInLowPercent *float64 `json:"timeInLowPercent" bson:"timeInLowPercent"`
-	TimeInLowRecords *int     `json:"timeInLowRecords" bson:"timeInLowRecords"`
+	HasTimeCGMUseRecords *bool `json:"hasTimeCGMUseRecords" bson:"hasTimeCGMUseRecords"`
+	TimeCGMUseRecords    *int  `json:"timeCGMUseRecords" bson:"timeCGMUseRecords"`
 
-	TimeInVeryLowPercent *float64 `json:"timeInVeryLowPercent" bson:"timeInVeryLowPercent"`
-	TimeInVeryLowRecords *int     `json:"timeInVeryLowRecords" bson:"timeInVeryLowRecords"`
+	HasTimeInTargetPercent *bool    `json:"hasTimeInTargetPercent" bson:"hasTimeInTargetPercent"`
+	TimeInTargetPercent    *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
 
-	TimeInHighPercent *float64 `json:"timeInHighPercent" bson:"timeInHighPercent"`
-	TimeInHighRecords *int     `json:"timeInHighRecords" bson:"timeInHighRecords"`
+	HasTimeInTargetRecords *bool `json:"hasTimeInTargetRecords" bson:"hasTimeTimeInTargetRecords"`
+	TimeInTargetRecords    *int  `json:"timeInTargetRecords" bson:"timeInTargetRecords"`
 
-	TimeInVeryHighPercent *float64 `json:"timeInVeryHighPercent" bson:"timeInVeryHighPercent"`
-	TimeInVeryHighRecords *int     `json:"timeInVeryHighRecords" bson:"timeInVeryHighRecords"`
+	HasTimeInLowPercent *bool    `json:"hasTimeInLowPercent" bson:"hasTimeInLowPercent"`
+	TimeInLowPercent    *float64 `json:"timeInLowPercent" bson:"timeInLowPercent"`
+
+	HasTimeInLowRecords *bool `json:"hasTimeInLowRecords" bson:"hasTimeInLowRecords"`
+	TimeInLowRecords    *int  `json:"timeInLowRecords" bson:"timeInLowRecords"`
+
+	HasTimeInVeryLowPercent *bool    `json:"hasTimeInVeryLowPercent" bson:"hasTimeInVeryLowPercent"`
+	TimeInVeryLowPercent    *float64 `json:"timeInVeryLowPercent" bson:"timeInVeryLowPercent"`
+
+	HasTimeInVeryLowRecords *bool `json:"hasTimeInVeryLowRecords" bson:"hasTimeInVeryLowRecords"`
+	TimeInVeryLowRecords    *int  `json:"timeInVeryLowRecords" bson:"timeInVeryLowRecords"`
+
+	HasTimeInHighPercent *bool    `json:"hasTimeInHighPercent" bson:"hasTimeInHighPercent"`
+	TimeInHighPercent    *float64 `json:"timeInHighPercent" bson:"timeInHighPercent"`
+
+	HasTimeInHighRecords *bool `json:"hasTimeInHighRecords" bson:"hasTimeInHighRecords"`
+	TimeInHighRecords    *int  `json:"timeInHighRecords" bson:"timeInHighRecords"`
+
+	HasTimeInVeryHighPercent *bool    `json:"hasTimeInVeryHighPercent" bson:"hasTimeInVeryHighPercent"`
+	TimeInVeryHighPercent    *float64 `json:"timeInVeryHighPercent" bson:"timeInVeryHighPercent"`
+
+	HasTimeInVeryHighRecords *bool `json:"hasTimeInVeryHighRecords" bson:"hasTimeInVeryHighRecords"`
+	TimeInVeryHighRecords    *int  `json:"timeInVeryHighRecords" bson:"timeInVeryHighRecords"`
 }
 
 type BGMStats struct {

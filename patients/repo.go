@@ -566,8 +566,6 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 }
 
 func generateListFilterQuery(filter *Filter) bson.M {
-	fmt.Println("Starting filter: ", *filter)
-
 	selector := bson.M{}
 	if filter.ClinicId != nil {
 		clinicId := *filter.ClinicId
@@ -623,10 +621,7 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		selector["summary.bgmStats.dates.lastUploadDate"] = bgmLastUploadDate
 	}
 
-	if filter.Period != nil && *filter.Period != "" {
-
-		fmt.Println("Period:", *filter.Period)
-
+	if filter.FilterPeriod != nil && *filter.FilterPeriod != "" {
 		var filterMap = map[string]map[string]FilterPair{
 			"cgm": {
 				"timeCGMUsePercent":     {filter.CgmTimeCGMUsePercentCmp, filter.CgmTimeCGMUsePercentValue},
@@ -648,7 +643,7 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		for t, fields := range filterMap {
 			for field, f := range fields {
 				MaybeApplyNumericFilter(selector,
-					*filter.Period,
+					*filter.FilterPeriod,
 					t,
 					field,
 					f.Cmp,
@@ -657,8 +652,6 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			}
 		}
 	}
-
-	fmt.Println("generated filter query: ", selector)
 
 	return selector
 }

@@ -462,34 +462,64 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 				destPeriods[i].GlucoseManagementIndicator = summary.CGM.Periods[i].GlucoseManagementIndicator
 				destPeriods[i].HasGlucoseManagementIndicator = summary.CGM.Periods[i].HasGlucoseManagementIndicator
 
-				destPeriods[i].TimeCGMUseMinutes = summary.CGM.Periods[i].TimeCGMUseMinutes
-				destPeriods[i].TimeCGMUsePercent = summary.CGM.Periods[i].TimeCGMUsePercent
+				destPeriods[i].HasAverageDailyRecords = summary.CGM.Periods[i].HasAverageDailyRecords
+				destPeriods[i].AverageDailyRecords = summary.CGM.Periods[i].AverageDailyRecords
+
+				destPeriods[i].HasTotalRecords = summary.CGM.Periods[i].HasTotalRecords
+				destPeriods[i].TotalRecords = summary.CGM.Periods[i].TotalRecords
+
 				destPeriods[i].HasTimeCGMUsePercent = summary.CGM.Periods[i].HasTimeCGMUsePercent
+				destPeriods[i].TimeCGMUsePercent = summary.CGM.Periods[i].TimeCGMUsePercent
+
+				destPeriods[i].HasTimeCGMUseMinutes = summary.CGM.Periods[i].HasTimeCGMUseMinutes
+				destPeriods[i].TimeCGMUseMinutes = summary.CGM.Periods[i].TimeCGMUseMinutes
+
+				destPeriods[i].HasTimeCGMUseRecords = summary.CGM.Periods[i].HasTimeCGMUseRecords
 				destPeriods[i].TimeCGMUseRecords = summary.CGM.Periods[i].TimeCGMUseRecords
 
-				destPeriods[i].TimeInHighMinutes = summary.CGM.Periods[i].TimeInHighMinutes
-				destPeriods[i].TimeInHighPercent = summary.CGM.Periods[i].TimeInHighPercent
 				destPeriods[i].HasTimeInHighPercent = summary.CGM.Periods[i].HasTimeInHighPercent
+				destPeriods[i].TimeInHighPercent = summary.CGM.Periods[i].TimeInHighPercent
+
+				destPeriods[i].HasTimeInHighMinutes = summary.CGM.Periods[i].HasTimeInHighMinutes
+				destPeriods[i].TimeInHighMinutes = summary.CGM.Periods[i].TimeInHighMinutes
+
+				destPeriods[i].HasTimeInHighRecords = summary.CGM.Periods[i].HasTimeInHighRecords
 				destPeriods[i].TimeInHighRecords = summary.CGM.Periods[i].TimeInHighRecords
 
-				destPeriods[i].TimeInLowMinutes = summary.CGM.Periods[i].TimeInLowMinutes
-				destPeriods[i].TimeInLowPercent = summary.CGM.Periods[i].TimeInLowPercent
 				destPeriods[i].HasTimeInLowPercent = summary.CGM.Periods[i].HasTimeInLowPercent
+				destPeriods[i].TimeInLowPercent = summary.CGM.Periods[i].TimeInLowPercent
+
+				destPeriods[i].HasTimeInLowMinutes = summary.CGM.Periods[i].HasTimeInLowMinutes
+				destPeriods[i].TimeInLowMinutes = summary.CGM.Periods[i].TimeInLowMinutes
+
+				destPeriods[i].HasTimeInLowRecords = summary.CGM.Periods[i].HasTimeInLowRecords
 				destPeriods[i].TimeInLowRecords = summary.CGM.Periods[i].TimeInLowRecords
 
-				destPeriods[i].TimeInTargetMinutes = summary.CGM.Periods[i].TimeInTargetMinutes
-				destPeriods[i].TimeInTargetPercent = summary.CGM.Periods[i].TimeInTargetPercent
 				destPeriods[i].HasTimeInTargetPercent = summary.CGM.Periods[i].HasTimeInTargetPercent
+				destPeriods[i].TimeInTargetPercent = summary.CGM.Periods[i].TimeInTargetPercent
+
+				destPeriods[i].HasTimeInTargetRecords = summary.CGM.Periods[i].HasTimeInTargetRecords
 				destPeriods[i].TimeInTargetRecords = summary.CGM.Periods[i].TimeInTargetRecords
 
-				destPeriods[i].TimeInVeryHighMinutes = summary.CGM.Periods[i].TimeInVeryHighMinutes
-				destPeriods[i].TimeInVeryHighPercent = summary.CGM.Periods[i].TimeInVeryHighPercent
+				destPeriods[i].HasTimeInTargetMinutes = summary.CGM.Periods[i].HasTimeInTargetMinutes
+				destPeriods[i].TimeInTargetMinutes = summary.CGM.Periods[i].TimeInTargetMinutes
+
 				destPeriods[i].HasTimeInVeryHighPercent = summary.CGM.Periods[i].HasTimeInVeryHighPercent
+				destPeriods[i].TimeInVeryHighPercent = summary.CGM.Periods[i].TimeInVeryHighPercent
+
+				destPeriods[i].HasTimeInVeryHighMinutes = summary.CGM.Periods[i].HasTimeInVeryHighMinutes
+				destPeriods[i].TimeInVeryHighMinutes = summary.CGM.Periods[i].TimeInVeryHighMinutes
+
+				destPeriods[i].HasTimeInVeryHighRecords = summary.CGM.Periods[i].HasTimeInVeryHighRecords
 				destPeriods[i].TimeInVeryHighRecords = summary.CGM.Periods[i].TimeInVeryHighRecords
 
-				destPeriods[i].TimeInVeryLowMinutes = summary.CGM.Periods[i].TimeInVeryLowMinutes
-				destPeriods[i].TimeInVeryLowPercent = summary.CGM.Periods[i].TimeInVeryLowPercent
 				destPeriods[i].HasTimeInVeryLowPercent = summary.CGM.Periods[i].HasTimeInVeryLowPercent
+				destPeriods[i].TimeInVeryLowPercent = summary.CGM.Periods[i].TimeInVeryLowPercent
+
+				destPeriods[i].HasTimeInVeryLowMinutes = summary.CGM.Periods[i].HasTimeInVeryLowMinutes
+				destPeriods[i].TimeInVeryLowMinutes = summary.CGM.Periods[i].TimeInVeryLowMinutes
+
+				destPeriods[i].HasTimeInVeryLowRecords = summary.CGM.Periods[i].HasTimeInVeryLowRecords
 				destPeriods[i].TimeInVeryLowRecords = summary.CGM.Periods[i].TimeInVeryLowRecords
 			}
 		}
@@ -549,24 +579,40 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 				}
 				destPeriods[i].HasAverageGlucose = summary.BGM.Periods[i].HasAverageGlucose
 
-				destPeriods[i].TimeInHighPercent = summary.BGM.Periods[i].TimeInHighPercent
+				destPeriods[i].HasAverageDailyRecords = summary.BGM.Periods[i].HasAverageDailyRecords
+				destPeriods[i].AverageDailyRecords = summary.BGM.Periods[i].AverageDailyRecords
+
+				destPeriods[i].HasTotalRecords = summary.BGM.Periods[i].HasTotalRecords
+				destPeriods[i].TotalRecords = summary.BGM.Periods[i].TotalRecords
+
 				destPeriods[i].HasTimeInHighPercent = summary.BGM.Periods[i].HasTimeInHighPercent
+				destPeriods[i].TimeInHighPercent = summary.BGM.Periods[i].TimeInHighPercent
+
+				destPeriods[i].HasTimeInHighRecords = summary.BGM.Periods[i].HasTimeInHighRecords
 				destPeriods[i].TimeInHighRecords = summary.BGM.Periods[i].TimeInHighRecords
 
-				destPeriods[i].TimeInLowPercent = summary.BGM.Periods[i].TimeInLowPercent
 				destPeriods[i].HasTimeInLowPercent = summary.BGM.Periods[i].HasTimeInLowPercent
+				destPeriods[i].TimeInLowPercent = summary.BGM.Periods[i].TimeInLowPercent
+
+				destPeriods[i].HasTimeInLowRecords = summary.BGM.Periods[i].HasTimeInLowRecords
 				destPeriods[i].TimeInLowRecords = summary.BGM.Periods[i].TimeInLowRecords
 
-				destPeriods[i].TimeInTargetPercent = summary.BGM.Periods[i].TimeInTargetPercent
 				destPeriods[i].HasTimeInTargetPercent = summary.BGM.Periods[i].HasTimeInTargetPercent
+				destPeriods[i].TimeInTargetPercent = summary.BGM.Periods[i].TimeInTargetPercent
+
+				destPeriods[i].HasTimeInTargetRecords = summary.BGM.Periods[i].HasTimeInTargetRecords
 				destPeriods[i].TimeInTargetRecords = summary.BGM.Periods[i].TimeInTargetRecords
 
-				destPeriods[i].TimeInVeryHighPercent = summary.BGM.Periods[i].TimeInVeryHighPercent
 				destPeriods[i].HasTimeInVeryHighPercent = summary.BGM.Periods[i].HasTimeInVeryHighPercent
+				destPeriods[i].TimeInVeryHighPercent = summary.BGM.Periods[i].TimeInVeryHighPercent
+
+				destPeriods[i].HasTimeInVeryHighRecords = summary.BGM.Periods[i].HasTimeInVeryHighRecords
 				destPeriods[i].TimeInVeryHighRecords = summary.BGM.Periods[i].TimeInVeryHighRecords
 
-				destPeriods[i].TimeInVeryLowPercent = summary.BGM.Periods[i].TimeInVeryLowPercent
 				destPeriods[i].HasTimeInVeryLowPercent = summary.BGM.Periods[i].HasTimeInVeryLowPercent
+				destPeriods[i].TimeInVeryLowPercent = summary.BGM.Periods[i].TimeInVeryLowPercent
+
+				destPeriods[i].HasTimeInVeryLowRecords = summary.BGM.Periods[i].HasTimeInVeryLowRecords
 				destPeriods[i].TimeInVeryLowRecords = summary.BGM.Periods[i].TimeInVeryLowRecords
 			}
 		}
@@ -804,27 +850,71 @@ func ParseSort(sort *Sort, t *string, period *string) ([]*store.Sort, error) {
 		"averageDailyRecords":        "summary." + *t + "Stats.periods." + *period + ".averageDailyRecords",
 		"totalRecords":               "summary." + *t + "Stats.periods." + *period + ".totalRecords",
 
-		"hasLastUploadDate":             "summary." + *t + "Stats.periods." + *period + ".hasLastUploadDate",
-		"hasTimeCGMUsePercent":          "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUsePercent",
+		"hasLastUploadDate": "summary." + *t + "Stats.periods." + *period + ".hasLastUploadDate",
+
 		"hasGlucoseManagementIndicator": "summary." + *t + "Stats.periods." + *period + ".hasGlucoseManagementIndicator",
-		"hasAverageGlucose":             "summary." + *t + "Stats.periods." + *period + ".hasAverageGlucose",
-		"hasTimeInTargetPercent":        "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetPercent",
-		"hasTimeInLowPercent":           "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowPercent",
-		"hasTimeInVeryLowPercent":       "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowPercent",
-		"hasTimeInHighPercent":          "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighPercent",
-		"hasTimeInVeryHighPercent":      "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighPercent",
+
+		"hasAverageGlucose": "summary." + *t + "Stats.periods." + *period + ".hasAverageGlucose",
+
+		"hasTimeCGMUsePercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUsePercent",
+		"hasTimeCGMUseRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUseRecords",
+		"hasTimeCGMUseMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUseMinutes",
+
+		"hasTimeInTargetPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetPercent",
+		"hasTimeInTargetRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetRecords",
+		"hasTimeInTargetMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetMinutes",
+
+		"hasTimeInLowPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowPercent",
+		"hasTimeInLowRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowRecords",
+		"hasTimeInLowMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowMinutes",
+
+		"hasTimeInVeryLowPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowPercent",
+		"hasTimeInVeryLowRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowRecords",
+		"hasTimeInVeryLowMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowMinutes",
+
+		"hasTimeInHighPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighPercent",
+		"hasTimeInHighRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighRecords",
+		"hasTimeInHighMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighMinutes",
+
+		"hasTimeInVeryHighPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighPercent",
+		"hasTimeInVeryHighRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighRecords",
+		"hasTimeInVeryHighMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighMinutes",
+
+		"hasAverageDailyRecords": "summary." + *t + "Stats.periods." + *period + ".hasAverageDailyRecords",
+
+		"hasTotalRecords": "summary." + *t + "Stats.periods." + *period + ".hasTotalRecords",
 	}
 
 	var extraSort = map[string]string{
 		expandedSorts["lastUploadDate"]:             expandedSorts["hasLastUploadDate"],
-		expandedSorts["timeCGMUsePercent"]:          expandedSorts["hasTimeCGMUsePercent"],
 		expandedSorts["glucoseManagementIndicator"]: expandedSorts["hasGlucoseManagementIndicator"],
 		expandedSorts["averageGlucose"]:             expandedSorts["hasAverageGlucose"],
-		expandedSorts["timeInTargetPercent"]:        expandedSorts["hasTimeInTargetPercent"],
-		expandedSorts["timeInLowPercent"]:           expandedSorts["hasTimeInLowPercent"],
-		expandedSorts["timeInVeryLowPercent"]:       expandedSorts["hasTimeInVeryLowPercent"],
-		expandedSorts["timeInHighPercent"]:          expandedSorts["hasTimeInHighPercent"],
-		expandedSorts["timeInVeryHighPercent"]:      expandedSorts["hasTimeInVeryHighPercent"],
+		expandedSorts["totalRecords"]:               expandedSorts["hasTotalRecords"],
+		expandedSorts["averageDailyRecords"]:        expandedSorts["hasAverageDailyRecords"],
+
+		expandedSorts["timeCGMUsePercent"]: expandedSorts["hasTimeCGMUsePercent"],
+		expandedSorts["timeCGMUseRecords"]: expandedSorts["hasTimeCGMUseRecords"],
+		expandedSorts["timeCGMUseMinutes"]: expandedSorts["hasTimeCGMUseMinutes"],
+
+		expandedSorts["timeInTargetPercent"]: expandedSorts["hasTimeInTargetPercent"],
+		expandedSorts["timeInTargetRecords"]: expandedSorts["hasTimeInTargetRecords"],
+		expandedSorts["timeInTargetMinutes"]: expandedSorts["hasTimeInTargetMinutes"],
+
+		expandedSorts["timeInLowPercent"]: expandedSorts["hasTimeInLowPercent"],
+		expandedSorts["timeInLowRecords"]: expandedSorts["hasTimeInLowRecords"],
+		expandedSorts["timeInLowMinutes"]: expandedSorts["hasTimeInLowMinutes"],
+
+		expandedSorts["timeInVeryLowPercent"]: expandedSorts["hasTimeInVeryLowPercent"],
+		expandedSorts["timeInVeryLowRecords"]: expandedSorts["hasTimeInVeryLowRecords"],
+		expandedSorts["timeInVeryLowMinutes"]: expandedSorts["hasTimeInVeryLowMinutes"],
+
+		expandedSorts["timeInHighPercent"]: expandedSorts["hasTimeInHighPercent"],
+		expandedSorts["timeInHighRecords"]: expandedSorts["hasTimeInHighRecords"],
+		expandedSorts["timeInHighMinutes"]: expandedSorts["hasTimeInHighMinutes"],
+
+		expandedSorts["timeInVeryHighPercent"]: expandedSorts["hasTimeInVeryHighPercent"],
+		expandedSorts["timeInVeryHighRecords"]: expandedSorts["hasTimeInVeryHighRecords"],
+		expandedSorts["timeInVeryHighMinutes"]: expandedSorts["hasTimeInVeryHighMinutes"],
 	}
 
 	// expand the original param now that we are done using it as a map key
@@ -851,16 +941,25 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"glucoseManagementIndicator": {},
 		"averageGlucose":             {},
 
-		"timeInLowPercent":      {},
-		"timeInLowRecords":      {},
-		"timeInVeryLowPercent":  {},
-		"timeInVeryLowRecords":  {},
-		"timeInHighPercent":     {},
-		"timeInHighRecords":     {},
+		"timeInLowPercent": {},
+		"timeInLowRecords": {},
+		"timeInLowMinutes": {},
+
+		"timeInVeryLowPercent": {},
+		"timeInVeryLowRecords": {},
+		"timeInVeryLowMinutes": {},
+
+		"timeInHighPercent": {},
+		"timeInHighMinutes": {},
+		"timeInHighRecords": {},
+
 		"timeInVeryHighPercent": {},
 		"timeInVeryHighRecords": {},
-		"timeInTargetPercent":   {},
-		"timeInTargetRecords":   {},
+		"timeInVeryHighMinutes": {},
+
+		"timeInTargetPercent": {},
+		"timeInTargetRecords": {},
+		"timeInTargetMinutes": {},
 
 		"totalRecords":        {},
 		"averageDailyRecords": {},
