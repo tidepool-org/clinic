@@ -276,40 +276,71 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				}
 
 				patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
-					TimeCGMUsePercent:    sourcePeriods[i].TimeCGMUsePercent,
 					HasTimeCGMUsePercent: sourcePeriods[i].HasTimeCGMUsePercent,
+					TimeCGMUsePercent:    sourcePeriods[i].TimeCGMUsePercent,
+
+					HasTimeCGMUseMinutes: sourcePeriods[i].HasTimeCGMUseMinutes,
 					TimeCGMUseMinutes:    sourcePeriods[i].TimeCGMUseMinutes,
+
+					HasTimeCGMUseRecords: sourcePeriods[i].HasTimeCGMUseRecords,
 					TimeCGMUseRecords:    sourcePeriods[i].TimeCGMUseRecords,
 
-					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
 					HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
+					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
+
+					HasTimeInVeryLowMinutes: sourcePeriods[i].HasTimeInVeryLowMinutes,
 					TimeInVeryLowMinutes:    sourcePeriods[i].TimeInVeryLowMinutes,
+
+					HasTimeInVeryLowRecords: sourcePeriods[i].HasTimeInVeryLowRecords,
 					TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
 
-					TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
 					HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
+					TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
+
+					HasTimeInLowMinutes: sourcePeriods[i].HasTimeInLowMinutes,
 					TimeInLowMinutes:    sourcePeriods[i].TimeInLowMinutes,
+
+					HasTimeInLowRecords: sourcePeriods[i].HasTimeInLowRecords,
 					TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
 
-					TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
 					HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
+					TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
+
+					HasTimeInTargetMinutes: sourcePeriods[i].HasTimeInTargetMinutes,
 					TimeInTargetMinutes:    sourcePeriods[i].TimeInTargetMinutes,
+
+					HasTimeInTargetRecords: sourcePeriods[i].HasTimeInTargetRecords,
 					TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
 
-					TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
 					HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
+					TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
+
+					HasTimeInHighMinutes: sourcePeriods[i].HasTimeInHighMinutes,
 					TimeInHighMinutes:    sourcePeriods[i].TimeInHighMinutes,
+
+					HasTimeInHighRecords: sourcePeriods[i].HasTimeInHighRecords,
 					TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
 
-					TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
 					HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
+					TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
+
+					HasTimeInVeryHighMinutes: sourcePeriods[i].HasTimeInVeryHighMinutes,
 					TimeInVeryHighMinutes:    sourcePeriods[i].TimeInVeryHighMinutes,
+
+					HasTimeInVeryHighRecords: sourcePeriods[i].HasTimeInVeryHighRecords,
 					TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
 
-					GlucoseManagementIndicator:    sourcePeriods[i].GlucoseManagementIndicator,
 					HasGlucoseManagementIndicator: sourcePeriods[i].HasGlucoseManagementIndicator,
-					AverageGlucose:                averageGlucose,
-					HasAverageGlucose:             sourcePeriods[i].HasAverageGlucose,
+					GlucoseManagementIndicator:    sourcePeriods[i].GlucoseManagementIndicator,
+
+					HasAverageGlucose: sourcePeriods[i].HasAverageGlucose,
+					AverageGlucose:    averageGlucose,
+
+					HasTotalRecords: sourcePeriods[i].HasTotalRecords,
+					TotalRecords:    sourcePeriods[i].TotalRecords,
+
+					HasAverageDailyRecords: sourcePeriods[i].HasAverageDailyRecords,
+					AverageDailyRecords:    sourcePeriods[i].AverageDailyRecords,
 				}
 			}
 		}
@@ -367,28 +398,44 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				}
 
 				patientSummary.BGM.Periods[i] = &patients.BGMPeriod{
-					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
 					HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
+					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
+
+					HasTimeInVeryLowRecords: sourcePeriods[i].HasTimeInVeryLowRecords,
 					TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
 
-					TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
 					HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
+					TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
+
+					HasTimeInLowRecords: sourcePeriods[i].HasTimeInLowRecords,
 					TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
 
-					TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
 					HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
+					TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
+
+					HasTimeInTargetRecords: sourcePeriods[i].HasTimeInTargetRecords,
 					TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
 
-					TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
 					HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
+					TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
+
+					HasTimeInHighRecords: sourcePeriods[i].HasTimeInHighRecords,
 					TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
 
-					TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
 					HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
+					TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
+
+					HasTimeInVeryHighRecords: sourcePeriods[i].HasTimeInVeryHighRecords,
 					TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
 
-					AverageGlucose:    averageGlucose,
 					HasAverageGlucose: sourcePeriods[i].HasAverageGlucose,
+					AverageGlucose:    averageGlucose,
+
+					HasTotalRecords: sourcePeriods[i].HasTotalRecords,
+					TotalRecords:    sourcePeriods[i].TotalRecords,
+
+					HasAverageDailyRecords: sourcePeriods[i].HasAverageDailyRecords,
+					AverageDailyRecords:    sourcePeriods[i].AverageDailyRecords,
 				}
 			}
 		}
