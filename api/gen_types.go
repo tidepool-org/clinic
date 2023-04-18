@@ -542,7 +542,10 @@ type PatientSummaryConfig struct {
 type PatientSummaryDates struct {
 	// Date of the first included value
 	FirstData         *time.Time `json:"firstData,omitempty"`
+	HasFirstData      *bool      `json:"hasFirstData,omitempty"`
+	HasLastData       *bool      `json:"hasLastData,omitempty"`
 	HasLastUploadDate *bool      `json:"hasLastUploadDate,omitempty"`
+	HasOutdatedSince  *bool      `json:"hasOutdatedSince,omitempty"`
 
 	// Date of the last calculated value
 	LastData *time.Time `json:"lastData,omitempty"`

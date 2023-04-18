@@ -331,12 +331,19 @@ type Config struct {
 }
 
 type Dates struct {
+	LastUpdatedDate *time.Time `json:"lastUpdatedDate" bson:"lastUpdatedDate"`
+
 	HasLastUploadDate *bool      `json:"hasLastUploadDate" bson:"hasLastUploadDate"`
 	LastUploadDate    *time.Time `json:"lastUploadDate" bson:"lastUploadDate"`
-	LastUpdatedDate   *time.Time `json:"lastUpdatedDate" bson:"lastUpdatedDate"`
-	FirstData         *time.Time `json:"firstData" bson:"firstData"`
-	LastData          *time.Time `json:"lastData" bson:"lastData"`
-	OutdatedSince     *time.Time `json:"outdatedSince" bson:"outdatedSince"`
+
+	HasFirstData *bool      `json:"hasFirstData" bson:"hasFirstData"`
+	FirstData    *time.Time `json:"firstData" bson:"firstData"`
+
+	HasLastData *bool      `json:"hasLastData" bson:"hasLastData"`
+	LastData    *time.Time `json:"lastData" bson:"lastData"`
+
+	HasOutdatedSince *bool      `json:"hasOutdatedSince" bson:"hasOutdatedSince"`
+	OutdatedSince    *time.Time `json:"outdatedSince" bson:"outdatedSince"`
 }
 
 type Summary struct {

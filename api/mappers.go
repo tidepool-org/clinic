@@ -231,12 +231,19 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 
 		if dto.CgmStats.Dates != nil {
 			patientSummary.CGM.Dates = &patients.Dates{
+				LastUpdatedDate: dto.CgmStats.Dates.LastUpdatedDate,
+
 				HasLastUploadDate: dto.CgmStats.Dates.HasLastUploadDate,
 				LastUploadDate:    dto.CgmStats.Dates.LastUploadDate,
-				LastUpdatedDate:   dto.CgmStats.Dates.LastUpdatedDate,
-				OutdatedSince:     dto.CgmStats.Dates.OutdatedSince,
-				FirstData:         dto.CgmStats.Dates.FirstData,
-				LastData:          dto.CgmStats.Dates.LastData,
+
+				HasOutdatedSince: dto.CgmStats.Dates.HasOutdatedSince,
+				OutdatedSince:    dto.CgmStats.Dates.OutdatedSince,
+
+				HasFirstData: dto.CgmStats.Dates.HasFirstData,
+				FirstData:    dto.CgmStats.Dates.FirstData,
+
+				HasLastData: dto.CgmStats.Dates.HasLastData,
+				LastData:    dto.CgmStats.Dates.LastData,
 			}
 		}
 
@@ -363,12 +370,19 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		}
 		if dto.BgmStats.Dates != nil {
 			patientSummary.BGM.Dates = &patients.Dates{
+				LastUpdatedDate: dto.BgmStats.Dates.LastUpdatedDate,
+
 				HasLastUploadDate: dto.BgmStats.Dates.HasLastUploadDate,
 				LastUploadDate:    dto.BgmStats.Dates.LastUploadDate,
-				LastUpdatedDate:   dto.BgmStats.Dates.LastUpdatedDate,
-				OutdatedSince:     dto.BgmStats.Dates.OutdatedSince,
-				FirstData:         dto.BgmStats.Dates.FirstData,
-				LastData:          dto.BgmStats.Dates.LastData,
+
+				HasOutdatedSince: dto.BgmStats.Dates.HasOutdatedSince,
+				OutdatedSince:    dto.BgmStats.Dates.OutdatedSince,
+
+				HasFirstData: dto.BgmStats.Dates.HasFirstData,
+				FirstData:    dto.BgmStats.Dates.FirstData,
+
+				HasLastData: dto.BgmStats.Dates.HasLastData,
+				LastData:    dto.BgmStats.Dates.LastData,
 			}
 		}
 
@@ -469,12 +483,19 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 		if summary.CGM.Dates != nil {
 			patientSummary.CgmStats.Dates = &PatientSummaryDates{
-				FirstData:         summary.CGM.Dates.FirstData,
+				LastUpdatedDate: summary.CGM.Dates.LastUpdatedDate,
+
+				HasFirstData: summary.CGM.Dates.HasFirstData,
+				FirstData:    summary.CGM.Dates.FirstData,
+
 				HasLastUploadDate: summary.CGM.Dates.HasLastUploadDate,
-				LastData:          summary.CGM.Dates.LastData,
-				LastUpdatedDate:   summary.CGM.Dates.LastUpdatedDate,
 				LastUploadDate:    summary.CGM.Dates.LastUploadDate,
-				OutdatedSince:     summary.CGM.Dates.OutdatedSince,
+
+				HasLastData: summary.CGM.Dates.HasLastData,
+				LastData:    summary.CGM.Dates.LastData,
+
+				HasOutdatedSince: summary.CGM.Dates.HasOutdatedSince,
+				OutdatedSince:    summary.CGM.Dates.OutdatedSince,
 			}
 		}
 
@@ -589,12 +610,19 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		}
 		if summary.BGM.Dates != nil {
 			patientSummary.BgmStats.Dates = &PatientSummaryDates{
-				FirstData:         summary.BGM.Dates.FirstData,
+				LastUpdatedDate: summary.BGM.Dates.LastUpdatedDate,
+
+				HasFirstData: summary.BGM.Dates.HasFirstData,
+				FirstData:    summary.BGM.Dates.FirstData,
+
 				HasLastUploadDate: summary.BGM.Dates.HasLastUploadDate,
-				LastData:          summary.BGM.Dates.LastData,
-				LastUpdatedDate:   summary.BGM.Dates.LastUpdatedDate,
 				LastUploadDate:    summary.BGM.Dates.LastUploadDate,
-				OutdatedSince:     summary.BGM.Dates.OutdatedSince,
+
+				HasLastData: summary.BGM.Dates.HasLastData,
+				LastData:    summary.BGM.Dates.LastData,
+
+				HasOutdatedSince: summary.BGM.Dates.HasOutdatedSince,
+				OutdatedSince:    summary.BGM.Dates.OutdatedSince,
 			}
 		}
 
@@ -880,60 +908,93 @@ func ParseSort(sort *Sort, t *string, period *string) ([]*store.Sort, error) {
 	}
 
 	var expandedSorts = map[string]string{
-		"lastUploadDate":             "summary." + *t + "Stats.dates.lastUploadDate",
-		"averageGlucose":             "summary." + *t + "Stats.periods." + *period + ".averageGlucose.value",
-		"timeCGMUsePercent":          "summary." + *t + "Stats.periods." + *period + ".timeCGMUsePercent",
-		"glucoseManagementIndicator": "summary." + *t + "Stats.periods." + *period + ".glucoseManagementIndicator",
-		"timeInTargetPercent":        "summary." + *t + "Stats.periods." + *period + ".timeInTargetPercent",
-		"timeInTargetRecords":        "summary." + *t + "Stats.periods." + *period + ".timeInTargetRecords",
-		"timeInLowPercent":           "summary." + *t + "Stats.periods." + *period + ".timeInLowPercent",
-		"timeInLowRecords":           "summary." + *t + "Stats.periods." + *period + ".timeInLowRecords",
-		"timeInVeryLowPercent":       "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowPercent",
-		"timeInVeryLowRecords":       "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowRecords",
-		"timeInHighPercent":          "summary." + *t + "Stats.periods." + *period + ".timeInHighPercent",
-		"timeInHighRecords":          "summary." + *t + "Stats.periods." + *period + ".timeInHighRecords",
-		"timeInVeryHighPercent":      "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighPercent",
-		"timeInVeryHighRecords":      "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighRecords",
-		"averageDailyRecords":        "summary." + *t + "Stats.periods." + *period + ".averageDailyRecords",
-		"totalRecords":               "summary." + *t + "Stats.periods." + *period + ".totalRecords",
+		"lastUpdatedDate": "summary." + *t + "Stats.dates.lastUpdatedDate",
 
-		"hasLastUploadDate": "summary." + *t + "Stats.periods." + *period + ".hasLastUploadDate",
+		"hasLastUploadDate": "summary." + *t + "Stats.dates.hasLastUploadDate",
+		"lastUploadDate":    "summary." + *t + "Stats.dates.lastUploadDate",
 
-		"hasGlucoseManagementIndicator": "summary." + *t + "Stats.periods." + *period + ".hasGlucoseManagementIndicator",
+		"hasFirstData": "summary." + *t + "Stats.dates.hasFirstData",
+		"firstData":    "summary." + *t + "Stats.dates.firstData",
+
+		"hasLastData": "summary." + *t + "Stats.dates.hasLastData",
+		"lastData":    "summary." + *t + "Stats.dates.lastData",
+
+		"hasOutdatedSince": "summary." + *t + "Stats.dates.hasOutdatedSince",
+		"outdatedSince":    "summary." + *t + "Stats.dates.outdatedSince",
 
 		"hasAverageGlucose": "summary." + *t + "Stats.periods." + *period + ".hasAverageGlucose",
+		"averageGlucose":    "summary." + *t + "Stats.periods." + *period + ".averageGlucose.value",
+
+		"hasGlucoseManagementIndicator": "summary." + *t + "Stats.periods." + *period + ".hasGlucoseManagementIndicator",
+		"glucoseManagementIndicator":    "summary." + *t + "Stats.periods." + *period + ".glucoseManagementIndicator",
 
 		"hasTimeCGMUsePercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUsePercent",
+		"timeCGMUsePercent":    "summary." + *t + "Stats.periods." + *period + ".timeCGMUsePercent",
+
 		"hasTimeCGMUseRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUseRecords",
+		"timeCGMUseRecords":    "summary." + *t + "Stats.periods." + *period + ".timeCGMUseRecords",
+
 		"hasTimeCGMUseMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUseMinutes",
+		"timeCGMUseMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeCGMUseMinutes",
 
 		"hasTimeInTargetPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetPercent",
+		"timeInTargetPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInTargetPercent",
+
 		"hasTimeInTargetRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetRecords",
+		"timeInTargetRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInTargetRecords",
+
 		"hasTimeInTargetMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetMinutes",
+		"timeInTargetMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInTargetMinutes",
 
 		"hasTimeInLowPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowPercent",
+		"timeInLowPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInLowPercent",
+
 		"hasTimeInLowRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowRecords",
+		"timeInLowRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInLowRecords",
+
 		"hasTimeInLowMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowMinutes",
+		"timeInLowMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInLowMinutes",
 
 		"hasTimeInVeryLowPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowPercent",
+		"timeInVeryLowPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowPercent",
+
 		"hasTimeInVeryLowRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowRecords",
+		"timeInVeryLowRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowRecords",
+
 		"hasTimeInVeryLowMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowMinutes",
+		"timeInVeryLowMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowMinutes",
 
 		"hasTimeInHighPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighPercent",
-		"hasTimeInHighRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighRecords",
+		"timeInHighPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInHighPercent",
+
 		"hasTimeInHighMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighMinutes",
+		"timeInHighMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInHighMinutes",
+
+		"hasTimeInHighRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighRecords",
+		"timeInHighRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInHighRecords",
 
 		"hasTimeInVeryHighPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighPercent",
+		"timeInVeryHighPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighPercent",
+
 		"hasTimeInVeryHighRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighRecords",
+		"timeInVeryHighRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighRecords",
+
 		"hasTimeInVeryHighMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighMinutes",
+		"timeInVeryHighMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighMinutes",
 
 		"hasAverageDailyRecords": "summary." + *t + "Stats.periods." + *period + ".hasAverageDailyRecords",
+		"averageDailyRecords":    "summary." + *t + "Stats.periods." + *period + ".averageDailyRecords",
 
 		"hasTotalRecords": "summary." + *t + "Stats.periods." + *period + ".hasTotalRecords",
+		"totalRecords":    "summary." + *t + "Stats.periods." + *period + ".totalRecords",
 	}
 
 	var extraSort = map[string]string{
-		expandedSorts["lastUploadDate"]:             expandedSorts["hasLastUploadDate"],
+		expandedSorts["lastUploadDate"]: expandedSorts["hasLastUploadDate"],
+		expandedSorts["lastData"]:       expandedSorts["hasLastData"],
+		expandedSorts["firstData"]:      expandedSorts["hasFirstData"],
+		expandedSorts["outdatedSince"]:  expandedSorts["hasOutdatedSince"],
+
 		expandedSorts["glucoseManagementIndicator"]: expandedSorts["hasGlucoseManagementIndicator"],
 		expandedSorts["averageGlucose"]:             expandedSorts["hasAverageGlucose"],
 		expandedSorts["totalRecords"]:               expandedSorts["hasTotalRecords"],
@@ -983,6 +1044,9 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"fullName":       {},
 		"birthDate":      {},
 		"lastUploadDate": {},
+		"lastData":       {},
+		"firstData":      {},
+		"outdatedSince":  {},
 
 		"timeCGMUsePercent":          {},
 		"glucoseManagementIndicator": {},
@@ -1015,6 +1079,9 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"fullName":       {},
 		"birthDate":      {},
 		"lastUploadDate": {},
+		"lastData":       {},
+		"firstData":      {},
+		"outdatedSince":  {},
 
 		"averageGlucose": {},
 
