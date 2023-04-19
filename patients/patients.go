@@ -276,12 +276,6 @@ type BGMPeriod struct {
 	HasAverageDailyRecords *bool    `json:"hasAverageDailyRecords" bson:"hasAverageDailyRecords"`
 	AverageDailyRecords    *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
 
-	HasTimeCGMUsePercent *bool    `json:"hasTimeCGMUsePercent" bson:"hasTimeCGMUsePercent"`
-	TimeCGMUsePercent    *float64 `json:"timeCGMUsePercent" bson:"timeCGMUsePercent"`
-
-	HasTimeCGMUseRecords *bool `json:"hasTimeCGMUseRecords" bson:"hasTimeCGMUseRecords"`
-	TimeCGMUseRecords    *int  `json:"timeCGMUseRecords" bson:"timeCGMUseRecords"`
-
 	HasTimeInTargetPercent *bool    `json:"hasTimeInTargetPercent" bson:"hasTimeInTargetPercent"`
 	TimeInTargetPercent    *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
 
