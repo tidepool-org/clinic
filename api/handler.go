@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/clinics/creator"
+	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
@@ -12,7 +12,7 @@ import (
 
 type Handler struct {
 	clinics           clinics.Service
-	clinicsCreator    creator.Creator
+	clinicsManager    manager.Manager
 	clinicsMigrator   migration.Migrator
 	clinicians        clinicians.Service
 	cliniciansUpdater clinicians.Service
@@ -26,7 +26,7 @@ type Params struct {
 	fx.In
 
 	Clinics           clinics.Service
-	ClinicsCreator    creator.Creator
+	ClinicsCreator    manager.Manager
 	ClinicsMigrator   migration.Migrator
 	Clinicians        clinicians.Service
 	CliniciansUpdater clinicians.Service
@@ -37,7 +37,7 @@ type Params struct {
 func NewHandler(p Params) *Handler {
 	return &Handler{
 		clinics:           p.Clinics,
-		clinicsCreator:    p.ClinicsCreator,
+		clinicsManager:    p.ClinicsCreator,
 		clinicsMigrator:   p.ClinicsMigrator,
 		clinicians:        p.Clinicians,
 		cliniciansUpdater: p.CliniciansUpdater,

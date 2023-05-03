@@ -319,6 +319,34 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("it allows clinic admins to delete clinics", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64"},
+				"method": "DELETE",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it doesn't allow clinic members to delete clinics", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64"},
+				"method": "DELETE",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
 		It("it allows clinic admins to update patients", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "99c290f838"},

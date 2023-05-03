@@ -1,8 +1,10 @@
-package creator
+package manager
 
 import (
 	"context"
+	errs "errors"
 	"fmt"
+	"github.com/tidepool-org/clinic/errors"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -33,11 +35,12 @@ type CreateClinic struct {
 	CreateDemoPatient bool
 }
 
-type Creator interface {
+type Manager interface {
 	CreateClinic(ctx context.Context, create *CreateClinic) (*clinics.Clinic, error)
+	DeleteClinic(ctx context.Context, clinicId string) error
 }
 
-type creator struct {
+type manager struct {
 	clinics              clinics.Service
 	cliniciansRepository *clinicians.Repository
 	config               *Config
@@ -59,8 +62,8 @@ type Params struct {
 	UserService          patients.UserService
 }
 
-func NewCreator(cp Params) (Creator, error) {
-	return &creator{
+func NewManager(cp Params) (Manager, error) {
+	return &manager{
 		clinics:              cp.Clinics,
 		cliniciansRepository: cp.CliniciansRepository,
 		config:               cp.Config,
@@ -71,7 +74,7 @@ func NewCreator(cp Params) (Creator, error) {
 	}, nil
 }
 
-func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clinics.Clinic, error) {
+func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clinics.Clinic, error) {
 	user, err := c.userService.GetUser(create.CreatorUserId)
 	if err != nil {
 		return nil, err
@@ -136,8 +139,39 @@ func (c *creator) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 	return result.(*clinics.Clinic), nil
 }
 
+func (c *manager) DeleteClinic(ctx context.Context, clinicId string) error {
+	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		filter := patients.Filter{ClinicId: &clinicId}
+		pagination := store.Pagination{Limit: 2}
+		res, err := c.patientsService.List(ctx, &filter, pagination, nil)
+
+		if err != nil {
+			return nil, err
+		}
+		if res == nil {
+			return nil, fmt.Errorf("patient list result not defined")
+		}
+		if !c.patientListAllowsClinicDeletion(res.Patients) {
+			return nil, fmt.Errorf("%w: deletion of non-empty clinics is not allowed", errors.BadRequest)
+		}
+
+		if err := c.patientsService.Remove(sessionCtx, clinicId, c.config.ClinicDemoPatientUserId); err != nil && !errs.Is(err, errors.NotFound) {
+			return nil, err
+		}
+
+		if err := c.cliniciansRepository.DeleteAll(sessionCtx, clinicId); err != nil {
+			return nil, err
+		}
+
+		return nil, c.clinics.Delete(sessionCtx, clinicId)
+	}
+
+	_, err := store.WithTransaction(ctx, c.dbClient, transaction)
+	return err
+}
+
 // Creates a clinic document in mongo and retries if there is a violation of the unique share code constraint
-func (c *creator) createClinicObject(sessionCtx mongo.SessionContext, create *CreateClinic) (clinic *clinics.Clinic, err error) {
+func (c *manager) createClinicObject(sessionCtx mongo.SessionContext, create *CreateClinic) (clinic *clinics.Clinic, err error) {
 retryLoop:
 	for i := 0; i < duplicateShareCodeRetryAttempts; i++ {
 		shareCode := c.shareCodeGenerator.Generate()
@@ -153,7 +187,7 @@ retryLoop:
 	return clinic, err
 }
 
-func (c *creator) getDemoPatient(ctx context.Context) (*patients.Patient, error) {
+func (c *manager) getDemoPatient(ctx context.Context) (*patients.Patient, error) {
 	if c.config.ClinicDemoPatientUserId == "" {
 		return nil, nil
 	}
@@ -170,4 +204,16 @@ func (c *creator) getDemoPatient(ctx context.Context) (*patients.Patient, error)
 		return nil, err
 	}
 	return patient, nil
+}
+
+func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool {
+	// No patients, OK to delete
+	if len(list) == 0 {
+		return true
+	}
+	// Only demo patients, OK to delete
+	if len(list) == 1 && list[0] != nil && list[0].UserId != nil && *list[0].UserId == c.config.ClinicDemoPatientUserId {
+		return true
+	}
+	return false
 }

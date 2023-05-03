@@ -53,11 +53,14 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 	if c.PreferredBgUnits != "" {
 		units = ClinicPreferredBgUnits(c.PreferredBgUnits)
 	}
+	id := Id(c.Id.Hex())
+	canMigrate := c.CanMigrate()
+
 	dto := Clinic{
-		Id:               Id(c.Id.Hex()),
+		Id:               &id,
 		Name:             pstr(c.Name),
-		ShareCode:        pstr(c.CanonicalShareCode),
-		CanMigrate:       c.CanMigrate(),
+		ShareCode:        c.CanonicalShareCode,
+		CanMigrate:       &canMigrate,
 		ClinicType:       stringToClinicType(c.ClinicType),
 		ClinicSize:       stringToClinicSize(c.ClinicSize),
 		Address:          c.Address,
@@ -66,10 +69,10 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		State:            c.State,
 		Country:          c.Country,
 		Website:          c.Website,
-		CreatedTime:      c.CreatedTime,
-		UpdatedTime:      c.UpdatedTime,
-		Tier:             tier,
-		TierDescription:  clinics.GetTierDescription(tier),
+		CreatedTime:      &c.CreatedTime,
+		UpdatedTime:      &c.UpdatedTime,
+		Tier:             &tier,
+		TierDescription:  strp(clinics.GetTierDescription(tier)),
 		PreferredBgUnits: units,
 	}
 	if c.PhoneNumbers != nil {
@@ -86,7 +89,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		var patientTags []PatientTag
 		for _, n := range c.PatientTags {
 			patientTags = append(patientTags, PatientTag{
-				Id:   n.Id.Hex(),
+				Id:   strp(n.Id.Hex()),
 				Name: n.Name,
 			})
 		}
@@ -111,8 +114,8 @@ func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
 		Name:        clinician.Name,
 		Email:       pstr(clinician.Email),
 		Roles:       ClinicianRoles(clinician.Roles),
-		CreatedTime: clinician.CreatedTime,
-		UpdatedTime: clinician.UpdatedTime,
+		CreatedTime: &clinician.CreatedTime,
+		UpdatedTime: &clinician.UpdatedTime,
 	}
 	return dto
 }
@@ -148,14 +151,14 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	dto := Patient{
 		Email:         patient.Email,
 		FullName:      pstr(patient.FullName),
-		Id:            *strpuseridp(patient.UserId),
+		Id:            strpuseridp(patient.UserId),
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
 		Tags:          NewPatientTagsDto(patient.Tags),
 		DataSources:   NewPatientDataSourcesDto(patient.DataSources),
 		TargetDevices: patient.TargetDevices,
-		CreatedTime:   patient.CreatedTime,
-		UpdatedTime:   patient.UpdatedTime,
+		CreatedTime:   &patient.CreatedTime,
+		UpdatedTime:   &patient.UpdatedTime,
 		Summary:       NewSummaryDto(patient.Summary),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
@@ -497,8 +500,8 @@ func NewMigrationDto(migration *migration.Migration) *Migration {
 	}
 
 	result := &Migration{
-		CreatedTime: migration.CreatedTime,
-		UpdatedTime: migration.UpdatedTime,
+		CreatedTime: &migration.CreatedTime,
+		UpdatedTime: &migration.UpdatedTime,
 		UserId:      migration.UserId,
 	}
 	if migration.Status != "" {
