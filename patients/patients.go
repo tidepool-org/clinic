@@ -76,78 +76,32 @@ func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
 }
 
+type FilterPair struct {
+	Cmp   string
+	Value float64
+}
+
+type FilterDatePair struct {
+	Min *time.Time
+	Max *time.Time
+}
+
+type SummaryFilters map[string]FilterPair
+
+type SummaryDateFilters map[string]FilterDatePair
+
 type Filter struct {
 	ClinicId *string
 	UserId   *string
 	Search   *string
+	Tags     *[]string
+	Period   *string
 
-	Tags *[]string
+	CGM SummaryFilters
+	BGM SummaryFilters
 
-	CgmLastUploadDateFrom *time.Time
-	CgmLastUploadDateTo   *time.Time
-
-	BgmLastUploadDateFrom *time.Time
-	BgmLastUploadDateTo   *time.Time
-
-	FilterPeriod *string
-
-	CgmTimeCGMUsePercentCmp       *string
-	CgmTimeCGMUsePercentValue     float64
-	CgmTimeInVeryLowPercentCmp    *string
-	CgmTimeInVeryLowPercentValue  float64
-	CgmTimeInLowPercentCmp        *string
-	CgmTimeInLowPercentValue      float64
-	CgmTimeInTargetPercentCmp     *string
-	CgmTimeInTargetPercentValue   float64
-	CgmTimeInHighPercentCmp       *string
-	CgmTimeInHighPercentValue     float64
-	CgmTimeInVeryHighPercentCmp   *string
-	CgmTimeInVeryHighPercentValue float64
-
-	CgmTimeCGMUseRecordsCmp       *string
-	CgmTimeCGMUseRecordsValue     float64
-	CgmTimeInVeryLowRecordsCmp    *string
-	CgmTimeInVeryLowRecordsValue  float64
-	CgmTimeInLowRecordsCmp        *string
-	CgmTimeInLowRecordsValue      float64
-	CgmTimeInTargetRecordsCmp     *string
-	CgmTimeInTargetRecordsValue   float64
-	CgmTimeInHighRecordsCmp       *string
-	CgmTimeInHighRecordsValue     float64
-	CgmTimeInVeryHighRecordsCmp   *string
-	CgmTimeInVeryHighRecordsValue float64
-
-	CgmTotalRecordsCmp          *string
-	CgmTotalRecordsValue        float64
-	CgmAverageDailyRecordsCmp   *string
-	CgmAverageDailyRecordsValue float64
-
-	BgmTimeInVeryLowPercentCmp    *string
-	BgmTimeInVeryLowPercentValue  float64
-	BgmTimeInLowPercentCmp        *string
-	BgmTimeInLowPercentValue      float64
-	BgmTimeInTargetPercentCmp     *string
-	BgmTimeInTargetPercentValue   float64
-	BgmTimeInHighPercentCmp       *string
-	BgmTimeInHighPercentValue     float64
-	BgmTimeInVeryHighPercentCmp   *string
-	BgmTimeInVeryHighPercentValue float64
-
-	BgmTimeInVeryLowRecordsCmp    *string
-	BgmTimeInVeryLowRecordsValue  float64
-	BgmTimeInLowRecordsCmp        *string
-	BgmTimeInLowRecordsValue      float64
-	BgmTimeInTargetRecordsCmp     *string
-	BgmTimeInTargetRecordsValue   float64
-	BgmTimeInHighRecordsCmp       *string
-	BgmTimeInHighRecordsValue     float64
-	BgmTimeInVeryHighRecordsCmp   *string
-	BgmTimeInVeryHighRecordsValue float64
-
-	BgmTotalRecordsCmp          *string
-	BgmTotalRecordsValue        float64
-	BgmAverageDailyRecordsCmp   *string
-	BgmAverageDailyRecordsValue float64
+	CGMTime SummaryDateFilters
+	BGMTime SummaryDateFilters
 }
 
 type Permission = map[string]interface{}

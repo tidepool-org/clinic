@@ -12,233 +12,39 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
+var defaultPeriod = "14d"
+
+func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) (err error) {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId:              strp(string(clinicId)),
-		Search:                searchToString(params.Search),
-		CgmLastUploadDateFrom: params.CgmLastUploadDateFrom,
-		CgmLastUploadDateTo:   params.CgmLastUploadDateTo,
-		BgmLastUploadDateFrom: params.BgmLastUploadDateFrom,
-		BgmLastUploadDateTo:   params.BgmLastUploadDateTo,
-		FilterPeriod:          params.FilterPeriod,
-		Tags:                  params.Tags,
+		ClinicId: strp(string(clinicId)),
+		Search:   searchToString(params.Search),
+		Tags:     params.Tags,
+	}
+
+	if params.Period == nil || *params.Period == "" {
+		filter.Period = &defaultPeriod
+	} else {
+		filter.Period = params.Period
 	}
 
 	var sorts []*store.Sort
 
-	if params.CgmTimeCGMUsePercent != nil && *params.CgmTimeCGMUsePercent != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeCGMUsePercent)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeCGMUsePercentCmp = cmp
-		filter.CgmTimeCGMUsePercentValue = value
-	}
-	if params.CgmTimeInVeryLowPercent != nil && *params.CgmTimeInVeryLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInVeryLowPercent)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInVeryLowPercentCmp = cmp
-		filter.CgmTimeInVeryLowPercentValue = value
-	}
-	if params.CgmTimeInLowPercent != nil && *params.CgmTimeInLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInLowPercent)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInLowPercentCmp = cmp
-		filter.CgmTimeInLowPercentValue = value
-	}
-	if params.CgmTimeInTargetPercent != nil && *params.CgmTimeInTargetPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInTargetPercent)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInTargetPercentCmp = cmp
-		filter.CgmTimeInTargetPercentValue = value
-	}
-	if params.CgmTimeInHighPercent != nil && *params.CgmTimeInHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInHighPercent)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInHighPercentCmp = cmp
-		filter.CgmTimeInHighPercentValue = value
-	}
-	if params.CgmTimeInVeryHighPercent != nil && *params.CgmTimeInVeryHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInVeryHighPercent)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInVeryHighPercentCmp = cmp
-		filter.CgmTimeInVeryHighPercentValue = value
-	}
-	if params.CgmTimeCGMUseRecords != nil && *params.CgmTimeCGMUseRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeCGMUseRecords)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeCGMUseRecordsCmp = cmp
-		filter.CgmTimeCGMUseRecordsValue = value
-	}
-	if params.CgmTimeInVeryLowRecords != nil && *params.CgmTimeInVeryLowRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInVeryLowRecords)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInVeryLowRecordsCmp = cmp
-		filter.CgmTimeInVeryLowRecordsValue = value
-	}
-	if params.CgmTimeInLowRecords != nil && *params.CgmTimeInLowRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInLowRecords)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInLowRecordsCmp = cmp
-		filter.CgmTimeInLowRecordsValue = value
-	}
-	if params.CgmTimeInTargetRecords != nil && *params.CgmTimeInTargetRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInTargetRecords)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInTargetRecordsCmp = cmp
-		filter.CgmTimeInTargetRecordsValue = value
-	}
-	if params.CgmTimeInHighRecords != nil && *params.CgmTimeInHighRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInHighRecords)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInHighRecordsCmp = cmp
-		filter.CgmTimeInHighRecordsValue = value
-	}
-	if params.CgmTimeInVeryHighRecords != nil && *params.CgmTimeInVeryHighRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTimeInVeryHighRecords)
-		if err != nil {
-			return err
-		}
-		filter.CgmTimeInVeryHighRecordsCmp = cmp
-		filter.CgmTimeInVeryHighRecordsValue = value
-	}
-	if params.CgmAverageDailyRecords != nil && *params.CgmAverageDailyRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmAverageDailyRecords)
-		if err != nil {
-			return err
-		}
-		filter.CgmAverageDailyRecordsCmp = cmp
-		filter.CgmAverageDailyRecordsValue = value
-	}
-	if params.CgmTotalRecords != nil && *params.CgmTotalRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.CgmTotalRecords)
-		if err != nil {
-			return err
-		}
-		filter.CgmTotalRecordsCmp = cmp
-		filter.CgmTotalRecordsValue = value
+	filter.CGM, err = ParseCGMSummaryFilters(params)
+	if err != nil {
+		return err
 	}
 
-	if params.BgmTimeInVeryLowPercent != nil && *params.BgmTimeInVeryLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInVeryLowPercent)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInVeryLowPercentCmp = cmp
-		filter.BgmTimeInVeryLowPercentValue = value
-	}
-	if params.BgmTimeInLowPercent != nil && *params.BgmTimeInLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInLowPercent)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInLowPercentCmp = cmp
-		filter.BgmTimeInLowPercentValue = value
-	}
-	if params.BgmTimeInTargetPercent != nil && *params.BgmTimeInTargetPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInTargetPercent)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInTargetPercentCmp = cmp
-		filter.BgmTimeInTargetPercentValue = value
-	}
-	if params.BgmTimeInHighPercent != nil && *params.BgmTimeInHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInHighPercent)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInHighPercentCmp = cmp
-		filter.BgmTimeInHighPercentValue = value
-	}
-	if params.BgmTimeInVeryHighPercent != nil && *params.BgmTimeInVeryHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInVeryHighPercent)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInVeryHighPercentCmp = cmp
-		filter.BgmTimeInVeryHighPercentValue = value
-	}
-	if params.BgmTimeInVeryLowRecords != nil && *params.BgmTimeInVeryLowRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInVeryLowRecords)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInVeryLowRecordsCmp = cmp
-		filter.BgmTimeInVeryLowRecordsValue = value
-	}
-	if params.BgmTimeInLowRecords != nil && *params.BgmTimeInLowRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInLowRecords)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInLowRecordsCmp = cmp
-		filter.BgmTimeInLowRecordsValue = value
-	}
-	if params.BgmTimeInTargetRecords != nil && *params.BgmTimeInTargetRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInTargetRecords)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInTargetRecordsCmp = cmp
-		filter.BgmTimeInTargetRecordsValue = value
-	}
-	if params.BgmTimeInHighRecords != nil && *params.BgmTimeInHighRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInHighRecords)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInHighRecordsCmp = cmp
-		filter.BgmTimeInHighRecordsValue = value
-	}
-	if params.BgmTimeInVeryHighRecords != nil && *params.BgmTimeInVeryHighRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTimeInVeryHighRecords)
-		if err != nil {
-			return err
-		}
-		filter.BgmTimeInVeryHighRecordsCmp = cmp
-		filter.BgmTimeInVeryHighRecordsValue = value
-	}
-	if params.BgmAverageDailyRecords != nil && *params.BgmAverageDailyRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmAverageDailyRecords)
-		if err != nil {
-			return err
-		}
-		filter.BgmAverageDailyRecordsCmp = cmp
-		filter.BgmAverageDailyRecordsValue = value
-	}
-	if params.BgmTotalRecords != nil && *params.BgmTotalRecords != "" {
-		cmp, value, err := parseRangeFilter(*params.BgmTotalRecords)
-		if err != nil {
-			return err
-		}
-		filter.BgmTotalRecordsCmp = cmp
-		filter.BgmTotalRecordsValue = value
+	filter.BGM, err = ParseBGMSummaryFilters(params)
+	if err != nil {
+		return err
 	}
 
-	sorts, err := ParseSort(params.Sort, params.SortType, params.SortPeriod)
+	filter.CGMTime = ParseCGMSummaryDateFilters(params)
+	filter.BGMTime = ParseBGMSummaryDateFilters(params)
+
+	sorts, err = ParseSort(params.Sort, params.SortType, params.Period)
 	if err != nil {
 		return err
 	}

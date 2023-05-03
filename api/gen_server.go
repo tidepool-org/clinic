@@ -804,18 +804,11 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sortType: %s", err))
 	}
 
-	// ------------- Optional query parameter "sortPeriod" -------------
+	// ------------- Optional query parameter "Period" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "sortPeriod", ctx.QueryParams(), &params.SortPeriod)
+	err = runtime.BindQueryParameter("form", true, false, "Period", ctx.QueryParams(), &params.Period)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sortPeriod: %s", err))
-	}
-
-	// ------------- Optional query parameter "filterPeriod" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "filterPeriod", ctx.QueryParams(), &params.FilterPeriod)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterPeriod: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter Period: %s", err))
 	}
 
 	// ------------- Optional query parameter "cgm.timeCGMUsePercent" -------------

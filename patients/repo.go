@@ -511,11 +511,6 @@ func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patie
 	return nil
 }
 
-type FilterPair struct {
-	Cmp   *string
-	Value float64
-}
-
 func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
@@ -589,96 +584,95 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		}
 	}
 
-	cgmLastUploadDate := bson.M{}
-	if filter.CgmLastUploadDateFrom != nil && !filter.CgmLastUploadDateFrom.IsZero() {
-		cgmLastUploadDate["$gte"] = filter.CgmLastUploadDateFrom
-	}
-
-	if filter.CgmLastUploadDateTo != nil && !filter.CgmLastUploadDateTo.IsZero() {
-		cgmLastUploadDate["$lt"] = filter.CgmLastUploadDateTo
-	}
-
-	bgmLastUploadDate := bson.M{}
-	if filter.BgmLastUploadDateFrom != nil && !filter.BgmLastUploadDateFrom.IsZero() {
-		bgmLastUploadDate["$gte"] = filter.BgmLastUploadDateFrom
-	}
-
-	if filter.BgmLastUploadDateTo != nil && !filter.BgmLastUploadDateTo.IsZero() {
-		bgmLastUploadDate["$lt"] = filter.BgmLastUploadDateTo
-	}
-
 	if filter.Tags != nil {
 		selector["tags"] = bson.M{
 			"$all": store.ObjectIDSFromStringArray(*filter.Tags),
 		}
 	}
 
-	if len(cgmLastUploadDate) > 0 {
+	if f, ok := filter.CGMTime["lastUploadDate"]; ok {
+		cgmLastUploadDate := bson.M{}
+
+		if f.Min != nil {
+			cgmLastUploadDate["$gte"] = f.Min
+		}
+
+		if f.Max != nil {
+			cgmLastUploadDate["$lt"] = f.Max
+		}
+
 		selector["summary.cgmStats.dates.lastUploadDate"] = cgmLastUploadDate
 	}
 
-	if len(bgmLastUploadDate) > 0 {
+	if f, ok := filter.CGMTime["lastUploadDate"]; ok {
+		bgmLastUploadDate := bson.M{}
+
+		if f.Min != nil {
+			bgmLastUploadDate["$gte"] = f.Min
+		}
+
+		if f.Max != nil {
+			bgmLastUploadDate["$lt"] = f.Max
+		}
+
 		selector["summary.bgmStats.dates.lastUploadDate"] = bgmLastUploadDate
 	}
 
-	if filter.FilterPeriod != nil && *filter.FilterPeriod != "" {
-		var filterMap = map[string]map[string]FilterPair{
-			"cgm": {
-				"timeCGMUsePercent":     {filter.CgmTimeCGMUsePercentCmp, filter.CgmTimeCGMUsePercentValue},
-				"timeInVeryLowPercent":  {filter.CgmTimeInVeryLowPercentCmp, filter.CgmTimeInVeryLowPercentValue},
-				"timeInLowPercent":      {filter.CgmTimeInLowPercentCmp, filter.CgmTimeInLowPercentValue},
-				"timeInTargetPercent":   {filter.CgmTimeInTargetPercentCmp, filter.CgmTimeInTargetPercentValue},
-				"timeInHighPercent":     {filter.CgmTimeInHighPercentCmp, filter.CgmTimeInHighPercentValue},
-				"timeInVeryHighPercent": {filter.CgmTimeInVeryHighPercentCmp, filter.CgmTimeInVeryHighPercentValue},
+	for field, pair := range filter.CGM {
+		MaybeApplyNumericFilter(selector,
+			*filter.Period,
+			"cgm",
+			field,
+			pair,
+		)
+	}
 
-				"timeCGMUseRecords":     {filter.CgmTimeCGMUseRecordsCmp, filter.CgmTimeCGMUseRecordsValue},
-				"timeInVeryLowRecords":  {filter.CgmTimeInVeryLowRecordsCmp, filter.CgmTimeInVeryLowRecordsValue},
-				"timeInLowRecords":      {filter.CgmTimeInLowRecordsCmp, filter.CgmTimeInLowRecordsValue},
-				"timeInTargetRecords":   {filter.CgmTimeInTargetRecordsCmp, filter.CgmTimeInTargetRecordsValue},
-				"timeInHighRecords":     {filter.CgmTimeInHighRecordsCmp, filter.CgmTimeInHighRecordsValue},
-				"timeInVeryHighRecords": {filter.CgmTimeInVeryHighRecordsCmp, filter.CgmTimeInVeryHighRecordsValue},
+	for field, pair := range filter.BGM {
+		MaybeApplyNumericFilter(selector,
+			*filter.Period,
+			"bgm",
+			field,
+			pair,
+		)
+	}
 
-				"averageDailyRecords": {filter.CgmAverageDailyRecordsCmp, filter.CgmAverageDailyRecordsValue},
-				"totalRecords":        {filter.CgmTotalRecordsCmp, filter.CgmTotalRecordsValue},
-			},
-			"bgm": {
-				"timeInVeryLowPercent":  {filter.BgmTimeInVeryLowPercentCmp, filter.BgmTimeInVeryLowPercentValue},
-				"timeInLowPercent":      {filter.BgmTimeInLowPercentCmp, filter.BgmTimeInLowPercentValue},
-				"timeInTargetPercent":   {filter.BgmTimeInTargetPercentCmp, filter.BgmTimeInTargetPercentValue},
-				"timeInHighPercent":     {filter.BgmTimeInHighPercentCmp, filter.BgmTimeInHighPercentValue},
-				"timeInVeryHighPercent": {filter.BgmTimeInVeryHighPercentCmp, filter.BgmTimeInVeryHighPercentValue},
+	for field, pair := range filter.CGMTime {
+		ApplyDateFilter(selector,
+			"cgm",
+			field,
+			pair,
+		)
+	}
 
-				"timeInVeryLowRecords":  {filter.BgmTimeInVeryLowRecordsCmp, filter.BgmTimeInVeryLowRecordsValue},
-				"timeInLowRecords":      {filter.BgmTimeInLowRecordsCmp, filter.BgmTimeInLowRecordsValue},
-				"timeInTargetRecords":   {filter.BgmTimeInTargetRecordsCmp, filter.BgmTimeInTargetRecordsValue},
-				"timeInHighRecords":     {filter.BgmTimeInHighRecordsCmp, filter.BgmTimeInHighRecordsValue},
-				"timeInVeryHighRecords": {filter.BgmTimeInVeryHighRecordsCmp, filter.BgmTimeInVeryHighRecordsValue},
-
-				"averageDailyRecords": {filter.BgmAverageDailyRecordsCmp, filter.BgmAverageDailyRecordsValue},
-				"totalRecords":        {filter.BgmTotalRecordsCmp, filter.BgmTotalRecordsValue},
-			},
-		}
-
-		for t, fields := range filterMap {
-			for field, f := range fields {
-				MaybeApplyNumericFilter(selector,
-					*filter.FilterPeriod,
-					t,
-					field,
-					f.Cmp,
-					f.Value,
-				)
-			}
-		}
+	for field, pair := range filter.BGMTime {
+		ApplyDateFilter(selector,
+			"bgm",
+			field,
+			pair,
+		)
 	}
 
 	return selector
 }
 
-func MaybeApplyNumericFilter(selector bson.M, period string, t string, field string, cmp *string, value float64) {
-	if operator, ok := cmpToMongoFilter(cmp); ok {
-		selector["summary."+t+"Stats.periods."+period+"."+field] = bson.M{operator: value}
+func MaybeApplyNumericFilter(selector bson.M, period string, typ string, field string, pair FilterPair) {
+	if operator, ok := cmpToMongoFilter(&pair.Cmp); ok {
+		selector["summary."+typ+"Stats.periods."+period+"."+field] = bson.M{operator: pair.Value}
 	}
+}
+
+func ApplyDateFilter(selector bson.M, typ string, field string, pair FilterDatePair) {
+	dateFilter := bson.M{}
+
+	if pair.Min != nil {
+		dateFilter["$gte"] = pair.Min
+	}
+
+	if pair.Max != nil {
+		dateFilter["$lt"] = pair.Max
+	}
+
+	selector["summary."+typ+"Stats.dates."+field] = dateFilter
 }
 
 func generateListSortStage(sorts []*store.Sort) bson.D {

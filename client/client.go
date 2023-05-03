@@ -2334,25 +2334,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	}
 
-	if params.SortPeriod != nil {
+	if params.Period != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "sortPeriod", runtime.ParamLocationQuery, *params.SortPeriod); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if params.FilterPeriod != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filterPeriod", runtime.ParamLocationQuery, *params.FilterPeriod); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "Period", runtime.ParamLocationQuery, *params.Period); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

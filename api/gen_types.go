@@ -734,11 +734,8 @@ type ListPatientsParams struct {
 	// Summary type to sort by
 	SortType *string `json:"sortType,omitempty"`
 
-	// Time Period to sort
-	SortPeriod *string `json:"sortPeriod,omitempty"`
-
-	// Time Period to filter
-	FilterPeriod *string `json:"filterPeriod,omitempty"`
+	// Time Period to display, filter, and sort
+	Period *string `json:"Period,omitempty"`
 
 	// Percentage of time of CGM use
 	CgmTimeCGMUsePercent *string `json:"cgm.timeCGMUsePercent,omitempty"`

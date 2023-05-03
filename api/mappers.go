@@ -872,14 +872,14 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
-func ParseSort(sort *Sort, t *string, period *string) ([]*store.Sort, error) {
+func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil
 	}
 
-	if t == nil {
+	if typ == nil {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing type", errors.BadRequest)
-	} else if *t != "cgm" && *t != "bgm" {
+	} else if *typ != "cgm" && *typ != "bgm" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid type", errors.BadRequest)
 	}
 
@@ -903,90 +903,90 @@ func ParseSort(sort *Sort, t *string, period *string) ([]*store.Sort, error) {
 	result.Attribute = str[1:]
 	if result.Attribute == "" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort attribute", errors.BadRequest)
-	} else if !isSortAttributeValid(result.Attribute, *t) {
+	} else if !isSortAttributeValid(result.Attribute, *typ) {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid sort attribute", errors.BadRequest)
 	}
 
 	var expandedSorts = map[string]string{
-		"lastUpdatedDate": "summary." + *t + "Stats.dates.lastUpdatedDate",
+		"lastUpdatedDate": "summary." + *typ + "Stats.dates.lastUpdatedDate",
 
-		"hasLastUploadDate": "summary." + *t + "Stats.dates.hasLastUploadDate",
-		"lastUploadDate":    "summary." + *t + "Stats.dates.lastUploadDate",
+		"hasLastUploadDate": "summary." + *typ + "Stats.dates.hasLastUploadDate",
+		"lastUploadDate":    "summary." + *typ + "Stats.dates.lastUploadDate",
 
-		"hasFirstData": "summary." + *t + "Stats.dates.hasFirstData",
-		"firstData":    "summary." + *t + "Stats.dates.firstData",
+		"hasFirstData": "summary." + *typ + "Stats.dates.hasFirstData",
+		"firstData":    "summary." + *typ + "Stats.dates.firstData",
 
-		"hasLastData": "summary." + *t + "Stats.dates.hasLastData",
-		"lastData":    "summary." + *t + "Stats.dates.lastData",
+		"hasLastData": "summary." + *typ + "Stats.dates.hasLastData",
+		"lastData":    "summary." + *typ + "Stats.dates.lastData",
 
-		"hasOutdatedSince": "summary." + *t + "Stats.dates.hasOutdatedSince",
-		"outdatedSince":    "summary." + *t + "Stats.dates.outdatedSince",
+		"hasOutdatedSince": "summary." + *typ + "Stats.dates.hasOutdatedSince",
+		"outdatedSince":    "summary." + *typ + "Stats.dates.outdatedSince",
 
-		"hasAverageGlucose": "summary." + *t + "Stats.periods." + *period + ".hasAverageGlucose",
-		"averageGlucose":    "summary." + *t + "Stats.periods." + *period + ".averageGlucose.value",
+		"hasAverageGlucose": "summary." + *typ + "Stats.periods." + *period + ".hasAverageGlucose",
+		"averageGlucose":    "summary." + *typ + "Stats.periods." + *period + ".averageGlucose.value",
 
-		"hasGlucoseManagementIndicator": "summary." + *t + "Stats.periods." + *period + ".hasGlucoseManagementIndicator",
-		"glucoseManagementIndicator":    "summary." + *t + "Stats.periods." + *period + ".glucoseManagementIndicator",
+		"hasGlucoseManagementIndicator": "summary." + *typ + "Stats.periods." + *period + ".hasGlucoseManagementIndicator",
+		"glucoseManagementIndicator":    "summary." + *typ + "Stats.periods." + *period + ".glucoseManagementIndicator",
 
-		"hasTimeCGMUsePercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUsePercent",
-		"timeCGMUsePercent":    "summary." + *t + "Stats.periods." + *period + ".timeCGMUsePercent",
+		"hasTimeCGMUsePercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUsePercent",
+		"timeCGMUsePercent":    "summary." + *typ + "Stats.periods." + *period + ".timeCGMUsePercent",
 
-		"hasTimeCGMUseRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUseRecords",
-		"timeCGMUseRecords":    "summary." + *t + "Stats.periods." + *period + ".timeCGMUseRecords",
+		"hasTimeCGMUseRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUseRecords",
+		"timeCGMUseRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeCGMUseRecords",
 
-		"hasTimeCGMUseMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeCGMUseMinutes",
-		"timeCGMUseMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeCGMUseMinutes",
+		"hasTimeCGMUseMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUseMinutes",
+		"timeCGMUseMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeCGMUseMinutes",
 
-		"hasTimeInTargetPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetPercent",
-		"timeInTargetPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInTargetPercent",
+		"hasTimeInTargetPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetPercent",
+		"timeInTargetPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInTargetPercent",
 
-		"hasTimeInTargetRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetRecords",
-		"timeInTargetRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInTargetRecords",
+		"hasTimeInTargetRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetRecords",
+		"timeInTargetRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInTargetRecords",
 
-		"hasTimeInTargetMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInTargetMinutes",
-		"timeInTargetMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInTargetMinutes",
+		"hasTimeInTargetMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetMinutes",
+		"timeInTargetMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInTargetMinutes",
 
-		"hasTimeInLowPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowPercent",
-		"timeInLowPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInLowPercent",
+		"hasTimeInLowPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowPercent",
+		"timeInLowPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInLowPercent",
 
-		"hasTimeInLowRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowRecords",
-		"timeInLowRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInLowRecords",
+		"hasTimeInLowRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowRecords",
+		"timeInLowRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInLowRecords",
 
-		"hasTimeInLowMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInLowMinutes",
-		"timeInLowMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInLowMinutes",
+		"hasTimeInLowMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowMinutes",
+		"timeInLowMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInLowMinutes",
 
-		"hasTimeInVeryLowPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowPercent",
-		"timeInVeryLowPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowPercent",
+		"hasTimeInVeryLowPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowPercent",
+		"timeInVeryLowPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowPercent",
 
-		"hasTimeInVeryLowRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowRecords",
-		"timeInVeryLowRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowRecords",
+		"hasTimeInVeryLowRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowRecords",
+		"timeInVeryLowRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowRecords",
 
-		"hasTimeInVeryLowMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryLowMinutes",
-		"timeInVeryLowMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryLowMinutes",
+		"hasTimeInVeryLowMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowMinutes",
+		"timeInVeryLowMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowMinutes",
 
-		"hasTimeInHighPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighPercent",
-		"timeInHighPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInHighPercent",
+		"hasTimeInHighPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighPercent",
+		"timeInHighPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInHighPercent",
 
-		"hasTimeInHighMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighMinutes",
-		"timeInHighMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInHighMinutes",
+		"hasTimeInHighMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighMinutes",
+		"timeInHighMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInHighMinutes",
 
-		"hasTimeInHighRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInHighRecords",
-		"timeInHighRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInHighRecords",
+		"hasTimeInHighRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighRecords",
+		"timeInHighRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInHighRecords",
 
-		"hasTimeInVeryHighPercent": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighPercent",
-		"timeInVeryHighPercent":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighPercent",
+		"hasTimeInVeryHighPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighPercent",
+		"timeInVeryHighPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighPercent",
 
-		"hasTimeInVeryHighRecords": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighRecords",
-		"timeInVeryHighRecords":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighRecords",
+		"hasTimeInVeryHighRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighRecords",
+		"timeInVeryHighRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighRecords",
 
-		"hasTimeInVeryHighMinutes": "summary." + *t + "Stats.periods." + *period + ".hasTimeInVeryHighMinutes",
-		"timeInVeryHighMinutes":    "summary." + *t + "Stats.periods." + *period + ".timeInVeryHighMinutes",
+		"hasTimeInVeryHighMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighMinutes",
+		"timeInVeryHighMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighMinutes",
 
-		"hasAverageDailyRecords": "summary." + *t + "Stats.periods." + *period + ".hasAverageDailyRecords",
-		"averageDailyRecords":    "summary." + *t + "Stats.periods." + *period + ".averageDailyRecords",
+		"hasAverageDailyRecords": "summary." + *typ + "Stats.periods." + *period + ".hasAverageDailyRecords",
+		"averageDailyRecords":    "summary." + *typ + "Stats.periods." + *period + ".averageDailyRecords",
 
-		"hasTotalRecords": "summary." + *t + "Stats.periods." + *period + ".hasTotalRecords",
-		"totalRecords":    "summary." + *t + "Stats.periods." + *period + ".totalRecords",
+		"hasTotalRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTotalRecords",
+		"totalRecords":    "summary." + *typ + "Stats.periods." + *period + ".totalRecords",
 	}
 
 	var extraSort = map[string]string{
@@ -1208,7 +1208,7 @@ func stringToClinicType(s *string) *ClinicClinicType {
 
 var rangeFilterRegex = regexp.MustCompile("^(<|<=|>|>=)(\\d\\.\\d?\\d?)$")
 
-func parseRangeFilter(filter string) (cmp *string, val float64, err error) {
+func parseRangeFilter(filter string) (filterPair patients.FilterPair, err error) {
 	matches := rangeFilterRegex.FindStringSubmatch(filter)
 	if len(matches) != 3 {
 		err = fmt.Errorf("%w: couldn't parse range filter", errors.BadRequest)
@@ -1225,9 +1225,20 @@ func parseRangeFilter(filter string) (cmp *string, val float64, err error) {
 		return
 	}
 
-	cmp = &matches[1]
-	val = value
-	err = nil
+	filterPair = patients.FilterPair{
+		Cmp:   matches[1],
+		Value: value,
+	}
+
+	return
+}
+
+func parseDateRangeFilter(filter *time.Time, filter2 *time.Time) (filterPair patients.FilterDatePair) {
+	filterPair = patients.FilterDatePair{
+		Min: filter,
+		Max: filter2,
+	}
+
 	return
 }
 
@@ -1248,4 +1259,201 @@ func patientTagsToObjectIds(tags *[]PatientTagId) *[]primitive.ObjectID {
 		}
 	}
 	return &tagIds
+}
+
+func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.SummaryFilters, err error) {
+	filters = patients.SummaryFilters{}
+	if params.CgmTimeCGMUsePercent != nil && *params.CgmTimeCGMUsePercent != "" {
+		filters["timeCGMUsePercent"], err = parseRangeFilter(*params.CgmTimeCGMUsePercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInVeryLowPercent != nil && *params.CgmTimeInVeryLowPercent != "" {
+		filters["timeInVeryLowPercent"], err = parseRangeFilter(*params.CgmTimeInVeryLowPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInLowPercent != nil && *params.CgmTimeInLowPercent != "" {
+		filters["timeInLowPercent"], err = parseRangeFilter(*params.CgmTimeInLowPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInTargetPercent != nil && *params.CgmTimeInTargetPercent != "" {
+		filters["timeInTargetPercent"], err = parseRangeFilter(*params.CgmTimeInTargetPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInHighPercent != nil && *params.CgmTimeInHighPercent != "" {
+		filters["timeInHighPercent"], err = parseRangeFilter(*params.CgmTimeInHighPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInVeryHighPercent != nil && *params.CgmTimeInVeryHighPercent != "" {
+		filters["timeInVeryHighPercent"], err = parseRangeFilter(*params.CgmTimeInVeryHighPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeCGMUseRecords != nil && *params.CgmTimeCGMUseRecords != "" {
+		filters["timeCGMUseRecords"], err = parseRangeFilter(*params.CgmTimeCGMUseRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInVeryLowRecords != nil && *params.CgmTimeInVeryLowRecords != "" {
+		filters["timeInVeryLowRecords"], err = parseRangeFilter(*params.CgmTimeInVeryLowRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInLowRecords != nil && *params.CgmTimeInLowRecords != "" {
+		filters["timeInLowRecords"], err = parseRangeFilter(*params.CgmTimeInLowRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInTargetRecords != nil && *params.CgmTimeInTargetRecords != "" {
+		filters["timeInTargetRecords"], err = parseRangeFilter(*params.CgmTimeInTargetRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInHighRecords != nil && *params.CgmTimeInHighRecords != "" {
+		filters["timeInHighRecords"], err = parseRangeFilter(*params.CgmTimeInHighRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTimeInVeryHighRecords != nil && *params.CgmTimeInVeryHighRecords != "" {
+		filters["timeInVeryHighRecords"], err = parseRangeFilter(*params.CgmTimeInVeryHighRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmAverageDailyRecords != nil && *params.CgmAverageDailyRecords != "" {
+		filters["averageDailyRecords"], err = parseRangeFilter(*params.CgmAverageDailyRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.CgmTotalRecords != nil && *params.CgmTotalRecords != "" {
+		filters["totalRecords"], err = parseRangeFilter(*params.CgmTotalRecords)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.SummaryFilters, err error) {
+	if params.BgmTimeInVeryLowPercent != nil && *params.BgmTimeInVeryLowPercent != "" {
+		filters["timeInVeryLowPercent"], err = parseRangeFilter(*params.BgmTimeInVeryLowPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInLowPercent != nil && *params.BgmTimeInLowPercent != "" {
+		filters["timeInLowPercent"], err = parseRangeFilter(*params.BgmTimeInLowPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInTargetPercent != nil && *params.BgmTimeInTargetPercent != "" {
+		filters["timeInTargetPercent"], err = parseRangeFilter(*params.BgmTimeInTargetPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInHighPercent != nil && *params.BgmTimeInHighPercent != "" {
+		filters["timeInHighPercent"], err = parseRangeFilter(*params.BgmTimeInHighPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInVeryHighPercent != nil && *params.BgmTimeInVeryHighPercent != "" {
+		filters["timeInVeryHighPercent"], err = parseRangeFilter(*params.BgmTimeInVeryHighPercent)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInVeryLowRecords != nil && *params.BgmTimeInVeryLowRecords != "" {
+		filters["timeInVeryLowRecords"], err = parseRangeFilter(*params.BgmTimeInVeryLowRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInLowRecords != nil && *params.BgmTimeInLowRecords != "" {
+		filters["timeInLowRecords"], err = parseRangeFilter(*params.BgmTimeInLowRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInTargetRecords != nil && *params.BgmTimeInTargetRecords != "" {
+		filters["timeInTargetRecords"], err = parseRangeFilter(*params.BgmTimeInTargetRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInHighRecords != nil && *params.BgmTimeInHighRecords != "" {
+		filters["timeInHighRecords"], err = parseRangeFilter(*params.BgmTimeInHighRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTimeInVeryHighRecords != nil && *params.BgmTimeInVeryHighRecords != "" {
+		filters["timeInVeryHighRecords"], err = parseRangeFilter(*params.BgmTimeInVeryHighRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmAverageDailyRecords != nil && *params.BgmAverageDailyRecords != "" {
+		filters["averageDailyRecords"], err = parseRangeFilter(*params.BgmAverageDailyRecords)
+		if err != nil {
+			return
+		}
+	}
+	if params.BgmTotalRecords != nil && *params.BgmTotalRecords != "" {
+		filters["totalRecords"], err = parseRangeFilter(*params.BgmTotalRecords)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func ParseCGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
+	// normalize any Zero values to nil
+	if params.CgmLastUploadDateFrom.IsZero() {
+		params.CgmLastUploadDateFrom = nil
+	}
+	if params.CgmLastUploadDateTo.IsZero() {
+		params.CgmLastUploadDateTo = nil
+	}
+
+	if params.CgmLastUploadDateFrom != nil || params.CgmLastUploadDateTo != nil {
+		filters["lastUploadDate"] = parseDateRangeFilter(params.CgmLastUploadDateFrom, params.CgmLastUploadDateTo)
+	}
+	return
+}
+
+func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
+	// normalize any Zero values to nil
+	if params.BgmLastUploadDateFrom.IsZero() {
+		params.BgmLastUploadDateFrom = nil
+	}
+	if params.BgmLastUploadDateTo.IsZero() {
+		params.BgmLastUploadDateTo = nil
+	}
+
+	if params.BgmLastUploadDateFrom != nil || params.BgmLastUploadDateTo != nil {
+		filters["lastUploadDate"] = parseDateRangeFilter(params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
+	}
+	return
 }
