@@ -4,7 +4,7 @@ import (
 	"github.com/jaswdr/faker"
 	"github.com/onsi/ginkgo/config"
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/clinics/creator"
+	"github.com/tidepool-org/clinic/clinics/manager"
 	"math/rand"
 	"time"
 )
@@ -40,14 +40,14 @@ func RandomClinic() *clinics.Clinic {
 	}
 }
 
-func RandomClinicCreate() *creator.CreateClinic {
+func RandomClinicCreate() *manager.CreateClinic {
 	userId := Faker.UUID().V4()
 	clinic := RandomClinic()
 	clinic.Admins = nil
 	clinic.CanonicalShareCode = nil
 	clinic.ShareCodes = nil
 
-	return &creator.CreateClinic{
+	return &manager.CreateClinic{
 		Clinic:            *clinic,
 		CreatorUserId:     userId,
 		CreateDemoPatient: false,

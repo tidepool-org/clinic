@@ -158,6 +158,14 @@ allow {
   clinician_has_write_access
 }
 
+# Allow currently authenticated clinician to delete clinic
+# PUT /v1/clinics/:clinicId
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _]
+  clinician_has_write_access
+}
+
 # Allow backend services to update clinic tiers
 # POST /v1/clinics/:clinicId/tier
 allow {

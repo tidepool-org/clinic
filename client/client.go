@@ -2336,7 +2336,7 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 	if params.Period != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "Period", runtime.ParamLocationQuery, *params.Period); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, *params.Period); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

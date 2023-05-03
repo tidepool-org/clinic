@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/clinics/creator"
+	"github.com/tidepool-org/clinic/clinics/manager"
 	internalErrs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -54,7 +54,7 @@ type Migrator interface {
 type Params struct {
 	fx.In
 
-	ClinicsCreator    creator.Creator
+	ClinicsCreator    manager.Manager
 	ClinicsService    clinics.Service
 	CliniciansService clinicians.Service
 	MigrationRepo     Repository
@@ -62,7 +62,7 @@ type Params struct {
 }
 
 type migrator struct {
-	clinicsCreator    creator.Creator
+	clinicsCreator    manager.Manager
 	clinicsService    clinics.Service
 	cliniciansService clinicians.Service
 	migrationRepo     Repository
@@ -88,7 +88,7 @@ func (m *migrator) CreateEmptyClinic(ctx context.Context, userId string) (*clini
 		return nil, err
 	}
 
-	return m.clinicsCreator.CreateClinic(ctx, &creator.CreateClinic{
+	return m.clinicsCreator.CreateClinic(ctx, &manager.CreateClinic{
 		Clinic:        clinics.NewClinic(),
 		CreatorUserId: userId,
 	})

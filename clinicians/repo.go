@@ -21,7 +21,7 @@ const (
 func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (*Repository, error) {
 	repo := &Repository{
 		collection: db.Collection(cliniciansCollectionName),
-		logger: logger,
+		logger:     logger,
 	}
 
 	lifecycle.Append(fx.Hook{
@@ -35,7 +35,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 
 type Repository struct {
 	collection *mongo.Collection
-	logger *zap.SugaredLogger
+	logger     *zap.SugaredLogger
 }
 
 func (r *Repository) Initialize(ctx context.Context) error {
@@ -236,6 +236,11 @@ func (r *Repository) Delete(ctx context.Context, clinicId string, userId string)
 	return r.deleteOne(ctx, clinicianSelector(clinicId, userId))
 }
 
+func (r *Repository) DeleteAll(ctx context.Context, clinicId string) error {
+	_, err := r.collection.DeleteMany(ctx, allCliniciansSelector(clinicId))
+	return err
+}
+
 func (r *Repository) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {
 	return r.getOne(ctx, inviteSelector(clinicId, inviteId))
 }
@@ -358,6 +363,13 @@ func clinicianSelector(clinicId, clinicianId string) bson.M {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	return bson.M{
 		"userId":   clinicianId,
+		"clinicId": clinicObjId,
+	}
+}
+
+func allCliniciansSelector(clinicId string) bson.M {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	return bson.M{
 		"clinicId": clinicObjId,
 	}
 }

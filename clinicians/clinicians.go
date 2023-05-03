@@ -24,6 +24,7 @@ type Service interface {
 	Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error)
 	UpdateAll(ctx context.Context, update *CliniciansUpdate) error
 	Delete(ctx context.Context, clinicId string, clinicianId string) error
+	DeleteAll(ctx context.Context, clinicId string) error
 	DeleteFromAllClinics(ctx context.Context, clinicianId string) error
 	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
 	DeleteInvite(ctx context.Context, clinicId, inviteId string) error
@@ -47,7 +48,7 @@ type ClinicianUpdate struct {
 // Update multiple clinician records belonging to the same user
 type CliniciansUpdate struct {
 	UserId string
-	Email string
+	Email  string
 }
 
 type Clinician struct {
