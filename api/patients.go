@@ -25,6 +25,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 
 	if params.Period == nil || *params.Period == "" {
 		filter.Period = &defaultPeriod
+		params.Period = &defaultPeriod
 	} else {
 		filter.Period = params.Period
 	}
@@ -44,7 +45,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	filter.CGMTime = ParseCGMSummaryDateFilters(params)
 	filter.BGMTime = ParseBGMSummaryDateFilters(params)
 
-	sorts, err = ParseSort(params.Sort, params.SortType, params.Period)
+	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
 	if err != nil {
 		return err
 	}

@@ -1211,8 +1211,12 @@ func stringToClinicType(s *string) *ClinicClinicType {
 
 var rangeFilterRegex = regexp.MustCompile("^(<|<=|>|>=)(\\d\\.\\d?\\d?)$")
 
-func parseRangeFilter(filter string) (filterPair patients.FilterPair, err error) {
-	matches := rangeFilterRegex.FindStringSubmatch(filter)
+func parseRangeFilter(filters patients.SummaryFilters, field string, filter *string) (err error) {
+	if filter == nil || *filter == "" {
+		return
+	}
+
+	matches := rangeFilterRegex.FindStringSubmatch(*filter)
 	if len(matches) != 3 {
 		err = fmt.Errorf("%w: couldn't parse range filter", errors.BadRequest)
 		return
@@ -1228,7 +1232,7 @@ func parseRangeFilter(filter string) (filterPair patients.FilterPair, err error)
 		return
 	}
 
-	filterPair = patients.FilterPair{
+	filters[field] = patients.FilterPair{
 		Cmp:   matches[1],
 		Value: value,
 	}
@@ -1236,10 +1240,20 @@ func parseRangeFilter(filter string) (filterPair patients.FilterPair, err error)
 	return
 }
 
-func parseDateRangeFilter(filter *time.Time, filter2 *time.Time) (filterPair patients.FilterDatePair) {
-	filterPair = patients.FilterDatePair{
-		Min: filter,
-		Max: filter2,
+func parseDateRangeFilter(filters patients.SummaryDateFilters, field string, min *time.Time, max *time.Time) (filterPair patients.FilterDatePair) {
+	// normalize any Zero values to nil
+	if min.IsZero() {
+		min = nil
+	}
+	if max.IsZero() {
+		max = nil
+	}
+
+	if min != nil || max != nil {
+		filters[field] = patients.FilterDatePair{
+			Min: min,
+			Max: max,
+		}
 	}
 
 	return
@@ -1265,87 +1279,26 @@ func patientTagsToObjectIds(tags *[]PatientTagId) *[]primitive.ObjectID {
 }
 
 func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.SummaryFilters, err error) {
-	filters = patients.SummaryFilters{}
-	if params.CgmTimeCGMUsePercent != nil && *params.CgmTimeCGMUsePercent != "" {
-		filters["timeCGMUsePercent"], err = parseRangeFilter(*params.CgmTimeCGMUsePercent)
-		if err != nil {
-			return
-		}
+	fieldsMap := map[string]*string{
+		"timeCGMUsePercent":     params.CgmTimeCGMUsePercent,
+		"timeInVeryLowPercent":  params.CgmTimeInVeryLowPercent,
+		"timeInLowPercent":      params.CgmTimeInLowPercent,
+		"timeInTargetPercent":   params.CgmTimeInTargetPercent,
+		"timeInHighPercent":     params.CgmTimeInHighPercent,
+		"timeInVeryHighPercent": params.CgmTimeInVeryHighPercent,
+
+		"timeCGMUseRecords":     params.CgmTimeCGMUseRecords,
+		"timeInVeryLowRecords":  params.CgmTimeInVeryLowRecords,
+		"timeInLowRecords":      params.CgmTimeInLowRecords,
+		"timeInTargetRecords":   params.CgmTimeInTargetRecords,
+		"timeInHighRecords":     params.CgmTimeInHighRecords,
+		"timeInVeryHighRecords": params.CgmTimeInVeryHighRecords,
+		"averageDailyRecords":   params.CgmAverageDailyRecords,
+		"totalRecords":          params.CgmTotalRecords,
 	}
-	if params.CgmTimeInVeryLowPercent != nil && *params.CgmTimeInVeryLowPercent != "" {
-		filters["timeInVeryLowPercent"], err = parseRangeFilter(*params.CgmTimeInVeryLowPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInLowPercent != nil && *params.CgmTimeInLowPercent != "" {
-		filters["timeInLowPercent"], err = parseRangeFilter(*params.CgmTimeInLowPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInTargetPercent != nil && *params.CgmTimeInTargetPercent != "" {
-		filters["timeInTargetPercent"], err = parseRangeFilter(*params.CgmTimeInTargetPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInHighPercent != nil && *params.CgmTimeInHighPercent != "" {
-		filters["timeInHighPercent"], err = parseRangeFilter(*params.CgmTimeInHighPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInVeryHighPercent != nil && *params.CgmTimeInVeryHighPercent != "" {
-		filters["timeInVeryHighPercent"], err = parseRangeFilter(*params.CgmTimeInVeryHighPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeCGMUseRecords != nil && *params.CgmTimeCGMUseRecords != "" {
-		filters["timeCGMUseRecords"], err = parseRangeFilter(*params.CgmTimeCGMUseRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInVeryLowRecords != nil && *params.CgmTimeInVeryLowRecords != "" {
-		filters["timeInVeryLowRecords"], err = parseRangeFilter(*params.CgmTimeInVeryLowRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInLowRecords != nil && *params.CgmTimeInLowRecords != "" {
-		filters["timeInLowRecords"], err = parseRangeFilter(*params.CgmTimeInLowRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInTargetRecords != nil && *params.CgmTimeInTargetRecords != "" {
-		filters["timeInTargetRecords"], err = parseRangeFilter(*params.CgmTimeInTargetRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInHighRecords != nil && *params.CgmTimeInHighRecords != "" {
-		filters["timeInHighRecords"], err = parseRangeFilter(*params.CgmTimeInHighRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTimeInVeryHighRecords != nil && *params.CgmTimeInVeryHighRecords != "" {
-		filters["timeInVeryHighRecords"], err = parseRangeFilter(*params.CgmTimeInVeryHighRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmAverageDailyRecords != nil && *params.CgmAverageDailyRecords != "" {
-		filters["averageDailyRecords"], err = parseRangeFilter(*params.CgmAverageDailyRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.CgmTotalRecords != nil && *params.CgmTotalRecords != "" {
-		filters["totalRecords"], err = parseRangeFilter(*params.CgmTotalRecords)
+
+	for field, value := range fieldsMap {
+		err = parseRangeFilter(filters, field, value)
 		if err != nil {
 			return
 		}
@@ -1355,74 +1308,24 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 }
 
 func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.SummaryFilters, err error) {
-	if params.BgmTimeInVeryLowPercent != nil && *params.BgmTimeInVeryLowPercent != "" {
-		filters["timeInVeryLowPercent"], err = parseRangeFilter(*params.BgmTimeInVeryLowPercent)
-		if err != nil {
-			return
-		}
+	fieldsMap := map[string]*string{
+		"timeInVeryLowPercent":  params.BgmTimeInVeryLowPercent,
+		"timeInLowPercent":      params.BgmTimeInLowPercent,
+		"timeInTargetPercent":   params.BgmTimeInTargetPercent,
+		"timeInHighPercent":     params.BgmTimeInHighPercent,
+		"timeInVeryHighPercent": params.BgmTimeInVeryHighPercent,
+
+		"timeInVeryLowRecords":  params.BgmTimeInVeryLowRecords,
+		"timeInLowRecords":      params.BgmTimeInLowRecords,
+		"timeInTargetRecords":   params.BgmTimeInTargetRecords,
+		"timeInHighRecords":     params.BgmTimeInHighRecords,
+		"timeInVeryHighRecords": params.BgmTimeInVeryHighRecords,
+		"averageDailyRecords":   params.BgmAverageDailyRecords,
+		"totalRecords":          params.BgmTotalRecords,
 	}
-	if params.BgmTimeInLowPercent != nil && *params.BgmTimeInLowPercent != "" {
-		filters["timeInLowPercent"], err = parseRangeFilter(*params.BgmTimeInLowPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTimeInTargetPercent != nil && *params.BgmTimeInTargetPercent != "" {
-		filters["timeInTargetPercent"], err = parseRangeFilter(*params.BgmTimeInTargetPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTimeInHighPercent != nil && *params.BgmTimeInHighPercent != "" {
-		filters["timeInHighPercent"], err = parseRangeFilter(*params.BgmTimeInHighPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTimeInVeryHighPercent != nil && *params.BgmTimeInVeryHighPercent != "" {
-		filters["timeInVeryHighPercent"], err = parseRangeFilter(*params.BgmTimeInVeryHighPercent)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTimeInVeryLowRecords != nil && *params.BgmTimeInVeryLowRecords != "" {
-		filters["timeInVeryLowRecords"], err = parseRangeFilter(*params.BgmTimeInVeryLowRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTimeInLowRecords != nil && *params.BgmTimeInLowRecords != "" {
-		filters["timeInLowRecords"], err = parseRangeFilter(*params.BgmTimeInLowRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTimeInTargetRecords != nil && *params.BgmTimeInTargetRecords != "" {
-		filters["timeInTargetRecords"], err = parseRangeFilter(*params.BgmTimeInTargetRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTimeInHighRecords != nil && *params.BgmTimeInHighRecords != "" {
-		filters["timeInHighRecords"], err = parseRangeFilter(*params.BgmTimeInHighRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTimeInVeryHighRecords != nil && *params.BgmTimeInVeryHighRecords != "" {
-		filters["timeInVeryHighRecords"], err = parseRangeFilter(*params.BgmTimeInVeryHighRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmAverageDailyRecords != nil && *params.BgmAverageDailyRecords != "" {
-		filters["averageDailyRecords"], err = parseRangeFilter(*params.BgmAverageDailyRecords)
-		if err != nil {
-			return
-		}
-	}
-	if params.BgmTotalRecords != nil && *params.BgmTotalRecords != "" {
-		filters["totalRecords"], err = parseRangeFilter(*params.BgmTotalRecords)
+
+	for field, value := range fieldsMap {
+		err = parseRangeFilter(filters, field, value)
 		if err != nil {
 			return
 		}
@@ -1432,31 +1335,11 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 }
 
 func ParseCGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
-	// normalize any Zero values to nil
-	if params.CgmLastUploadDateFrom.IsZero() {
-		params.CgmLastUploadDateFrom = nil
-	}
-	if params.CgmLastUploadDateTo.IsZero() {
-		params.CgmLastUploadDateTo = nil
-	}
-
-	if params.CgmLastUploadDateFrom != nil || params.CgmLastUploadDateTo != nil {
-		filters["lastUploadDate"] = parseDateRangeFilter(params.CgmLastUploadDateFrom, params.CgmLastUploadDateTo)
-	}
+	parseDateRangeFilter(filters, "lastUploadDate", params.CgmLastUploadDateFrom, params.CgmLastUploadDateTo)
 	return
 }
 
 func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
-	// normalize any Zero values to nil
-	if params.BgmLastUploadDateFrom.IsZero() {
-		params.BgmLastUploadDateFrom = nil
-	}
-	if params.BgmLastUploadDateTo.IsZero() {
-		params.BgmLastUploadDateTo = nil
-	}
-
-	if params.BgmLastUploadDateFrom != nil || params.BgmLastUploadDateTo != nil {
-		filters["lastUploadDate"] = parseDateRangeFilter(params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
-	}
+	parseDateRangeFilter(filters, "lastUploadDate", params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
 	return
 }
