@@ -604,7 +604,7 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		selector["summary.cgmStats.dates.lastUploadDate"] = cgmLastUploadDate
 	}
 
-	if f, ok := filter.CGMTime["lastUploadDate"]; ok {
+	if f, ok := filter.BGMTime["lastUploadDate"]; ok {
 		bgmLastUploadDate := bson.M{}
 
 		if f.Min != nil {
