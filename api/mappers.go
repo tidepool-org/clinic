@@ -1279,6 +1279,8 @@ func patientTagsToObjectIds(tags *[]PatientTagId) *[]primitive.ObjectID {
 }
 
 func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.SummaryFilters, err error) {
+	filters = patients.SummaryFilters{}
+
 	fieldsMap := map[string]*string{
 		"timeCGMUsePercent":     params.CgmTimeCGMUsePercent,
 		"timeInVeryLowPercent":  params.CgmTimeInVeryLowPercent,
@@ -1308,6 +1310,8 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 }
 
 func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.SummaryFilters, err error) {
+	filters = patients.SummaryFilters{}
+
 	fieldsMap := map[string]*string{
 		"timeInVeryLowPercent":  params.BgmTimeInVeryLowPercent,
 		"timeInLowPercent":      params.BgmTimeInLowPercent,
