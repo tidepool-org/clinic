@@ -1339,11 +1339,15 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 }
 
 func ParseCGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
+	filters = patients.SummaryDateFilters{}
+
 	parseDateRangeFilter(filters, "lastUploadDate", params.CgmLastUploadDateFrom, params.CgmLastUploadDateTo)
 	return
 }
 
 func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
+	filters = patients.SummaryDateFilters{}
+
 	parseDateRangeFilter(filters, "lastUploadDate", params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
 	return
 }
