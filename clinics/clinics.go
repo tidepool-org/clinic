@@ -31,6 +31,8 @@ type Service interface {
 	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*Clinic, error)
 	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*Clinic, error)
 	DeletePatientTag(ctx context.Context, clinicId, tagId string) (*Clinic, error)
+	ListMembershipRestrictions(ctx context.Context, clinicId string) ([]MembershipRestrictions, error)
+	UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error
 }
 
 type Filter struct {
@@ -63,6 +65,7 @@ type Clinic struct {
 	Tier                    string                  `bson:"tier,omitempty"`
 	PreferredBgUnits        string                  `bson:"PreferredBgUnits,omitempty"`
 	SuppressedNotifications SuppressedNotifications `bson:"suppressedNotifications"`
+	MembershipRestrictions []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
 }
 
 func NewClinic() Clinic {
@@ -102,6 +105,15 @@ func (c *Clinic) CanMigrate() bool {
 	return !c.IsMigrated &&
 		c.HasAllRequiredFields() &&
 		c.Admins != nil && len(*c.Admins) > 0
+}
+
+type MembershipRestrictions struct {
+	EmailDomain string `bson:"emailDomain,omitempty"`
+	RequiredIdp string `bson:"requiredIdp,omitempty"`
+}
+
+func (r *MembershipRestrictions) IsEmpty() bool {
+	return r.EmailDomain == "" && r.RequiredIdp == ""
 }
 
 type PhoneNumber struct {

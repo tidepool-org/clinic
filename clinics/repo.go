@@ -358,6 +358,34 @@ func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*C
 	return c.Get(ctx, id)
 }
 
+func (c *repository) ListMembershipRestrictions(ctx context.Context, id string) ([]MembershipRestrictions, error) {
+	clinic, err := c.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return clinic.MembershipRestrictions, nil
+}
+
+func (c *repository) UpdateMembershipRestrictions(ctx context.Context, id string, restrictions []MembershipRestrictions) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"updatedTime":            time.Now(),
+			"membershipRestrictions": restrictions,
+		},
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err == mongo.ErrNoDocuments {
+		return ErrNotFound
+	}
+
+	return err
+}
+
 func canAddPatientTag(clinic Clinic, tag PatientTag) (bool, error) {
 	if len(clinic.PatientTags) >= MaximumPatientTags {
 		return false, ErrMaximumPatientTagsExceeded

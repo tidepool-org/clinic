@@ -525,6 +525,45 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
+func NewMembershipRestrictionsDto(restrictions []clinics.MembershipRestrictions) MembershipRestrictions {
+	dto := MembershipRestrictions{}
+	var dtos []MembershipRestriction
+	for _, r := range restrictions {
+		if !r.IsEmpty() {
+			restriction := MembershipRestriction{}
+			if r.EmailDomain != "" {
+				restriction.EmailDomain = strp(r.EmailDomain)
+			}
+			if r.RequiredIdp != "" {
+				restriction.RequiredIdp = strp(r.RequiredIdp)
+			}
+			dtos = append(dtos, restriction)
+		}
+	}
+	if len(dtos) > 0 {
+		dto.Restrictions = &dtos
+	}
+
+	return dto
+}
+
+func NewMembershipRestrictions(dto MembershipRestrictions) []clinics.MembershipRestrictions {
+	var restrictions []clinics.MembershipRestrictions
+	if dto.Restrictions != nil {
+		for _, r := range *dto.Restrictions {
+			restriction := clinics.MembershipRestrictions{
+				EmailDomain: pstr(r.EmailDomain),
+				RequiredIdp: pstr(r.RequiredIdp),
+			}
+			if !restriction.IsEmpty() {
+				restrictions = append(restrictions, restriction)
+			}
+		}
+	}
+
+	return restrictions
+}
+
 func ParseSort(sort *Sort) (*store.Sort, error) {
 	if sort == nil {
 		return nil, nil

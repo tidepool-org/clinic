@@ -305,3 +305,27 @@ func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 
 	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
 }
+
+func (h *Handler) ListMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	updated, err := h.clinics.ListMembershipRestrictions(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewMembershipRestrictionsDto(updated))
+}
+
+func (h *Handler) UpdateMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := MembershipRestrictions{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	if err := h.clinics.UpdateMembershipRestrictions(ctx, clinicId, NewMembershipRestrictions(dto)); err != nil {
+		return err
+	}
+
+	return h.ListMembershipRestrictions(ec, clinicId)
+}
