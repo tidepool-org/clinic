@@ -151,6 +151,14 @@ type ClientInterface interface {
 
 	AssociateClinicianToUser(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListMembershipRestrictions request
+	ListMembershipRestrictions(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateMembershipRestrictions request with any body
+	UpdateMembershipRestrictionsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateMembershipRestrictions(ctx context.Context, clinicId ClinicId, body UpdateMembershipRestrictionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// TriggerInitialMigration request with any body
 	TriggerInitialMigrationWithBody(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -512,6 +520,42 @@ func (c *Client) AssociateClinicianToUserWithBody(ctx context.Context, clinicId 
 
 func (c *Client) AssociateClinicianToUser(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAssociateClinicianToUserRequest(c.Server, clinicId, inviteId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListMembershipRestrictions(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListMembershipRestrictionsRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMembershipRestrictionsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMembershipRestrictionsRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMembershipRestrictions(ctx context.Context, clinicId ClinicId, body UpdateMembershipRestrictionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMembershipRestrictionsRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1929,6 +1973,87 @@ func NewAssociateClinicianToUserRequestWithBody(server string, clinicId ClinicId
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListMembershipRestrictionsRequest generates requests for ListMembershipRestrictions
+func NewListMembershipRestrictionsRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/membership_restrictions", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateMembershipRestrictionsRequest calls the generic UpdateMembershipRestrictions builder with application/json body
+func NewUpdateMembershipRestrictionsRequest(server string, clinicId ClinicId, body UpdateMembershipRestrictionsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateMembershipRestrictionsRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewUpdateMembershipRestrictionsRequestWithBody generates requests for UpdateMembershipRestrictions with any type of body
+func NewUpdateMembershipRestrictionsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/membership_restrictions", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -3454,6 +3579,14 @@ type ClientWithResponsesInterface interface {
 
 	AssociateClinicianToUserWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, body AssociateClinicianToUserJSONRequestBody, reqEditors ...RequestEditorFn) (*AssociateClinicianToUserResponse, error)
 
+	// ListMembershipRestrictions request
+	ListMembershipRestrictionsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListMembershipRestrictionsResponse, error)
+
+	// UpdateMembershipRestrictions request with any body
+	UpdateMembershipRestrictionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMembershipRestrictionsResponse, error)
+
+	UpdateMembershipRestrictionsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateMembershipRestrictionsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMembershipRestrictionsResponse, error)
+
 	// TriggerInitialMigration request with any body
 	TriggerInitialMigrationWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error)
 
@@ -3928,6 +4061,50 @@ func (r AssociateClinicianToUserResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r AssociateClinicianToUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListMembershipRestrictionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MembershipRestrictions
+}
+
+// Status returns HTTPResponse.Status
+func (r ListMembershipRestrictionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListMembershipRestrictionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateMembershipRestrictionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MembershipRestrictions
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateMembershipRestrictionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateMembershipRestrictionsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4686,6 +4863,32 @@ func (c *ClientWithResponses) AssociateClinicianToUserWithResponse(ctx context.C
 	return ParseAssociateClinicianToUserResponse(rsp)
 }
 
+// ListMembershipRestrictionsWithResponse request returning *ListMembershipRestrictionsResponse
+func (c *ClientWithResponses) ListMembershipRestrictionsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListMembershipRestrictionsResponse, error) {
+	rsp, err := c.ListMembershipRestrictions(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListMembershipRestrictionsResponse(rsp)
+}
+
+// UpdateMembershipRestrictionsWithBodyWithResponse request with arbitrary body returning *UpdateMembershipRestrictionsResponse
+func (c *ClientWithResponses) UpdateMembershipRestrictionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMembershipRestrictionsResponse, error) {
+	rsp, err := c.UpdateMembershipRestrictionsWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMembershipRestrictionsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateMembershipRestrictionsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateMembershipRestrictionsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMembershipRestrictionsResponse, error) {
+	rsp, err := c.UpdateMembershipRestrictions(ctx, clinicId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMembershipRestrictionsResponse(rsp)
+}
+
 // TriggerInitialMigrationWithBodyWithResponse request with arbitrary body returning *TriggerInitialMigrationResponse
 func (c *ClientWithResponses) TriggerInitialMigrationWithBodyWithResponse(ctx context.Context, clinicId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*TriggerInitialMigrationResponse, error) {
 	rsp, err := c.TriggerInitialMigrationWithBody(ctx, clinicId, contentType, body, reqEditors...)
@@ -5442,6 +5645,58 @@ func ParseAssociateClinicianToUserResponse(rsp *http.Response) (*AssociateClinic
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Clinician
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListMembershipRestrictionsResponse parses an HTTP response from a ListMembershipRestrictionsWithResponse call
+func ParseListMembershipRestrictionsResponse(rsp *http.Response) (*ListMembershipRestrictionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListMembershipRestrictionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MembershipRestrictions
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateMembershipRestrictionsResponse parses an HTTP response from a UpdateMembershipRestrictionsWithResponse call
+func ParseUpdateMembershipRestrictionsResponse(rsp *http.Response) (*UpdateMembershipRestrictionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateMembershipRestrictionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MembershipRestrictions
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
