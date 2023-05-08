@@ -112,10 +112,6 @@ type MembershipRestrictions struct {
 	RequiredIdp string `bson:"requiredIdp,omitempty"`
 }
 
-func (r *MembershipRestrictions) IsEmpty() bool {
-	return r.EmailDomain == "" && r.RequiredIdp == ""
-}
-
 type PhoneNumber struct {
 	Type   *string `bson:"type,omitempty"`
 	Number string  `bson:"number,omitempty"`
