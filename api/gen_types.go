@@ -134,14 +134,12 @@ type Clinic struct {
 	ShareCode *string `json:"shareCode,omitempty"`
 
 	// State or province. In the U.S., typically something like `CA` or `California`.
-	State                   *string `json:"state,omitempty"`
-	SuppressedNotifications *struct {
-		PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
-	} `json:"suppressedNotifications,omitempty"`
-	Tier            *string    `json:"tier,omitempty"`
-	TierDescription *string    `json:"tierDescription,omitempty"`
-	UpdatedTime     *time.Time `json:"updatedTime,omitempty"`
-	Website         *string    `json:"website,omitempty"`
+	State                   *string                  `json:"state,omitempty"`
+	SuppressedNotifications *SuppressedNotifications `json:"suppressedNotifications,omitempty"`
+	Tier                    *string                  `json:"tier,omitempty"`
+	TierDescription         *string                  `json:"tierDescription,omitempty"`
+	UpdatedTime             *time.Time               `json:"updatedTime,omitempty"`
+	Website                 *string                  `json:"website,omitempty"`
 }
 
 // ClinicClinicSize defines model for Clinic.ClinicSize.
@@ -375,6 +373,11 @@ type PhoneNumber struct {
 	Type   *string `json:"type,omitempty"`
 }
 
+// SuppressedNotifications defines model for SuppressedNotifications.
+type SuppressedNotifications struct {
+	PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
+}
+
 // String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type TidepoolUserId string
 
@@ -384,6 +387,11 @@ type Tier string
 // TriggerMigration defines model for TriggerMigration.
 type TriggerMigration struct {
 	AttestationSubmitted *bool `json:"attestationSubmitted,omitempty"`
+}
+
+// UpdateSuppressedNotifications defines model for UpdateSuppressedNotifications.
+type UpdateSuppressedNotifications struct {
+	SuppressedNotifications SuppressedNotifications `json:"suppressedNotifications"`
 }
 
 // UpdateTier defines model for UpdateTier.
@@ -562,6 +570,9 @@ type UpdatePatientJSONBody Patient
 // UpdatePatientPermissionsJSONBody defines parameters for UpdatePatientPermissions.
 type UpdatePatientPermissionsJSONBody PatientPermissions
 
+// UpdateSuppressedNotificationsJSONBody defines parameters for UpdateSuppressedNotifications.
+type UpdateSuppressedNotificationsJSONBody UpdateSuppressedNotifications
+
 // UpdateTierJSONBody defines parameters for UpdateTier.
 type UpdateTierJSONBody UpdateTier
 
@@ -621,6 +632,9 @@ type UpdatePatientJSONRequestBody UpdatePatientJSONBody
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody UpdatePatientPermissionsJSONBody
+
+// UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
+type UpdateSuppressedNotificationsJSONRequestBody UpdateSuppressedNotificationsJSONBody
 
 // UpdateTierJSONRequestBody defines body for UpdateTier for application/json ContentType.
 type UpdateTierJSONRequestBody UpdateTierJSONBody
