@@ -174,6 +174,14 @@ allow {
   input.path = ["v1", "clinics", _, "tier"]
 }
 
+# Allow backend services to update clinic tiers
+# POST /v1/clinics/:clinicId/suppressed_notifications
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "suppressed_notifications"]
+  clinician_has_write_access
+}
+
 # Allow currently authenticated clinician to list clinicians
 # GET /v1/clinics/:clinicId/clinicians
 allow {
