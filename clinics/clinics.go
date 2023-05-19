@@ -62,7 +62,7 @@ type Clinic struct {
 	IsMigrated              bool                    `bson:"isMigrated,omitempty"`
 	Tier                    string                  `bson:"tier,omitempty"`
 	PreferredBgUnits        string                  `bson:"PreferredBgUnits,omitempty"`
-	SuppressedNotifications SuppressedNotifications `bson:"suppressedNotifications,omitempty"`
+	SuppressedNotifications SuppressedNotifications `bson:"suppressedNotifications"`
 }
 
 func NewClinic() Clinic {
