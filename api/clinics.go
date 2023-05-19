@@ -253,7 +253,7 @@ func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) UpdateSuppressedNotifications(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := UpdateSuppressedNotifications{}
+	var dto UpdateSuppressedNotifications
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
