@@ -110,6 +110,9 @@ type ClientInterface interface {
 	// GetClinicByShareCode request
 	GetClinicByShareCode(ctx context.Context, shareCode string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteClinic request
+	DeleteClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetClinic request
 	GetClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -324,6 +327,18 @@ func (c *Client) CreateClinic(ctx context.Context, body CreateClinicJSONRequestB
 
 func (c *Client) GetClinicByShareCode(ctx context.Context, shareCode string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetClinicByShareCodeRequest(c.Server, shareCode)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteClinicRequest(c.Server, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -1335,6 +1350,40 @@ func NewGetClinicByShareCodeRequest(server string, shareCode string) (*http.Requ
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteClinicRequest generates requests for DeleteClinic
+func NewDeleteClinicRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -3672,6 +3721,9 @@ type ClientWithResponsesInterface interface {
 	// GetClinicByShareCode request
 	GetClinicByShareCodeWithResponse(ctx context.Context, shareCode string, reqEditors ...RequestEditorFn) (*GetClinicByShareCodeResponse, error)
 
+	// DeleteClinic request
+	DeleteClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*DeleteClinicResponse, error)
+
 	// GetClinic request
 	GetClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetClinicResponse, error)
 
@@ -3942,6 +3994,27 @@ func (r GetClinicByShareCodeResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetClinicByShareCodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteClinicResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteClinicResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteClinicResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4764,6 +4837,15 @@ func (c *ClientWithResponses) GetClinicByShareCodeWithResponse(ctx context.Conte
 	return ParseGetClinicByShareCodeResponse(rsp)
 }
 
+// DeleteClinicWithResponse request returning *DeleteClinicResponse
+func (c *ClientWithResponses) DeleteClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*DeleteClinicResponse, error) {
+	rsp, err := c.DeleteClinic(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteClinicResponse(rsp)
+}
+
 // GetClinicWithResponse request returning *GetClinicResponse
 func (c *ClientWithResponses) GetClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetClinicResponse, error) {
 	rsp, err := c.GetClinic(ctx, clinicId, reqEditors...)
@@ -5394,6 +5476,22 @@ func ParseGetClinicByShareCodeResponse(rsp *http.Response) (*GetClinicByShareCod
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseDeleteClinicResponse parses an HTTP response from a DeleteClinicWithResponse call
+func ParseDeleteClinicResponse(rsp *http.Response) (*DeleteClinicResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteClinicResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

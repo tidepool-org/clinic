@@ -31,6 +31,9 @@ type ServerInterface interface {
 	// Get Clinic by Share Code
 	// (GET /v1/clinics/share_code/{shareCode})
 	GetClinicByShareCode(ctx echo.Context, shareCode string) error
+	// Delete Clinic
+	// (DELETE /v1/clinics/{clinicId})
+	DeleteClinic(ctx echo.Context, clinicId ClinicId) error
 	// Get Clinic
 	// (GET /v1/clinics/{clinicId})
 	GetClinic(ctx echo.Context, clinicId ClinicId) error
@@ -310,6 +313,24 @@ func (w *ServerInterfaceWrapper) GetClinicByShareCode(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetClinicByShareCode(ctx, shareCode)
+	return err
+}
+
+// DeleteClinic converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteClinic(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteClinic(ctx, clinicId)
 	return err
 }
 
@@ -1451,6 +1472,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics", wrapper.ListClinics)
 	router.POST(baseURL+"/v1/clinics", wrapper.CreateClinic)
 	router.GET(baseURL+"/v1/clinics/share_code/:shareCode", wrapper.GetClinicByShareCode)
+	router.DELETE(baseURL+"/v1/clinics/:clinicId", wrapper.DeleteClinic)
 	router.GET(baseURL+"/v1/clinics/:clinicId", wrapper.GetClinic)
 	router.PUT(baseURL+"/v1/clinics/:clinicId", wrapper.UpdateClinic)
 	router.GET(baseURL+"/v1/clinics/:clinicId/clinicians", wrapper.ListClinicians)
