@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+
 	oapiMiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
@@ -76,7 +77,9 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 	})
 	requestValidator := oapiMiddleware.OapiRequestValidatorWithOptions(swagger, &oapiMiddleware.Options{
 		Options: openapi3filter.Options{
-			AuthenticationFunc: authorizer.Authorize,
+			AuthenticationFunc:          authorizer.Authorize,
+			ExcludeReadOnlyValidations:  true,
+			ExcludeWriteOnlyValidations: true,
 		},
 		Skipper: skipper,
 	})

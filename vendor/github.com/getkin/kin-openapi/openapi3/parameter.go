@@ -2,14 +2,13 @@ package openapi3
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 
 	"github.com/go-openapi/jsonpointer"
-
-	"github.com/getkin/kin-openapi/jsoninfo"
 )
 
 type ParametersMap map[string]*ParameterRef
@@ -69,7 +68,9 @@ func (parameters Parameters) GetByInAndName(in string, name string) *Parameter {
 }
 
 // Validate returns an error if Parameters does not comply with the OpenAPI spec.
-func (parameters Parameters) Validate(ctx context.Context) error {
+func (parameters Parameters) Validate(ctx context.Context, opts ...ValidationOption) error {
+	ctx = WithValidationOptions(ctx, opts...)
+
 	dupes := make(map[string]struct{})
 	for _, parameterRef := range parameters {
 		if v := parameterRef.Value; v != nil {
@@ -88,9 +89,9 @@ func (parameters Parameters) Validate(ctx context.Context) error {
 }
 
 // Parameter is specified by OpenAPI/Swagger 3.0 standard.
-// See https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#parameterObject
+// See https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#parameter-object
 type Parameter struct {
-	ExtensionProps
+	Extensions map[string]interface{} `json:"-" yaml:"-"`
 
 	Name            string      `json:"name,omitempty" yaml:"name,omitempty"`
 	In              string      `json:"in,omitempty" yaml:"in,omitempty"`
@@ -167,13 +168,80 @@ func (parameter *Parameter) WithSchema(value *Schema) *Parameter {
 }
 
 // MarshalJSON returns the JSON encoding of Parameter.
-func (parameter *Parameter) MarshalJSON() ([]byte, error) {
-	return jsoninfo.MarshalStrictStruct(parameter)
+func (parameter Parameter) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{}, 13+len(parameter.Extensions))
+	for k, v := range parameter.Extensions {
+		m[k] = v
+	}
+
+	if x := parameter.Name; x != "" {
+		m["name"] = x
+	}
+	if x := parameter.In; x != "" {
+		m["in"] = x
+	}
+	if x := parameter.Description; x != "" {
+		m["description"] = x
+	}
+	if x := parameter.Style; x != "" {
+		m["style"] = x
+	}
+	if x := parameter.Explode; x != nil {
+		m["explode"] = x
+	}
+	if x := parameter.AllowEmptyValue; x {
+		m["allowEmptyValue"] = x
+	}
+	if x := parameter.AllowReserved; x {
+		m["allowReserved"] = x
+	}
+	if x := parameter.Deprecated; x {
+		m["deprecated"] = x
+	}
+	if x := parameter.Required; x {
+		m["required"] = x
+	}
+	if x := parameter.Schema; x != nil {
+		m["schema"] = x
+	}
+	if x := parameter.Example; x != nil {
+		m["example"] = x
+	}
+	if x := parameter.Examples; len(x) != 0 {
+		m["examples"] = x
+	}
+	if x := parameter.Content; len(x) != 0 {
+		m["content"] = x
+	}
+
+	return json.Marshal(m)
 }
 
 // UnmarshalJSON sets Parameter to a copy of data.
 func (parameter *Parameter) UnmarshalJSON(data []byte) error {
-	return jsoninfo.UnmarshalStrictStruct(data, parameter)
+	type ParameterBis Parameter
+	var x ParameterBis
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	_ = json.Unmarshal(data, &x.Extensions)
+
+	delete(x.Extensions, "name")
+	delete(x.Extensions, "in")
+	delete(x.Extensions, "description")
+	delete(x.Extensions, "style")
+	delete(x.Extensions, "explode")
+	delete(x.Extensions, "allowEmptyValue")
+	delete(x.Extensions, "allowReserved")
+	delete(x.Extensions, "deprecated")
+	delete(x.Extensions, "required")
+	delete(x.Extensions, "schema")
+	delete(x.Extensions, "example")
+	delete(x.Extensions, "examples")
+	delete(x.Extensions, "content")
+
+	*parameter = Parameter(x)
+	return nil
 }
 
 // JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
@@ -212,7 +280,7 @@ func (parameter Parameter) JSONLookup(token string) (interface{}, error) {
 		return parameter.Content, nil
 	}
 
-	v, _, err := jsonpointer.GetForToken(parameter.ExtensionProps, token)
+	v, _, err := jsonpointer.GetForToken(parameter.Extensions, token)
 	return v, err
 }
 
@@ -247,7 +315,9 @@ func (parameter *Parameter) SerializationMethod() (*SerializationMethod, error) 
 }
 
 // Validate returns an error if Parameter does not comply with the OpenAPI spec.
-func (parameter *Parameter) Validate(ctx context.Context) error {
+func (parameter *Parameter) Validate(ctx context.Context, opts ...ValidationOption) error {
+	ctx = WithValidationOptions(ctx, opts...)
+
 	if parameter.Name == "" {
 		return errors.New("parameter name can't be blank")
 	}
@@ -319,7 +389,7 @@ func (parameter *Parameter) Validate(ctx context.Context) error {
 			return fmt.Errorf("parameter %q example and examples are mutually exclusive", parameter.Name)
 		}
 
-		if vo := getValidationOptions(ctx); vo.ExamplesValidationDisabled {
+		if vo := getValidationOptions(ctx); vo.examplesValidationDisabled {
 			return nil
 		}
 		if example := parameter.Example; example != nil {
@@ -344,5 +414,5 @@ func (parameter *Parameter) Validate(ctx context.Context) error {
 		}
 	}
 
-	return nil
+	return validateExtensions(ctx, parameter.Extensions)
 }

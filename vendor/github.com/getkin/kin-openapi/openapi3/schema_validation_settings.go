@@ -8,14 +8,18 @@ import (
 type SchemaValidationOption func(*schemaValidationSettings)
 
 type schemaValidationSettings struct {
-	failfast                  bool
-	multiError                bool
-	asreq, asrep              bool // exclusive (XOR) fields
-	formatValidationEnabled   bool
-	patternValidationDisabled bool
+	failfast                    bool
+	multiError                  bool
+	asreq, asrep                bool // exclusive (XOR) fields
+	formatValidationEnabled     bool
+	patternValidationDisabled   bool
+	readOnlyValidationDisabled  bool
+	writeOnlyValidationDisabled bool
 
 	onceSettingDefaults sync.Once
 	defaultsSet         func()
+
+	customizeMessageError func(err *SchemaError) string
 }
 
 // FailFast returns schema validation errors quicker.
@@ -45,9 +49,25 @@ func DisablePatternValidation() SchemaValidationOption {
 	return func(s *schemaValidationSettings) { s.patternValidationDisabled = true }
 }
 
+// DisableReadOnlyValidation setting makes Validate not return an error when validating properties marked as read-only
+func DisableReadOnlyValidation() SchemaValidationOption {
+	return func(s *schemaValidationSettings) { s.readOnlyValidationDisabled = true }
+}
+
+// DisableWriteOnlyValidation setting makes Validate not return an error when validating properties marked as write-only
+func DisableWriteOnlyValidation() SchemaValidationOption {
+	return func(s *schemaValidationSettings) { s.writeOnlyValidationDisabled = true }
+}
+
 // DefaultsSet executes the given callback (once) IFF schema validation set default values.
 func DefaultsSet(f func()) SchemaValidationOption {
 	return func(s *schemaValidationSettings) { s.defaultsSet = f }
+}
+
+// SetSchemaErrorMessageCustomizer allows to override the schema error message.
+// If the passed function returns an empty string, it returns to the previous Error() implementation.
+func SetSchemaErrorMessageCustomizer(f func(err *SchemaError) string) SchemaValidationOption {
+	return func(s *schemaValidationSettings) { s.customizeMessageError = f }
 }
 
 func newSchemaValidationSettings(opts ...SchemaValidationOption) *schemaValidationSettings {
