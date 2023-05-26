@@ -2,19 +2,18 @@ package openapi3
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-
-	"github.com/getkin/kin-openapi/jsoninfo"
 )
 
 // T is the root of an OpenAPI v3 document
-// See https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#oasObject
+// See https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#openapi-object
 type T struct {
-	ExtensionProps
+	Extensions map[string]interface{} `json:"-" yaml:"-"`
 
 	OpenAPI      string               `json:"openapi" yaml:"openapi"` // Required
-	Components   Components           `json:"components,omitempty" yaml:"components,omitempty"`
+	Components   *Components          `json:"components,omitempty" yaml:"components,omitempty"`
 	Info         *Info                `json:"info" yaml:"info"`   // Required
 	Paths        Paths                `json:"paths" yaml:"paths"` // Required
 	Security     SecurityRequirements `json:"security,omitempty" yaml:"security,omitempty"`
@@ -26,25 +25,60 @@ type T struct {
 }
 
 // MarshalJSON returns the JSON encoding of T.
-func (doc *T) MarshalJSON() ([]byte, error) {
-	return jsoninfo.MarshalStrictStruct(doc)
+func (doc T) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{}, 4+len(doc.Extensions))
+	for k, v := range doc.Extensions {
+		m[k] = v
+	}
+	m["openapi"] = doc.OpenAPI
+	if x := doc.Components; x != nil {
+		m["components"] = x
+	}
+	m["info"] = doc.Info
+	m["paths"] = doc.Paths
+	if x := doc.Security; len(x) != 0 {
+		m["security"] = x
+	}
+	if x := doc.Servers; len(x) != 0 {
+		m["servers"] = x
+	}
+	if x := doc.Tags; len(x) != 0 {
+		m["tags"] = x
+	}
+	if x := doc.ExternalDocs; x != nil {
+		m["externalDocs"] = x
+	}
+	return json.Marshal(m)
 }
 
 // UnmarshalJSON sets T to a copy of data.
 func (doc *T) UnmarshalJSON(data []byte) error {
-	return jsoninfo.UnmarshalStrictStruct(data, doc)
+	type TBis T
+	var x TBis
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	_ = json.Unmarshal(data, &x.Extensions)
+	delete(x.Extensions, "openapi")
+	delete(x.Extensions, "components")
+	delete(x.Extensions, "info")
+	delete(x.Extensions, "paths")
+	delete(x.Extensions, "security")
+	delete(x.Extensions, "servers")
+	delete(x.Extensions, "tags")
+	delete(x.Extensions, "externalDocs")
+	*doc = T(x)
+	return nil
 }
 
 func (doc *T) AddOperation(path string, method string, operation *Operation) {
-	paths := doc.Paths
-	if paths == nil {
-		paths = make(Paths)
-		doc.Paths = paths
+	if doc.Paths == nil {
+		doc.Paths = make(Paths)
 	}
-	pathItem := paths[path]
+	pathItem := doc.Paths[path]
 	if pathItem == nil {
 		pathItem = &PathItem{}
-		paths[path] = pathItem
+		doc.Paths[path] = pathItem
 	}
 	pathItem.SetOperation(method, operation)
 }
@@ -56,11 +90,7 @@ func (doc *T) AddServer(server *Server) {
 // Validate returns an error if T does not comply with the OpenAPI spec.
 // Validations Options can be provided to modify the validation behavior.
 func (doc *T) Validate(ctx context.Context, opts ...ValidationOption) error {
-	validationOpts := &ValidationOptions{}
-	for _, opt := range opts {
-		opt(validationOpts)
-	}
-	ctx = WithValidationOptions(ctx, validationOpts)
+	ctx = WithValidationOptions(ctx, opts...)
 
 	if doc.OpenAPI == "" {
 		return errors.New("value of openapi must be a non-empty string")
@@ -70,8 +100,10 @@ func (doc *T) Validate(ctx context.Context, opts ...ValidationOption) error {
 	// NOTE: only mention info/components/paths/... key in this func's errors.
 
 	wrap = func(e error) error { return fmt.Errorf("invalid components: %w", e) }
-	if err := doc.Components.Validate(ctx); err != nil {
-		return wrap(err)
+	if v := doc.Components; v != nil {
+		if err := v.Validate(ctx); err != nil {
+			return wrap(err)
+		}
 	}
 
 	wrap = func(e error) error { return fmt.Errorf("invalid info: %w", e) }
@@ -120,5 +152,5 @@ func (doc *T) Validate(ctx context.Context, opts ...ValidationOption) error {
 		}
 	}
 
-	return nil
+	return validateExtensions(ctx, doc.Extensions)
 }

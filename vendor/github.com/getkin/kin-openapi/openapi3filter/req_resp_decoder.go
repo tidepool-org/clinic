@@ -1,6 +1,9 @@
 package openapi3filter
 
 import (
+	"archive/zip"
+	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -298,10 +301,8 @@ func decodeValue(dec valueDecoder, param string, sm *openapi3.SerializationMetho
 				isMatched++
 			}
 		}
-		if isMatched == 1 {
+		if isMatched >= 1 {
 			return value, found, nil
-		} else if isMatched > 1 {
-			return nil, found, fmt.Errorf("decoding oneOf failed: %d schemas matched", isMatched)
 		}
 		if required {
 			return nil, found, fmt.Errorf("decoding oneOf failed: %q is required", param)
@@ -334,9 +335,12 @@ func decodeValue(dec valueDecoder, param string, sm *openapi3.SerializationMetho
 	case *pathParamDecoder:
 		_, found = vDecoder.pathParams[param]
 	case *urlValuesDecoder:
+		if schema.Value.Pattern != "" {
+			return dec.DecodePrimitive(param, sm, schema)
+		}
 		_, found = vDecoder.values[param]
 	case *headerParamDecoder:
-		_, found = vDecoder.header[param]
+		_, found = vDecoder.header[http.CanonicalHeaderKey(param)]
 	case *cookieParamDecoder:
 		_, err := vDecoder.req.Cookie(param)
 		found = err != http.ErrNoCookie
@@ -500,6 +504,10 @@ func (d *urlValuesDecoder) DecodePrimitive(param string, sm *openapi3.Serializat
 		// HTTP request does not contain a value of the target query parameter.
 		return nil, ok, nil
 	}
+
+	if schema.Value.Type == "" && schema.Value.Pattern != "" {
+		return values[0], ok, nil
+	}
 	val, err := parsePrimitive(values[0], schema)
 	return val, ok, err
 }
@@ -526,8 +534,89 @@ func (d *urlValuesDecoder) DecodeArray(param string, sm *openapi3.SerializationM
 		}
 		values = strings.Split(values[0], delim)
 	}
-	val, err := parseArray(values, schema)
+	val, err := d.parseArray(values, sm, schema)
 	return val, ok, err
+}
+
+// parseArray returns an array that contains items from a raw array.
+// Every item is parsed as a primitive value.
+// The function returns an error when an error happened while parse array's items.
+func (d *urlValuesDecoder) parseArray(raw []string, sm *openapi3.SerializationMethod, schemaRef *openapi3.SchemaRef) ([]interface{}, error) {
+	var value []interface{}
+
+	for i, v := range raw {
+		item, err := d.parseValue(v, schemaRef.Value.Items)
+		if err != nil {
+			if v, ok := err.(*ParseError); ok {
+				return nil, &ParseError{path: []interface{}{i}, Cause: v}
+			}
+			return nil, fmt.Errorf("item %d: %w", i, err)
+		}
+
+		// If the items are nil, then the array is nil. There shouldn't be case where some values are actual primitive
+		// values and some are nil values.
+		if item == nil {
+			return nil, nil
+		}
+		value = append(value, item)
+	}
+	return value, nil
+}
+
+func (d *urlValuesDecoder) parseValue(v string, schema *openapi3.SchemaRef) (interface{}, error) {
+	if len(schema.Value.AllOf) > 0 {
+		var value interface{}
+		var err error
+		for _, sr := range schema.Value.AllOf {
+			value, err = d.parseValue(v, sr)
+			if value == nil || err != nil {
+				break
+			}
+		}
+		return value, err
+	}
+
+	if len(schema.Value.AnyOf) > 0 {
+		var value interface{}
+		var err error
+		for _, sr := range schema.Value.AnyOf {
+			if value, err = d.parseValue(v, sr); err == nil {
+				return value, nil
+			}
+		}
+
+		return nil, err
+	}
+
+	if len(schema.Value.OneOf) > 0 {
+		isMatched := 0
+		var value interface{}
+		var err error
+		for _, sr := range schema.Value.OneOf {
+			result, err := d.parseValue(v, sr)
+			if err == nil {
+				value = result
+				isMatched++
+			}
+		}
+		if isMatched == 1 {
+			return value, nil
+		} else if isMatched > 1 {
+			return nil, fmt.Errorf("decoding oneOf failed: %d schemas matched", isMatched)
+		} else if isMatched == 0 {
+			return nil, fmt.Errorf("decoding oneOf failed: %d schemas matched", isMatched)
+		}
+
+		return nil, err
+	}
+
+	if schema.Value.Not != nil {
+		// TODO(decode not): handle decoding "not" JSON Schema
+		return nil, errors.New("not implemented: decoding 'not'")
+	}
+
+	return parsePrimitive(v, schema)
+
 }
 
 func (d *urlValuesDecoder) DecodeObject(param string, sm *openapi3.SerializationMethod, schema *openapi3.SchemaRef) (map[string]interface{}, bool, error) {
@@ -800,14 +889,21 @@ func parseArray(raw []string, schemaRef *openapi3.SchemaRef) ([]interface{}, err
 
 // parsePrimitive returns a value that is created by parsing a source string to a primitive type
 // that is specified by a schema. The function returns nil when the source string is empty.
-// The function panics when a schema has a non primitive type.
+// The function panics when a schema has a non-primitive type.
 func parsePrimitive(raw string, schema *openapi3.SchemaRef) (interface{}, error) {
 	if raw == "" {
 		return nil, nil
 	}
 	switch schema.Value.Type {
 	case "integer":
-		v, err := strconv.ParseFloat(raw, 64)
+		if schema.Value.Format == "int32" {
+			v, err := strconv.ParseInt(raw, 0, 32)
+			if err != nil {
+				return nil, &ParseError{Kind: KindInvalidFormat, Value: raw, Reason: "an invalid " + schema.Value.Type, Cause: err.(*strconv.NumError).Err}
+			}
+			return int32(v), nil
+		}
+		v, err := strconv.ParseInt(raw, 0, 64)
 		if err != nil {
 			return nil, &ParseError{Kind: KindInvalidFormat, Value: raw, Reason: "an invalid " + schema.Value.Type, Cause: err.(*strconv.NumError).Err}
 		}
@@ -909,14 +1005,17 @@ func decodeBody(body io.Reader, header http.Header, schema *openapi3.SchemaRef, 
 }
 
 func init() {
-	RegisterBodyDecoder("text/plain", plainBodyDecoder)
 	RegisterBodyDecoder("application/json", jsonBodyDecoder)
-	RegisterBodyDecoder("application/x-yaml", yamlBodyDecoder)
-	RegisterBodyDecoder("application/yaml", yamlBodyDecoder)
+	RegisterBodyDecoder("application/json-patch+json", jsonBodyDecoder)
+	RegisterBodyDecoder("application/octet-stream", FileBodyDecoder)
 	RegisterBodyDecoder("application/problem+json", jsonBodyDecoder)
 	RegisterBodyDecoder("application/x-www-form-urlencoded", urlencodedBodyDecoder)
+	RegisterBodyDecoder("application/x-yaml", yamlBodyDecoder)
+	RegisterBodyDecoder("application/yaml", yamlBodyDecoder)
+	RegisterBodyDecoder("application/zip", zipFileBodyDecoder)
 	RegisterBodyDecoder("multipart/form-data", multipartBodyDecoder)
-	RegisterBodyDecoder("application/octet-stream", FileBodyDecoder)
+	RegisterBodyDecoder("text/csv", csvBodyDecoder)
+	RegisterBodyDecoder("text/plain", plainBodyDecoder)
 }
 
 func plainBodyDecoder(body io.Reader, header http.Header, schema *openapi3.SchemaRef, encFn EncodingFn) (interface{}, error) {
@@ -929,7 +1028,9 @@ func plainBodyDecoder(body io.Reader, header http.Header, schema *openapi3.Schem
 
 func jsonBodyDecoder(body io.Reader, header http.Header, schema *openapi3.SchemaRef, encFn EncodingFn) (interface{}, error) {
 	var value interface{}
-	if err := json.NewDecoder(body).Decode(&value); err != nil {
+	dec := json.NewDecoder(body)
+	dec.UseNumber()
+	if err := dec.Decode(&value); err != nil {
 		return nil, &ParseError{Kind: KindInvalidFormat, Cause: err}
 	}
 	return value, nil
@@ -1024,33 +1125,43 @@ func multipartBodyDecoder(body io.Reader, header http.Header, schema *openapi3.S
 			enc = encFn(name)
 		}
 		subEncFn := func(string) *openapi3.Encoding { return enc }
-		// If the property's schema has type "array" it is means that the form contains a few parts with the same name.
-		// Every such part has a type that is defined by an items schema in the property's schema.
+
 		var valueSchema *openapi3.SchemaRef
-		var exists bool
-		valueSchema, exists = schema.Value.Properties[name]
-		if !exists {
-			anyProperties := schema.Value.AdditionalPropertiesAllowed
-			if anyProperties != nil {
-				switch *anyProperties {
-				case true:
-					//additionalProperties: true
-					continue
-				default:
-					//additionalProperties: false
-					return nil, &ParseError{Kind: KindOther, Cause: fmt.Errorf("part %s: undefined", name)}
+		if len(schema.Value.AllOf) > 0 {
+			var exists bool
+			for _, sr := range schema.Value.AllOf {
+				if valueSchema, exists = sr.Value.Properties[name]; exists {
+					break
 				}
 			}
-			if schema.Value.AdditionalProperties == nil {
-				return nil, &ParseError{Kind: KindOther, Cause: fmt.Errorf("part %s: undefined", name)}
-			}
-			valueSchema, exists = schema.Value.AdditionalProperties.Value.Properties[name]
 			if !exists {
 				return nil, &ParseError{Kind: KindOther, Cause: fmt.Errorf("part %s: undefined", name)}
 			}
-		}
-		if valueSchema.Value.Type == "array" {
-			valueSchema = valueSchema.Value.Items
+		} else {
+			// If the property's schema has type "array" it is means that the form contains a few parts with the same name.
+			// Every such part has a type that is defined by an items schema in the property's schema.
+			var exists bool
+			if valueSchema, exists = schema.Value.Properties[name]; !exists {
+				if anyProperties := schema.Value.AdditionalProperties.Has; anyProperties != nil {
+					switch *anyProperties {
+					case true:
+						//additionalProperties: true
+						continue
+					default:
+						//additionalProperties: false
+						return nil, &ParseError{Kind: KindOther, Cause: fmt.Errorf("part %s: undefined", name)}
+					}
+				}
+				if schema.Value.AdditionalProperties.Schema == nil {
+					return nil, &ParseError{Kind: KindOther, Cause: fmt.Errorf("part %s: undefined", name)}
+				}
+				if valueSchema, exists = schema.Value.AdditionalProperties.Schema.Value.Properties[name]; !exists {
+					return nil, &ParseError{Kind: KindOther, Cause: fmt.Errorf("part %s: undefined", name)}
+				}
+			}
+			if valueSchema.Value.Type == "array" {
+				valueSchema = valueSchema.Value.Items
+			}
 		}
 
 		var value interface{}
@@ -1064,14 +1175,28 @@ func multipartBodyDecoder(body io.Reader, header http.Header, schema *openapi3.S
 	}
 
 	allTheProperties := make(map[string]*openapi3.SchemaRef)
-	for k, v := range schema.Value.Properties {
-		allTheProperties[k] = v
-	}
-	if schema.Value.AdditionalProperties != nil {
-		for k, v := range schema.Value.AdditionalProperties.Value.Properties {
+	if len(schema.Value.AllOf) > 0 {
+		for _, sr := range schema.Value.AllOf {
+			for k, v := range sr.Value.Properties {
+				allTheProperties[k] = v
+			}
+			if addProps := sr.Value.AdditionalProperties.Schema; addProps != nil {
+				for k, v := range addProps.Value.Properties {
+					allTheProperties[k] = v
+				}
+			}
+		}
+	} else {
+		for k, v := range schema.Value.Properties {
 			allTheProperties[k] = v
 		}
+		if addProps := schema.Value.AdditionalProperties.Schema; addProps != nil {
+			for k, v := range addProps.Value.Properties {
+				allTheProperties[k] = v
+			}
+		}
 	}
+
 	// Make an object value from form values.
 	obj := make(map[string]interface{})
 	for name, prop := range allTheProperties {
@@ -1096,4 +1221,75 @@ func FileBodyDecoder(body io.Reader, header http.Header, schema *openapi3.Schema
 		return nil, err
 	}
 	return string(data), nil
+}
+
+// zipFileBodyDecoder is a body decoder that decodes a zip file body to a string.
+func zipFileBodyDecoder(body io.Reader, header http.Header, schema *openapi3.SchemaRef, encFn EncodingFn) (interface{}, error) {
+	buff := bytes.NewBuffer([]byte{})
+	size, err := io.Copy(buff, body)
+	if err != nil {
+		return nil, err
+	}
+
+	zr, err := zip.NewReader(bytes.NewReader(buff.Bytes()), size)
+	if err != nil {
+		return nil, err
+	}
+
+	const bufferSize = 256
+	content := make([]byte, 0, bufferSize*len(zr.File))
+	buffer := make([]byte /*0,*/, bufferSize)
+
+	for _, f := range zr.File {
+		err := func() error {
+			rc, err := f.Open()
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = rc.Close()
+			}()
+
+			for {
+				n, err := rc.Read(buffer)
+				if 0 < n {
+					content = append(content, buffer...)
+				}
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		}()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return string(content), nil
+}
+
+// csvBodyDecoder is a body decoder that decodes a csv body to a string.
+func csvBodyDecoder(body io.Reader, header http.Header, schema *openapi3.SchemaRef, encFn EncodingFn) (interface{}, error) {
+	r := csv.NewReader(body)
+
+	var content string
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		content += strings.Join(record, ",") + "\n"
+	}
+
+	return content, nil
 }
