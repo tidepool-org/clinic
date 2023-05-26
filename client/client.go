@@ -226,6 +226,11 @@ type ClientInterface interface {
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpdateSuppressedNotifications request with any body
+	UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateSuppressedNotifications(ctx context.Context, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdateTier request with any body
 	UpdateTierWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -843,6 +848,30 @@ func (c *Client) SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId
 
 func (c *Client) SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendUploadReminderRequest(c.Server, clinicId, patientId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSuppressedNotificationsRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSuppressedNotifications(ctx context.Context, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSuppressedNotificationsRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2982,6 +3011,53 @@ func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId Pa
 	return req, nil
 }
 
+// NewUpdateSuppressedNotificationsRequest calls the generic UpdateSuppressedNotifications builder with application/json body
+func NewUpdateSuppressedNotificationsRequest(server string, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateSuppressedNotificationsRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewUpdateSuppressedNotificationsRequestWithBody generates requests for UpdateSuppressedNotifications with any type of body
+func NewUpdateSuppressedNotificationsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/suppressed_notifications", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewUpdateTierRequest calls the generic UpdateTier builder with application/json body
 func NewUpdateTierRequest(server string, clinicId ClinicId, body UpdateTierJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -3452,6 +3528,11 @@ type ClientWithResponsesInterface interface {
 
 	// SendUploadReminder request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
+
+	// UpdateSuppressedNotifications request with any body
+	UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error)
+
+	UpdateSuppressedNotificationsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error)
 
 	// UpdateTier request with any body
 	UpdateTierWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTierResponse, error)
@@ -4264,6 +4345,27 @@ func (r SendUploadReminderResponse) StatusCode() int {
 	return 0
 }
 
+type UpdateSuppressedNotificationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateSuppressedNotificationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateSuppressedNotificationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdateTierResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -4825,6 +4927,23 @@ func (c *ClientWithResponses) SendUploadReminderWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseSendUploadReminderResponse(rsp)
+}
+
+// UpdateSuppressedNotificationsWithBodyWithResponse request with arbitrary body returning *UpdateSuppressedNotificationsResponse
+func (c *ClientWithResponses) UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error) {
+	rsp, err := c.UpdateSuppressedNotificationsWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSuppressedNotificationsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateSuppressedNotificationsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error) {
+	rsp, err := c.UpdateSuppressedNotifications(ctx, clinicId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSuppressedNotificationsResponse(rsp)
 }
 
 // UpdateTierWithBodyWithResponse request with arbitrary body returning *UpdateTierResponse
@@ -5750,6 +5869,22 @@ func ParseSendUploadReminderResponse(rsp *http.Response) (*SendUploadReminderRes
 	}
 
 	response := &SendUploadReminderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseUpdateSuppressedNotificationsResponse parses an HTTP response from a UpdateSuppressedNotificationsWithResponse call
+func ParseUpdateSuppressedNotificationsResponse(rsp *http.Response) (*UpdateSuppressedNotificationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateSuppressedNotificationsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

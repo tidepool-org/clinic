@@ -236,6 +236,24 @@ func (c *repository) UpdateTier(ctx context.Context, id, tier string) error {
 	return err
 }
 
+func (c *repository) UpdateSuppressedNotifications(ctx context.Context, id string, suppressedNotifications SuppressedNotifications) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"updatedTime":             time.Now(),
+			"suppressedNotifications": suppressedNotifications,
+		},
+	}
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err == mongo.ErrNoDocuments {
+		return ErrNotFound
+	}
+
+	return err
+}
+
 func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*Clinic, error) {
 	clinic, err := c.Get(ctx, id)
 	if err != nil {

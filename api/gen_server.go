@@ -31,7 +31,7 @@ type ServerInterface interface {
 	// Get Clinic by Share Code
 	// (GET /v1/clinics/share_code/{shareCode})
 	GetClinicByShareCode(ctx echo.Context, shareCode string) error
-
+	// Delete Clinic
 	// (DELETE /v1/clinics/{clinicId})
 	DeleteClinic(ctx echo.Context, clinicId ClinicId) error
 	// Get Clinic
@@ -121,6 +121,9 @@ type ServerInterface interface {
 	// Send Upload Reminder
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
 	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+	// Update Suppressed Notifications
+	// (POST /v1/clinics/{clinicId}/suppressed_notifications)
+	UpdateSuppressedNotifications(ctx echo.Context, clinicId ClinicId) error
 	// Update Tier
 	// (POST /v1/clinics/{clinicId}/tier)
 	UpdateTier(ctx echo.Context, clinicId ClinicId) error
@@ -1146,6 +1149,24 @@ func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
 	return err
 }
 
+// UpdateSuppressedNotifications converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateSuppressedNotifications(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateSuppressedNotifications(ctx, clinicId)
+	return err
+}
+
 // UpdateTier converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdateTier(ctx echo.Context) error {
 	var err error
@@ -1334,6 +1355,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request", wrapper.SendDexcomConnectRequest)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
+	router.POST(baseURL+"/v1/clinics/:clinicId/suppressed_notifications", wrapper.UpdateSuppressedNotifications)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)

@@ -184,7 +184,7 @@ paths:
       tags:
         - Clinics
     delete:
-      summary: ''
+      summary: Delete Clinic
       operationId: DeleteClinic
       responses:
         '204':
@@ -551,8 +551,17 @@ paths:
                     enum:
                       - password_reset
                       - careteam_invitation
+                      - clinician_invitation
                       - signup_confirmation
                       - no_account
+                  status:
+                    title: Confirmation Status
+                    type: string
+                    enum:
+                      - pending
+                      - completed
+                      - canceled
+                      - declined
                   email:
                     $ref: '#/components/schemas/InviteClinician/properties/email'
                   creatorId:
@@ -607,6 +616,7 @@ paths:
                 required:
                   - key
                   - type
+                  - status
                   - email
                   - creatorId
                   - created
@@ -1085,6 +1095,23 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateTier'
+  '/v1/clinics/{clinicId}/suppressed_notifications':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      summary: Update Suppressed Notifications
+      operationId: UpdateSuppressedNotifications
+      responses:
+        '200':
+          description: OK
+      description: Endpoint to update clinic suppressed notifications
+      tags:
+        - Clinics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSuppressedNotifications'
   '/v1/clinics/{clinicId}/patients/{patientId}/upload_reminder':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1250,6 +1277,8 @@ components:
           enum:
             - mg/dL
             - mmol/L
+        suppressedNotifications:
+          $ref: '#/components/schemas/SuppressedNotifications'
       required:
         - id
         - name
@@ -1803,6 +1832,21 @@ components:
         - tier0300
         - tier0400
       example: tier0100
+    UpdateSuppressedNotifications:
+      title: UpdateSuppressedNotifications
+      type: object
+      properties:
+        suppressedNotifications:
+          $ref: '#/components/schemas/SuppressedNotifications'
+      required:
+        - suppressedNotifications
+    SuppressedNotifications:
+      title: Suppressed Notifications
+      type: object
+      properties:
+        patientClinicInvitation:
+          type: boolean
+      additionalProperties: false
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
