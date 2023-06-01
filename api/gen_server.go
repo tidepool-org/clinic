@@ -64,6 +64,12 @@ type ServerInterface interface {
 	// Associate Clinician to User
 	// (PATCH /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
 	AssociateClinicianToUser(ctx echo.Context, clinicId ClinicId, inviteId InviteId) error
+	// List Membership Restrictions
+	// (GET /v1/clinics/{clinicId}/membership_restrictions)
+	ListMembershipRestrictions(ctx echo.Context, clinicId ClinicId) error
+	// Update Membership Restrictions
+	// (PUT /v1/clinics/{clinicId}/membership_restrictions)
+	UpdateMembershipRestrictions(ctx echo.Context, clinicId ClinicId) error
 	// Trigger initial migration
 	// (POST /v1/clinics/{clinicId}/migrate)
 	TriggerInitialMigration(ctx echo.Context, clinicId string) error
@@ -599,6 +605,42 @@ func (w *ServerInterfaceWrapper) AssociateClinicianToUser(ctx echo.Context) erro
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.AssociateClinicianToUser(ctx, clinicId, inviteId)
+	return err
+}
+
+// ListMembershipRestrictions converts echo context to params.
+func (w *ServerInterfaceWrapper) ListMembershipRestrictions(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ListMembershipRestrictions(ctx, clinicId)
+	return err
+}
+
+// UpdateMembershipRestrictions converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateMembershipRestrictions(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateMembershipRestrictions(ctx, clinicId)
 	return err
 }
 
@@ -1336,6 +1378,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.DeleteInvitedClinician)
 	router.GET(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.GetInvitedClinician)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.AssociateClinicianToUser)
+	router.GET(baseURL+"/v1/clinics/:clinicId/membership_restrictions", wrapper.ListMembershipRestrictions)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/membership_restrictions", wrapper.UpdateMembershipRestrictions)
 	router.POST(baseURL+"/v1/clinics/:clinicId/migrate", wrapper.TriggerInitialMigration)
 	router.GET(baseURL+"/v1/clinics/:clinicId/migrations", wrapper.ListMigrations)
 	router.POST(baseURL+"/v1/clinics/:clinicId/migrations", wrapper.MigrateLegacyClinicianPatients)

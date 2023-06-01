@@ -213,6 +213,20 @@ type Error struct {
 // Id Clinic identifier.
 type Id = string
 
+// MembershipRestriction A user joining a clinic must match all of the defined restrictions
+type MembershipRestriction struct {
+	// EmailDomain The restriction applies only if the user has an email address with a matching domain
+	EmailDomain string `json:"emailDomain"`
+
+	// RequiredIdp If this attribute is set, at the time of joining the clinic the user must be authenticated against this identity provider
+	RequiredIdp *string `json:"requiredIdp,omitempty"`
+}
+
+// MembershipRestrictions A user joining a clinic must match at least one of the specified membership restrictions
+type MembershipRestrictions struct {
+	Restrictions *[]MembershipRestriction `json:"restrictions,omitempty"`
+}
+
 // Meta defines model for Meta.
 type Meta struct {
 	Count *int `json:"count,omitempty"`
@@ -530,6 +544,9 @@ type UpdateClinicianJSONRequestBody = Clinician
 
 // AssociateClinicianToUserJSONRequestBody defines body for AssociateClinicianToUser for application/json ContentType.
 type AssociateClinicianToUserJSONRequestBody = AssociateClinicianToUser
+
+// UpdateMembershipRestrictionsJSONRequestBody defines body for UpdateMembershipRestrictions for application/json ContentType.
+type UpdateMembershipRestrictionsJSONRequestBody = MembershipRestrictions
 
 // TriggerInitialMigrationJSONRequestBody defines body for TriggerInitialMigration for application/json ContentType.
 type TriggerInitialMigrationJSONRequestBody = TriggerMigration

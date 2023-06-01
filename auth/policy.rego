@@ -478,3 +478,27 @@ allow {
   input.path = ["v1", "patients", _, "data_sources"]
   is_backend_service
 }
+
+# Allow backend services to update clinic membership restrictions
+# PUT /v1/clinics/:clinicId/membership_restrictions
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "membership_restrictions"]
+  is_backend_service
+}
+
+# Allow backend services to list clinic membership restrictions
+# GET /v1/clinics/:clinicId/membership_restrictions
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "membership_restrictions"]
+  is_backend_service
+}
+
+# Allow clinic admins to list clinic membership restrictions
+# GET /v1/clinics/:clinicId/membership_restrictions
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "membership_restrictions"]
+  clinician_has_write_access
+}

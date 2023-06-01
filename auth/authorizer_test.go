@@ -700,4 +700,86 @@ var _ = Describe("Request Authorizer", func() {
 		err := authorizer.EvaluatePolicy(context.Background(), input)
 		Expect(err).ToNot(HaveOccurred())
 	})
+
+	It("it allows ORCA to list membership restrictions", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "membership_restrictions"},
+			"method": "GET",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinic-worker",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it allows clinic admins to list membership restrictions", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "membership_restrictions"},
+			"method": "GET",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it prevents clinic members to list membership restrictions", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "membership_restrictions"},
+			"method": "GET",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("it allows ORCA to update membership restrictions", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "membership_restrictions"},
+			"method": "PUT",
+			"auth": map[string]interface{}{
+				"subjectId":    "orca",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it prevents clinic admins to update membership restrictions", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "membership_restrictions"},
+			"method": "PUT",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("it prevents clinic members to update membership restrictions", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "membership_restrictions"},
+			"method": "PUT",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
 })
