@@ -876,9 +876,6 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
-<<<<<<< HEAD
-func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
-=======
 func NewMembershipRestrictionsDto(restrictions []clinics.MembershipRestrictions) MembershipRestrictions {
 	dto := MembershipRestrictions{}
 	var dtos []MembershipRestriction
@@ -912,8 +909,7 @@ func NewMembershipRestrictions(dto MembershipRestrictions) []clinics.MembershipR
 	return restrictions
 }
 
-func ParseSort(sort *Sort) (*store.Sort, error) {
->>>>>>> origin/master
+func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil
 	}
