@@ -1276,10 +1276,10 @@ func parseRangeFilter(filters patients.SummaryFilters, field string, filter *str
 
 func parseDateRangeFilter(filters patients.SummaryDateFilters, field string, min *time.Time, max *time.Time) (filterPair patients.FilterDatePair) {
 	// normalize any Zero values to nil
-	if min.IsZero() {
+	if min != nil && min.IsZero() {
 		min = nil
 	}
-	if max.IsZero() {
+	if max != nil && max.IsZero() {
 		max = nil
 	}
 
