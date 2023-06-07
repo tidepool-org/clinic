@@ -57,23 +57,24 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 	canMigrate := c.CanMigrate()
 
 	dto := Clinic{
-		Id:               &id,
-		Name:             pstr(c.Name),
-		ShareCode:        c.CanonicalShareCode,
-		CanMigrate:       &canMigrate,
-		ClinicType:       stringToClinicType(c.ClinicType),
-		ClinicSize:       stringToClinicSize(c.ClinicSize),
-		Address:          c.Address,
-		City:             c.City,
-		PostalCode:       c.PostalCode,
-		State:            c.State,
-		Country:          c.Country,
-		Website:          c.Website,
-		CreatedTime:      &c.CreatedTime,
-		UpdatedTime:      &c.UpdatedTime,
-		Tier:             &tier,
-		TierDescription:  strp(clinics.GetTierDescription(tier)),
-		PreferredBgUnits: units,
+		Id:                      &id,
+		Name:                    pstr(c.Name),
+		ShareCode:               c.CanonicalShareCode,
+		CanMigrate:              &canMigrate,
+		ClinicType:              stringToClinicType(c.ClinicType),
+		ClinicSize:              stringToClinicSize(c.ClinicSize),
+		Address:                 c.Address,
+		City:                    c.City,
+		PostalCode:              c.PostalCode,
+		State:                   c.State,
+		Country:                 c.Country,
+		Website:                 c.Website,
+		CreatedTime:             &c.CreatedTime,
+		UpdatedTime:             &c.UpdatedTime,
+		Tier:                    &tier,
+		TierDescription:         strp(clinics.GetTierDescription(tier)),
+		PreferredBgUnits:        units,
+		SuppressedNotifications: (*SuppressedNotifications)(&c.SuppressedNotifications),
 	}
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber
@@ -875,7 +876,44 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
+<<<<<<< HEAD
 func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
+=======
+func NewMembershipRestrictionsDto(restrictions []clinics.MembershipRestrictions) MembershipRestrictions {
+	dto := MembershipRestrictions{}
+	var dtos []MembershipRestriction
+	for _, r := range restrictions {
+		restriction := MembershipRestriction{}
+		restriction.EmailDomain = r.EmailDomain
+		if r.RequiredIdp != "" {
+			restriction.RequiredIdp = strp(r.RequiredIdp)
+		}
+		dtos = append(dtos, restriction)
+	}
+	if len(dtos) > 0 {
+		dto.Restrictions = &dtos
+	}
+
+	return dto
+}
+
+func NewMembershipRestrictions(dto MembershipRestrictions) []clinics.MembershipRestrictions {
+	var restrictions []clinics.MembershipRestrictions
+	if dto.Restrictions != nil {
+		for _, r := range *dto.Restrictions {
+			restriction := clinics.MembershipRestrictions{
+				EmailDomain: r.EmailDomain,
+				RequiredIdp: pstr(r.RequiredIdp),
+			}
+			restrictions = append(restrictions, restriction)
+		}
+	}
+
+	return restrictions
+}
+
+func ParseSort(sort *Sort) (*store.Sort, error) {
+>>>>>>> origin/master
 	if sort == nil {
 		return nil, nil
 	}

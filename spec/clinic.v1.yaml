@@ -717,8 +717,17 @@ paths:
                     enum:
                       - password_reset
                       - careteam_invitation
+                      - clinician_invitation
                       - signup_confirmation
                       - no_account
+                  status:
+                    title: Confirmation Status
+                    type: string
+                    enum:
+                      - pending
+                      - completed
+                      - canceled
+                      - declined
                   email:
                     $ref: '#/components/schemas/InviteClinician/properties/email'
                   creatorId:
@@ -770,9 +779,24 @@ paths:
                       - profile
                   context:
                     type: string
+                  restrictions:
+                    title: Acceptance restrictions
+                    x-stoplight:
+                      id: ywnkw0w7xn8b4
+                    type: object
+                    properties:
+                      canAccept:
+                        type: boolean
+                        description: Whether the invite can be accepted by the current user
+                      requiredIdp:
+                        type: string
+                        description: Set if the user must be authenticated against a specific identity provider before they are able to accept the invite
+                    required:
+                      - canAccept
                 required:
                   - key
                   - type
+                  - status
                   - email
                   - creatorId
                   - created
@@ -1251,6 +1275,23 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateTier'
+  '/v1/clinics/{clinicId}/suppressed_notifications':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      summary: Update Suppressed Notifications
+      operationId: UpdateSuppressedNotifications
+      responses:
+        '200':
+          description: OK
+      description: Endpoint to update clinic suppressed notifications
+      tags:
+        - Clinics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSuppressedNotifications'
   '/v1/clinics/{clinicId}/patients/{patientId}/upload_reminder':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1292,6 +1333,45 @@ paths:
         '200':
           description: OK
       description: Delete a patient tag from all clinic patients
+      tags:
+        - Clinics
+        - Internal
+  '/v1/clinics/{clinicId}/membership_restrictions':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: List Membership Restrictions
+      tags:
+        - Clinics
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipRestrictions'
+      operationId: ListMembershipRestrictions
+      description: |-
+        Returns a list of the membership restrictions that will be evaluated when a user joins a clinic.
+
+        Only clinic admins can access this endpoint.
+    put:
+      summary: Update Membership Restrictions
+      operationId: UpdateMembershipRestrictions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipRestrictions'
+      description: An internal endpoint to update clinic membership restrictions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipRestrictions'
+      x-internal: true
       tags:
         - Clinics
         - Internal
@@ -1416,6 +1496,8 @@ components:
           enum:
             - mg/dL
             - mmol/L
+        suppressedNotifications:
+          $ref: '#/components/schemas/SuppressedNotifications'
       required:
         - id
         - name
@@ -2231,6 +2313,48 @@ components:
         - tier0300
         - tier0400
       example: tier0100
+    UpdateSuppressedNotifications:
+      title: UpdateSuppressedNotifications
+      type: object
+      properties:
+        suppressedNotifications:
+          $ref: '#/components/schemas/SuppressedNotifications'
+      required:
+        - suppressedNotifications
+    SuppressedNotifications:
+      title: Suppressed Notifications
+      type: object
+      properties:
+        patientClinicInvitation:
+          type: boolean
+      additionalProperties: false
+    MembershipRestriction:
+      title: Membership Restriction
+      x-stoplight:
+        id: lkeikldmhqso2
+      type: object
+      description: A user joining a clinic must match all of the defined restrictions
+      properties:
+        emailDomain:
+          type: string
+          format: hostname
+          description: The restriction applies only if the user has an email address with a matching domain
+        requiredIdp:
+          type: string
+          description: 'If this attribute is set, at the time of joining the clinic the user must be authenticated against this identity provider'
+      required:
+        - emailDomain
+    MembershipRestrictions:
+      title: Membership Restrictions
+      x-stoplight:
+        id: j8zuck3me7f8s
+      type: object
+      description: A user joining a clinic must match at least one of the specified membership restrictions
+      properties:
+        restrictions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembershipRestriction'
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

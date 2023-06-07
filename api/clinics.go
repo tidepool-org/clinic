@@ -2,9 +2,10 @@ package api
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/clinics/manager"
 	"net/http"
 	"time"
+
+	"github.com/tidepool-org/clinic/clinics/manager"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
@@ -250,6 +251,20 @@ func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
 	return ec.NoContent(http.StatusOK)
 }
 
+func (h *Handler) UpdateSuppressedNotifications(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	var dto UpdateSuppressedNotifications
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	if err := h.clinics.UpdateSuppressedNotifications(ctx, string(clinicId), clinics.SuppressedNotifications(dto.SuppressedNotifications)); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
 func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 	dto := clinics.PatientTag{}
@@ -289,4 +304,28 @@ func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 	}
 
 	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+}
+
+func (h *Handler) ListMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	updated, err := h.clinics.ListMembershipRestrictions(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewMembershipRestrictionsDto(updated))
+}
+
+func (h *Handler) UpdateMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := MembershipRestrictions{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	if err := h.clinics.UpdateMembershipRestrictions(ctx, clinicId, NewMembershipRestrictions(dto)); err != nil {
+		return err
+	}
+
+	return h.ListMembershipRestrictions(ec, clinicId)
 }
