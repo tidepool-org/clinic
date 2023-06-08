@@ -124,7 +124,7 @@ func (mr *MockRepositoryMockRecorder) Get(ctx, clinicId, userId interface{}) *go
 }
 
 // List mocks base method.
-func (m *MockRepository) List(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sort *store.Sort) (*patients.ListResult, error) {
+func (m *MockRepository) List(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sort []*store.Sort) (*patients.ListResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, filter, pagination, sort)
 	ret0, _ := ret[0].(*patients.ListResult)

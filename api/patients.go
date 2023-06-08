@@ -12,71 +12,45 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) error {
+var defaultPeriod = "14d"
+
+func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) (err error) {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId:           strp(string(clinicId)),
-		Search:             searchToString(params.Search),
-		LastUploadDateFrom: params.SummaryLastUploadDateFrom,
-		LastUploadDateTo:   params.SummaryLastUploadDateTo,
-		Tags:               params.Tags,
-	}
-	if params.SummaryPeriods14dTimeCGMUsePercent != nil && *params.SummaryPeriods14dTimeCGMUsePercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeCGMUsePercent)
-		if err != nil {
-			return err
-		}
-		filter.TimeCGMUsePercentCmp14d = cmp
-		filter.TimeCGMUsePercentValue14d = value
-	}
-	if params.SummaryPeriods14dTimeInVeryLowPercent != nil && *params.SummaryPeriods14dTimeInVeryLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInVeryLowPercent)
-		if err != nil {
-			return err
-		}
-		filter.TimeInVeryLowPercentCmp14d = cmp
-		filter.TimeInVeryLowPercentValue14d = value
-	}
-	if params.SummaryPeriods14dTimeInLowPercent != nil && *params.SummaryPeriods14dTimeInLowPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInLowPercent)
-		if err != nil {
-			return err
-		}
-		filter.TimeInLowPercentCmp14d = cmp
-		filter.TimeInLowPercentValue14d = value
-	}
-	if params.SummaryPeriods14dTimeInTargetPercent != nil && *params.SummaryPeriods14dTimeInTargetPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInTargetPercent)
-		if err != nil {
-			return err
-		}
-		filter.TimeInTargetPercentCmp14d = cmp
-		filter.TimeInTargetPercentValue14d = value
-	}
-	if params.SummaryPeriods14dTimeInHighPercent != nil && *params.SummaryPeriods14dTimeInHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInHighPercent)
-		if err != nil {
-			return err
-		}
-		filter.TimeInHighPercentCmp14d = cmp
-		filter.TimeInHighPercentValue14d = value
-	}
-	if params.SummaryPeriods14dTimeInVeryHighPercent != nil && *params.SummaryPeriods14dTimeInVeryHighPercent != "" {
-		cmp, value, err := parseRangeFilter(*params.SummaryPeriods14dTimeInVeryHighPercent)
-		if err != nil {
-			return err
-		}
-		filter.TimeInVeryHighPercentCmp14d = cmp
-		filter.TimeInVeryHighPercentValue14d = value
+		ClinicId: strp(string(clinicId)),
+		Search:   searchToString(params.Search),
+		Tags:     params.Tags,
 	}
 
-	sort, err := ParseSort(params.Sort)
+	if params.Period == nil || *params.Period == "" {
+		filter.Period = &defaultPeriod
+		params.Period = &defaultPeriod
+	} else {
+		filter.Period = params.Period
+	}
+
+	var sorts []*store.Sort
+
+	filter.CGM, err = ParseCGMSummaryFilters(params)
 	if err != nil {
 		return err
 	}
 
-	list, err := h.patients.List(ctx, &filter, page, sort)
+	filter.BGM, err = ParseBGMSummaryFilters(params)
+	if err != nil {
+		return err
+	}
+
+	filter.CGMTime = ParseCGMSummaryDateFilters(params)
+	filter.BGMTime = ParseBGMSummaryDateFilters(params)
+
+	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
+	if err != nil {
+		return err
+	}
+
+	list, err := h.patients.List(ctx, &filter, page, sorts)
 	if err != nil {
 		return err
 	}

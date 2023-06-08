@@ -56,7 +56,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "userId", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetUnique(true).
 				SetName("UniquePatient"),
 		},
@@ -66,7 +65,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "fullName", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientFullNameEn").
 				SetCollation(&collation),
 		},
@@ -76,7 +74,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "birthDate", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientBirthDate"),
 		},
 		{
@@ -85,7 +82,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "email", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientEmail"),
 		},
 		{
@@ -94,80 +90,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "mrn", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientMRN"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.lastUploadDate", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryLastUploadDate"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeCGMUse", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeCGMUse14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.glucoseManagementIndicator", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryGMI14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInVeryLow", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryLow14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInLow", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInLow14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInTarget", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInTarget14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInHigh", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInHigh14d"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "clinicId", Value: 1},
-				{Key: "summary.periods.14d.percentTimeInVeryHigh", Value: 1},
-			},
-			Options: options.Index().
-				SetBackground(true).
-				SetName("PatientSummaryTimeInVeryHigh14d"),
 		},
 		{
 			Keys: bson.D{
@@ -175,7 +98,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "tags", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("PatientTags"),
 		},
 		{
@@ -184,7 +106,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "dataSources.providerName", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("DataSourcesProviderName"),
 		},
 		{
@@ -193,7 +114,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "dataSources.state", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetName("DataSourcesState"),
 		},
 	})
@@ -236,18 +156,25 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string)
 	return nil
 }
 
-func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination, sort *store.Sort) (*ListResult, error) {
+func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination, sorts []*store.Sort) (*ListResult, error) {
 	// We use an aggregation pipeline with facet in order to get the count
 	// and the patients from a single query
 	pipeline := []bson.M{
 		{"$match": generateListFilterQuery(filter)},
-		{"$sort": generateListSortStage(sort)},
+		{"$sort": generateListSortStage(sorts)},
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
+	var hasFullNameSort = false
+	for _, sort := range sorts {
+		if sort.Attribute == "fullName" {
+			hasFullNameSort = true
+		}
+	}
+
 	var opts *options.AggregateOptions
-	if sort == nil || sort.Attribute == "fullName" {
-		// Case insensitive sorting when sorting by fullName
+	if len(sorts) == 0 || hasFullNameSort {
+		// Case-insensitive sorting when sorting by fullName
 		opts = options.Aggregate().SetCollation(&collation)
 	}
 
@@ -451,20 +378,22 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		"userId": userId,
 	}
 
-	update := bson.M{}
+	set := bson.M{}
+	unset := bson.M{}
 	if summary == nil {
-		update["$unset"] = bson.M{
-			"summary":     "",
-			"updatedTime": time.Now(),
+		unset = bson.M{
+			"summary": "",
 		}
 	} else {
-		update["$set"] = bson.M{
-			"summary":     summary,
-			"updatedTime": time.Now(),
+		if summary.CGM != nil {
+			set["summary.cgmStats"] = summary.CGM
+		}
+		if summary.BGM != nil {
+			set["summary.bgmStats"] = summary.BGM
 		}
 	}
 
-	res, err := r.collection.UpdateMany(ctx, selector, update)
+	res, err := r.collection.UpdateMany(ctx, selector, bson.M{"$set": set, "$unset": unset})
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
@@ -524,7 +453,7 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 		"dataSources.providerName": DexcomDataSourceProviderName,
 	}
 
-	// Default update for inital connection requests
+	// Default update for initial connection requests
 	mongoUpdate := bson.M{
 		"$set": bson.M{
 			"lastRequestedDexcomConnectTime": update.Time,
@@ -654,77 +583,107 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			bson.M{"birthDate": filter},
 		}
 	}
-	lastUploadDate := bson.M{}
-	if filter.LastUploadDateFrom != nil && !filter.LastUploadDateFrom.IsZero() {
-		lastUploadDate["$gte"] = filter.LastUploadDateFrom
-	}
-	if filter.LastUploadDateTo != nil && !filter.LastUploadDateTo.IsZero() {
-		lastUploadDate["$lt"] = filter.LastUploadDateTo
-	}
-	if len(lastUploadDate) > 0 {
-		selector["summary.lastUploadDate"] = lastUploadDate
-	}
+
 	if filter.Tags != nil {
 		selector["tags"] = bson.M{
 			"$all": store.ObjectIDSFromStringArray(*filter.Tags),
 		}
 	}
 
-	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeCGMUsePercent",
-		filter.TimeCGMUsePercentCmp14d,
-		filter.TimeCGMUsePercentValue14d,
-	)
+	if f, ok := filter.CGMTime["lastUploadDate"]; ok {
+		cgmLastUploadDate := bson.M{}
 
-	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInVeryLowPercent",
-		filter.TimeInVeryLowPercentCmp14d,
-		filter.TimeInVeryLowPercentValue14d,
-	)
+		if f.Min != nil {
+			cgmLastUploadDate["$gte"] = f.Min
+		}
 
-	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInLowPercent",
-		filter.TimeInLowPercentCmp14d,
-		filter.TimeInLowPercentValue14d,
-	)
+		if f.Max != nil {
+			cgmLastUploadDate["$lt"] = f.Max
+		}
 
-	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInTargetPercent",
-		filter.TimeInTargetPercentCmp14d,
-		filter.TimeInTargetPercentValue14d,
-	)
+		selector["summary.cgmStats.dates.lastUploadDate"] = cgmLastUploadDate
+	}
 
-	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInHighPercent",
-		filter.TimeInHighPercentCmp14d,
-		filter.TimeInHighPercentValue14d,
-	)
+	if f, ok := filter.BGMTime["lastUploadDate"]; ok {
+		bgmLastUploadDate := bson.M{}
 
-	MaybeApplyNumericFilter(selector,
-		"summary.periods.14d.timeInVeryHighPercent",
-		filter.TimeInVeryHighPercentCmp14d,
-		filter.TimeInVeryHighPercentValue14d,
-	)
+		if f.Min != nil {
+			bgmLastUploadDate["$gte"] = f.Min
+		}
+
+		if f.Max != nil {
+			bgmLastUploadDate["$lt"] = f.Max
+		}
+
+		selector["summary.bgmStats.dates.lastUploadDate"] = bgmLastUploadDate
+	}
+
+	for field, pair := range filter.CGM {
+		MaybeApplyNumericFilter(selector,
+			*filter.Period,
+			"cgm",
+			field,
+			pair,
+		)
+	}
+
+	for field, pair := range filter.BGM {
+		MaybeApplyNumericFilter(selector,
+			*filter.Period,
+			"bgm",
+			field,
+			pair,
+		)
+	}
+
+	for field, pair := range filter.CGMTime {
+		ApplyDateFilter(selector,
+			"cgm",
+			field,
+			pair,
+		)
+	}
+
+	for field, pair := range filter.BGMTime {
+		ApplyDateFilter(selector,
+			"bgm",
+			field,
+			pair,
+		)
+	}
 
 	return selector
 }
 
-func MaybeApplyNumericFilter(selector bson.M, field string, cmp *string, value float64) {
-	if f, ok := cmpToMongoFilter(cmp); ok {
-		selector[field] = bson.M{f: value}
+func MaybeApplyNumericFilter(selector bson.M, period string, typ string, field string, pair FilterPair) {
+	if operator, ok := cmpToMongoFilter(&pair.Cmp); ok {
+		selector["summary."+typ+"Stats.periods."+period+"."+field] = bson.M{operator: pair.Value}
 	}
 }
 
-func isSortAttributeValid(attribute string) bool {
-	_, ok := validSortAttributes[attribute]
-	return ok
+func ApplyDateFilter(selector bson.M, typ string, field string, pair FilterDatePair) {
+	dateFilter := bson.M{}
+
+	if pair.Min != nil {
+		dateFilter["$gte"] = pair.Min
+	}
+
+	if pair.Max != nil {
+		dateFilter["$lt"] = pair.Max
+	}
+
+	selector["summary."+typ+"Stats.dates."+field] = dateFilter
 }
 
-func generateListSortStage(sort *store.Sort) bson.D {
+func generateListSortStage(sorts []*store.Sort) bson.D {
 	var s bson.D
-	if sort != nil && isSortAttributeValid(sort.Attribute) {
-		s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
-	} else {
+	for _, sort := range sorts {
+		if sort != nil {
+			s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
+		}
+	}
+
+	if len(s) == 0 {
 		s = append(s, bson.E{Key: "fullName", Value: 1})
 	}
 
@@ -791,12 +750,4 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 
 	f, ok := cmpToFilter[*cmp]
 	return f, ok
-}
-
-var validSortAttributes = map[string]struct{}{
-	"fullName":                              {},
-	"birthDate":                             {},
-	"summary.lastUploadDate":                {},
-	"summary.periods.14d.timeCGMUsePercent": {},
-	"summary.periods.14d.glucoseManagementIndicator": {},
 }

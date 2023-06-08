@@ -28,8 +28,8 @@ func (s *service) Get(ctx context.Context, clinicId string, userId string) (*Pat
 	return s.repo.Get(ctx, clinicId, userId)
 }
 
-func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pagination, sort *store.Sort) (*ListResult, error) {
-	return s.repo.List(ctx, filter, pagination, sort)
+func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pagination, sorts []*store.Sort) (*ListResult, error) {
+	return s.repo.List(ctx, filter, pagination, sorts)
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
