@@ -1322,17 +1322,43 @@ paths:
       description: Resend Dexcom connect request to the email address of the patient
       tags:
         - Clinics
+  '/v1/clinics/{clinicId}/patients/assign_tag/{patientTagId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientTagId'
+    post:
+      summary: Assign Patient Tag To Clinic Patients
+      operationId: AssignPatientTagToClinicPatients
+      requestBody:
+        description: Pass an array of patient IDs to target a subset of the clinic patients. Omit request body to target all clinic patients.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TidepoolUserIds'
+      responses:
+        '200':
+          description: OK
+      description: Assign a patient tag to all or a subset of clinic patients
+      tags:
+        - Clinics
+        - Internal
   '/v1/clinics/{clinicId}/patients/delete_tag/{patientTagId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientTagId'
-    delete:
+    post:
       summary: Delete Patient Tag From Clinic Patients
       operationId: DeletePatientTagFromClinicPatients
+      requestBody:
+        description: Pass an array of patient IDs to target a subset of the clinic patients. Omit request body to target all clinic patients.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TidepoolUserIds'
       responses:
         '200':
           description: OK
-      description: Delete a patient tag from all clinic patients
+      description: Delete a patient tag from all or a subset of clinic patients
       tags:
         - Clinics
         - Internal
@@ -1722,6 +1748,14 @@ components:
       description: 'String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))'
       readOnly: true
       x-go-type: string
+    TidepoolUserIds:
+      type: array
+      description: Array of Tidepool User IDs
+      items:
+        $ref: '#/components/schemas/TidepoolUserId'
+      minItems: 1
+      maxItems: 1000
+      uniqueItems: true
     ClinicianRoles:
       type: array
       title: Clinician Permissions
@@ -1915,6 +1949,7 @@ components:
           type: number
           format: float
           minimum: 0
+          maximum: 55
           example: 5.5
           x-tags:
             - Data

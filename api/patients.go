@@ -329,6 +329,18 @@ func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId C
 	return ec.NoContent(http.StatusOK)
 }
 
+func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	ctx := ec.Request().Context()
+
+	err := h.patients.AssignPatientTagToClinicPatients(ctx, string(clinicId), string(patientTagId))
+
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
 func (h *Handler) UpdatePatientDataSources(ec echo.Context, userId UserId) error {
 	ctx := ec.Request().Context()
 	dto := patients.DataSources{}
