@@ -476,7 +476,7 @@ allow {
   clinician_has_write_access
 }
 
-# Allow backend services or clinic admins to delete a patient tag from all clinic patients
+# Allow backend services or clinic admins to assign a patient tag to a subset of clinic patients
 # POST /v1/clinics/:clinicId/patients/assign_tag/:patientTagId
 allow {
   input.method == "POST"

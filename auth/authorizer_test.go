@@ -756,7 +756,7 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("it prevents a currently authenticated clinic non-admin member from assigning a tag from all matching patients", func() {
+	It("it prevents a currently authenticated clinic non-admin member from assigning a tag to all matching patients", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "assign_tag", "6066fbabc6f484277200ac65"},
 			"method": "POST",
