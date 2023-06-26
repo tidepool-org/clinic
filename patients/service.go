@@ -146,9 +146,19 @@ func (s *service) UpdateLastRequestedDexcomConnectTime(ctx context.Context, upda
 	return s.repo.UpdateLastRequestedDexcomConnectTime(ctx, update)
 }
 
-func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
-	s.logger.Infow("deleting tag from all patients", "clinicId", clinicId, "tagId", tagId)
-	return s.repo.DeletePatientTagFromClinicPatients(ctx, clinicId, tagId)
+func (s *service) AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
+	s.logger.Infow("assigning tag to patients", "clinicId", clinicId, "tagId", tagId)
+	return s.repo.AssignPatientTagToClinicPatients(ctx, clinicId, tagId, patientIds)
+}
+
+func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
+	target := "all"
+	if patientIds != nil {
+		target = "subset"
+	}
+
+	s.logger.Infow("deleting tag from patients", "clinicId", clinicId, "tagId", tagId, "target", target)
+	return s.repo.DeletePatientTagFromClinicPatients(ctx, clinicId, tagId, patientIds)
 }
 
 func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error {

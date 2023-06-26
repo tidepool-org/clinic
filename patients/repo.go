@@ -511,13 +511,63 @@ func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patie
 	return nil
 }
 
-func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
+func (r *repository) AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
+
+	// We can't $addToSet below for any patients with a tags field value of `null`,
+	// so we set the field to an empty array if that's the case
+	tagsFieldisNullSelector := bson.M{
+		"clinicId": clinicObjId,
+		"tags":     bson.M{"$type": 10}, // BSON type 10 is `null`
+		"userId":   bson.M{"$in": patientIds},
+	}
+
+	tagsFieldisNullUpdate := bson.M{
+		"$set": bson.M{
+			"tags": bson.A{},
+		},
+	}
+
+	_, arraySetErr := r.collection.UpdateMany(ctx, tagsFieldisNullSelector, tagsFieldisNullUpdate)
+	if arraySetErr != nil {
+		return fmt.Errorf("error ensuring patient tags field is an array: %w", arraySetErr)
+	}
+
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"tags":     bson.M{"$nin": bson.A{patientTagId}},
+		"userId":   bson.M{"$in": patientIds},
+	}
+
+	update := bson.M{
+		"$addToSet": bson.M{
+			"tags": patientTagId,
+		},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+
+	_, err := r.collection.UpdateMany(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error assigning patient tag to patients: %w", err)
+	}
+
+	return nil
+}
+
+func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
 
 	selector := bson.M{
 		"clinicId": clinicObjId,
 		"tags":     patientTagId,
+	}
+
+	if patientIds != nil {
+		selector["userId"] = bson.M{"$in": patientIds}
 	}
 
 	update := bson.M{
