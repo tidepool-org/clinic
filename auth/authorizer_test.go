@@ -691,7 +691,7 @@ var _ = Describe("Request Authorizer", func() {
 	It("it allows clinic-worker to remove a tag from all matching patients", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "delete_tag", "6066fbabc6f484277200ac65"},
-			"method": "DELETE",
+			"method": "POST",
 			"auth": map[string]interface{}{
 				"subjectId":    "clinic-worker",
 				"serverAccess": true,
@@ -699,6 +699,75 @@ var _ = Describe("Request Authorizer", func() {
 		}
 		err := authorizer.EvaluatePolicy(context.Background(), input)
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it allows a currently authenticated clinic admin member to remove a tag from all matching patients", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "delete_tag", "6066fbabc6f484277200ac65"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it prevents a currently authenticated clinic non-admin member from removing a tag from all matching patients", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "delete_tag", "6066fbabc6f484277200ac65"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("it allows clinic-worker to assign a tag to all matching patients", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "assign_tag", "6066fbabc6f484277200ac65"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinic-worker",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it allows a currently authenticated clinic admin member to assign a tag to all matching patients", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "assign_tag", "6066fbabc6f484277200ac65"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it prevents a currently authenticated clinic non-admin member from assigning a tag from all matching patients", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "assign_tag", "6066fbabc6f484277200ac65"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("it allows ORCA to list membership restrictions", func() {
