@@ -814,6 +814,9 @@ type ListClinicsForPatientParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ProcessEHRMessageJSONBody defines parameters for ProcessEHRMessage.
+type ProcessEHRMessageJSONBody = map[string]interface{}
+
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
 type CreateClinicJSONRequestBody = Clinic
 
@@ -870,6 +873,9 @@ type UpdatePatientSummaryJSONRequestBody = PatientSummary
 
 // UpdatePatientDataSourcesJSONRequestBody defines body for UpdatePatientDataSources for application/json ContentType.
 type UpdatePatientDataSourcesJSONRequestBody = DataSources
+
+// ProcessEHRMessageJSONRequestBody defines body for ProcessEHRMessage for application/json ContentType.
+type ProcessEHRMessageJSONRequestBody = ProcessEHRMessageJSONBody
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetails

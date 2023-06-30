@@ -142,6 +142,12 @@ type ServerInterface interface {
 	// Create or update a data source for a patient
 	// (PUT /v1/patients/{userId}/data_sources)
 	UpdatePatientDataSources(ctx echo.Context, userId UserId) error
+	// Redox EHR Endpoint
+	// (POST /v1/redox)
+	ProcessEHRMessage(ctx echo.Context) error
+	// Redox Verify Endpoint
+	// (POST /v1/redox/verify)
+	VerifyEndpoint(ctx echo.Context) error
 
 	// (DELETE /v1/users/{userId}/clinics)
 	DeleteUserFromClinics(ctx echo.Context, userId UserId) error
@@ -1465,6 +1471,28 @@ func (w *ServerInterfaceWrapper) UpdatePatientDataSources(ctx echo.Context) erro
 	return err
 }
 
+// ProcessEHRMessage converts echo context to params.
+func (w *ServerInterfaceWrapper) ProcessEHRMessage(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ProcessEHRMessage(ctx)
+	return err
+}
+
+// VerifyEndpoint converts echo context to params.
+func (w *ServerInterfaceWrapper) VerifyEndpoint(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.VerifyEndpoint(ctx)
+	return err
+}
+
 // DeleteUserFromClinics converts echo context to params.
 func (w *ServerInterfaceWrapper) DeleteUserFromClinics(ctx echo.Context) error {
 	var err error
@@ -1572,6 +1600,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)
+	router.POST(baseURL+"/v1/redox", wrapper.ProcessEHRMessage)
+	router.POST(baseURL+"/v1/redox/verify", wrapper.VerifyEndpoint)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
 

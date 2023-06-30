@@ -257,6 +257,14 @@ type ClientInterface interface {
 
 	UpdatePatientDataSources(ctx context.Context, userId UserId, body UpdatePatientDataSourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ProcessEHRMessage request with any body
+	ProcessEHRMessageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ProcessEHRMessage(ctx context.Context, body ProcessEHRMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// VerifyEndpoint request
+	VerifyEndpoint(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteUserFromClinics request
 	DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1000,6 +1008,42 @@ func (c *Client) UpdatePatientDataSourcesWithBody(ctx context.Context, userId Us
 
 func (c *Client) UpdatePatientDataSources(ctx context.Context, userId UserId, body UpdatePatientDataSourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientDataSourcesRequest(c.Server, userId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ProcessEHRMessageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProcessEHRMessageRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ProcessEHRMessage(ctx context.Context, body ProcessEHRMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProcessEHRMessageRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) VerifyEndpoint(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifyEndpointRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -3778,6 +3822,73 @@ func NewUpdatePatientDataSourcesRequestWithBody(server string, userId UserId, co
 	return req, nil
 }
 
+// NewProcessEHRMessageRequest calls the generic ProcessEHRMessage builder with application/json body
+func NewProcessEHRMessageRequest(server string, body ProcessEHRMessageJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewProcessEHRMessageRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewProcessEHRMessageRequestWithBody generates requests for ProcessEHRMessage with any type of body
+func NewProcessEHRMessageRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/redox")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewVerifyEndpointRequest generates requests for VerifyEndpoint
+func NewVerifyEndpointRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/redox/verify")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDeleteUserFromClinicsRequest generates requests for DeleteUserFromClinics
 func NewDeleteUserFromClinicsRequest(server string, userId UserId) (*http.Request, error) {
 	var err error
@@ -4068,6 +4179,14 @@ type ClientWithResponsesInterface interface {
 	UpdatePatientDataSourcesWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourcesResponse, error)
 
 	UpdatePatientDataSourcesWithResponse(ctx context.Context, userId UserId, body UpdatePatientDataSourcesJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientDataSourcesResponse, error)
+
+	// ProcessEHRMessage request with any body
+	ProcessEHRMessageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProcessEHRMessageResponse, error)
+
+	ProcessEHRMessageWithResponse(ctx context.Context, body ProcessEHRMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*ProcessEHRMessageResponse, error)
+
+	// VerifyEndpoint request
+	VerifyEndpointWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*VerifyEndpointResponse, error)
 
 	// DeleteUserFromClinics request
 	DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*DeleteUserFromClinicsResponse, error)
@@ -5012,6 +5131,48 @@ func (r UpdatePatientDataSourcesResponse) StatusCode() int {
 	return 0
 }
 
+type ProcessEHRMessageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ProcessEHRMessageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ProcessEHRMessageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type VerifyEndpointResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r VerifyEndpointResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r VerifyEndpointResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type DeleteUserFromClinicsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -5591,6 +5752,32 @@ func (c *ClientWithResponses) UpdatePatientDataSourcesWithResponse(ctx context.C
 		return nil, err
 	}
 	return ParseUpdatePatientDataSourcesResponse(rsp)
+}
+
+// ProcessEHRMessageWithBodyWithResponse request with arbitrary body returning *ProcessEHRMessageResponse
+func (c *ClientWithResponses) ProcessEHRMessageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProcessEHRMessageResponse, error) {
+	rsp, err := c.ProcessEHRMessageWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProcessEHRMessageResponse(rsp)
+}
+
+func (c *ClientWithResponses) ProcessEHRMessageWithResponse(ctx context.Context, body ProcessEHRMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*ProcessEHRMessageResponse, error) {
+	rsp, err := c.ProcessEHRMessage(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProcessEHRMessageResponse(rsp)
+}
+
+// VerifyEndpointWithResponse request returning *VerifyEndpointResponse
+func (c *ClientWithResponses) VerifyEndpointWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*VerifyEndpointResponse, error) {
+	rsp, err := c.VerifyEndpoint(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVerifyEndpointResponse(rsp)
 }
 
 // DeleteUserFromClinicsWithResponse request returning *DeleteUserFromClinicsResponse
@@ -6598,6 +6785,38 @@ func ParseUpdatePatientDataSourcesResponse(rsp *http.Response) (*UpdatePatientDa
 	}
 
 	response := &UpdatePatientDataSourcesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseProcessEHRMessageResponse parses an HTTP response from a ProcessEHRMessageWithResponse call
+func ParseProcessEHRMessageResponse(rsp *http.Response) (*ProcessEHRMessageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ProcessEHRMessageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseVerifyEndpointResponse parses an HTTP response from a VerifyEndpointWithResponse call
+func ParseVerifyEndpointResponse(rsp *http.Response) (*VerifyEndpointResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &VerifyEndpointResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

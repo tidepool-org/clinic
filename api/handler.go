@@ -6,6 +6,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/redox"
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/fx"
 )
@@ -17,6 +18,7 @@ type Handler struct {
 	clinicians        clinicians.Service
 	cliniciansUpdater clinicians.Service
 	patients          patients.Service
+	redox             redox.Redox
 	users             patients.UserService
 }
 
