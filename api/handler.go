@@ -34,6 +34,7 @@ type Params struct {
 	CliniciansUpdater clinicians.Service
 	Patients          patients.Service
 	Users             patients.UserService
+	Redox             redox.Redox
 }
 
 func NewHandler(p Params) *Handler {
@@ -45,6 +46,7 @@ func NewHandler(p Params) *Handler {
 		cliniciansUpdater: p.CliniciansUpdater,
 		patients:          p.Patients,
 		users:             p.Users,
+		redox:             p.Redox,
 	}
 }
 

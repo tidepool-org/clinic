@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/tidepool-org/clinic/redox"
 
 	oapiMiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -113,6 +114,8 @@ func MainLoop() {
 			patients.NewRepository,
 			patients.NewCustodialService,
 			patients.NewService,
+			redox.NewConfig,
+			redox.NewHandler,
 			clinicians.NewRepository,
 			clinicians.NewService,
 			clinics.NewRepository,
