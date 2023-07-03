@@ -71,7 +71,7 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 	swagger.Servers = nil
 
 	healthcheckRoutes := []string{"/ready", "/metrics"}
-	redoxRoutes := []string{"/v1/redox"}
+	redoxRoutes := []string{"/v1/redox", "/v1/redox/verify"}
 
 	// Skip common auth logic for healthcheck routes and redox
 	authMiddleware := auth.NewAuthMiddleware(authenticator, auth.AuthMiddlewareOpts{
