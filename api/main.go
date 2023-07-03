@@ -83,7 +83,7 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 			ExcludeReadOnlyValidations:  true,
 			ExcludeWriteOnlyValidations: true,
 		},
-		Skipper: RouteSkipper(healthcheckRoutes),
+		Skipper: RouteSkipper(append(healthcheckRoutes, redoxRoutes...)),
 	})
 	loggerConfig := middleware.DefaultLoggerConfig
 	loggerConfig.Skipper = RouteSkipper(healthcheckRoutes)
