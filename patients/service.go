@@ -180,6 +180,22 @@ func (s *service) enforceMrnSettings(ctx context.Context, patient *Patient) erro
 	}
 	if mrnSettings.Unique {
 		patient.RequireUniqueMrn = true
+		if patient.Mrn != nil {
+			clinicId := patient.ClinicId.Hex()
+			filter := &Filter{
+				ClinicId: &clinicId,
+				Mrn:      patient.Mrn,
+			}
+			res, err := s.repo.List(ctx, filter, store.Pagination{Limit: 2, Offset: 0}, nil)
+			if err != nil {
+				return err
+			}
+
+			// The same MRN shouldn't exist already, or it should belong to the same user
+			if !(res.TotalCount == 0 || (res.TotalCount == 1 && patient.UserId != nil && *patient.UserId == *res.Patients[0].UserId)) {
+				return fmt.Errorf("%w: mrn must be unique", errors2.BadRequest)
+			}
+		}
 	}
 
 	return nil

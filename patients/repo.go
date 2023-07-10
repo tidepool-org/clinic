@@ -128,9 +128,10 @@ func (r *repository) Initialize(ctx context.Context) error {
 				// Enforce unique constraints when the MRN is present and when uniqueness is enabled
 				// for the patient of the clinic (based on the clinic settings)
 				SetName("UniqueMrn").
+				SetUnique(true).
 				SetPartialFilterExpression(bson.D{
-					{"requireUniqueMrn", bson.M{"$eq": true}},
 					{"mrn", bson.M{"$exists": true}},
+					{"requireUniqueMrn", bson.M{"$eq": true}},
 				}),
 		},
 	})
