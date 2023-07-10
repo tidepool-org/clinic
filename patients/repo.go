@@ -99,7 +99,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "tags", Value: 1},
 			},
 			Options: options.Index().
-				SetName("PatientTags"),
+				SetName("PatientTagsV2"),
 		},
 		{
 			Keys: bson.D{
