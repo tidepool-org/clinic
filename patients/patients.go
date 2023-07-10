@@ -56,9 +56,9 @@ type Patient struct {
 	Email                          *string               `bson:"email"`
 	FullName                       *string               `bson:"fullName"`
 	Mrn                            *string               `bson:"mrn"`
+	TargetDevices                  *[]string             `bson:"targetDevices"`
 	Tags                           *[]primitive.ObjectID `bson:"tags,omitempty"`
 	DataSources                    *[]DataSource         `bson:"dataSources,omitempty"`
-	TargetDevices                  *[]string             `bson:"targetDevices"`
 	Permissions                    *Permissions          `bson:"permissions,omitempty"`
 	IsMigrated                     bool                  `bson:"isMigrated,omitempty"`
 	LegacyClinicianIds             []string              `bson:"legacyClinicianIds,omitempty"`
@@ -68,12 +68,20 @@ type Patient struct {
 	Summary                        *Summary              `bson:"summary,omitempty"`
 	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
 	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
+	RequireUniqueMrn               bool                  `bson:"requireUniqueMrn"`
+	EHRIdentity                    *EHRIdentity          `bson:"ehrIdentity,omitempty"`
 }
-
-// PatientSummary defines model for PatientSummary.
 
 func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
+}
+
+type EHRIdentity struct {
+	FirstName   string `bson:"firstName"`
+	MiddleName  string `bson:"middleName"`
+	LastName    string `bson:"lastName"`
+	DateOfBirth string `bson:"dateOfBirth"`
+	Mrn         string `bson:"mrn"`
 }
 
 type FilterPair struct {
@@ -91,11 +99,14 @@ type SummaryFilters map[string]FilterPair
 type SummaryDateFilters map[string]FilterDatePair
 
 type Filter struct {
-	ClinicId *string
-	UserId   *string
-	Search   *string
-	Tags     *[]string
-	Period   *string
+	ClinicId  *string
+	UserId    *string
+	Search    *string
+	Tags      *[]string
+	Mrn       *string
+	BirthDate *string
+
+	Period *string
 
 	CGM SummaryFilters
 	BGM SummaryFilters

@@ -127,6 +127,18 @@ type ServerInterface interface {
 	// Send Upload Reminder
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
 	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+	// Get EHR Settings
+	// (GET /v1/clinics/{clinicId}/settings/ehr)
+	GetEHRSettings(ctx echo.Context, clinicId ClinicId) error
+	// Update EHR Settings
+	// (PUT /v1/clinics/{clinicId}/settings/ehr)
+	UpdateEHRSettings(ctx echo.Context, clinicId ClinicId) error
+	// Get MRN Settings
+	// (GET /v1/clinics/{clinicId}/settings/mrn)
+	GetMRNSettings(ctx echo.Context, clinicId ClinicId) error
+
+	// (PUT /v1/clinics/{clinicId}/settings/mrn)
+	UpdateMRNSettings(ctx echo.Context, clinicId ClinicId) error
 	// Update Suppressed Notifications
 	// (POST /v1/clinics/{clinicId}/suppressed_notifications)
 	UpdateSuppressedNotifications(ctx echo.Context, clinicId ClinicId) error
@@ -145,6 +157,9 @@ type ServerInterface interface {
 	// Redox EHR Endpoint
 	// (POST /v1/redox)
 	ProcessEHRMessage(ctx echo.Context) error
+	// Match Clinic and Patient
+	// (POST /v1/redox/match)
+	MatchClinicAndPatient(ctx echo.Context) error
 	// Redox Verify Endpoint
 	// (POST /v1/redox/verify)
 	VerifyEndpoint(ctx echo.Context) error
@@ -1365,6 +1380,78 @@ func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
 	return err
 }
 
+// GetEHRSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEHRSettings(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetEHRSettings(ctx, clinicId)
+	return err
+}
+
+// UpdateEHRSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateEHRSettings(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateEHRSettings(ctx, clinicId)
+	return err
+}
+
+// GetMRNSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) GetMRNSettings(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetMRNSettings(ctx, clinicId)
+	return err
+}
+
+// UpdateMRNSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateMRNSettings(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateMRNSettings(ctx, clinicId)
+	return err
+}
+
 // UpdateSuppressedNotifications converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdateSuppressedNotifications(ctx echo.Context) error {
 	var err error
@@ -1482,6 +1569,17 @@ func (w *ServerInterfaceWrapper) ProcessEHRMessage(ctx echo.Context) error {
 	return err
 }
 
+// MatchClinicAndPatient converts echo context to params.
+func (w *ServerInterfaceWrapper) MatchClinicAndPatient(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.MatchClinicAndPatient(ctx)
+	return err
+}
+
 // VerifyEndpoint converts echo context to params.
 func (w *ServerInterfaceWrapper) VerifyEndpoint(ctx echo.Context) error {
 	var err error
@@ -1595,12 +1693,17 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request", wrapper.SendDexcomConnectRequest)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
+	router.GET(baseURL+"/v1/clinics/:clinicId/settings/ehr", wrapper.GetEHRSettings)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/ehr", wrapper.UpdateEHRSettings)
+	router.GET(baseURL+"/v1/clinics/:clinicId/settings/mrn", wrapper.GetMRNSettings)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/mrn", wrapper.UpdateMRNSettings)
 	router.POST(baseURL+"/v1/clinics/:clinicId/suppressed_notifications", wrapper.UpdateSuppressedNotifications)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)
 	router.POST(baseURL+"/v1/redox", wrapper.ProcessEHRMessage)
+	router.POST(baseURL+"/v1/redox/match", wrapper.MatchClinicAndPatient)
 	router.POST(baseURL+"/v1/redox/verify", wrapper.VerifyEndpoint)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)

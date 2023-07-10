@@ -1403,6 +1403,102 @@ paths:
         - Internal
       x-internal: true
       description: Internal endpoint for Redox chanallenge verification
+  '/v1/clinics/{clinicId}/settings/ehr':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: Get EHR Settings
+      tags:
+        - Clinics
+        - Internal
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRSettings'
+      operationId: GetEHRSettings
+      description: Returns EHR related settings
+      x-internal: true
+    put:
+      summary: Update EHR Settings
+      operationId: UpdateEHRSettings
+      responses:
+        '200':
+          description: OK
+      description: Update EHR related settings for a clinic
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EHRSettings'
+  /v1/redox/match:
+    post:
+      summary: Match Clinic and Patient
+      operationId: MatchClinicAndPatient
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRMatchResponse'
+        '404':
+          description: Not Found
+      tags:
+        - Clinics
+        - Internal
+      description: |-
+        An internal endpoint used for matching an EHR request (e.g. NewOrder) to a clinic and patient.
+
+        If a clinic with the provided details cannot be found, the service will return `404 Not Found` and will not attempt to match patients to the provided details.
+
+        Due to lack of uniqueness constraints on the MRN and DOB fields it's possible that multiple patient records match the provided attributes. All results will be returned in the response and it's the calling services responsiblity to determine how to handle duplicates records.
+
+        First name and last name will not be used for matching patients until those are stored in the database as separate attributes instead of a single `fullName` attribute. 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EHRMatchRequest'
+  '/v1/clinics/{clinicId}/settings/mrn':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: Get MRN Settings
+      tags:
+        - Clinics
+        - Internal
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MRNSettings'
+      operationId: GetMRNSettings
+      x-internal: true
+      description: Retrieve MRN settings
+    put:
+      summary: ''
+      operationId: UpdateMRNSettings
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Clinics
+        - Internal
+      description: Update MRN Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MRNSettings'
 components:
   schemas:
     Error:
@@ -2383,6 +2479,119 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MembershipRestriction'
+    EHRSettings:
+      title: EHR Settings
+      x-stoplight:
+        id: m0iw4p0mf24nb
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Enable or disabled the EHR integration
+        facility:
+          $ref: '#/components/schemas/EHRFacility'
+        sourceId:
+          type: string
+      required:
+        - enabled
+        - sourceId
+    EHRFacility:
+      title: Facility
+      x-stoplight:
+        id: 0lyqf8tfdtnu0
+      type: object
+      properties:
+        name:
+          type: string
+          description: 'Ordering Facility Name '
+      required:
+        - name
+    EHRMatchRequest:
+      title: EHR Match Request
+      x-stoplight:
+        id: nq0mlm5dqdfw0
+      type: object
+      properties:
+        clinic:
+          $ref: '#/components/schemas/EHRMatchClinicRequest'
+        patient:
+          $ref: '#/components/schemas/EHRMatchPatientRequest'
+      required:
+        - clinic
+      x-examples:
+        Example 1:
+          clinic:
+            facilityName: ACME Clinic
+          patient:
+            firstName: John
+            lastName: Doe
+            mrn: BG1234567890
+            birthDate: '1984-03-22'
+    EHRMatchResponse:
+      title: EHRMatchResponse
+      x-stoplight:
+        id: pekkj09rlany0
+      type: object
+      properties:
+        clinic:
+          $ref: '#/components/schemas/Clinic'
+        patients:
+          $ref: '#/components/schemas/Patients'
+        facility:
+          $ref: '#/components/schemas/EHRFacility'
+        sourceId:
+          type: string
+      required:
+        - clinic
+        - facility
+        - sourceId
+    EHRMatchPatientRequest:
+      title: EHRMatchPatientRequest
+      x-stoplight:
+        id: pypm1wrq7qljz
+      type: object
+      x-examples: {}
+      properties:
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        mrn:
+          type: string
+        dateOfBirth:
+          type: string
+      required:
+        - mrn
+        - dateOfBirth
+    EHRMatchClinicRequest:
+      title: EHRMatchClinicRequest
+      x-stoplight:
+        id: k8zoii2rrerf4
+      type: object
+      properties:
+        facilityName:
+          type: string
+        sourceId:
+          type: string
+      required:
+        - sourceId
+    MRNSettings:
+      title: MRN Settings
+      x-stoplight:
+        id: 876c3qkxy3ih9
+      type: object
+      properties:
+        required:
+          type: boolean
+          description: Require MRN when creating or updating patients
+        unique:
+          type: boolean
+          description: Enforce MRN uniqueness constraint
+      required:
+        - required
+        - unique
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

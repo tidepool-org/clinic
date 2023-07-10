@@ -329,3 +329,89 @@ func (h *Handler) UpdateMembershipRestrictions(ec echo.Context, clinicId ClinicI
 
 	return h.ListMembershipRestrictions(ec, clinicId)
 }
+
+func (h *Handler) GetEHRSettings(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+
+	settings, err := h.clinics.GetEHRSettings(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	if settings == nil {
+		return errors.NotFound
+	}
+
+	response := EHRSettings{
+		Enabled:  settings.Enabled,
+		SourceId: settings.SourceId,
+	}
+	if settings.Facility != nil {
+		response.Facility = &EHRFacility{
+			Name: settings.Facility.Name,
+		}
+	}
+	return ec.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := EHRSettings{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	settings := &clinics.EHRSettings{
+		Enabled:  dto.Enabled,
+		SourceId: dto.SourceId,
+	}
+	if dto.Facility != nil {
+		settings.Facility = &clinics.EHRFacility{
+			Name: dto.Facility.Name,
+		}
+	}
+	err := h.clinics.UpdateEHRSettings(ctx, clinicId, settings)
+
+	if err != nil {
+		return err
+	}
+
+	return h.GetEHRSettings(ec, clinicId)
+}
+
+func (h *Handler) GetMRNSettings(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+
+	settings, err := h.clinics.GetMRNSettings(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	if settings == nil {
+		return errors.NotFound
+	}
+
+	return ec.JSON(http.StatusOK, MRNSettings{
+		Required: settings.Required,
+		Unique:   settings.Unique,
+	})
+}
+
+func (h *Handler) UpdateMRNSettings(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := MRNSettings{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	err := h.clinics.UpdateMRNSettings(ctx, clinicId, &clinics.MRNSettings{
+		Required: dto.Required,
+		Unique:   dto.Unique,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return h.GetMRNSettings(ec, clinicId)
+}

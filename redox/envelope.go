@@ -53,3 +53,16 @@ type VerificationRequest struct {
 type VerificationResponse struct {
 	Challenge string `json:"challenge"`
 }
+
+type PatientMatchingCriteria struct {
+	FirstName   string
+	MiddleName  string
+	LastName    string
+	Mrn         string
+	DateOfBirth string
+}
+
+type ClinicMatchingCriteria struct {
+	SourceId     string
+	FacilityName *string
+}

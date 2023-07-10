@@ -204,6 +204,50 @@ type DataSources = []DataSource
 // DateTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 type DateTime = string
 
+// EHRFacility defines model for EHRFacility.
+type EHRFacility struct {
+	// Name Ordering Facility Name
+	Name string `json:"name"`
+}
+
+// EHRMatchClinicRequest defines model for EHRMatchClinicRequest.
+type EHRMatchClinicRequest struct {
+	FacilityName *string `json:"facilityName,omitempty"`
+	SourceId     string  `json:"sourceId"`
+}
+
+// EHRMatchPatientRequest defines model for EHRMatchPatientRequest.
+type EHRMatchPatientRequest struct {
+	DateOfBirth string  `json:"dateOfBirth"`
+	FirstName   *string `json:"firstName,omitempty"`
+	LastName    *string `json:"lastName,omitempty"`
+	MiddleName  *string `json:"middleName,omitempty"`
+	Mrn         string  `json:"mrn"`
+}
+
+// EHRMatchRequest defines model for EHRMatchRequest.
+type EHRMatchRequest struct {
+	Clinic  EHRMatchClinicRequest   `json:"clinic"`
+	Patient *EHRMatchPatientRequest `json:"patient,omitempty"`
+}
+
+// EHRMatchResponse defines model for EHRMatchResponse.
+type EHRMatchResponse struct {
+	// Clinic Clinic
+	Clinic   Clinic      `json:"clinic"`
+	Facility EHRFacility `json:"facility"`
+	Patients *Patients   `json:"patients,omitempty"`
+	SourceId string      `json:"sourceId"`
+}
+
+// EHRSettings defines model for EHRSettings.
+type EHRSettings struct {
+	// Enabled Enable or disabled the EHR integration
+	Enabled  bool         `json:"enabled"`
+	Facility *EHRFacility `json:"facility,omitempty"`
+	SourceId string       `json:"sourceId"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Code    int    `json:"code"`
@@ -212,6 +256,15 @@ type Error struct {
 
 // Id Clinic identifier.
 type Id = string
+
+// MRNSettings defines model for MRNSettings.
+type MRNSettings struct {
+	// Required Require MRN when creating or updating patients
+	Required bool `json:"required"`
+
+	// Unique Enforce MRN uniqueness constraint
+	Unique bool `json:"unique"`
+}
 
 // MembershipRestriction A user joining a clinic must match all of the defined restrictions
 type MembershipRestriction struct {
@@ -862,6 +915,12 @@ type UpdatePatientJSONRequestBody = Patient
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody = PatientPermissions
 
+// UpdateEHRSettingsJSONRequestBody defines body for UpdateEHRSettings for application/json ContentType.
+type UpdateEHRSettingsJSONRequestBody = EHRSettings
+
+// UpdateMRNSettingsJSONRequestBody defines body for UpdateMRNSettings for application/json ContentType.
+type UpdateMRNSettingsJSONRequestBody = MRNSettings
+
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications
 
@@ -876,6 +935,9 @@ type UpdatePatientDataSourcesJSONRequestBody = DataSources
 
 // ProcessEHRMessageJSONRequestBody defines body for ProcessEHRMessage for application/json ContentType.
 type ProcessEHRMessageJSONRequestBody = ProcessEHRMessageJSONBody
+
+// MatchClinicAndPatientJSONRequestBody defines body for MatchClinicAndPatient for application/json ContentType.
+type MatchClinicAndPatientJSONRequestBody = EHRMatchRequest
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetails

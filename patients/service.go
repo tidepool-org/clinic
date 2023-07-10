@@ -3,12 +3,16 @@ package patients
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/tidepool-org/clinic/clinics"
+	errors2 "github.com/tidepool-org/clinic/errors"
 
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
 )
 
 type service struct {
+	clinics          clinics.Service
 	repo             Repository
 	custodialService CustodialService
 	logger           *zap.SugaredLogger
@@ -16,8 +20,9 @@ type service struct {
 
 var _ Service = &service{}
 
-func NewService(repo Repository, custodialService CustodialService, logger *zap.SugaredLogger) (Service, error) {
+func NewService(repo Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger) (Service, error) {
 	return &service{
+		clinics:          clinics,
 		repo:             repo,
 		custodialService: custodialService,
 		logger:           logger,
@@ -33,6 +38,10 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
+	if err := s.enforceMrnSettings(ctx, &patient); err != nil {
+		return nil, err
+	}
+
 	// Only create new accounts if the custodial user doesn't exist already (i.e. we are not migrating it)
 	if patient.IsCustodial() && patient.UserId == nil {
 		s.logger.Infow("creating custodial account", "clinicId", patient.ClinicId.Hex())
@@ -54,6 +63,10 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, error) {
 	existing, err := s.Get(ctx, update.ClinicId, update.UserId)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := s.enforceMrnSettings(ctx, &update.Patient); err != nil {
 		return nil, err
 	}
 
@@ -154,6 +167,22 @@ func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinic
 func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error {
 	s.logger.Infow("updating data sources for clinic patients", "userId", userId)
 	return s.repo.UpdatePatientDataSources(ctx, userId, dataSources)
+}
+
+func (s *service) enforceMrnSettings(ctx context.Context, patient *Patient) error {
+	mrnSettings, err := s.clinics.GetMRNSettings(ctx, patient.ClinicId.Hex())
+	if err != nil || mrnSettings == nil {
+		return err
+	}
+
+	if mrnSettings.Required && (patient.Mrn == nil || *patient.Mrn == "") {
+		return fmt.Errorf("%w: mrn is required", errors2.BadRequest)
+	}
+	if mrnSettings.Unique {
+		patient.RequireUniqueMrn = true
+	}
+
+	return nil
 }
 
 func shouldRemovePatientFromClinic(patient *Patient) bool {

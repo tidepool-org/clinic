@@ -660,5 +660,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
 		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
+		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
+		"EHRIdentity":                    Equal(patient.EHRIdentity),
 	})
 }

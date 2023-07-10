@@ -234,6 +234,22 @@ type ClientInterface interface {
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetEHRSettings request
+	GetEHRSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateEHRSettings request with any body
+	UpdateEHRSettingsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateEHRSettings(ctx context.Context, clinicId ClinicId, body UpdateEHRSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetMRNSettings request
+	GetMRNSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateMRNSettings request with any body
+	UpdateMRNSettingsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateMRNSettings(ctx context.Context, clinicId ClinicId, body UpdateMRNSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdateSuppressedNotifications request with any body
 	UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -261,6 +277,11 @@ type ClientInterface interface {
 	ProcessEHRMessageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	ProcessEHRMessage(ctx context.Context, body ProcessEHRMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MatchClinicAndPatient request with any body
+	MatchClinicAndPatientWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MatchClinicAndPatient(ctx context.Context, body MatchClinicAndPatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// VerifyEndpoint request
 	VerifyEndpoint(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -910,6 +931,78 @@ func (c *Client) SendUploadReminder(ctx context.Context, clinicId ClinicId, pati
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetEHRSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEHRSettingsRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateEHRSettingsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateEHRSettingsRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateEHRSettings(ctx context.Context, clinicId ClinicId, body UpdateEHRSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateEHRSettingsRequest(c.Server, clinicId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetMRNSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMRNSettingsRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMRNSettingsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMRNSettingsRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMRNSettings(ctx context.Context, clinicId ClinicId, body UpdateMRNSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMRNSettingsRequest(c.Server, clinicId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateSuppressedNotificationsRequestWithBody(c.Server, clinicId, contentType, body)
 	if err != nil {
@@ -1032,6 +1125,30 @@ func (c *Client) ProcessEHRMessageWithBody(ctx context.Context, contentType stri
 
 func (c *Client) ProcessEHRMessage(ctx context.Context, body ProcessEHRMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewProcessEHRMessageRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MatchClinicAndPatientWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMatchClinicAndPatientRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MatchClinicAndPatient(ctx context.Context, body MatchClinicAndPatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMatchClinicAndPatientRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3564,6 +3681,168 @@ func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId Pa
 	return req, nil
 }
 
+// NewGetEHRSettingsRequest generates requests for GetEHRSettings
+func NewGetEHRSettingsRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/settings/ehr", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateEHRSettingsRequest calls the generic UpdateEHRSettings builder with application/json body
+func NewUpdateEHRSettingsRequest(server string, clinicId ClinicId, body UpdateEHRSettingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateEHRSettingsRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewUpdateEHRSettingsRequestWithBody generates requests for UpdateEHRSettings with any type of body
+func NewUpdateEHRSettingsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/settings/ehr", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetMRNSettingsRequest generates requests for GetMRNSettings
+func NewGetMRNSettingsRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/settings/mrn", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateMRNSettingsRequest calls the generic UpdateMRNSettings builder with application/json body
+func NewUpdateMRNSettingsRequest(server string, clinicId ClinicId, body UpdateMRNSettingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateMRNSettingsRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewUpdateMRNSettingsRequestWithBody generates requests for UpdateMRNSettings with any type of body
+func NewUpdateMRNSettingsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/settings/mrn", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewUpdateSuppressedNotificationsRequest calls the generic UpdateSuppressedNotifications builder with application/json body
 func NewUpdateSuppressedNotificationsRequest(server string, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -3843,6 +4122,46 @@ func NewProcessEHRMessageRequestWithBody(server string, contentType string, body
 	}
 
 	operationPath := fmt.Sprintf("/v1/redox")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewMatchClinicAndPatientRequest calls the generic MatchClinicAndPatient builder with application/json body
+func NewMatchClinicAndPatientRequest(server string, body MatchClinicAndPatientJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMatchClinicAndPatientRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewMatchClinicAndPatientRequestWithBody generates requests for MatchClinicAndPatient with any type of body
+func NewMatchClinicAndPatientRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/redox/match")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -4157,6 +4476,22 @@ type ClientWithResponsesInterface interface {
 	// SendUploadReminder request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
 
+	// GetEHRSettings request
+	GetEHRSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetEHRSettingsResponse, error)
+
+	// UpdateEHRSettings request with any body
+	UpdateEHRSettingsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateEHRSettingsResponse, error)
+
+	UpdateEHRSettingsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateEHRSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEHRSettingsResponse, error)
+
+	// GetMRNSettings request
+	GetMRNSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetMRNSettingsResponse, error)
+
+	// UpdateMRNSettings request with any body
+	UpdateMRNSettingsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMRNSettingsResponse, error)
+
+	UpdateMRNSettingsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateMRNSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMRNSettingsResponse, error)
+
 	// UpdateSuppressedNotifications request with any body
 	UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error)
 
@@ -4184,6 +4519,11 @@ type ClientWithResponsesInterface interface {
 	ProcessEHRMessageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProcessEHRMessageResponse, error)
 
 	ProcessEHRMessageWithResponse(ctx context.Context, body ProcessEHRMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*ProcessEHRMessageResponse, error)
+
+	// MatchClinicAndPatient request with any body
+	MatchClinicAndPatientWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MatchClinicAndPatientResponse, error)
+
+	MatchClinicAndPatientWithResponse(ctx context.Context, body MatchClinicAndPatientJSONRequestBody, reqEditors ...RequestEditorFn) (*MatchClinicAndPatientResponse, error)
 
 	// VerifyEndpoint request
 	VerifyEndpointWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*VerifyEndpointResponse, error)
@@ -5025,6 +5365,92 @@ func (r SendUploadReminderResponse) StatusCode() int {
 	return 0
 }
 
+type GetEHRSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EHRSettings
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEHRSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEHRSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateEHRSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateEHRSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateEHRSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetMRNSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MRNSettings
+}
+
+// Status returns HTTPResponse.Status
+func (r GetMRNSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetMRNSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateMRNSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateMRNSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateMRNSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdateSuppressedNotificationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -5146,6 +5572,28 @@ func (r ProcessEHRMessageResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ProcessEHRMessageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MatchClinicAndPatientResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EHRMatchResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r MatchClinicAndPatientResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MatchClinicAndPatientResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -5677,6 +6125,58 @@ func (c *ClientWithResponses) SendUploadReminderWithResponse(ctx context.Context
 	return ParseSendUploadReminderResponse(rsp)
 }
 
+// GetEHRSettingsWithResponse request returning *GetEHRSettingsResponse
+func (c *ClientWithResponses) GetEHRSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetEHRSettingsResponse, error) {
+	rsp, err := c.GetEHRSettings(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEHRSettingsResponse(rsp)
+}
+
+// UpdateEHRSettingsWithBodyWithResponse request with arbitrary body returning *UpdateEHRSettingsResponse
+func (c *ClientWithResponses) UpdateEHRSettingsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateEHRSettingsResponse, error) {
+	rsp, err := c.UpdateEHRSettingsWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateEHRSettingsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateEHRSettingsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateEHRSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEHRSettingsResponse, error) {
+	rsp, err := c.UpdateEHRSettings(ctx, clinicId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateEHRSettingsResponse(rsp)
+}
+
+// GetMRNSettingsWithResponse request returning *GetMRNSettingsResponse
+func (c *ClientWithResponses) GetMRNSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetMRNSettingsResponse, error) {
+	rsp, err := c.GetMRNSettings(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetMRNSettingsResponse(rsp)
+}
+
+// UpdateMRNSettingsWithBodyWithResponse request with arbitrary body returning *UpdateMRNSettingsResponse
+func (c *ClientWithResponses) UpdateMRNSettingsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMRNSettingsResponse, error) {
+	rsp, err := c.UpdateMRNSettingsWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMRNSettingsResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateMRNSettingsWithResponse(ctx context.Context, clinicId ClinicId, body UpdateMRNSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMRNSettingsResponse, error) {
+	rsp, err := c.UpdateMRNSettings(ctx, clinicId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMRNSettingsResponse(rsp)
+}
+
 // UpdateSuppressedNotificationsWithBodyWithResponse request with arbitrary body returning *UpdateSuppressedNotificationsResponse
 func (c *ClientWithResponses) UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error) {
 	rsp, err := c.UpdateSuppressedNotificationsWithBody(ctx, clinicId, contentType, body, reqEditors...)
@@ -5769,6 +6269,23 @@ func (c *ClientWithResponses) ProcessEHRMessageWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseProcessEHRMessageResponse(rsp)
+}
+
+// MatchClinicAndPatientWithBodyWithResponse request with arbitrary body returning *MatchClinicAndPatientResponse
+func (c *ClientWithResponses) MatchClinicAndPatientWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MatchClinicAndPatientResponse, error) {
+	rsp, err := c.MatchClinicAndPatientWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMatchClinicAndPatientResponse(rsp)
+}
+
+func (c *ClientWithResponses) MatchClinicAndPatientWithResponse(ctx context.Context, body MatchClinicAndPatientJSONRequestBody, reqEditors ...RequestEditorFn) (*MatchClinicAndPatientResponse, error) {
+	rsp, err := c.MatchClinicAndPatient(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMatchClinicAndPatientResponse(rsp)
 }
 
 // VerifyEndpointWithResponse request returning *VerifyEndpointResponse
@@ -6702,6 +7219,90 @@ func ParseSendUploadReminderResponse(rsp *http.Response) (*SendUploadReminderRes
 	return response, nil
 }
 
+// ParseGetEHRSettingsResponse parses an HTTP response from a GetEHRSettingsWithResponse call
+func ParseGetEHRSettingsResponse(rsp *http.Response) (*GetEHRSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEHRSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EHRSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateEHRSettingsResponse parses an HTTP response from a UpdateEHRSettingsWithResponse call
+func ParseUpdateEHRSettingsResponse(rsp *http.Response) (*UpdateEHRSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateEHRSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetMRNSettingsResponse parses an HTTP response from a GetMRNSettingsWithResponse call
+func ParseGetMRNSettingsResponse(rsp *http.Response) (*GetMRNSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetMRNSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MRNSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateMRNSettingsResponse parses an HTTP response from a UpdateMRNSettingsWithResponse call
+func ParseUpdateMRNSettingsResponse(rsp *http.Response) (*UpdateMRNSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateMRNSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ParseUpdateSuppressedNotificationsResponse parses an HTTP response from a UpdateSuppressedNotificationsWithResponse call
 func ParseUpdateSuppressedNotificationsResponse(rsp *http.Response) (*UpdateSuppressedNotificationsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -6803,6 +7404,32 @@ func ParseProcessEHRMessageResponse(rsp *http.Response) (*ProcessEHRMessageRespo
 	response := &ProcessEHRMessageResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseMatchClinicAndPatientResponse parses an HTTP response from a MatchClinicAndPatientWithResponse call
+func ParseMatchClinicAndPatientResponse(rsp *http.Response) (*MatchClinicAndPatientResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MatchClinicAndPatientResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EHRMatchResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

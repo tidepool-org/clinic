@@ -73,7 +73,7 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 		}
 	}
 
-	clinicObjId, err := primitive.ObjectIDFromHex(string(clinicId))
+	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
 		return err
 	}

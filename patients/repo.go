@@ -116,6 +116,23 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetName("DataSourcesState"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "mrn", Value: 1},
+				// The field is not used and only set here to allow the creation of
+				// a second index on (clinicId, mrn) but with different options
+				{Key: "_na", Value: 1},
+			},
+			Options: options.Index().
+				// Enforce unique constraints when the MRN is present and when uniqueness is enabled
+				// for the patient of the clinic (based on the clinic settings)
+				SetName("UniqueMrn").
+				SetPartialFilterExpression(bson.D{
+					{"requireUniqueMrn", bson.M{"$eq": true}},
+					{"mrn", bson.M{"$exists": true}},
+				}),
+		},
 	})
 	return err
 }
@@ -282,7 +299,7 @@ func (r *repository) UpdateEmail(ctx context.Context, userId string, email *stri
 
 	result, err := r.collection.UpdateMany(ctx, selector, update)
 	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
-		err = fmt.Errorf("partially updated %v out of %v clinician records: %w", result.ModifiedCount, result.MatchedCount, err)
+		err = fmt.Errorf("partially updated %v out of %v patient records: %w", result.ModifiedCount, result.MatchedCount, err)
 	}
 	if err != nil {
 		r.logger.Errorw("error updating patient emails", "error", err, "userId", userId)
@@ -569,6 +586,12 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 	if filter.UserId != nil {
 		selector["userId"] = filter.UserId
+	}
+	if filter.Mrn != nil {
+		selector["mrn"] = filter.Mrn
+	}
+	if filter.BirthDate != nil {
+		selector["birthDate"] = filter.BirthDate
 	}
 	if filter.Search != nil {
 		search := regexp.QuoteMeta(*filter.Search)

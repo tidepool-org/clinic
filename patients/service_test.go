@@ -4,6 +4,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/tidepool-org/clinic/clinics"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/patients/test"
 	"go.uber.org/zap"
@@ -11,20 +13,26 @@ import (
 
 var _ = Describe("Patients Service", func() {
 	var service patients.Service
+	var clinicsService clinics.Service
 	var repo *test.MockRepository
 	var repoCtrl *gomock.Controller
+	var clinicsCtrl *gomock.Controller
 
 	BeforeEach(func() {
 		repoCtrl = gomock.NewController(GinkgoT())
+		clinicsCtrl = gomock.NewController(GinkgoT())
+
 		repo = test.NewMockRepository(repoCtrl)
+		clinicsService = clinicsTest.NewMockService(clinicsCtrl)
 
 		var err error
-		service, err = patients.NewService(repo, nil, zap.NewNop().Sugar())
+		service, err = patients.NewService(repo, clinicsService, nil, zap.NewNop().Sugar())
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
 		repoCtrl.Finish()
+		clinicsCtrl.Finish()
 	})
 
 	Describe("Update Permissions", func() {
