@@ -3,23 +3,35 @@ package redox_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/tidepool-org/clinic/clinics"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
+	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/redox"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"net/http"
+	"strings"
 )
 
 var _ = Describe("Redox", func() {
 	var database *mongo.Database
 	var collection *mongo.Collection
 	var handler redox.Redox
+
+	var clinicsService *clinicsTest.MockService
+	var patientsService *patientsTest.MockService
+	var patientsCtrl *gomock.Controller
+	var clinicsCtrl *gomock.Controller
 
 	BeforeEach(func() {
 		database = dbTest.GetTestDatabase()
@@ -29,8 +41,14 @@ var _ = Describe("Redox", func() {
 		}
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
 
+		patientsCtrl = gomock.NewController(GinkgoT())
+		clinicsCtrl = gomock.NewController(GinkgoT())
+
+		patientsService = patientsTest.NewMockService(patientsCtrl)
+		clinicsService = clinicsTest.NewMockService(clinicsCtrl)
+
 		var err error
-		handler, err = redox.NewHandler(config, database, zap.NewNop().Sugar(), lifecycle)
+		handler, err = redox.NewHandler(config, clinicsService, patientsService, database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(handler).ToNot(BeNil())
 		lifecycle.RequireStart()
@@ -123,4 +141,153 @@ var _ = Describe("Redox", func() {
 		})
 	})
 
+	Describe("FindMatchingClinic", func() {
+		var clinic *clinics.Clinic
+		var criteria redox.ClinicMatchingCriteria
+
+		BeforeEach(func() {
+			clinicId := primitive.NewObjectID()
+			clinic = clinicsTest.RandomClinic()
+			clinic.Id = &clinicId
+
+			criteria = redox.ClinicMatchingCriteria{
+				SourceId:     clinic.EHRSettings.SourceId,
+				FacilityName: &clinic.EHRSettings.Facility.Name,
+			}
+		})
+
+		It("returns an error when the source id is empty", func() {
+			criteria.SourceId = ""
+			res, err := handler.FindMatchingClinic(nil, criteria)
+			Expect(err).To(MatchError(errors.BadRequest))
+			Expect(res).To(BeNil())
+		})
+
+		It("returns the matching clinic when only one clinic matches", func() {
+			ehrEnabled := true
+			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
+				EHREnabled:      &ehrEnabled,
+				EHRSourceId:     &criteria.SourceId,
+				EHRFacilityName: criteria.FacilityName,
+			}), gomock.Any()).Return([]*clinics.Clinic{clinic}, nil)
+
+			res, err := handler.FindMatchingClinic(nil, criteria)
+			Expect(err).To(BeNil())
+			Expect(res).ToNot(BeNil())
+		})
+
+		It("returns an error when multiple clinics match the criteria", func() {
+			ehrEnabled := true
+			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
+				EHREnabled:      &ehrEnabled,
+				EHRSourceId:     &criteria.SourceId,
+				EHRFacilityName: criteria.FacilityName,
+			}), gomock.Any()).Return([]*clinics.Clinic{clinic, clinicsTest.RandomClinic()}, nil)
+
+			res, err := handler.FindMatchingClinic(nil, criteria)
+			Expect(err).To(MatchError(errors.Duplicate))
+			Expect(res).To(BeNil())
+		})
+
+		It("returns an error when no clinics match the criteria", func() {
+			ehrEnabled := true
+			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
+				EHREnabled:      &ehrEnabled,
+				EHRSourceId:     &criteria.SourceId,
+				EHRFacilityName: criteria.FacilityName,
+			}), gomock.Any()).Return([]*clinics.Clinic{}, nil)
+
+			res, err := handler.FindMatchingClinic(nil, criteria)
+			Expect(err).To(MatchError(errors.NotFound))
+			Expect(res).To(BeNil())
+		})
+	})
+
+	Describe("MatchPatient", func() {
+		var patient patients.Patient
+		var criteria redox.PatientMatchingCriteria
+
+		BeforeEach(func() {
+			patient = patientsTest.RandomPatient()
+			criteria = redox.PatientMatchingCriteria{
+				Mrn:         *patient.Mrn,
+				DateOfBirth: *patient.BirthDate,
+				FirstName:   strings.Split(*patient.FullName, " ")[0],
+				LastName:    strings.Split(*patient.FullName, " ")[1],
+			}
+		})
+
+		It("returns an error when mrn is empty", func() {
+			criteria.Mrn = ""
+			res, err := handler.MatchPatient(nil, criteria)
+			Expect(err).To(MatchError(errors.BadRequest))
+			Expect(res).To(BeNil())
+		})
+
+		It("returns an error when date of birth is empty", func() {
+			criteria.DateOfBirth = ""
+			res, err := handler.MatchPatient(nil, criteria)
+			Expect(err).To(MatchError(errors.BadRequest))
+			Expect(res).To(BeNil())
+		})
+
+		It("successfully matches a patient", func() {
+			matched := patient
+			matched.EHRIdentity = &patients.EHRIdentity{
+				FirstName:   criteria.FirstName,
+				MiddleName:  criteria.MiddleName,
+				LastName:    criteria.LastName,
+				DateOfBirth: criteria.DateOfBirth,
+				Mrn:         criteria.Mrn,
+			}
+
+			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+				Mrn:       &criteria.Mrn,
+				BirthDate: &criteria.DateOfBirth,
+			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+				Patients:   []*patients.Patient{&patient},
+				TotalCount: 1,
+			}, nil)
+
+			patientsService.EXPECT().Update(gomock.Any(), gomock.Eq(patients.PatientUpdate{
+				ClinicId: patient.ClinicId.Hex(),
+				UserId:   *patient.UserId,
+				Patient:  matched,
+			})).Return(&matched, nil)
+
+			res, err := handler.MatchPatient(nil, criteria)
+			Expect(err).To(BeNil())
+			Expect(res).To(HaveLen(1))
+		})
+
+		It("returns all patients when multiple matches are found", func() {
+			second := patientsTest.RandomPatient()
+
+			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+				Mrn:       &criteria.Mrn,
+				BirthDate: &criteria.DateOfBirth,
+			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+				Patients:   []*patients.Patient{&patient, &second},
+				TotalCount: 2,
+			}, nil)
+
+			res, err := handler.MatchPatient(nil, criteria)
+			Expect(err).To(BeNil())
+			Expect(res).To(HaveLen(2))
+		})
+
+		It("does not return error when no patients are found", func() {
+			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+				Mrn:       &criteria.Mrn,
+				BirthDate: &criteria.DateOfBirth,
+			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+				Patients:   []*patients.Patient{},
+				TotalCount: 0,
+			}, nil)
+
+			res, err := handler.MatchPatient(nil, criteria)
+			Expect(err).To(BeNil())
+			Expect(res).To(HaveLen(0))
+		})
+	})
 })

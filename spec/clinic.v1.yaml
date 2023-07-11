@@ -1460,6 +1460,8 @@ paths:
 
         Due to lack of uniqueness constraints on the MRN and DOB fields it's possible that multiple patient records match the provided attributes. All results will be returned in the response and it's the calling services responsiblity to determine how to handle duplicates records.
 
+        If a unique match is found, the patient matching criteria will be added to the patient record for future use (e.g. pushing data on a schedule).
+
         First name and last name will not be used for matching patients until those are stored in the database as separate attributes instead of a single `fullName` attribute. 
       requestBody:
         content:

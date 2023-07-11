@@ -39,11 +39,14 @@ func NewConfig() (Config, error) {
 	err := envconfig.Process("", &cfg)
 	return cfg, err
 }
-func NewHandler(config Config, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Redox, error) {
+func NewHandler(config Config, clinics clinics.Service, patients patients.Service, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Redox, error) {
 	handler := &Handler{
 		collection: db.Collection(collection),
 		config:     config,
 		logger:     logger,
+
+		clinics:  clinics,
+		patients: patients,
 	}
 
 	lifecycle.Append(fx.Hook{
@@ -219,5 +222,6 @@ func (h *Handler) MatchPatient(ctx context.Context, criteria PatientMatchingCrit
 		}
 		result.Patients[0] = updated
 	}
+
 	return result.Patients, err
 }

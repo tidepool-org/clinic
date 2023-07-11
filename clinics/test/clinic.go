@@ -21,6 +21,7 @@ func RandomClinic() *clinics.Clinic {
 	shareCode := Faker.UUID().V4()
 	shareCodes := []string{shareCode}
 	admins := []string{Faker.UUID().V4()}
+
 	return &clinics.Clinic{
 		Address:            strp(Faker.Address().Address()),
 		City:               strp(Faker.Address().City()),
@@ -37,6 +38,13 @@ func RandomClinic() *clinics.Clinic {
 		CreatedTime:        Faker.Time().Time(time.Now()),
 		UpdatedTime:        Faker.Time().Time(time.Now()),
 		IsMigrated:         false,
+		EHRSettings: &clinics.EHRSettings{
+			Enabled: true,
+			Facility: &clinics.EHRFacility{
+				Name: Faker.Company().Name(),
+			},
+			SourceId: Faker.UUID().V4(),
+		},
 	}
 }
 
