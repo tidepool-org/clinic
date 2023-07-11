@@ -130,7 +130,7 @@ func (r *repository) Initialize(ctx context.Context) error {
 				SetName("UniqueMrn").
 				SetUnique(true).
 				SetPartialFilterExpression(bson.D{
-					{"mrn", bson.M{"$exists": true}},
+					{"mrn", bson.M{"$type": "string"}},
 					{"requireUniqueMrn", bson.M{"$eq": true}},
 				}),
 		},

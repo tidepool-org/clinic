@@ -141,6 +141,97 @@ var _ = Describe("Patients Service", func() {
 		})
 	})
 
+	Describe("Update", func() {
+		var update patients.PatientUpdate
+
+		BeforeEach(func() {
+			update = test.RandomPatientUpdate()
+			update.Patient.Permissions = &patients.Permissions{
+				Upload: &patients.Permission{},
+			}
+		})
+
+		When("the clinic requires the mrn to be set", func() {
+			BeforeEach(func() {
+				repo.
+					EXPECT().
+					Get(gomock.Any(), gomock.Eq(update.ClinicId), gomock.Eq(update.UserId)).
+					Return(&update.Patient, nil)
+				clinicsService.
+					EXPECT().
+					GetMRNSettings(gomock.Any(), gomock.Eq(update.ClinicId)).
+					Return(&clinics.MRNSettings{Required: true}, nil)
+			})
+
+			It("updates the patient in the repository when the MRN is set", func() {
+				repo.EXPECT().
+					Update(gomock.Any(), gomock.Eq(update)).
+					Return(&update.Patient, nil)
+
+				updatedPatient, err := service.Update(nil, update)
+				Expect(err).To(BeNil())
+				Expect(updatedPatient).ToNot(BeNil())
+			})
+
+			It("returns an error when the MRN is not set", func() {
+				update.Patient.Mrn = nil
+
+				createdPatient, err := service.Update(nil, update)
+				Expect(err).To(MatchError(errors.BadRequest))
+				Expect(createdPatient).To(BeNil())
+			})
+		})
+
+		When("the clinic requires mrn to be unique", func() {
+			BeforeEach(func() {
+				repo.
+					EXPECT().
+					Get(gomock.Any(), gomock.Eq(update.ClinicId), gomock.Eq(update.UserId)).
+					Return(&update.Patient, nil)
+				clinicsService.
+					EXPECT().
+					GetMRNSettings(gomock.Any(), gomock.Eq(update.ClinicId)).
+					Return(&clinics.MRNSettings{Unique: true}, nil)
+			})
+
+			It("updates the patient in the repository with uniqueness flag set to true", func() {
+				expectedUpdate := update
+				expectedUpdate.Patient.RequireUniqueMrn = true
+
+				repo.EXPECT().
+					Update(gomock.Any(), gomock.Eq(expectedUpdate)).
+					Return(&update.Patient, nil)
+
+				repo.EXPECT().
+					List(gomock.Any(), &patients.Filter{ClinicId: &update.ClinicId, Mrn: update.Patient.Mrn}, gomock.Any(), gomock.Any()).
+					Return(&patients.ListResult{
+						Patients:   nil,
+						TotalCount: 0,
+					}, nil)
+
+				updatedPatient, err := service.Update(nil, update)
+				Expect(err).To(BeNil())
+				Expect(updatedPatient).ToNot(BeNil())
+			})
+
+			It("returns an error if a patient with the same mrn exists in the repository", func() {
+				existing := test.RandomPatient()
+				existing.Mrn = update.Patient.Mrn
+
+				repo.EXPECT().
+					List(gomock.Any(), &patients.Filter{ClinicId: &update.ClinicId, Mrn: update.Patient.Mrn}, gomock.Any(), gomock.Any()).
+					Return(&patients.ListResult{
+						Patients:   []*patients.Patient{&existing},
+						TotalCount: 1,
+					}, nil)
+
+				updatedPatient, err := service.Update(nil, update)
+				Expect(err).To(MatchError("bad request: mrn must be unique"))
+				Expect(updatedPatient).To(BeNil())
+			})
+		})
+	})
+
 	Describe("Update Permissions", func() {
 		Context("With non-empty permissions", func() {
 			perms := &patients.Permissions{

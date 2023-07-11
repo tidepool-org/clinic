@@ -134,6 +134,29 @@ var _ = Describe("Patients Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
+			It("successfully inserts multiple patients without mrns when uniqueness is enabled", func() {
+				patient.Mrn = nil
+				patient.RequireUniqueMrn = true
+				result, err := repo.Create(nil, patient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				patient.Id = result.Id
+
+				secondPatient := patientsTest.RandomPatient()
+				secondPatient.ClinicId = patient.ClinicId
+				secondPatient.Mrn = nil
+				secondPatient.RequireUniqueMrn = true
+
+				result, err = repo.Create(nil, secondPatient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
 			It("returns an error when a user with duplicate mrn is created", func() {
 				patient.RequireUniqueMrn = true
 				result, err := repo.Create(nil, patient)
