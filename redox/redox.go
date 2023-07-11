@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/redox/models"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -114,7 +115,7 @@ func (h *Handler) AuthorizeRequest(req *http.Request) error {
 func (h *Handler) ProcessEHRMessage(ctx context.Context, raw []byte) error {
 	// Deserialize request metadata, so it's easier to process it later
 	message := struct {
-		Meta Meta
+		Meta models.Meta
 	}{}
 	if err := json.Unmarshal(raw, &message); err != nil {
 		return err
@@ -134,7 +135,7 @@ func (h *Handler) ProcessEHRMessage(ctx context.Context, raw []byte) error {
 		return fmt.Errorf("%w: unable to unmarshall message", errors.BadRequest)
 	}
 
-	envelope := MessageEnvelope{
+	envelope := models.MessageEnvelope{
 		Meta:    message.Meta,
 		Message: bsonRaw,
 	}
@@ -224,4 +225,26 @@ func (h *Handler) MatchPatient(ctx context.Context, criteria PatientMatchingCrit
 	}
 
 	return result.Patients, err
+}
+
+type VerificationRequest struct {
+	VerificationToken string `json:"verification-token"`
+	Challenge         string `json:"challenge"`
+}
+
+type VerificationResponse struct {
+	Challenge string `json:"challenge"`
+}
+
+type PatientMatchingCriteria struct {
+	FirstName   string
+	MiddleName  string
+	LastName    string
+	Mrn         string
+	DateOfBirth string
+}
+
+type ClinicMatchingCriteria struct {
+	SourceId     string
+	FacilityName *string
 }

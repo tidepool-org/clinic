@@ -12,6 +12,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/redox"
+	"github.com/tidepool-org/clinic/redox/models"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson"
@@ -124,14 +125,14 @@ var _ = Describe("Redox", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(payload).ToNot(HaveLen(0))
 
-			var order redox.NewOrder
+			var order models.NewOrder
 			err = json.Unmarshal(payload, &order)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = handler.ProcessEHRMessage(ctx, payload)
 			Expect(err).ToNot(HaveOccurred())
 
-			env := redox.MessageEnvelope{}
+			env := models.MessageEnvelope{}
 			err = collection.FindOne(ctx, bson.M{
 				"meta.Logs.ID": "d9f5d293-7110-461e-a875-3beb089e79f3",
 			}).Decode(&env)

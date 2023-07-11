@@ -1,4 +1,4 @@
-package redox
+package models
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
@@ -43,26 +43,4 @@ type Meta struct {
 
 func (m *Meta) IsValid() bool {
 	return m.DataModel != "" && m.EventType != ""
-}
-
-type VerificationRequest struct {
-	VerificationToken string `json:"verification-token"`
-	Challenge         string `json:"challenge"`
-}
-
-type VerificationResponse struct {
-	Challenge string `json:"challenge"`
-}
-
-type PatientMatchingCriteria struct {
-	FirstName   string
-	MiddleName  string
-	LastName    string
-	Mrn         string
-	DateOfBirth string
-}
-
-type ClinicMatchingCriteria struct {
-	SourceId     string
-	FacilityName *string
 }

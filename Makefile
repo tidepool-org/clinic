@@ -9,7 +9,7 @@ generate:
 	oapi-codegen -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > client/types.go
 	oapi-codegen -exclude-tags=Confirmations -package=api -generate=client spec/clinic.v1.yaml > client/client.go
 	swagger-cli bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml -t yaml
-	oapi-codegen -package=redox -generate=types spec/redox.v1.yaml > redox/gen_types.go
+	oapi-codegen -package=models -generate=types spec/redox.v1.yaml > redox/models/gen_types.go
 	go generate ./...
 	cd client && go generate ./...
 
