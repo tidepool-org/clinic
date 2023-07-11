@@ -38,7 +38,7 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
-	if err := s.enforceMrnSettings(ctx, &patient); err != nil {
+	if err := s.enforceMrnSettings(ctx, patient.ClinicId.Hex(), &patient); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		return nil, err
 	}
 
-	if err := s.enforceMrnSettings(ctx, &update.Patient); err != nil {
+	if err := s.enforceMrnSettings(ctx, update.ClinicId, &update.Patient); err != nil {
 		return nil, err
 	}
 
@@ -169,8 +169,8 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 	return s.repo.UpdatePatientDataSources(ctx, userId, dataSources)
 }
 
-func (s *service) enforceMrnSettings(ctx context.Context, patient *Patient) error {
-	mrnSettings, err := s.clinics.GetMRNSettings(ctx, patient.ClinicId.Hex())
+func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, patient *Patient) error {
+	mrnSettings, err := s.clinics.GetMRNSettings(ctx, clinicId)
 	if err != nil || mrnSettings == nil {
 		return err
 	}
@@ -181,7 +181,6 @@ func (s *service) enforceMrnSettings(ctx context.Context, patient *Patient) erro
 	if mrnSettings.Unique {
 		patient.RequireUniqueMrn = true
 		if patient.Mrn != nil {
-			clinicId := patient.ClinicId.Hex()
 			filter := &Filter{
 				ClinicId: &clinicId,
 				Mrn:      patient.Mrn,
