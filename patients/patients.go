@@ -44,7 +44,8 @@ type Service interface {
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error)
-	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error
+	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
+	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 }
 

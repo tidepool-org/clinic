@@ -463,12 +463,30 @@ allow {
   clinician_has_write_access
 }
 
-# Allow backend services to delete a patient tag from all clinic patients
-# DELETE /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
+# Allow backend services or clinic admins to delete a patient tag from all clinic patients
+# POST /v1/clinics/:clinicId/patients/delete_tag/:patientTagId
 allow {
-  input.method == "DELETE"
+  input.method == "POST"
   input.path = ["v1", "clinics", _, "patients", "delete_tag", _]
   is_backend_service
+}
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", "delete_tag", _]
+  clinician_has_write_access
+}
+
+# Allow backend services or clinic admins to assign a patient tag to a subset of clinic patients
+# POST /v1/clinics/:clinicId/patients/assign_tag/:patientTagId
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", "assign_tag", _]
+  is_backend_service
+}
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", "assign_tag", _]
+  clinician_has_write_access
 }
 
 # Allow backend services to update a user data source for all associated clinic patient records
