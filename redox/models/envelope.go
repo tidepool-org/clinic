@@ -6,7 +6,7 @@ import (
 )
 
 type MessageEnvelope struct {
-	Id primitive.ObjectID `bson:"_id"`
+	Id primitive.ObjectID `bson:"_id,omitempty"`
 
 	// Copy of meta from the payload for easier deserialization
 	Meta Meta
