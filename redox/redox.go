@@ -72,7 +72,7 @@ func (h *Handler) Initialize(ctx context.Context) error {
 	_, err := h.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
-				{Key: "Meta.Logs.Id", Value: 1},
+				{Key: "meta.Logs.Id", Value: 1},
 			},
 			Options: options.Index().
 				SetUnique(true).
@@ -80,8 +80,8 @@ func (h *Handler) Initialize(ctx context.Context) error {
 		},
 		{
 			Keys: bson.D{
-				{Key: "Meta.Source.Id", Value: 1},
-				{Key: "Meta.FacilityCode", Value: 1},
+				{Key: "meta.Source.Id", Value: 1},
+				{Key: "meta.FacilityCode", Value: 1},
 			},
 			Options: options.Index().
 				SetName("MetadataSource"),
