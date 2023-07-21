@@ -75,7 +75,6 @@ func (h *Handler) Initialize(ctx context.Context) error {
 				{Key: "meta.Logs.Id", Value: 1},
 			},
 			Options: options.Index().
-				SetUnique(true).
 				SetName("MetadataLogsId"),
 		},
 		{
