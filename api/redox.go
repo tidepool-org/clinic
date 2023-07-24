@@ -54,11 +54,20 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	}
 
 	response := EHRMatchResponse{
-		Clinic:   NewClinicDto(clinic),
-		SourceId: clinic.EHRSettings.SourceId,
+		Clinic: NewClinicDto(clinic),
+		Settings: EHRSettings{
+			Enabled:  clinic.EHRSettings.Enabled,
+			SourceId: clinic.EHRSettings.SourceId,
+			DestinationIds: EHRDestinationIds{
+				Default:   clinic.EHRSettings.DestinationIds.Default,
+				Flowsheet: clinic.EHRSettings.DestinationIds.Flowsheet,
+				Notes:     clinic.EHRSettings.DestinationIds.Notes,
+				Results:   clinic.EHRSettings.DestinationIds.Results,
+			},
+		},
 	}
 	if clinic.EHRSettings.Facility != nil && clinic.EHRSettings.Facility.Name != "" {
-		response.Facility = EHRFacility{
+		response.Settings.Facility = &EHRFacility{
 			Name: clinic.EHRSettings.Facility.Name,
 		}
 	}

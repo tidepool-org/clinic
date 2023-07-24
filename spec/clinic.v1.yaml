@@ -2489,14 +2489,17 @@ components:
       properties:
         enabled:
           type: boolean
-          description: Enable or disabled the EHR integration
+          description: Enable or disable the EHR integration
         facility:
           $ref: '#/components/schemas/EHRFacility'
         sourceId:
           type: string
+        destinationIds:
+          $ref: '#/components/schemas/EHRDestinationIds'
       required:
         - enabled
         - sourceId
+        - destinationIds
     EHRFacility:
       title: Facility
       x-stoplight:
@@ -2539,14 +2542,11 @@ components:
           $ref: '#/components/schemas/Clinic'
         patients:
           $ref: '#/components/schemas/Patients'
-        facility:
-          $ref: '#/components/schemas/EHRFacility'
-        sourceId:
-          type: string
+        settings:
+          $ref: '#/components/schemas/EHRSettings'
       required:
         - clinic
-        - facility
-        - sourceId
+        - settings
     EHRMatchPatientRequest:
       title: EHRMatchPatientRequest
       x-stoplight:
@@ -2594,6 +2594,30 @@ components:
       required:
         - required
         - unique
+    EHRDestinationIds:
+      title: Default Redox destination ID and per-model overrides
+      x-stoplight:
+        id: z6cjrz20e5mvu
+      type: object
+      properties:
+        default:
+          type: string
+          description: The default Redox destination ID
+          minLength: 1
+        flowsheet:
+          type: string
+          description: Destination ID override for Flowsheets
+          minLength: 1
+        results:
+          type: string
+          description: Destination ID override for Results
+          minLength: 1
+        notes:
+          type: string
+          description: Destination ID override for Notes
+          minLength: 1
+      required:
+        - default
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

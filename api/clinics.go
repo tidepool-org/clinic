@@ -345,6 +345,12 @@ func (h *Handler) GetEHRSettings(ec echo.Context, clinicId ClinicId) error {
 	response := EHRSettings{
 		Enabled:  settings.Enabled,
 		SourceId: settings.SourceId,
+		DestinationIds: EHRDestinationIds{
+			Default:   settings.DestinationIds.Default,
+			Flowsheet: settings.DestinationIds.Flowsheet,
+			Notes:     settings.DestinationIds.Notes,
+			Results:   settings.DestinationIds.Results,
+		},
 	}
 	if settings.Facility != nil {
 		response.Facility = &EHRFacility{
@@ -364,6 +370,12 @@ func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
 	settings := &clinics.EHRSettings{
 		Enabled:  dto.Enabled,
 		SourceId: dto.SourceId,
+		DestinationIds: clinics.EHRDestinationIds{
+			Default:   dto.DestinationIds.Default,
+			Flowsheet: dto.DestinationIds.Flowsheet,
+			Notes:     dto.DestinationIds.Notes,
+			Results:   dto.DestinationIds.Results,
+		},
 	}
 	if dto.Facility != nil {
 		settings.Facility = &clinics.EHRFacility{

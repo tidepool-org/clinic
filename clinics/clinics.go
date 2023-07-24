@@ -80,13 +80,21 @@ type Clinic struct {
 }
 
 type EHRSettings struct {
-	Enabled  bool         `bson:"enabled"`
-	Facility *EHRFacility `bson:"facility"`
-	SourceId string       `bson:"sourceId"`
+	Enabled        bool              `bson:"enabled"`
+	DestinationIds EHRDestinationIds `bson:"destinationIds"`
+	Facility       *EHRFacility      `bson:"facility"`
+	SourceId       string            `bson:"sourceId"`
 }
 
 type EHRFacility struct {
 	Name string `bson:"name"`
+}
+
+type EHRDestinationIds struct {
+	Default   string  `bson:"default"`
+	Flowsheet *string `bson:"flowsheet"`
+	Notes     *string `bson:"notes"`
+	Results   *string `bson:"results"`
 }
 
 type MRNSettings struct {
