@@ -670,7 +670,7 @@ paths:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/inviteId'
     patch:
-      summary: ''
+      summary: Resend Clinician Invite
       operationId: ResendInvite
       responses:
         '200':
@@ -781,8 +781,6 @@ paths:
                     type: string
                   restrictions:
                     title: Acceptance restrictions
-                    x-stoplight:
-                      id: ywnkw0w7xn8b4
                     type: object
                     properties:
                       canAccept:
@@ -1139,7 +1137,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/userId'
     delete:
-      summary: ''
+      summary: Remove User from Clinics
       operationId: DeleteUserFromClinics
       responses:
         '200':
@@ -1216,26 +1214,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatientSummary'
-            examples:
-              example-1:
-                value:
-                  lastUpdatedDate: '2019-08-24T14:15:22Z'
-                  firstData: '2019-08-24T14:15:22Z'
-                  lastData: '2019-08-24T14:15:22Z'
-                  lastUploadDate: '2019-08-24T14:15:22Z'
-                  outdatedSince: '2019-08-24T14:15:22Z'
-                  averageGlucose:
-                    units: mmol/l
-                    value: 105
-                  glucoseManagementIndicator: 0.06
-                  percentTimeInTarget: 0.7
-                  percentTimeInHigh: 0.1
-                  percentTimeInVeryHigh: 0.1
-                  percentTimeInLow: 0.05
-                  percentTimeInVeryLow: 0.05
-                  percentTimeCGMUse: 0.9
-                  highGlucoseThreshold: 0
-                  lowGlucoseThreshold: 0
         description: ''
   '/v1/patients/{userId}/data_sources':
     parameters:
@@ -1802,6 +1780,7 @@ components:
       maxLength: 24
       pattern: '^[a-f0-9]{24}$'
       readOnly: true
+      example: 2fe2488217ee43e1b2e83c2f
     PatientClinicRelationship:
       title: PatientClinicRelationship
       type: object
@@ -1949,7 +1928,6 @@ components:
           type: number
           format: float
           minimum: 0
-          maximum: 55
           example: 5.5
           x-tags:
             - Data
@@ -2364,8 +2342,6 @@ components:
       additionalProperties: false
     MembershipRestriction:
       title: Membership Restriction
-      x-stoplight:
-        id: lkeikldmhqso2
       type: object
       description: A user joining a clinic must match all of the defined restrictions
       properties:
@@ -2380,8 +2356,6 @@ components:
         - emailDomain
     MembershipRestrictions:
       title: Membership Restrictions
-      x-stoplight:
-        id: j8zuck3me7f8s
       type: object
       description: A user joining a clinic must match at least one of the specified membership restrictions
       properties:
