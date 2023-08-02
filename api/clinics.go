@@ -351,6 +351,9 @@ func (h *Handler) GetEHRSettings(ec echo.Context, clinicId ClinicId) error {
 			Notes:     settings.DestinationIds.Notes,
 			Results:   settings.DestinationIds.Results,
 		},
+		ProcedureCodes: EHRProcedureCodes{
+			SummaryReportsSubscription: settings.ProcedureCodes.SummaryReportsSubscription,
+		},
 	}
 	if settings.Facility != nil {
 		response.Facility = &EHRFacility{
@@ -375,6 +378,9 @@ func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
 			Flowsheet: dto.DestinationIds.Flowsheet,
 			Notes:     dto.DestinationIds.Notes,
 			Results:   dto.DestinationIds.Results,
+		},
+		ProcedureCodes: clinics.EHRProcedureCodes{
+			SummaryReportsSubscription: dto.ProcedureCodes.SummaryReportsSubscription,
 		},
 	}
 	if dto.Facility != nil {

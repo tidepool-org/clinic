@@ -1854,7 +1854,6 @@ components:
       x-go-type: string
     TidepoolUserIds:
       type: array
-      nullable: true
       description: Array of Tidepool User IDs
       items:
         $ref: '#/components/schemas/TidepoolUserId'
@@ -2505,10 +2504,13 @@ components:
           type: string
         destinationIds:
           $ref: '#/components/schemas/EHRDestinationIds'
+        procedureCodes:
+          $ref: '#/components/schemas/EHRProcedureCodes'
       required:
         - enabled
         - sourceId
         - destinationIds
+        - procedureCodes
     EHRFacility:
       title: Facility
       x-stoplight:
@@ -2627,6 +2629,18 @@ components:
           minLength: 1
       required:
         - default
+    EHRProcedureCodes:
+      title: EHR Procedure Codes Map
+      x-stoplight:
+        id: gy7do1thlm3g5
+      type: object
+      properties:
+        summaryReportsSubscription:
+          type: string
+          minLength: 1
+          description: Procedure Code for Summary Statistics and PDF Reports subscription
+      required:
+        - summaryReportsSubscription
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

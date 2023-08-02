@@ -254,14 +254,21 @@ type EHRMatchResponse struct {
 	Settings EHRSettings `json:"settings"`
 }
 
+// EHRProcedureCodes defines model for EHRProcedureCodes.
+type EHRProcedureCodes struct {
+	// SummaryReportsSubscription Procedure Code for Summary Statistics and PDF Reports subscription
+	SummaryReportsSubscription string `json:"summaryReportsSubscription"`
+}
+
 // EHRSettings defines model for EHRSettings.
 type EHRSettings struct {
 	DestinationIds EHRDestinationIds `json:"destinationIds"`
 
 	// Enabled Enable or disable the EHR integration
-	Enabled  bool         `json:"enabled"`
-	Facility *EHRFacility `json:"facility,omitempty"`
-	SourceId string       `json:"sourceId"`
+	Enabled        bool              `json:"enabled"`
+	Facility       *EHRFacility      `json:"facility,omitempty"`
+	ProcedureCodes EHRProcedureCodes `json:"procedureCodes"`
+	SourceId       string            `json:"sourceId"`
 }
 
 // Error defines model for Error.

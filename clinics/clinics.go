@@ -83,6 +83,7 @@ type EHRSettings struct {
 	Enabled        bool              `bson:"enabled"`
 	DestinationIds EHRDestinationIds `bson:"destinationIds"`
 	Facility       *EHRFacility      `bson:"facility"`
+	ProcedureCodes EHRProcedureCodes `bson:"procedureCodes"`
 	SourceId       string            `bson:"sourceId"`
 }
 
@@ -95,6 +96,10 @@ type EHRDestinationIds struct {
 	Flowsheet *string `bson:"flowsheet"`
 	Notes     *string `bson:"notes"`
 	Results   *string `bson:"results"`
+}
+
+type EHRProcedureCodes struct {
+	SummaryReportsSubscription string `bson:"summaryReportsSubscription"`
 }
 
 type MRNSettings struct {
