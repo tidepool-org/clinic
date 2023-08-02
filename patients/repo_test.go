@@ -2,8 +2,9 @@ package patients_test
 
 import (
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -449,13 +450,109 @@ var _ = Describe("Patients Repository", func() {
 				Expect(res).To(Equal(int64(count)))
 
 				// Perform the delete operation
-				err = repo.DeletePatientTagFromClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex())
+				err = repo.DeletePatientTagFromClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex(), nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				// No patients should have matching tag
 				res, err = collection.CountDocuments(nil, selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(0)))
+			})
+		})
+
+		Describe("Delete tag from subset of clinic patients", func() {
+			It("deletes the correct patient tag, but only from the specified patients", func() {
+				newPatientTag := primitive.NewObjectID()
+				clinicId := primitive.NewObjectID()
+
+				// Add new patient tag and set common clinic ID for all patients
+				for _, patient := range allPatients {
+					selector := bson.M{
+						"clinicId": patient.ClinicId,
+						"userId":   patient.UserId,
+					}
+
+					newTags := append(*patient.Tags, newPatientTag)
+					update := bson.M{
+						"$set": bson.M{
+							"tags":     append(newTags, newPatientTag),
+							"clinicId": clinicId,
+						},
+					}
+
+					_, err := collection.UpdateOne(nil, selector, update)
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				selector := bson.M{
+					"tags": newPatientTag,
+				}
+
+				// All patients should be returned when querying for the new tag
+				res, err := collection.CountDocuments(nil, selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(count)))
+
+				patientIds := []string{
+					*allPatients[0].UserId,
+					*allPatients[1].UserId,
+				}
+
+				// Perform the delete operation
+				err = repo.DeletePatientTagFromClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex(), patientIds)
+				Expect(err).ToNot(HaveOccurred())
+
+				// All but 2 patients should have matching tag
+				res, err = collection.CountDocuments(nil, selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(count - 2)))
+			})
+		})
+
+		Describe("Assign tag to a subset of clinic patients", func() {
+			It("assigns the correct patient tag, but only to the specified patients", func() {
+				newPatientTag := primitive.NewObjectID()
+				clinicId := primitive.NewObjectID()
+
+				// Add set common clinic ID for all patients
+				for _, patient := range allPatients {
+					selector := bson.M{
+						"clinicId": patient.ClinicId,
+						"userId":   patient.UserId,
+					}
+
+					update := bson.M{
+						"$set": bson.M{
+							"clinicId": clinicId,
+						},
+					}
+
+					_, err := collection.UpdateOne(nil, selector, update)
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				selector := bson.M{
+					"tags": newPatientTag,
+				}
+
+				// No patients should be returned when querying for the new tag
+				res, err := collection.CountDocuments(nil, selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(0)))
+
+				patientIds := []string{
+					*allPatients[0].UserId,
+					*allPatients[1].UserId,
+				}
+
+				// Perform the assign operation
+				err = repo.AssignPatientTagToClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex(), patientIds)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Two patients should have matching tag
+				res, err = collection.CountDocuments(nil, selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(2)))
 			})
 		})
 

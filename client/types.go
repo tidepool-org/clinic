@@ -658,6 +658,9 @@ type SuppressedNotifications struct {
 // TidepoolUserId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type TidepoolUserId = string
 
+// TidepoolUserIds Array of Tidepool User IDs
+type TidepoolUserIds = []TidepoolUserId
+
 // Tier defines model for Tier.
 type Tier string
 
@@ -921,6 +924,12 @@ type UpdatePatientTagJSONRequestBody = PatientTag
 
 // CreatePatientAccountJSONRequestBody defines body for CreatePatientAccount for application/json ContentType.
 type CreatePatientAccountJSONRequestBody = Patient
+
+// AssignPatientTagToClinicPatientsJSONRequestBody defines body for AssignPatientTagToClinicPatients for application/json ContentType.
+type AssignPatientTagToClinicPatientsJSONRequestBody = TidepoolUserIds
+
+// DeletePatientTagFromClinicPatientsJSONRequestBody defines body for DeletePatientTagFromClinicPatients for application/json ContentType.
+type DeletePatientTagFromClinicPatientsJSONRequestBody = TidepoolUserIds
 
 // CreatePatientFromUserJSONRequestBody defines body for CreatePatientFromUser for application/json ContentType.
 type CreatePatientFromUserJSONRequestBody = CreatePatient

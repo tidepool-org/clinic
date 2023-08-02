@@ -320,7 +320,34 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	err := h.patients.DeletePatientTagFromClinicPatients(ctx, string(clinicId), string(patientTagId))
+	dto := TidepoolUserIds{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	// We pass an empty request body as nil which will target all clinic patients for tag deletion
+	if ec.Request().Body == http.NoBody {
+		dto = nil
+	}
+
+	err := h.patients.DeletePatientTagFromClinicPatients(ctx, string(clinicId), string(patientTagId), dto)
+
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
+	ctx := ec.Request().Context()
+
+	dto := TidepoolUserIds{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	err := h.patients.AssignPatientTagToClinicPatients(ctx, string(clinicId), string(patientTagId), dto)
 
 	if err != nil {
 		return err

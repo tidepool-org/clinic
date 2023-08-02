@@ -201,8 +201,15 @@ type ClientInterface interface {
 
 	CreatePatientAccount(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// DeletePatientTagFromClinicPatients request
-	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// AssignPatientTagToClinicPatients request with any body
+	AssignPatientTagToClinicPatientsWithBody(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AssignPatientTagToClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeletePatientTagFromClinicPatients request with any body
+	DeletePatientTagFromClinicPatientsWithBody(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body DeletePatientTagFromClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeletePatient request
 	DeletePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -787,8 +794,44 @@ func (c *Client) CreatePatientAccount(ctx context.Context, clinicId ClinicId, bo
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeletePatientTagFromClinicPatientsRequest(c.Server, clinicId, patientTagId)
+func (c *Client) AssignPatientTagToClinicPatientsWithBody(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignPatientTagToClinicPatientsRequestWithBody(c.Server, clinicId, patientTagId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AssignPatientTagToClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignPatientTagToClinicPatientsRequest(c.Server, clinicId, patientTagId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatientTagFromClinicPatientsWithBody(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientTagFromClinicPatientsRequestWithBody(c.Server, clinicId, patientTagId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body DeletePatientTagFromClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientTagFromClinicPatientsRequest(c.Server, clinicId, patientTagId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3276,8 +3319,73 @@ func NewCreatePatientAccountRequestWithBody(server string, clinicId ClinicId, co
 	return req, nil
 }
 
-// NewDeletePatientTagFromClinicPatientsRequest generates requests for DeletePatientTagFromClinicPatients
-func NewDeletePatientTagFromClinicPatientsRequest(server string, clinicId ClinicId, patientTagId PatientTagId) (*http.Request, error) {
+// NewAssignPatientTagToClinicPatientsRequest calls the generic AssignPatientTagToClinicPatients builder with application/json body
+func NewAssignPatientTagToClinicPatientsRequest(server string, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAssignPatientTagToClinicPatientsRequestWithBody(server, clinicId, patientTagId, "application/json", bodyReader)
+}
+
+// NewAssignPatientTagToClinicPatientsRequestWithBody generates requests for AssignPatientTagToClinicPatients with any type of body
+func NewAssignPatientTagToClinicPatientsRequestWithBody(server string, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientTagId", runtime.ParamLocationPath, patientTagId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/assign_tag/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeletePatientTagFromClinicPatientsRequest calls the generic DeletePatientTagFromClinicPatients builder with application/json body
+func NewDeletePatientTagFromClinicPatientsRequest(server string, clinicId ClinicId, patientTagId PatientTagId, body DeletePatientTagFromClinicPatientsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDeletePatientTagFromClinicPatientsRequestWithBody(server, clinicId, patientTagId, "application/json", bodyReader)
+}
+
+// NewDeletePatientTagFromClinicPatientsRequestWithBody generates requests for DeletePatientTagFromClinicPatients with any type of body
+func NewDeletePatientTagFromClinicPatientsRequestWithBody(server string, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -3309,10 +3417,12 @@ func NewDeletePatientTagFromClinicPatientsRequest(server string, clinicId Clinic
 		return nil, err
 	}
 
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -4455,8 +4565,15 @@ type ClientWithResponsesInterface interface {
 
 	CreatePatientAccountWithResponse(ctx context.Context, clinicId ClinicId, body CreatePatientAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePatientAccountResponse, error)
 
-	// DeletePatientTagFromClinicPatients request
-	DeletePatientTagFromClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error)
+	// AssignPatientTagToClinicPatients request with any body
+	AssignPatientTagToClinicPatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignPatientTagToClinicPatientsResponse, error)
+
+	AssignPatientTagToClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignPatientTagToClinicPatientsResponse, error)
+
+	// DeletePatientTagFromClinicPatients request with any body
+	DeletePatientTagFromClinicPatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error)
+
+	DeletePatientTagFromClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body DeletePatientTagFromClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error)
 
 	// DeletePatient request
 	DeletePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*DeletePatientResponse, error)
@@ -5177,6 +5294,27 @@ func (r CreatePatientAccountResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r CreatePatientAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AssignPatientTagToClinicPatientsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r AssignPatientTagToClinicPatientsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AssignPatientTagToClinicPatientsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -6032,9 +6170,34 @@ func (c *ClientWithResponses) CreatePatientAccountWithResponse(ctx context.Conte
 	return ParseCreatePatientAccountResponse(rsp)
 }
 
-// DeletePatientTagFromClinicPatientsWithResponse request returning *DeletePatientTagFromClinicPatientsResponse
-func (c *ClientWithResponses) DeletePatientTagFromClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error) {
-	rsp, err := c.DeletePatientTagFromClinicPatients(ctx, clinicId, patientTagId, reqEditors...)
+// AssignPatientTagToClinicPatientsWithBodyWithResponse request with arbitrary body returning *AssignPatientTagToClinicPatientsResponse
+func (c *ClientWithResponses) AssignPatientTagToClinicPatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AssignPatientTagToClinicPatientsResponse, error) {
+	rsp, err := c.AssignPatientTagToClinicPatientsWithBody(ctx, clinicId, patientTagId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAssignPatientTagToClinicPatientsResponse(rsp)
+}
+
+func (c *ClientWithResponses) AssignPatientTagToClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignPatientTagToClinicPatientsResponse, error) {
+	rsp, err := c.AssignPatientTagToClinicPatients(ctx, clinicId, patientTagId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAssignPatientTagToClinicPatientsResponse(rsp)
+}
+
+// DeletePatientTagFromClinicPatientsWithBodyWithResponse request with arbitrary body returning *DeletePatientTagFromClinicPatientsResponse
+func (c *ClientWithResponses) DeletePatientTagFromClinicPatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error) {
+	rsp, err := c.DeletePatientTagFromClinicPatientsWithBody(ctx, clinicId, patientTagId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePatientTagFromClinicPatientsResponse(rsp)
+}
+
+func (c *ClientWithResponses) DeletePatientTagFromClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body DeletePatientTagFromClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error) {
+	rsp, err := c.DeletePatientTagFromClinicPatients(ctx, clinicId, patientTagId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -7032,6 +7195,22 @@ func ParseCreatePatientAccountResponse(rsp *http.Response) (*CreatePatientAccoun
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseAssignPatientTagToClinicPatientsResponse parses an HTTP response from a AssignPatientTagToClinicPatientsWithResponse call
+func ParseAssignPatientTagToClinicPatientsResponse(rsp *http.Response) (*AssignPatientTagToClinicPatientsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AssignPatientTagToClinicPatientsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

@@ -670,7 +670,7 @@ paths:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/inviteId'
     patch:
-      summary: ''
+      summary: Resend Clinician Invite
       operationId: ResendInvite
       responses:
         '200':
@@ -781,8 +781,6 @@ paths:
                     type: string
                   restrictions:
                     title: Acceptance restrictions
-                    x-stoplight:
-                      id: ywnkw0w7xn8b4
                     type: object
                     properties:
                       canAccept:
@@ -1139,7 +1137,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/userId'
     delete:
-      summary: ''
+      summary: Remove User from Clinics
       operationId: DeleteUserFromClinics
       responses:
         '200':
@@ -1216,26 +1214,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatientSummary'
-            examples:
-              example-1:
-                value:
-                  lastUpdatedDate: '2019-08-24T14:15:22Z'
-                  firstData: '2019-08-24T14:15:22Z'
-                  lastData: '2019-08-24T14:15:22Z'
-                  lastUploadDate: '2019-08-24T14:15:22Z'
-                  outdatedSince: '2019-08-24T14:15:22Z'
-                  averageGlucose:
-                    units: mmol/l
-                    value: 105
-                  glucoseManagementIndicator: 0.06
-                  percentTimeInTarget: 0.7
-                  percentTimeInHigh: 0.1
-                  percentTimeInVeryHigh: 0.1
-                  percentTimeInLow: 0.05
-                  percentTimeInVeryLow: 0.05
-                  percentTimeCGMUse: 0.9
-                  highGlucoseThreshold: 0
-                  lowGlucoseThreshold: 0
         description: ''
   '/v1/patients/{userId}/data_sources':
     parameters:
@@ -1322,17 +1300,43 @@ paths:
       description: Resend Dexcom connect request to the email address of the patient
       tags:
         - Clinics
+  '/v1/clinics/{clinicId}/patients/assign_tag/{patientTagId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientTagId'
+    post:
+      summary: Assign Patient Tag To Clinic Patients
+      operationId: AssignPatientTagToClinicPatients
+      requestBody:
+        description: Array of clinic patient user IDs to target for tag assignment.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TidepoolUserIds'
+      responses:
+        '200':
+          description: OK
+      description: Assign a patient tag to a subset of clinic patients
+      tags:
+        - Clinics
+        - Internal
   '/v1/clinics/{clinicId}/patients/delete_tag/{patientTagId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientTagId'
-    delete:
+    post:
       summary: Delete Patient Tag From Clinic Patients
       operationId: DeletePatientTagFromClinicPatients
+      requestBody:
+        description: Pass an array of patient IDs to target a subset of the clinic patients. Omit request body to target all clinic patients.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TidepoolUserIds'
       responses:
         '200':
           description: OK
-      description: Delete a patient tag from all clinic patients
+      description: Delete a patient tag from all or a subset of clinic patients
       tags:
         - Clinics
         - Internal
@@ -1848,6 +1852,15 @@ components:
       description: 'String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))'
       readOnly: true
       x-go-type: string
+    TidepoolUserIds:
+      type: array
+      nullable: true
+      description: Array of Tidepool User IDs
+      items:
+        $ref: '#/components/schemas/TidepoolUserId'
+      minItems: 1
+      maxItems: 1000
+      uniqueItems: true
     ClinicianRoles:
       type: array
       title: Clinician Permissions
@@ -1894,6 +1907,7 @@ components:
       maxLength: 24
       pattern: '^[a-f0-9]{24}$'
       readOnly: true
+      example: 2fe2488217ee43e1b2e83c2f
     PatientClinicRelationship:
       title: PatientClinicRelationship
       type: object
@@ -2041,7 +2055,6 @@ components:
           type: number
           format: float
           minimum: 0
-          maximum: 55
           example: 5.5
           x-tags:
             - Data
@@ -2456,8 +2469,6 @@ components:
       additionalProperties: false
     MembershipRestriction:
       title: Membership Restriction
-      x-stoplight:
-        id: lkeikldmhqso2
       type: object
       description: A user joining a clinic must match all of the defined restrictions
       properties:
@@ -2472,8 +2483,6 @@ components:
         - emailDomain
     MembershipRestrictions:
       title: Membership Restrictions
-      x-stoplight:
-        id: j8zuck3me7f8s
       type: object
       description: A user joining a clinic must match at least one of the specified membership restrictions
       properties:

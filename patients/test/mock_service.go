@@ -36,6 +36,20 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 	return m.recorder
 }
 
+// AssignPatientTagToClinicPatients mocks base method.
+func (m *MockService) AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AssignPatientTagToClinicPatients", ctx, clinicId, tagId, patientIds)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AssignPatientTagToClinicPatients indicates an expected call of AssignPatientTagToClinicPatients.
+func (mr *MockServiceMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicId, tagId, patientIds interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockService)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
+}
+
 // Create mocks base method.
 func (m *MockService) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -80,17 +94,17 @@ func (mr *MockServiceMockRecorder) DeleteNonCustodialPatientsOfClinic(ctx, clini
 }
 
 // DeletePatientTagFromClinicPatients mocks base method.
-func (m *MockService) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string) error {
+func (m *MockService) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePatientTagFromClinicPatients", ctx, clinicId, tagId)
+	ret := m.ctrl.Call(m, "DeletePatientTagFromClinicPatients", ctx, clinicId, tagId, patientIds)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeletePatientTagFromClinicPatients indicates an expected call of DeletePatientTagFromClinicPatients.
-func (mr *MockServiceMockRecorder) DeletePatientTagFromClinicPatients(ctx, clinicId, tagId interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) DeletePatientTagFromClinicPatients(ctx, clinicId, tagId, patientIds interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTagFromClinicPatients", reflect.TypeOf((*MockService)(nil).DeletePatientTagFromClinicPatients), ctx, clinicId, tagId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTagFromClinicPatients", reflect.TypeOf((*MockService)(nil).DeletePatientTagFromClinicPatients), ctx, clinicId, tagId, patientIds)
 }
 
 // DeletePermission mocks base method.
