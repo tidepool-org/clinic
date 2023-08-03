@@ -64,6 +64,9 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 				Notes:     clinic.EHRSettings.DestinationIds.Notes,
 				Results:   clinic.EHRSettings.DestinationIds.Results,
 			},
+			ProcedureCodes: EHRProcedureCodes{
+				SummaryReportsSubscription: clinic.EHRSettings.ProcedureCodes.SummaryReportsSubscription,
+			},
 		},
 	}
 	if clinic.EHRSettings.Facility != nil && clinic.EHRSettings.Facility.Name != "" {
