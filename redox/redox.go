@@ -11,6 +11,7 @@ import (
 	"github.com/tidepool-org/clinic/redox/models"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
@@ -31,8 +32,9 @@ type Redox interface {
 	VerifyEndpoint(request VerificationRequest) (*VerificationResponse, error)
 	AuthorizeRequest(req *http.Request) error
 	ProcessEHRMessage(ctx context.Context, raw []byte) error
+	FindMessage(ctx context.Context, documentId, dataModel, eventType string) (*models.MessageEnvelope, error)
+	MatchNewOrderToPatient(ctx context.Context, clinic *clinics.Clinic, order *models.NewOrder, update patients.SubscriptionUpdate) ([]*patients.Patient, error)
 	FindMatchingClinic(ctx context.Context, criteria ClinicMatchingCriteria) (*clinics.Clinic, error)
-	MatchPatient(ctx context.Context, criteria PatientMatchingCriteria) ([]*patients.Patient, error)
 }
 
 func NewConfig() (Config, error) {
@@ -155,6 +157,31 @@ func (h *Handler) ProcessEHRMessage(ctx context.Context, raw []byte) error {
 	return nil
 }
 
+func (h *Handler) FindMessage(ctx context.Context, documentId, dataModel, eventType string) (*models.MessageEnvelope, error) {
+	id, err := primitive.ObjectIDFromHex(documentId)
+	if err != nil {
+		return nil, err
+	}
+
+	envelope := models.MessageEnvelope{}
+	filter := bson.M{"_id": id, "Meta.DataModel": dataModel, "Meta.EventType": eventType}
+	err = h.collection.FindOne(ctx, filter).Decode(&envelope)
+	if err != nil {
+		return nil, err
+	}
+
+	return &envelope, nil
+}
+
+func (h *Handler) FindMatchingClinicFromNewOrder(ctx context.Context, order *models.NewOrder) (*clinics.Clinic, error) {
+	criteria, err := GetClinicMatchingCriteriaFromNewOrder(order)
+	if err != nil {
+		return nil, err
+	}
+
+	return h.FindMatchingClinic(ctx, criteria)
+}
+
 func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchingCriteria) (*clinics.Clinic, error) {
 	if criteria.SourceId == "" {
 		return nil, fmt.Errorf("%w: source id is required", errors.BadRequest)
@@ -185,9 +212,10 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 	return result[0], nil
 }
 
-func (h *Handler) MatchPatient(ctx context.Context, criteria PatientMatchingCriteria) ([]*patients.Patient, error) {
-	if criteria.Mrn == "" || criteria.DateOfBirth == "" {
-		return nil, fmt.Errorf("%w: mrn and birth date are required", errors.BadRequest)
+func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic *clinics.Clinic, order *models.NewOrder, update patients.SubscriptionUpdate) ([]*patients.Patient, error) {
+	criteria, err := GetPatientMatchingCriteriaFromNewOrder(order, *clinic)
+	if err != nil {
+		return nil, err
 	}
 
 	filter := patients.Filter{
@@ -203,24 +231,11 @@ func (h *Handler) MatchPatient(ctx context.Context, criteria PatientMatchingCrit
 	result, err := h.patients.List(ctx, &filter, page, nil)
 
 	if err == nil && result.TotalCount == 1 && result.Patients[0] != nil {
-		// Add the matched EHR identity, so we can push data without an Order later
+		// Update the subscription for matched patient only if single match was found
 		match := result.Patients[0]
-		match.EHRIdentity = &patients.EHRIdentity{
-			FirstName:   criteria.FirstName,
-			MiddleName:  criteria.MiddleName,
-			LastName:    criteria.LastName,
-			DateOfBirth: criteria.DateOfBirth,
-			Mrn:         criteria.Mrn,
-		}
-		updated, err := h.patients.Update(ctx, patients.PatientUpdate{
-			ClinicId: match.ClinicId.Hex(),
-			UserId:   *match.UserId,
-			Patient:  *match,
-		})
-		if err != nil {
+		if err := h.patients.UpdateEHRSubscription(ctx, match.ClinicId.Hex(), *match.UserId, update); err != nil {
 			return nil, err
 		}
-		result.Patients[0] = updated
 	}
 
 	return result.Patients, err
@@ -236,9 +251,6 @@ type VerificationResponse struct {
 }
 
 type PatientMatchingCriteria struct {
-	FirstName   string
-	MiddleName  string
-	LastName    string
 	Mrn         string
 	DateOfBirth string
 }
@@ -246,4 +258,61 @@ type PatientMatchingCriteria struct {
 type ClinicMatchingCriteria struct {
 	SourceId     string
 	FacilityName *string
+}
+
+func GetClinicMatchingCriteriaFromNewOrder(order *models.NewOrder) (ClinicMatchingCriteria, error) {
+	criteria := ClinicMatchingCriteria{}
+	if order.Meta.Source == nil || order.Meta.Source.ID == nil || *order.Meta.Source.ID == "" {
+		return criteria, fmt.Errorf("%w: source id is required", errors.BadRequest)
+	}
+	criteria.SourceId = *order.Meta.Source.ID
+
+	if order.Order.OrderingFacility != nil {
+		criteria.FacilityName = order.Order.OrderingFacility.Name
+	}
+
+	return criteria, nil
+}
+
+func GetPatientMatchingCriteriaFromNewOrder(order *models.NewOrder, clinic clinics.Clinic) (*PatientMatchingCriteria, error) {
+	if clinic.EHRSettings == nil {
+		return nil, fmt.Errorf("%w: clinic has no EHR settings", errors.BadRequest)
+	}
+	var mrn string
+	var dob string
+
+	mrnIdType := clinic.EHRSettings.GetMrnIDType()
+	for _, identifier := range order.Patient.Identifiers {
+		if identifier.IDType == mrnIdType {
+			mrn = identifier.ID
+		}
+	}
+	if mrn == "" {
+		return nil, fmt.Errorf("%w: no matching identifier found", errors.BadRequest)
+	}
+
+	if order.Patient.Demographics != nil && order.Patient.Demographics.DOB != nil {
+		dob = *order.Patient.Demographics.DOB
+	}
+	if dob == "" {
+		return nil, fmt.Errorf("%w: date of birth is missing", errors.BadRequest)
+	}
+
+	return &PatientMatchingCriteria{
+		Mrn:         mrn,
+		DateOfBirth: dob,
+	}, nil
+}
+
+type Model interface {
+	models.NewOrder
+}
+
+func UnmarshallMessage[S *T, T Model](envelope models.MessageEnvelope) (S, error) {
+	model := new(T)
+	if err := bson.Unmarshal(envelope.Message, model); err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }

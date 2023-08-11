@@ -99,4 +99,6 @@ require (
 
 replace github.com/tidepool-org/clinic/client => ./client
 
+replace github.com/tidepool-org/clinic/redox => ./redox
+
 replace github.com/tidepool-org/clinic/redox/models => ./redox/models

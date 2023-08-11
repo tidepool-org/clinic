@@ -2527,13 +2527,6 @@ components:
       x-stoplight:
         id: nq0mlm5dqdfw0
       type: object
-      properties:
-        clinic:
-          $ref: '#/components/schemas/EHRMatchClinicRequest'
-        patient:
-          $ref: '#/components/schemas/EHRMatchPatientRequest'
-      required:
-        - clinic
       x-examples:
         Example 1:
           clinic:
@@ -2543,6 +2536,17 @@ components:
             lastName: Doe
             mrn: BG1234567890
             birthDate: '1984-03-22'
+      properties:
+        clinic:
+          $ref: '#/components/schemas/EHRMatchClinicRequest'
+        patient:
+          $ref: '#/components/schemas/EHRMatchPatientRequest'
+        messageRef:
+          $ref: '#/components/schemas/EHRMatchMessageRef'
+        action:
+          $ref: '#/components/schemas/EHRMatchAction'
+      required:
+        - clinic
     EHRMatchResponse:
       title: EHRMatchResponse
       x-stoplight:
@@ -2641,6 +2645,39 @@ components:
           description: Procedure Code for Summary Statistics and PDF Reports subscription
       required:
         - summaryReportsSubscription
+    EHRMatchMessageRef:
+      title: EHRMatchMessageRef
+      x-stoplight:
+        id: a1215t5vip3tr
+      type: object
+      properties:
+        dataModel:
+          type: string
+          enum:
+            - Order
+        eventType:
+          type: string
+          enum:
+            - New
+        documentId:
+          type: string
+      required:
+        - dataModel
+        - eventType
+        - documentId
+    EHRMatchAction:
+      title: EHRMatchAction
+      x-stoplight:
+        id: ouyj6lwlrtzhc
+      type: object
+      properties:
+        actionType:
+          type: string
+          enum:
+            - ENABLE_SUMARY_AND_REPORTS_SUBSCRIPTION
+            - DISABLE_SUMARY_AND_REPORTS_SUBSCRIPTION
+      required:
+        - actionType
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

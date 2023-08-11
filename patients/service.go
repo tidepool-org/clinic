@@ -179,6 +179,11 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 	return s.repo.UpdatePatientDataSources(ctx, userId, dataSources)
 }
 
+func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error {
+	s.logger.Infow("updating patient subscription", "clinicId", clinicId, "userId", userId, "update", update)
+	return s.repo.UpdateEHRSubscription(ctx, clinicId, userId, update)
+}
+
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, patient *Patient) error {
 	mrnSettings, err := s.clinics.GetMRNSettings(ctx, clinicId)
 	if err != nil || mrnSettings == nil {

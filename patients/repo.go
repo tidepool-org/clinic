@@ -629,6 +629,50 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	return nil
 }
 
+func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patientId string, update SubscriptionUpdate) error {
+	patient, err := r.Get(ctx, clinicId, patientId)
+	if err != nil {
+		return err
+	}
+
+	if patient.UserId == nil || *patient.UserId == "" || patient.ClinicId == nil {
+		return fmt.Errorf("patient is missing required fields")
+	}
+
+	selector := bson.M{
+		"userId":      patient.UserId,
+		"clinicId":    patient.ClinicId,
+		"updatedTime": patient.UpdatedTime,
+	}
+
+	subscriptions := patient.EHRSubscriptions
+	if subscriptions == nil {
+		subscriptions = make(map[string]EHRSubscription)
+	}
+
+	subscription, ok := subscriptions[update.Name]
+	if !ok {
+		subscription = EHRSubscription{}
+	}
+
+	subscription.Active = update.Active
+	subscription.MatchedMessages = append(subscription.MatchedMessages, update.MatchedMessage)
+	subscriptions[update.Name] = subscription
+
+	res, err := r.collection.UpdateOne(ctx, selector, bson.M{
+		"$set": bson.M{
+			"ehrSubscriptions": subscriptions,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("no patient found to update")
+	}
+	return nil
+}
+
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
 	if filter.ClinicId != nil {

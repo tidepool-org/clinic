@@ -1,8 +1,13 @@
 package api
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/redox"
+	"github.com/tidepool-org/clinic/redox/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io"
 	"net/http"
 )
@@ -45,12 +50,67 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 		return err
 	}
 
-	clinic, err := h.redox.FindMatchingClinic(ctx, redox.ClinicMatchingCriteria{
-		SourceId:     request.Clinic.SourceId,
-		FacilityName: request.Clinic.FacilityName,
-	})
+	if request.MessageRef == nil {
+		return fmt.Errorf("%w: messageRef is required", errors.BadRequest)
+	}
+	documentId, err := primitive.ObjectIDFromHex(request.MessageRef.DocumentId)
+	if err != nil {
+		return fmt.Errorf("%w: invalid documentId", errors.BadRequest)
+	}
+
+	// We only support new order messages for now
+	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != New {
+		return fmt.Errorf("%w: only new order messages are supported", errors.BadRequest)
+	}
+	msg, err := h.redox.FindMessage(
+		ctx,
+		request.MessageRef.DocumentId,
+		string(request.MessageRef.DataModel),
+		string(request.MessageRef.EventType),
+	)
 	if err != nil {
 		return err
+	}
+
+	order, err := redox.UnmarshallMessage[*models.NewOrder](*msg)
+	if err != nil {
+		return err
+	}
+
+	criteria, err := redox.GetClinicMatchingCriteriaFromNewOrder(order)
+	if err != nil {
+		return err
+	}
+	clinic, err := h.redox.FindMatchingClinic(ctx, criteria)
+	if err != nil {
+		return err
+	}
+
+	var matchedPatients []*patients.Patient
+	if request.Action != nil {
+		update := patients.SubscriptionUpdate{
+			MatchedMessage: patients.MatchedMessage{
+				DocumentId: documentId,
+				DataModel:  string(request.MessageRef.DataModel),
+				EventType:  string(request.MessageRef.EventType),
+			},
+		}
+
+		switch request.Action.ActionType {
+		case ENABLESUMARYANDREPORTSSUBSCRIPTION:
+			update.Name = patients.SummaryAndReportsSubscription
+			update.Active = true
+		case DISABLESUMARYANDREPORTSSUBSCRIPTION:
+			update.Name = patients.SummaryAndReportsSubscription
+			update.Active = false
+		default:
+			return fmt.Errorf("%w: unsupported action type", errors.BadRequest)
+		}
+
+		matchedPatients, err = h.redox.MatchNewOrderToPatient(ctx, clinic, order, update)
+		if err != nil {
+			return err
+		}
 	}
 
 	response := EHRMatchResponse{
@@ -74,17 +134,8 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 			Name: clinic.EHRSettings.Facility.Name,
 		}
 	}
-
-	if request.Patient != nil {
-		patients, err := h.redox.MatchPatient(ctx, redox.PatientMatchingCriteria{
-			Mrn:         request.Patient.Mrn,
-			DateOfBirth: request.Patient.DateOfBirth,
-		})
-		if err != nil {
-			return err
-		}
-
-		dto := NewPatientsDto(patients)
+	if matchedPatients != nil {
+		dto := NewPatientsDto(matchedPatients)
 		response.Patients = &dto
 	}
 

@@ -181,6 +181,20 @@ func (mr *MockRepositoryMockRecorder) Update(ctx, update interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepository)(nil).Update), ctx, update)
 }
 
+// UpdateEHRSubscription mocks base method.
+func (m *MockRepository) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEHRSubscription", ctx, clinicId, userId, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateEHRSubscription indicates an expected call of UpdateEHRSubscription.
+func (mr *MockRepositoryMockRecorder) UpdateEHRSubscription(ctx, clinicId, userId, update interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEHRSubscription", reflect.TypeOf((*MockRepository)(nil).UpdateEHRSubscription), ctx, clinicId, userId, update)
+}
+
 // UpdateEmail mocks base method.
 func (m *MockRepository) UpdateEmail(ctx context.Context, userId string, email *string) error {
 	m.ctrl.T.Helper()

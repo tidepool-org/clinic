@@ -51,6 +51,22 @@ const (
 	DataSourceStatePendingReconnect DataSourceState = "pendingReconnect"
 )
 
+// Defines values for EHRMatchActionActionType.
+const (
+	DISABLESUMARYANDREPORTSSUBSCRIPTION EHRMatchActionActionType = "DISABLE_SUMARY_AND_REPORTS_SUBSCRIPTION"
+	ENABLESUMARYANDREPORTSSUBSCRIPTION  EHRMatchActionActionType = "ENABLE_SUMARY_AND_REPORTS_SUBSCRIPTION"
+)
+
+// Defines values for EHRMatchMessageRefDataModel.
+const (
+	Order EHRMatchMessageRefDataModel = "Order"
+)
+
+// Defines values for EHRMatchMessageRefEventType.
+const (
+	New EHRMatchMessageRefEventType = "New"
+)
+
 // Defines values for MigrationStatus.
 const (
 	COMPLETED MigrationStatus = "COMPLETED"
@@ -225,11 +241,32 @@ type EHRFacility struct {
 	Name string `json:"name"`
 }
 
+// EHRMatchAction defines model for EHRMatchAction.
+type EHRMatchAction struct {
+	ActionType EHRMatchActionActionType `json:"actionType"`
+}
+
+// EHRMatchActionActionType defines model for EHRMatchAction.ActionType.
+type EHRMatchActionActionType string
+
 // EHRMatchClinicRequest defines model for EHRMatchClinicRequest.
 type EHRMatchClinicRequest struct {
 	FacilityName *string `json:"facilityName,omitempty"`
 	SourceId     string  `json:"sourceId"`
 }
+
+// EHRMatchMessageRef defines model for EHRMatchMessageRef.
+type EHRMatchMessageRef struct {
+	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
+	DocumentId string                      `json:"documentId"`
+	EventType  EHRMatchMessageRefEventType `json:"eventType"`
+}
+
+// EHRMatchMessageRefDataModel defines model for EHRMatchMessageRef.DataModel.
+type EHRMatchMessageRefDataModel string
+
+// EHRMatchMessageRefEventType defines model for EHRMatchMessageRef.EventType.
+type EHRMatchMessageRefEventType string
 
 // EHRMatchPatientRequest defines model for EHRMatchPatientRequest.
 type EHRMatchPatientRequest struct {
@@ -242,8 +279,10 @@ type EHRMatchPatientRequest struct {
 
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	Clinic  EHRMatchClinicRequest   `json:"clinic"`
-	Patient *EHRMatchPatientRequest `json:"patient,omitempty"`
+	Action     *EHRMatchAction         `json:"action,omitempty"`
+	Clinic     EHRMatchClinicRequest   `json:"clinic"`
+	MessageRef *EHRMatchMessageRef     `json:"messageRef,omitempty"`
+	Patient    *EHRMatchPatientRequest `json:"patient,omitempty"`
 }
 
 // EHRMatchResponse defines model for EHRMatchResponse.
@@ -254,14 +293,21 @@ type EHRMatchResponse struct {
 	Settings EHRSettings `json:"settings"`
 }
 
+// EHRProcedureCodes defines model for EHRProcedureCodes.
+type EHRProcedureCodes struct {
+	// SummaryReportsSubscription Procedure Code for Summary Statistics and PDF Reports subscription
+	SummaryReportsSubscription string `json:"summaryReportsSubscription"`
+}
+
 // EHRSettings defines model for EHRSettings.
 type EHRSettings struct {
 	DestinationIds EHRDestinationIds `json:"destinationIds"`
 
 	// Enabled Enable or disable the EHR integration
-	Enabled  bool         `json:"enabled"`
-	Facility *EHRFacility `json:"facility,omitempty"`
-	SourceId string       `json:"sourceId"`
+	Enabled        bool              `json:"enabled"`
+	Facility       *EHRFacility      `json:"facility,omitempty"`
+	ProcedureCodes EHRProcedureCodes `json:"procedureCodes"`
+	SourceId       string            `json:"sourceId"`
 }
 
 // Error defines model for Error.

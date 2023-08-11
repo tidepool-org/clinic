@@ -10,6 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const (
+	DefaultMrnIdType = "MRN"
+)
+
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
 var ErrPatientTagNotFound = fmt.Errorf("patient tag %w", errors.NotFound)
 var ErrDuplicatePatientTagName = fmt.Errorf("%w patient tag", errors.Duplicate)
@@ -85,6 +89,14 @@ type EHRSettings struct {
 	Facility       *EHRFacility      `bson:"facility"`
 	ProcedureCodes EHRProcedureCodes `bson:"procedureCodes"`
 	SourceId       string            `bson:"sourceId"`
+	MrnIdType      string            `bson:"mrnIdType"`
+}
+
+func (e *EHRSettings) GetMrnIDType() string {
+	if e.MrnIdType == "" {
+		return DefaultMrnIdType
+	}
+	return e.MrnIdType
 }
 
 type EHRFacility struct {

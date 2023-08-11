@@ -589,4 +589,5 @@ honnef.co/go/tools/stylecheck
 honnef.co/go/tools/unused
 honnef.co/go/tools/version
 # github.com/tidepool-org/clinic/client => ./client
+# github.com/tidepool-org/clinic/redox => ./redox
 # github.com/tidepool-org/clinic/redox/models => ./redox/models
