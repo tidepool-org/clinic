@@ -33,7 +33,7 @@ type Redox interface {
 	AuthorizeRequest(req *http.Request) error
 	ProcessEHRMessage(ctx context.Context, raw []byte) error
 	FindMessage(ctx context.Context, documentId, dataModel, eventType string) (*models.MessageEnvelope, error)
-	MatchNewOrderToPatient(ctx context.Context, clinic *clinics.Clinic, order *models.NewOrder, update patients.SubscriptionUpdate) ([]*patients.Patient, error)
+	MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error)
 	FindMatchingClinic(ctx context.Context, criteria ClinicMatchingCriteria) (*clinics.Clinic, error)
 }
 
@@ -212,8 +212,8 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 	return result[0], nil
 }
 
-func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic *clinics.Clinic, order *models.NewOrder, update patients.SubscriptionUpdate) ([]*patients.Patient, error) {
-	criteria, err := GetPatientMatchingCriteriaFromNewOrder(order, *clinic)
+func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error) {
+	criteria, err := GetPatientMatchingCriteriaFromNewOrder(order, clinic)
 	if err != nil {
 		return nil, err
 	}
@@ -230,10 +230,10 @@ func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic *clinics.Cl
 
 	result, err := h.patients.List(ctx, &filter, page, nil)
 
-	if err == nil && result.TotalCount == 1 && result.Patients[0] != nil {
+	if err == nil && result.TotalCount == 1 && result.Patients[0] != nil && update != nil {
 		// Update the subscription for matched patient only if single match was found
 		match := result.Patients[0]
-		if err := h.patients.UpdateEHRSubscription(ctx, match.ClinicId.Hex(), *match.UserId, update); err != nil {
+		if err := h.patients.UpdateEHRSubscription(ctx, match.ClinicId.Hex(), *match.UserId, *update); err != nil {
 			return nil, err
 		}
 	}
@@ -274,7 +274,7 @@ func GetClinicMatchingCriteriaFromNewOrder(order *models.NewOrder) (ClinicMatchi
 	return criteria, nil
 }
 
-func GetPatientMatchingCriteriaFromNewOrder(order *models.NewOrder, clinic clinics.Clinic) (*PatientMatchingCriteria, error) {
+func GetPatientMatchingCriteriaFromNewOrder(order models.NewOrder, clinic clinics.Clinic) (*PatientMatchingCriteria, error) {
 	if clinic.EHRSettings == nil {
 		return nil, fmt.Errorf("%w: clinic has no EHR settings", errors.BadRequest)
 	}
@@ -315,4 +315,31 @@ func UnmarshallMessage[S *T, T Model](envelope models.MessageEnvelope) (S, error
 	}
 
 	return model, nil
+}
+
+func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID, order models.NewOrder) *patients.SubscriptionUpdate {
+	if clinic.EHRSettings == nil || order.Order.Procedure == nil || order.Order.Procedure.Code == nil {
+		return nil
+	}
+
+	update := patients.SubscriptionUpdate{
+		MatchedMessage: patients.MatchedMessage{
+			DocumentId: documentId,
+			DataModel:  order.Meta.DataModel,
+			EventType:  order.Meta.EventType,
+		},
+	}
+
+	switch *order.Order.Procedure.Code {
+	case clinic.EHRSettings.ProcedureCodes.EnableSummaryReports:
+		update.Name = patients.SummaryAndReportsSubscription
+		update.Active = true
+		return &update
+	case clinic.EHRSettings.ProcedureCodes.DisableSummaryReports:
+		update.Name = patients.SummaryAndReportsSubscription
+		update.Active = true
+		return &update
+	}
+
+	return nil
 }

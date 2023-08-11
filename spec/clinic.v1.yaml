@@ -2527,26 +2527,10 @@ components:
       x-stoplight:
         id: nq0mlm5dqdfw0
       type: object
-      x-examples:
-        Example 1:
-          clinic:
-            facilityName: ACME Clinic
-          patient:
-            firstName: John
-            lastName: Doe
-            mrn: BG1234567890
-            birthDate: '1984-03-22'
+      x-examples: {}
       properties:
-        clinic:
-          $ref: '#/components/schemas/EHRMatchClinicRequest'
-        patient:
-          $ref: '#/components/schemas/EHRMatchPatientRequest'
         messageRef:
           $ref: '#/components/schemas/EHRMatchMessageRef'
-        action:
-          $ref: '#/components/schemas/EHRMatchAction'
-      required:
-        - clinic
     EHRMatchResponse:
       title: EHRMatchResponse
       x-stoplight:
@@ -2559,6 +2543,8 @@ components:
           $ref: '#/components/schemas/Patients'
         settings:
           $ref: '#/components/schemas/EHRSettings'
+        action:
+          $ref: '#/components/schemas/EHRMatchAction'
       required:
         - clinic
         - settings
@@ -2639,12 +2625,15 @@ components:
         id: gy7do1thlm3g5
       type: object
       properties:
-        summaryReportsSubscription:
+        enableSummaryReports:
           type: string
           minLength: 1
           description: Procedure Code for Summary Statistics and PDF Reports subscription
+        disableSummaryReports:
+          type: string
       required:
-        - summaryReportsSubscription
+        - enableSummaryReports
+        - disableSummaryReports
     EHRMatchMessageRef:
       title: EHRMatchMessageRef
       x-stoplight:

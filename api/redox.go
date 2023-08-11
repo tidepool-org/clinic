@@ -86,31 +86,10 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 		return err
 	}
 
-	var matchedPatients []*patients.Patient
-	if request.Action != nil {
-		update := patients.SubscriptionUpdate{
-			MatchedMessage: patients.MatchedMessage{
-				DocumentId: documentId,
-				DataModel:  string(request.MessageRef.DataModel),
-				EventType:  string(request.MessageRef.EventType),
-			},
-		}
-
-		switch request.Action.ActionType {
-		case ENABLESUMARYANDREPORTSSUBSCRIPTION:
-			update.Name = patients.SummaryAndReportsSubscription
-			update.Active = true
-		case DISABLESUMARYANDREPORTSSUBSCRIPTION:
-			update.Name = patients.SummaryAndReportsSubscription
-			update.Active = false
-		default:
-			return fmt.Errorf("%w: unsupported action type", errors.BadRequest)
-		}
-
-		matchedPatients, err = h.redox.MatchNewOrderToPatient(ctx, clinic, order, update)
-		if err != nil {
-			return err
-		}
+	update := redox.GetUpdateFromNewOrder(*clinic, documentId, *order)
+	matchedPatients, err := h.redox.MatchNewOrderToPatient(ctx, *clinic, *order, update)
+	if err != nil {
+		return err
 	}
 
 	response := EHRMatchResponse{
@@ -125,7 +104,8 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 				Results:   clinic.EHRSettings.DestinationIds.Results,
 			},
 			ProcedureCodes: EHRProcedureCodes{
-				SummaryReportsSubscription: clinic.EHRSettings.ProcedureCodes.SummaryReportsSubscription,
+				EnableSummaryReports:  clinic.EHRSettings.ProcedureCodes.EnableSummaryReports,
+				DisableSummaryReports: clinic.EHRSettings.ProcedureCodes.DisableSummaryReports,
 			},
 		},
 	}
@@ -137,6 +117,17 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	if matchedPatients != nil {
 		dto := NewPatientsDto(matchedPatients)
 		response.Patients = &dto
+	}
+	if update != nil {
+		action := &EHRMatchAction{}
+		if update.Name == patients.SummaryAndReportsSubscription && update.Active {
+			action.ActionType = ENABLESUMARYANDREPORTSSUBSCRIPTION
+		} else if update.Name == patients.SummaryAndReportsSubscription && !update.Active {
+			action.ActionType = DISABLESUMARYANDREPORTSSUBSCRIPTION
+		}
+		if action.ActionType != "" {
+			response.Action = action
+		}
 	}
 
 	return ec.JSON(http.StatusOK, response)

@@ -111,7 +111,8 @@ type EHRDestinationIds struct {
 }
 
 type EHRProcedureCodes struct {
-	SummaryReportsSubscription string `bson:"summaryReportsSubscription"`
+	EnableSummaryReports  string `bson:"enableSummaryReports"`
+	DisableSummaryReports string `bson:"disableSummaryReports"`
 }
 
 type MRNSettings struct {

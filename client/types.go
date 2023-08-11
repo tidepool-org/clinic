@@ -249,12 +249,6 @@ type EHRMatchAction struct {
 // EHRMatchActionActionType defines model for EHRMatchAction.ActionType.
 type EHRMatchActionActionType string
 
-// EHRMatchClinicRequest defines model for EHRMatchClinicRequest.
-type EHRMatchClinicRequest struct {
-	FacilityName *string `json:"facilityName,omitempty"`
-	SourceId     string  `json:"sourceId"`
-}
-
 // EHRMatchMessageRef defines model for EHRMatchMessageRef.
 type EHRMatchMessageRef struct {
 	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
@@ -268,25 +262,15 @@ type EHRMatchMessageRefDataModel string
 // EHRMatchMessageRefEventType defines model for EHRMatchMessageRef.EventType.
 type EHRMatchMessageRefEventType string
 
-// EHRMatchPatientRequest defines model for EHRMatchPatientRequest.
-type EHRMatchPatientRequest struct {
-	DateOfBirth string  `json:"dateOfBirth"`
-	FirstName   *string `json:"firstName,omitempty"`
-	LastName    *string `json:"lastName,omitempty"`
-	MiddleName  *string `json:"middleName,omitempty"`
-	Mrn         string  `json:"mrn"`
-}
-
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	Action     *EHRMatchAction         `json:"action,omitempty"`
-	Clinic     EHRMatchClinicRequest   `json:"clinic"`
-	MessageRef *EHRMatchMessageRef     `json:"messageRef,omitempty"`
-	Patient    *EHRMatchPatientRequest `json:"patient,omitempty"`
+	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
 }
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {
+	Action *EHRMatchAction `json:"action,omitempty"`
+
 	// Clinic Clinic
 	Clinic   Clinic      `json:"clinic"`
 	Patients *Patients   `json:"patients,omitempty"`
@@ -295,8 +279,10 @@ type EHRMatchResponse struct {
 
 // EHRProcedureCodes defines model for EHRProcedureCodes.
 type EHRProcedureCodes struct {
-	// SummaryReportsSubscription Procedure Code for Summary Statistics and PDF Reports subscription
-	SummaryReportsSubscription string `json:"summaryReportsSubscription"`
+	DisableSummaryReports string `json:"disableSummaryReports"`
+
+	// EnableSummaryReports Procedure Code for Summary Statistics and PDF Reports subscription
+	EnableSummaryReports string `json:"enableSummaryReports"`
 }
 
 // EHRSettings defines model for EHRSettings.

@@ -352,7 +352,8 @@ func (h *Handler) GetEHRSettings(ec echo.Context, clinicId ClinicId) error {
 			Results:   settings.DestinationIds.Results,
 		},
 		ProcedureCodes: EHRProcedureCodes{
-			SummaryReportsSubscription: settings.ProcedureCodes.SummaryReportsSubscription,
+			EnableSummaryReports:  settings.ProcedureCodes.EnableSummaryReports,
+			DisableSummaryReports: settings.ProcedureCodes.DisableSummaryReports,
 		},
 	}
 	if settings.Facility != nil {
@@ -380,7 +381,8 @@ func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
 			Results:   dto.DestinationIds.Results,
 		},
 		ProcedureCodes: clinics.EHRProcedureCodes{
-			SummaryReportsSubscription: dto.ProcedureCodes.SummaryReportsSubscription,
+			EnableSummaryReports:  dto.ProcedureCodes.EnableSummaryReports,
+			DisableSummaryReports: dto.ProcedureCodes.DisableSummaryReports,
 		},
 	}
 	if dto.Facility != nil {

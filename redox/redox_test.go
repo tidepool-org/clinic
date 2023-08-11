@@ -233,7 +233,7 @@ var _ = Describe("Redox", func() {
 
 		It("returns an error when mrn is empty", func() {
 			order.Patient.Identifiers = nil
-			res, err := handler.MatchNewOrderToPatient(nil, &clinic, &order, update)
+			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
 
 			Expect(err).To(MatchError(errors.BadRequest))
 			Expect(res).To(BeNil())
@@ -241,14 +241,14 @@ var _ = Describe("Redox", func() {
 
 		It("returns an error when demographics is empty", func() {
 			order.Patient.Demographics = nil
-			res, err := handler.MatchNewOrderToPatient(nil, &clinic, &order, update)
+			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
 			Expect(err).To(MatchError(errors.BadRequest))
 			Expect(res).To(BeNil())
 		})
 
 		It("returns an error when date of birth is empty", func() {
 			order.Patient.Demographics.DOB = nil
-			res, err := handler.MatchNewOrderToPatient(nil, &clinic, &order, update)
+			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
 			Expect(err).To(MatchError(errors.BadRequest))
 			Expect(res).To(BeNil())
 		})
@@ -271,7 +271,7 @@ var _ = Describe("Redox", func() {
 				gomock.Eq(update),
 			).Return(nil)
 
-			res, err := handler.MatchNewOrderToPatient(nil, &clinic, &order, update)
+			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
 			Expect(err).To(BeNil())
 			Expect(res).To(HaveLen(1))
 		})
@@ -289,7 +289,7 @@ var _ = Describe("Redox", func() {
 				TotalCount: 2,
 			}, nil)
 
-			res, err := handler.MatchNewOrderToPatient(nil, &clinic, &order, update)
+			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
 			Expect(err).To(BeNil())
 			Expect(res).To(HaveLen(2))
 		})
@@ -306,7 +306,7 @@ var _ = Describe("Redox", func() {
 				TotalCount: 0,
 			}, nil)
 
-			res, err := handler.MatchNewOrderToPatient(nil, &clinic, &order, update)
+			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
 			Expect(err).To(BeNil())
 			Expect(res).To(HaveLen(0))
 		})
