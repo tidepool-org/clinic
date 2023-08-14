@@ -13,12 +13,6 @@ const (
 	SessionTokenScopes = "sessionToken.Scopes"
 )
 
-// Defines values for AverageGlucoseUnits.
-const (
-	AverageGlucoseUnitsMmolL AverageGlucoseUnits = "mmol/L"
-	AverageGlucoseUnitsMmoll AverageGlucoseUnits = "mmol/l"
-)
-
 // Defines values for ClinicClinicSize.
 const (
 	N0249   ClinicClinicSize = "0-249"
@@ -38,8 +32,8 @@ const (
 
 // Defines values for ClinicPreferredBgUnits.
 const (
-	ClinicPreferredBgUnitsMgdL  ClinicPreferredBgUnits = "mg/dL"
-	ClinicPreferredBgUnitsMmolL ClinicPreferredBgUnits = "mmol/L"
+	MgdL  ClinicPreferredBgUnits = "mg/dL"
+	MmolL ClinicPreferredBgUnits = "mmol/L"
 )
 
 // Defines values for DataSourceState.
@@ -70,17 +64,6 @@ const (
 type AssociateClinicianToUser struct {
 	UserId string `json:"userId"`
 }
-
-// AverageGlucose Blood glucose value, in `mmol/L`
-type AverageGlucose struct {
-	Units AverageGlucoseUnits `json:"units"`
-
-	// Value A floating point value representing a `mmol/L` value.
-	Value float32 `json:"value"`
-}
-
-// AverageGlucoseUnits defines model for AverageGlucose.Units.
-type AverageGlucoseUnits string
 
 // Clinic Clinic
 type Clinic struct {
@@ -292,13 +275,13 @@ type PatientBGMPeriod struct {
 	// AverageDailyRecordsDelta Difference between the averageDailyRecords in this period and version in the opposite offset
 	AverageDailyRecordsDelta *float64 `json:"averageDailyRecordsDelta,omitempty"`
 
-	// AverageGlucose Blood glucose value, in `mmol/L`
-	AverageGlucose *AverageGlucose `json:"averageGlucose,omitempty"`
+	// AverageGlucoseMmol Average Glucose of records in this period
+	AverageGlucoseMmol *float64 `json:"averageGlucoseMmol,omitempty"`
 
-	// AverageGlucoseDelta Difference between the averageGlucose in this period and the other offset version
-	AverageGlucoseDelta      *float64 `json:"averageGlucoseDelta,omitempty"`
+	// AverageGlucoseMmolDelta Difference between the averageGlucose in this period and the other offset version
+	AverageGlucoseMmolDelta  *float64 `json:"averageGlucoseMmolDelta,omitempty"`
 	HasAverageDailyRecords   *bool    `json:"hasAverageDailyRecords,omitempty"`
-	HasAverageGlucose        *bool    `json:"hasAverageGlucose,omitempty"`
+	HasAverageGlucoseMmol    *bool    `json:"hasAverageGlucoseMmol,omitempty"`
 	HasTimeInHighPercent     *bool    `json:"hasTimeInHighPercent,omitempty"`
 	HasTimeInHighRecords     *bool    `json:"hasTimeInHighRecords,omitempty"`
 	HasTimeInLowPercent      *bool    `json:"hasTimeInLowPercent,omitempty"`
@@ -407,11 +390,11 @@ type PatientCGMPeriod struct {
 	// AverageDailyRecordsDelta Difference between the averageDailyRecords in this period and version in the opposite offset
 	AverageDailyRecordsDelta *float64 `json:"averageDailyRecordsDelta,omitempty"`
 
-	// AverageGlucose Blood glucose value, in `mmol/L`
-	AverageGlucose *AverageGlucose `json:"averageGlucose,omitempty"`
+	// AverageGlucoseMmol Average Glucose of records in this period
+	AverageGlucoseMmol *float64 `json:"averageGlucoseMmol,omitempty"`
 
-	// AverageGlucoseDelta Difference between the averageGlucose in this period and the other offset version
-	AverageGlucoseDelta *float64 `json:"averageGlucoseDelta,omitempty"`
+	// AverageGlucoseMmolDelta Difference between the averageGlucose in this period and the other offset version
+	AverageGlucoseMmolDelta *float64 `json:"averageGlucoseMmolDelta,omitempty"`
 
 	// GlucoseManagementIndicator A derived value which emulates A1C
 	GlucoseManagementIndicator *float64 `json:"glucoseManagementIndicator,omitempty"`
@@ -419,7 +402,7 @@ type PatientCGMPeriod struct {
 	// GlucoseManagementIndicatorDelta Difference between the glucoseManagementIndicator in this period and the other offset version
 	GlucoseManagementIndicatorDelta *float64 `json:"glucoseManagementIndicatorDelta,omitempty"`
 	HasAverageDailyRecords          *bool    `json:"hasAverageDailyRecords,omitempty"`
-	HasAverageGlucose               *bool    `json:"hasAverageGlucose,omitempty"`
+	HasAverageGlucoseMmol           *bool    `json:"hasAverageGlucoseMmol,omitempty"`
 	HasGlucoseManagementIndicator   *bool    `json:"hasGlucoseManagementIndicator,omitempty"`
 	HasTimeCGMUseMinutes            *bool    `json:"hasTimeCGMUseMinutes,omitempty"`
 	HasTimeCGMUsePercent            *bool    `json:"hasTimeCGMUsePercent,omitempty"`

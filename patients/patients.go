@@ -3,7 +3,6 @@ package patients
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/api"
 	"time"
 
 	"github.com/tidepool-org/clinic/errors"
@@ -148,8 +147,8 @@ type LastRequestedDexcomConnectUpdate struct {
 }
 
 type Summary struct {
-	CGM *api.PatientCGMStats `json:"cgmStats" bson:"cgmStats"`
-	BGM *api.PatientBGMStats `json:"bgmStats" bson:"bgmStats"`
+	CGM *PatientCGMStats `json:"cgmStats" bson:"cgmStats"`
+	BGM *PatientBGMStats `json:"bgmStats" bson:"bgmStats"`
 }
 
 type DataSources []DataSource

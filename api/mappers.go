@@ -49,7 +49,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		tier = c.Tier
 	}
 
-	units := ClinicPreferredBgUnitsMgdL
+	units := MgdL
 	if c.PreferredBgUnits != "" {
 		units = ClinicPreferredBgUnits(c.PreferredBgUnits)
 	}
@@ -228,11 +228,61 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 	patientSummary := &patients.Summary{}
 
 	if dto.CgmStats != nil {
-		patientSummary.CGM = dto.CgmStats
+		patientSummary.CGM = &patients.PatientCGMStats{
+			Periods:       &patients.PatientCGMPeriods{},
+			OffsetPeriods: &patients.PatientCGMPeriods{},
+			TotalHours:    dto.CgmStats.TotalHours,
+		}
+
+		if dto.CgmStats.Config != nil {
+			config := patients.PatientSummaryConfig(*dto.CgmStats.Config)
+			patientSummary.CGM.Config = &config
+		}
+		if dto.CgmStats.Dates != nil {
+			dates := patients.PatientSummaryDates(*dto.CgmStats.Dates)
+			patientSummary.CGM.Dates = &dates
+		}
+
+		if dto.CgmStats.Periods != nil {
+			for k, source := range *dto.CgmStats.Periods {
+				(*patientSummary.CGM.Periods)[k] = patients.PatientCGMPeriod(source)
+			}
+		}
+
+		if dto.CgmStats.OffsetPeriods != nil {
+			for k, source := range *dto.CgmStats.OffsetPeriods {
+				(*patientSummary.CGM.OffsetPeriods)[k] = patients.PatientCGMPeriod(source)
+			}
+		}
 	}
 
 	if dto.BgmStats != nil {
-		patientSummary.BGM = dto.BgmStats
+		patientSummary.BGM = &patients.PatientBGMStats{
+			Periods:       &patients.PatientBGMPeriods{},
+			OffsetPeriods: &patients.PatientBGMPeriods{},
+			TotalHours:    dto.BgmStats.TotalHours,
+		}
+
+		if dto.BgmStats.Config != nil {
+			config := patients.PatientSummaryConfig(*dto.BgmStats.Config)
+			patientSummary.BGM.Config = &config
+		}
+		if dto.BgmStats.Dates != nil {
+			dates := patients.PatientSummaryDates(*dto.BgmStats.Dates)
+			patientSummary.BGM.Dates = &dates
+		}
+
+		if dto.BgmStats.Periods != nil {
+			for k, source := range *dto.BgmStats.Periods {
+				(*patientSummary.BGM.Periods)[k] = patients.PatientBGMPeriod(source)
+			}
+		}
+
+		if dto.BgmStats.OffsetPeriods != nil {
+			for k, source := range *dto.BgmStats.OffsetPeriods {
+				(*patientSummary.BGM.OffsetPeriods)[k] = patients.PatientBGMPeriod(source)
+			}
+		}
 	}
 
 	return patientSummary
@@ -246,11 +296,63 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	patientSummary := &PatientSummary{}
 
 	if summary.CGM != nil {
-		patientSummary.CgmStats = summary.CGM
+		patientSummary.CgmStats = &PatientCGMStats{
+			Periods:       &PatientCGMPeriods{},
+			OffsetPeriods: &PatientCGMPeriods{},
+			TotalHours:    summary.CGM.TotalHours,
+		}
+
+		if summary.CGM.Config != nil {
+			config := PatientSummaryConfig(*summary.CGM.Config)
+			patientSummary.CgmStats.Config = &config
+
+		}
+		if summary.CGM.Dates != nil {
+			dates := PatientSummaryDates(*summary.CGM.Dates)
+			patientSummary.CgmStats.Dates = &dates
+		}
+
+		if summary.CGM.Periods != nil {
+			for k, source := range *summary.CGM.Periods {
+				(*patientSummary.CgmStats.Periods)[k] = PatientCGMPeriod(source)
+			}
+		}
+
+		if summary.CGM.OffsetPeriods != nil {
+			for k, source := range *summary.CGM.OffsetPeriods {
+				(*patientSummary.CgmStats.OffsetPeriods)[k] = PatientCGMPeriod(source)
+			}
+		}
 	}
 
 	if summary.BGM != nil {
-		patientSummary.BgmStats = summary.BGM
+		patientSummary.BgmStats = &PatientBGMStats{
+			Periods:       &PatientBGMPeriods{},
+			OffsetPeriods: &PatientBGMPeriods{},
+			TotalHours:    summary.BGM.TotalHours,
+		}
+
+		if summary.BGM.Config != nil {
+			config := PatientSummaryConfig(*summary.BGM.Config)
+			patientSummary.BgmStats.Config = &config
+
+		}
+		if summary.BGM.Dates != nil {
+			dates := PatientSummaryDates(*summary.BGM.Dates)
+			patientSummary.BgmStats.Dates = &dates
+		}
+
+		if summary.BGM.Periods != nil {
+			for k, source := range *summary.BGM.Periods {
+				(*patientSummary.BgmStats.Periods)[k] = PatientBGMPeriod(source)
+			}
+		}
+
+		if summary.BGM.OffsetPeriods != nil {
+			for k, source := range *summary.BGM.OffsetPeriods {
+				(*patientSummary.BgmStats.OffsetPeriods)[k] = PatientBGMPeriod(source)
+			}
+		}
 	}
 
 	return patientSummary
@@ -519,9 +621,9 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"hasOutdatedSince": "summary." + *typ + "Stats.dates.hasOutdatedSince",
 		"outdatedSince":    "summary." + *typ + "Stats.dates.outdatedSince",
 
-		"hasAverageGlucose":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasAverageGlucose",
-		"averageGlucose":      "summary." + *typ + "Stats.periods." + *period + ".averageGlucose.value",
-		"averageGlucoseDelta": "summary." + *typ + "Stats.periods." + *period + ".averageGlucoseDelta",
+		"hasAverageGlucoseMmol":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasAverageGlucoseMmol",
+		"averageGlucoseMmol":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageGlucoseMmol",
+		"averageGlucoseMmolDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageGlucoseMmolDelta",
 
 		"hasGlucoseManagementIndicator":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasGlucoseManagementIndicator",
 		"glucoseManagementIndicator":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".glucoseManagementIndicator",
@@ -617,8 +719,8 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		expandedSorts["glucoseManagementIndicator"]:      expandedSorts["hasGlucoseManagementIndicator"],
 		expandedSorts["glucoseManagementIndicatorDelta"]: expandedSorts["hasGlucoseManagementIndicator"],
 
-		expandedSorts["averageGlucose"]:      expandedSorts["hasAverageGlucose"],
-		expandedSorts["averageGlucoseDelta"]: expandedSorts["hasAverageGlucose"],
+		expandedSorts["averageGlucoseMmol"]:      expandedSorts["hasAverageGlucoseMmol"],
+		expandedSorts["averageGlucoseMmolDelta"]: expandedSorts["hasAverageGlucoseMmol"],
 
 		expandedSorts["totalRecords"]:      expandedSorts["hasTotalRecords"],
 		expandedSorts["totalRecordsDelta"]: expandedSorts["hasTotalRecords"],
@@ -698,8 +800,8 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"glucoseManagementIndicator":      {},
 		"glucoseManagementIndicatorDelta": {},
 
-		"averageGlucose":      {},
-		"averageGlucoseDelta": {},
+		"averageGlucoseMmol":      {},
+		"averageGlucoseMmolDelta": {},
 
 		"timeInLowPercent":      {},
 		"timeInLowPercentDelta": {},
@@ -750,8 +852,8 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"firstData":      {},
 		"outdatedSince":  {},
 
-		"averageGlucose":      {},
-		"averageGlucoseDelta": {},
+		"averageGlucoseMmol":      {},
+		"averageGlucoseMmolDelta": {},
 
 		"timeInLowPercent":      {},
 		"timeInLowPercentDelta": {},

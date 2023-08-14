@@ -1915,44 +1915,19 @@ components:
       properties:
         attestationSubmitted:
           type: boolean
-    AverageGlucose:
-      title: Blood Glucose (mmol/L)
-      description: 'Blood glucose value, in `mmol/L`'
-      type: object
-      properties:
-        units:
-          title: Blood Unit (mmol/L)
-          type: string
-          enum:
-            - mmol/L
-            - mmol/l
-          example: mmol/L
-          x-tags:
-            - Data
-        value:
-          title: Blood Value (mmol/L)
-          description: A floating point value representing a `mmol/L` value.
-          type: number
-          format: float
-          minimum: 0
-          example: 5.5
-          x-tags:
-            - Data
-      required:
-        - units
-        - value
-      x-tags:
-        - Data
     PatientBGMPeriod:
       type: object
       title: bgmperiod.v1
       description: 'Summary of a specific BGM time period (currently: 1d, 7d, 14d, 30d)'
       properties:
-        hasAverageGlucose:
+        hasAverageGlucoseMmol:
           type: boolean
-        averageGlucose:
-          $ref: '#/components/schemas/AverageGlucose'
-        averageGlucoseDelta:
+        averageGlucoseMmol:
+          description: Average Glucose of records in this period
+          type: number
+          example: 5.5
+          x-go-type: float64
+        averageGlucoseMmolDelta:
           description: Difference between the averageGlucose in this period and the other offset version
           type: number
           example: 2.5
@@ -2134,11 +2109,14 @@ components:
       title: cgmperiod.v1
       description: 'Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)'
       properties:
-        hasAverageGlucose:
+        hasAverageGlucoseMmol:
           type: boolean
-        averageGlucose:
-          $ref: '#/components/schemas/AverageGlucose'
-        averageGlucoseDelta:
+        averageGlucoseMmol:
+          description: Average Glucose of records in this period
+          type: number
+          example: 5.5
+          x-go-type: float64
+        averageGlucoseMmolDelta:
           description: Difference between the averageGlucose in this period and the other offset version
           type: number
           example: 2.5
