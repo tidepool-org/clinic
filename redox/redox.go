@@ -164,7 +164,7 @@ func (h *Handler) FindMessage(ctx context.Context, documentId, dataModel, eventT
 	}
 
 	envelope := models.MessageEnvelope{}
-	filter := bson.M{"_id": id, "Meta.DataModel": dataModel, "Meta.EventType": eventType}
+	filter := bson.M{"_id": id, "meta.DataModel": dataModel, "meta.EventType": eventType}
 	err = h.collection.FindOne(ctx, filter).Decode(&envelope)
 	if err != nil {
 		return nil, err
