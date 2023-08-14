@@ -222,17 +222,14 @@ type DateTime = string
 
 // EHRDestinationIds defines model for EHRDestinationIds.
 type EHRDestinationIds struct {
-	// Default The default Redox destination ID
-	Default string `json:"default"`
-
 	// Flowsheet Destination ID override for Flowsheets
-	Flowsheet *string `json:"flowsheet,omitempty"`
+	Flowsheet string `json:"flowsheet"`
 
 	// Notes Destination ID override for Notes
-	Notes *string `json:"notes,omitempty"`
+	Notes string `json:"notes"`
 
 	// Results Destination ID override for Results
-	Results *string `json:"results,omitempty"`
+	Results string `json:"results"`
 }
 
 // EHRFacility defines model for EHRFacility.

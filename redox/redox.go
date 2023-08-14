@@ -8,7 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

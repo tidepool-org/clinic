@@ -6,7 +6,7 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/redox"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io"
 	"net/http"
@@ -98,7 +98,6 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 			Enabled:  clinic.EHRSettings.Enabled,
 			SourceId: clinic.EHRSettings.SourceId,
 			DestinationIds: EHRDestinationIds{
-				Default:   clinic.EHRSettings.DestinationIds.Default,
 				Flowsheet: clinic.EHRSettings.DestinationIds.Flowsheet,
 				Notes:     clinic.EHRSettings.DestinationIds.Notes,
 				Results:   clinic.EHRSettings.DestinationIds.Results,

@@ -104,10 +104,9 @@ type EHRFacility struct {
 }
 
 type EHRDestinationIds struct {
-	Default   string  `bson:"default"`
-	Flowsheet *string `bson:"flowsheet"`
-	Notes     *string `bson:"notes"`
-	Results   *string `bson:"results"`
+	Flowsheet string `bson:"flowsheet"`
+	Notes     string `bson:"notes"`
+	Results   string `bson:"results"`
 }
 
 type EHRProcedureCodes struct {

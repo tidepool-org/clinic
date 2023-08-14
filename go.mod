@@ -15,7 +15,7 @@ require (
 	github.com/onsi/gomega v1.9.0
 	github.com/open-policy-agent/opa v0.27.1
 	github.com/tidepool-org/clinic/client v0.0.0-00010101000000-000000000000
-	github.com/tidepool-org/clinic/redox/models v0.0.0-00010101000000-000000000000
+	github.com/tidepool-org/clinic/redox_models v0.0.0-00010101000000-000000000000
 	github.com/tidepool-org/go-common v0.8.3-0.20210528114116-26ab9a2d32b5
 	go.mongodb.org/mongo-driver v1.12.0
 	go.uber.org/fx v1.13.1
@@ -99,6 +99,4 @@ require (
 
 replace github.com/tidepool-org/clinic/client => ./client
 
-replace github.com/tidepool-org/clinic/redox => ./redox
-
-replace github.com/tidepool-org/clinic/redox/models => ./redox/models
+replace github.com/tidepool-org/clinic/redox_models => ./redox_models

@@ -12,7 +12,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/redox"
-	"github.com/tidepool-org/clinic/redox/models"
+	models "github.com/tidepool-org/clinic/redox_models"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson"

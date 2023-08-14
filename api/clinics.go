@@ -346,7 +346,6 @@ func (h *Handler) GetEHRSettings(ec echo.Context, clinicId ClinicId) error {
 		Enabled:  settings.Enabled,
 		SourceId: settings.SourceId,
 		DestinationIds: EHRDestinationIds{
-			Default:   settings.DestinationIds.Default,
 			Flowsheet: settings.DestinationIds.Flowsheet,
 			Notes:     settings.DestinationIds.Notes,
 			Results:   settings.DestinationIds.Results,
@@ -375,7 +374,6 @@ func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
 		Enabled:  dto.Enabled,
 		SourceId: dto.SourceId,
 		DestinationIds: clinics.EHRDestinationIds{
-			Default:   dto.DestinationIds.Default,
 			Flowsheet: dto.DestinationIds.Flowsheet,
 			Notes:     dto.DestinationIds.Notes,
 			Results:   dto.DestinationIds.Results,

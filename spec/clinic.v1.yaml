@@ -2601,10 +2601,6 @@ components:
         id: z6cjrz20e5mvu
       type: object
       properties:
-        default:
-          type: string
-          description: The default Redox destination ID
-          minLength: 1
         flowsheet:
           type: string
           description: Destination ID override for Flowsheets
@@ -2618,7 +2614,9 @@ components:
           description: Destination ID override for Notes
           minLength: 1
       required:
-        - default
+        - flowsheet
+        - results
+        - notes
     EHRProcedureCodes:
       title: EHR Procedure Codes Map
       x-stoplight:
