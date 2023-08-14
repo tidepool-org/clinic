@@ -16,7 +16,7 @@ CMD ["air"]
 FROM alpine:latest AS production
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
-    apk add --no-cache ca-certificates tzdata && \
+    apk --no-cache add ca-certificates tzdata && \
     adduser -D tidepool
 WORKDIR /go/src/github.com/tidepool-org/clinic
 USER tidepool

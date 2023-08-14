@@ -263,6 +263,12 @@ paths:
           name: period
           description: 'Time Period to display, filter, and sort'
         - schema:
+            type: boolean
+          in: query
+          name: offsetPeriods
+          required: false
+          description: 'If we should display, filter, and sort based on the offset periods or default periods'
+        - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.5'
@@ -1946,12 +1952,22 @@ components:
           type: boolean
         averageGlucose:
           $ref: '#/components/schemas/AverageGlucose'
+        averageGlucoseDelta:
+          description: Difference between the averageGlucose in this period and the other offset version
+          type: number
+          example: 2.5
+          x-go-type: float64
         hasTimeInTargetPercent:
           type: boolean
         timeInTargetPercent:
           description: Percentage of time spent in target glucose range
           type: number
           example: 0.35
+          x-go-type: float64
+        timeInTargetPercentDelta:
+          description: Difference between the timeInTargetPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
           x-go-type: float64
         hasTimeInTargetRecords:
           type: boolean
@@ -1960,12 +1976,22 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeInTargetRecordsDelta:
+          description: Difference between the timeInTargetRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInHighPercent:
           type: boolean
         timeInHighPercent:
           description: Percentage of time spent in high glucose range
           type: number
           example: 0.35
+          x-go-type: float64
+        timeInHighPercentDelta:
+          description: Difference between the timeInHighPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
           x-go-type: float64
         hasTimeInHighRecords:
           type: boolean
@@ -1974,12 +2000,22 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeInHighRecordsDelta:
+          description: Difference between the timeInHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInVeryHighPercent:
           type: boolean
         timeInVeryHighPercent:
           description: Percentage of time spent in very high glucose range
           type: number
           example: 0.35
+          x-go-type: float64
+        timeInVeryHighPercentDelta:
+          description: Difference between the timeInVeryHighPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
           x-go-type: float64
         hasTimeInVeryHighRecords:
           type: boolean
@@ -1988,12 +2024,22 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeInVeryHighRecordsDelta:
+          description: Difference between the timeInVeryHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInLowPercent:
           type: boolean
         timeInLowPercent:
           description: Percentage of time spent in low glucose range
           type: number
           example: 0.35
+          x-go-type: float64
+        timeInLowPercentDelta:
+          description: Difference between the timeInLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
           x-go-type: float64
         hasTimeInLowRecords:
           type: boolean
@@ -2002,12 +2048,22 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeInLowRecordsDelta:
+          description: Difference between the timeInLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInVeryLowPercent:
           type: boolean
         timeInVeryLowPercent:
           description: Percentage of time spent in very low glucose range
           type: number
           example: 0.35
+          x-go-type: float64
+        timeInVeryLowPercentDelta:
+          description: Difference between the timeInVeryLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
           x-go-type: float64
         hasTimeInVeryLowRecords:
           type: boolean
@@ -2016,10 +2072,20 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeInVeryLowRecordsDelta:
+          description: Difference between the timeInVeryLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTotalRecords:
           type: boolean
         totalRecords:
           description: Counter of records
+          type: number
+          example: 10
+          x-go-type: int
+        totalRecordsDelta:
+          description: Difference between the totalRecords in this period and version in the opposite offset
           type: number
           example: 10
           x-go-type: int
@@ -2030,19 +2096,22 @@ components:
           type: number
           example: 3.5
           x-go-type: float64
+        averageDailyRecordsDelta:
+          description: Difference between the averageDailyRecords in this period and version in the opposite offset
+          type: number
+          example: 2.5
+          x-go-type: float64
     PatientBGMPeriods:
       type: object
       title: bgmperiods.v1
       description: A map to each supported BGM summary period
-      properties:
-        1d:
-          $ref: '#/components/schemas/PatientBGMPeriod'
-        7d:
-          $ref: '#/components/schemas/PatientBGMPeriod'
-        14d:
-          $ref: '#/components/schemas/PatientBGMPeriod'
-        30d:
-          $ref: '#/components/schemas/PatientBGMPeriod'
+      required:
+        - 1d
+        - 7d
+        - 14d
+        - 30d
+      additionalProperties:
+        $ref: '#/components/schemas/PatientBGMPeriod'
     PatientBGMStats:
       type: object
       title: bgmstats.v1
@@ -2058,6 +2127,8 @@ components:
           x-go-type: int
         periods:
           $ref: '#/components/schemas/PatientBGMPeriods'
+        offsetPeriods:
+          $ref: '#/components/schemas/PatientBGMPeriods'
     PatientCGMPeriod:
       type: object
       title: cgmperiod.v1
@@ -2067,12 +2138,22 @@ components:
           type: boolean
         averageGlucose:
           $ref: '#/components/schemas/AverageGlucose'
+        averageGlucoseDelta:
+          description: Difference between the averageGlucose in this period and the other offset version
+          type: number
+          example: 2.5
+          x-go-type: float64
         hasGlucoseManagementIndicator:
           type: boolean
         glucoseManagementIndicator:
           type: number
           x-go-type: float64
           description: A derived value which emulates A1C
+          example: 7.5
+        glucoseManagementIndicatorDelta:
+          type: number
+          x-go-type: float64
+          description: Difference between the glucoseManagementIndicator in this period and the other offset version
           example: 7.5
         hasTimeInTargetPercent:
           type: boolean
@@ -2081,12 +2162,22 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        timeInTargetPercentDelta:
+          description: Difference between the timeInTargetPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
         hasTimeInTargetMinutes:
           type: boolean
         timeInTargetMinutes:
           description: Counter of minutes spent in target glucose range
           type: number
           example: 200
+          x-go-type: int
+        timeInTargetMinutesDelta:
+          description: Difference between the timeInTargetMinutes in this period and version in the opposite offset
+          type: number
+          example: 20
           x-go-type: int
         hasTimeInTargetRecords:
           type: boolean
@@ -2095,12 +2186,22 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeInTargetRecordsDelta:
+          description: Difference between the timeInTargetRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInHighPercent:
           type: boolean
         timeInHighPercent:
           description: Percentage of time spent in high glucose range
           type: number
           example: 0.35
+          x-go-type: float64
+        timeInHighPercentDelta:
+          description: Difference between the timeInHighPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
           x-go-type: float64
         hasTimeInHighMinutes:
           type: boolean
@@ -2109,12 +2210,22 @@ components:
           type: number
           example: 200
           x-go-type: int
+        timeInHighMinutesDelta:
+          description: Difference between the timeInHighMinutes in this period and version in the opposite offset
+          type: number
+          example: 20
+          x-go-type: int
         hasTimeInHighRecords:
           type: boolean
         timeInHighRecords:
           description: Counter of records in high glucose range
           type: number
           example: 10
+          x-go-type: int
+        timeInHighRecordsDelta:
+          description: Difference between the timeInHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
           x-go-type: int
         hasTimeInVeryHighPercent:
           type: boolean
@@ -2123,12 +2234,22 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        timeInVeryHighPercentDelta:
+          description: Difference between the timeInVeryHighPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
         hasTimeInVeryHighMinutes:
           type: boolean
         timeInVeryHighMinutes:
           description: Counter of minutes spent in very high glucose range
           type: number
           example: 200
+          x-go-type: int
+        timeInVeryHighMinutesDelta:
+          description: Difference between the timeInVeryHighMinutes in this period and version in the opposite offset
+          type: number
+          example: 5
           x-go-type: int
         hasTimeInVeryHighRecords:
           type: boolean
@@ -2137,12 +2258,22 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeInVeryHighRecordsDelta:
+          description: Difference between the timeInVeryHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInLowPercent:
           type: boolean
         timeInLowPercent:
           description: Percentage of time spent in low glucose range
           type: number
           example: 0.35
+          x-go-type: float64
+        timeInLowPercentDelta:
+          description: Difference between the timeInLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
           x-go-type: float64
         hasTimeInLowMinutes:
           type: boolean
@@ -2151,12 +2282,22 @@ components:
           type: number
           example: 200
           x-go-type: int
+        timeInLowMinutesDelta:
+          description: Difference between the timeInLowMinutes in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInLowRecords:
           type: boolean
         timeInLowRecords:
           description: Counter of records in low glucose range
           type: number
           example: 10
+          x-go-type: int
+        timeInLowRecordsDelta:
+          description: Difference between the timeInLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
           x-go-type: int
         hasTimeInVeryLowPercent:
           type: boolean
@@ -2165,12 +2306,22 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        timeInVeryLowPercentDelta:
+          description: Difference between the timeInVeryLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
         hasTimeInVeryLowMinutes:
           type: boolean
         timeInVeryLowMinutes:
           description: Counter of minutes spent in very low glucose range
           type: number
           example: 200
+          x-go-type: int
+        timeInVeryLowMinutesDelta:
+          description: Difference between the timeInVeryLowMinutes in this period and version in the opposite offset
+          type: number
+          example: 5
           x-go-type: int
         hasTimeInVeryLowRecords:
           type: boolean
@@ -2179,12 +2330,22 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeInVeryLowRecordsDelta:
+          description: Difference between the timeInVeryLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeCGMUsePercent:
           type: boolean
         timeCGMUsePercent:
           description: Percentage of time spent wearing a cgm
           type: number
           example: 0.35
+          x-go-type: float64
+        timeCGMUsePercentDelta:
+          description: Difference between the timeCGMUsePercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
           x-go-type: float64
         hasTimeCGMUseMinutes:
           type: boolean
@@ -2193,6 +2354,11 @@ components:
           type: number
           example: 200
           x-go-type: int
+        timeCGMUseMinutesDelta:
+          description: Difference between the timeCGMUseMinutes in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeCGMUseRecords:
           type: boolean
         timeCGMUseRecords:
@@ -2200,10 +2366,20 @@ components:
           type: number
           example: 10
           x-go-type: int
+        timeCGMUseRecordsDelta:
+          description: Difference between the timeCGMUseRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTotalRecords:
           type: boolean
         totalRecords:
           description: Counter of records
+          type: number
+          example: 10
+          x-go-type: int
+        totalRecordsDelta:
+          description: Difference between the totalRecords in this period and version in the opposite offset
           type: number
           example: 10
           x-go-type: int
@@ -2214,19 +2390,22 @@ components:
           type: number
           example: 3.5
           x-go-type: float64
+        averageDailyRecordsDelta:
+          description: Difference between the averageDailyRecords in this period and version in the opposite offset
+          type: number
+          example: 2.5
+          x-go-type: float64
     PatientCGMPeriods:
       type: object
       title: cgmperiods.v1
       description: A map to each supported CGM summary period
-      properties:
-        1d:
-          $ref: '#/components/schemas/PatientCGMPeriod'
-        7d:
-          $ref: '#/components/schemas/PatientCGMPeriod'
-        14d:
-          $ref: '#/components/schemas/PatientCGMPeriod'
-        30d:
-          $ref: '#/components/schemas/PatientCGMPeriod'
+      required:
+        - 1d
+        - 7d
+        - 14d
+        - 30d
+      additionalProperties:
+        $ref: '#/components/schemas/PatientCGMPeriod'
     PatientCGMStats:
       type: object
       title: cgmstats.v1
@@ -2241,6 +2420,8 @@ components:
           type: number
           x-go-type: int
         periods:
+          $ref: '#/components/schemas/PatientCGMPeriods'
+        offsetPeriods:
           $ref: '#/components/schemas/PatientCGMPeriods'
     PatientSummaryConfig:
       type: object
