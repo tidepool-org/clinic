@@ -337,7 +337,7 @@ func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID,
 		return &update
 	case clinic.EHRSettings.ProcedureCodes.DisableSummaryReports:
 		update.Name = patients.SummaryAndReportsSubscription
-		update.Active = true
+		update.Active = false
 		return &update
 	}
 
