@@ -217,6 +217,9 @@ func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Cli
 	if err != nil {
 		return nil, err
 	}
+	if criteria == nil {
+		return nil, nil
+	}
 
 	filter := patients.Filter{
 		Mrn:       &criteria.Mrn,
@@ -288,7 +291,7 @@ func GetPatientMatchingCriteriaFromNewOrder(order models.NewOrder, clinic clinic
 		}
 	}
 	if mrn == "" {
-		return nil, fmt.Errorf("%w: no matching identifier found", errors.BadRequest)
+		return nil, nil
 	}
 
 	if order.Patient.Demographics != nil && order.Patient.Demographics.DOB != nil {
