@@ -264,12 +264,10 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		}
 
 		if dto.BgmStats.Config != nil {
-			config := patients.PatientSummaryConfig(*dto.BgmStats.Config)
-			patientSummary.BGM.Config = &config
+			patientSummary.BGM.Config = (*patients.PatientSummaryConfig)(dto.BgmStats.Config)
 		}
 		if dto.BgmStats.Dates != nil {
-			dates := patients.PatientSummaryDates(*dto.BgmStats.Dates)
-			patientSummary.BGM.Dates = &dates
+			patientSummary.BGM.Dates = (*patients.PatientSummaryDates)(dto.BgmStats.Dates)
 		}
 
 		if dto.BgmStats.Periods != nil {
@@ -303,13 +301,11 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		}
 
 		if summary.CGM.Config != nil {
-			config := PatientSummaryConfig(*summary.CGM.Config)
-			patientSummary.CgmStats.Config = &config
-
+			patientSummary.CgmStats.Config = (*PatientSummaryConfig)(summary.CGM.Config)
 		}
+
 		if summary.CGM.Dates != nil {
-			dates := PatientSummaryDates(*summary.CGM.Dates)
-			patientSummary.CgmStats.Dates = &dates
+			patientSummary.CgmStats.Dates = (*PatientSummaryDates)(summary.CGM.Dates)
 		}
 
 		if summary.CGM.Periods != nil {
@@ -333,13 +329,11 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		}
 
 		if summary.BGM.Config != nil {
-			config := PatientSummaryConfig(*summary.BGM.Config)
-			patientSummary.BgmStats.Config = &config
-
+			patientSummary.BgmStats.Config = (*PatientSummaryConfig)(summary.BGM.Config)
 		}
+
 		if summary.BGM.Dates != nil {
-			dates := PatientSummaryDates(*summary.BGM.Dates)
-			patientSummary.BgmStats.Dates = &dates
+			patientSummary.BgmStats.Dates = (*PatientSummaryDates)(summary.BGM.Dates)
 		}
 
 		if summary.BGM.Periods != nil {
@@ -606,7 +600,7 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid sort attribute", errors.BadRequest)
 	}
 
-	var expandedSorts = map[string]string{
+	expandedSorts := map[string]string{
 		"lastUpdatedDate": "summary." + *typ + "Stats.dates.lastUpdatedDate",
 
 		"hasLastUploadDate": "summary." + *typ + "Stats.dates.hasLastUploadDate",
@@ -710,7 +704,7 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"totalRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".totalRecordsDelta",
 	}
 
-	var extraSort = map[string]string{
+	extraSort := map[string]string{
 		expandedSorts["lastUploadDate"]: expandedSorts["hasLastUploadDate"],
 		expandedSorts["lastData"]:       expandedSorts["hasLastData"],
 		expandedSorts["firstData"]:      expandedSorts["hasFirstData"],
