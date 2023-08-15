@@ -61,6 +61,7 @@ paths:
         - $ref: '#/components/parameters/shareCode'
         - $ref: '#/components/parameters/createdTimeStart'
         - $ref: '#/components/parameters/createdTimeEnd'
+        - $ref: '#/components/parameters/ehrEnabled'
       x-roles:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
@@ -2776,6 +2777,13 @@ components:
         type: string
         format: date-time
       description: Return records created before the given date (exclusive)
+    ehrEnabled:
+      name: ehrEnabled
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: Retrieve clinics with enabled EHR integration
 tags:
   - name: Clinics
   - name: Confirmations

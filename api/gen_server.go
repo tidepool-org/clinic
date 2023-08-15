@@ -315,6 +315,13 @@ func (w *ServerInterfaceWrapper) ListClinics(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter createdTimeEnd: %s", err))
 	}
 
+	// ------------- Optional query parameter "ehrEnabled" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "ehrEnabled", ctx.QueryParams(), &params.EhrEnabled)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ehrEnabled: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListClinics(ctx, params)
 	return err

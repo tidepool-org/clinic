@@ -231,11 +231,11 @@ var _ = Describe("Redox", func() {
 			}
 		})
 
-		It("returns an error when mrn is empty", func() {
+		It("does not return an error when mrn cannot be found", func() {
 			order.Patient.Identifiers = nil
 			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
 
-			Expect(err).To(MatchError(errors.BadRequest))
+			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(BeNil())
 		})
 

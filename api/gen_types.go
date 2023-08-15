@@ -725,6 +725,9 @@ type CreatedTimeEnd = time.Time
 // CreatedTimeStart defines model for createdTimeStart.
 type CreatedTimeStart = time.Time
 
+// EhrEnabled defines model for ehrEnabled.
+type EhrEnabled = bool
+
 // Email defines model for email.
 type Email = openapi_types.Email
 
@@ -787,6 +790,9 @@ type ListClinicsParams struct {
 
 	// CreatedTimeEnd Return records created before the given date (exclusive)
 	CreatedTimeEnd *CreatedTimeEnd `form:"createdTimeEnd,omitempty" json:"createdTimeEnd,omitempty"`
+
+	// EhrEnabled Retrieve clinics with enabled EHR integration
+	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
 }
 
 // ListCliniciansParams defines parameters for ListClinicians.

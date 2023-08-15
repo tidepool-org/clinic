@@ -2,10 +2,8 @@ package api
 
 import (
 	"fmt"
-	"net/http"
-	"time"
-
 	"github.com/tidepool-org/clinic/clinics/manager"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
@@ -21,19 +19,22 @@ func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
 
 	filter := clinics.Filter{}
 	if params.ShareCode != nil {
-		filter.ShareCodes = []string{string(*params.ShareCode)}
+		filter.ShareCodes = []string{*params.ShareCode}
 	}
 	if params.CreatedTimeStart != nil {
-		start := time.Time(*params.CreatedTimeStart)
+		start := *params.CreatedTimeStart
 		if !start.IsZero() {
 			filter.CreatedTimeStart = &start
 		}
 	}
 	if params.CreatedTimeEnd != nil {
-		end := time.Time(*params.CreatedTimeEnd)
+		end := *params.CreatedTimeEnd
 		if !end.IsZero() {
 			filter.CreatedTimeEnd = &end
 		}
+	}
+	if params.EhrEnabled != nil {
+		filter.EHREnabled = params.EhrEnabled
 	}
 
 	list, err := h.clinics.List(ctx, &filter, page)
