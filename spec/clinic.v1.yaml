@@ -1506,6 +1506,24 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MRNSettings'
+  '/v1/clinics/{clinicId}/ehr/sync':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      summary: Sync EHR Data
+      operationId: SyncEHRData
+      responses:
+        '202':
+          description: Accepted
+      description: |-
+        An internal endpoint which will push the latest patient summary statistics and PDF reports for all patients who have an active subscription. The actual data is pushed asynchronously. A successful response means that an asynchronous task has been scheduled for each patient of the clinic with an active subscription.
+
+        Will return 404 Not Found if the clinic does not have an active EHR connection.
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
+      parameters: []
 components:
   schemas:
     Error:

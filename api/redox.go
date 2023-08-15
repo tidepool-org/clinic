@@ -131,3 +131,7 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 
 	return ec.JSON(http.StatusOK, response)
 }
+
+func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
+	return ec.NoContent(http.StatusAccepted)
+}

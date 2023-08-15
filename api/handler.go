@@ -53,10 +53,10 @@ func NewHandler(p Params) *Handler {
 func pagination(offset *Offset, limit *Limit) store.Pagination {
 	page := store.DefaultPagination()
 	if offset != nil {
-		page.Offset = int(*offset)
+		page.Offset = *offset
 	}
 	if limit != nil {
-		page.Limit = int(*limit)
+		page.Limit = *limit
 	}
 	return page
 }
