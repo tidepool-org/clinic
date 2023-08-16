@@ -557,6 +557,6 @@ allow {
 # GET /v1/clinics/:clinicId/ehr/sync
 allow {
   input.method == "POST"
-  input.path = ["v1", "clinics", "_" , "ehr", "sync"]
+  input.path = ["v1", "clinics", _, "ehr", "sync"]
   is_backend_service
 }
