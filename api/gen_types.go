@@ -262,7 +262,7 @@ type Patient struct {
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
-	Tags          *[]string       `json:"tags"`
+	Tags          *PatientTagIds  `json:"tags"`
 	TargetDevices *[]string       `json:"targetDevices,omitempty"`
 	UpdatedTime   *time.Time      `json:"updatedTime,omitempty"`
 }
@@ -636,6 +636,9 @@ type PatientTag struct {
 	Name string `json:"name"`
 }
 
+// PatientTagIds defines model for PatientTagIds.
+type PatientTagIds = []string
+
 // Patients defines model for Patients.
 type Patients = []Patient
 
@@ -654,6 +657,100 @@ type PhoneNumber struct {
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {
 	PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
+}
+
+// Tide Report of at-risk patients based on specific grouping criteria
+type Tide struct {
+	Config  *TideConfig  `json:"config,omitempty"`
+	Results *TideResults `json:"results,omitempty"`
+}
+
+// TideConfig defines model for TideConfig.
+type TideConfig struct {
+	// ClinicId Clinic identifier.
+	ClinicId *Id `json:"clinicId,omitempty"`
+
+	// ClinicianId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
+	ClinicianId *TidepoolUserId `json:"clinicianId,omitempty"`
+	Filters     *TideFilters    `json:"filters,omitempty"`
+
+	// HighGlucoseThreshold Threshold used for determining if a value is high
+	HighGlucoseThreshold *float64   `json:"highGlucoseThreshold,omitempty"`
+	LastUploadDateFrom   *time.Time `json:"lastUploadDateFrom,omitempty"`
+	LastUploadDateTo     *time.Time `json:"lastUploadDateTo,omitempty"`
+
+	// LowGlucoseThreshold Threshold used for determining if a value is low
+	LowGlucoseThreshold *float64 `json:"lowGlucoseThreshold,omitempty"`
+	Period              *string  `json:"period,omitempty"`
+
+	// SchemaVersion TIDE schema version
+	SchemaVersion *int           `json:"schemaVersion,omitempty"`
+	Tags          *PatientTagIds `json:"tags"`
+
+	// VeryHighGlucoseThreshold Threshold used for determining if a value is very high
+	VeryHighGlucoseThreshold *float64 `json:"veryHighGlucoseThreshold,omitempty"`
+
+	// VeryLowGlucoseThreshold Threshold used for determining if a value is very low
+	VeryLowGlucoseThreshold *float64 `json:"veryLowGlucoseThreshold,omitempty"`
+}
+
+// TideFilters defines model for TideFilters.
+type TideFilters struct {
+	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
+	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
+	TimeInLowPercent          *string `json:"timeInLowPercent,omitempty"`
+	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
+	TimeInVeryLowPercent      *string `json:"timeInVeryLowPercent,omitempty"`
+}
+
+// TideResponse defines model for TideResponse.
+type TideResponse struct {
+	// Data Report of at-risk patients based on specific grouping criteria
+	Data *Tide `json:"data,omitempty"`
+}
+
+// TideResultPatient defines model for TideResultPatient.
+type TideResultPatient struct {
+	// AverageGlucoseMmol Average Glucose of records in this period
+	AverageGlucoseMmol *float64 `json:"averageGlucoseMmol,omitempty"`
+
+	// GlucoseManagementIndicator A derived value which emulates A1C
+	GlucoseManagementIndicator *float64     `json:"glucoseManagementIndicator,omitempty"`
+	Patient                    *interface{} `json:"patient,omitempty"`
+
+	// TimeCGMUseMinutes Counter of minutes spent wearing a cgm
+	TimeCGMUseMinutes *int `json:"timeCGMUseMinutes,omitempty"`
+
+	// TimeCGMUsePercent Percentage of time spent wearing a cgm
+	TimeCGMUsePercent *float64 `json:"timeCGMUsePercent,omitempty"`
+
+	// TimeInHighPercent Percentage of time spent in high glucose range
+	TimeInHighPercent *float64 `json:"timeInHighPercent,omitempty"`
+
+	// TimeInLowPercent Percentage of time spent in low glucose range
+	TimeInLowPercent *float64 `json:"timeInLowPercent,omitempty"`
+
+	// TimeInTargetPercent Percentage of time spent in target glucose range
+	TimeInTargetPercent *float64 `json:"timeInTargetPercent,omitempty"`
+
+	// TimeInTargetPercentDelta Difference between the timeInTargetPercent in this period and version in the opposite offset
+	TimeInTargetPercentDelta *float64 `json:"timeInTargetPercentDelta,omitempty"`
+
+	// TimeInVeryHighPercent Percentage of time spent in very high glucose range
+	TimeInVeryHighPercent *float64 `json:"timeInVeryHighPercent,omitempty"`
+
+	// TimeInVeryLowPercent Percentage of time spent in very low glucose range
+	TimeInVeryLowPercent *float64 `json:"timeInVeryLowPercent,omitempty"`
+}
+
+// TideResults defines model for TideResults.
+type TideResults struct {
+	DropInTimeInTargetPercent *[]TideResultPatient `json:"dropInTimeInTargetPercent"`
+	MeetingTargets            *[]TideResultPatient `json:"meetingTargets"`
+	TimeCGMUsePercent         *[]TideResultPatient `json:"timeCGMUsePercent"`
+	TimeInLowPercent          *[]TideResultPatient `json:"timeInLowPercent"`
+	TimeInTargetPercent       *[]TideResultPatient `json:"timeInTargetPercent"`
+	TimeInVeryLowPercent      *[]TideResultPatient `json:"timeInVeryLowPercent"`
 }
 
 // TidepoolUserId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
@@ -882,6 +979,21 @@ type ListPatientsParams struct {
 
 	// Tags Comma-separated list of patient tag IDs
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+}
+
+// TideReportParams defines parameters for TideReport.
+type TideReportParams struct {
+	// Period Time Period to display
+	Period *string `form:"period,omitempty" json:"period,omitempty"`
+
+	// Tags Comma-separated list of patient tag IDs
+	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+
+	// CgmLastUploadDateFrom Inclusive
+	CgmLastUploadDateFrom *time.Time `form:"cgm.lastUploadDateFrom,omitempty" json:"cgm.lastUploadDateFrom,omitempty"`
+
+	// CgmLastUploadDateTo Exclusive
+	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
 }
 
 // ListClinicsForPatientParams defines parameters for ListClinicsForPatient.

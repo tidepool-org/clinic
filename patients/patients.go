@@ -47,6 +47,7 @@ type Service interface {
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
+	TideReport(ctx context.Context, clinicId string, params TideReportParams) error
 }
 
 type Patient struct {
@@ -158,4 +159,11 @@ type DataSource struct {
 	ExpirationTime *time.Time          `bson:"expirationTime,omitempty"`
 	ProviderName   string              `bson:"providerName"`
 	State          string              `bson:"state"`
+}
+
+type TideReportParams struct {
+	Period                *string
+	Tags                  *[]string
+	CgmLastUploadDateFrom *time.Time
+	CgmLastUploadDateTo   *time.Time
 }

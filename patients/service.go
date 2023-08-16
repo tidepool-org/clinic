@@ -3,7 +3,6 @@ package patients
 import (
 	"context"
 	"errors"
-
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
 )
@@ -185,4 +184,8 @@ func getUpdatedBy(update PatientUpdate) *string {
 	}
 
 	return update.Patient.InvitedBy
+}
+
+func (s *service) TideReport(ctx context.Context, clinicId string, params TideReportParams) error {
+	return s.repo.TideReport(ctx, clinicId, params)
 }

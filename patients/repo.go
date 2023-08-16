@@ -2,6 +2,7 @@ package patients
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -166,7 +167,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
-	var hasFullNameSort = false
+	hasFullNameSort := false
 	for _, sort := range sorts {
 		if sort.Attribute == "fullName" {
 			hasFullNameSort = true
@@ -189,7 +190,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		return nil, fmt.Errorf("error getting pipeline result")
 	}
 
-	var result ListResult
+	result := ListResult{}
 	if err = cursor.Decode(&result); err != nil {
 		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
@@ -801,4 +802,28 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 
 	f, ok := cmpToFilter[*cmp]
 	return f, ok
+}
+
+func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) error {
+	if params.Tags == nil || len(*params.Tags) < 1 {
+		return errors.New("no tags provided")
+	}
+
+	if params.CgmLastUploadDateFrom == nil {
+		return errors.New("no lastUploadDateFrom provided")
+	}
+
+	if params.CgmLastUploadDateTo == nil {
+		return errors.New("no lastUploadDateTo provided")
+	}
+
+	if params.CgmLastUploadDateFrom.After(*params.CgmLastUploadDateTo) || params.CgmLastUploadDateFrom.Equal(*params.CgmLastUploadDateTo) {
+		return errors.New("provided lastUploadDateFrom is after or equal to lastUploadDateTo")
+	}
+
+	selector := bson.M{
+		"clinicId": clinicId,
+		"tags":     bson.M{"$in": params.Tags},
+	}
+	return nil
 }
