@@ -242,7 +242,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TideResponse'
+                $ref: '#/components/schemas/Tide'
       operationId: TideReport
       parameters:
         - schema:
@@ -1947,11 +1947,7 @@ components:
         results:
           $ref: '#/components/schemas/TideResults'
     TideResponse:
-      title: TideResponse
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/Tide'
+      $ref: '#/components/schemas/Tide'
     UpdateUserDetails:
       title: UpdateUserDetails
       type: object
@@ -1990,8 +1986,6 @@ components:
           x-go-type: int
         clinicId:
           $ref: '#/components/schemas/Id'
-        clinicianId:
-          $ref: '#/components/schemas/TidepoolUserId'
         period:
           type: string
           pattern: ^(1d|7d|14d|30d)$
@@ -2047,6 +2041,23 @@ components:
           type: string
           pattern: ^(>=|>|<=|<)\d\.\d\d?$
           example: '>0.5'
+    TidePatient:
+      type: object
+      title: tidepatient.v1
+      description: ''
+      properties:
+        id:
+          $ref: '#/components/schemas/TidepoolUserId'
+        email:
+          type: string
+          x-go-type: string
+          format: email
+        fullName:
+          type: string
+          description: The full name of the patient
+          minLength: 1
+        tags:
+          $ref: '#/components/schemas/PatientTagIds'
     TideResultPatient:
       type: object
       title: tideresultpatient.v1
@@ -2103,53 +2114,23 @@ components:
           example: 200
           x-go-type: int
         patient:
-          id:
-            $ref: '#/components/schemas/TidepoolUserId'
-          email:
-            type: string
-            x-go-type: string
-            format: email
-          fullName:
-            type: string
-            description: The full name of the patient
-            minLength: 1
-          tags:
-            $ref: '#/components/schemas/PatientTagIds'
+          $ref: '#/components/schemas/TidePatient'
     TideResults:
       type: object
       title: tideresults.v1
       description: ''
-      properties:
-        timeInVeryLowPercent:
-          type: array
-          nullable: true
-          items:
-            $ref: '#/components/schemas/TideResultPatient'
-        timeInLowPercent:
-          type: array
-          nullable: true
-          items:
-            $ref: '#/components/schemas/TideResultPatient'
-        dropInTimeInTargetPercent:
-          type: array
-          nullable: true
-          items:
-            $ref: '#/components/schemas/TideResultPatient'
-        timeInTargetPercent:
-          type: array
-          nullable: true
-          items:
-            $ref: '#/components/schemas/TideResultPatient'
-        timeCGMUsePercent:
-          type: array
-          nullable: true
-          items:
-            $ref: '#/components/schemas/TideResultPatient'
-        meetingTargets:
-          type: array
-          nullable: true
-          items:
-            $ref: '#/components/schemas/TideResultPatient'
+      required:
+        - timeInVeryLowPercent
+        - timeInLowPercent
+        - dropInTimeInTargetPercent
+        - timeInTargetPercent
+        - timeCGMUsePercent
+        - meetingTargets
+      additionalProperties:
+        type: array
+        nullable: true
+        items:
+          $ref: '#/components/schemas/TideResultPatient'
     PatientBGMPeriod:
       type: object
       title: bgmperiod.v1

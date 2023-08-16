@@ -352,6 +352,51 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	return patientSummary
 }
 
+func NewTideDto(tide *patients.Tide) *Tide {
+	if tide == nil {
+		return nil
+	}
+
+	tideResult := &Tide{
+		Config: &TideConfig{
+			ClinicId:                 tide.Config.ClinicId,
+			Filters:                  (*TideFilters)(tide.Config.Filters),
+			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
+			LastUploadDateFrom:       tide.Config.LastUploadDateFrom,
+			LastUploadDateTo:         tide.Config.LastUploadDateTo,
+			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
+			Period:                   tide.Config.Period,
+			SchemaVersion:            tide.Config.SchemaVersion,
+			Tags:                     tide.Config.Tags,
+			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
+		},
+		Results: &TideResults{},
+	}
+
+	for category, tidePatients := range *tide.Results {
+		c := make([]TideResultPatient, 0, 50)
+		for _, patient := range *tidePatients {
+			c = append(c, TideResultPatient{
+				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
+				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
+				Patient:                    (*TidePatient)(patient.Patient),
+				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
+				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
+				TimeInHighPercent:          patient.TimeInHighPercent,
+				TimeInLowPercent:           patient.TimeInLowPercent,
+				TimeInTargetPercent:        patient.TimeInTargetPercent,
+				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
+				TimeInVeryHighPercent:      patient.TimeInVeryHighPercent,
+				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
+			})
+		}
+		(*tideResult.Results)[category] = &c
+	}
+
+	return tideResult
+}
+
 func NewPermissions(dto *PatientPermissions) *patients.Permissions {
 	var permissions *patients.Permissions
 	if dto != nil {

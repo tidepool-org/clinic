@@ -25,6 +25,10 @@ var collation = options.Collation{Locale: "en", Strength: 1}
 
 //go:generate mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 type Repository interface {
 	Service
 }
@@ -804,26 +808,196 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 	return f, ok
 }
 
-func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) error {
+func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
 	if params.Tags == nil || len(*params.Tags) < 1 {
-		return errors.New("no tags provided")
+		return nil, errors.New("no tags provided")
 	}
 
 	if params.CgmLastUploadDateFrom == nil {
-		return errors.New("no lastUploadDateFrom provided")
+		return nil, errors.New("no lastUploadDateFrom provided")
 	}
 
 	if params.CgmLastUploadDateTo == nil {
-		return errors.New("no lastUploadDateTo provided")
+		return nil, errors.New("no lastUploadDateTo provided")
 	}
 
 	if params.CgmLastUploadDateFrom.After(*params.CgmLastUploadDateTo) || params.CgmLastUploadDateFrom.Equal(*params.CgmLastUploadDateTo) {
-		return errors.New("provided lastUploadDateFrom is after or equal to lastUploadDateTo")
+		return nil, errors.New("provided lastUploadDateFrom is after or equal to lastUploadDateTo")
 	}
 
-	selector := bson.M{
-		"clinicId": clinicId,
-		"tags":     bson.M{"$in": params.Tags},
+	if params.Period == nil {
+		return nil, errors.New("no period provided")
 	}
-	return nil
+
+	if *params.Period != "1d" && *params.Period != "7d" && *params.Period != "14d" && *params.Period != "30d" {
+		return nil, errors.New("provided period is not one of the valid periods")
+	}
+
+	categories := [...]map[string]string{
+		{
+			"heading": "timeInVeryLowPercent",
+			"field":   "timeInVeryLowPercent",
+			"comp":    "$gt",
+			"val":     "0.01",
+		},
+
+		{
+			"heading": "timeInLowPercent",
+			"field":   "timeInLowPercent",
+			"comp":    "$gt",
+			"val":     "0.04",
+		},
+
+		{
+			"heading": "dropInTimeInTargetPercent",
+			"field":   "timeInTargetPercentDelta",
+			"comp":    "$gt",
+			"val":     "0.15",
+		},
+
+		{
+			"heading": "timeInTargetPercent",
+			"field":   "timeInTargetPercent",
+			"comp":    "$lt",
+			"val":     "0.7",
+		},
+
+		{
+			"heading": "timeCGMUsePercent",
+			"field":   "timeCGMUsePercent",
+			"comp":    "$lt",
+			"val":     "0.7",
+		},
+	}
+
+	limit := 50
+	exclusions := make([]*primitive.ObjectID, 0, 50)
+	tide := Tide{
+		Config: &TideConfig{
+			ClinicId: &clinicId,
+			Filters: &TideFilters{
+				TimeInVeryLowPercent:      ptr(">0.01"),
+				TimeInLowPercent:          ptr(">0.04"),
+				DropInTimeInTargetPercent: ptr(">0.15"),
+				TimeInTargetPercent:       ptr("<0.7"),
+				TimeCGMUsePercent:         ptr("<0.7"),
+			},
+			HighGlucoseThreshold:     ptr(10.0),
+			LastUploadDateFrom:       params.CgmLastUploadDateFrom,
+			LastUploadDateTo:         params.CgmLastUploadDateTo,
+			LowGlucoseThreshold:      ptr(3.9),
+			Period:                   params.Period,
+			SchemaVersion:            ptr(1),
+			Tags:                     params.Tags,
+			VeryHighGlucoseThreshold: ptr(13.9),
+			VeryLowGlucoseThreshold:  ptr(3.0),
+		},
+		Results: &TideResults{},
+	}
+
+	for _, category := range categories {
+		selector := bson.M{
+			"clinicId": clinicId,
+			"tags":     bson.M{"$in": params.Tags},
+			"summary.cgmStats.dates.lastUploadDate": bson.A{
+				bson.M{"$gt": params.CgmLastUploadDateFrom},
+				bson.M{"$lte": params.CgmLastUploadDateTo},
+			},
+			"summary.cgmStats.periods." + *params.Period + "." + category["field"]: bson.M{category["comp"]: category["val"]},
+			"_id": bson.M{"$nin": exclusions},
+		}
+
+		opts := options.Find()
+		opts.SetLimit(int64(limit))
+
+		if category["comp"] == "$gt" {
+			opts.SetSort(bson.D{
+				{"summary.cgmStats.periods." + *params.Period + "." + category["field"], -1},
+			})
+		} else {
+			opts.SetSort(bson.D{
+				{"summary.cgmStats.periods." + *params.Period + "." + category["field"], 1},
+			})
+		}
+
+		cursor, err := r.collection.Find(ctx, selector, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		var patients []*Patient
+		err = cursor.Decode(patients)
+		if err != nil {
+			return nil, err
+		}
+
+		categoryResult := make([]TideResultPatient, 20)
+		for _, patient := range patients {
+			exclusions = append(exclusions, patient.Id)
+
+			var tags []string
+			for _, tag := range *patient.Tags {
+				tags = append(tags, tag.String())
+			}
+
+			categoryResult = append(categoryResult, TideResultPatient{
+				Patient: &TidePatient{
+					Email:    patient.Email,
+					FullName: patient.FullName,
+					Id:       patient.UserId,
+					Tags:     &tags,
+				},
+				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
+				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
+				TimeCGMUseMinutes:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUseMinutes,
+				TimeCGMUsePercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUsePercent,
+				TimeInHighPercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeInHighPercent,
+				TimeInLowPercent:           (*patient.Summary.CGM.Periods)[*params.Period].TimeInLowPercent,
+				TimeInTargetPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercent,
+				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
+				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
+				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
+			})
+		}
+
+		(*tide.Results)[category["heading"]] = &categoryResult
+
+		limit -= len(patients)
+		if limit < 1 {
+			break
+		}
+	}
+
+	if limit > 0 {
+		selector := bson.M{
+			"clinicId": clinicId,
+			"tags":     bson.M{"$in": params.Tags},
+			"summary.cgmStats.dates.lastUploadDate": bson.A{
+				bson.M{"$gt": params.CgmLastUploadDateFrom},
+				bson.M{"$lte": params.CgmLastUploadDateTo},
+			},
+			"_id": bson.M{"$nin": exclusions},
+		}
+
+		opts := options.Find()
+		opts.SetLimit(int64(limit))
+
+		opts.SetSort(bson.D{
+			{"summary.cgmStats.periods." + *params.Period + ".timeInTargetPercent", -1},
+		})
+
+		cursor, err := r.collection.Find(ctx, selector, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		var patients []*Patient
+		err = cursor.Decode(patients)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	return &tide, nil
 }

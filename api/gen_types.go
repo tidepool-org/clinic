@@ -668,11 +668,8 @@ type Tide struct {
 // TideConfig defines model for TideConfig.
 type TideConfig struct {
 	// ClinicId Clinic identifier.
-	ClinicId *Id `json:"clinicId,omitempty"`
-
-	// ClinicianId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	ClinicianId *TidepoolUserId `json:"clinicianId,omitempty"`
-	Filters     *TideFilters    `json:"filters,omitempty"`
+	ClinicId *Id          `json:"clinicId,omitempty"`
+	Filters  *TideFilters `json:"filters,omitempty"`
 
 	// HighGlucoseThreshold Threshold used for determining if a value is high
 	HighGlucoseThreshold *float64   `json:"highGlucoseThreshold,omitempty"`
@@ -703,10 +700,16 @@ type TideFilters struct {
 	TimeInVeryLowPercent      *string `json:"timeInVeryLowPercent,omitempty"`
 }
 
-// TideResponse defines model for TideResponse.
-type TideResponse struct {
-	// Data Report of at-risk patients based on specific grouping criteria
-	Data *Tide `json:"data,omitempty"`
+// TidePatient defines model for TidePatient.
+type TidePatient struct {
+	Email *string `json:"email,omitempty"`
+
+	// FullName The full name of the patient
+	FullName *string `json:"fullName,omitempty"`
+
+	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
+	Id   *TidepoolUserId `json:"id,omitempty"`
+	Tags *PatientTagIds  `json:"tags"`
 }
 
 // TideResultPatient defines model for TideResultPatient.
@@ -716,7 +719,7 @@ type TideResultPatient struct {
 
 	// GlucoseManagementIndicator A derived value which emulates A1C
 	GlucoseManagementIndicator *float64     `json:"glucoseManagementIndicator,omitempty"`
-	Patient                    *interface{} `json:"patient,omitempty"`
+	Patient                    *TidePatient `json:"patient,omitempty"`
 
 	// TimeCGMUseMinutes Counter of minutes spent wearing a cgm
 	TimeCGMUseMinutes *int `json:"timeCGMUseMinutes,omitempty"`
@@ -744,14 +747,7 @@ type TideResultPatient struct {
 }
 
 // TideResults defines model for TideResults.
-type TideResults struct {
-	DropInTimeInTargetPercent *[]TideResultPatient `json:"dropInTimeInTargetPercent"`
-	MeetingTargets            *[]TideResultPatient `json:"meetingTargets"`
-	TimeCGMUsePercent         *[]TideResultPatient `json:"timeCGMUsePercent"`
-	TimeInLowPercent          *[]TideResultPatient `json:"timeInLowPercent"`
-	TimeInTargetPercent       *[]TideResultPatient `json:"timeInTargetPercent"`
-	TimeInVeryLowPercent      *[]TideResultPatient `json:"timeInVeryLowPercent"`
-}
+type TideResults map[string]*[]TideResultPatient
 
 // TidepoolUserId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type TidepoolUserId = string

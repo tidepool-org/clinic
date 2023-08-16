@@ -47,7 +47,7 @@ type Service interface {
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
-	TideReport(ctx context.Context, clinicId string, params TideReportParams) error
+	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
 }
 
 type Patient struct {

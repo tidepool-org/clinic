@@ -319,12 +319,12 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 
 func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideReportParams) error {
 	ctx := ec.Request().Context()
-	err := h.patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
+	tide, err := h.patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
 	if err != nil {
 		return err
 	}
 
-	return ec.NoContent(http.StatusOK)
+	return ec.JSON(http.StatusOK, NewTideDto(tide))
 }
 
 func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {

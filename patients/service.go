@@ -186,6 +186,6 @@ func getUpdatedBy(update PatientUpdate) *string {
 	return update.Patient.InvitedBy
 }
 
-func (s *service) TideReport(ctx context.Context, clinicId string, params TideReportParams) error {
+func (s *service) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
 	return s.repo.TideReport(ctx, clinicId, params)
 }

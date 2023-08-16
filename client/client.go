@@ -5218,7 +5218,7 @@ func (r UpdateSuppressedNotificationsResponse) StatusCode() int {
 type TideReportResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *TideResponse
+	JSON200      *Tide
 }
 
 // Status returns HTTPResponse.Status
@@ -6906,7 +6906,7 @@ func ParseTideReportResponse(rsp *http.Response) (*TideReportResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest TideResponse
+		var dest Tide
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
