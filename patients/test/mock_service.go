@@ -166,6 +166,20 @@ func (mr *MockServiceMockRecorder) Remove(ctx, clinicId, userId interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockService)(nil).Remove), ctx, clinicId, userId)
 }
 
+// RescheduleLastSubscriptionOrderForAllPatients mocks base method.
+func (m *MockService) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RescheduleLastSubscriptionOrderForAllPatients", ctx, clinicId, subscription, ordersCollection, targetCollection)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RescheduleLastSubscriptionOrderForAllPatients indicates an expected call of RescheduleLastSubscriptionOrderForAllPatients.
+func (mr *MockServiceMockRecorder) RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RescheduleLastSubscriptionOrderForAllPatients", reflect.TypeOf((*MockService)(nil).RescheduleLastSubscriptionOrderForAllPatients), ctx, clinicId, subscription, ordersCollection, targetCollection)
+}
+
 // Update mocks base method.
 func (m *MockService) Update(ctx context.Context, update patients.PatientUpdate) (*patients.Patient, error) {
 	m.ctrl.T.Helper()

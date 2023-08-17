@@ -975,7 +975,7 @@ var _ = Describe("Request Authorizer", func() {
 
 	It("it allows task service to sync clinic patients", func() {
 		input := map[string]interface{}{
-			"path":   []string{"v1", "clinic", "6066fbabc6f484277200ac64", "ehr", "sync"},
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "ehr", "sync"},
 			"method": "POST",
 			"auth": map[string]interface{}{
 				"subjectId":    "task",
