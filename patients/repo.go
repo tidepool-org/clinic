@@ -926,7 +926,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		var patients []*Patient
-		err = cursor.Decode(patients)
+		err = cursor.Decode(&patients)
 		if err != nil {
 			return nil, err
 		}
@@ -992,7 +992,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		var patients []*Patient
-		err = cursor.Decode(patients)
+		err = cursor.Decode(&patients)
 		if err != nil {
 			return nil, err
 		}
