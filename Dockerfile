@@ -13,7 +13,7 @@ RUN ./build.sh
 CMD ["air"]
 
 # Production
-FROM alpine:latest AS production
+FROM golang:1.21-alpine AS production
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
     apk --no-cache add ca-certificates tzdata && \
@@ -21,5 +21,6 @@ RUN apk --no-cache update && \
 WORKDIR /go/src/github.com/tidepool-org/clinic
 USER tidepool
 COPY --from=development --chown=tidepool . .
+RUN ./build.sh
 CMD ["./dist/clinic"]
 
