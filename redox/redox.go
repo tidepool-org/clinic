@@ -17,11 +17,14 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 const (
-	verificationTokenHeader = "verification-token"
-	collection              = "redox"
+	verificationTokenHeader                          = "verification-token"
+	messagesCollectionName                           = "redox"
+	summaryAndReportsRescheduledOrdersCollectionName = "scheduledSummaryAndReportsOrders"
+	rescheduledMessagesExpiration                    = 30 * 24 * time.Hour
 )
 
 type Config struct {
@@ -35,6 +38,7 @@ type Redox interface {
 	FindMessage(ctx context.Context, documentId, dataModel, eventType string) (*models.MessageEnvelope, error)
 	MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error)
 	FindMatchingClinic(ctx context.Context, criteria ClinicMatchingCriteria) (*clinics.Clinic, error)
+	RescheduleSubscriptionOrders(ctx context.Context, clinicId string) error
 }
 
 func NewConfig() (Config, error) {
@@ -44,9 +48,10 @@ func NewConfig() (Config, error) {
 }
 func NewHandler(config Config, clinics clinics.Service, patients patients.Service, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Redox, error) {
 	handler := &Handler{
-		collection: db.Collection(collection),
-		config:     config,
-		logger:     logger,
+		messagesCollection:                     db.Collection(messagesCollectionName),
+		rescheduledSummaryAndReportsCollection: db.Collection(summaryAndReportsRescheduledOrdersCollectionName),
+		config:                                 config,
+		logger:                                 logger,
 
 		clinics:  clinics,
 		patients: patients,
@@ -62,16 +67,17 @@ func NewHandler(config Config, clinics clinics.Service, patients patients.Servic
 }
 
 type Handler struct {
-	config     Config
-	collection *mongo.Collection
-	logger     *zap.SugaredLogger
+	config                                 Config
+	messagesCollection                     *mongo.Collection
+	rescheduledSummaryAndReportsCollection *mongo.Collection
+	logger                                 *zap.SugaredLogger
 
 	clinics  clinics.Service
 	patients patients.Service
 }
 
 func (h *Handler) Initialize(ctx context.Context) error {
-	_, err := h.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
+	_, err := h.messagesCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
 				{Key: "meta.Logs.Id", Value: 1},
@@ -86,6 +92,20 @@ func (h *Handler) Initialize(ctx context.Context) error {
 			},
 			Options: options.Index().
 				SetName("MetadataSource"),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = h.rescheduledSummaryAndReportsCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "createdTime", Value: 1},
+			},
+			Options: options.Index().
+				SetExpireAfterSeconds(int32(rescheduledMessagesExpiration.Seconds())).
+				SetName("CleanupExpiredRescheduledOrders"),
 		},
 	})
 
@@ -143,7 +163,7 @@ func (h *Handler) ProcessEHRMessage(ctx context.Context, raw []byte) error {
 
 	h.logger.Debugw("saving EHR message to database", "metadata", message.Meta)
 
-	res, err := h.collection.InsertOne(ctx, envelope)
+	res, err := h.messagesCollection.InsertOne(ctx, envelope)
 	if err != nil {
 		return err
 	}
@@ -165,7 +185,7 @@ func (h *Handler) FindMessage(ctx context.Context, documentId, dataModel, eventT
 
 	envelope := models.MessageEnvelope{}
 	filter := bson.M{"_id": id, "meta.DataModel": dataModel, "meta.EventType": eventType}
-	err = h.collection.FindOne(ctx, filter).Decode(&envelope)
+	err = h.messagesCollection.FindOne(ctx, filter).Decode(&envelope)
 	if err != nil {
 		return nil, err
 	}
@@ -210,6 +230,37 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 	}
 
 	return result[0], nil
+}
+
+func (h *Handler) RescheduleSubscriptionOrders(ctx context.Context, clinicId string) error {
+	enabled := true
+	filter := clinics.Filter{
+		Ids:        []string{clinicId},
+		EHREnabled: &enabled,
+	}
+	page := store.Pagination{
+		Offset: 0,
+		Limit:  2,
+	}
+
+	result, err := h.clinics.List(ctx, &filter, page)
+	if err != nil {
+		return err
+	}
+
+	if len(result) > 1 {
+		return fmt.Errorf("%w: multiple matching clinics found", errors.Duplicate)
+	} else if len(result) == 0 || result[0] == nil || result[0].Id == nil {
+		return fmt.Errorf("%w: couldn't find a matching clinic", errors.NotFound)
+	}
+
+	return h.patients.RescheduleLastSubscriptionOrderForAllPatients(
+		ctx,
+		clinicId,
+		patients.SummaryAndReportsSubscription,
+		messagesCollectionName,
+		summaryAndReportsRescheduledOrdersCollectionName,
+	)
 }
 
 func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error) {

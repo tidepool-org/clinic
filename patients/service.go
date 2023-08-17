@@ -201,6 +201,11 @@ func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId st
 	return s.repo.UpdateEHRSubscription(ctx, clinicId, userId, update)
 }
 
+func (s *service) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
+	s.logger.Infow("rescheduling patient subscriptions", "subscription", subscription, "clinicId", clinicId)
+	return s.repo.RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection)
+}
+
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, patient *Patient) error {
 	mrnSettings, err := s.clinics.GetMRNSettings(ctx, clinicId)
 	if err != nil || mrnSettings == nil {

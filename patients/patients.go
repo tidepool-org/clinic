@@ -53,6 +53,7 @@ type Service interface {
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
+	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 }
 
 type Patient struct {
@@ -123,6 +124,8 @@ type Filter struct {
 	Tags      *[]string
 	Mrn       *string
 	BirthDate *string
+
+	ActiveEHRSubscription *string
 
 	Period *string
 
