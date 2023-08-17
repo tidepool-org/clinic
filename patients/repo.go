@@ -926,8 +926,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		var patientsList []*Patient
-		err = cursor.Decode(&patientsList)
-		if err = cursor.Decode(&patientsList); err != nil {
+		if err = cursor.All(ctx, &patientsList); err != nil {
 			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
 
@@ -992,8 +991,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		var patientsList []*Patient
-		err = cursor.Decode(&patientsList)
-		if err = cursor.Decode(&patientsList); err != nil {
+		if err = cursor.All(ctx, &patientsList); err != nil {
 			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
 
