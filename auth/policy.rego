@@ -529,6 +529,14 @@ allow {
   is_backend_service
 }
 
+# Allow clinic members to fetch mrn settings
+# GET /v1/clinics/:clinicId/settings/men
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "settings", "mrn"]
+  clinician_has_read_access
+}
+
 # Allow services to update clinics settings
 # GET /v1/clinics/:clinicId/settings/:settings
 allow {

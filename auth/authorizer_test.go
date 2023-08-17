@@ -919,6 +919,20 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	It("it allows clinic members to fetch mrn settings", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "settings", "mrn"},
+			"method": "GET",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
 	It("it allows ORCA to update mrn settings", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "settings", "mrn"},
