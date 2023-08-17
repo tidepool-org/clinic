@@ -137,6 +137,6 @@ func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
 	if err := h.redox.RescheduleSubscriptionOrders(ctx, clinicId); err != nil {
 		return err
 	}
-	
+
 	return ec.NoContent(http.StatusAccepted)
 }

@@ -532,12 +532,14 @@ func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.C
 			},
 		},
 		{
-			"$newRoot": bson.M{
-				"userId":      "$userId",
-				"clinicId":    "$clinicId",
-				"createdTime": time.Now(),
-				"lastMatchedOrder": bson.M{
-					"$arrayElemAt": bson.A{"$lastMatchedOrder", 0},
+			"$replaceRoot": bson.M{
+				"newRoot": bson.M{
+					"userId":      "$userId",
+					"clinicId":    "$clinicId",
+					"createdTime": time.Now(),
+					"lastMatchedOrder": bson.M{
+						"$arrayElemAt": bson.A{"$lastMatchedOrder", 0},
+					},
 				},
 			},
 		},
