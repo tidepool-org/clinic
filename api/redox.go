@@ -133,5 +133,10 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 }
 
 func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	if err := h.redox.RescheduleSubscriptionOrders(ctx, clinicId); err != nil {
+		return err
+	}
+	
 	return ec.NoContent(http.StatusAccepted)
 }

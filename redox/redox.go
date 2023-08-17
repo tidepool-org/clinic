@@ -38,6 +38,7 @@ type Redox interface {
 	FindMessage(ctx context.Context, documentId, dataModel, eventType string) (*models.MessageEnvelope, error)
 	MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error)
 	FindMatchingClinic(ctx context.Context, criteria ClinicMatchingCriteria) (*clinics.Clinic, error)
+	RescheduleSubscriptionOrders(ctx context.Context, clinicId string) error
 }
 
 func NewConfig() (Config, error) {
@@ -107,7 +108,7 @@ func (h *Handler) Initialize(ctx context.Context) error {
 				SetName("CleanupExpiredRescheduledOrders"),
 		},
 	})
-	
+
 	return err
 }
 
