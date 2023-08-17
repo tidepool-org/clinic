@@ -925,14 +925,14 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			return nil, err
 		}
 
-		var patients []*Patient
-		err = cursor.Decode(&patients)
-		if err != nil {
-			return nil, err
+		var patientsList []*Patient
+		err = cursor.Decode(&patientsList)
+		if err = cursor.Decode(&patientsList); err != nil {
+			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
 
-		categoryResult := make([]TideResultPatient, 20)
-		for _, patient := range patients {
+		categoryResult := make([]TideResultPatient, 25)
+		for _, patient := range patientsList {
 			exclusions = append(exclusions, patient.Id)
 
 			var tags []string
@@ -962,7 +962,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 		(*tide.Results)[category["heading"]] = &categoryResult
 
-		limit -= len(patients)
+		limit -= len(patientsList)
 		if limit < 1 {
 			break
 		}
@@ -991,11 +991,40 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			return nil, err
 		}
 
-		var patients []*Patient
-		err = cursor.Decode(&patients)
-		if err != nil {
-			return nil, err
+		var patientsList []*Patient
+		err = cursor.Decode(&patientsList)
+		if err = cursor.Decode(&patientsList); err != nil {
+			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
+
+		categoryResult := make([]TideResultPatient, 25)
+		for _, patient := range patientsList {
+			var tags []string
+			for _, tag := range *patient.Tags {
+				tags = append(tags, tag.String())
+			}
+
+			categoryResult = append(categoryResult, TideResultPatient{
+				Patient: &TidePatient{
+					Email:    patient.Email,
+					FullName: patient.FullName,
+					Id:       patient.UserId,
+					Tags:     &tags,
+				},
+				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
+				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
+				TimeCGMUseMinutes:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUseMinutes,
+				TimeCGMUsePercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUsePercent,
+				TimeInHighPercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeInHighPercent,
+				TimeInLowPercent:           (*patient.Summary.CGM.Periods)[*params.Period].TimeInLowPercent,
+				TimeInTargetPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercent,
+				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
+				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
+				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
+			})
+		}
+
+		(*tide.Results)["meetingTargets"] = &categoryResult
 
 	}
 
