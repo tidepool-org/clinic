@@ -520,7 +520,9 @@ func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.C
 		},
 		{
 			"$addFields": bson.M{
-				"$arrayElemAt": bson.A{matchedMessagesSubscriptionKey, -1},
+				"lastMatchedOrderRef": bson.M{
+					"$arrayElemAt": bson.A{matchedMessagesSubscriptionKey, -1},
+				},
 			},
 		},
 		{
