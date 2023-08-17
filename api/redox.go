@@ -1,8 +1,13 @@
 package api
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/redox"
+	models "github.com/tidepool-org/clinic/redox_models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io"
 	"net/http"
 )
@@ -45,10 +50,44 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 		return err
 	}
 
-	clinic, err := h.redox.FindMatchingClinic(ctx, redox.ClinicMatchingCriteria{
-		SourceId:     request.Clinic.SourceId,
-		FacilityName: request.Clinic.FacilityName,
-	})
+	if request.MessageRef == nil {
+		return fmt.Errorf("%w: messageRef is required", errors.BadRequest)
+	}
+	documentId, err := primitive.ObjectIDFromHex(request.MessageRef.DocumentId)
+	if err != nil {
+		return fmt.Errorf("%w: invalid documentId", errors.BadRequest)
+	}
+
+	// We only support new order messages for now
+	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != New {
+		return fmt.Errorf("%w: only new order messages are supported", errors.BadRequest)
+	}
+	msg, err := h.redox.FindMessage(
+		ctx,
+		request.MessageRef.DocumentId,
+		string(request.MessageRef.DataModel),
+		string(request.MessageRef.EventType),
+	)
+	if err != nil {
+		return err
+	}
+
+	order, err := redox.UnmarshallMessage[*models.NewOrder](*msg)
+	if err != nil {
+		return err
+	}
+
+	criteria, err := redox.GetClinicMatchingCriteriaFromNewOrder(order)
+	if err != nil {
+		return err
+	}
+	clinic, err := h.redox.FindMatchingClinic(ctx, criteria)
+	if err != nil {
+		return err
+	}
+
+	update := redox.GetUpdateFromNewOrder(*clinic, documentId, *order)
+	matchedPatients, err := h.redox.MatchNewOrderToPatient(ctx, *clinic, *order, update)
 	if err != nil {
 		return err
 	}
@@ -59,13 +98,13 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 			Enabled:  clinic.EHRSettings.Enabled,
 			SourceId: clinic.EHRSettings.SourceId,
 			DestinationIds: EHRDestinationIds{
-				Default:   clinic.EHRSettings.DestinationIds.Default,
 				Flowsheet: clinic.EHRSettings.DestinationIds.Flowsheet,
 				Notes:     clinic.EHRSettings.DestinationIds.Notes,
 				Results:   clinic.EHRSettings.DestinationIds.Results,
 			},
 			ProcedureCodes: EHRProcedureCodes{
-				SummaryReportsSubscription: clinic.EHRSettings.ProcedureCodes.SummaryReportsSubscription,
+				EnableSummaryReports:  clinic.EHRSettings.ProcedureCodes.EnableSummaryReports,
+				DisableSummaryReports: clinic.EHRSettings.ProcedureCodes.DisableSummaryReports,
 			},
 		},
 	}
@@ -74,19 +113,30 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 			Name: clinic.EHRSettings.Facility.Name,
 		}
 	}
-
-	if request.Patient != nil {
-		patients, err := h.redox.MatchPatient(ctx, redox.PatientMatchingCriteria{
-			Mrn:         request.Patient.Mrn,
-			DateOfBirth: request.Patient.DateOfBirth,
-		})
-		if err != nil {
-			return err
-		}
-
-		dto := NewPatientsDto(patients)
+	if matchedPatients != nil {
+		dto := NewPatientsDto(matchedPatients)
 		response.Patients = &dto
+	}
+	if update != nil {
+		action := &EHRMatchAction{}
+		if update.Name == patients.SummaryAndReportsSubscription && update.Active {
+			action.ActionType = ENABLESUMARYANDREPORTSSUBSCRIPTION
+		} else if update.Name == patients.SummaryAndReportsSubscription && !update.Active {
+			action.ActionType = DISABLESUMARYANDREPORTSSUBSCRIPTION
+		}
+		if action.ActionType != "" {
+			response.Action = action
+		}
 	}
 
 	return ec.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	if err := h.redox.RescheduleSubscriptionOrders(ctx, clinicId); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusAccepted)
 }

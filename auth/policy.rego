@@ -546,9 +546,17 @@ allow {
 }
 
 # Allow services to match EHR patients
-# GET /v1/clinics/:clinicId/settings/:settings
+# GET /v1/redox/match
 allow {
   input.method == "POST"
   input.path = ["v1", "redox", "match"]
+  is_backend_service
+}
+
+# Allow services to trigger EHR data sync
+# GET /v1/clinics/:clinicId/ehr/sync
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "ehr", "sync"]
   is_backend_service
 }

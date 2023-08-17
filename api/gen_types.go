@@ -51,6 +51,22 @@ const (
 	DataSourceStatePendingReconnect DataSourceState = "pendingReconnect"
 )
 
+// Defines values for EHRMatchActionActionType.
+const (
+	DISABLESUMARYANDREPORTSSUBSCRIPTION EHRMatchActionActionType = "DISABLE_SUMARY_AND_REPORTS_SUBSCRIPTION"
+	ENABLESUMARYANDREPORTSSUBSCRIPTION  EHRMatchActionActionType = "ENABLE_SUMARY_AND_REPORTS_SUBSCRIPTION"
+)
+
+// Defines values for EHRMatchMessageRefDataModel.
+const (
+	Order EHRMatchMessageRefDataModel = "Order"
+)
+
+// Defines values for EHRMatchMessageRefEventType.
+const (
+	New EHRMatchMessageRefEventType = "New"
+)
+
 // Defines values for MigrationStatus.
 const (
 	COMPLETED MigrationStatus = "COMPLETED"
@@ -206,17 +222,14 @@ type DateTime = string
 
 // EHRDestinationIds defines model for EHRDestinationIds.
 type EHRDestinationIds struct {
-	// Default The default Redox destination ID
-	Default string `json:"default"`
-
 	// Flowsheet Destination ID override for Flowsheets
-	Flowsheet *string `json:"flowsheet,omitempty"`
+	Flowsheet string `json:"flowsheet"`
 
 	// Notes Destination ID override for Notes
-	Notes *string `json:"notes,omitempty"`
+	Notes string `json:"notes"`
 
 	// Results Destination ID override for Results
-	Results *string `json:"results,omitempty"`
+	Results string `json:"results"`
 }
 
 // EHRFacility defines model for EHRFacility.
@@ -225,29 +238,36 @@ type EHRFacility struct {
 	Name string `json:"name"`
 }
 
-// EHRMatchClinicRequest defines model for EHRMatchClinicRequest.
-type EHRMatchClinicRequest struct {
-	FacilityName *string `json:"facilityName,omitempty"`
-	SourceId     string  `json:"sourceId"`
+// EHRMatchAction defines model for EHRMatchAction.
+type EHRMatchAction struct {
+	ActionType EHRMatchActionActionType `json:"actionType"`
 }
 
-// EHRMatchPatientRequest defines model for EHRMatchPatientRequest.
-type EHRMatchPatientRequest struct {
-	DateOfBirth string  `json:"dateOfBirth"`
-	FirstName   *string `json:"firstName,omitempty"`
-	LastName    *string `json:"lastName,omitempty"`
-	MiddleName  *string `json:"middleName,omitempty"`
-	Mrn         string  `json:"mrn"`
+// EHRMatchActionActionType defines model for EHRMatchAction.ActionType.
+type EHRMatchActionActionType string
+
+// EHRMatchMessageRef defines model for EHRMatchMessageRef.
+type EHRMatchMessageRef struct {
+	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
+	DocumentId string                      `json:"documentId"`
+	EventType  EHRMatchMessageRefEventType `json:"eventType"`
 }
+
+// EHRMatchMessageRefDataModel defines model for EHRMatchMessageRef.DataModel.
+type EHRMatchMessageRefDataModel string
+
+// EHRMatchMessageRefEventType defines model for EHRMatchMessageRef.EventType.
+type EHRMatchMessageRefEventType string
 
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	Clinic  EHRMatchClinicRequest   `json:"clinic"`
-	Patient *EHRMatchPatientRequest `json:"patient,omitempty"`
+	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
 }
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {
+	Action *EHRMatchAction `json:"action,omitempty"`
+
 	// Clinic Clinic
 	Clinic   Clinic      `json:"clinic"`
 	Patients *Patients   `json:"patients,omitempty"`
@@ -256,8 +276,10 @@ type EHRMatchResponse struct {
 
 // EHRProcedureCodes defines model for EHRProcedureCodes.
 type EHRProcedureCodes struct {
-	// SummaryReportsSubscription Procedure Code for Summary Statistics and PDF Reports subscription
-	SummaryReportsSubscription string `json:"summaryReportsSubscription"`
+	DisableSummaryReports string `json:"disableSummaryReports"`
+
+	// EnableSummaryReports Procedure Code for Summary Statistics and PDF Reports subscription
+	EnableSummaryReports string `json:"enableSummaryReports"`
 }
 
 // EHRSettings defines model for EHRSettings.
@@ -703,6 +725,9 @@ type CreatedTimeEnd = time.Time
 // CreatedTimeStart defines model for createdTimeStart.
 type CreatedTimeStart = time.Time
 
+// EhrEnabled defines model for ehrEnabled.
+type EhrEnabled = bool
+
 // Email defines model for email.
 type Email = openapi_types.Email
 
@@ -765,6 +790,9 @@ type ListClinicsParams struct {
 
 	// CreatedTimeEnd Return records created before the given date (exclusive)
 	CreatedTimeEnd *CreatedTimeEnd `form:"createdTimeEnd,omitempty" json:"createdTimeEnd,omitempty"`
+
+	// EhrEnabled Retrieve clinics with enabled EHR integration
+	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
 }
 
 // ListCliniciansParams defines parameters for ListClinicians.

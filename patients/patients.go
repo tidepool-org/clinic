@@ -10,6 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const (
+	SummaryAndReportsSubscription = "summaryAndReports"
+)
+
 var (
 	ErrNotFound           = fmt.Errorf("patient %w", errors.NotFound)
 	ErrPermissionNotFound = fmt.Errorf("permission %w", errors.NotFound)
@@ -48,6 +52,8 @@ type Service interface {
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
+	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
+	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 }
 
 type Patient struct {
@@ -71,19 +77,30 @@ type Patient struct {
 	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
 	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
 	RequireUniqueMrn               bool                  `bson:"requireUniqueMrn"`
-	EHRIdentity                    *EHRIdentity          `bson:"ehrIdentity,omitempty"`
+	EHRSubscriptions               EHRSubscriptions      `bson:"ehrSubscriptions,omitempty"`
 }
 
 func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
 }
 
-type EHRIdentity struct {
-	FirstName   string `bson:"firstName"`
-	MiddleName  string `bson:"middleName"`
-	LastName    string `bson:"lastName"`
-	DateOfBirth string `bson:"dateOfBirth"`
-	Mrn         string `bson:"mrn"`
+type EHRSubscriptions map[string]EHRSubscription
+
+type EHRSubscription struct {
+	Active          bool             `bson:"active"`
+	MatchedMessages []MatchedMessage `bson:"matchedMessages,omitempty"`
+}
+
+type MatchedMessage struct {
+	DocumentId primitive.ObjectID `bson:"id"`
+	DataModel  string             `bson:"dataModel"`
+	EventType  string             `bson:"eventType"`
+}
+
+type SubscriptionUpdate struct {
+	Name           string
+	Active         bool
+	MatchedMessage MatchedMessage
 }
 
 type FilterPair struct {
@@ -107,6 +124,8 @@ type Filter struct {
 	Tags      *[]string
 	Mrn       *string
 	BirthDate *string
+
+	ActiveEHRSubscription *string
 
 	Period *string
 

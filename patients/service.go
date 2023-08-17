@@ -179,6 +179,33 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 	return s.repo.UpdatePatientDataSources(ctx, userId, dataSources)
 }
 
+func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error {
+	patient, err := s.Get(ctx, clinicId, userId)
+	if err != nil {
+		return err
+	}
+
+	// Check if this message has already been matched
+	if patient.EHRSubscriptions != nil {
+		if subscr, ok := patient.EHRSubscriptions[update.Name]; ok {
+			for _, msg := range subscr.MatchedMessages {
+				if update.MatchedMessage.DocumentId == msg.DocumentId {
+					s.logger.Infow("the message has already been matched, skipping update", "clinicId", clinicId, "userId", userId, "update", update)
+					return nil
+				}
+			}
+		}
+	}
+
+	s.logger.Infow("updating patient subscription", "clinicId", clinicId, "userId", userId, "update", update)
+	return s.repo.UpdateEHRSubscription(ctx, clinicId, userId, update)
+}
+
+func (s *service) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
+	s.logger.Infow("rescheduling patient subscriptions", "subscription", subscription, "clinicId", clinicId)
+	return s.repo.RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection)
+}
+
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, patient *Patient) error {
 	mrnSettings, err := s.clinics.GetMRNSettings(ctx, clinicId)
 	if err != nil || mrnSettings == nil {

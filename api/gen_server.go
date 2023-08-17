@@ -55,6 +55,9 @@ type ServerInterface interface {
 	// Update Clinician
 	// (PUT /v1/clinics/{clinicId}/clinicians/{clinicianId})
 	UpdateClinician(ctx echo.Context, clinicId ClinicId, clinicianId ClinicianId) error
+	// Sync EHR Data
+	// (POST /v1/clinics/{clinicId}/ehr/sync)
+	SyncEHRData(ctx echo.Context, clinicId ClinicId) error
 	// Delete Invited Clinician
 	// (DELETE /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
 	DeleteInvitedClinician(ctx echo.Context, clinicId ClinicId, inviteId InviteId) error
@@ -315,6 +318,13 @@ func (w *ServerInterfaceWrapper) ListClinics(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter createdTimeEnd: %s", err))
 	}
 
+	// ------------- Optional query parameter "ehrEnabled" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "ehrEnabled", ctx.QueryParams(), &params.EhrEnabled)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ehrEnabled: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.ListClinics(ctx, params)
 	return err
@@ -551,6 +561,24 @@ func (w *ServerInterfaceWrapper) UpdateClinician(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.UpdateClinician(ctx, clinicId, clinicianId)
+	return err
+}
+
+// SyncEHRData converts echo context to params.
+func (w *ServerInterfaceWrapper) SyncEHRData(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.SyncEHRData(ctx, clinicId)
 	return err
 }
 
@@ -1698,6 +1726,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.DeleteClinician)
 	router.GET(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.GetClinician)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.UpdateClinician)
+	router.POST(baseURL+"/v1/clinics/:clinicId/ehr/sync", wrapper.SyncEHRData)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.DeleteInvitedClinician)
 	router.GET(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.GetInvitedClinician)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.AssociateClinicianToUser)

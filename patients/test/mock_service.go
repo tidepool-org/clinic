@@ -166,6 +166,20 @@ func (mr *MockServiceMockRecorder) Remove(ctx, clinicId, userId interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockService)(nil).Remove), ctx, clinicId, userId)
 }
 
+// RescheduleLastSubscriptionOrderForAllPatients mocks base method.
+func (m *MockService) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RescheduleLastSubscriptionOrderForAllPatients", ctx, clinicId, subscription, ordersCollection, targetCollection)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RescheduleLastSubscriptionOrderForAllPatients indicates an expected call of RescheduleLastSubscriptionOrderForAllPatients.
+func (mr *MockServiceMockRecorder) RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RescheduleLastSubscriptionOrderForAllPatients", reflect.TypeOf((*MockService)(nil).RescheduleLastSubscriptionOrderForAllPatients), ctx, clinicId, subscription, ordersCollection, targetCollection)
+}
+
 // Update mocks base method.
 func (m *MockService) Update(ctx context.Context, update patients.PatientUpdate) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -179,6 +193,20 @@ func (m *MockService) Update(ctx context.Context, update patients.PatientUpdate)
 func (mr *MockServiceMockRecorder) Update(ctx, update interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockService)(nil).Update), ctx, update)
+}
+
+// UpdateEHRSubscription mocks base method.
+func (m *MockService) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEHRSubscription", ctx, clinicId, userId, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateEHRSubscription indicates an expected call of UpdateEHRSubscription.
+func (mr *MockServiceMockRecorder) UpdateEHRSubscription(ctx, clinicId, userId, update interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEHRSubscription", reflect.TypeOf((*MockService)(nil).UpdateEHRSubscription), ctx, clinicId, userId, update)
 }
 
 // UpdateEmail mocks base method.

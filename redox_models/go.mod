@@ -1,4 +1,4 @@
-module github.com/tidepool-org/clinic/redox/models
+module github.com/tidepool-org/clinic/redox_models
 
 go 1.19
 

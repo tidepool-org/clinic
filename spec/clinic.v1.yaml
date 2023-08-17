@@ -61,6 +61,7 @@ paths:
         - $ref: '#/components/parameters/shareCode'
         - $ref: '#/components/parameters/createdTimeStart'
         - $ref: '#/components/parameters/createdTimeEnd'
+        - $ref: '#/components/parameters/ehrEnabled'
       x-roles:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
@@ -1505,6 +1506,24 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MRNSettings'
+  '/v1/clinics/{clinicId}/ehr/sync':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      summary: Sync EHR Data
+      operationId: SyncEHRData
+      responses:
+        '202':
+          description: Accepted
+      description: |-
+        An internal endpoint which will push the latest patient summary statistics and PDF reports for all patients who have an active subscription. The actual data is pushed asynchronously. A successful response means that an asynchronous task has been scheduled for each patient of the clinic with an active subscription.
+
+        Will return 404 Not Found if the clinic does not have an active EHR connection.
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
+      parameters: []
 components:
   schemas:
     Error:
@@ -2527,22 +2546,10 @@ components:
       x-stoplight:
         id: nq0mlm5dqdfw0
       type: object
+      x-examples: {}
       properties:
-        clinic:
-          $ref: '#/components/schemas/EHRMatchClinicRequest'
-        patient:
-          $ref: '#/components/schemas/EHRMatchPatientRequest'
-      required:
-        - clinic
-      x-examples:
-        Example 1:
-          clinic:
-            facilityName: ACME Clinic
-          patient:
-            firstName: John
-            lastName: Doe
-            mrn: BG1234567890
-            birthDate: '1984-03-22'
+        messageRef:
+          $ref: '#/components/schemas/EHRMatchMessageRef'
     EHRMatchResponse:
       title: EHRMatchResponse
       x-stoplight:
@@ -2555,6 +2562,8 @@ components:
           $ref: '#/components/schemas/Patients'
         settings:
           $ref: '#/components/schemas/EHRSettings'
+        action:
+          $ref: '#/components/schemas/EHRMatchAction'
       required:
         - clinic
         - settings
@@ -2611,10 +2620,6 @@ components:
         id: z6cjrz20e5mvu
       type: object
       properties:
-        default:
-          type: string
-          description: The default Redox destination ID
-          minLength: 1
         flowsheet:
           type: string
           description: Destination ID override for Flowsheets
@@ -2628,19 +2633,57 @@ components:
           description: Destination ID override for Notes
           minLength: 1
       required:
-        - default
+        - flowsheet
+        - results
+        - notes
     EHRProcedureCodes:
       title: EHR Procedure Codes Map
       x-stoplight:
         id: gy7do1thlm3g5
       type: object
       properties:
-        summaryReportsSubscription:
+        enableSummaryReports:
           type: string
           minLength: 1
           description: Procedure Code for Summary Statistics and PDF Reports subscription
+        disableSummaryReports:
+          type: string
       required:
-        - summaryReportsSubscription
+        - enableSummaryReports
+        - disableSummaryReports
+    EHRMatchMessageRef:
+      title: EHRMatchMessageRef
+      x-stoplight:
+        id: a1215t5vip3tr
+      type: object
+      properties:
+        dataModel:
+          type: string
+          enum:
+            - Order
+        eventType:
+          type: string
+          enum:
+            - New
+        documentId:
+          type: string
+      required:
+        - dataModel
+        - eventType
+        - documentId
+    EHRMatchAction:
+      title: EHRMatchAction
+      x-stoplight:
+        id: ouyj6lwlrtzhc
+      type: object
+      properties:
+        actionType:
+          type: string
+          enum:
+            - ENABLE_SUMARY_AND_REPORTS_SUBSCRIPTION
+            - DISABLE_SUMARY_AND_REPORTS_SUBSCRIPTION
+      required:
+        - actionType
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
@@ -2752,6 +2795,13 @@ components:
         type: string
         format: date-time
       description: Return records created before the given date (exclusive)
+    ehrEnabled:
+      name: ehrEnabled
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: Retrieve clinics with enabled EHR integration
 tags:
   - name: Clinics
   - name: Confirmations
