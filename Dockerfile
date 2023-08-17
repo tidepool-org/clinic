@@ -14,13 +14,14 @@ CMD ["air"]
 
 # Production
 FROM golang:1.21-alpine AS production
+WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
     apk --no-cache add ca-certificates tzdata && \
-    adduser -D tidepool
-WORKDIR /go/src/github.com/tidepool-org/clinic
+    adduser -D tidepool && \
+    chown -R tidepool /go/src/github.com/tidepool-org/clinic
 USER tidepool
-COPY --from=development --chown=tidepool . .
+COPY --chown=tidepool . .
 RUN ./build.sh
 CMD ["./dist/clinic"]
 
