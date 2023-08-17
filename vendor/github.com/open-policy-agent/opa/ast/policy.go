@@ -20,7 +20,6 @@ import (
 // subsequent lookups. If the hash seeds are out of sync, lookups will fail.
 var hashSeed = rand.New(rand.NewSource(time.Now().UnixNano()))
 var hashSeed0 = (uint64(hashSeed.Uint32()) << 32) | uint64(hashSeed.Uint32())
-var hashSeed1 = (uint64(hashSeed.Uint32()) << 32) | uint64(hashSeed.Uint32())
 
 // DefaultRootDocument is the default root document.
 //
@@ -31,8 +30,23 @@ var DefaultRootDocument = VarTerm("data")
 // InputRootDocument names the document containing query arguments.
 var InputRootDocument = VarTerm("input")
 
+// SchemaRootDocument names the document containing external data schemas.
+var SchemaRootDocument = VarTerm("schema")
+
+// FunctionArgRootDocument names the document containing function arguments.
+// It's only for internal usage, for referencing function arguments between
+// the index and topdown.
+var FunctionArgRootDocument = VarTerm("args")
+
+// FutureRootDocument names the document containing new, to-become-default,
+// features.
+var FutureRootDocument = VarTerm("future")
+
 // RootDocumentNames contains the names of top-level documents that can be
 // referred to in modules and queries.
+//
+// Note, the schema document is not currently implemented in the evaluator so it
+// is not registered as a root document name (yet).
 var RootDocumentNames = NewSet(
 	DefaultRootDocument,
 	InputRootDocument,
@@ -47,6 +61,13 @@ var DefaultRootRef = Ref{DefaultRootDocument}
 //
 // All refs to query arguments are prefixed with this ref.
 var InputRootRef = Ref{InputRootDocument}
+
+// SchemaRootRef is a reference to the root of the schema document.
+//
+// All refs to schema documents are prefixed with this ref. Note, the schema
+// document is not currently implemented in the evaluator so it is not
+// registered as a root document ref (yet).
+var SchemaRootRef = Ref{SchemaRootDocument}
 
 // RootDocumentRefs contains the prefixes of top-level documents that all
 // non-local references start with.
@@ -118,57 +139,71 @@ type (
 	// within a namespace (defined by the package) and optional
 	// dependencies on external documents (defined by imports).
 	Module struct {
-		Package  *Package   `json:"package"`
-		Imports  []*Import  `json:"imports,omitempty"`
-		Rules    []*Rule    `json:"rules,omitempty"`
-		Comments []*Comment `json:"comments,omitempty"`
+		Package     *Package       `json:"package"`
+		Imports     []*Import      `json:"imports,omitempty"`
+		Annotations []*Annotations `json:"annotations,omitempty"`
+		Rules       []*Rule        `json:"rules,omitempty"`
+		Comments    []*Comment     `json:"comments,omitempty"`
+		stmts       []Statement
 	}
 
 	// Comment contains the raw text from the comment in the definition.
 	Comment struct {
+		// TODO: these fields have inconsistent JSON keys with other structs in this package.
 		Text     []byte
 		Location *Location
+
+		jsonOptions JSONOptions
 	}
 
 	// Package represents the namespace of the documents produced
 	// by rules inside the module.
 	Package struct {
-		Location *Location `json:"-"`
 		Path     Ref       `json:"path"`
+		Location *Location `json:"location,omitempty"`
+
+		jsonOptions JSONOptions
 	}
 
 	// Import represents a dependency on a document outside of the policy
 	// namespace. Imports are optional.
 	Import struct {
-		Location *Location `json:"-"`
 		Path     *Term     `json:"path"`
 		Alias    Var       `json:"alias,omitempty"`
+		Location *Location `json:"location,omitempty"`
+
+		jsonOptions JSONOptions
 	}
 
 	// Rule represents a rule as defined in the language. Rules define the
 	// content of documents that represent policy decisions.
 	Rule struct {
-		Location *Location `json:"-"`
 		Default  bool      `json:"default,omitempty"`
 		Head     *Head     `json:"head"`
 		Body     Body      `json:"body"`
 		Else     *Rule     `json:"else,omitempty"`
+		Location *Location `json:"location,omitempty"`
 
 		// Module is a pointer to the module containing this rule. If the rule
 		// was NOT created while parsing/constructing a module, this should be
 		// left unset. The pointer is not included in any standard operations
 		// on the rule (e.g., printing, comparison, visiting, etc.)
 		Module *Module `json:"-"`
+
+		jsonOptions JSONOptions
 	}
 
 	// Head represents the head of a rule.
 	Head struct {
-		Location *Location `json:"-"`
-		Name     Var       `json:"name"`
-		Args     Args      `json:"args,omitempty"`
-		Key      *Term     `json:"key,omitempty"`
-		Value    *Term     `json:"value,omitempty"`
-		Assign   bool      `json:"assign,omitempty"`
+		Name      Var       `json:"name,omitempty"`
+		Reference Ref       `json:"ref,omitempty"`
+		Args      Args      `json:"args,omitempty"`
+		Key       *Term     `json:"key,omitempty"`
+		Value     *Term     `json:"value,omitempty"`
+		Assign    bool      `json:"assign,omitempty"`
+		Location  *Location `json:"location,omitempty"`
+
+		jsonOptions JSONOptions
 	}
 
 	// Args represents zero or more arguments to a rule.
@@ -182,23 +217,39 @@ type (
 	Expr struct {
 		With      []*With     `json:"with,omitempty"`
 		Terms     interface{} `json:"terms"`
-		Location  *Location   `json:"-"`
 		Index     int         `json:"index"`
 		Generated bool        `json:"generated,omitempty"`
 		Negated   bool        `json:"negated,omitempty"`
+		Location  *Location   `json:"location,omitempty"`
+
+		jsonOptions JSONOptions
 	}
 
 	// SomeDecl represents a variable declaration statement. The symbols are variables.
 	SomeDecl struct {
-		Location *Location `json:"-"`
 		Symbols  []*Term   `json:"symbols"`
+		Location *Location `json:"location,omitempty"`
+
+		jsonOptions JSONOptions
+	}
+
+	Every struct {
+		Key      *Term     `json:"key"`
+		Value    *Term     `json:"value"`
+		Domain   *Term     `json:"domain"`
+		Body     Body      `json:"body"`
+		Location *Location `json:"location,omitempty"`
+
+		jsonOptions JSONOptions
 	}
 
 	// With represents a modifier on an expression.
 	With struct {
-		Location *Location `json:"-"`
 		Target   *Term     `json:"target"`
 		Value    *Term     `json:"value"`
+		Location *Location `json:"location,omitempty"`
+
+		jsonOptions JSONOptions
 	}
 )
 
@@ -219,6 +270,9 @@ func (mod *Module) Compare(other *Module) int {
 	if cmp := importsCompare(mod.Imports, other.Imports); cmp != 0 {
 		return cmp
 	}
+	if cmp := annotationsCompare(mod.Annotations, other.Annotations); cmp != 0 {
+		return cmp
+	}
 	return rulesCompare(mod.Rules, other.Rules)
 }
 
@@ -226,14 +280,39 @@ func (mod *Module) Compare(other *Module) int {
 func (mod *Module) Copy() *Module {
 	cpy := *mod
 	cpy.Rules = make([]*Rule, len(mod.Rules))
+
+	nodes := make(map[Node]Node, len(mod.Rules)+len(mod.Imports)+1 /* package */)
+
 	for i := range mod.Rules {
 		cpy.Rules[i] = mod.Rules[i].Copy()
+		cpy.Rules[i].Module = &cpy
+		nodes[mod.Rules[i]] = cpy.Rules[i]
 	}
+
 	cpy.Imports = make([]*Import, len(mod.Imports))
 	for i := range mod.Imports {
 		cpy.Imports[i] = mod.Imports[i].Copy()
+		nodes[mod.Imports[i]] = cpy.Imports[i]
 	}
+
 	cpy.Package = mod.Package.Copy()
+	nodes[mod.Package] = cpy.Package
+
+	cpy.Annotations = make([]*Annotations, len(mod.Annotations))
+	for i := range mod.Annotations {
+		cpy.Annotations[i] = mod.Annotations[i].Copy(nodes[mod.Annotations[i].node])
+	}
+
+	cpy.Comments = make([]*Comment, len(mod.Comments))
+	for i := range mod.Comments {
+		cpy.Comments[i] = mod.Comments[i].Copy()
+	}
+
+	cpy.stmts = make([]Statement, len(mod.stmts))
+	for i := range mod.stmts {
+		cpy.stmts[i] = nodes[mod.stmts[i]]
+	}
+
 	return &cpy
 }
 
@@ -243,17 +322,36 @@ func (mod *Module) Equal(other *Module) bool {
 }
 
 func (mod *Module) String() string {
+	byNode := map[Node][]*Annotations{}
+	for _, a := range mod.Annotations {
+		byNode[a.node] = append(byNode[a.node], a)
+	}
+
+	appendAnnotationStrings := func(buf []string, node Node) []string {
+		if as, ok := byNode[node]; ok {
+			for i := range as {
+				buf = append(buf, "# METADATA")
+				buf = append(buf, "# "+as[i].String())
+			}
+		}
+		return buf
+	}
+
 	buf := []string{}
+	buf = appendAnnotationStrings(buf, mod.Package)
 	buf = append(buf, mod.Package.String())
+
 	if len(mod.Imports) > 0 {
 		buf = append(buf, "")
 		for _, imp := range mod.Imports {
+			buf = appendAnnotationStrings(buf, imp)
 			buf = append(buf, imp.String())
 		}
 	}
 	if len(mod.Rules) > 0 {
 		buf = append(buf, "")
 		for _, rule := range mod.Rules {
+			buf = appendAnnotationStrings(buf, rule)
 			buf = append(buf, rule.String())
 		}
 	}
@@ -330,6 +428,12 @@ func (c *Comment) Equal(other *Comment) bool {
 	return c.Location.Equal(other.Location) && bytes.Equal(c.Text, other.Text)
 }
 
+func (c *Comment) setJSONOptions(opts JSONOptions) {
+	// Note: this is not used for location since Comments use default JSON marshaling
+	// behavior with struct field names in JSON.
+	c.jsonOptions = opts
+}
+
 // Compare returns an integer indicating whether pkg is less than, equal to,
 // or greater than other.
 func (pkg *Package) Compare(other *Package) int {
@@ -372,6 +476,24 @@ func (pkg *Package) String() string {
 	path[0] = VarTerm(string(pkg.Path[1].Value.(String)))
 	copy(path[1:], pkg.Path[2:])
 	return fmt.Sprintf("package %v", path)
+}
+
+func (pkg *Package) setJSONOptions(opts JSONOptions) {
+	pkg.jsonOptions = opts
+}
+
+func (pkg *Package) MarshalJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"path": pkg.Path,
+	}
+
+	if pkg.jsonOptions.MarshalOptions.IncludeLocation.Package {
+		if pkg.Location != nil {
+			data["location"] = pkg.Location
+		}
+	}
+
+	return json.Marshal(data)
 }
 
 // IsValidImportPath returns an error indicating if the import path is invalid.
@@ -466,6 +588,28 @@ func (imp *Import) String() string {
 	return strings.Join(buf, " ")
 }
 
+func (imp *Import) setJSONOptions(opts JSONOptions) {
+	imp.jsonOptions = opts
+}
+
+func (imp *Import) MarshalJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"path": imp.Path,
+	}
+
+	if len(imp.Alias) != 0 {
+		data["alias"] = imp.Alias
+	}
+
+	if imp.jsonOptions.MarshalOptions.IncludeLocation.Import {
+		if imp.Location != nil {
+			data["location"] = imp.Location
+		}
+	}
+
+	return json.Marshal(data)
+}
+
 // Compare returns an integer indicating whether rule is less than, equal to,
 // or greater than other.
 func (rule *Rule) Compare(other *Rule) int {
@@ -520,11 +664,22 @@ func (rule *Rule) SetLoc(loc *Location) {
 
 // Path returns a ref referring to the document produced by this rule. If rule
 // is not contained in a module, this function panics.
+// Deprecated: Poor handling of ref rules. Use `(*Rule).Ref()` instead.
 func (rule *Rule) Path() Ref {
 	if rule.Module == nil {
 		panic("assertion failed")
 	}
-	return rule.Module.Package.Path.Append(StringTerm(string(rule.Head.Name)))
+	return rule.Module.Package.Path.Extend(rule.Head.Ref().GroundPrefix())
+}
+
+// Ref returns a ref referring to the document produced by this rule. If rule
+// is not contained in a module, this function panics. The returned ref may
+// contain variables in the last position.
+func (rule *Rule) Ref() Ref {
+	if rule.Module == nil {
+		panic("assertion failed")
+	}
+	return rule.Module.Package.Path.Extend(rule.Head.Ref())
 }
 
 func (rule *Rule) String() string {
@@ -542,6 +697,33 @@ func (rule *Rule) String() string {
 		buf = append(buf, rule.Else.elseString())
 	}
 	return strings.Join(buf, " ")
+}
+
+func (rule *Rule) setJSONOptions(opts JSONOptions) {
+	rule.jsonOptions = opts
+}
+
+func (rule *Rule) MarshalJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"head": rule.Head,
+		"body": rule.Body,
+	}
+
+	if rule.Default {
+		data["default"] = true
+	}
+
+	if rule.Else != nil {
+		data["else"] = rule.Else
+	}
+
+	if rule.jsonOptions.MarshalOptions.IncludeLocation.Rule {
+		if rule.Location != nil {
+			data["location"] = rule.Location
+		}
+	}
+
+	return json.Marshal(data)
 }
 
 func (rule *Rule) elseString() string {
@@ -570,7 +752,8 @@ func (rule *Rule) elseString() string {
 // used for the key and the second will be used for the value.
 func NewHead(name Var, args ...*Term) *Head {
 	head := &Head{
-		Name: name,
+		Name:      name, // backcompat
+		Reference: []*Term{NewTerm(name)},
 	}
 	if len(args) == 0 {
 		return head
@@ -580,6 +763,23 @@ func NewHead(name Var, args ...*Term) *Head {
 		return head
 	}
 	head.Value = args[1]
+	if head.Key != nil && head.Value != nil {
+		head.Reference = head.Reference.Append(args[0])
+	}
+	return head
+}
+
+// RefHead returns a new Head object with the passed Ref. If args are provided,
+// the first will be used for the value.
+func RefHead(ref Ref, args ...*Term) *Head {
+	head := &Head{}
+	head.SetRef(ref)
+	if len(ref) < 2 {
+		head.Name = ref[0].Value.(Var)
+	}
+	if len(args) >= 1 {
+		head.Value = args[0]
+	}
 	return head
 }
 
@@ -591,11 +791,11 @@ const (
 	CompleteDoc = iota
 
 	// PartialSetDoc represents a set document that is partially defined by the rule.
-	PartialSetDoc = iota
+	PartialSetDoc
 
 	// PartialObjectDoc represents an object document that is partially defined by the rule.
-	PartialObjectDoc = iota
-)
+	PartialObjectDoc
+) // TODO(sr): Deprecate?
 
 // DocKind returns the type of document produced by this rule.
 func (head *Head) DocKind() DocKind {
@@ -606,6 +806,41 @@ func (head *Head) DocKind() DocKind {
 		return PartialSetDoc
 	}
 	return CompleteDoc
+}
+
+type RuleKind int
+
+const (
+	SingleValue = iota
+	MultiValue
+)
+
+// RuleKind returns the type of rule this is
+func (head *Head) RuleKind() RuleKind {
+	// NOTE(sr): This is bit verbose, since the key is irrelevant for single vs
+	//           multi value, but as good a spot as to assert the invariant.
+	switch {
+	case head.Value != nil:
+		return SingleValue
+	case head.Key != nil:
+		return MultiValue
+	default:
+		panic("unreachable")
+	}
+}
+
+// Ref returns the Ref of the rule. If it doesn't have one, it's filled in
+// via the Head's Name.
+func (head *Head) Ref() Ref {
+	if len(head.Reference) > 0 {
+		return head.Reference
+	}
+	return Ref{&Term{Value: head.Name}}
+}
+
+// SetRef can be used to set a rule head's Reference
+func (head *Head) SetRef(r Ref) {
+	head.Reference = r
 }
 
 // Compare returns an integer indicating whether head is less than, equal to,
@@ -627,6 +862,9 @@ func (head *Head) Compare(other *Head) int {
 	if cmp := Compare(head.Args, other.Args); cmp != 0 {
 		return cmp
 	}
+	if cmp := Compare(head.Reference, other.Reference); cmp != 0 {
+		return cmp
+	}
 	if cmp := Compare(head.Name, other.Name); cmp != 0 {
 		return cmp
 	}
@@ -639,6 +877,7 @@ func (head *Head) Compare(other *Head) int {
 // Copy returns a deep copy of head.
 func (head *Head) Copy() *Head {
 	cpy := *head
+	cpy.Reference = head.Reference.Copy()
 	cpy.Args = head.Args.Copy()
 	cpy.Key = head.Key.Copy()
 	cpy.Value = head.Value.Copy()
@@ -651,23 +890,57 @@ func (head *Head) Equal(other *Head) bool {
 }
 
 func (head *Head) String() string {
-	var buf []string
-	if len(head.Args) != 0 {
-		buf = append(buf, head.Name.String()+head.Args.String())
-	} else if head.Key != nil {
-		buf = append(buf, head.Name.String()+"["+head.Key.String()+"]")
-	} else {
-		buf = append(buf, head.Name.String())
+	buf := strings.Builder{}
+	buf.WriteString(head.Ref().String())
+
+	switch {
+	case len(head.Args) != 0:
+		buf.WriteString(head.Args.String())
+	case len(head.Reference) == 1 && head.Key != nil:
+		buf.WriteRune('[')
+		buf.WriteString(head.Key.String())
+		buf.WriteRune(']')
 	}
 	if head.Value != nil {
 		if head.Assign {
-			buf = append(buf, ":=")
+			buf.WriteString(" := ")
 		} else {
-			buf = append(buf, "=")
+			buf.WriteString(" = ")
 		}
-		buf = append(buf, head.Value.String())
+		buf.WriteString(head.Value.String())
+	} else if head.Name == "" && head.Key != nil {
+		buf.WriteString(" contains ")
+		buf.WriteString(head.Key.String())
 	}
-	return strings.Join(buf, " ")
+	return buf.String()
+}
+
+func (head *Head) setJSONOptions(opts JSONOptions) {
+	head.jsonOptions = opts
+}
+
+func (head *Head) MarshalJSON() ([]byte, error) {
+	var loc *Location
+	if head.jsonOptions.MarshalOptions.IncludeLocation.Head {
+		if head.Location != nil {
+			loc = head.Location
+		}
+	}
+
+	// NOTE(sr): we do this to override the rendering of `head.Reference`.
+	// It's still what'll be used via the default means of encoding/json
+	// for unmarshaling a json object into a Head struct!
+	// NOTE(charlieegan3): we also need to optionally include the location
+	type h Head
+	return json.Marshal(struct {
+		h
+		Ref      Ref       `json:"ref"`
+		Location *Location `json:"location,omitempty"`
+	}{
+		h:        h(*head),
+		Ref:      head.Ref(),
+		Location: loc,
+	})
 }
 
 // Vars returns a set of vars found in the head.
@@ -682,6 +955,9 @@ func (head *Head) Vars() VarSet {
 	}
 	if head.Value != nil {
 		vis.Walk(head.Value)
+	}
+	if len(head.Reference) > 0 {
+		vis.Walk(head.Reference[1:])
 	}
 	return vis.vars
 }
@@ -709,7 +985,7 @@ func (a Args) Copy() Args {
 }
 
 func (a Args) String() string {
-	var buf []string
+	buf := make([]string, 0, len(a))
 	for _, t := range a {
 		buf = append(buf, t.String())
 	}
@@ -754,7 +1030,8 @@ func (body Body) MarshalJSON() ([]byte, error) {
 	if len(body) == 0 {
 		return []byte(`[]`), nil
 	}
-	return json.Marshal([]*Expr(body))
+	ret, err := json.Marshal([]*Expr(body))
+	return ret, err
 }
 
 // Append adds the expr to the body and updates the expr's index accordingly.
@@ -853,7 +1130,7 @@ func (body Body) SetLoc(loc *Location) {
 }
 
 func (body Body) String() string {
-	var buf []string
+	buf := make([]string, 0, len(body))
 	for _, v := range body {
 		buf = append(buf, v.String())
 	}
@@ -870,6 +1147,11 @@ func (body Body) Vars(params VarVisitorParams) VarSet {
 
 // NewExpr returns a new Expr object.
 func NewExpr(terms interface{}) *Expr {
+	switch terms.(type) {
+	case *SomeDecl, *Every, *Term, []*Term: // ok
+	default:
+		panic("unreachable")
+	}
 	return &Expr{
 		Negated: false,
 		Terms:   terms,
@@ -948,6 +1230,10 @@ func (expr *Expr) Compare(other *Expr) int {
 		if cmp := Compare(t, other.Terms.(*SomeDecl)); cmp != 0 {
 			return cmp
 		}
+	case *Every:
+		if cmp := Compare(t, other.Terms.(*Every)); cmp != 0 {
+			return cmp
+		}
 	}
 
 	return withSliceCompare(expr.With, other.With)
@@ -961,14 +1247,28 @@ func (expr *Expr) sortOrder() int {
 		return 1
 	case []*Term:
 		return 2
+	case *Every:
+		return 3
 	}
 	return -1
+}
+
+// CopyWithoutTerms returns a deep copy of expr without its Terms
+func (expr *Expr) CopyWithoutTerms() *Expr {
+	cpy := *expr
+
+	cpy.With = make([]*With, len(expr.With))
+	for i := range expr.With {
+		cpy.With[i] = expr.With[i].Copy()
+	}
+
+	return &cpy
 }
 
 // Copy returns a deep copy of expr.
 func (expr *Expr) Copy() *Expr {
 
-	cpy := *expr
+	cpy := expr.CopyWithoutTerms()
 
 	switch ts := expr.Terms.(type) {
 	case *SomeDecl:
@@ -981,14 +1281,11 @@ func (expr *Expr) Copy() *Expr {
 		cpy.Terms = cpyTs
 	case *Term:
 		cpy.Terms = ts.Copy()
+	case *Every:
+		cpy.Terms = ts.Copy()
 	}
 
-	cpy.With = make([]*With, len(expr.With))
-	for i := range expr.With {
-		cpy.With[i] = expr.With[i].Copy()
-	}
-
-	return &cpy
+	return cpy
 }
 
 // Hash returns the hash code of the Expr.
@@ -1029,12 +1326,12 @@ func (expr *Expr) NoWith() *Expr {
 
 // IsEquality returns true if this is an equality expression.
 func (expr *Expr) IsEquality() bool {
-	return isglobalbuiltin(expr, Var(Equality.Name))
+	return isGlobalBuiltin(expr, Var(Equality.Name))
 }
 
 // IsAssignment returns true if this an assignment expression.
 func (expr *Expr) IsAssignment() bool {
-	return isglobalbuiltin(expr, Var(Assign.Name))
+	return isGlobalBuiltin(expr, Var(Assign.Name))
 }
 
 // IsCall returns true if this expression calls a function.
@@ -1043,14 +1340,36 @@ func (expr *Expr) IsCall() bool {
 	return ok
 }
 
+// IsEvery returns true if this expression is an 'every' expression.
+func (expr *Expr) IsEvery() bool {
+	_, ok := expr.Terms.(*Every)
+	return ok
+}
+
+// IsSome returns true if this expression is a 'some' expression.
+func (expr *Expr) IsSome() bool {
+	_, ok := expr.Terms.(*SomeDecl)
+	return ok
+}
+
 // Operator returns the name of the function or built-in this expression refers
 // to. If this expression is not a function call, returns nil.
 func (expr *Expr) Operator() Ref {
+	op := expr.OperatorTerm()
+	if op == nil {
+		return nil
+	}
+	return op.Value.(Ref)
+}
+
+// OperatorTerm returns the name of the function or built-in this expression
+// refers to. If this expression is not a function call, returns nil.
+func (expr *Expr) OperatorTerm() *Term {
 	terms, ok := expr.Terms.([]*Term)
 	if !ok || len(terms) == 0 {
 		return nil
 	}
-	return terms[0].Value.(Ref)
+	return terms[0]
 }
 
 // Operand returns the term at the zero-based pos. If the expr does not include
@@ -1118,7 +1437,7 @@ func (expr *Expr) SetLoc(loc *Location) {
 }
 
 func (expr *Expr) String() string {
-	var buf []string
+	buf := make([]string, 0, 2+len(expr.With))
 	if expr.Negated {
 		buf = append(buf, "not")
 	}
@@ -1129,9 +1448,7 @@ func (expr *Expr) String() string {
 		} else {
 			buf = append(buf, Call(t).String())
 		}
-	case *Term:
-		buf = append(buf, t.String())
-	case *SomeDecl:
+	case fmt.Stringer:
 		buf = append(buf, t.String())
 	}
 
@@ -1140,6 +1457,37 @@ func (expr *Expr) String() string {
 	}
 
 	return strings.Join(buf, " ")
+}
+
+func (expr *Expr) setJSONOptions(opts JSONOptions) {
+	expr.jsonOptions = opts
+}
+
+func (expr *Expr) MarshalJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"terms": expr.Terms,
+		"index": expr.Index,
+	}
+
+	if len(expr.With) > 0 {
+		data["with"] = expr.With
+	}
+
+	if expr.Generated {
+		data["generated"] = true
+	}
+
+	if expr.Negated {
+		data["negated"] = true
+	}
+
+	if expr.jsonOptions.MarshalOptions.IncludeLocation.Expr {
+		if expr.Location != nil {
+			data["location"] = expr.Location
+		}
+	}
+
+	return json.Marshal(data)
 }
 
 // UnmarshalJSON parses the byte array and stores the result in expr.
@@ -1166,6 +1514,12 @@ func NewBuiltinExpr(terms ...*Term) *Expr {
 }
 
 func (d *SomeDecl) String() string {
+	if call, ok := d.Symbols[0].Value.(Call); ok {
+		if len(call) == 4 {
+			return "some " + call[1].String() + ", " + call[2].String() + " in " + call[3].String()
+		}
+		return "some " + call[1].String() + " in " + call[2].String()
+	}
 	buf := make([]string, len(d.Symbols))
 	for i := range buf {
 		buf[i] = d.Symbols[i].String()
@@ -1199,6 +1553,101 @@ func (d *SomeDecl) Compare(other *SomeDecl) int {
 // Hash returns a hash code of d.
 func (d *SomeDecl) Hash() int {
 	return termSliceHash(d.Symbols)
+}
+
+func (d *SomeDecl) setJSONOptions(opts JSONOptions) {
+	d.jsonOptions = opts
+}
+
+func (d *SomeDecl) MarshalJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"symbols": d.Symbols,
+	}
+
+	if d.jsonOptions.MarshalOptions.IncludeLocation.SomeDecl {
+		if d.Location != nil {
+			data["location"] = d.Location
+		}
+	}
+
+	return json.Marshal(data)
+}
+
+func (q *Every) String() string {
+	if q.Key != nil {
+		return fmt.Sprintf("every %s, %s in %s { %s }",
+			q.Key,
+			q.Value,
+			q.Domain,
+			q.Body)
+	}
+	return fmt.Sprintf("every %s in %s { %s }",
+		q.Value,
+		q.Domain,
+		q.Body)
+}
+
+func (q *Every) Loc() *Location {
+	return q.Location
+}
+
+func (q *Every) SetLoc(l *Location) {
+	q.Location = l
+}
+
+// Copy returns a deep copy of d.
+func (q *Every) Copy() *Every {
+	cpy := *q
+	cpy.Key = q.Key.Copy()
+	cpy.Value = q.Value.Copy()
+	cpy.Domain = q.Domain.Copy()
+	cpy.Body = q.Body.Copy()
+	return &cpy
+}
+
+func (q *Every) Compare(other *Every) int {
+	for _, terms := range [][2]*Term{
+		{q.Key, other.Key},
+		{q.Value, other.Value},
+		{q.Domain, other.Domain},
+	} {
+		if d := Compare(terms[0], terms[1]); d != 0 {
+			return d
+		}
+	}
+	return q.Body.Compare(other.Body)
+}
+
+// KeyValueVars returns the key and val arguments of an `every`
+// expression, if they are non-nil and not wildcards.
+func (q *Every) KeyValueVars() VarSet {
+	vis := &VarVisitor{vars: VarSet{}}
+	if q.Key != nil {
+		vis.Walk(q.Key)
+	}
+	vis.Walk(q.Value)
+	return vis.vars
+}
+
+func (q *Every) setJSONOptions(opts JSONOptions) {
+	q.jsonOptions = opts
+}
+
+func (q *Every) MarshalJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"key":    q.Key,
+		"value":  q.Value,
+		"domain": q.Domain,
+		"body":   q.Body,
+	}
+
+	if q.jsonOptions.MarshalOptions.IncludeLocation.Every {
+		if q.Location != nil {
+			data["location"] = q.Location
+		}
+	}
+
+	return json.Marshal(data)
 }
 
 func (w *With) String() string {
@@ -1259,6 +1708,25 @@ func (w *With) SetLoc(loc *Location) {
 	w.Location = loc
 }
 
+func (w *With) setJSONOptions(opts JSONOptions) {
+	w.jsonOptions = opts
+}
+
+func (w *With) MarshalJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"target": w.Target,
+		"value":  w.Value,
+	}
+
+	if w.jsonOptions.MarshalOptions.IncludeLocation.With {
+		if w.Location != nil {
+			data["location"] = w.Location
+		}
+	}
+
+	return json.Marshal(data)
+}
+
 // Copy returns a deep copy of the AST node x. If x is not an AST node, x is returned unmodified.
 func Copy(x interface{}) interface{} {
 	switch x := x.(type) {
@@ -1281,6 +1749,8 @@ func Copy(x interface{}) interface{} {
 	case *With:
 		return x.Copy()
 	case *SomeDecl:
+		return x.Copy()
+	case *Every:
 		return x.Copy()
 	case *Term:
 		return x.Copy()
@@ -1374,12 +1844,6 @@ func (rs RuleSet) String() string {
 	return "{" + strings.Join(buf, ", ") + "}"
 }
 
-type ruleSlice []*Rule
-
-func (s ruleSlice) Less(i, j int) bool { return Compare(s[i], s[j]) < 0 }
-func (s ruleSlice) Swap(i, j int)      { x := s[i]; s[i] = s[j]; s[j] = x }
-func (s ruleSlice) Len() int           { return len(s) }
-
 // Returns true if the equality or assignment expression referred to by expr
 // has a valid number of arguments.
 func validEqAssignArgCount(expr *Expr) bool {
@@ -1388,7 +1852,7 @@ func validEqAssignArgCount(expr *Expr) bool {
 
 // this function checks if the expr refers to a non-namespaced (global) built-in
 // function like eq, gt, plus, etc.
-func isglobalbuiltin(expr *Expr, name Var) bool {
+func isGlobalBuiltin(expr *Expr, name Var) bool {
 	terms, ok := expr.Terms.([]*Term)
 	if !ok {
 		return false
@@ -1399,9 +1863,9 @@ func isglobalbuiltin(expr *Expr, name Var) bool {
 	ref, ok := terms[0].Value.(Ref)
 	if !ok || len(ref) != 1 {
 		return false
-	} else if head, ok := ref[0].Value.(Var); !ok {
-		return false
-	} else {
+	}
+	if head, ok := ref[0].Value.(Var); ok {
 		return head.Equal(name)
 	}
+	return false
 }

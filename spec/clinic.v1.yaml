@@ -2296,11 +2296,6 @@ components:
       type: object
       title: bgmperiods.v1
       description: A map to each supported BGM summary period
-      required:
-        - 1d
-        - 7d
-        - 14d
-        - 30d
       additionalProperties:
         $ref: '#/components/schemas/PatientBGMPeriod'
     PatientBGMStats:
@@ -2593,11 +2588,6 @@ components:
       type: object
       title: cgmperiods.v1
       description: A map to each supported CGM summary period
-      required:
-        - 1d
-        - 7d
-        - 14d
-        - 30d
       additionalProperties:
         $ref: '#/components/schemas/PatientCGMPeriod'
     PatientCGMStats:
