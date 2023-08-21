@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/redox"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -116,17 +115,6 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	if matchedPatients != nil {
 		dto := NewPatientsDto(matchedPatients)
 		response.Patients = &dto
-	}
-	if update != nil {
-		action := &EHRMatchAction{}
-		if update.Name == patients.SummaryAndReportsSubscription && update.Active {
-			action.ActionType = ENABLESUMARYANDREPORTSSUBSCRIPTION
-		} else if update.Name == patients.SummaryAndReportsSubscription && !update.Active {
-			action.ActionType = DISABLESUMARYANDREPORTSSUBSCRIPTION
-		}
-		if action.ActionType != "" {
-			response.Action = action
-		}
 	}
 
 	return ec.JSON(http.StatusOK, response)

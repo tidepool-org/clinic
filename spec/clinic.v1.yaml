@@ -1407,7 +1407,7 @@ paths:
         - Redox
         - Internal
       x-internal: true
-      description: Internal endpoint for Redox chanallenge verification
+      description: Internal endpoint for Redox challenge verification
   '/v1/clinics/{clinicId}/settings/ehr':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1458,7 +1458,7 @@ paths:
       tags:
         - Clinics
         - Internal
-      description: |-
+      description: |
         An internal endpoint used for matching an EHR request (e.g. NewOrder) to a clinic and patient.
 
         If a clinic with the provided details cannot be found, the service will return `404 Not Found` and will not attempt to match patients to the provided details.
@@ -1466,8 +1466,6 @@ paths:
         Due to lack of uniqueness constraints on the MRN and DOB fields it's possible that multiple patient records match the provided attributes. All results will be returned in the response and it's the calling services responsiblity to determine how to handle duplicates records.
 
         If a unique match is found, the patient matching criteria will be added to the patient record for future use (e.g. pushing data on a schedule).
-
-        First name and last name will not be used for matching patients until those are stored in the database as separate attributes instead of a single `fullName` attribute. 
       requestBody:
         content:
           application/json:
@@ -2562,43 +2560,9 @@ components:
           $ref: '#/components/schemas/Patients'
         settings:
           $ref: '#/components/schemas/EHRSettings'
-        action:
-          $ref: '#/components/schemas/EHRMatchAction'
       required:
         - clinic
         - settings
-    EHRMatchPatientRequest:
-      title: EHRMatchPatientRequest
-      x-stoplight:
-        id: pypm1wrq7qljz
-      type: object
-      x-examples: {}
-      properties:
-        firstName:
-          type: string
-        middleName:
-          type: string
-        lastName:
-          type: string
-        mrn:
-          type: string
-        dateOfBirth:
-          type: string
-      required:
-        - mrn
-        - dateOfBirth
-    EHRMatchClinicRequest:
-      title: EHRMatchClinicRequest
-      x-stoplight:
-        id: k8zoii2rrerf4
-      type: object
-      properties:
-        facilityName:
-          type: string
-        sourceId:
-          type: string
-      required:
-        - sourceId
     MRNSettings:
       title: MRN Settings
       x-stoplight:
@@ -2671,19 +2635,6 @@ components:
         - dataModel
         - eventType
         - documentId
-    EHRMatchAction:
-      title: EHRMatchAction
-      x-stoplight:
-        id: ouyj6lwlrtzhc
-      type: object
-      properties:
-        actionType:
-          type: string
-          enum:
-            - ENABLE_SUMARY_AND_REPORTS_SUBSCRIPTION
-            - DISABLE_SUMARY_AND_REPORTS_SUBSCRIPTION
-      required:
-        - actionType
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
@@ -2804,8 +2755,12 @@ components:
       description: Retrieve clinics with enabled EHR integration
 tags:
   - name: Clinics
+    description: 'Manage clinics, clinians and patients.'
   - name: Confirmations
+    description: 'Manage confirmations for account creation, sharing invites, etc.'
   - name: Internal
+    description: APIs intended for internal use by Tidepool.
   - name: Redox
+    description: Public endpoints invoked by Redox.
 security:
   - sessionToken: []
