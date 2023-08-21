@@ -847,40 +847,47 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		return nil, errors.New("provided period is not one of the valid periods")
 	}
 
-	categories := [...]map[string]string{
+	type Category struct {
+		Heading    string
+		Field      string
+		Comparison string
+		Value      float64
+	}
+
+	categories := [...]Category{
 		{
-			"heading": "timeInVeryLowPercent",
-			"field":   "timeInVeryLowPercent",
-			"comp":    "$gt",
-			"val":     "0.01",
+			Heading:    "timeInVeryLowPercent",
+			Field:      "timeInVeryLowPercent",
+			Comparison: "$gt",
+			Value:      0.01,
 		},
 
 		{
-			"heading": "timeInLowPercent",
-			"field":   "timeInLowPercent",
-			"comp":    "$gt",
-			"val":     "0.04",
+			Heading:    "timeInLowPercent",
+			Field:      "timeInLowPercent",
+			Comparison: "$gt",
+			Value:      0.04,
 		},
 
 		{
-			"heading": "dropInTimeInTargetPercent",
-			"field":   "timeInTargetPercentDelta",
-			"comp":    "$gt",
-			"val":     "0.15",
+			Heading:    "dropInTimeInTargetPercent",
+			Field:      "timeInTargetPercentDelta",
+			Comparison: "$gt",
+			Value:      0.15,
 		},
 
 		{
-			"heading": "timeInTargetPercent",
-			"field":   "timeInTargetPercent",
-			"comp":    "$lt",
-			"val":     "0.7",
+			Heading:    "timeInTargetPercent",
+			Field:      "timeInTargetPercent",
+			Comparison: "$lt",
+			Value:      0.7,
 		},
 
 		{
-			"heading": "timeCGMUsePercent",
-			"field":   "timeCGMUsePercent",
-			"comp":    "$lt",
-			"val":     "0.7",
+			Heading:    "timeCGMUsePercent",
+			Field:      "timeCGMUsePercent",
+			Comparison: "$lt",
+			Value:      0.7,
 		},
 	}
 
@@ -918,21 +925,21 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 				"$gt":  params.CgmLastUploadDateFrom,
 				"$lte": params.CgmLastUploadDateTo,
 			},
-			"summary.cgmStats.periods." + *params.Period + "." + category["field"]: bson.M{category["comp"]: category["val"]},
+			"summary.cgmStats.periods." + *params.Period + "." + category.Field: bson.M{category.Comparison: category.Value},
 		}
 
-		fmt.Println("category", category["heading"], "selector:", selector)
+		fmt.Println("category", category.Heading, "selector:", selector)
 
 		opts := options.Find()
 		opts.SetLimit(int64(limit))
 
-		if category["comp"] == "$gt" {
+		if category.Comparison == "$gt" {
 			opts.SetSort(bson.D{
-				{"summary.cgmStats.periods." + *params.Period + "." + category["field"], -1},
+				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, -1},
 			})
 		} else {
 			opts.SetSort(bson.D{
-				{"summary.cgmStats.periods." + *params.Period + "." + category["field"], 1},
+				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, 1},
 			})
 		}
 
@@ -948,7 +955,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 		categoryResult := make([]TideResultPatient, 0, 25)
 		for _, patient := range patientsList {
-			fmt.Println("adding patient", patient.UserId, "to category", category["heading"])
+			fmt.Println("adding patient", patient.UserId, "to category", category.Heading)
 			exclusions = append(exclusions, patient.Id)
 
 			var patientTags []string
@@ -976,7 +983,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			})
 		}
 
-		(*tide.Results)[category["heading"]] = &categoryResult
+		(*tide.Results)[category.Heading] = &categoryResult
 
 		limit -= len(patientsList)
 		if limit < 1 {
