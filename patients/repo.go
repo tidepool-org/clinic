@@ -910,8 +910,6 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"_id": bson.M{"$nin": exclusions},
 		}
 
-		fmt.Println("selector for category", category, ":", selector)
-
 		opts := options.Find()
 		opts.SetLimit(int64(limit))
 
@@ -982,8 +980,6 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			},
 			"_id": bson.M{"$nin": exclusions},
 		}
-
-		fmt.Println("selector for category meetingTargets:", selector)
 
 		opts := options.Find()
 		opts.SetLimit(int64(limit))

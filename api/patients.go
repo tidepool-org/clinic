@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -33,9 +32,6 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 
 	var sorts []*store.Sort
 
-	fmt.Println("cgm lastUpload from/to params:", params.CgmLastUploadDateFrom, params.CgmLastUploadDateTo)
-	fmt.Println("bgm lastUpload from/to params:", params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
-
 	filter.CGM, err = ParseCGMSummaryFilters(params)
 	if err != nil {
 		return err
@@ -48,9 +44,6 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 
 	filter.CGMTime = ParseCGMSummaryDateFilters(params)
 	filter.BGMTime = ParseBGMSummaryDateFilters(params)
-
-	fmt.Println("cgm lastUpload from/to params:", filter.CGMTime)
-	fmt.Println("bgm lastUpload from/to params:", filter.BGMTime)
 
 	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period, params.OffsetPeriods)
 	if err != nil {
