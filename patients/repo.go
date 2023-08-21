@@ -913,7 +913,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		selector := bson.M{
 			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
-			"tags":     bson.M{"$in": tags},
+			"tags":     bson.M{"$all": tags},
 			"summary.cgmStats.dates.lastUploadDate": bson.M{
 				"$gt":  params.CgmLastUploadDateFrom,
 				"$lte": params.CgmLastUploadDateTo,
@@ -985,7 +985,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		selector := bson.M{
 			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
-			"tags":     bson.M{"$in": tags},
+			"tags":     bson.M{"$all": tags},
 			"summary.cgmStats.dates.lastUploadDate": bson.M{
 				"$gt":  params.CgmLastUploadDateFrom,
 				"$lte": params.CgmLastUploadDateTo,
