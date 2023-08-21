@@ -913,9 +913,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		selector := bson.M{
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$in": tags},
-			"summary.cgmStats.dates.lastUploadDate": bson.A{
-				bson.M{"$gt": params.CgmLastUploadDateFrom},
-				bson.M{"$lte": params.CgmLastUploadDateTo},
+			"summary.cgmStats.dates.lastUploadDate": bson.M{
+				"$gt":  params.CgmLastUploadDateFrom,
+				"$lte": params.CgmLastUploadDateTo,
 			},
 			"summary.cgmStats.periods." + *params.Period + "." + category["field"]: bson.M{category["comp"]: category["val"]},
 			"_id": bson.M{"$nin": exclusions},
@@ -988,9 +988,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		selector := bson.M{
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$in": tags},
-			"summary.cgmStats.dates.lastUploadDate": bson.A{
-				bson.M{"$gt": params.CgmLastUploadDateFrom},
-				bson.M{"$lte": params.CgmLastUploadDateTo},
+			"summary.cgmStats.dates.lastUploadDate": bson.M{
+				"$gt":  params.CgmLastUploadDateFrom,
+				"$lte": params.CgmLastUploadDateTo,
 			},
 			"_id": bson.M{"$nin": exclusions},
 		}
