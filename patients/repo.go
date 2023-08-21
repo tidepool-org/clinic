@@ -818,11 +818,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		return nil, errors.New("no tags provided")
 	}
 
-	tags := make([]primitive.ObjectID, 0, len(*params.Tags))
-	for _, tagId := range *params.Tags {
-		tagObjId, _ := primitive.ObjectIDFromHex(tagId)
-		tags = append(tags, tagObjId)
-	}
+	tags := store.ObjectIDSFromStringArray(*params.Tags)
 
 	if params.CgmLastUploadDateFrom == nil {
 		return nil, errors.New("no lastUploadDateFrom provided")
