@@ -708,6 +708,7 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		)
 	}
 
+	fmt.Println("final match selector:", selector)
 	return selector
 }
 
@@ -747,6 +748,8 @@ func generateListSortStage(sorts []*store.Sort) bson.D {
 	// See https://docs.mongodb.com/manual/reference/operator/aggregation/skip/
 	// for more details
 	s = append(s, bson.E{Key: "_id", Value: 1})
+
+	fmt.Println("final sort selector:", s)
 
 	return s
 }
@@ -907,6 +910,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"_id": bson.M{"$nin": exclusions},
 		}
 
+		fmt.Println("selector for category", category, ":", selector)
+
 		opts := options.Find()
 		opts.SetLimit(int64(limit))
 
@@ -977,6 +982,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			},
 			"_id": bson.M{"$nin": exclusions},
 		}
+
+		fmt.Println("selector for category meetingTargets:", selector)
 
 		opts := options.Find()
 		opts.SetLimit(int64(limit))
