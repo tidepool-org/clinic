@@ -78,6 +78,7 @@ type Clinic struct {
 	Tier                    string                   `bson:"tier,omitempty"`
 	PreferredBgUnits        string                   `bson:"PreferredBgUnits,omitempty"`
 	SuppressedNotifications SuppressedNotifications  `bson:"suppressedNotifications"`
+	Timezone                *string                  `bson:"timezone"`
 	MembershipRestrictions  []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
 	EHRSettings             *EHRSettings             `bson:"ehrSettings,omitempty"`
 	MRNSettings             *MRNSettings             `bson:"mrnSettings,omitempty"`

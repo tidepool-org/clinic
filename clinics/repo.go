@@ -2,6 +2,7 @@ package clinics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -76,7 +77,7 @@ func (c *repository) Get(ctx context.Context, id string) (*Clinic, error) {
 
 	clinic := &Clinic{}
 	err := c.collection.FindOne(ctx, selector).Decode(&clinic)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, err
@@ -199,7 +200,7 @@ func (c *repository) Delete(ctx context.Context, clinicId string) error {
 	}
 
 	err = c.collection.FindOneAndDelete(ctx, selector).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
@@ -248,7 +249,7 @@ func (c *repository) UpdateTier(ctx context.Context, id, tier string) error {
 		},
 	}
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
@@ -266,7 +267,7 @@ func (c *repository) UpdateSuppressedNotifications(ctx context.Context, id strin
 		},
 	}
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
@@ -304,7 +305,7 @@ func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (
 
 	updateErr := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if updateErr != nil {
-		if updateErr == mongo.ErrNoDocuments {
+		if errors.Is(updateErr, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, updateErr
@@ -342,7 +343,7 @@ func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 
 	updateErr := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if updateErr != nil {
-		if updateErr == mongo.ErrNoDocuments {
+		if errors.Is(updateErr, mongo.ErrNoDocuments) {
 			return nil, ErrPatientTagNotFound
 		}
 		return nil, updateErr
@@ -368,7 +369,7 @@ func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*C
 
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, err
@@ -398,7 +399,7 @@ func (c *repository) UpdateMembershipRestrictions(ctx context.Context, id string
 	}
 
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
@@ -426,7 +427,7 @@ func (c *repository) UpdateEHRSettings(ctx context.Context, id string, settings 
 	}
 
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
@@ -454,7 +455,7 @@ func (c *repository) UpdateMRNSettings(ctx context.Context, id string, settings 
 	}
 
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
