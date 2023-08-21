@@ -812,8 +812,19 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 }
 
 func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
+	if clinicId == "" {
+		return nil, errors.New("empty clinicId provided")
+	}
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+
 	if params.Tags == nil || len(*params.Tags) < 1 {
 		return nil, errors.New("no tags provided")
+	}
+
+	tags := make([]primitive.ObjectID, 0, len(*params.Tags))
+	for _, tagId := range *params.Tags {
+		tagObjId, _ := primitive.ObjectIDFromHex(tagId)
+		tags = append(tags, tagObjId)
 	}
 
 	if params.CgmLastUploadDateFrom == nil {
@@ -900,8 +911,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 	for _, category := range categories {
 		selector := bson.M{
-			"clinicId": clinicId,
-			"tags":     bson.M{"$in": params.Tags},
+			"clinicId": clinicObjId,
+			"tags":     bson.M{"$in": tags},
 			"summary.cgmStats.dates.lastUploadDate": bson.A{
 				bson.M{"$gt": params.CgmLastUploadDateFrom},
 				bson.M{"$lte": params.CgmLastUploadDateTo},
@@ -975,8 +986,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 	if limit > 0 {
 		selector := bson.M{
-			"clinicId": clinicId,
-			"tags":     bson.M{"$in": params.Tags},
+			"clinicId": clinicObjId,
+			"tags":     bson.M{"$in": tags},
 			"summary.cgmStats.dates.lastUploadDate": bson.A{
 				bson.M{"$gt": params.CgmLastUploadDateFrom},
 				bson.M{"$lte": params.CgmLastUploadDateTo},
