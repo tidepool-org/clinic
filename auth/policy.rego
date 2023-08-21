@@ -530,10 +530,18 @@ allow {
 }
 
 # Allow clinic members to fetch mrn settings
-# GET /v1/clinics/:clinicId/settings/men
+# GET /v1/clinics/:clinicId/settings/mrn
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "settings", "mrn"]
+  clinician_has_read_access
+}
+
+# Allow clinic members to fetch ehr settings
+# GET /v1/clinics/:clinicId/settings/ehr
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "settings", "ehr"]
   clinician_has_read_access
 }
 
