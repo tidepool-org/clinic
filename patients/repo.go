@@ -910,6 +910,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"_id": bson.M{"$nin": exclusions},
 		}
 
+		fmt.Println("category", category["heading"], "selector:", selector)
+
 		opts := options.Find()
 		opts.SetLimit(int64(limit))
 
@@ -935,6 +937,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 		categoryResult := make([]TideResultPatient, 0, 25)
 		for _, patient := range patientsList {
+			fmt.Println("adding patient", patient.UserId, "to category", category["heading"])
 			exclusions = append(exclusions, patient.Id)
 
 			var tags []string
@@ -981,6 +984,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"_id": bson.M{"$nin": exclusions},
 		}
 
+		fmt.Println("category meetingTarget selector:", selector)
+
 		opts := options.Find()
 		opts.SetLimit(int64(limit))
 
@@ -1000,6 +1005,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 		categoryResult := make([]TideResultPatient, 0, 25)
 		for _, patient := range patientsList {
+			fmt.Println("adding patient", patient.UserId, "to category meetingTarget")
+
 			var tags []string
 			for _, tag := range *patient.Tags {
 				tags = append(tags, tag.String())
