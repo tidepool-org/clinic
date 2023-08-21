@@ -911,6 +911,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 	for _, category := range categories {
 		selector := bson.M{
+			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$in": tags},
 			"summary.cgmStats.dates.lastUploadDate": bson.M{
@@ -918,7 +919,6 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 				"$lte": params.CgmLastUploadDateTo,
 			},
 			"summary.cgmStats.periods." + *params.Period + "." + category["field"]: bson.M{category["comp"]: category["val"]},
-			"_id": bson.M{"$nin": exclusions},
 		}
 
 		fmt.Println("category", category["heading"], "selector:", selector)
@@ -951,9 +951,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			fmt.Println("adding patient", patient.UserId, "to category", category["heading"])
 			exclusions = append(exclusions, patient.Id)
 
-			var tags []string
+			var patientTags []string
 			for _, tag := range *patient.Tags {
-				tags = append(tags, tag.String())
+				patientTags = append(patientTags, tag.String())
 			}
 
 			categoryResult = append(categoryResult, TideResultPatient{
@@ -961,7 +961,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 					Email:    patient.Email,
 					FullName: patient.FullName,
 					Id:       patient.UserId,
-					Tags:     &tags,
+					Tags:     &patientTags,
 				},
 				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
 				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
@@ -986,13 +986,13 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 	if limit > 0 {
 		selector := bson.M{
+			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$in": tags},
 			"summary.cgmStats.dates.lastUploadDate": bson.M{
 				"$gt":  params.CgmLastUploadDateFrom,
 				"$lte": params.CgmLastUploadDateTo,
 			},
-			"_id": bson.M{"$nin": exclusions},
 		}
 
 		fmt.Println("category meetingTarget selector:", selector)
@@ -1018,9 +1018,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		for _, patient := range patientsList {
 			fmt.Println("adding patient", patient.UserId, "to category meetingTarget")
 
-			var tags []string
+			var patientTags []string
 			for _, tag := range *patient.Tags {
-				tags = append(tags, tag.String())
+				patientTags = append(patientTags, tag.String())
 			}
 
 			categoryResult = append(categoryResult, TideResultPatient{
@@ -1028,7 +1028,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 					Email:    patient.Email,
 					FullName: patient.FullName,
 					Id:       patient.UserId,
-					Tags:     &tags,
+					Tags:     &patientTags,
 				},
 				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
 				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
