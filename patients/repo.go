@@ -708,7 +708,6 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		)
 	}
 
-	fmt.Println("final match selector:", selector)
 	return selector
 }
 
@@ -748,8 +747,6 @@ func generateListSortStage(sorts []*store.Sort) bson.D {
 	// See https://docs.mongodb.com/manual/reference/operator/aggregation/skip/
 	// for more details
 	s = append(s, bson.E{Key: "_id", Value: 1})
-
-	fmt.Println("final sort selector:", s)
 
 	return s
 }
@@ -861,28 +858,24 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			Comparison: "$gt",
 			Value:      0.01,
 		},
-
 		{
 			Heading:    "timeInLowPercent",
 			Field:      "timeInLowPercent",
 			Comparison: "$gt",
 			Value:      0.04,
 		},
-
 		{
 			Heading:    "dropInTimeInTargetPercent",
 			Field:      "timeInTargetPercentDelta",
-			Comparison: "$gt",
-			Value:      0.15,
+			Comparison: "$lt",
+			Value:      -0.15,
 		},
-
 		{
 			Heading:    "timeInTargetPercent",
 			Field:      "timeInTargetPercent",
 			Comparison: "$lt",
 			Value:      0.7,
 		},
-
 		{
 			Heading:    "timeCGMUsePercent",
 			Field:      "timeCGMUsePercent",
@@ -899,7 +892,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			Filters: &TideFilters{
 				TimeInVeryLowPercent:      ptr(">0.01"),
 				TimeInLowPercent:          ptr(">0.04"),
-				DropInTimeInTargetPercent: ptr(">0.15"),
+				DropInTimeInTargetPercent: ptr("<-0.15"),
 				TimeInTargetPercent:       ptr("<0.7"),
 				TimeCGMUsePercent:         ptr("<0.7"),
 			},
@@ -928,8 +921,6 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"summary.cgmStats.periods." + *params.Period + "." + category.Field: bson.M{category.Comparison: category.Value},
 		}
 
-		fmt.Println("category", category.Heading, "selector:", selector)
-
 		opts := options.Find()
 		opts.SetLimit(int64(limit))
 
@@ -955,7 +946,6 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 		categoryResult := make([]TideResultPatient, 0, 25)
 		for _, patient := range patientsList {
-			fmt.Println("adding patient", patient.UserId, "to category", category.Heading)
 			exclusions = append(exclusions, patient.Id)
 
 			var patientTags []string
@@ -1002,8 +992,6 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			},
 		}
 
-		fmt.Println("category meetingTarget selector:", selector)
-
 		opts := options.Find()
 		opts.SetLimit(int64(limit))
 
@@ -1023,8 +1011,6 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 		categoryResult := make([]TideResultPatient, 0, 25)
 		for _, patient := range patientsList {
-			fmt.Println("adding patient", patient.UserId, "to category meetingTarget")
-
 			var patientTags []string
 			for _, tag := range *patient.Tags {
 				patientTags = append(patientTags, tag.String())
