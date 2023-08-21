@@ -946,7 +946,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 			var patientTags []string
 			for _, tag := range *patient.Tags {
-				patientTags = append(patientTags, tag.String())
+				patientTags = append(patientTags, tag.Hex())
 			}
 
 			categoryResult = append(categoryResult, TideResultPatient{
@@ -1009,7 +1009,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		for _, patient := range patientsList {
 			var patientTags []string
 			for _, tag := range *patient.Tags {
-				patientTags = append(patientTags, tag.String())
+				patientTags = append(patientTags, tag.Hex())
 			}
 
 			categoryResult = append(categoryResult, TideResultPatient{
