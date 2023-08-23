@@ -817,14 +817,13 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	if params.Tags == nil || len(*params.Tags) < 1 {
 		return nil, errors.New("no tags provided")
 	}
-
 	tags := store.ObjectIDSFromStringArray(*params.Tags)
 
-	if params.CgmLastUploadDateFrom == nil {
+	if params.CgmLastUploadDateFrom == nil || params.CgmLastUploadDateFrom.IsZero() {
 		return nil, errors.New("no lastUploadDateFrom provided")
 	}
 
-	if params.CgmLastUploadDateTo == nil {
+	if params.CgmLastUploadDateTo == nil || params.CgmLastUploadDateTo.IsZero() {
 		return nil, errors.New("no lastUploadDateTo provided")
 	}
 
