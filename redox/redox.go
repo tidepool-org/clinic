@@ -28,7 +28,7 @@ const (
 )
 
 type Config struct {
-	VerificationToken string `envconfig:"TIDEPOOL_REDOX_VERIFICATION_TOKEN" required:"true"`
+	VerificationToken string `envconfig:"TIDEPOOL_REDOX_VERIFICATION_TOKEN"`
 }
 
 type Redox interface {
