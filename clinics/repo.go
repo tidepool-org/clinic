@@ -2,6 +2,7 @@ package clinics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -56,6 +57,16 @@ func (c *repository) Initialize(ctx context.Context) error {
 				SetUnique(true).
 				SetName("UniqueCanonicalShareCode"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "ehrSettings.sourceId", Value: 1},
+				{Key: "ehrSettings.facility.name", Value: 1},
+			},
+			Options: options.Index().
+				SetUnique(true).
+				SetName("UniqueEHRSourceFacility").
+				SetPartialFilterExpression(bson.D{{"ehrSettings.sourceId", bson.M{"$exists": true}}}),
+		},
 	})
 	return err
 }
@@ -66,7 +77,7 @@ func (c *repository) Get(ctx context.Context, id string) (*Clinic, error) {
 
 	clinic := &Clinic{}
 	err := c.collection.FindOne(ctx, selector).Decode(&clinic)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, err
@@ -91,6 +102,15 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 		selector["shareCodes"] = bson.M{
 			"$in": filter.ShareCodes,
 		}
+	}
+	if filter.EHRSourceId != nil {
+		selector["ehrSettings.sourceId"] = filter.EHRSourceId
+	}
+	if filter.EHRFacilityName != nil {
+		selector["ehrSettings.facility.name"] = filter.EHRFacilityName
+	}
+	if filter.EHREnabled != nil {
+		selector["ehrSettings.enabled"] = filter.EHREnabled
 	}
 
 	createdTime := bson.M{}
@@ -180,7 +200,7 @@ func (c *repository) Delete(ctx context.Context, clinicId string) error {
 	}
 
 	err = c.collection.FindOneAndDelete(ctx, selector).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
@@ -229,7 +249,7 @@ func (c *repository) UpdateTier(ctx context.Context, id, tier string) error {
 		},
 	}
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
@@ -247,7 +267,7 @@ func (c *repository) UpdateSuppressedNotifications(ctx context.Context, id strin
 		},
 	}
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 
@@ -285,7 +305,7 @@ func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (
 
 	updateErr := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if updateErr != nil {
-		if updateErr == mongo.ErrNoDocuments {
+		if errors.Is(updateErr, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, updateErr
@@ -323,7 +343,7 @@ func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 
 	updateErr := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if updateErr != nil {
-		if updateErr == mongo.ErrNoDocuments {
+		if errors.Is(updateErr, mongo.ErrNoDocuments) {
 			return nil, ErrPatientTagNotFound
 		}
 		return nil, updateErr
@@ -349,7 +369,7 @@ func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*C
 
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, err
@@ -379,7 +399,63 @@ func (c *repository) UpdateMembershipRestrictions(ctx context.Context, id string
 	}
 
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return ErrNotFound
+	}
+
+	return err
+}
+
+func (c *repository) GetEHRSettings(ctx context.Context, clinicId string) (*EHRSettings, error) {
+	clinic, err := c.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	return clinic.EHRSettings, nil
+}
+
+func (c *repository) UpdateEHRSettings(ctx context.Context, id string, settings *EHRSettings) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+			"ehrSettings": settings,
+		},
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return ErrNotFound
+	}
+
+	return err
+}
+
+func (c *repository) GetMRNSettings(ctx context.Context, clinicId string) (*MRNSettings, error) {
+	clinic, err := c.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	return clinic.MRNSettings, nil
+}
+
+func (c *repository) UpdateMRNSettings(ctx context.Context, id string, settings *MRNSettings) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+			"mrnSettings": settings,
+		},
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return ErrNotFound
 	}
 

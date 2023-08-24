@@ -10,6 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const (
+	DefaultMrnIdType = "MRN"
+)
+
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
 var ErrPatientTagNotFound = fmt.Errorf("patient tag %w", errors.NotFound)
 var ErrDuplicatePatientTagName = fmt.Errorf("%w patient tag", errors.Duplicate)
@@ -17,6 +21,8 @@ var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin", errors.ConstraintViolation)
 var MaximumPatientTags = 20
 var ErrMaximumPatientTagsExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %v patient tags", errors.ConstraintViolation, MaximumPatientTags)
+
+//go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockRepository
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -33,6 +39,10 @@ type Service interface {
 	DeletePatientTag(ctx context.Context, clinicId, tagId string) (*Clinic, error)
 	ListMembershipRestrictions(ctx context.Context, clinicId string) ([]MembershipRestrictions, error)
 	UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error
+	GetEHRSettings(ctx context.Context, clinicId string) (*EHRSettings, error)
+	UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error
+	GetMRNSettings(ctx context.Context, clinicId string) (*MRNSettings, error)
+	UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error
 }
 
 type Filter struct {
@@ -41,31 +51,73 @@ type Filter struct {
 	ShareCodes       []string
 	CreatedTimeStart *time.Time
 	CreatedTimeEnd   *time.Time
+	EHRSourceId      *string
+	EHRFacilityName  *string
+	EHREnabled       *bool
 }
 
 type Clinic struct {
-	Id                      *primitive.ObjectID     `bson:"_id,omitempty"`
-	Address                 *string                 `bson:"address,omitempty"`
-	City                    *string                 `bson:"city,omitempty"`
-	ClinicType              *string                 `bson:"clinicType,omitempty"`
-	ClinicSize              *string                 `bson:"clinicSize,omitempty"`
-	Country                 *string                 `bson:"country,omitempty"`
-	Name                    *string                 `bson:"name,omitempty"`
-	PatientTags             []PatientTag            `bson:"patientTags,omitempty"`
-	PhoneNumbers            *[]PhoneNumber          `bson:"phoneNumbers,omitempty"`
-	PostalCode              *string                 `bson:"postalCode,omitempty"`
-	State                   *string                 `bson:"state,omitempty"`
-	CanonicalShareCode      *string                 `bson:"canonicalShareCode,omitempty"`
-	Website                 *string                 `bson:"website,omitempty"`
-	ShareCodes              *[]string               `bson:"shareCodes,omitempty"`
-	Admins                  *[]string               `bson:"admins,omitempty"`
-	CreatedTime             time.Time               `bson:"createdTime,omitempty"`
-	UpdatedTime             time.Time               `bson:"updatedTime,omitempty"`
-	IsMigrated              bool                    `bson:"isMigrated,omitempty"`
-	Tier                    string                  `bson:"tier,omitempty"`
-	PreferredBgUnits        string                  `bson:"PreferredBgUnits,omitempty"`
-	SuppressedNotifications SuppressedNotifications `bson:"suppressedNotifications"`
-	MembershipRestrictions []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
+	Id                      *primitive.ObjectID      `bson:"_id,omitempty"`
+	Address                 *string                  `bson:"address,omitempty"`
+	City                    *string                  `bson:"city,omitempty"`
+	ClinicType              *string                  `bson:"clinicType,omitempty"`
+	ClinicSize              *string                  `bson:"clinicSize,omitempty"`
+	Country                 *string                  `bson:"country,omitempty"`
+	Name                    *string                  `bson:"name,omitempty"`
+	PatientTags             []PatientTag             `bson:"patientTags,omitempty"`
+	PhoneNumbers            *[]PhoneNumber           `bson:"phoneNumbers,omitempty"`
+	PostalCode              *string                  `bson:"postalCode,omitempty"`
+	State                   *string                  `bson:"state,omitempty"`
+	CanonicalShareCode      *string                  `bson:"canonicalShareCode,omitempty"`
+	Website                 *string                  `bson:"website,omitempty"`
+	ShareCodes              *[]string                `bson:"shareCodes,omitempty"`
+	Admins                  *[]string                `bson:"admins,omitempty"`
+	CreatedTime             time.Time                `bson:"createdTime,omitempty"`
+	UpdatedTime             time.Time                `bson:"updatedTime,omitempty"`
+	IsMigrated              bool                     `bson:"isMigrated,omitempty"`
+	Tier                    string                   `bson:"tier,omitempty"`
+	PreferredBgUnits        string                   `bson:"PreferredBgUnits,omitempty"`
+	SuppressedNotifications SuppressedNotifications  `bson:"suppressedNotifications"`
+	Timezone                *string                  `bson:"timezone"`
+	MembershipRestrictions  []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
+	EHRSettings             *EHRSettings             `bson:"ehrSettings,omitempty"`
+	MRNSettings             *MRNSettings             `bson:"mrnSettings,omitempty"`
+}
+
+type EHRSettings struct {
+	Enabled        bool              `bson:"enabled"`
+	DestinationIds EHRDestinationIds `bson:"destinationIds"`
+	Facility       *EHRFacility      `bson:"facility"`
+	ProcedureCodes EHRProcedureCodes `bson:"procedureCodes"`
+	SourceId       string            `bson:"sourceId"`
+	MrnIdType      string            `bson:"mrnIdType"`
+}
+
+func (e *EHRSettings) GetMrnIDType() string {
+	if e.MrnIdType == "" {
+		return DefaultMrnIdType
+	}
+	return e.MrnIdType
+}
+
+type EHRFacility struct {
+	Name string `bson:"name"`
+}
+
+type EHRDestinationIds struct {
+	Flowsheet string `bson:"flowsheet"`
+	Notes     string `bson:"notes"`
+	Results   string `bson:"results"`
+}
+
+type EHRProcedureCodes struct {
+	EnableSummaryReports  string `bson:"enableSummaryReports"`
+	DisableSummaryReports string `bson:"disableSummaryReports"`
+}
+
+type MRNSettings struct {
+	Required bool `bson:"required"`
+	Unique   bool `bson:"unique"`
 }
 
 func NewClinic() Clinic {

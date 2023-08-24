@@ -10,6 +10,7 @@ var (
 	Duplicate           = HttpError{http.StatusConflict, errors.New("duplicate")}
 	ConstraintViolation = HttpError{http.StatusUnprocessableEntity, errors.New("constraint violation")}
 	BadRequest          = HttpError{http.StatusBadRequest, errors.New("bad request")}
+	Unauthorized        = HttpError{http.StatusUnauthorized, errors.New("unauthorized")}
 )
 
 type HttpError struct {

@@ -520,3 +520,59 @@ allow {
   input.path = ["v1", "clinics", _, "membership_restrictions"]
   clinician_has_write_access
 }
+
+# Allow services to fetch clinics settings
+# GET /v1/clinics/:clinicId/settings/:settings
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "settings", _]
+  is_backend_service
+}
+
+# Allow clinic members to fetch mrn settings
+# GET /v1/clinics/:clinicId/settings/mrn
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "settings", "mrn"]
+  clinician_has_read_access
+}
+
+# Allow clinic members to fetch ehr settings
+# GET /v1/clinics/:clinicId/settings/ehr
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "settings", "ehr"]
+  clinician_has_read_access
+}
+
+# Allow services to update clinics settings
+# GET /v1/clinics/:clinicId/settings/:settings
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "settings", _]
+  is_backend_service
+}
+
+# Allow services to update clinics settings
+# GET /v1/clinics/:clinicId/settings/:settings
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "settings", _]
+  is_backend_service
+}
+
+# Allow services to match EHR patients
+# GET /v1/redox/match
+allow {
+  input.method == "POST"
+  input.path = ["v1", "redox", "match"]
+  is_backend_service
+}
+
+# Allow services to trigger EHR data sync
+# GET /v1/clinics/:clinicId/ehr/sync
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "ehr", "sync"]
+  is_backend_service
+}

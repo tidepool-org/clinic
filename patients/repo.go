@@ -117,6 +117,24 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetName("DataSourcesState"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "mrn", Value: 1},
+				// The field is not used and only set here to allow the creation of
+				// a second index on (clinicId, mrn) but with different options
+				{Key: "_na", Value: 1},
+			},
+			Options: options.Index().
+				// Enforce unique constraints when the MRN is present and when uniqueness is enabled
+				// for the patient of the clinic (based on the clinic settings)
+				SetName("UniqueMrn").
+				SetUnique(true).
+				SetPartialFilterExpression(bson.D{
+					{"mrn", bson.M{"$type": "string"}},
+					{"requireUniqueMrn", bson.M{"$eq": true}},
+				}),
+		},
 	})
 	return err
 }
@@ -283,7 +301,7 @@ func (r *repository) UpdateEmail(ctx context.Context, userId string, email *stri
 
 	result, err := r.collection.UpdateMany(ctx, selector, update)
 	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
-		err = fmt.Errorf("partially updated %v out of %v clinician records: %w", result.ModifiedCount, result.MatchedCount, err)
+		err = fmt.Errorf("partially updated %v out of %v patient records: %w", result.ModifiedCount, result.MatchedCount, err)
 	}
 	if err != nil {
 		r.logger.Errorw("error updating patient emails", "error", err, "userId", userId)
@@ -488,6 +506,60 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
+func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	activeSubscriptionKey := fmt.Sprintf("ehrSubscriptions.%s.active", subscription)
+	matchedMessagesSubscriptionKey := fmt.Sprintf("$ehrSubscriptions.%s.matchedMessages", subscription)
+
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"clinicId":            clinicObjId,
+				activeSubscriptionKey: true,
+			},
+		},
+		{
+			"$addFields": bson.M{
+				"lastMatchedOrderRef": bson.M{
+					"$arrayElemAt": bson.A{matchedMessagesSubscriptionKey, -1},
+				},
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         ordersCollection,
+				"localField":   "lastMatchedOrderRef.id",
+				"foreignField": "_id",
+				"as":           "lastMatchedOrder",
+			},
+		},
+		{
+			"$replaceRoot": bson.M{
+				"newRoot": bson.M{
+					"userId":      "$userId",
+					"clinicId":    "$clinicId",
+					"createdTime": time.Now(),
+					"lastMatchedOrder": bson.M{
+						"$arrayElemAt": bson.A{"$lastMatchedOrder", 0},
+					},
+				},
+			},
+		},
+		{
+			"$merge": bson.M{
+				"into": targetCollection,
+			},
+		},
+	}
+
+	_, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return fmt.Errorf("error rescheduling subscription %s for clinic %s: %w", subscription, clinicId, err)
+	}
+
+	return nil
+}
+
 func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patient) error {
 	selector := bson.M{
 		"clinicId": patient.ClinicId,
@@ -611,6 +683,50 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	return nil
 }
 
+func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patientId string, update SubscriptionUpdate) error {
+	patient, err := r.Get(ctx, clinicId, patientId)
+	if err != nil {
+		return err
+	}
+
+	if patient.UserId == nil || *patient.UserId == "" || patient.ClinicId == nil {
+		return fmt.Errorf("patient is missing required fields")
+	}
+
+	selector := bson.M{
+		"userId":      patient.UserId,
+		"clinicId":    patient.ClinicId,
+		"updatedTime": patient.UpdatedTime,
+	}
+
+	subscriptions := patient.EHRSubscriptions
+	if subscriptions == nil {
+		subscriptions = make(map[string]EHRSubscription)
+	}
+
+	subscription, ok := subscriptions[update.Name]
+	if !ok {
+		subscription = EHRSubscription{}
+	}
+
+	subscription.Active = update.Active
+	subscription.MatchedMessages = append(subscription.MatchedMessages, update.MatchedMessage)
+	subscriptions[update.Name] = subscription
+
+	res, err := r.collection.UpdateOne(ctx, selector, bson.M{
+		"$set": bson.M{
+			"ehrSubscriptions": subscriptions,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("no patient found to update")
+	}
+	return nil
+}
+
 func generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
 	if filter.ClinicId != nil {
@@ -620,6 +736,12 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 	if filter.UserId != nil {
 		selector["userId"] = filter.UserId
+	}
+	if filter.Mrn != nil {
+		selector["mrn"] = filter.Mrn
+	}
+	if filter.BirthDate != nil {
+		selector["birthDate"] = filter.BirthDate
 	}
 	if filter.Search != nil {
 		search := regexp.QuoteMeta(*filter.Search)
