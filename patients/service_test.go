@@ -9,7 +9,8 @@ import (
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/patients/test"
+	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
@@ -17,7 +18,7 @@ import (
 var _ = Describe("Patients Service", func() {
 	var service patients.Service
 	var clinicsService *clinicsTest.MockService
-	var repo *test.MockRepository
+	var repo *patientsTest.MockRepository
 	var repoCtrl *gomock.Controller
 	var clinicsCtrl *gomock.Controller
 
@@ -25,7 +26,7 @@ var _ = Describe("Patients Service", func() {
 		repoCtrl = gomock.NewController(GinkgoT())
 		clinicsCtrl = gomock.NewController(GinkgoT())
 
-		repo = test.NewMockRepository(repoCtrl)
+		repo = patientsTest.NewMockRepository(repoCtrl)
 		clinicsService = clinicsTest.NewMockService(clinicsCtrl)
 
 		var err error
@@ -46,7 +47,7 @@ var _ = Describe("Patients Service", func() {
 		BeforeEach(func() {
 			clinicId, _ = primitive.ObjectIDFromHex("60d1dc0eac5285751add8f82")
 			patientId := primitive.NewObjectID()
-			randomPatient = test.RandomPatient()
+			randomPatient = patientsTest.RandomPatient()
 			randomPatient.Id = &patientId
 			randomPatient.ClinicId = &clinicId
 			randomPatient.Permissions = &patients.Permissions{
@@ -124,7 +125,7 @@ var _ = Describe("Patients Service", func() {
 				expected := create
 				expected.RequireUniqueMrn = true
 
-				existing := test.RandomPatient()
+				existing := patientsTest.RandomPatient()
 				existing.Mrn = create.Mrn
 
 				repo.EXPECT().
@@ -145,7 +146,7 @@ var _ = Describe("Patients Service", func() {
 		var update patients.PatientUpdate
 
 		BeforeEach(func() {
-			update = test.RandomPatientUpdate()
+			update = patientsTest.RandomPatientUpdate()
 			update.Patient.Permissions = &patients.Permissions{
 				Upload: &patients.Permission{},
 			}
@@ -215,7 +216,7 @@ var _ = Describe("Patients Service", func() {
 			})
 
 			It("returns an error if a patient with the same mrn exists in the repository", func() {
-				existing := test.RandomPatient()
+				existing := patientsTest.RandomPatient()
 				existing.Mrn = update.Patient.Mrn
 
 				repo.EXPECT().
@@ -228,6 +229,44 @@ var _ = Describe("Patients Service", func() {
 				updatedPatient, err := service.Update(nil, update)
 				Expect(err).To(MatchError("bad request: mrn must be unique"))
 				Expect(updatedPatient).To(BeNil())
+			})
+		})
+
+		When("there are active subscriptions", func() {
+			var randomPatient patients.Patient
+
+			BeforeEach(func() {
+				randomPatient = patientsTest.RandomPatient()
+				randomPatient.EHRSubscriptions = patientsTest.RandomSubscriptions()
+				randomPatient.Permissions.Custodian = nil
+
+				repo.
+					EXPECT().
+					Get(gomock.Any(), gomock.Eq(update.ClinicId), gomock.Eq(update.UserId)).
+					Return(&randomPatient, nil)
+				clinicsService.
+					EXPECT().
+					GetMRNSettings(gomock.Any(), gomock.Eq(update.ClinicId)).
+					Return(nil, nil)
+			})
+
+			It("deactivates subscriptions if patients mrn has changed", func() {
+				repo.EXPECT().
+					Update(gomock.Any(), gomock.All(test.Match[patients.PatientUpdate](func(update patients.PatientUpdate) bool {
+						if len(update.Patient.EHRSubscriptions) == 0 {
+							return false
+						}
+						for _, sub := range update.Patient.EHRSubscriptions {
+							if sub.Active == true {
+								return false
+							}
+						}
+						return true
+					}))).Return(&update.Patient, nil)
+
+				updatedPatient, err := service.Update(nil, update)
+				Expect(err).To(BeNil())
+				Expect(updatedPatient).ToNot(BeNil())
 			})
 		})
 	})
