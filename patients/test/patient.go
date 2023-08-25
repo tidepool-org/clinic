@@ -36,6 +36,19 @@ func RandomPatient() patients.Patient {
 	}
 }
 
+func RandomSubscriptions() patients.EHRSubscriptions {
+	subs := make(patients.EHRSubscriptions)
+	subs[patients.SummaryAndReportsSubscription] = patients.EHRSubscription{
+		Active: true,
+		MatchedMessages: []patients.MatchedMessage{{
+			DocumentId: primitive.NewObjectID(),
+			DataModel:  "Order",
+			EventType:  "New",
+		}},
+	}
+	return subs
+}
+
 func RandomPatientUpdate() patients.PatientUpdate {
 	patient := RandomPatient()
 	return patients.PatientUpdate{

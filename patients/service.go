@@ -70,6 +70,10 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		return nil, err
 	}
 
+	if mrnChanged(*existing, update.Patient) {
+		update.Patient.EHRSubscriptions = deactiveAllSubscriptions(existing.EHRSubscriptions)
+	}
+
 	if existing.IsCustodial() {
 		s.logger.Infow("updating custodial account", "userId", existing.UserId, "clinicId", update.ClinicId)
 		update.Patient.ClinicId = existing.ClinicId
@@ -256,4 +260,18 @@ func getUpdatedBy(update PatientUpdate) *string {
 	}
 
 	return update.Patient.InvitedBy
+}
+
+func mrnChanged(existing Patient, updated Patient) bool {
+	return (existing.Mrn == nil && updated.Mrn != nil) ||
+		(existing.Mrn != nil && updated.Mrn == nil) ||
+		(existing.Mrn != nil && updated.Mrn != nil && *existing.Mrn != *updated.Mrn)
+}
+
+func deactiveAllSubscriptions(subscriptions EHRSubscriptions) EHRSubscriptions {
+	for name, sub := range subscriptions {
+		sub.Active = false
+		subscriptions[name] = sub
+	}
+	return subscriptions
 }
