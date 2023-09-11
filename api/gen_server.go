@@ -142,7 +142,7 @@ type ServerInterface interface {
 	// Get MRN Settings
 	// (GET /v1/clinics/{clinicId}/settings/mrn)
 	GetMRNSettings(ctx echo.Context, clinicId ClinicId) error
-
+	// Update MRN Settings
 	// (PUT /v1/clinics/{clinicId}/settings/mrn)
 	UpdateMRNSettings(ctx echo.Context, clinicId ClinicId) error
 	// Update Suppressed Notifications
