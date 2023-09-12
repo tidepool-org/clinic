@@ -1490,7 +1490,7 @@ paths:
       x-internal: true
       description: Retrieve MRN settings
     put:
-      summary: ''
+      summary: Update MRN Settings
       operationId: UpdateMRNSettings
       responses:
         '200':
@@ -2473,6 +2473,7 @@ components:
       x-go-type: string
     TidepoolUserIds:
       type: array
+      nullable: true
       description: Array of Tidepool User IDs
       items:
         $ref: '#/components/schemas/TidepoolUserId'
