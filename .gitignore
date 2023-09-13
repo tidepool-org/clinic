@@ -6,3 +6,6 @@ dist/
 
 # ide
 .idea/
+
+# Linkerd Service Profile
+service-profile/
