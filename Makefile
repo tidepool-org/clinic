@@ -15,11 +15,14 @@ generate:
 	cd client && go generate ./...
 
 # Generate linkerd service profile
-.PHONY: service-profile
-service-profile: generate
-	mkdir -p service-profile
-	openapi-filter -f Confirmations --checkTags spec/clinic.v1.yaml service-profile/clinic.v1.yaml
+service-profile/profile.yaml: service-profile/clinic.v1.yaml service-profile
 	linkerd profile --ignore-cluster --open-api service-profile/clinic.v1.yaml clinic > service-profile/profile.yaml
+
+service-profile/clinic.v1.yaml: generate service-profile
+	openapi-filter -f Confirmations --checkTags spec/clinic.v1.yaml service-profile/clinic.v1.yaml
+
+service-profile:
+	mkdir -p service-profile
 
 # Set flags
 .PHONY: go-flags
