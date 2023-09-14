@@ -110,7 +110,7 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 		if err := s.Remove(ctx, clinicId, userId); err != nil {
 			// the patient was removed by concurrent request which is not a problem,
 			// because it had to be removed as a result of the current operation
-			if err == ErrNotFound {
+			if errors.Is(err, ErrNotFound) {
 				return nil, nil
 			}
 			return nil, err
@@ -130,9 +130,14 @@ func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinic
 	return s.repo.DeleteNonCustodialPatientsOfClinic(ctx, clinicId)
 }
 
-func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
-	s.logger.Infow("updating summaries for user", "userId", userId)
-	return s.repo.UpdateSummaryInAllClinics(ctx, userId, summary)
+func (s *service) ListPatientsForUserId(ctx context.Context, userId string) ([]*Patient, error) {
+	s.logger.Infow("listing patients for userId", "userId", userId)
+	return s.repo.ListPatientsForUserId(ctx, userId)
+}
+
+func (s *service) UpdatePatientSummary(ctx context.Context, patientId string, summary *Summary) error {
+	s.logger.Infow("updating summaries for patient", "patientId", patientId)
+	return s.repo.UpdatePatientSummary(ctx, patientId, summary)
 }
 
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error) {
@@ -186,6 +191,6 @@ func getUpdatedBy(update PatientUpdate) *string {
 	return update.Patient.InvitedBy
 }
 
-func (s *service) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
-	return s.repo.TideReport(ctx, clinicId, params)
+func (s *service) TideReport(ctx context.Context, clinicId string, pagination store.Pagination, params TideReportParams) (*Tide, error) {
+	return s.repo.TideReport(ctx, clinicId, pagination, params)
 }

@@ -1,6 +1,9 @@
 package patients
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Tide struct {
 	Config  *TideConfig  `json:"config,omitempty"`
@@ -8,15 +11,15 @@ type Tide struct {
 }
 
 type TideConfig struct {
-	ClinicId             *string      `json:"clinicId,omitempty"`
-	Filters              *TideFilters `json:"filters,omitempty"`
-	HighGlucoseThreshold *float64     `json:"highGlucoseThreshold,omitempty"`
-	LastUploadDateFrom   *time.Time   `json:"lastUploadDateFrom,omitempty"`
-	LastUploadDateTo     *time.Time   `json:"lastUploadDateTo,omitempty"`
-	LowGlucoseThreshold  *float64     `json:"lowGlucoseThreshold,omitempty"`
-	Period               *string      `json:"period,omitempty"`
-	SchemaVersion        *int         `json:"schemaVersion,omitempty"`
-	Tags                 *[]string    `json:"tags"`
+	ClinicId             *string         `json:"clinicId,omitempty"`
+	Filters              *TideCategories `json:"filters,omitempty"`
+	HighGlucoseThreshold *float64        `json:"highGlucoseThreshold,omitempty"`
+	LastUploadDateFrom   *time.Time      `json:"lastUploadDateFrom,omitempty"`
+	LastUploadDateTo     *time.Time      `json:"lastUploadDateTo,omitempty"`
+	LowGlucoseThreshold  *float64        `json:"lowGlucoseThreshold,omitempty"`
+	Period               *string         `json:"period,omitempty"`
+	SchemaVersion        *int            `json:"schemaVersion,omitempty"`
+	Tags                 *[]string       `json:"tags"`
 
 	VeryHighGlucoseThreshold *float64 `json:"veryHighGlucoseThreshold,omitempty"`
 	VeryLowGlucoseThreshold  *float64 `json:"veryLowGlucoseThreshold,omitempty"`
@@ -53,4 +56,49 @@ type TideResultPatient struct {
 
 type TideResults map[string]*[]TideResultPatient
 
-type PatientTagIds = []string
+type TideCategoryId []byte
+
+type TideCategory struct {
+	Id         TideCategoryId `json:"-"`
+	Field      string         `json:"field"`
+	Comparison string         `json:"comp"`
+	Value      float64        `json:"value"`
+}
+
+type TideCategories []*TideCategory
+
+func DefaultTideReport() (config TideCategories) {
+	config = []*TideCategory{
+		{
+			Field:      "timeInVeryLowPercent",
+			Comparison: ">",
+			Value:      0.01,
+		},
+		{
+			Field:      "timeInLowPercent",
+			Comparison: ">",
+			Value:      0.04,
+		},
+		{
+			Field:      "timeInTargetPercentDelta",
+			Comparison: "<",
+			Value:      -0.15,
+		},
+		{
+			Field:      "timeInTargetPercent",
+			Comparison: "<",
+			Value:      0.7,
+		},
+		{
+			Field:      "timeCGMUsePercent",
+			Comparison: "<",
+			Value:      0.7,
+		},
+	}
+
+	for _, category := range config {
+		category.Id = []byte(fmt.Sprintf("%s-%s-%f", category.Field, category.Comparison, category.Value))
+	}
+
+	return
+}

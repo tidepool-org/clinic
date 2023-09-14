@@ -299,7 +299,7 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 	return ec.NoContent(http.StatusNoContent)
 }
 
-func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) error {
+func (h *Handler) UpdatePatientSummary(ec echo.Context, userId PatientId) error {
 	ctx := ec.Request().Context()
 	var dto *PatientSummary
 	if ec.Request().ContentLength != 0 {
@@ -309,9 +309,19 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 		}
 	}
 
-	err := h.patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto))
+	patientUsers, err := h.patients.ListPatientsForUserId(ctx, userId)
 	if err != nil {
 		return err
+	}
+
+	for _, patient := range patientUsers {
+		// lookup reports configured for patient.ClinicId, for now we just use a default
+		tideConfig := patients.DefaultTideReport()
+
+		err = h.patients.UpdatePatientSummary(ctx, patient.Id.Hex(), NewSummary(dto, []*patients.TideReportConfig{&tideConfig}))
+		if err != nil {
+			return err
+		}
 	}
 
 	return ec.NoContent(http.StatusOK)

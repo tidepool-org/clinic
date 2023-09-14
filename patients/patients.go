@@ -41,13 +41,14 @@ type Service interface {
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
 	DeleteFromAllClinics(ctx context.Context, userId string) error
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
-	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
+	UpdatePatientSummary(ctx context.Context, patientId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error)
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
-	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
+	TideReport(ctx context.Context, clinicId string, pagination store.Pagination, params TideReportParams) (*Tide, error)
+	ListPatientsForUserId(ctx context.Context, userId string) ([]*Patient, error)
 }
 
 type Patient struct {
@@ -148,8 +149,9 @@ type LastRequestedDexcomConnectUpdate struct {
 }
 
 type Summary struct {
-	CGM *PatientCGMStats `json:"cgmStats" bson:"cgmStats"`
-	BGM *PatientBGMStats `json:"bgmStats" bson:"bgmStats"`
+	CGM  *PatientCGMStats   `json:"cgmStats" bson:"cgmStats"`
+	BGM  *PatientBGMStats   `json:"bgmStats" bson:"bgmStats"`
+	Risk PatientRiskPeriods `json:"risk" bson:"risk"`
 }
 
 type DataSources []DataSource
@@ -167,3 +169,6 @@ type TideReportParams struct {
 	CgmLastUploadDateFrom *time.Time
 	CgmLastUploadDateTo   *time.Time
 }
+
+type PatientRiskCategories []TideCategoryId
+type PatientRiskPeriods map[string]*PatientRiskCategories
