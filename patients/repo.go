@@ -862,10 +862,19 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, pagination
 
 	tideConfig := DefaultTideReport()
 
+	if params.Category != nil {
+		for _, v := range tideConfig {
+			if *v.Field == *params.Category {
+				tideConfig = TideFilters{v}
+				break
+			}
+		}
+	}
+
 	report := Tide{
 		Config: &TideConfig{
 			ClinicId:                 &clinicId,
-			Filters:                  &tideConfig,
+			Filters:                  tideConfig,
 			HighGlucoseThreshold:     ptr(10.0),
 			LastUploadDateFrom:       params.CgmLastUploadDateFrom,
 			LastUploadDateTo:         params.CgmLastUploadDateTo,
@@ -879,10 +888,10 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, pagination
 		Results: &TideResults{},
 	}
 
-	allCategoryIds := make([]TideCategoryId, 0, 5)
+	allCategoryIds := make([][]byte, 0, 5)
 
 	for _, category := range tideConfig {
-		allCategoryIds = append(allCategoryIds, category.Id)
+		allCategoryIds = append(allCategoryIds, *category.Id)
 		selector := bson.M{
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
@@ -897,13 +906,13 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, pagination
 		opts.SetLimit(int64(pagination.Limit))
 		opts.SetSkip(int64(pagination.Offset))
 
-		if category.Comparison[0] == '>' {
+		if (*category.Comparison)[0] == '>' {
 			opts.SetSort(bson.D{
-				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, -1},
+				{"summary.cgmStats.periods." + *params.Period + "." + *category.Field, -1},
 			})
 		} else {
 			opts.SetSort(bson.D{
-				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, 1},
+				{"summary.cgmStats.periods." + *params.Period + "." + *category.Field, 1},
 			})
 		}
 
@@ -944,7 +953,11 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, pagination
 				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
 			})
 		}
-		(*report.Results)[category.Field] = &categoryResult
+		(*report.Results)[*category.Field] = &categoryResult
+	}
+
+	if params.Category != nil {
+		return &report, nil
 	}
 
 	selector := bson.M{

@@ -164,11 +164,12 @@ type DataSource struct {
 }
 
 type TideReportParams struct {
+	Category              *string
 	Period                *string
 	Tags                  *[]string
 	CgmLastUploadDateFrom *time.Time
 	CgmLastUploadDateTo   *time.Time
 }
 
-type PatientRiskCategories []TideCategoryId
+type PatientRiskCategories [][]byte
 type PatientRiskPeriods map[string]*PatientRiskCategories

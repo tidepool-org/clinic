@@ -3747,6 +3747,22 @@ func NewTideReportRequest(server string, clinicId ClinicId, params *TideReportPa
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.Category != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "category", runtime.ParamLocationQuery, *params.Category); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Period != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, *params.Period); err != nil {
@@ -3798,6 +3814,38 @@ func NewTideReportRequest(server string, clinicId ClinicId, params *TideReportPa
 		if params.CgmLastUploadDateTo != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastUploadDateTo", runtime.ParamLocationQuery, *params.CgmLastUploadDateTo); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

@@ -182,18 +182,18 @@ func (mr *MockRepositoryMockRecorder) Remove(ctx, clinicId, userId interface{}) 
 }
 
 // TideReport mocks base method.
-func (m *MockRepository) TideReport(ctx context.Context, clinicId string, params patients.TideReportParams) (*patients.Tide, error) {
+func (m *MockRepository) TideReport(ctx context.Context, clinicId string, pagination store.Pagination, params patients.TideReportParams) (*patients.Tide, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TideReport", ctx, clinicId, params)
+	ret := m.ctrl.Call(m, "TideReport", ctx, clinicId, pagination, params)
 	ret0, _ := ret[0].(*patients.Tide)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // TideReport indicates an expected call of TideReport.
-func (mr *MockRepositoryMockRecorder) TideReport(ctx, clinicId, params interface{}) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) TideReport(ctx, clinicId, pagination, params interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TideReport", reflect.TypeOf((*MockRepository)(nil).TideReport), ctx, clinicId, params)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TideReport", reflect.TypeOf((*MockRepository)(nil).TideReport), ctx, clinicId, pagination, params)
 }
 
 // Update mocks base method.

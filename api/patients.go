@@ -318,7 +318,7 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, userId PatientId) error 
 		// lookup reports configured for patient.ClinicId, for now we just use a default
 		tideConfig := patients.DefaultTideReport()
 
-		err = h.patients.UpdatePatientSummary(ctx, patient.Id.Hex(), NewSummary(dto, []*patients.TideReportConfig{&tideConfig}))
+		err = h.patients.UpdatePatientSummary(ctx, patient.Id.Hex(), NewSummary(dto, []*patients.TideFilters{&tideConfig}))
 		if err != nil {
 			return err
 		}
@@ -329,7 +329,17 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, userId PatientId) error 
 
 func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideReportParams) error {
 	ctx := ec.Request().Context()
-	tide, err := h.patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
+	page := pagination(params.Offset, params.Limit)
+
+	reportParams := patients.TideReportParams{
+		Category:              params.Category,
+		Period:                params.Period,
+		Tags:                  params.Tags,
+		CgmLastUploadDateFrom: params.CgmLastUploadDateFrom,
+		CgmLastUploadDateTo:   params.CgmLastUploadDateTo,
+	}
+
+	tide, err := h.patients.TideReport(ctx, clinicId, page, reportParams)
 	if err != nil {
 		return err
 	}

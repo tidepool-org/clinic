@@ -247,6 +247,13 @@ paths:
       parameters:
         - schema:
             type: string
+            pattern: '(?:[a-zA-Z]|_)+'
+            example: timeInTargetPercent
+          in: query
+          name: category
+          description: Specific category to limit results to
+        - schema:
+            type: string
             pattern: ^(1d|7d|14d|30d)$
             example: 7d
           in: query
@@ -274,6 +281,8 @@ paths:
           in: query
           name: cgm.lastUploadDateTo
           description: Exclusive
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
   '/v1/clinics/{clinicId}/patients':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -2017,30 +2026,37 @@ components:
         filters:
           $ref: '#/components/schemas/TideFilters'
     TideFilters:
-      type: object
+      type: array
       title: tidefilters.v1
       description: ''
+      items:
+        $ref: '#/components/schemas/TideFilter'
+    TideFilter:
+      type: object
+      title: tidefilter.v1
+      description: ''
       properties:
-        timeInVeryLowPercent:
+        id:
           type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
-        timeInLowPercent:
+          readOnly: true
+          format: byte
+          x-go-json-ignore: true
+        field:
+          description: Name of the field to check
           type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
-        dropInTimeInTargetPercent:
+          x-go-type: string
+          example: timeInTargetPercentDelta
+        comp:
+          description: Boolean comparison used when checking
           type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
-        timeInTargetPercent:
-          type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
-        timeCGMUsePercent:
-          type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
+          x-go-type: string
+          x-go-name: Comparison
+          example: '>='
+        value:
+          description: Value used in comparison
+          type: number
+          x-go-type: float64
+          example: 0.5
     TidePatient:
       type: object
       title: tidepatient.v1
@@ -2119,13 +2135,6 @@ components:
       type: object
       title: tideresults.v1
       description: ''
-      required:
-        - timeInVeryLowPercent
-        - timeInLowPercent
-        - dropInTimeInTargetPercent
-        - timeInTargetPercent
-        - timeCGMUsePercent
-        - meetingTargets
       additionalProperties:
         type: array
         nullable: true

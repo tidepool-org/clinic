@@ -249,7 +249,7 @@ func periodByJsonTag(s *patients.PatientCGMPeriod) map[string]*float64 {
 	return valuesByTag
 }
 
-func NewSummary(dto *PatientSummary, tideConfig []*patients.TideReportConfig) *patients.Summary {
+func NewSummary(dto *PatientSummary, tideConfig []*patients.TideFilters) *patients.Summary {
 	if dto == nil {
 		return nil
 	}
@@ -330,8 +330,8 @@ func NewSummary(dto *PatientSummary, tideConfig []*patients.TideReportConfig) *p
 
 		for _, report := range tideConfig {
 			for _, category := range *report {
-				if periodByTag[category.Field] != nil {
-					if ops[category.Comparison](*periodByTag[category.Field], category.Value) {
+				if periodByTag[*category.Field] != nil {
+					if ops[*category.Comparison](*periodByTag[*category.Field], *category.Value) {
 						categoryKey := fmt.Sprintf("%s-%s-%f", category.Field, category.Comparison, category.Value)
 						riskCategoriesMap[categoryKey] = empty
 					}
@@ -423,7 +423,6 @@ func NewTideDto(tide *patients.Tide) *Tide {
 	tideResult := &Tide{
 		Config: &TideConfig{
 			ClinicId:                 tide.Config.ClinicId,
-			Filters:                  (*TideFilters)(tide.Config.Filters),
 			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
 			LastUploadDateFrom:       tide.Config.LastUploadDateFrom,
 			LastUploadDateTo:         tide.Config.LastUploadDateTo,
@@ -436,6 +435,12 @@ func NewTideDto(tide *patients.Tide) *Tide {
 		},
 		Results: &TideResults{},
 	}
+
+	f := make(TideFilters, 0, 5)
+	for _, v := range tide.Config.Filters {
+		f = append(f, (TideFilter)(v))
+	}
+	tideResult.Config.Filters = &f
 
 	for category, tidePatients := range *tide.Results {
 		c := make([]TideResultPatient, 0, 50)

@@ -1431,6 +1431,13 @@ func (w *ServerInterfaceWrapper) TideReport(ctx echo.Context) error {
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params TideReportParams
+	// ------------- Optional query parameter "category" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "category", ctx.QueryParams(), &params.Category)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter category: %s", err))
+	}
+
 	// ------------- Optional query parameter "period" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "period", ctx.QueryParams(), &params.Period)
@@ -1457,6 +1464,20 @@ func (w *ServerInterfaceWrapper) TideReport(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
