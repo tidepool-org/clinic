@@ -691,14 +691,21 @@ type TideConfig struct {
 	VeryLowGlucoseThreshold *float64 `json:"veryLowGlucoseThreshold,omitempty"`
 }
 
-// TideFilters defines model for TideFilters.
-type TideFilters struct {
-	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
-	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
-	TimeInLowPercent          *string `json:"timeInLowPercent,omitempty"`
-	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
-	TimeInVeryLowPercent      *string `json:"timeInVeryLowPercent,omitempty"`
+// TideFilter defines model for TideFilter.
+type TideFilter struct {
+	// Comp Boolean comparison used when checking
+	Comparison *string `json:"comp,omitempty"`
+
+	// Field Name of the field to check
+	Field *string `json:"field,omitempty"`
+	Id    *[]byte `json:"-"`
+
+	// Value Value used in comparison
+	Value *float64 `json:"value,omitempty"`
 }
+
+// TideFilters defines model for TideFilters.
+type TideFilters = []TideFilter
 
 // TidePatient defines model for TidePatient.
 type TidePatient struct {
@@ -979,6 +986,9 @@ type ListPatientsParams struct {
 
 // TideReportParams defines parameters for TideReport.
 type TideReportParams struct {
+	// Category Specific category to limit results to
+	Category *string `form:"category,omitempty" json:"category,omitempty"`
+
 	// Period Time Period to display
 	Period *string `form:"period,omitempty" json:"period,omitempty"`
 
@@ -990,6 +1000,8 @@ type TideReportParams struct {
 
 	// CgmLastUploadDateTo Exclusive
 	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
+	Offset              *Offset    `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit               *Limit     `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListClinicsForPatientParams defines parameters for ListClinicsForPatient.

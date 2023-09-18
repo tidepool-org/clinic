@@ -1,6 +1,9 @@
 package patients
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Tide struct {
 	Config  *TideConfig  `json:"config,omitempty"`
@@ -8,26 +11,18 @@ type Tide struct {
 }
 
 type TideConfig struct {
-	ClinicId             *string      `json:"clinicId,omitempty"`
-	Filters              *TideFilters `json:"filters,omitempty"`
-	HighGlucoseThreshold *float64     `json:"highGlucoseThreshold,omitempty"`
-	LastUploadDateFrom   *time.Time   `json:"lastUploadDateFrom,omitempty"`
-	LastUploadDateTo     *time.Time   `json:"lastUploadDateTo,omitempty"`
-	LowGlucoseThreshold  *float64     `json:"lowGlucoseThreshold,omitempty"`
-	Period               *string      `json:"period,omitempty"`
-	SchemaVersion        *int         `json:"schemaVersion,omitempty"`
-	Tags                 *[]string    `json:"tags"`
+	ClinicId             *string     `json:"clinicId,omitempty"`
+	Filters              TideFilters `json:"filters,omitempty"`
+	HighGlucoseThreshold *float64    `json:"highGlucoseThreshold,omitempty"`
+	LastUploadDateFrom   *time.Time  `json:"lastUploadDateFrom,omitempty"`
+	LastUploadDateTo     *time.Time  `json:"lastUploadDateTo,omitempty"`
+	LowGlucoseThreshold  *float64    `json:"lowGlucoseThreshold,omitempty"`
+	Period               *string     `json:"period,omitempty"`
+	SchemaVersion        *int        `json:"schemaVersion,omitempty"`
+	Tags                 *[]string   `json:"tags"`
 
 	VeryHighGlucoseThreshold *float64 `json:"veryHighGlucoseThreshold,omitempty"`
 	VeryLowGlucoseThreshold  *float64 `json:"veryLowGlucoseThreshold,omitempty"`
-}
-
-type TideFilters struct {
-	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
-	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
-	TimeInLowPercent          *string `json:"timeInLowPercent,omitempty"`
-	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
-	TimeInVeryLowPercent      *string `json:"timeInVeryLowPercent,omitempty"`
 }
 
 type TidePatient struct {
@@ -53,4 +48,47 @@ type TideResultPatient struct {
 
 type TideResults map[string]*[]TideResultPatient
 
-type PatientTagIds = []string
+type TideFilter struct {
+	Comparison *string  `json:"comp,omitempty"`
+	Field      *string  `json:"field,omitempty"`
+	Id         *[]byte  `json:"-"`
+	Value      *float64 `json:"value,omitempty"`
+}
+
+type TideFilters []TideFilter
+
+func DefaultTideReport() (config TideFilters) {
+	config = []TideFilter{
+		{
+			Field:      ptr("timeInVeryLowPercent"),
+			Comparison: ptr(">"),
+			Value:      ptr(0.01),
+		},
+		{
+			Field:      ptr("timeInLowPercent"),
+			Comparison: ptr(">"),
+			Value:      ptr(0.04),
+		},
+		{
+			Field:      ptr("timeInTargetPercentDelta"),
+			Comparison: ptr("<"),
+			Value:      ptr(-0.15),
+		},
+		{
+			Field:      ptr("timeInTargetPercent"),
+			Comparison: ptr("<"),
+			Value:      ptr(0.7),
+		},
+		{
+			Field:      ptr("timeCGMUsePercent"),
+			Comparison: ptr("<"),
+			Value:      ptr(0.7),
+		},
+	}
+
+	for _, category := range config {
+		category.Id = ptr([]byte(fmt.Sprintf("%s-%s-%f", *category.Field, *category.Comparison, *category.Value)))
+	}
+
+	return
+}

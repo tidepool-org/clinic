@@ -152,6 +152,21 @@ func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination, sort interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepository)(nil).List), ctx, filter, pagination, sort)
 }
 
+// ListPatientsForUserId mocks base method.
+func (m *MockRepository) ListPatientsForUserId(ctx context.Context, userId string) ([]*patients.Patient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPatientsForUserId", ctx, userId)
+	ret0, _ := ret[0].([]*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPatientsForUserId indicates an expected call of ListPatientsForUserId.
+func (mr *MockRepositoryMockRecorder) ListPatientsForUserId(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPatientsForUserId", reflect.TypeOf((*MockRepository)(nil).ListPatientsForUserId), ctx, userId)
+}
+
 // Remove mocks base method.
 func (m *MockRepository) Remove(ctx context.Context, clinicId, userId string) error {
 	m.ctrl.T.Helper()
@@ -167,18 +182,18 @@ func (mr *MockRepositoryMockRecorder) Remove(ctx, clinicId, userId interface{}) 
 }
 
 // TideReport mocks base method.
-func (m *MockRepository) TideReport(ctx context.Context, clinicId string, params patients.TideReportParams) (*patients.Tide, error) {
+func (m *MockRepository) TideReport(ctx context.Context, clinicId string, pagination store.Pagination, params patients.TideReportParams) (*patients.Tide, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TideReport", ctx, clinicId, params)
+	ret := m.ctrl.Call(m, "TideReport", ctx, clinicId, pagination, params)
 	ret0, _ := ret[0].(*patients.Tide)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // TideReport indicates an expected call of TideReport.
-func (mr *MockRepositoryMockRecorder) TideReport(ctx, clinicId, params interface{}) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) TideReport(ctx, clinicId, pagination, params interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TideReport", reflect.TypeOf((*MockRepository)(nil).TideReport), ctx, clinicId, params)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TideReport", reflect.TypeOf((*MockRepository)(nil).TideReport), ctx, clinicId, pagination, params)
 }
 
 // Update mocks base method.
@@ -254,6 +269,20 @@ func (mr *MockRepositoryMockRecorder) UpdatePatientDataSources(ctx, userId, data
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientDataSources", reflect.TypeOf((*MockRepository)(nil).UpdatePatientDataSources), ctx, userId, dataSources)
 }
 
+// UpdatePatientSummary mocks base method.
+func (m *MockRepository) UpdatePatientSummary(ctx context.Context, patientId string, summary *patients.Summary) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePatientSummary", ctx, patientId, summary)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePatientSummary indicates an expected call of UpdatePatientSummary.
+func (mr *MockRepositoryMockRecorder) UpdatePatientSummary(ctx, patientId, summary interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientSummary", reflect.TypeOf((*MockRepository)(nil).UpdatePatientSummary), ctx, patientId, summary)
+}
+
 // UpdatePermissions mocks base method.
 func (m *MockRepository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *patients.Permissions) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -267,18 +296,4 @@ func (m *MockRepository) UpdatePermissions(ctx context.Context, clinicId, userId
 func (mr *MockRepositoryMockRecorder) UpdatePermissions(ctx, clinicId, userId, permissions interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockRepository)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
-}
-
-// UpdateSummaryInAllClinics mocks base method.
-func (m *MockRepository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *patients.Summary) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSummaryInAllClinics", ctx, userId, summary)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateSummaryInAllClinics indicates an expected call of UpdateSummaryInAllClinics.
-func (mr *MockRepositoryMockRecorder) UpdateSummaryInAllClinics(ctx, userId, summary interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSummaryInAllClinics", reflect.TypeOf((*MockRepository)(nil).UpdateSummaryInAllClinics), ctx, userId, summary)
 }

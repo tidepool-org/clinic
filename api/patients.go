@@ -299,7 +299,7 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 	return ec.NoContent(http.StatusNoContent)
 }
 
-func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) error {
+func (h *Handler) UpdatePatientSummary(ec echo.Context, userId PatientId) error {
 	ctx := ec.Request().Context()
 	var dto *PatientSummary
 	if ec.Request().ContentLength != 0 {
@@ -309,9 +309,19 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 		}
 	}
 
-	err := h.patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto))
+	patientUsers, err := h.patients.ListPatientsForUserId(ctx, userId)
 	if err != nil {
 		return err
+	}
+
+	for _, patient := range patientUsers {
+		// lookup reports configured for patient.ClinicId, for now we just use a default
+		tideConfig := patients.DefaultTideReport()
+
+		err = h.patients.UpdatePatientSummary(ctx, patient.Id.Hex(), NewSummary(dto, []*patients.TideFilters{&tideConfig}))
+		if err != nil {
+			return err
+		}
 	}
 
 	return ec.NoContent(http.StatusOK)
@@ -319,7 +329,17 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 
 func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideReportParams) error {
 	ctx := ec.Request().Context()
-	tide, err := h.patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
+	page := pagination(params.Offset, params.Limit)
+
+	reportParams := patients.TideReportParams{
+		Category:              params.Category,
+		Period:                params.Period,
+		Tags:                  params.Tags,
+		CgmLastUploadDateFrom: params.CgmLastUploadDateFrom,
+		CgmLastUploadDateTo:   params.CgmLastUploadDateTo,
+	}
+
+	tide, err := h.patients.TideReport(ctx, clinicId, page, reportParams)
 	if err != nil {
 		return err
 	}

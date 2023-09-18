@@ -135,7 +135,7 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 
 	patient := &Patient{}
 	err := r.collection.FindOne(ctx, selector).Decode(&patient)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, err
@@ -206,6 +206,26 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	return &result, nil
 }
 
+func (r *repository) ListPatientsForUserId(ctx context.Context, userId string) (patients []*Patient, err error) {
+	if userId == "" {
+		return nil, fmt.Errorf("user id is missing")
+	}
+
+	opts := options.Find().SetProjection(bson.D{{"clinicId", 1}})
+
+	// We don't use distinct here because we can be sure that there is no duplicate userIds within a clinic
+	cursor, err := r.collection.Find(ctx, bson.M{"userId": userId}, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(ctx, &patients); err != nil {
+		return nil, fmt.Errorf("error decoding userid clinicId list: %w", err)
+	}
+
+	return
+}
+
 func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
 	if patient.ClinicId == nil {
 		return nil, fmt.Errorf("patient clinic id is missing")
@@ -257,7 +277,7 @@ func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
@@ -321,7 +341,7 @@ func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
@@ -347,7 +367,7 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrPermissionNotFound
 		}
 		return nil, fmt.Errorf("error removing permission: %w", err)
@@ -379,9 +399,10 @@ func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, cli
 	return err
 }
 
-func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
+func (r *repository) UpdatePatientSummary(ctx context.Context, patientId string, summary *Summary) error {
+	patientObjId, _ := primitive.ObjectIDFromHex(patientId)
 	selector := bson.M{
-		"userId": userId,
+		"_id": patientObjId,
 	}
 
 	set := bson.M{}
@@ -399,7 +420,7 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		}
 	}
 
-	res, err := r.collection.UpdateMany(ctx, selector, bson.M{"$set": set, "$unset": unset})
+	res, err := r.collection.UpdateOne(ctx, selector, bson.M{"$set": set, "$unset": unset})
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
@@ -424,7 +445,7 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
@@ -484,7 +505,7 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 
 	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
@@ -808,7 +829,7 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 	return f, ok
 }
 
-func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
+func (r *repository) TideReport(ctx context.Context, clinicId string, pagination store.Pagination, params TideReportParams) (*Tide, error) {
 	if clinicId == "" {
 		return nil, errors.New("empty clinicId provided")
 	}
@@ -839,58 +860,21 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		return nil, errors.New("provided period is not one of the valid periods")
 	}
 
-	type Category struct {
-		Heading    string
-		Field      string
-		Comparison string
-		Value      float64
+	tideConfig := DefaultTideReport()
+
+	if params.Category != nil {
+		for _, v := range tideConfig {
+			if *v.Field == *params.Category {
+				tideConfig = TideFilters{v}
+				break
+			}
+		}
 	}
 
-	categories := [...]Category{
-		{
-			Heading:    "timeInVeryLowPercent",
-			Field:      "timeInVeryLowPercent",
-			Comparison: "$gt",
-			Value:      0.01,
-		},
-		{
-			Heading:    "timeInLowPercent",
-			Field:      "timeInLowPercent",
-			Comparison: "$gt",
-			Value:      0.04,
-		},
-		{
-			Heading:    "dropInTimeInTargetPercent",
-			Field:      "timeInTargetPercentDelta",
-			Comparison: "$lt",
-			Value:      -0.15,
-		},
-		{
-			Heading:    "timeInTargetPercent",
-			Field:      "timeInTargetPercent",
-			Comparison: "$lt",
-			Value:      0.7,
-		},
-		{
-			Heading:    "timeCGMUsePercent",
-			Field:      "timeCGMUsePercent",
-			Comparison: "$lt",
-			Value:      0.7,
-		},
-	}
-
-	limit := 50
-	exclusions := make([]*primitive.ObjectID, 0, 50)
-	tide := Tide{
+	report := Tide{
 		Config: &TideConfig{
-			ClinicId: &clinicId,
-			Filters: &TideFilters{
-				TimeInVeryLowPercent:      ptr(">0.01"),
-				TimeInLowPercent:          ptr(">0.04"),
-				DropInTimeInTargetPercent: ptr("<-0.15"),
-				TimeInTargetPercent:       ptr("<0.7"),
-				TimeCGMUsePercent:         ptr("<0.7"),
-			},
+			ClinicId:                 &clinicId,
+			Filters:                  tideConfig,
 			HighGlucoseThreshold:     ptr(10.0),
 			LastUploadDateFrom:       params.CgmLastUploadDateFrom,
 			LastUploadDateTo:         params.CgmLastUploadDateTo,
@@ -904,28 +888,31 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		Results: &TideResults{},
 	}
 
-	for _, category := range categories {
+	allCategoryIds := make([][]byte, 0, 5)
+
+	for _, category := range tideConfig {
+		allCategoryIds = append(allCategoryIds, *category.Id)
 		selector := bson.M{
-			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
 			"summary.cgmStats.dates.lastUploadDate": bson.M{
 				"$gt":  params.CgmLastUploadDateFrom,
 				"$lte": params.CgmLastUploadDateTo,
 			},
-			"summary.cgmStats.periods." + *params.Period + "." + category.Field: bson.M{category.Comparison: category.Value},
+			"summary.risk." + *params.Period: category.Id,
 		}
 
 		opts := options.Find()
-		opts.SetLimit(int64(limit))
+		opts.SetLimit(int64(pagination.Limit))
+		opts.SetSkip(int64(pagination.Offset))
 
-		if category.Comparison == "$gt" {
+		if (*category.Comparison)[0] == '>' {
 			opts.SetSort(bson.D{
-				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, -1},
+				{"summary.cgmStats.periods." + *params.Period + "." + *category.Field, -1},
 			})
 		} else {
 			opts.SetSort(bson.D{
-				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, 1},
+				{"summary.cgmStats.periods." + *params.Period + "." + *category.Field, 1},
 			})
 		}
 
@@ -939,11 +926,10 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
 
-		categoryResult := make([]TideResultPatient, 0, 25)
+		categoryResult := make([]TideResultPatient, 0, 20)
 		for _, patient := range patientsList {
-			exclusions = append(exclusions, patient.Id)
 
-			var patientTags []string
+			patientTags := make([]string, 0, len(*patient.Tags))
 			for _, tag := range *patient.Tags {
 				patientTags = append(patientTags, tag.Hex())
 			}
@@ -967,73 +953,69 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
 			})
 		}
-
-		(*tide.Results)[category.Heading] = &categoryResult
-
-		limit -= len(patientsList)
-		if limit < 1 {
-			break
-		}
+		(*report.Results)[*category.Field] = &categoryResult
 	}
 
-	if limit > 0 {
-		selector := bson.M{
-			"_id":      bson.M{"$nin": exclusions},
-			"clinicId": clinicObjId,
-			"tags":     bson.M{"$all": tags},
-			"summary.cgmStats.dates.lastUploadDate": bson.M{
-				"$gt":  params.CgmLastUploadDateFrom,
-				"$lte": params.CgmLastUploadDateTo,
+	if params.Category != nil {
+		return &report, nil
+	}
+
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"tags":     bson.M{"$all": tags},
+		"summary.cgmStats.dates.lastUploadDate": bson.M{
+			"$gt":  params.CgmLastUploadDateFrom,
+			"$lte": params.CgmLastUploadDateTo,
+		},
+		"summary.risk." + *params.Period: bson.M{"$nin": allCategoryIds},
+	}
+
+	opts := options.Find()
+	opts.SetLimit(int64(pagination.Limit))
+	opts.SetSkip(int64(pagination.Offset))
+	opts.SetSort(bson.D{
+		{"summary.cgmStats.periods." + *params.Period + ".timeInTargetPercent", -1},
+	})
+
+	cursor, err := r.collection.Find(ctx, selector, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var patientsList []*Patient
+	if err = cursor.All(ctx, &patientsList); err != nil {
+		return nil, fmt.Errorf("error decoding patients list: %w", err)
+	}
+
+	categoryResult := make([]TideResultPatient, 0, 20)
+	for _, patient := range patientsList {
+
+		patientTags := make([]string, 0, len(*patient.Tags))
+		for _, tag := range *patient.Tags {
+			patientTags = append(patientTags, tag.Hex())
+		}
+
+		categoryResult = append(categoryResult, TideResultPatient{
+			Patient: &TidePatient{
+				Email:    patient.Email,
+				FullName: patient.FullName,
+				Id:       patient.UserId,
+				Tags:     &patientTags,
 			},
-		}
-
-		opts := options.Find()
-		opts.SetLimit(int64(limit))
-
-		opts.SetSort(bson.D{
-			{"summary.cgmStats.periods." + *params.Period + ".timeInTargetPercent", -1},
+			AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
+			GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
+			TimeCGMUseMinutes:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUseMinutes,
+			TimeCGMUsePercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUsePercent,
+			TimeInHighPercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeInHighPercent,
+			TimeInLowPercent:           (*patient.Summary.CGM.Periods)[*params.Period].TimeInLowPercent,
+			TimeInTargetPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercent,
+			TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
+			TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
+			TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
 		})
-
-		cursor, err := r.collection.Find(ctx, selector, opts)
-		if err != nil {
-			return nil, err
-		}
-
-		var patientsList []*Patient
-		if err = cursor.All(ctx, &patientsList); err != nil {
-			return nil, fmt.Errorf("error decoding patients list: %w", err)
-		}
-
-		categoryResult := make([]TideResultPatient, 0, 25)
-		for _, patient := range patientsList {
-			var patientTags []string
-			for _, tag := range *patient.Tags {
-				patientTags = append(patientTags, tag.Hex())
-			}
-
-			categoryResult = append(categoryResult, TideResultPatient{
-				Patient: &TidePatient{
-					Email:    patient.Email,
-					FullName: patient.FullName,
-					Id:       patient.UserId,
-					Tags:     &patientTags,
-				},
-				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
-				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
-				TimeCGMUseMinutes:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUseMinutes,
-				TimeCGMUsePercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUsePercent,
-				TimeInHighPercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeInHighPercent,
-				TimeInLowPercent:           (*patient.Summary.CGM.Periods)[*params.Period].TimeInLowPercent,
-				TimeInTargetPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercent,
-				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
-				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
-				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
-			})
-		}
-
-		(*tide.Results)["meetingTargets"] = &categoryResult
-
 	}
 
-	return &tide, nil
+	(*report.Results)["meetingTargets"] = &categoryResult
+
+	return &report, nil
 }

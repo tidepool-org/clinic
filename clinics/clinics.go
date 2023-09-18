@@ -44,28 +44,28 @@ type Filter struct {
 }
 
 type Clinic struct {
-	Id                      *primitive.ObjectID     `bson:"_id,omitempty"`
-	Address                 *string                 `bson:"address,omitempty"`
-	City                    *string                 `bson:"city,omitempty"`
-	ClinicType              *string                 `bson:"clinicType,omitempty"`
-	ClinicSize              *string                 `bson:"clinicSize,omitempty"`
-	Country                 *string                 `bson:"country,omitempty"`
-	Name                    *string                 `bson:"name,omitempty"`
-	PatientTags             []PatientTag            `bson:"patientTags,omitempty"`
-	PhoneNumbers            *[]PhoneNumber          `bson:"phoneNumbers,omitempty"`
-	PostalCode              *string                 `bson:"postalCode,omitempty"`
-	State                   *string                 `bson:"state,omitempty"`
-	CanonicalShareCode      *string                 `bson:"canonicalShareCode,omitempty"`
-	Website                 *string                 `bson:"website,omitempty"`
-	ShareCodes              *[]string               `bson:"shareCodes,omitempty"`
-	Admins                  *[]string               `bson:"admins,omitempty"`
-	CreatedTime             time.Time               `bson:"createdTime,omitempty"`
-	UpdatedTime             time.Time               `bson:"updatedTime,omitempty"`
-	IsMigrated              bool                    `bson:"isMigrated,omitempty"`
-	Tier                    string                  `bson:"tier,omitempty"`
-	PreferredBgUnits        string                  `bson:"PreferredBgUnits,omitempty"`
-	SuppressedNotifications SuppressedNotifications `bson:"suppressedNotifications"`
-	MembershipRestrictions []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
+	Id                      *primitive.ObjectID      `bson:"_id,omitempty"`
+	Address                 *string                  `bson:"address,omitempty"`
+	City                    *string                  `bson:"city,omitempty"`
+	ClinicType              *string                  `bson:"clinicType,omitempty"`
+	ClinicSize              *string                  `bson:"clinicSize,omitempty"`
+	Country                 *string                  `bson:"country,omitempty"`
+	Name                    *string                  `bson:"name,omitempty"`
+	PatientTags             []PatientTag             `bson:"patientTags,omitempty"`
+	PhoneNumbers            *[]PhoneNumber           `bson:"phoneNumbers,omitempty"`
+	PostalCode              *string                  `bson:"postalCode,omitempty"`
+	State                   *string                  `bson:"state,omitempty"`
+	CanonicalShareCode      *string                  `bson:"canonicalShareCode,omitempty"`
+	Website                 *string                  `bson:"website,omitempty"`
+	ShareCodes              *[]string                `bson:"shareCodes,omitempty"`
+	Admins                  *[]string                `bson:"admins,omitempty"`
+	CreatedTime             time.Time                `bson:"createdTime,omitempty"`
+	UpdatedTime             time.Time                `bson:"updatedTime,omitempty"`
+	IsMigrated              bool                     `bson:"isMigrated,omitempty"`
+	Tier                    string                   `bson:"tier,omitempty"`
+	PreferredBgUnits        string                   `bson:"PreferredBgUnits,omitempty"`
+	SuppressedNotifications SuppressedNotifications  `bson:"suppressedNotifications"`
+	MembershipRestrictions  []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
 }
 
 func NewClinic() Clinic {
