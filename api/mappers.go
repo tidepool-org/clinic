@@ -332,7 +332,7 @@ func NewSummary(dto *PatientSummary, tideConfig []*patients.TideFilters) *patien
 			for _, category := range *report {
 				if periodByTag[*category.Field] != nil {
 					if ops[*category.Comparison](*periodByTag[*category.Field], *category.Value) {
-						categoryKey := fmt.Sprintf("%s-%s-%f", category.Field, category.Comparison, category.Value)
+						categoryKey := fmt.Sprintf("%s-%s-%f", *category.Field, *category.Comparison, *category.Value)
 						riskCategoriesMap[categoryKey] = empty
 					}
 				}

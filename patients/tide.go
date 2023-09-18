@@ -87,7 +87,7 @@ func DefaultTideReport() (config TideFilters) {
 	}
 
 	for _, category := range config {
-		category.Id = ptr([]byte(fmt.Sprintf("%s-%s-%f", category.Field, category.Comparison, category.Value)))
+		category.Id = ptr([]byte(fmt.Sprintf("%s-%s-%f", *category.Field, *category.Comparison, *category.Value)))
 	}
 
 	return
