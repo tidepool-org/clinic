@@ -52,6 +52,13 @@ func (r *repository) Initialize(ctx context.Context) error {
 	_, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
+				{Key: "userId", Value: 1},
+			},
+			Options: options.Index().
+				SetName("UserId"),
+		},
+		{
+			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "userId", Value: 1},
 			},

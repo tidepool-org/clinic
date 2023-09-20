@@ -256,7 +256,9 @@ var _ = Describe("Redox", func() {
 		It("successfully matches a patient", func() {
 			fixtureMrn := "0000000001"
 			fixtureDateOfBirth := "2008-01-06"
+			clinicId := clinic.Id.Hex()
 			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+				ClinicId:  &clinicId,
 				Mrn:       &fixtureMrn,
 				BirthDate: &fixtureDateOfBirth,
 			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
@@ -280,8 +282,10 @@ var _ = Describe("Redox", func() {
 			fixtureMrn := "0000000001"
 			fixtureDateOfBirth := "2008-01-06"
 			second := patientsTest.RandomPatient()
+			clinicId := clinic.Id.Hex()
 
 			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+				ClinicId:  &clinicId,
 				Mrn:       &fixtureMrn,
 				BirthDate: &fixtureDateOfBirth,
 			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
@@ -297,8 +301,10 @@ var _ = Describe("Redox", func() {
 		It("does not return error when no patients are found", func() {
 			fixtureMrn := "0000000001"
 			fixtureDateOfBirth := "2008-01-06"
+			clinicId := clinic.Id.Hex()
 
 			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+				ClinicId:  &clinicId,
 				Mrn:       &fixtureMrn,
 				BirthDate: &fixtureDateOfBirth,
 			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{

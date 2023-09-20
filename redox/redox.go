@@ -272,7 +272,9 @@ func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Cli
 		return nil, nil
 	}
 
+	clinicId := clinic.Id.Hex()
 	filter := patients.Filter{
+		ClinicId:  &clinicId,
 		Mrn:       &criteria.Mrn,
 		BirthDate: &criteria.DateOfBirth,
 	}

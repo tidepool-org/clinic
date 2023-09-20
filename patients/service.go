@@ -38,7 +38,7 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
-	if err := s.enforceMrnSettings(ctx, patient.ClinicId.Hex(), &patient); err != nil {
+	if err := s.enforceMrnSettings(ctx, patient.ClinicId.Hex(), patient.UserId, &patient); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		return nil, err
 	}
 
-	if err := s.enforceMrnSettings(ctx, update.ClinicId, &update.Patient); err != nil {
+	if err := s.enforceMrnSettings(ctx, update.ClinicId, &update.UserId, &update.Patient); err != nil {
 		return nil, err
 	}
 
@@ -210,7 +210,7 @@ func (s *service) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Cont
 	return s.repo.RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection)
 }
 
-func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, patient *Patient) error {
+func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, existingUserId *string, patient *Patient) error {
 	mrnSettings, err := s.clinics.GetMRNSettings(ctx, clinicId)
 	if err != nil || mrnSettings == nil {
 		return err
@@ -232,7 +232,7 @@ func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, patie
 			}
 
 			// The same MRN shouldn't exist already, or it should belong to the same user
-			if !(res.TotalCount == 0 || (res.TotalCount == 1 && patient.UserId != nil && *patient.UserId == *res.Patients[0].UserId)) {
+			if !(res.TotalCount == 0 || (res.TotalCount == 1 && existingUserId != nil && *existingUserId == *res.Patients[0].UserId)) {
 				return fmt.Errorf("%w: mrn must be unique", errors2.BadRequest)
 			}
 		}
