@@ -863,7 +863,8 @@ type EHRMatchResponse struct {
 
 // EHRProcedureCodes defines model for EHRProcedureCodes.
 type EHRProcedureCodes struct {
-	DisableSummaryReports string `json:"disableSummaryReports"`
+	CreateAccount         *string `json:"createAccount,omitempty"`
+	DisableSummaryReports string  `json:"disableSummaryReports"`
 
 	// EnableSummaryReports Procedure Code for Summary Statistics and PDF Reports subscription
 	EnableSummaryReports string `json:"enableSummaryReports"`

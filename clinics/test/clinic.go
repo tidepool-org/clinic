@@ -23,6 +23,7 @@ func RandomClinic() *clinics.Clinic {
 	shareCodes := []string{shareCode}
 	admins := []string{Faker.UUID().V4()}
 	id := primitive.NewObjectIDFromTimestamp(Faker.Time().TimeBetween(time.Now().Add(-time.Hour*24*365), time.Now()))
+	createAccountCode := "34567"
 
 	return &clinics.Clinic{
 		Id:                 &id,
@@ -45,6 +46,11 @@ func RandomClinic() *clinics.Clinic {
 			Enabled: true,
 			Facility: &clinics.EHRFacility{
 				Name: Faker.Company().Name(),
+			},
+			ProcedureCodes: clinics.EHRProcedureCodes{
+				EnableSummaryReports:  "12345",
+				DisableSummaryReports: "23456",
+				CreateAccount:         &createAccountCode,
 			},
 			SourceId: Faker.UUID().V4(),
 		},

@@ -124,6 +124,7 @@ type Filter struct {
 	Tags      *[]string
 	Mrn       *string
 	BirthDate *string
+	FullName  *string
 
 	ActiveEHRSubscription *string
 
