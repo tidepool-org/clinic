@@ -1034,16 +1034,6 @@ func (mr *MockClientInterfaceMockRecorder) SendUploadReminder(ctx, clinicId, pat
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendUploadReminder", reflect.TypeOf((*MockClientInterface)(nil).SendUploadReminder), varargs...)
 }
 
-<<<<<<< HEAD
-// TideReport mocks base method.
-func (m *MockClientInterface) TideReport(ctx context.Context, clinicId ClinicId, params *TideReportParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, clinicId, params}
-	for _, a := range reqEditors {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "TideReport", varargs...)
-=======
 // SyncEHRData mocks base method.
 func (m *MockClientInterface) SyncEHRData(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1052,25 +1042,36 @@ func (m *MockClientInterface) SyncEHRData(ctx context.Context, clinicId ClinicId
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "SyncEHRData", varargs...)
->>>>>>> origin/master
 	ret0, _ := ret[0].(*http.Response)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-<<<<<<< HEAD
-// TideReport indicates an expected call of TideReport.
-func (mr *MockClientInterfaceMockRecorder) TideReport(ctx, clinicId, params interface{}, reqEditors ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, clinicId, params}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TideReport", reflect.TypeOf((*MockClientInterface)(nil).TideReport), varargs...)
-=======
 // SyncEHRData indicates an expected call of SyncEHRData.
 func (mr *MockClientInterfaceMockRecorder) SyncEHRData(ctx, clinicId interface{}, reqEditors ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncEHRData", reflect.TypeOf((*MockClientInterface)(nil).SyncEHRData), varargs...)
->>>>>>> origin/master
+}
+
+// TideReport mocks base method.
+func (m *MockClientInterface) TideReport(ctx context.Context, clinicId ClinicId, params *TideReportParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "TideReport", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TideReport indicates an expected call of TideReport.
+func (mr *MockClientInterfaceMockRecorder) TideReport(ctx, clinicId, params interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TideReport", reflect.TypeOf((*MockClientInterface)(nil).TideReport), varargs...)
 }
 
 // TriggerInitialMigration mocks base method.
@@ -2676,17 +2677,6 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) SendUploadReminderWithRe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendUploadReminderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SendUploadReminderWithResponse), varargs...)
 }
 
-<<<<<<< HEAD
-// TideReportWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) TideReportWithResponse(ctx context.Context, clinicId ClinicId, params *TideReportParams, reqEditors ...RequestEditorFn) (*TideReportResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, clinicId, params}
-	for _, a := range reqEditors {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "TideReportWithResponse", varargs...)
-	ret0, _ := ret[0].(*TideReportResponse)
-=======
 // SyncEHRDataWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) SyncEHRDataWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*SyncEHRDataResponse, error) {
 	m.ctrl.T.Helper()
@@ -2696,24 +2686,35 @@ func (m *MockClientWithResponsesInterface) SyncEHRDataWithResponse(ctx context.C
 	}
 	ret := m.ctrl.Call(m, "SyncEHRDataWithResponse", varargs...)
 	ret0, _ := ret[0].(*SyncEHRDataResponse)
->>>>>>> origin/master
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-<<<<<<< HEAD
-// TideReportWithResponse indicates an expected call of TideReportWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) TideReportWithResponse(ctx, clinicId, params interface{}, reqEditors ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, clinicId, params}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TideReportWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).TideReportWithResponse), varargs...)
-=======
 // SyncEHRDataWithResponse indicates an expected call of SyncEHRDataWithResponse.
 func (mr *MockClientWithResponsesInterfaceMockRecorder) SyncEHRDataWithResponse(ctx, clinicId interface{}, reqEditors ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncEHRDataWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SyncEHRDataWithResponse), varargs...)
->>>>>>> origin/master
+}
+
+// TideReportWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) TideReportWithResponse(ctx context.Context, clinicId ClinicId, params *TideReportParams, reqEditors ...RequestEditorFn) (*TideReportResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "TideReportWithResponse", varargs...)
+	ret0, _ := ret[0].(*TideReportResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TideReportWithResponse indicates an expected call of TideReportWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) TideReportWithResponse(ctx, clinicId, params interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TideReportWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).TideReportWithResponse), varargs...)
 }
 
 // TriggerInitialMigrationWithBodyWithResponse mocks base method.
