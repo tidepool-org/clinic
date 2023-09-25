@@ -28,7 +28,7 @@ func NewClinic(c Clinic) *clinics.Clinic {
 		}
 	}
 
-	return &clinics.Clinic{
+	clinic := &clinics.Clinic{
 		Name:             &c.Name,
 		ClinicType:       clinicTypeToString(c.ClinicType),
 		ClinicSize:       clinicSizeToString(c.ClinicSize),
@@ -41,6 +41,12 @@ func NewClinic(c Clinic) *clinics.Clinic {
 		Website:          c.Website,
 		PreferredBgUnits: string(c.PreferredBgUnits),
 	}
+	if c.Timezone != nil {
+		tz := string(*c.Timezone)
+		clinic.Timezone = &tz
+	}
+
+	return clinic
 }
 
 func NewClinicDto(c *clinics.Clinic) Clinic {
@@ -95,6 +101,10 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 			})
 		}
 		dto.PatientTags = &patientTags
+	}
+	if c.Timezone != nil {
+		tz := ClinicTimezone(*c.Timezone)
+		dto.Timezone = &tz
 	}
 
 	return dto

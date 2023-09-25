@@ -5,6 +5,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"math/rand"
 	"time"
 )
@@ -21,7 +22,10 @@ func RandomClinic() *clinics.Clinic {
 	shareCode := Faker.UUID().V4()
 	shareCodes := []string{shareCode}
 	admins := []string{Faker.UUID().V4()}
+	id := primitive.NewObjectIDFromTimestamp(Faker.Time().TimeBetween(time.Now().Add(-time.Hour*24*365), time.Now()))
+
 	return &clinics.Clinic{
+		Id:                 &id,
 		Address:            strp(Faker.Address().Address()),
 		City:               strp(Faker.Address().City()),
 		ClinicType:         strp(Faker.RandomStringElement([]string{"Diabetes Clinic", "Hospital"})),
@@ -37,6 +41,13 @@ func RandomClinic() *clinics.Clinic {
 		CreatedTime:        Faker.Time().Time(time.Now()),
 		UpdatedTime:        Faker.Time().Time(time.Now()),
 		IsMigrated:         false,
+		EHRSettings: &clinics.EHRSettings{
+			Enabled: true,
+			Facility: &clinics.EHRFacility{
+				Name: Faker.Company().Name(),
+			},
+			SourceId: Faker.UUID().V4(),
+		},
 	}
 }
 

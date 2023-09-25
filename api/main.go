@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/tidepool-org/clinic/redox"
 
 	oapiMiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -70,10 +71,12 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 	// Do not validate servers in the open api spec
 	swagger.Servers = nil
 
-	// Skip auth, validation and logging for readiness probe and metrics routes
-	skipper := RouteSkipper([]string{"/ready", "/metrics"})
+	healthcheckRoutes := []string{"/ready", "/metrics"}
+	redoxRoutes := []string{"/v1/redox", "/v1/redox/verify"}
+
+	// Skip common auth logic for healthcheck routes and redox
 	authMiddleware := auth.NewAuthMiddleware(authenticator, auth.AuthMiddlewareOpts{
-		Skipper: skipper,
+		Skipper: RouteSkipper(append(healthcheckRoutes, redoxRoutes...)),
 	})
 	requestValidator := oapiMiddleware.OapiRequestValidatorWithOptions(swagger, &oapiMiddleware.Options{
 		Options: openapi3filter.Options{
@@ -81,10 +84,10 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 			ExcludeReadOnlyValidations:  true,
 			ExcludeWriteOnlyValidations: true,
 		},
-		Skipper: skipper,
+		Skipper: RouteSkipper(append(healthcheckRoutes, redoxRoutes...)),
 	})
 	loggerConfig := middleware.DefaultLoggerConfig
-	loggerConfig.Skipper = skipper
+	loggerConfig.Skipper = RouteSkipper(healthcheckRoutes)
 	loggerMiddleware := middleware.LoggerWithConfig(loggerConfig)
 
 	e.Use(middleware.Recover())
@@ -111,6 +114,8 @@ func MainLoop() {
 			patients.NewRepository,
 			patients.NewCustodialService,
 			patients.NewService,
+			redox.NewConfig,
+			redox.NewHandler,
 			clinicians.NewRepository,
 			clinicians.NewService,
 			clinics.NewRepository,

@@ -338,8 +338,6 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/tchap/go-patricia/v2 v2.3.1 h1:6rQp39lgIYZ+MHmdEq4xzuk1t7OdC35z/xm0BGhTkes=
 github.com/tchap/go-patricia/v2 v2.3.1/go.mod h1:VZRHKAb53DLaG+nA9EaYYiaEx6YztwDlLElMsnSHD4k=
-github.com/tidepool-org/clinic/client v0.0.0-20230801231413-4c8627f3c3f3 h1:NiGOy6QFfQV2HiO45L+tCiDiEHRUea0bdamGw16+4vU=
-github.com/tidepool-org/clinic/client v0.0.0-20230801231413-4c8627f3c3f3/go.mod h1:eduhUZw6oOhrtt2C57RGn4rYq9CoCX8ucwDV0PmxSF4=
 github.com/tidepool-org/go-common v0.10.1-0.20230817174512-2e38ce659a65 h1:pjS6NdBZ3AcHrjmiArJzXyu3B7ojMmhoq7TY+t9HWgY=
 github.com/tidepool-org/go-common v0.10.1-0.20230817174512-2e38ce659a65/go.mod h1:5U4rnYWGfg4gW/fT9EAZZnSIRsYH0ijIlkDnddL+OE4=
 github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=

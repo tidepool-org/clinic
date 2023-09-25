@@ -7,8 +7,13 @@ import (
 )
 
 func NewClient(host string) (*mongo.Client, error) {
+	bsonOpts := &options.BSONOptions{
+		UseJSONStructTags: true,
+	}
+	opts := options.Client().ApplyURI(host).SetBSONOptions(bsonOpts)
+
 	ctx := NewDbContext()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(host))
+	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to mongo: %w", err)
 	}

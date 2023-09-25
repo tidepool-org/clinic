@@ -15,6 +15,7 @@ require (
 	github.com/onsi/gomega v1.27.10
 	github.com/open-policy-agent/opa v0.55.0
 	github.com/tidepool-org/clinic/client v0.0.0-20230801231413-4c8627f3c3f3
+	github.com/tidepool-org/clinic/redox_models v0.0.0-00010101000000-000000000000
 	github.com/tidepool-org/go-common v0.10.1-0.20230817174512-2e38ce659a65
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/fx v1.20.0
@@ -129,3 +130,5 @@ require (
 )
 
 replace github.com/tidepool-org/clinic/client => ./client
+
+replace github.com/tidepool-org/clinic/redox_models => ./redox_models

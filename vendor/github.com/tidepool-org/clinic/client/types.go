@@ -36,6 +36,605 @@ const (
 	MmolL ClinicPreferredBgUnits = "mmol/L"
 )
 
+// Defines values for ClinicTimezone.
+const (
+	AfricaAbidjan                  ClinicTimezone = "Africa/Abidjan"
+	AfricaAccra                    ClinicTimezone = "Africa/Accra"
+	AfricaAddisAbaba               ClinicTimezone = "Africa/Addis_Ababa"
+	AfricaAlgiers                  ClinicTimezone = "Africa/Algiers"
+	AfricaAsmara                   ClinicTimezone = "Africa/Asmara"
+	AfricaAsmera                   ClinicTimezone = "Africa/Asmera"
+	AfricaBamako                   ClinicTimezone = "Africa/Bamako"
+	AfricaBangui                   ClinicTimezone = "Africa/Bangui"
+	AfricaBanjul                   ClinicTimezone = "Africa/Banjul"
+	AfricaBissau                   ClinicTimezone = "Africa/Bissau"
+	AfricaBlantyre                 ClinicTimezone = "Africa/Blantyre"
+	AfricaBrazzaville              ClinicTimezone = "Africa/Brazzaville"
+	AfricaBujumbura                ClinicTimezone = "Africa/Bujumbura"
+	AfricaCairo                    ClinicTimezone = "Africa/Cairo"
+	AfricaCasablanca               ClinicTimezone = "Africa/Casablanca"
+	AfricaCeuta                    ClinicTimezone = "Africa/Ceuta"
+	AfricaConakry                  ClinicTimezone = "Africa/Conakry"
+	AfricaDakar                    ClinicTimezone = "Africa/Dakar"
+	AfricaDarEsSalaam              ClinicTimezone = "Africa/Dar_es_Salaam"
+	AfricaDjibouti                 ClinicTimezone = "Africa/Djibouti"
+	AfricaDouala                   ClinicTimezone = "Africa/Douala"
+	AfricaElAaiun                  ClinicTimezone = "Africa/El_Aaiun"
+	AfricaFreetown                 ClinicTimezone = "Africa/Freetown"
+	AfricaGaborone                 ClinicTimezone = "Africa/Gaborone"
+	AfricaHarare                   ClinicTimezone = "Africa/Harare"
+	AfricaJohannesburg             ClinicTimezone = "Africa/Johannesburg"
+	AfricaJuba                     ClinicTimezone = "Africa/Juba"
+	AfricaKampala                  ClinicTimezone = "Africa/Kampala"
+	AfricaKhartoum                 ClinicTimezone = "Africa/Khartoum"
+	AfricaKigali                   ClinicTimezone = "Africa/Kigali"
+	AfricaKinshasa                 ClinicTimezone = "Africa/Kinshasa"
+	AfricaLagos                    ClinicTimezone = "Africa/Lagos"
+	AfricaLibreville               ClinicTimezone = "Africa/Libreville"
+	AfricaLome                     ClinicTimezone = "Africa/Lome"
+	AfricaLuanda                   ClinicTimezone = "Africa/Luanda"
+	AfricaLubumbashi               ClinicTimezone = "Africa/Lubumbashi"
+	AfricaLusaka                   ClinicTimezone = "Africa/Lusaka"
+	AfricaMalabo                   ClinicTimezone = "Africa/Malabo"
+	AfricaMaputo                   ClinicTimezone = "Africa/Maputo"
+	AfricaMaseru                   ClinicTimezone = "Africa/Maseru"
+	AfricaMbabane                  ClinicTimezone = "Africa/Mbabane"
+	AfricaMogadishu                ClinicTimezone = "Africa/Mogadishu"
+	AfricaMonrovia                 ClinicTimezone = "Africa/Monrovia"
+	AfricaNairobi                  ClinicTimezone = "Africa/Nairobi"
+	AfricaNdjamena                 ClinicTimezone = "Africa/Ndjamena"
+	AfricaNiamey                   ClinicTimezone = "Africa/Niamey"
+	AfricaNouakchott               ClinicTimezone = "Africa/Nouakchott"
+	AfricaOuagadougou              ClinicTimezone = "Africa/Ouagadougou"
+	AfricaPortoNovo                ClinicTimezone = "Africa/Porto-Novo"
+	AfricaSaoTome                  ClinicTimezone = "Africa/Sao_Tome"
+	AfricaTimbuktu                 ClinicTimezone = "Africa/Timbuktu"
+	AfricaTripoli                  ClinicTimezone = "Africa/Tripoli"
+	AfricaTunis                    ClinicTimezone = "Africa/Tunis"
+	AfricaWindhoek                 ClinicTimezone = "Africa/Windhoek"
+	AmericaAdak                    ClinicTimezone = "America/Adak"
+	AmericaAnchorage               ClinicTimezone = "America/Anchorage"
+	AmericaAnguilla                ClinicTimezone = "America/Anguilla"
+	AmericaAntigua                 ClinicTimezone = "America/Antigua"
+	AmericaAraguaina               ClinicTimezone = "America/Araguaina"
+	AmericaArgentinaBuenosAires    ClinicTimezone = "America/Argentina/Buenos_Aires"
+	AmericaArgentinaCatamarca      ClinicTimezone = "America/Argentina/Catamarca"
+	AmericaArgentinaComodRivadavia ClinicTimezone = "America/Argentina/ComodRivadavia"
+	AmericaArgentinaCordoba        ClinicTimezone = "America/Argentina/Cordoba"
+	AmericaArgentinaJujuy          ClinicTimezone = "America/Argentina/Jujuy"
+	AmericaArgentinaLaRioja        ClinicTimezone = "America/Argentina/La_Rioja"
+	AmericaArgentinaMendoza        ClinicTimezone = "America/Argentina/Mendoza"
+	AmericaArgentinaRioGallegos    ClinicTimezone = "America/Argentina/Rio_Gallegos"
+	AmericaArgentinaSalta          ClinicTimezone = "America/Argentina/Salta"
+	AmericaArgentinaSanJuan        ClinicTimezone = "America/Argentina/San_Juan"
+	AmericaArgentinaSanLuis        ClinicTimezone = "America/Argentina/San_Luis"
+	AmericaArgentinaTucuman        ClinicTimezone = "America/Argentina/Tucuman"
+	AmericaArgentinaUshuaia        ClinicTimezone = "America/Argentina/Ushuaia"
+	AmericaAruba                   ClinicTimezone = "America/Aruba"
+	AmericaAsuncion                ClinicTimezone = "America/Asuncion"
+	AmericaAtikokan                ClinicTimezone = "America/Atikokan"
+	AmericaAtka                    ClinicTimezone = "America/Atka"
+	AmericaBahia                   ClinicTimezone = "America/Bahia"
+	AmericaBahiaBanderas           ClinicTimezone = "America/Bahia_Banderas"
+	AmericaBarbados                ClinicTimezone = "America/Barbados"
+	AmericaBelem                   ClinicTimezone = "America/Belem"
+	AmericaBelize                  ClinicTimezone = "America/Belize"
+	AmericaBlancSablon             ClinicTimezone = "America/Blanc-Sablon"
+	AmericaBoaVista                ClinicTimezone = "America/Boa_Vista"
+	AmericaBogota                  ClinicTimezone = "America/Bogota"
+	AmericaBoise                   ClinicTimezone = "America/Boise"
+	AmericaBuenosAires             ClinicTimezone = "America/Buenos_Aires"
+	AmericaCambridgeBay            ClinicTimezone = "America/Cambridge_Bay"
+	AmericaCampoGrande             ClinicTimezone = "America/Campo_Grande"
+	AmericaCancun                  ClinicTimezone = "America/Cancun"
+	AmericaCaracas                 ClinicTimezone = "America/Caracas"
+	AmericaCatamarca               ClinicTimezone = "America/Catamarca"
+	AmericaCayenne                 ClinicTimezone = "America/Cayenne"
+	AmericaCayman                  ClinicTimezone = "America/Cayman"
+	AmericaChicago                 ClinicTimezone = "America/Chicago"
+	AmericaChihuahua               ClinicTimezone = "America/Chihuahua"
+	AmericaCiudadJuarez            ClinicTimezone = "America/Ciudad_Juarez"
+	AmericaCoralHarbour            ClinicTimezone = "America/Coral_Harbour"
+	AmericaCordoba                 ClinicTimezone = "America/Cordoba"
+	AmericaCostaRica               ClinicTimezone = "America/Costa_Rica"
+	AmericaCreston                 ClinicTimezone = "America/Creston"
+	AmericaCuiaba                  ClinicTimezone = "America/Cuiaba"
+	AmericaCuracao                 ClinicTimezone = "America/Curacao"
+	AmericaDanmarkshavn            ClinicTimezone = "America/Danmarkshavn"
+	AmericaDawson                  ClinicTimezone = "America/Dawson"
+	AmericaDawsonCreek             ClinicTimezone = "America/Dawson_Creek"
+	AmericaDenver                  ClinicTimezone = "America/Denver"
+	AmericaDetroit                 ClinicTimezone = "America/Detroit"
+	AmericaDominica                ClinicTimezone = "America/Dominica"
+	AmericaEdmonton                ClinicTimezone = "America/Edmonton"
+	AmericaEirunepe                ClinicTimezone = "America/Eirunepe"
+	AmericaElSalvador              ClinicTimezone = "America/El_Salvador"
+	AmericaEnsenada                ClinicTimezone = "America/Ensenada"
+	AmericaFortNelson              ClinicTimezone = "America/Fort_Nelson"
+	AmericaFortWayne               ClinicTimezone = "America/Fort_Wayne"
+	AmericaFortaleza               ClinicTimezone = "America/Fortaleza"
+	AmericaGlaceBay                ClinicTimezone = "America/Glace_Bay"
+	AmericaGodthab                 ClinicTimezone = "America/Godthab"
+	AmericaGooseBay                ClinicTimezone = "America/Goose_Bay"
+	AmericaGrandTurk               ClinicTimezone = "America/Grand_Turk"
+	AmericaGrenada                 ClinicTimezone = "America/Grenada"
+	AmericaGuadeloupe              ClinicTimezone = "America/Guadeloupe"
+	AmericaGuatemala               ClinicTimezone = "America/Guatemala"
+	AmericaGuayaquil               ClinicTimezone = "America/Guayaquil"
+	AmericaGuyana                  ClinicTimezone = "America/Guyana"
+	AmericaHalifax                 ClinicTimezone = "America/Halifax"
+	AmericaHavana                  ClinicTimezone = "America/Havana"
+	AmericaHermosillo              ClinicTimezone = "America/Hermosillo"
+	AmericaIndianaIndianapolis     ClinicTimezone = "America/Indiana/Indianapolis"
+	AmericaIndianaKnox             ClinicTimezone = "America/Indiana/Knox"
+	AmericaIndianaMarengo          ClinicTimezone = "America/Indiana/Marengo"
+	AmericaIndianaPetersburg       ClinicTimezone = "America/Indiana/Petersburg"
+	AmericaIndianaTellCity         ClinicTimezone = "America/Indiana/Tell_City"
+	AmericaIndianaVevay            ClinicTimezone = "America/Indiana/Vevay"
+	AmericaIndianaVincennes        ClinicTimezone = "America/Indiana/Vincennes"
+	AmericaIndianaWinamac          ClinicTimezone = "America/Indiana/Winamac"
+	AmericaIndianapolis            ClinicTimezone = "America/Indianapolis"
+	AmericaInuvik                  ClinicTimezone = "America/Inuvik"
+	AmericaIqaluit                 ClinicTimezone = "America/Iqaluit"
+	AmericaJamaica                 ClinicTimezone = "America/Jamaica"
+	AmericaJujuy                   ClinicTimezone = "America/Jujuy"
+	AmericaJuneau                  ClinicTimezone = "America/Juneau"
+	AmericaKentuckyLouisville      ClinicTimezone = "America/Kentucky/Louisville"
+	AmericaKentuckyMonticello      ClinicTimezone = "America/Kentucky/Monticello"
+	AmericaKnoxIN                  ClinicTimezone = "America/Knox_IN"
+	AmericaKralendijk              ClinicTimezone = "America/Kralendijk"
+	AmericaLaPaz                   ClinicTimezone = "America/La_Paz"
+	AmericaLima                    ClinicTimezone = "America/Lima"
+	AmericaLosAngeles              ClinicTimezone = "America/Los_Angeles"
+	AmericaLouisville              ClinicTimezone = "America/Louisville"
+	AmericaLowerPrinces            ClinicTimezone = "America/Lower_Princes"
+	AmericaMaceio                  ClinicTimezone = "America/Maceio"
+	AmericaManagua                 ClinicTimezone = "America/Managua"
+	AmericaManaus                  ClinicTimezone = "America/Manaus"
+	AmericaMarigot                 ClinicTimezone = "America/Marigot"
+	AmericaMartinique              ClinicTimezone = "America/Martinique"
+	AmericaMatamoros               ClinicTimezone = "America/Matamoros"
+	AmericaMazatlan                ClinicTimezone = "America/Mazatlan"
+	AmericaMendoza                 ClinicTimezone = "America/Mendoza"
+	AmericaMenominee               ClinicTimezone = "America/Menominee"
+	AmericaMerida                  ClinicTimezone = "America/Merida"
+	AmericaMetlakatla              ClinicTimezone = "America/Metlakatla"
+	AmericaMexicoCity              ClinicTimezone = "America/Mexico_City"
+	AmericaMiquelon                ClinicTimezone = "America/Miquelon"
+	AmericaMoncton                 ClinicTimezone = "America/Moncton"
+	AmericaMonterrey               ClinicTimezone = "America/Monterrey"
+	AmericaMontevideo              ClinicTimezone = "America/Montevideo"
+	AmericaMontreal                ClinicTimezone = "America/Montreal"
+	AmericaMontserrat              ClinicTimezone = "America/Montserrat"
+	AmericaNassau                  ClinicTimezone = "America/Nassau"
+	AmericaNewYork                 ClinicTimezone = "America/New_York"
+	AmericaNipigon                 ClinicTimezone = "America/Nipigon"
+	AmericaNome                    ClinicTimezone = "America/Nome"
+	AmericaNoronha                 ClinicTimezone = "America/Noronha"
+	AmericaNorthDakotaBeulah       ClinicTimezone = "America/North_Dakota/Beulah"
+	AmericaNorthDakotaCenter       ClinicTimezone = "America/North_Dakota/Center"
+	AmericaNorthDakotaNewSalem     ClinicTimezone = "America/North_Dakota/New_Salem"
+	AmericaNuuk                    ClinicTimezone = "America/Nuuk"
+	AmericaOjinaga                 ClinicTimezone = "America/Ojinaga"
+	AmericaPanama                  ClinicTimezone = "America/Panama"
+	AmericaPangnirtung             ClinicTimezone = "America/Pangnirtung"
+	AmericaParamaribo              ClinicTimezone = "America/Paramaribo"
+	AmericaPhoenix                 ClinicTimezone = "America/Phoenix"
+	AmericaPortAuPrince            ClinicTimezone = "America/Port-au-Prince"
+	AmericaPortOfSpain             ClinicTimezone = "America/Port_of_Spain"
+	AmericaPortoAcre               ClinicTimezone = "America/Porto_Acre"
+	AmericaPortoVelho              ClinicTimezone = "America/Porto_Velho"
+	AmericaPuertoRico              ClinicTimezone = "America/Puerto_Rico"
+	AmericaPuntaArenas             ClinicTimezone = "America/Punta_Arenas"
+	AmericaRainyRiver              ClinicTimezone = "America/Rainy_River"
+	AmericaRankinInlet             ClinicTimezone = "America/Rankin_Inlet"
+	AmericaRecife                  ClinicTimezone = "America/Recife"
+	AmericaRegina                  ClinicTimezone = "America/Regina"
+	AmericaResolute                ClinicTimezone = "America/Resolute"
+	AmericaRioBranco               ClinicTimezone = "America/Rio_Branco"
+	AmericaRosario                 ClinicTimezone = "America/Rosario"
+	AmericaSantaIsabel             ClinicTimezone = "America/Santa_Isabel"
+	AmericaSantarem                ClinicTimezone = "America/Santarem"
+	AmericaSantiago                ClinicTimezone = "America/Santiago"
+	AmericaSantoDomingo            ClinicTimezone = "America/Santo_Domingo"
+	AmericaSaoPaulo                ClinicTimezone = "America/Sao_Paulo"
+	AmericaScoresbysund            ClinicTimezone = "America/Scoresbysund"
+	AmericaShiprock                ClinicTimezone = "America/Shiprock"
+	AmericaSitka                   ClinicTimezone = "America/Sitka"
+	AmericaStBarthelemy            ClinicTimezone = "America/St_Barthelemy"
+	AmericaStJohns                 ClinicTimezone = "America/St_Johns"
+	AmericaStKitts                 ClinicTimezone = "America/St_Kitts"
+	AmericaStLucia                 ClinicTimezone = "America/St_Lucia"
+	AmericaStThomas                ClinicTimezone = "America/St_Thomas"
+	AmericaStVincent               ClinicTimezone = "America/St_Vincent"
+	AmericaSwiftCurrent            ClinicTimezone = "America/Swift_Current"
+	AmericaTegucigalpa             ClinicTimezone = "America/Tegucigalpa"
+	AmericaThule                   ClinicTimezone = "America/Thule"
+	AmericaThunderBay              ClinicTimezone = "America/Thunder_Bay"
+	AmericaTijuana                 ClinicTimezone = "America/Tijuana"
+	AmericaToronto                 ClinicTimezone = "America/Toronto"
+	AmericaTortola                 ClinicTimezone = "America/Tortola"
+	AmericaVancouver               ClinicTimezone = "America/Vancouver"
+	AmericaVirgin                  ClinicTimezone = "America/Virgin"
+	AmericaWhitehorse              ClinicTimezone = "America/Whitehorse"
+	AmericaWinnipeg                ClinicTimezone = "America/Winnipeg"
+	AmericaYakutat                 ClinicTimezone = "America/Yakutat"
+	AmericaYellowknife             ClinicTimezone = "America/Yellowknife"
+	AntarcticaCasey                ClinicTimezone = "Antarctica/Casey"
+	AntarcticaDavis                ClinicTimezone = "Antarctica/Davis"
+	AntarcticaDumontDUrville       ClinicTimezone = "Antarctica/DumontDUrville"
+	AntarcticaMacquarie            ClinicTimezone = "Antarctica/Macquarie"
+	AntarcticaMawson               ClinicTimezone = "Antarctica/Mawson"
+	AntarcticaMcMurdo              ClinicTimezone = "Antarctica/McMurdo"
+	AntarcticaPalmer               ClinicTimezone = "Antarctica/Palmer"
+	AntarcticaRothera              ClinicTimezone = "Antarctica/Rothera"
+	AntarcticaSouthPole            ClinicTimezone = "Antarctica/South_Pole"
+	AntarcticaSyowa                ClinicTimezone = "Antarctica/Syowa"
+	AntarcticaTroll                ClinicTimezone = "Antarctica/Troll"
+	AntarcticaVostok               ClinicTimezone = "Antarctica/Vostok"
+	ArcticLongyearbyen             ClinicTimezone = "Arctic/Longyearbyen"
+	AsiaAden                       ClinicTimezone = "Asia/Aden"
+	AsiaAlmaty                     ClinicTimezone = "Asia/Almaty"
+	AsiaAmman                      ClinicTimezone = "Asia/Amman"
+	AsiaAnadyr                     ClinicTimezone = "Asia/Anadyr"
+	AsiaAqtau                      ClinicTimezone = "Asia/Aqtau"
+	AsiaAqtobe                     ClinicTimezone = "Asia/Aqtobe"
+	AsiaAshgabat                   ClinicTimezone = "Asia/Ashgabat"
+	AsiaAshkhabad                  ClinicTimezone = "Asia/Ashkhabad"
+	AsiaAtyrau                     ClinicTimezone = "Asia/Atyrau"
+	AsiaBaghdad                    ClinicTimezone = "Asia/Baghdad"
+	AsiaBahrain                    ClinicTimezone = "Asia/Bahrain"
+	AsiaBaku                       ClinicTimezone = "Asia/Baku"
+	AsiaBangkok                    ClinicTimezone = "Asia/Bangkok"
+	AsiaBarnaul                    ClinicTimezone = "Asia/Barnaul"
+	AsiaBeirut                     ClinicTimezone = "Asia/Beirut"
+	AsiaBishkek                    ClinicTimezone = "Asia/Bishkek"
+	AsiaBrunei                     ClinicTimezone = "Asia/Brunei"
+	AsiaCalcutta                   ClinicTimezone = "Asia/Calcutta"
+	AsiaChita                      ClinicTimezone = "Asia/Chita"
+	AsiaChoibalsan                 ClinicTimezone = "Asia/Choibalsan"
+	AsiaChongqing                  ClinicTimezone = "Asia/Chongqing"
+	AsiaChungking                  ClinicTimezone = "Asia/Chungking"
+	AsiaColombo                    ClinicTimezone = "Asia/Colombo"
+	AsiaDacca                      ClinicTimezone = "Asia/Dacca"
+	AsiaDamascus                   ClinicTimezone = "Asia/Damascus"
+	AsiaDhaka                      ClinicTimezone = "Asia/Dhaka"
+	AsiaDili                       ClinicTimezone = "Asia/Dili"
+	AsiaDubai                      ClinicTimezone = "Asia/Dubai"
+	AsiaDushanbe                   ClinicTimezone = "Asia/Dushanbe"
+	AsiaFamagusta                  ClinicTimezone = "Asia/Famagusta"
+	AsiaGaza                       ClinicTimezone = "Asia/Gaza"
+	AsiaHarbin                     ClinicTimezone = "Asia/Harbin"
+	AsiaHebron                     ClinicTimezone = "Asia/Hebron"
+	AsiaHoChiMinh                  ClinicTimezone = "Asia/Ho_Chi_Minh"
+	AsiaHongKong                   ClinicTimezone = "Asia/Hong_Kong"
+	AsiaHovd                       ClinicTimezone = "Asia/Hovd"
+	AsiaIrkutsk                    ClinicTimezone = "Asia/Irkutsk"
+	AsiaIstanbul                   ClinicTimezone = "Asia/Istanbul"
+	AsiaJakarta                    ClinicTimezone = "Asia/Jakarta"
+	AsiaJayapura                   ClinicTimezone = "Asia/Jayapura"
+	AsiaJerusalem                  ClinicTimezone = "Asia/Jerusalem"
+	AsiaKabul                      ClinicTimezone = "Asia/Kabul"
+	AsiaKamchatka                  ClinicTimezone = "Asia/Kamchatka"
+	AsiaKarachi                    ClinicTimezone = "Asia/Karachi"
+	AsiaKashgar                    ClinicTimezone = "Asia/Kashgar"
+	AsiaKathmandu                  ClinicTimezone = "Asia/Kathmandu"
+	AsiaKatmandu                   ClinicTimezone = "Asia/Katmandu"
+	AsiaKhandyga                   ClinicTimezone = "Asia/Khandyga"
+	AsiaKolkata                    ClinicTimezone = "Asia/Kolkata"
+	AsiaKrasnoyarsk                ClinicTimezone = "Asia/Krasnoyarsk"
+	AsiaKualaLumpur                ClinicTimezone = "Asia/Kuala_Lumpur"
+	AsiaKuching                    ClinicTimezone = "Asia/Kuching"
+	AsiaKuwait                     ClinicTimezone = "Asia/Kuwait"
+	AsiaMacao                      ClinicTimezone = "Asia/Macao"
+	AsiaMacau                      ClinicTimezone = "Asia/Macau"
+	AsiaMagadan                    ClinicTimezone = "Asia/Magadan"
+	AsiaMakassar                   ClinicTimezone = "Asia/Makassar"
+	AsiaManila                     ClinicTimezone = "Asia/Manila"
+	AsiaMuscat                     ClinicTimezone = "Asia/Muscat"
+	AsiaNicosia                    ClinicTimezone = "Asia/Nicosia"
+	AsiaNovokuznetsk               ClinicTimezone = "Asia/Novokuznetsk"
+	AsiaNovosibirsk                ClinicTimezone = "Asia/Novosibirsk"
+	AsiaOmsk                       ClinicTimezone = "Asia/Omsk"
+	AsiaOral                       ClinicTimezone = "Asia/Oral"
+	AsiaPhnomPenh                  ClinicTimezone = "Asia/Phnom_Penh"
+	AsiaPontianak                  ClinicTimezone = "Asia/Pontianak"
+	AsiaPyongyang                  ClinicTimezone = "Asia/Pyongyang"
+	AsiaQatar                      ClinicTimezone = "Asia/Qatar"
+	AsiaQostanay                   ClinicTimezone = "Asia/Qostanay"
+	AsiaQyzylorda                  ClinicTimezone = "Asia/Qyzylorda"
+	AsiaRangoon                    ClinicTimezone = "Asia/Rangoon"
+	AsiaRiyadh                     ClinicTimezone = "Asia/Riyadh"
+	AsiaSaigon                     ClinicTimezone = "Asia/Saigon"
+	AsiaSakhalin                   ClinicTimezone = "Asia/Sakhalin"
+	AsiaSamarkand                  ClinicTimezone = "Asia/Samarkand"
+	AsiaSeoul                      ClinicTimezone = "Asia/Seoul"
+	AsiaShanghai                   ClinicTimezone = "Asia/Shanghai"
+	AsiaSingapore                  ClinicTimezone = "Asia/Singapore"
+	AsiaSrednekolymsk              ClinicTimezone = "Asia/Srednekolymsk"
+	AsiaTaipei                     ClinicTimezone = "Asia/Taipei"
+	AsiaTashkent                   ClinicTimezone = "Asia/Tashkent"
+	AsiaTbilisi                    ClinicTimezone = "Asia/Tbilisi"
+	AsiaTehran                     ClinicTimezone = "Asia/Tehran"
+	AsiaTelAviv                    ClinicTimezone = "Asia/Tel_Aviv"
+	AsiaThimbu                     ClinicTimezone = "Asia/Thimbu"
+	AsiaThimphu                    ClinicTimezone = "Asia/Thimphu"
+	AsiaTokyo                      ClinicTimezone = "Asia/Tokyo"
+	AsiaTomsk                      ClinicTimezone = "Asia/Tomsk"
+	AsiaUjungPandang               ClinicTimezone = "Asia/Ujung_Pandang"
+	AsiaUlaanbaatar                ClinicTimezone = "Asia/Ulaanbaatar"
+	AsiaUlanBator                  ClinicTimezone = "Asia/Ulan_Bator"
+	AsiaUrumqi                     ClinicTimezone = "Asia/Urumqi"
+	AsiaUstNera                    ClinicTimezone = "Asia/Ust-Nera"
+	AsiaVientiane                  ClinicTimezone = "Asia/Vientiane"
+	AsiaVladivostok                ClinicTimezone = "Asia/Vladivostok"
+	AsiaYakutsk                    ClinicTimezone = "Asia/Yakutsk"
+	AsiaYangon                     ClinicTimezone = "Asia/Yangon"
+	AsiaYekaterinburg              ClinicTimezone = "Asia/Yekaterinburg"
+	AsiaYerevan                    ClinicTimezone = "Asia/Yerevan"
+	AtlanticAzores                 ClinicTimezone = "Atlantic/Azores"
+	AtlanticBermuda                ClinicTimezone = "Atlantic/Bermuda"
+	AtlanticCanary                 ClinicTimezone = "Atlantic/Canary"
+	AtlanticCapeVerde              ClinicTimezone = "Atlantic/Cape_Verde"
+	AtlanticFaeroe                 ClinicTimezone = "Atlantic/Faeroe"
+	AtlanticFaroe                  ClinicTimezone = "Atlantic/Faroe"
+	AtlanticJanMayen               ClinicTimezone = "Atlantic/Jan_Mayen"
+	AtlanticMadeira                ClinicTimezone = "Atlantic/Madeira"
+	AtlanticReykjavik              ClinicTimezone = "Atlantic/Reykjavik"
+	AtlanticSouthGeorgia           ClinicTimezone = "Atlantic/South_Georgia"
+	AtlanticStHelena               ClinicTimezone = "Atlantic/St_Helena"
+	AtlanticStanley                ClinicTimezone = "Atlantic/Stanley"
+	AustraliaACT                   ClinicTimezone = "Australia/ACT"
+	AustraliaAdelaide              ClinicTimezone = "Australia/Adelaide"
+	AustraliaBrisbane              ClinicTimezone = "Australia/Brisbane"
+	AustraliaBrokenHill            ClinicTimezone = "Australia/Broken_Hill"
+	AustraliaCanberra              ClinicTimezone = "Australia/Canberra"
+	AustraliaCurrie                ClinicTimezone = "Australia/Currie"
+	AustraliaDarwin                ClinicTimezone = "Australia/Darwin"
+	AustraliaEucla                 ClinicTimezone = "Australia/Eucla"
+	AustraliaHobart                ClinicTimezone = "Australia/Hobart"
+	AustraliaLHI                   ClinicTimezone = "Australia/LHI"
+	AustraliaLindeman              ClinicTimezone = "Australia/Lindeman"
+	AustraliaLordHowe              ClinicTimezone = "Australia/Lord_Howe"
+	AustraliaMelbourne             ClinicTimezone = "Australia/Melbourne"
+	AustraliaNSW                   ClinicTimezone = "Australia/NSW"
+	AustraliaNorth                 ClinicTimezone = "Australia/North"
+	AustraliaPerth                 ClinicTimezone = "Australia/Perth"
+	AustraliaQueensland            ClinicTimezone = "Australia/Queensland"
+	AustraliaSouth                 ClinicTimezone = "Australia/South"
+	AustraliaSydney                ClinicTimezone = "Australia/Sydney"
+	AustraliaTasmania              ClinicTimezone = "Australia/Tasmania"
+	AustraliaVictoria              ClinicTimezone = "Australia/Victoria"
+	AustraliaWest                  ClinicTimezone = "Australia/West"
+	AustraliaYancowinna            ClinicTimezone = "Australia/Yancowinna"
+	BrazilAcre                     ClinicTimezone = "Brazil/Acre"
+	BrazilDeNoronha                ClinicTimezone = "Brazil/DeNoronha"
+	BrazilEast                     ClinicTimezone = "Brazil/East"
+	BrazilWest                     ClinicTimezone = "Brazil/West"
+	CET                            ClinicTimezone = "CET"
+	CST6CDT                        ClinicTimezone = "CST6CDT"
+	CanadaAtlantic                 ClinicTimezone = "Canada/Atlantic"
+	CanadaCentral                  ClinicTimezone = "Canada/Central"
+	CanadaEastern                  ClinicTimezone = "Canada/Eastern"
+	CanadaMountain                 ClinicTimezone = "Canada/Mountain"
+	CanadaNewfoundland             ClinicTimezone = "Canada/Newfoundland"
+	CanadaPacific                  ClinicTimezone = "Canada/Pacific"
+	CanadaSaskatchewan             ClinicTimezone = "Canada/Saskatchewan"
+	CanadaYukon                    ClinicTimezone = "Canada/Yukon"
+	ChileContinental               ClinicTimezone = "Chile/Continental"
+	ChileEasterIsland              ClinicTimezone = "Chile/EasterIsland"
+	Cuba                           ClinicTimezone = "Cuba"
+	EET                            ClinicTimezone = "EET"
+	EST                            ClinicTimezone = "EST"
+	EST5EDT                        ClinicTimezone = "EST5EDT"
+	Egypt                          ClinicTimezone = "Egypt"
+	Eire                           ClinicTimezone = "Eire"
+	EtcGMT                         ClinicTimezone = "Etc/GMT"
+	EtcGMT0                        ClinicTimezone = "Etc/GMT+0"
+	EtcGMT01                       ClinicTimezone = "Etc/GMT-0"
+	EtcGMT02                       ClinicTimezone = "Etc/GMT0"
+	EtcGMT1                        ClinicTimezone = "Etc/GMT+1"
+	EtcGMT10                       ClinicTimezone = "Etc/GMT+10"
+	EtcGMT101                      ClinicTimezone = "Etc/GMT-10"
+	EtcGMT11                       ClinicTimezone = "Etc/GMT-1"
+	EtcGMT111                      ClinicTimezone = "Etc/GMT-11"
+	EtcGMT12                       ClinicTimezone = "Etc/GMT+12"
+	EtcGMT121                      ClinicTimezone = "Etc/GMT-12"
+	EtcGMT13                       ClinicTimezone = "Etc/GMT-13"
+	EtcGMT14                       ClinicTimezone = "Etc/GMT-14"
+	EtcGMT2                        ClinicTimezone = "Etc/GMT+2"
+	EtcGMT21                       ClinicTimezone = "Etc/GMT-2"
+	EtcGMT3                        ClinicTimezone = "Etc/GMT+3"
+	EtcGMT31                       ClinicTimezone = "Etc/GMT-3"
+	EtcGMT4                        ClinicTimezone = "Etc/GMT+4"
+	EtcGMT41                       ClinicTimezone = "Etc/GMT-4"
+	EtcGMT5                        ClinicTimezone = "Etc/GMT+5"
+	EtcGMT51                       ClinicTimezone = "Etc/GMT-5"
+	EtcGMT6                        ClinicTimezone = "Etc/GMT+6"
+	EtcGMT61                       ClinicTimezone = "Etc/GMT-6"
+	EtcGMT7                        ClinicTimezone = "Etc/GMT+7"
+	EtcGMT71                       ClinicTimezone = "Etc/GMT-7"
+	EtcGMT8                        ClinicTimezone = "Etc/GMT+8"
+	EtcGMT81                       ClinicTimezone = "Etc/GMT-8"
+	EtcGMT9                        ClinicTimezone = "Etc/GMT+9"
+	EtcGMT91                       ClinicTimezone = "Etc/GMT-9"
+	EtcGreenwich                   ClinicTimezone = "Etc/Greenwich"
+	EtcUCT                         ClinicTimezone = "Etc/UCT"
+	EtcUTC                         ClinicTimezone = "Etc/UTC"
+	EtcUniversal                   ClinicTimezone = "Etc/Universal"
+	EtcZulu                        ClinicTimezone = "Etc/Zulu"
+	EuropeAmsterdam                ClinicTimezone = "Europe/Amsterdam"
+	EuropeAndorra                  ClinicTimezone = "Europe/Andorra"
+	EuropeAstrakhan                ClinicTimezone = "Europe/Astrakhan"
+	EuropeAthens                   ClinicTimezone = "Europe/Athens"
+	EuropeBelfast                  ClinicTimezone = "Europe/Belfast"
+	EuropeBelgrade                 ClinicTimezone = "Europe/Belgrade"
+	EuropeBerlin                   ClinicTimezone = "Europe/Berlin"
+	EuropeBratislava               ClinicTimezone = "Europe/Bratislava"
+	EuropeBrussels                 ClinicTimezone = "Europe/Brussels"
+	EuropeBucharest                ClinicTimezone = "Europe/Bucharest"
+	EuropeBudapest                 ClinicTimezone = "Europe/Budapest"
+	EuropeBusingen                 ClinicTimezone = "Europe/Busingen"
+	EuropeChisinau                 ClinicTimezone = "Europe/Chisinau"
+	EuropeCopenhagen               ClinicTimezone = "Europe/Copenhagen"
+	EuropeDublin                   ClinicTimezone = "Europe/Dublin"
+	EuropeGibraltar                ClinicTimezone = "Europe/Gibraltar"
+	EuropeGuernsey                 ClinicTimezone = "Europe/Guernsey"
+	EuropeHelsinki                 ClinicTimezone = "Europe/Helsinki"
+	EuropeIsleOfMan                ClinicTimezone = "Europe/Isle_of_Man"
+	EuropeIstanbul                 ClinicTimezone = "Europe/Istanbul"
+	EuropeJersey                   ClinicTimezone = "Europe/Jersey"
+	EuropeKaliningrad              ClinicTimezone = "Europe/Kaliningrad"
+	EuropeKiev                     ClinicTimezone = "Europe/Kiev"
+	EuropeKirov                    ClinicTimezone = "Europe/Kirov"
+	EuropeKyiv                     ClinicTimezone = "Europe/Kyiv"
+	EuropeLisbon                   ClinicTimezone = "Europe/Lisbon"
+	EuropeLjubljana                ClinicTimezone = "Europe/Ljubljana"
+	EuropeLondon                   ClinicTimezone = "Europe/London"
+	EuropeLuxembourg               ClinicTimezone = "Europe/Luxembourg"
+	EuropeMadrid                   ClinicTimezone = "Europe/Madrid"
+	EuropeMalta                    ClinicTimezone = "Europe/Malta"
+	EuropeMariehamn                ClinicTimezone = "Europe/Mariehamn"
+	EuropeMinsk                    ClinicTimezone = "Europe/Minsk"
+	EuropeMonaco                   ClinicTimezone = "Europe/Monaco"
+	EuropeMoscow                   ClinicTimezone = "Europe/Moscow"
+	EuropeNicosia                  ClinicTimezone = "Europe/Nicosia"
+	EuropeOslo                     ClinicTimezone = "Europe/Oslo"
+	EuropeParis                    ClinicTimezone = "Europe/Paris"
+	EuropePodgorica                ClinicTimezone = "Europe/Podgorica"
+	EuropePrague                   ClinicTimezone = "Europe/Prague"
+	EuropeRiga                     ClinicTimezone = "Europe/Riga"
+	EuropeRome                     ClinicTimezone = "Europe/Rome"
+	EuropeSamara                   ClinicTimezone = "Europe/Samara"
+	EuropeSanMarino                ClinicTimezone = "Europe/San_Marino"
+	EuropeSarajevo                 ClinicTimezone = "Europe/Sarajevo"
+	EuropeSaratov                  ClinicTimezone = "Europe/Saratov"
+	EuropeSimferopol               ClinicTimezone = "Europe/Simferopol"
+	EuropeSkopje                   ClinicTimezone = "Europe/Skopje"
+	EuropeSofia                    ClinicTimezone = "Europe/Sofia"
+	EuropeStockholm                ClinicTimezone = "Europe/Stockholm"
+	EuropeTallinn                  ClinicTimezone = "Europe/Tallinn"
+	EuropeTirane                   ClinicTimezone = "Europe/Tirane"
+	EuropeTiraspol                 ClinicTimezone = "Europe/Tiraspol"
+	EuropeUlyanovsk                ClinicTimezone = "Europe/Ulyanovsk"
+	EuropeUzhgorod                 ClinicTimezone = "Europe/Uzhgorod"
+	EuropeVaduz                    ClinicTimezone = "Europe/Vaduz"
+	EuropeVatican                  ClinicTimezone = "Europe/Vatican"
+	EuropeVienna                   ClinicTimezone = "Europe/Vienna"
+	EuropeVilnius                  ClinicTimezone = "Europe/Vilnius"
+	EuropeVolgograd                ClinicTimezone = "Europe/Volgograd"
+	EuropeWarsaw                   ClinicTimezone = "Europe/Warsaw"
+	EuropeZagreb                   ClinicTimezone = "Europe/Zagreb"
+	EuropeZaporozhye               ClinicTimezone = "Europe/Zaporozhye"
+	EuropeZurich                   ClinicTimezone = "Europe/Zurich"
+	GB                             ClinicTimezone = "GB"
+	GBEire                         ClinicTimezone = "GB-Eire"
+	GMT                            ClinicTimezone = "GMT"
+	GMT0                           ClinicTimezone = "GMT+0"
+	GMT01                          ClinicTimezone = "GMT-0"
+	GMT02                          ClinicTimezone = "GMT0"
+	Greenwich                      ClinicTimezone = "Greenwich"
+	HST                            ClinicTimezone = "HST"
+	Hongkong                       ClinicTimezone = "Hongkong"
+	Iceland                        ClinicTimezone = "Iceland"
+	IndianAntananarivo             ClinicTimezone = "Indian/Antananarivo"
+	IndianChagos                   ClinicTimezone = "Indian/Chagos"
+	IndianChristmas                ClinicTimezone = "Indian/Christmas"
+	IndianCocos                    ClinicTimezone = "Indian/Cocos"
+	IndianComoro                   ClinicTimezone = "Indian/Comoro"
+	IndianKerguelen                ClinicTimezone = "Indian/Kerguelen"
+	IndianMahe                     ClinicTimezone = "Indian/Mahe"
+	IndianMaldives                 ClinicTimezone = "Indian/Maldives"
+	IndianMauritius                ClinicTimezone = "Indian/Mauritius"
+	IndianMayotte                  ClinicTimezone = "Indian/Mayotte"
+	IndianReunion                  ClinicTimezone = "Indian/Reunion"
+	Iran                           ClinicTimezone = "Iran"
+	Israel                         ClinicTimezone = "Israel"
+	Jamaica                        ClinicTimezone = "Jamaica"
+	Japan                          ClinicTimezone = "Japan"
+	Kwajalein                      ClinicTimezone = "Kwajalein"
+	Libya                          ClinicTimezone = "Libya"
+	MET                            ClinicTimezone = "MET"
+	MST                            ClinicTimezone = "MST"
+	MST7MDT                        ClinicTimezone = "MST7MDT"
+	MexicoBajaNorte                ClinicTimezone = "Mexico/BajaNorte"
+	MexicoBajaSur                  ClinicTimezone = "Mexico/BajaSur"
+	MexicoGeneral                  ClinicTimezone = "Mexico/General"
+	NZ                             ClinicTimezone = "NZ"
+	NZCHAT                         ClinicTimezone = "NZ-CHAT"
+	Navajo                         ClinicTimezone = "Navajo"
+	PRC                            ClinicTimezone = "PRC"
+	PST8PDT                        ClinicTimezone = "PST8PDT"
+	PacificApia                    ClinicTimezone = "Pacific/Apia"
+	PacificAuckland                ClinicTimezone = "Pacific/Auckland"
+	PacificBougainville            ClinicTimezone = "Pacific/Bougainville"
+	PacificChatham                 ClinicTimezone = "Pacific/Chatham"
+	PacificChuuk                   ClinicTimezone = "Pacific/Chuuk"
+	PacificEaster                  ClinicTimezone = "Pacific/Easter"
+	PacificEfate                   ClinicTimezone = "Pacific/Efate"
+	PacificEnderbury               ClinicTimezone = "Pacific/Enderbury"
+	PacificFakaofo                 ClinicTimezone = "Pacific/Fakaofo"
+	PacificFiji                    ClinicTimezone = "Pacific/Fiji"
+	PacificFunafuti                ClinicTimezone = "Pacific/Funafuti"
+	PacificGalapagos               ClinicTimezone = "Pacific/Galapagos"
+	PacificGambier                 ClinicTimezone = "Pacific/Gambier"
+	PacificGuadalcanal             ClinicTimezone = "Pacific/Guadalcanal"
+	PacificGuam                    ClinicTimezone = "Pacific/Guam"
+	PacificHonolulu                ClinicTimezone = "Pacific/Honolulu"
+	PacificJohnston                ClinicTimezone = "Pacific/Johnston"
+	PacificKanton                  ClinicTimezone = "Pacific/Kanton"
+	PacificKiritimati              ClinicTimezone = "Pacific/Kiritimati"
+	PacificKosrae                  ClinicTimezone = "Pacific/Kosrae"
+	PacificKwajalein               ClinicTimezone = "Pacific/Kwajalein"
+	PacificMajuro                  ClinicTimezone = "Pacific/Majuro"
+	PacificMarquesas               ClinicTimezone = "Pacific/Marquesas"
+	PacificMidway                  ClinicTimezone = "Pacific/Midway"
+	PacificNauru                   ClinicTimezone = "Pacific/Nauru"
+	PacificNiue                    ClinicTimezone = "Pacific/Niue"
+	PacificNorfolk                 ClinicTimezone = "Pacific/Norfolk"
+	PacificNoumea                  ClinicTimezone = "Pacific/Noumea"
+	PacificPagoPago                ClinicTimezone = "Pacific/Pago_Pago"
+	PacificPalau                   ClinicTimezone = "Pacific/Palau"
+	PacificPitcairn                ClinicTimezone = "Pacific/Pitcairn"
+	PacificPohnpei                 ClinicTimezone = "Pacific/Pohnpei"
+	PacificPonape                  ClinicTimezone = "Pacific/Ponape"
+	PacificPortMoresby             ClinicTimezone = "Pacific/Port_Moresby"
+	PacificRarotonga               ClinicTimezone = "Pacific/Rarotonga"
+	PacificSaipan                  ClinicTimezone = "Pacific/Saipan"
+	PacificSamoa                   ClinicTimezone = "Pacific/Samoa"
+	PacificTahiti                  ClinicTimezone = "Pacific/Tahiti"
+	PacificTarawa                  ClinicTimezone = "Pacific/Tarawa"
+	PacificTongatapu               ClinicTimezone = "Pacific/Tongatapu"
+	PacificTruk                    ClinicTimezone = "Pacific/Truk"
+	PacificWake                    ClinicTimezone = "Pacific/Wake"
+	PacificWallis                  ClinicTimezone = "Pacific/Wallis"
+	PacificYap                     ClinicTimezone = "Pacific/Yap"
+	Poland                         ClinicTimezone = "Poland"
+	Portugal                       ClinicTimezone = "Portugal"
+	ROC                            ClinicTimezone = "ROC"
+	ROK                            ClinicTimezone = "ROK"
+	Singapore                      ClinicTimezone = "Singapore"
+	Turkey                         ClinicTimezone = "Turkey"
+	UCT                            ClinicTimezone = "UCT"
+	USAlaska                       ClinicTimezone = "US/Alaska"
+	USAleutian                     ClinicTimezone = "US/Aleutian"
+	USArizona                      ClinicTimezone = "US/Arizona"
+	USCentral                      ClinicTimezone = "US/Central"
+	USEastIndiana                  ClinicTimezone = "US/East-Indiana"
+	USEastern                      ClinicTimezone = "US/Eastern"
+	USHawaii                       ClinicTimezone = "US/Hawaii"
+	USIndianaStarke                ClinicTimezone = "US/Indiana-Starke"
+	USMichigan                     ClinicTimezone = "US/Michigan"
+	USMountain                     ClinicTimezone = "US/Mountain"
+	USPacific                      ClinicTimezone = "US/Pacific"
+	USSamoa                        ClinicTimezone = "US/Samoa"
+	UTC                            ClinicTimezone = "UTC"
+	Universal                      ClinicTimezone = "Universal"
+	WET                            ClinicTimezone = "WET"
+	WSU                            ClinicTimezone = "W-SU"
+	Zulu                           ClinicTimezone = "Zulu"
+)
+
 // Defines values for DataSourceState.
 const (
 	DataSourceStateConnected        DataSourceState = "connected"
@@ -43,6 +642,16 @@ const (
 	DataSourceStateError            DataSourceState = "error"
 	DataSourceStatePending          DataSourceState = "pending"
 	DataSourceStatePendingReconnect DataSourceState = "pendingReconnect"
+)
+
+// Defines values for EHRMatchMessageRefDataModel.
+const (
+	Order EHRMatchMessageRefDataModel = "Order"
+)
+
+// Defines values for EHRMatchMessageRefEventType.
+const (
+	New EHRMatchMessageRefEventType = "New"
 )
 
 // Defines values for MigrationStatus.
@@ -103,6 +712,7 @@ type Clinic struct {
 	SuppressedNotifications *SuppressedNotifications `json:"suppressedNotifications,omitempty"`
 	Tier                    *string                  `json:"tier,omitempty"`
 	TierDescription         *string                  `json:"tierDescription,omitempty"`
+	Timezone                *ClinicTimezone          `json:"timezone,omitempty"`
 	UpdatedTime             *time.Time               `json:"updatedTime,omitempty"`
 	Website                 *string                  `json:"website,omitempty"`
 }
@@ -115,6 +725,9 @@ type ClinicClinicType string
 
 // ClinicPreferredBgUnits defines model for Clinic.PreferredBgUnits.
 type ClinicPreferredBgUnits string
+
+// ClinicTimezone defines model for Clinic.Timezone.
+type ClinicTimezone string
 
 // Clinician The `id` may be empty if the clinician invite has not been accepted.
 type Clinician struct {
@@ -187,6 +800,69 @@ type DataSources = []DataSource
 // DateTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 type DateTime = string
 
+// EHRDestinationIds defines model for EHRDestinationIds.
+type EHRDestinationIds struct {
+	// Flowsheet Destination ID override for Flowsheets
+	Flowsheet string `json:"flowsheet"`
+
+	// Notes Destination ID override for Notes
+	Notes string `json:"notes"`
+
+	// Results Destination ID override for Results
+	Results string `json:"results"`
+}
+
+// EHRFacility defines model for EHRFacility.
+type EHRFacility struct {
+	// Name Ordering Facility Name
+	Name string `json:"name"`
+}
+
+// EHRMatchMessageRef defines model for EHRMatchMessageRef.
+type EHRMatchMessageRef struct {
+	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
+	DocumentId string                      `json:"documentId"`
+	EventType  EHRMatchMessageRefEventType `json:"eventType"`
+}
+
+// EHRMatchMessageRefDataModel defines model for EHRMatchMessageRef.DataModel.
+type EHRMatchMessageRefDataModel string
+
+// EHRMatchMessageRefEventType defines model for EHRMatchMessageRef.EventType.
+type EHRMatchMessageRefEventType string
+
+// EHRMatchRequest defines model for EHRMatchRequest.
+type EHRMatchRequest struct {
+	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
+}
+
+// EHRMatchResponse defines model for EHRMatchResponse.
+type EHRMatchResponse struct {
+	// Clinic Clinic
+	Clinic   Clinic      `json:"clinic"`
+	Patients *Patients   `json:"patients,omitempty"`
+	Settings EHRSettings `json:"settings"`
+}
+
+// EHRProcedureCodes defines model for EHRProcedureCodes.
+type EHRProcedureCodes struct {
+	DisableSummaryReports string `json:"disableSummaryReports"`
+
+	// EnableSummaryReports Procedure Code for Summary Statistics and PDF Reports subscription
+	EnableSummaryReports string `json:"enableSummaryReports"`
+}
+
+// EHRSettings defines model for EHRSettings.
+type EHRSettings struct {
+	DestinationIds EHRDestinationIds `json:"destinationIds"`
+
+	// Enabled Enable or disable the EHR integration
+	Enabled        bool              `json:"enabled"`
+	Facility       *EHRFacility      `json:"facility,omitempty"`
+	ProcedureCodes EHRProcedureCodes `json:"procedureCodes"`
+	SourceId       string            `json:"sourceId"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Code    int    `json:"code"`
@@ -195,6 +871,15 @@ type Error struct {
 
 // Id Clinic identifier.
 type Id = string
+
+// MRNSettings defines model for MRNSettings.
+type MRNSettings struct {
+	// Required Require MRN when creating or updating patients
+	Required bool `json:"required"`
+
+	// Unique Enforce MRN uniqueness constraint
+	Unique bool `json:"unique"`
+}
 
 // MembershipRestriction A user joining a clinic must match all of the defined restrictions
 type MembershipRestriction struct {
@@ -790,6 +1475,9 @@ type CreatedTimeEnd = time.Time
 // CreatedTimeStart defines model for createdTimeStart.
 type CreatedTimeStart = time.Time
 
+// EhrEnabled defines model for ehrEnabled.
+type EhrEnabled = bool
+
 // Email defines model for email.
 type Email = openapi_types.Email
 
@@ -852,6 +1540,9 @@ type ListClinicsParams struct {
 
 	// CreatedTimeEnd Return records created before the given date (exclusive)
 	CreatedTimeEnd *CreatedTimeEnd `form:"createdTimeEnd,omitempty" json:"createdTimeEnd,omitempty"`
+
+	// EhrEnabled Retrieve clinics with enabled EHR integration
+	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
 }
 
 // ListCliniciansParams defines parameters for ListClinicians.
@@ -998,6 +1689,9 @@ type ListClinicsForPatientParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ProcessEHRMessageJSONBody defines parameters for ProcessEHRMessage.
+type ProcessEHRMessageJSONBody = map[string]interface{}
+
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
 type CreateClinicJSONRequestBody = Clinic
 
@@ -1049,6 +1743,12 @@ type UpdatePatientJSONRequestBody = Patient
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody = PatientPermissions
 
+// UpdateEHRSettingsJSONRequestBody defines body for UpdateEHRSettings for application/json ContentType.
+type UpdateEHRSettingsJSONRequestBody = EHRSettings
+
+// UpdateMRNSettingsJSONRequestBody defines body for UpdateMRNSettings for application/json ContentType.
+type UpdateMRNSettingsJSONRequestBody = MRNSettings
+
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications
 
@@ -1060,6 +1760,12 @@ type UpdatePatientSummaryJSONRequestBody = PatientSummary
 
 // UpdatePatientDataSourcesJSONRequestBody defines body for UpdatePatientDataSources for application/json ContentType.
 type UpdatePatientDataSourcesJSONRequestBody = DataSources
+
+// ProcessEHRMessageJSONRequestBody defines body for ProcessEHRMessage for application/json ContentType.
+type ProcessEHRMessageJSONRequestBody = ProcessEHRMessageJSONBody
+
+// MatchClinicAndPatientJSONRequestBody defines body for MatchClinicAndPatient for application/json ContentType.
+type MatchClinicAndPatientJSONRequestBody = EHRMatchRequest
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetails

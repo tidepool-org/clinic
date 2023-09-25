@@ -113,6 +113,130 @@ var _ = Describe("Patients Repository", func() {
 				Expect(inserted).To(matchPatientFields)
 			})
 
+			It("successfully inserts a patient with duplicate mrn if uniqueness is not enabled", func() {
+				patient.RequireUniqueMrn = false
+				result, err := repo.Create(nil, patient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				patient.Id = result.Id
+
+				secondPatient := patientsTest.RandomPatient()
+				secondPatient.ClinicId = patient.ClinicId
+				secondPatient.Mrn = patient.Mrn
+				secondPatient.RequireUniqueMrn = false
+
+				result, err = repo.Create(nil, secondPatient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("successfully inserts multiple patients without mrns when uniqueness is enabled", func() {
+				patient.Mrn = nil
+				patient.RequireUniqueMrn = true
+				result, err := repo.Create(nil, patient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				patient.Id = result.Id
+
+				secondPatient := patientsTest.RandomPatient()
+				secondPatient.ClinicId = patient.ClinicId
+				secondPatient.Mrn = nil
+				secondPatient.RequireUniqueMrn = true
+
+				result, err = repo.Create(nil, secondPatient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("returns an error when a user with duplicate mrn is created", func() {
+				patient.RequireUniqueMrn = true
+				result, err := repo.Create(nil, patient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				patient.Id = result.Id
+
+				secondPatient := patientsTest.RandomPatient()
+				secondPatient.ClinicId = patient.ClinicId
+				secondPatient.Mrn = patient.Mrn
+				secondPatient.RequireUniqueMrn = true
+
+				result, err = repo.Create(nil, secondPatient)
+
+				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
+			})
+
+			It("returns an error when a patient is updated with a duplicated mrn", func() {
+				patient.RequireUniqueMrn = true
+				result, err := repo.Create(nil, patient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				patient.Id = result.Id
+
+				secondPatient := patientsTest.RandomPatient()
+				secondPatient.ClinicId = patient.ClinicId
+				secondPatient.RequireUniqueMrn = true
+
+				result, err = repo.Create(nil, secondPatient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				result.Mrn = patient.Mrn
+				updated, err := repo.Update(nil, patients.PatientUpdate{
+					ClinicId:  result.ClinicId.Hex(),
+					UserId:    *result.UserId,
+					Patient:   *result,
+					UpdatedBy: "12345",
+				})
+				Expect(err).To(HaveOccurred())
+				Expect(updated).To(BeNil())
+
+				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("successfully updates the mrn if it is not a duplicate", func() {
+				patient.RequireUniqueMrn = true
+				result, err := repo.Create(nil, patient)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				patient.Id = result.Id
+
+				secondPatient := patientsTest.RandomPatient()
+				secondPatient.ClinicId = patient.ClinicId
+				secondPatient.RequireUniqueMrn = true
+
+				result, err = repo.Create(nil, secondPatient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				result.Mrn = patientsTest.RandomPatient().Mrn
+				result, err = repo.Update(nil, patients.PatientUpdate{
+					ClinicId:  result.ClinicId.Hex(),
+					UserId:    *result.UserId,
+					Patient:   *result,
+					UpdatedBy: "12345",
+				})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
 			It("updates legacy clinician ids if the patient exists already", func() {
 				result, err := repo.Create(nil, patient)
 				Expect(err).ToNot(HaveOccurred())
@@ -757,5 +881,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
 		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
+		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
+		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
 	})
 }

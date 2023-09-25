@@ -3,11 +3,15 @@ package patients
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/tidepool-org/clinic/clinics"
+	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
 )
 
 type service struct {
+	clinics          clinics.Service
 	repo             Repository
 	custodialService CustodialService
 	logger           *zap.SugaredLogger
@@ -15,8 +19,9 @@ type service struct {
 
 var _ Service = &service{}
 
-func NewService(repo Repository, custodialService CustodialService, logger *zap.SugaredLogger) (Service, error) {
+func NewService(repo Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger) (Service, error) {
 	return &service{
+		clinics:          clinics,
 		repo:             repo,
 		custodialService: custodialService,
 		logger:           logger,
@@ -32,6 +37,10 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
+	if err := s.enforceMrnSettings(ctx, patient.ClinicId.Hex(), patient.UserId, &patient); err != nil {
+		return nil, err
+	}
+
 	// Only create new accounts if the custodial user doesn't exist already (i.e. we are not migrating it)
 	if patient.IsCustodial() && patient.UserId == nil {
 		s.logger.Infow("creating custodial account", "clinicId", patient.ClinicId.Hex())
@@ -54,6 +63,14 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 	existing, err := s.Get(ctx, update.ClinicId, update.UserId)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := s.enforceMrnSettings(ctx, update.ClinicId, &update.UserId, &update.Patient); err != nil {
+		return nil, err
+	}
+
+	if mrnChanged(*existing, update.Patient) {
+		update.Patient.EHRSubscriptions = deactiveAllSubscriptions(existing.EHRSubscriptions)
 	}
 
 	if existing.IsCustodial() {
@@ -165,6 +182,64 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 	return s.repo.UpdatePatientDataSources(ctx, userId, dataSources)
 }
 
+func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error {
+	patient, err := s.Get(ctx, clinicId, userId)
+	if err != nil {
+		return err
+	}
+
+	// Check if this message has already been matched
+	if patient.EHRSubscriptions != nil {
+		if subscr, ok := patient.EHRSubscriptions[update.Name]; ok {
+			for _, msg := range subscr.MatchedMessages {
+				if update.MatchedMessage.DocumentId == msg.DocumentId {
+					s.logger.Infow("the message has already been matched, skipping update", "clinicId", clinicId, "userId", userId, "update", update)
+					return nil
+				}
+			}
+		}
+	}
+
+	s.logger.Infow("updating patient subscription", "clinicId", clinicId, "userId", userId, "update", update)
+	return s.repo.UpdateEHRSubscription(ctx, clinicId, userId, update)
+}
+
+func (s *service) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
+	s.logger.Infow("rescheduling patient subscriptions", "subscription", subscription, "clinicId", clinicId)
+	return s.repo.RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection)
+}
+
+func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, existingUserId *string, patient *Patient) error {
+	mrnSettings, err := s.clinics.GetMRNSettings(ctx, clinicId)
+	if err != nil || mrnSettings == nil {
+		return err
+	}
+
+	if mrnSettings.Required && (patient.Mrn == nil || *patient.Mrn == "") {
+		return fmt.Errorf("%w: mrn is required", errors2.BadRequest)
+	}
+	if mrnSettings.Unique {
+		patient.RequireUniqueMrn = true
+		if patient.Mrn != nil {
+			filter := &Filter{
+				ClinicId: &clinicId,
+				Mrn:      patient.Mrn,
+			}
+			res, err := s.repo.List(ctx, filter, store.Pagination{Limit: 2, Offset: 0}, nil)
+			if err != nil {
+				return err
+			}
+
+			// The same MRN shouldn't exist already, or it should belong to the same user
+			if !(res.TotalCount == 0 || (res.TotalCount == 1 && existingUserId != nil && *existingUserId == *res.Patients[0].UserId)) {
+				return fmt.Errorf("%w: mrn must be unique", errors2.BadRequest)
+			}
+		}
+	}
+
+	return nil
+}
+
 func shouldRemovePatientFromClinic(patient *Patient) bool {
 	if patient != nil {
 		return patient.Permissions == nil || patient.Permissions.Empty()
@@ -188,4 +263,18 @@ func getUpdatedBy(update PatientUpdate) *string {
 
 func (s *service) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
 	return s.repo.TideReport(ctx, clinicId, params)
+}
+
+func mrnChanged(existing Patient, updated Patient) bool {
+	return (existing.Mrn == nil && updated.Mrn != nil) ||
+		(existing.Mrn != nil && updated.Mrn == nil) ||
+		(existing.Mrn != nil && updated.Mrn != nil && *existing.Mrn != *updated.Mrn)
+}
+
+func deactiveAllSubscriptions(subscriptions EHRSubscriptions) EHRSubscriptions {
+	for name, sub := range subscriptions {
+		sub.Active = false
+		subscriptions[name] = sub
+	}
+	return subscriptions
 }
