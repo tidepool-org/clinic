@@ -341,8 +341,19 @@ func (h *Handler) FindMatchingPatientsForAccountCreationOrder(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
+
+	unique := map[string]struct{}{}
 	if result.TotalCount > 0 {
-		matchingPatients = result.Patients
+		for _, patient := range result.Patients {
+			if patient == nil || patient.UserId == nil {
+				continue
+			}
+			if _, ok := unique[*patient.UserId]; ok {
+				continue
+			}
+			unique[*patient.UserId] = struct{}{}
+			matchingPatients = append(matchingPatients, patient)
+		}
 	}
 
 	filter = patients.Filter{
@@ -355,7 +366,16 @@ func (h *Handler) FindMatchingPatientsForAccountCreationOrder(ctx context.Contex
 		return nil, err
 	}
 	if result.TotalCount > 0 {
-		matchingPatients = append(matchingPatients, result.Patients...)
+		for _, patient := range result.Patients {
+			if patient == nil || patient.UserId == nil {
+				continue
+			}
+			if _, ok := unique[*patient.UserId]; ok {
+				continue
+			}
+			unique[*patient.UserId] = struct{}{}
+			matchingPatients = append(matchingPatients, patient)
+		}
 	}
 
 	return matchingPatients, nil
