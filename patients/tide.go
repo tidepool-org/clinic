@@ -55,10 +55,10 @@ type TideFilter struct {
 	Value      *float64 `json:"value,omitempty"`
 }
 
-type TideFilters []TideFilter
+type TideFilters []*TideFilter
 
 func DefaultTideReport() (config TideFilters) {
-	config = []TideFilter{
+	config = TideFilters{
 		{
 			Field:      ptr("timeInVeryLowPercent"),
 			Comparison: ptr(">"),

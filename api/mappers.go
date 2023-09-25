@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -221,34 +220,6 @@ func NewPatient(dto Patient) patients.Patient {
 	return patient
 }
 
-func periodByJsonTag(s *patients.PatientCGMPeriod) map[string]*float64 {
-	valuesByTag := make(map[string]*float64)
-
-	typeOf := reflect.TypeOf(s)
-	valueOf := reflect.ValueOf(s)
-	for i := 0; i < valueOf.NumField(); i++ {
-		f := typeOf.Field(i)
-		key := strings.Split(f.Tag.Get("json"), ",")[0]
-		if key == "" || key == "-" {
-			continue
-		}
-		vInt := valueOf.Field(i).Interface()
-		switch v := vInt.(type) {
-		case *float64:
-			valuesByTag[key] = v
-		case *int:
-			if v != nil {
-				c := float64(*v)
-				valuesByTag[key] = &c
-			} else {
-				valuesByTag[key] = nil
-			}
-		}
-	}
-
-	return valuesByTag
-}
-
 func NewSummary(dto *PatientSummary, tideConfig []*patients.TideFilters) *patients.Summary {
 	if dto == nil {
 		return nil
@@ -312,39 +283,7 @@ func NewSummary(dto *PatientSummary, tideConfig []*patients.TideFilters) *patien
 		}
 	}
 
-	ops := map[string]func(float64, float64) bool{
-		"<":  func(x, y float64) bool { return x < y },
-		">":  func(x, y float64) bool { return x > y },
-		">=": func(x, y float64) bool { return x >= y },
-		"<=": func(x, y float64) bool { return x <= y },
-		"==": func(x, y float64) bool { return x == y },
-		"!=": func(x, y float64) bool { return x != y },
-	}
-
-	patientSummary.Risk = make(patients.PatientRiskPeriods)
-	var empty struct{}
-
-	for periodKey, period := range *patientSummary.CGM.Periods {
-		periodByTag := periodByJsonTag(&period)
-		riskCategoriesMap := make(map[string]struct{})
-
-		for _, report := range tideConfig {
-			for _, category := range *report {
-				if periodByTag[*category.Field] != nil {
-					if ops[*category.Comparison](*periodByTag[*category.Field], *category.Value) {
-						categoryKey := fmt.Sprintf("%s-%s-%f", *category.Field, *category.Comparison, *category.Value)
-						riskCategoriesMap[categoryKey] = empty
-					}
-				}
-			}
-		}
-
-		riskCategories := make(patients.PatientRiskCategories, 2)
-		for k, _ := range riskCategoriesMap {
-			riskCategories = append(riskCategories, []byte(k))
-		}
-		patientSummary.Risk[periodKey] = &riskCategories
-	}
+	patientSummary.TideCategorize(tideConfig)
 
 	return patientSummary
 }
@@ -438,7 +377,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 
 	f := make(TideFilters, 0, 5)
 	for _, v := range tide.Config.Filters {
-		f = append(f, (TideFilter)(v))
+		f = append(f, (TideFilter)(*v))
 	}
 	tideResult.Config.Filters = &f
 

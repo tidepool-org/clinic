@@ -862,12 +862,22 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, pagination
 
 	tideConfig := DefaultTideReport()
 
-	if params.Category != nil {
+	// Gather category IDs for exclusion lists
+	allCategoryIds := make([][]byte, 0, 5)
+	for _, category := range tideConfig {
+		allCategoryIds = append(allCategoryIds, *category.Id)
+	}
+
+	if params.Category != nil && *params.Category != "meetingTargets" {
 		for _, v := range tideConfig {
 			if *v.Field == *params.Category {
 				tideConfig = TideFilters{v}
 				break
 			}
+		}
+
+		if len(tideConfig) > 1 {
+			return nil, errors.New("provided category is not a valid report category")
 		}
 	}
 
@@ -888,10 +898,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, pagination
 		Results: &TideResults{},
 	}
 
-	allCategoryIds := make([][]byte, 0, 5)
-
 	for _, category := range tideConfig {
-		allCategoryIds = append(allCategoryIds, *category.Id)
 		selector := bson.M{
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
@@ -956,7 +963,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, pagination
 		(*report.Results)[*category.Field] = &categoryResult
 	}
 
-	if params.Category != nil {
+	if params.Category != nil && *params.Category != "meetingTargets" {
 		return &report, nil
 	}
 

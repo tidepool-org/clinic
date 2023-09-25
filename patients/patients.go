@@ -3,6 +3,8 @@ package patients
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/tidepool-org/clinic/errors"
@@ -173,3 +175,70 @@ type TideReportParams struct {
 
 type PatientRiskCategories [][]byte
 type PatientRiskPeriods map[string]*PatientRiskCategories
+
+func periodByJsonTag(s PatientCGMPeriod) map[string]*float64 {
+	valuesByTag := make(map[string]*float64)
+
+	typeOf := reflect.TypeOf(s)
+	valueOf := reflect.ValueOf(s)
+
+	for i := 0; i < valueOf.NumField(); i++ {
+		f := typeOf.Field(i)
+		key := strings.Split(f.Tag.Get("json"), ",")[0]
+		if key == "" || key == "-" {
+			continue
+		}
+		vInt := valueOf.Field(i).Interface()
+		switch v := vInt.(type) {
+		case *float64:
+			valuesByTag[key] = v
+		case *int:
+			if v != nil {
+				c := float64(*v)
+				valuesByTag[key] = &c
+			} else {
+				valuesByTag[key] = nil
+			}
+		}
+	}
+
+	return valuesByTag
+}
+
+func (s *Summary) TideCategorize(tideConfig []*TideFilters) {
+	ops := map[string]func(float64, float64) bool{
+		"<":  func(x, y float64) bool { return x < y },
+		">":  func(x, y float64) bool { return x > y },
+		">=": func(x, y float64) bool { return x >= y },
+		"<=": func(x, y float64) bool { return x <= y },
+		"==": func(x, y float64) bool { return x == y },
+		"!=": func(x, y float64) bool { return x != y },
+	}
+
+	s.Risk = make(PatientRiskPeriods)
+	var empty struct{}
+
+	for periodKey, period := range *s.CGM.Periods {
+		periodByTag := periodByJsonTag(period)
+		riskCategoriesMap := make(map[string]struct{})
+
+		for _, report := range tideConfig {
+			for _, category := range *report {
+				if periodByTag[*category.Field] != nil {
+					if ops[*category.Comparison](*periodByTag[*category.Field], *category.Value) {
+						riskCategoriesMap[string(*category.Id)] = empty
+
+						// NOTE we only allow the first match per report to be added
+						break
+					}
+				}
+			}
+		}
+
+		riskCategories := make(PatientRiskCategories, 0, 2)
+		for k, _ := range riskCategoriesMap {
+			riskCategories = append(riskCategories, []byte(k))
+		}
+		s.Risk[periodKey] = &riskCategories
+	}
+}

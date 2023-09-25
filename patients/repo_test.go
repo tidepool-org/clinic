@@ -263,7 +263,7 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
-		Describe("Delete from all clinics", func() {
+		Describe("deletes from all clinics", func() {
 			It("deletes the correct patients", func() {
 				// Add the same user to  a different clinic
 				patient := patientsTest.RandomPatient()
@@ -730,6 +730,15 @@ var _ = Describe("Patients Repository", func() {
 
 				result, err = repo.DeletePermission(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, permission)
 				Expect(err).To(MatchError(patients.ErrPermissionNotFound))
+			})
+		})
+
+		Describe("UpdatePatientSummary", func() {
+			It("add a summary to patient", func() {
+				userSummary := &patients.Summary{}
+
+				err := repo.UpdatePatientSummary(nil, allPatients[0].Id.Hex(), userSummary)
+				Expect(err).ToNot(HaveOccurred())
 			})
 		})
 	})
