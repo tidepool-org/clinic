@@ -4,14 +4,16 @@
 
 package ast
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Transformer defines the interface for transforming AST elements. If the
 // transformer returns nil and does not indicate an error, the AST element will
 // be set to nil and no transformations will be applied to children of the
 // element.
 type Transformer interface {
-	Transform(v interface{}) (interface{}, error)
+	Transform(interface{}) (interface{}, error)
 }
 
 // Transform iterates the AST and calls the Transform function on the
@@ -57,6 +59,15 @@ func Transform(t Transformer, x interface{}) (interface{}, error) {
 			}
 			if y.Rules[i], ok = rule.(*Rule); !ok {
 				return nil, fmt.Errorf("illegal transform: %T != %T", y.Rules[i], rule)
+			}
+		}
+		for i := range y.Annotations {
+			a, err := Transform(t, y.Annotations[i])
+			if err != nil {
+				return nil, err
+			}
+			if y.Annotations[i], ok = a.(*Annotations); !ok {
+				return nil, fmt.Errorf("illegal transform: %T != %T", y.Annotations[i], a)
 			}
 		}
 		for i := range y.Comments {
@@ -105,6 +116,9 @@ func Transform(t Transformer, x interface{}) (interface{}, error) {
 		}
 		return y, nil
 	case *Head:
+		if y.Reference, err = transformRef(t, y.Reference); err != nil {
+			return nil, err
+		}
 		if y.Name, err = transformVar(t, y.Name); err != nil {
 			return nil, err
 		}
@@ -161,6 +175,26 @@ func Transform(t Transformer, x interface{}) (interface{}, error) {
 			if y.Terms, err = transformTerm(t, ts); err != nil {
 				return nil, err
 			}
+		case *Every:
+			if ts.Key != nil {
+				ts.Key, err = transformTerm(t, ts.Key)
+				if err != nil {
+					return nil, err
+				}
+			}
+			ts.Value, err = transformTerm(t, ts.Value)
+			if err != nil {
+				return nil, err
+			}
+			ts.Domain, err = transformTerm(t, ts.Domain)
+			if err != nil {
+				return nil, err
+			}
+			ts.Body, err = transformBody(t, ts.Body)
+			if err != nil {
+				return nil, err
+			}
+			y.Terms = ts
 		}
 		for i, w := range y.With {
 			w, err := Transform(t, w)
@@ -296,7 +330,7 @@ func TransformComprehensions(x interface{}, f func(interface{}) (Value, error)) 
 // GenericTransformer implements the Transformer interface to provide a utility
 // to transform AST nodes using a closure.
 type GenericTransformer struct {
-	f func(x interface{}) (interface{}, error)
+	f func(interface{}) (interface{}, error)
 }
 
 // NewGenericTransformer returns a new GenericTransformer that will transform
@@ -348,18 +382,6 @@ func transformBody(t Transformer, body Body) (Body, error) {
 	return r, nil
 }
 
-func transformExpr(t Transformer, expr *Expr) (*Expr, error) {
-	y, err := Transform(t, expr)
-	if err != nil {
-		return nil, err
-	}
-	h, ok := y.(*Expr)
-	if !ok {
-		return nil, fmt.Errorf("illegal transform: %T != %T", expr, y)
-	}
-	return h, nil
-}
-
 func transformTerm(t Transformer, term *Term) (*Term, error) {
 	v, err := transformValue(t, term.Value)
 	if err != nil {
@@ -394,4 +416,16 @@ func transformVar(t Transformer, v Var) (Var, error) {
 		return "", fmt.Errorf("illegal transform: %T != %T", v, v1)
 	}
 	return r, nil
+}
+
+func transformRef(t Transformer, r Ref) (Ref, error) {
+	r1, err := Transform(t, r)
+	if err != nil {
+		return nil, err
+	}
+	r2, ok := r1.(Ref)
+	if !ok {
+		return nil, fmt.Errorf("illegal transform: %T != %T", r, r2)
+	}
+	return r2, nil
 }

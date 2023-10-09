@@ -102,7 +102,7 @@ type SubSchema struct {
 	// hierarchy
 	Parent                      *SubSchema
 	ItemsChildren               []*SubSchema
-	itemsChildrenIsSingleSchema bool
+	ItemsChildrenIsSingleSchema bool
 	PropertiesChildren          []*SubSchema
 
 	// validation : number / integer
@@ -142,8 +142,8 @@ type SubSchema struct {
 
 	// validation : SubSchema
 	oneOf []*SubSchema
-	anyOf []*SubSchema
-	allOf []*SubSchema
+	AnyOf []*SubSchema
+	AllOf []*SubSchema
 	not   *SubSchema
 	_if   *SubSchema // if/else are golang keywords
 	_then *SubSchema

@@ -6,7 +6,6 @@ package ast
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
@@ -33,14 +32,16 @@ type RuleIndex interface {
 
 // IndexResult contains the result of an index lookup.
 type IndexResult struct {
-	Kind    DocKind
-	Rules   []*Rule
-	Else    map[*Rule][]*Rule
-	Default *Rule
+	Kind           RuleKind
+	Rules          []*Rule
+	Else           map[*Rule][]*Rule
+	Default        *Rule
+	EarlyExit      bool
+	OnlyGroundRefs bool
 }
 
 // NewIndexResult returns a new IndexResult object.
-func NewIndexResult(kind DocKind) *IndexResult {
+func NewIndexResult(kind RuleKind) *IndexResult {
 	return &IndexResult{
 		Kind: kind,
 		Else: map[*Rule][]*Rule{},
@@ -53,16 +54,20 @@ func (ir *IndexResult) Empty() bool {
 }
 
 type baseDocEqIndex struct {
-	isVirtual   func(Ref) bool
-	root        *trieNode
-	defaultRule *Rule
-	kind        DocKind
+	skipIndexing   Set
+	isVirtual      func(Ref) bool
+	root           *trieNode
+	defaultRule    *Rule
+	kind           RuleKind
+	onlyGroundRefs bool
 }
 
 func newBaseDocEqIndex(isVirtual func(Ref) bool) *baseDocEqIndex {
 	return &baseDocEqIndex{
-		isVirtual: isVirtual,
-		root:      newTrieNodeImpl(),
+		skipIndexing:   NewSet(NewTerm(InternalPrint.Ref())),
+		isVirtual:      isVirtual,
+		root:           newTrieNodeImpl(),
+		onlyGroundRefs: true,
 	}
 }
 
@@ -71,7 +76,7 @@ func (i *baseDocEqIndex) Build(rules []*Rule) bool {
 		return false
 	}
 
-	i.kind = rules[0].Head.DocKind()
+	i.kind = rules[0].Head.RuleKind()
 	indices := newrefindices(i.isVirtual)
 
 	// build indices for each rule.
@@ -81,8 +86,20 @@ func (i *baseDocEqIndex) Build(rules []*Rule) bool {
 				i.defaultRule = rule
 				return false
 			}
+			if i.onlyGroundRefs {
+				i.onlyGroundRefs = rule.Head.Reference.IsGround()
+			}
+			var skip bool
 			for _, expr := range rule.Body {
-				indices.Update(rule, expr)
+				if op := expr.OperatorTerm(); op != nil && i.skipIndexing.Contains(op) {
+					skip = true
+					break
+				}
+			}
+			if !skip {
+				for _, expr := range rule.Body {
+					indices.Update(rule, expr)
+				}
 			}
 			return false
 		})
@@ -104,13 +121,11 @@ func (i *baseDocEqIndex) Build(rules []*Rule) bool {
 			// Insert rule into trie with (insertion order, priority order)
 			// tuple. Retaining the insertion order allows us to return rules
 			// in the order they were passed to this function.
-			node.rules = append(node.rules, &ruleNode{[...]int{idx, prio}, rule})
+			node.append([...]int{idx, prio}, rule)
 			prio++
 			return false
 		})
-
 	}
-
 	return true
 }
 
@@ -125,6 +140,7 @@ func (i *baseDocEqIndex) Lookup(resolver ValueResolver) (*IndexResult, error) {
 
 	result := NewIndexResult(i.kind)
 	result.Default = i.defaultRule
+	result.OnlyGroundRefs = i.onlyGroundRefs
 	result.Rules = make([]*Rule, 0, len(tr.ordering))
 
 	for _, pos := range tr.ordering {
@@ -133,6 +149,7 @@ func (i *baseDocEqIndex) Lookup(resolver ValueResolver) (*IndexResult, error) {
 		})
 		nodes := tr.unordered[pos]
 		root := nodes[0].rule
+
 		result.Rules = append(result.Rules, root)
 		if len(nodes) > 1 {
 			result.Else[root] = make([]*Rule, len(nodes)-1)
@@ -141,6 +158,8 @@ func (i *baseDocEqIndex) Lookup(resolver ValueResolver) (*IndexResult, error) {
 			}
 		}
 	}
+
+	result.EarlyExit = tr.values.Len() == 1 && tr.values.Slice()[0].IsGround()
 
 	return result, nil
 }
@@ -154,6 +173,7 @@ func (i *baseDocEqIndex) AllRules(resolver ValueResolver) (*IndexResult, error) 
 
 	result := NewIndexResult(i.kind)
 	result.Default = i.defaultRule
+	result.OnlyGroundRefs = i.onlyGroundRefs
 	result.Rules = make([]*Rule, 0, len(tr.ordering))
 
 	for _, pos := range tr.ordering {
@@ -171,6 +191,8 @@ func (i *baseDocEqIndex) AllRules(resolver ValueResolver) (*IndexResult, error) 
 		}
 	}
 
+	result.EarlyExit = tr.values.Len() == 1 && tr.values.Slice()[0].IsGround()
+
 	return result, nil
 }
 
@@ -180,9 +202,7 @@ type ruleWalker struct {
 
 func (r *ruleWalker) Do(x interface{}) trieWalker {
 	tn := x.(*trieNode)
-	for _, rn := range tn.rules {
-		r.result.Add(rn)
-	}
+	r.result.Add(tn)
 	return r
 }
 
@@ -234,12 +254,20 @@ func (i *refindices) Update(rule *Rule, expr *Expr) {
 
 	op := expr.Operator()
 
-	if op.Equal(Equality.Ref()) || op.Equal(Equal.Ref()) {
-
+	switch {
+	case op.Equal(Equality.Ref()):
 		i.updateEq(rule, expr)
 
-	} else if op.Equal(GlobMatch.Ref()) {
+	case op.Equal(Equal.Ref()) && len(expr.Operands()) == 2:
+		// NOTE(tsandall): if equal() is called with more than two arguments the
+		// output value is being captured in which case the indexer cannot
+		// exclude the rule if the equal() call would return false (because the
+		// false value must still be produced.)
+		i.updateEq(rule, expr)
 
+	case op.Equal(GlobMatch.Ref()) && len(expr.Operands()) == 3:
+		// NOTE(sr): Same as with equal() above -- 4 operands means the output
+		// of `glob.match` is captured and the rule can thus not be excluded.
 		i.updateGlobMatch(rule, expr)
 	}
 }
@@ -292,20 +320,19 @@ func (i *refindices) Mapper(rule *Rule, ref Ref) *valueMapper {
 
 func (i *refindices) updateEq(rule *Rule, expr *Expr) {
 	a, b := expr.Operand(0), expr.Operand(1)
-	if ref, value, ok := eqOperandsToRefAndValue(i.isVirtual, a, b); ok {
-		i.insert(rule, &refindex{
-			Ref:   ref,
-			Value: value,
-		})
-	} else if ref, value, ok := eqOperandsToRefAndValue(i.isVirtual, b, a); ok {
-		i.insert(rule, &refindex{
-			Ref:   ref,
-			Value: value,
-		})
+	args := rule.Head.Args
+	if idx, ok := eqOperandsToRefAndValue(i.isVirtual, args, a, b); ok {
+		i.insert(rule, idx)
+		return
+	}
+	if idx, ok := eqOperandsToRefAndValue(i.isVirtual, args, b, a); ok {
+		i.insert(rule, idx)
+		return
 	}
 }
 
 func (i *refindices) updateGlobMatch(rule *Rule, expr *Expr) {
+	args := rule.Head.Args
 
 	delim, ok := globDelimiterToString(expr.Operand(1))
 	if !ok {
@@ -315,25 +342,36 @@ func (i *refindices) updateGlobMatch(rule *Rule, expr *Expr) {
 	if arr := globPatternToArray(expr.Operand(0), delim); arr != nil {
 		// The 3rd operand of glob.match is the value to match. We assume the
 		// 3rd operand was a reference that has been rewritten and bound to a
-		// variable earlier in the query.
+		// variable earlier in the query OR a function argument variable.
 		match := expr.Operand(2)
 		if _, ok := match.Value.(Var); ok {
+			var ref Ref
 			for _, other := range i.rules[rule] {
 				if _, ok := other.Value.(Var); ok && other.Value.Compare(match.Value) == 0 {
-					i.insert(rule, &refindex{
-						Ref:   other.Ref,
-						Value: arr.Value,
-						Mapper: &valueMapper{
-							Key: delim,
-							MapValue: func(v Value) Value {
-								if s, ok := v.(String); ok {
-									return stringSliceToArray(splitStringEscaped(string(s), delim))
-								}
-								return v
-							},
-						},
-					})
+					ref = other.Ref
 				}
+			}
+			if ref == nil {
+				for j, arg := range args {
+					if arg.Equal(match) {
+						ref = Ref{FunctionArgRootDocument, IntNumberTerm(j)}
+					}
+				}
+			}
+			if ref != nil {
+				i.insert(rule, &refindex{
+					Ref:   ref,
+					Value: arr.Value,
+					Mapper: &valueMapper{
+						Key: delim,
+						MapValue: func(v Value) Value {
+							if s, ok := v.(String); ok {
+								return stringSliceToArray(splitStringEscaped(string(s), delim))
+							}
+							return v
+						},
+					},
+				})
 			}
 		}
 	}
@@ -374,30 +412,38 @@ type trieWalker interface {
 type trieTraversalResult struct {
 	unordered map[int][]*ruleNode
 	ordering  []int
+	values    Set
 }
 
 func newTrieTraversalResult() *trieTraversalResult {
 	return &trieTraversalResult{
 		unordered: map[int][]*ruleNode{},
+		values:    NewSet(),
 	}
 }
 
-func (tr *trieTraversalResult) Add(node *ruleNode) {
-	root := node.prio[0]
-	nodes, ok := tr.unordered[root]
-	if !ok {
-		tr.ordering = append(tr.ordering, root)
+func (tr *trieTraversalResult) Add(t *trieNode) {
+	for _, node := range t.rules {
+		root := node.prio[0]
+		nodes, ok := tr.unordered[root]
+		if !ok {
+			tr.ordering = append(tr.ordering, root)
+		}
+		tr.unordered[root] = append(nodes, node)
 	}
-	tr.unordered[root] = append(nodes, node)
+	if t.values != nil {
+		t.values.Foreach(func(v *Term) { tr.values.Add(v) })
+	}
 }
 
 type trieNode struct {
 	ref       Ref
+	values    Set
 	mappers   []*valueMapper
 	next      *trieNode
 	any       *trieNode
 	undefined *trieNode
-	scalars   map[Value]*trieNode
+	scalars   *util.HashMap
 	array     *trieNode
 	rules     []*ruleNode
 }
@@ -420,11 +466,14 @@ func (node *trieNode) String() string {
 	if node.array != nil {
 		flags = append(flags, fmt.Sprintf("array:%p", node.array))
 	}
-	if len(node.scalars) > 0 {
-		buf := []string{}
-		for k, v := range node.scalars {
-			buf = append(buf, fmt.Sprintf("scalar(%v):%p", k, v))
-		}
+	if node.scalars.Len() > 0 {
+		buf := make([]string, 0, node.scalars.Len())
+		node.scalars.Iter(func(k, v util.T) bool {
+			key := k.(Value)
+			val := v.(*trieNode)
+			buf = append(buf, fmt.Sprintf("scalar(%v):%p", key, val))
+			return false
+		})
 		sort.Strings(buf)
 		flags = append(flags, strings.Join(buf, " "))
 	}
@@ -432,9 +481,27 @@ func (node *trieNode) String() string {
 		flags = append(flags, fmt.Sprintf("%d rule(s)", len(node.rules)))
 	}
 	if len(node.mappers) > 0 {
-		flags = append(flags, "mapper(s)")
+		flags = append(flags, fmt.Sprintf("%d mapper(s)", len(node.mappers)))
+	}
+	if node.values != nil {
+		if l := node.values.Len(); l > 0 {
+			flags = append(flags, fmt.Sprintf("%d value(s)", l))
+		}
 	}
 	return strings.Join(flags, " ")
+}
+
+func (node *trieNode) append(prio [2]int, rule *Rule) {
+	node.rules = append(node.rules, &ruleNode{prio, rule})
+
+	if node.values != nil {
+		node.values.Add(rule.Head.Value)
+		return
+	}
+
+	if node.values == nil && rule.Head.DocKind() == CompleteDoc {
+		node.values = NewSet(rule.Head.Value)
+	}
 }
 
 type ruleNode struct {
@@ -444,7 +511,7 @@ type ruleNode struct {
 
 func newTrieNodeImpl() *trieNode {
 	return &trieNode{
-		scalars: map[Value]*trieNode{},
+		scalars: util.NewHashMap(valueEq, valueHash),
 	}
 }
 
@@ -459,9 +526,13 @@ func (node *trieNode) Do(walker trieWalker) {
 	if node.undefined != nil {
 		node.undefined.Do(next)
 	}
-	for _, child := range node.scalars {
+
+	node.scalars.Iter(func(_, v util.T) bool {
+		child := v.(*trieNode)
 		child.Do(next)
-	}
+		return false
+	})
+
 	if node.array != nil {
 		node.array.Do(next)
 	}
@@ -490,9 +561,7 @@ func (node *trieNode) Traverse(resolver ValueResolver, tr *trieTraversalResult) 
 		return nil
 	}
 
-	for i := range node.rules {
-		tr.Add(node.rules[i])
-	}
+	tr.Add(node)
 
 	return node.next.traverse(resolver, tr)
 }
@@ -520,12 +589,12 @@ func (node *trieNode) insertValue(value Value) *trieNode {
 		}
 		return node.any
 	case Null, Boolean, Number, String:
-		child, ok := node.scalars[value]
+		child, ok := node.scalars.Get(value)
 		if !ok {
 			child = newTrieNodeImpl()
-			node.scalars[value] = child
+			node.scalars.Put(value, child)
 		}
-		return child
+		return child.(*trieNode)
 	case *Array:
 		if node.array == nil {
 			node.array = newTrieNodeImpl()
@@ -549,12 +618,12 @@ func (node *trieNode) insertArray(arr *Array) *trieNode {
 		}
 		return node.any.insertArray(arr.Slice(1, -1))
 	case Null, Boolean, Number, String:
-		child, ok := node.scalars[head]
+		child, ok := node.scalars.Get(head)
 		if !ok {
 			child = newTrieNodeImpl()
-			node.scalars[head] = child
+			node.scalars.Put(head, child)
 		}
-		return child.insertArray(arr.Slice(1, -1))
+		return child.(*trieNode).insertArray(arr.Slice(1, -1))
 	}
 
 	panic("illegal value")
@@ -575,7 +644,10 @@ func (node *trieNode) traverse(resolver ValueResolver, tr *trieTraversalResult) 
 	}
 
 	if node.undefined != nil {
-		node.undefined.Traverse(resolver, tr)
+		err = node.undefined.Traverse(resolver, tr)
+		if err != nil {
+			return err
+		}
 	}
 
 	if v == nil {
@@ -583,11 +655,14 @@ func (node *trieNode) traverse(resolver ValueResolver, tr *trieTraversalResult) 
 	}
 
 	if node.any != nil {
-		node.any.Traverse(resolver, tr)
+		err = node.any.Traverse(resolver, tr)
+		if err != nil {
+			return err
+		}
 	}
 
-	if len(node.mappers) == 0 {
-		return node.traverseValue(resolver, tr, v)
+	if err := node.traverseValue(resolver, tr, v); err != nil {
+		return err
 	}
 
 	for i := range node.mappers {
@@ -609,11 +684,11 @@ func (node *trieNode) traverseValue(resolver ValueResolver, tr *trieTraversalRes
 		return node.array.traverseArray(resolver, tr, value)
 
 	case Null, Boolean, Number, String:
-		child, ok := node.scalars[value]
+		child, ok := node.scalars.Get(value)
 		if !ok {
 			return nil
 		}
-		return child.Traverse(resolver, tr)
+		return child.(*trieNode).Traverse(resolver, tr)
 	}
 
 	return nil
@@ -625,22 +700,24 @@ func (node *trieNode) traverseArray(resolver ValueResolver, tr *trieTraversalRes
 		return node.Traverse(resolver, tr)
 	}
 
+	if node.any != nil {
+		err := node.any.traverseArray(resolver, tr, arr.Slice(1, -1))
+		if err != nil {
+			return err
+		}
+	}
+
 	head := arr.Elem(0).Value
 
 	if !IsScalar(head) {
 		return nil
 	}
 
-	if node.any != nil {
-		node.any.traverseArray(resolver, tr, arr.Slice(1, -1))
-	}
-
-	child, ok := node.scalars[head]
+	child, ok := node.scalars.Get(head)
 	if !ok {
 		return nil
 	}
-
-	return child.traverseArray(resolver, tr, arr.Slice(1, -1))
+	return child.(*trieNode).traverseArray(resolver, tr, arr.Slice(1, -1))
 }
 
 func (node *trieNode) traverseUnknown(resolver ValueResolver, tr *trieTraversalResult) error {
@@ -665,49 +742,53 @@ func (node *trieNode) traverseUnknown(resolver ValueResolver, tr *trieTraversalR
 		return err
 	}
 
-	for _, child := range node.scalars {
-		if err := child.traverseUnknown(resolver, tr); err != nil {
-			return err
+	var iterErr error
+	node.scalars.Iter(func(_, v util.T) bool {
+		child := v.(*trieNode)
+		if iterErr = child.traverseUnknown(resolver, tr); iterErr != nil {
+			return true
+		}
+		return false
+	})
+
+	return iterErr
+}
+
+// If term `a` is one of the function's operands, we store a Ref: `args[0]`
+// for the argument number. So for `f(x, y) { x = 10; y = 12 }`, we'll
+// bind `args[0]` and `args[1]` to this rule when called for (x=10) and
+// (y=12) respectively.
+func eqOperandsToRefAndValue(isVirtual func(Ref) bool, args []*Term, a, b *Term) (*refindex, bool) {
+	switch v := a.Value.(type) {
+	case Var:
+		for i, arg := range args {
+			if arg.Value.Compare(v) == 0 {
+				if bval, ok := indexValue(b); ok {
+					return &refindex{Ref: Ref{FunctionArgRootDocument, IntNumberTerm(i)}, Value: bval}, true
+				}
+			}
+		}
+	case Ref:
+		if !RootDocumentNames.Contains(v[0]) {
+			return nil, false
+		}
+		if isVirtual(v) {
+			return nil, false
+		}
+		if v.IsNested() || !v.IsGround() {
+			return nil, false
+		}
+		if bval, ok := indexValue(b); ok {
+			return &refindex{Ref: v, Value: bval}, true
 		}
 	}
-
-	return nil
+	return nil, false
 }
 
-type triePrinter struct {
-	depth int
-	w     io.Writer
-}
-
-func (p triePrinter) Do(x interface{}) trieWalker {
-	padding := strings.Repeat(" ", p.depth)
-	fmt.Fprintf(p.w, "%v%v\n", padding, x)
-	p.depth++
-	return p
-}
-
-func eqOperandsToRefAndValue(isVirtual func(Ref) bool, a, b *Term) (Ref, Value, bool) {
-
-	ref, ok := a.Value.(Ref)
-	if !ok {
-		return nil, nil, false
-	}
-
-	if !RootDocumentNames.Contains(ref[0]) {
-		return nil, nil, false
-	}
-
-	if isVirtual(ref) {
-		return nil, nil, false
-	}
-
-	if ref.IsNested() || !ref.IsGround() {
-		return nil, nil, false
-	}
-
+func indexValue(b *Term) (Value, bool) {
 	switch b := b.Value.(type) {
 	case Null, Boolean, Number, String, Var:
-		return ref, b, true
+		return b, true
 	case *Array:
 		stop := false
 		first := true
@@ -725,11 +806,11 @@ func eqOperandsToRefAndValue(isVirtual func(Ref) bool, a, b *Term) (Ref, Value, 
 		})
 		vis.Walk(b)
 		if !stop {
-			return ref, b, true
+			return b, true
 		}
 	}
 
-	return nil, nil, false
+	return nil, false
 }
 
 func globDelimiterToString(delim *Term) (string, bool) {
