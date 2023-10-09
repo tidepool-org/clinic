@@ -151,6 +151,9 @@ type ServerInterface interface {
 	// Update Tier
 	// (POST /v1/clinics/{clinicId}/tier)
 	UpdateTier(ctx echo.Context, clinicId ClinicId) error
+	// Find Patients
+	// (GET /v1/patients)
+	FindPatients(ctx echo.Context, params FindPatientsParams) error
 	// UpdatePatientSummary
 	// (POST /v1/patients/{patientId}/summary)
 	UpdatePatientSummary(ctx echo.Context, patientId PatientId) error
@@ -1545,6 +1548,61 @@ func (w *ServerInterfaceWrapper) UpdateTier(ctx echo.Context) error {
 	return err
 }
 
+// FindPatients converts echo context to params.
+func (w *ServerInterfaceWrapper) FindPatients(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params FindPatientsParams
+	// ------------- Optional query parameter "mrn" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "mrn", ctx.QueryParams(), &params.Mrn)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter mrn: %s", err))
+	}
+
+	// ------------- Optional query parameter "dob" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "dob", ctx.QueryParams(), &params.Dob)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter dob: %s", err))
+	}
+
+	// ------------- Optional query parameter "workspaceId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "workspaceId", ctx.QueryParams(), &params.WorkspaceId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter workspaceId: %s", err))
+	}
+
+	// ------------- Optional query parameter "workspaceIdType" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "workspaceIdType", ctx.QueryParams(), &params.WorkspaceIdType)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter workspaceIdType: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.FindPatients(ctx, params)
+	return err
+}
+
 // UpdatePatientSummary converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdatePatientSummary(ctx echo.Context) error {
 	var err error
@@ -1758,6 +1816,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/mrn", wrapper.UpdateMRNSettings)
 	router.POST(baseURL+"/v1/clinics/:clinicId/suppressed_notifications", wrapper.UpdateSuppressedNotifications)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
+	router.GET(baseURL+"/v1/patients", wrapper.FindPatients)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)

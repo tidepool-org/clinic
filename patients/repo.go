@@ -741,6 +741,17 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 		selector["clinicId"] = clinicObjId
 	}
+	if filter.ClinicIds != nil {
+		clinicObjIds := make([]primitive.ObjectID, len(filter.ClinicIds))
+		for _, clinicId := range filter.ClinicIds {
+			if clinicObjId, err := primitive.ObjectIDFromHex(clinicId); err == nil {
+				clinicObjIds = append(clinicObjIds, clinicObjId)
+			}
+		}
+		selector["clinicId"] = bson.M{
+			"$in": clinicObjIds,
+		}
+	}
 	if filter.UserId != nil {
 		selector["userId"] = filter.UserId
 	}
