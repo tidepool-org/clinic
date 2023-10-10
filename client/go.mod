@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic/client
 
-go 1.21
+go 1.21.2
 
 require (
 	github.com/deepmap/oapi-codegen v1.9.0
