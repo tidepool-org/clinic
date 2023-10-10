@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.19-alpine AS development
+FROM golang:1.21-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic
@@ -10,7 +10,7 @@ RUN ./build.sh
 CMD ["air"]
 
 # Production
-FROM golang:1.19-alpine AS production
+FROM golang:1.21-alpine AS production
 WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic
