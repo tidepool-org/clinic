@@ -1068,7 +1068,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
 
-		categoryResult := make([]TideResultPatient, 0, 25)
+		categoryResult := make([]TideResultPatient, 0, len(patientsList))
 		for _, patient := range patientsList {
 			exclusions = append(exclusions, patient.Id)
 
