@@ -304,6 +304,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow backend service create a custodial accounts
+# POST /v1/clinics/:clinicId/patients
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients"]
+}
+
 # Allow currently authenticated clinician to send an upload reminder
 # POST /v1/clinics/:clinicId/patients
 allow {

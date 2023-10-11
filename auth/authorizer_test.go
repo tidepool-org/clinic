@@ -389,6 +389,19 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("it allows clinic-worker to create custodial accounts for patients", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "clinic-worker",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("it allows clinic members to create custodial accounts for patients", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients"},
