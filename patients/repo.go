@@ -2,6 +2,7 @@ package patients
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -18,6 +19,10 @@ import (
 const (
 	patientsCollectionName = "patients"
 )
+
+func ptr[T any](v T) *T {
+	return &v
+}
 
 // Collation to use for string fields
 var collation = options.Collation{Locale: "en", Strength: 1}
@@ -191,7 +196,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
-	var hasFullNameSort = false
+	hasFullNameSort := false
 	for _, sort := range sorts {
 		if sort.Attribute == "fullName" {
 			hasFullNameSort = true
@@ -214,7 +219,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		return nil, fmt.Errorf("error getting pipeline result")
 	}
 
-	var result ListResult
+	result := ListResult{}
 	if err = cursor.Decode(&result); err != nil {
 		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
@@ -930,4 +935,234 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 
 	f, ok := cmpToFilter[*cmp]
 	return f, ok
+}
+
+func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
+	if clinicId == "" {
+		return nil, errors.New("empty clinicId provided")
+	}
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+
+	if params.Tags == nil || len(*params.Tags) < 1 {
+		return nil, errors.New("no tags provided")
+	}
+	tags := store.ObjectIDSFromStringArray(*params.Tags)
+
+	if params.CgmLastUploadDateFrom == nil || params.CgmLastUploadDateFrom.IsZero() {
+		return nil, errors.New("no lastUploadDateFrom provided")
+	}
+
+	if params.CgmLastUploadDateTo == nil || params.CgmLastUploadDateTo.IsZero() {
+		return nil, errors.New("no lastUploadDateTo provided")
+	}
+
+	if params.CgmLastUploadDateFrom.After(*params.CgmLastUploadDateTo) || params.CgmLastUploadDateFrom.Equal(*params.CgmLastUploadDateTo) {
+		return nil, errors.New("provided lastUploadDateFrom is after or equal to lastUploadDateTo")
+	}
+
+	if params.Period == nil {
+		return nil, errors.New("no period provided")
+	}
+
+	if *params.Period != "1d" && *params.Period != "7d" && *params.Period != "14d" && *params.Period != "30d" {
+		return nil, errors.New("provided period is not one of the valid periods")
+	}
+
+	type Category struct {
+		Heading    string
+		Field      string
+		Comparison string
+		Value      float64
+	}
+
+	categories := [...]Category{
+		{
+			Heading:    "timeInVeryLowPercent",
+			Field:      "timeInVeryLowPercent",
+			Comparison: "$gt",
+			Value:      0.01,
+		},
+		{
+			Heading:    "timeInLowPercent",
+			Field:      "timeInLowPercent",
+			Comparison: "$gt",
+			Value:      0.04,
+		},
+		{
+			Heading:    "dropInTimeInTargetPercent",
+			Field:      "timeInTargetPercentDelta",
+			Comparison: "$lt",
+			Value:      -0.15,
+		},
+		{
+			Heading:    "timeInTargetPercent",
+			Field:      "timeInTargetPercent",
+			Comparison: "$lt",
+			Value:      0.7,
+		},
+		{
+			Heading:    "timeCGMUsePercent",
+			Field:      "timeCGMUsePercent",
+			Comparison: "$lt",
+			Value:      0.7,
+		},
+	}
+
+	limit := 50
+	exclusions := make([]*primitive.ObjectID, 0, 50)
+	tide := Tide{
+		Config: &TideConfig{
+			ClinicId: &clinicId,
+			Filters: &TideFilters{
+				TimeInVeryLowPercent:      ptr(">0.01"),
+				TimeInLowPercent:          ptr(">0.04"),
+				DropInTimeInTargetPercent: ptr("<-0.15"),
+				TimeInTargetPercent:       ptr("<0.7"),
+				TimeCGMUsePercent:         ptr("<0.7"),
+			},
+			HighGlucoseThreshold:     ptr(10.0),
+			LastUploadDateFrom:       params.CgmLastUploadDateFrom,
+			LastUploadDateTo:         params.CgmLastUploadDateTo,
+			LowGlucoseThreshold:      ptr(3.9),
+			Period:                   params.Period,
+			SchemaVersion:            ptr(1),
+			Tags:                     params.Tags,
+			VeryHighGlucoseThreshold: ptr(13.9),
+			VeryLowGlucoseThreshold:  ptr(3.0),
+		},
+		Results: &TideResults{},
+	}
+
+	for _, category := range categories {
+		selector := bson.M{
+			"_id":      bson.M{"$nin": exclusions},
+			"clinicId": clinicObjId,
+			"tags":     bson.M{"$all": tags},
+			"summary.cgmStats.dates.lastUploadDate": bson.M{
+				"$gt":  params.CgmLastUploadDateFrom,
+				"$lte": params.CgmLastUploadDateTo,
+			},
+			"summary.cgmStats.periods." + *params.Period + "." + category.Field: bson.M{category.Comparison: category.Value},
+		}
+
+		opts := options.Find()
+		opts.SetLimit(int64(limit))
+
+		if category.Comparison == "$gt" {
+			opts.SetSort(bson.D{
+				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, -1},
+			})
+		} else {
+			opts.SetSort(bson.D{
+				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, 1},
+			})
+		}
+
+		cursor, err := r.collection.Find(ctx, selector, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		var patientsList []*Patient
+		if err = cursor.All(ctx, &patientsList); err != nil {
+			return nil, fmt.Errorf("error decoding patients list: %w", err)
+		}
+
+		categoryResult := make([]TideResultPatient, 0, len(patientsList))
+		for _, patient := range patientsList {
+			exclusions = append(exclusions, patient.Id)
+
+			var patientTags []string
+			for _, tag := range *patient.Tags {
+				patientTags = append(patientTags, tag.Hex())
+			}
+
+			categoryResult = append(categoryResult, TideResultPatient{
+				Patient: &TidePatient{
+					Email:    patient.Email,
+					FullName: patient.FullName,
+					Id:       patient.UserId,
+					Tags:     &patientTags,
+				},
+				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
+				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
+				TimeCGMUseMinutes:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUseMinutes,
+				TimeCGMUsePercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUsePercent,
+				TimeInHighPercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeInHighPercent,
+				TimeInLowPercent:           (*patient.Summary.CGM.Periods)[*params.Period].TimeInLowPercent,
+				TimeInTargetPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercent,
+				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
+				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
+				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
+			})
+		}
+
+		(*tide.Results)[category.Heading] = &categoryResult
+
+		limit -= len(patientsList)
+		if limit < 1 {
+			break
+		}
+	}
+
+	if limit > 0 {
+		selector := bson.M{
+			"_id":      bson.M{"$nin": exclusions},
+			"clinicId": clinicObjId,
+			"tags":     bson.M{"$all": tags},
+			"summary.cgmStats.dates.lastUploadDate": bson.M{
+				"$gt":  params.CgmLastUploadDateFrom,
+				"$lte": params.CgmLastUploadDateTo,
+			},
+		}
+
+		opts := options.Find()
+		opts.SetLimit(int64(limit))
+
+		opts.SetSort(bson.D{
+			{"summary.cgmStats.periods." + *params.Period + ".timeInTargetPercent", -1},
+		})
+
+		cursor, err := r.collection.Find(ctx, selector, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		var patientsList []*Patient
+		if err = cursor.All(ctx, &patientsList); err != nil {
+			return nil, fmt.Errorf("error decoding patients list: %w", err)
+		}
+
+		categoryResult := make([]TideResultPatient, 0, 25)
+		for _, patient := range patientsList {
+			var patientTags []string
+			for _, tag := range *patient.Tags {
+				patientTags = append(patientTags, tag.Hex())
+			}
+
+			categoryResult = append(categoryResult, TideResultPatient{
+				Patient: &TidePatient{
+					Email:    patient.Email,
+					FullName: patient.FullName,
+					Id:       patient.UserId,
+					Tags:     &patientTags,
+				},
+				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
+				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
+				TimeCGMUseMinutes:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUseMinutes,
+				TimeCGMUsePercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUsePercent,
+				TimeInHighPercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeInHighPercent,
+				TimeInLowPercent:           (*patient.Summary.CGM.Periods)[*params.Period].TimeInLowPercent,
+				TimeInTargetPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercent,
+				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
+				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
+				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
+			})
+		}
+
+		(*tide.Results)["meetingTargets"] = &categoryResult
+
+	}
+
+	return &tide, nil
 }

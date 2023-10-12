@@ -45,7 +45,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	filter.CGMTime = ParseCGMSummaryDateFilters(params)
 	filter.BGMTime = ParseBGMSummaryDateFilters(params)
 
-	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
+	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period, params.OffsetPeriods)
 	if err != nil {
 		return err
 	}
@@ -309,12 +309,22 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 		}
 	}
 
-	err := h.patients.UpdateSummaryInAllClinics(ctx, string(patientId), NewSummary(dto))
+	err := h.patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto))
 	if err != nil {
 		return err
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideReportParams) error {
+	ctx := ec.Request().Context()
+	tide, err := h.patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewTideDto(tide))
 }
 
 func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {

@@ -7,41 +7,53 @@ package topdown
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/topdown/builtins"
 )
 
-func builtinRegoParseModule(a, b ast.Value) (ast.Value, error) {
+func builtinRegoParseModule(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
 
-	filename, err := builtins.StringOperand(a, 1)
+	filename, err := builtins.StringOperand(operands[0].Value, 1)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	input, err := builtins.StringOperand(b, 1)
+	input, err := builtins.StringOperand(operands[1].Value, 1)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	module, err := ast.ParseModule(string(filename), string(input))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(module); err != nil {
-		return nil, err
+		return err
 	}
 
 	term, err := ast.ParseTerm(buf.String())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return term.Value, nil
+	return iter(term)
+}
+
+func registerRegoMetadataBuiltinFunction(builtin *ast.Builtin) {
+	f := func(BuiltinContext, []*ast.Term, func(*ast.Term) error) error {
+		// The compiler should replace all usage of this function, so the only way to get here is within a query;
+		// which cannot define rules.
+		return fmt.Errorf("the %s function must only be called within the scope of a rule", builtin.Name)
+	}
+	RegisterBuiltinFunc(builtin.Name, f)
 }
 
 func init() {
-	RegisterFunctionalBuiltin2(ast.RegoParseModule.Name, builtinRegoParseModule)
+	RegisterBuiltinFunc(ast.RegoParseModule.Name, builtinRegoParseModule)
+	registerRegoMetadataBuiltinFunction(ast.RegoMetadataChain)
+	registerRegoMetadataBuiltinFunction(ast.RegoMetadataRule)
 }

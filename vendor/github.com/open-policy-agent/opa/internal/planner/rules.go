@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/open-policy-agent/opa/ast"
@@ -82,7 +83,27 @@ func (t *ruletrie) Arity() int {
 
 func (t *ruletrie) Rules() []*ast.Rule {
 	if t != nil {
-		return t.rules
+		if t.rules == nil {
+			return nil
+		}
+		rules := make([]*ast.Rule, len(t.rules), len(t.rules)+len(t.children)) // could be too little
+		copy(rules, t.rules)
+
+		// NOTE(sr): We pull in one layer of children: the compiler ensures
+		// that these are the only possible, relevant rule sources for a given
+		// ref: If the trie is what we get for
+		//
+		//     a.b.c  = 1 { ... }
+		//     a.b[x] = 2 { ... }
+		//
+		// and we're retrieving a.b, we want Rules() to include the rule body
+		// of a.b.c.
+		for _, rs := range t.children {
+			if r := rs[len(rs)-1].rules; r != nil {
+				rules = append(rules, r...)
+			}
+		}
+		return rules
 	}
 	return nil
 }
@@ -143,7 +164,14 @@ func (t *ruletrie) LookupOrInsert(key ast.Ref) *ruletrie {
 	return t.Insert(key)
 }
 
+func (t *ruletrie) ChildrenCount() int {
+	return len(t.children)
+}
+
 func (t *ruletrie) Children() []ast.Value {
+	if t == nil {
+		return nil
+	}
 	sorted := make([]ast.Value, 0, len(t.children))
 	for key := range t.children {
 		if t.Get(key) != nil {
@@ -165,4 +193,82 @@ func (t *ruletrie) Get(k ast.Value) *ruletrie {
 		return nil
 	}
 	return nodes[len(nodes)-1]
+}
+
+func (t *ruletrie) DepthFirst(f func(*ruletrie) bool) {
+	if f(t) {
+		return
+	}
+	for _, rules := range t.children {
+		for i := range rules {
+			rules[i].DepthFirst(f)
+		}
+	}
+}
+
+func (t *ruletrie) Depth() int {
+	if len(t.Children()) == 0 {
+		return 0
+	}
+	c := make([]int, 0, len(t.Children()))
+	for _, nodes := range t.children {
+		c = append(c, nodes[len(nodes)-1].Depth())
+	}
+	max := 0
+	for i := range c {
+		if max < c[i] {
+			max = c[i]
+		}
+	}
+	return max + 1
+}
+
+func (t *ruletrie) String() string {
+	return fmt.Sprintf("<ruletrie rules:%v children:%v>", t.rules, t.children)
+}
+
+type functionMocksStack struct {
+	stack []*functionMocksElem
+}
+
+type functionMocksElem []frame
+
+type frame map[string]*ast.Term
+
+func newFunctionMocksStack() *functionMocksStack {
+	stack := &functionMocksStack{}
+	stack.Push()
+	return stack
+}
+
+func newFunctionMocksElem() *functionMocksElem {
+	return &functionMocksElem{}
+}
+
+func (s *functionMocksStack) Push() {
+	s.stack = append(s.stack, newFunctionMocksElem())
+}
+
+func (s *functionMocksStack) Pop() {
+	s.stack = s.stack[:len(s.stack)-1]
+}
+
+func (s *functionMocksStack) PushFrame(f frame) {
+	current := s.stack[len(s.stack)-1]
+	*current = append(*current, f)
+}
+
+func (s *functionMocksStack) PopFrame() {
+	current := s.stack[len(s.stack)-1]
+	*current = (*current)[:len(*current)-1]
+}
+
+func (s *functionMocksStack) Lookup(f string) *ast.Term {
+	current := *s.stack[len(s.stack)-1]
+	for i := len(current) - 1; i >= 0; i-- {
+		if t, ok := current[i][f]; ok {
+			return t
+		}
+	}
+	return nil
 }

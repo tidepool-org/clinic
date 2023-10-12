@@ -5,6 +5,7 @@
 package topdown
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/open-policy-agent/opa/ast"
@@ -20,12 +21,15 @@ func (h Halt) Error() string {
 	return h.Err.Error()
 }
 
+func (h Halt) Unwrap() error { return h.Err }
+
 // Error is the error type returned by the Eval and Query functions when
 // an evaluation error occurs.
 type Error struct {
 	Code     string        `json:"code"`
 	Message  string        `json:"message"`
 	Location *ast.Location `json:"location,omitempty"`
+	err      error         `json:"-"`
 }
 
 const (
@@ -57,20 +61,27 @@ const (
 
 // IsError returns true if the err is an Error.
 func IsError(err error) bool {
-	_, ok := err.(*Error)
-	return ok
+	var e *Error
+	return errors.As(err, &e)
 }
 
 // IsCancel returns true if err was caused by cancellation.
 func IsCancel(err error) bool {
-	if e, ok := err.(*Error); ok {
-		return e.Code == CancelErr
+	return errors.Is(err, &Error{Code: CancelErr})
+}
+
+// Is allows matching topdown errors using errors.Is (see IsCancel).
+func (e *Error) Is(target error) bool {
+	var t *Error
+	if errors.As(target, &t) {
+		return (t.Code == "" || e.Code == t.Code) &&
+			(t.Message == "" || e.Message == t.Message) &&
+			(t.Location == nil || t.Location.Compare(e.Location) == 0)
 	}
 	return false
 }
 
 func (e *Error) Error() string {
-
 	msg := fmt.Sprintf("%v: %v", e.Code, e.Message)
 
 	if e.Location != nil {
@@ -78,6 +89,15 @@ func (e *Error) Error() string {
 	}
 
 	return msg
+}
+
+func (e *Error) Wrap(err error) *Error {
+	e.err = err
+	return e
+}
+
+func (e *Error) Unwrap() error {
+	return e.err
 }
 
 func functionConflictErr(loc *ast.Location) error {
@@ -101,14 +121,6 @@ func objectDocKeyConflictErr(loc *ast.Location) error {
 		Code:     ConflictErr,
 		Location: loc,
 		Message:  "object keys must be unique",
-	}
-}
-
-func documentConflictErr(loc *ast.Location) error {
-	return &Error{
-		Code:     ConflictErr,
-		Location: loc,
-		Message:  "base and virtual document keys must be disjoint",
 	}
 }
 

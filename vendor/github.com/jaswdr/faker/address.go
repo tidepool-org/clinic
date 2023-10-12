@@ -12,7 +12,8 @@ var (
 
 	buildingNumber = []string{"%####", "%###", "%##"}
 
-	streetSuffix = []string{"Alley", "Avenue",
+	streetSuffix = []string{
+		"Alley", "Avenue",
 		"Branch", "Bridge", "Brook", "Brooks", "Burg", "Burgs", "Bypass",
 		"Camp", "Canyon", "Cape", "Causeway", "Center", "Centers", "Circle", "Circles", "Cliff", "Cliffs", "Club", "Common", "Corner", "Corners", "Course", "Court", "Courts", "Cove", "Coves", "Creek", "Crescent", "Crest", "Crossing", "Crossroad", "Curve",
 		"Dale", "Dam", "Divide", "Drive", "Drive", "Drives",
@@ -33,7 +34,8 @@ var (
 		"Terrace", "Throughway", "Trace", "Track", "Trafficway", "Trail", "Trail", "Tunnel", "Tunnel", "Turnpike", "Turnpike",
 		"Underpass", "Union", "Unions",
 		"Valley", "Valleys", "Via", "Viaduct", "View", "Views", "Village", "Village", "Villages", "Ville", "Vista", "Vista",
-		"Walk", "Walks", "Wall", "Way", "Ways", "Well", "Wells"}
+		"Walk", "Walks", "Wall", "Way", "Ways", "Well", "Wells",
+	}
 
 	postCode = []string{"#####", "#####-####"}
 
@@ -41,7 +43,8 @@ var (
 
 	stateAbbr = []string{"AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"}
 
-	country = []string{"Afghanistan", "Albania", "Algeria", "American Samoa", "Andorra", "Angola", "Anguilla", "Antarctica (the territory South of 60 deg S)", "Antigua and Barbuda", "Argentina", "Armenia", "Aruba", "Australia", "Austria", "Azerbaijan",
+	country = []string{
+		"Afghanistan", "Albania", "Algeria", "American Samoa", "Andorra", "Angola", "Anguilla", "Antarctica (the territory South of 60 deg S)", "Antigua and Barbuda", "Argentina", "Armenia", "Aruba", "Australia", "Austria", "Azerbaijan",
 		"Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Bouvet Island (Bouvetoya)", "Brazil", "British Indian Ocean Territory (Chagos Archipelago)", "British Virgin Islands", "Brunei Darussalam", "Bulgaria", "Burkina Faso", "Burundi",
 		"Cambodia", "Cameroon", "Canada", "Cape Verde", "Cayman Islands", "Central African Republic", "Chad", "Chile", "China", "Christmas Island", "Cocos (Keeling) Islands", "Colombia", "Comoros", "Congo", "Cook Islands", "Costa Rica", "Cote d\"Ivoire", "Croatia", "Cuba", "Cyprus", "Czech Republic",
 		"Denmark", "Djibouti", "Dominica", "Dominican Republic",
@@ -65,23 +68,60 @@ var (
 		"Vanuatu", "Venezuela", "Vietnam",
 		"Wallis and Futuna", "Western Sahara",
 		"Yemen",
-		"Zambia", "Zimbabwe"}
+		"Zambia", "Zimbabwe",
+	}
 
-	countryAbbr = []string{"ABW", "AFG", "AGO", "AIA", "ALA", "ALB", "AND", "ARE", "ARG", "ARM", "ASM", "ATA", "ATF", "ATG", "AUS", "AUT", "AZE", "BDI", "BEL", "BEN", "BES", "BFA", "BGD", "BGR", "BHR", "BHS", "BIH", "BLM", "BLR", "BLZ", "BMU", "BOL", "BRA", "BRB", "BRN", "BTN", "BVT", "BWA", "CAF", "CAN", "CCK", "CHE", "CHL", "CHN", "CIV", "CMR", "COD", "COG", "COK", "COL", "COM", "CPV", "CRI", "CUB", "CUW", "CXR", "CYM", "CYP", "CZE", "DEU", "DJI", "DMA", "DNK", "DOM", "DZA", "ECU", "EGY", "ERI", "ESH", "ESP", "EST", "ETH", "FIN", "FJI", "FLK", "FRA", "FRO",
+	countryAbbr = []string{
+		"ABW", "AFG", "AGO", "AIA", "ALA", "ALB", "AND", "ARE", "ARG", "ARM", "ASM", "ATA", "ATF", "ATG", "AUS", "AUT", "AZE", "BDI", "BEL", "BEN", "BES", "BFA", "BGD", "BGR", "BHR", "BHS", "BIH", "BLM", "BLR", "BLZ", "BMU", "BOL", "BRA", "BRB", "BRN", "BTN", "BVT", "BWA", "CAF", "CAN", "CCK", "CHE", "CHL", "CHN", "CIV", "CMR", "COD", "COG", "COK", "COL", "COM", "CPV", "CRI", "CUB", "CUW", "CXR", "CYM", "CYP", "CZE", "DEU", "DJI", "DMA", "DNK", "DOM", "DZA", "ECU", "EGY", "ERI", "ESH", "ESP", "EST", "ETH", "FIN", "FJI", "FLK", "FRA", "FRO",
 		"FSM", "GAB", "GBR", "GEO", "GGY", "GHA", "GIB", "GIN", "GLP", "GMB", "GNB", "GNQ", "GRC", "GRD", "GRL", "GTM", "GUF", "GUM", "GUY", "HKG", "HMD", "HND", "HRV", "HTI", "HUN", "IDN", "IMN", "IND", "IOT", "IRL", "IRN", "IRQ", "ISL", "ISR", "ITA", "JAM", "JEY", "JOR", "JPN", "KAZ", "KEN", "KGZ", "KHM", "KIR", "KNA", "KOR", "KWT", "LAO", "LBN", "LBR", "LBY", "LCA", "LIE", "LKA", "LSO", "LTU", "LUX", "LVA", "MAC", "MAF", "MAR", "MCO", "MDA", "MDG", "MDV", "MEX", "MHL", "MKD", "MLI", "MLT", "MMR", "MNE", "MNG", "MNP", "MOZ", "MRT", "MSR", "MTQ", "MUS", "MWI",
 		"MYS", "MYT", "NAM", "NCL", "NER", "NFK", "NGA", "NIC", "NIU", "NLD", "NOR", "NPL", "NRU", "NZL", "OMN", "PAK", "PAN", "PCN", "PER", "PHL", "PLW", "PNG", "POL", "PRI", "PRK", "PRT", "PRY", "PSE", "PYF", "QAT", "REU", "ROU", "RUS", "RWA", "SAU", "SDN", "SEN", "SGP", "SGS", "SHN", "SJM", "SLB", "SLE", "SLV", "SMR", "SOM", "SPM", "SRB", "SSD", "STP", "SUR", "SVK", "SVN", "SWE", "SWZ", "SXM", "SYC", "SYR", "TCA", "TCD", "TGO", "THA", "TJK", "TKL", "TKM", "TLS", "TON", "TTO", "TUN", "TUR", "TUV", "TWN", "TZA", "UGA", "UKR", "UMI", "URY", "USA", "UZB", "VAT",
-		"VCT", "VEN", "VGB", "VIR", "VNM", "VUT", "WLF", "WSM", "YEM", "ZAF", "ZMB", "ZWE"}
+		"VCT", "VEN", "VGB", "VIR", "VNM", "VUT", "WLF", "WSM", "YEM", "ZAF", "ZMB", "ZWE",
+	}
 
-	cityFormats = []string{"{{cityPrefix}} {{firstName}}{{citySuffix}}",
+	countryCode = []string{
+		"AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX", "AZ",
+		"BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BV", "BW", "BY", "BZ",
+		"CA", "CC", "CD", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR", "CU", "CV", "CW", "CX", "CY", "CZ",
+		"DE", "DJ", "DK", "DM", "DO", "DZ",
+		"EC", "EE", "EG", "EH", "ER", "ES", "ET",
+		"FI", "FJ", "FK", "FM", "FO", "FR",
+		"GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS", "GT", "GU", "GW", "GY",
+		"HK", "HM", "HN", "HR", "HT", "HU",
+		"ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT",
+		"JE", "JM", "JO", "JP",
+		"KE", "KG", "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ",
+		"LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY",
+		"MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ", "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ",
+		"NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU", "NZ",
+		"OM",
+		"PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM", "PN", "PR", "PS", "PT", "PW", "PY",
+		"QA",
+		"RE", "RO", "RS", "RU", "RW",
+		"SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV", "SX", "SY", "SZ",
+		"TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ",
+		"UA", "UG", "UM", "US", "UY", "UZ",
+		"VA", "VC", "VE", "VG", "VI", "VN", "VU",
+		"WF", "WS",
+		"YE", "YT",
+		"ZA", "ZM", "ZW",
+	}
+
+	cityFormats = []string{
+		"{{cityPrefix}} {{firstName}}{{citySuffix}}",
 		"{{cityPrefix}} {{firstName}}",
 		"{{firstName}}{{citySuffix}}",
-		"{{lastName}}{{citySuffix}}"}
+		"{{lastName}}{{citySuffix}}",
+	}
 
-	streetNameFormats = []string{"{{firstName}} {{streetSuffix}}",
-		"{{lastName}} {{streetSuffix}}"}
+	streetNameFormats = []string{
+		"{{firstName}} {{streetSuffix}}",
+		"{{lastName}} {{streetSuffix}}",
+	}
 
-	streetAddressFormats = []string{"{{buildingNumber}} {{streetName}}",
-		"{{buildingNumber}} {{streetName}} {{secondaryAddress}}"}
+	streetAddressFormats = []string{
+		"{{buildingNumber}} {{streetName}}",
+		"{{buildingNumber}} {{streetName}} {{secondaryAddress}}",
+	}
 
 	addressFormats = []string{"{{streetAddress}}\n{{city}}, {{stateAbbr}} {{postCode}}"}
 
@@ -126,12 +166,8 @@ func (a Address) StreetSuffix() string {
 
 // BuildingNumber returns a fake building number for Address
 func (a Address) BuildingNumber() (bn string) {
-	t := a.Faker.IntBetween(1, 6)
-	for i := 0; i < t; i++ {
-		bn = bn + strconv.Itoa(a.Faker.RandomDigitNotNull())
-	}
-
-	return
+	pattern := a.Faker.RandomStringElement(buildingNumber)
+	return a.Faker.Numerify(pattern)
 }
 
 // City returns a fake city for Address
@@ -139,26 +175,18 @@ func (a Address) City() string {
 	city := a.Faker.RandomStringElement(cityFormats)
 
 	// {{cityPrefix}}
-	if strings.Contains(city, "{{cityPrefix}}") {
-		city = strings.Replace(city, "{{cityPrefix}}", a.CityPrefix(), 1)
-	}
+	city = strings.Replace(city, "{{cityPrefix}}", a.CityPrefix(), 1)
 
 	var p Person = a.Faker.Person()
 
 	// {{firstName}}
-	if strings.Contains(city, "{{firstName}}") {
-		city = strings.Replace(city, "{{firstName}}", p.FirstName(), 1)
-	}
+	city = strings.Replace(city, "{{firstName}}", p.FirstName(), 1)
 
 	// {{lastName}}
-	if strings.Contains(city, "{{lastName}}") {
-		city = strings.Replace(city, "{{lastName}}", p.LastName(), 1)
-	}
+	city = strings.Replace(city, "{{lastName}}", p.LastName(), 1)
 
 	// {{citySuffix}}
-	if strings.Contains(city, "{{citySuffix}}") {
-		city = strings.Replace(city, "{{citySuffix}}", a.CitySuffix(), 1)
-	}
+	city = strings.Replace(city, "{{citySuffix}}", a.CitySuffix(), 1)
 
 	return city
 }
@@ -170,19 +198,13 @@ func (a Address) StreetName() string {
 	var p Person = a.Faker.Person()
 
 	// {{firstName}}
-	if strings.Contains(street, "{{firstName}}") {
-		street = strings.Replace(street, "{{firstName}}", p.FirstName(), 1)
-	}
+	street = strings.Replace(street, "{{firstName}}", p.FirstName(), 1)
 
 	// {{lastName}}
-	if strings.Contains(street, "{{lastName}}") {
-		street = strings.Replace(street, "{{lastName}}", p.LastName(), 1)
-	}
+	street = strings.Replace(street, "{{lastName}}", p.LastName(), 1)
 
 	// {{streetSuffix}}
-	if strings.Contains(street, "{{streetSuffix}}") {
-		street = strings.Replace(street, "{{streetSuffix}}", a.StreetSuffix(), 1)
-	}
+	street = strings.Replace(street, "{{streetSuffix}}", a.StreetSuffix(), 1)
 
 	return street
 }
@@ -192,19 +214,13 @@ func (a Address) StreetAddress() string {
 	streetAddress := a.Faker.RandomStringElement(streetAddressFormats)
 
 	// {{buildingNumber}}
-	if strings.Contains(streetAddress, "{{buildingNumber}}") {
-		streetAddress = strings.Replace(streetAddress, "{{buildingNumber}}", a.BuildingNumber(), 1)
-	}
+	streetAddress = strings.Replace(streetAddress, "{{buildingNumber}}", a.BuildingNumber(), 1)
 
 	// {{streetName}}
-	if strings.Contains(streetAddress, "{{streetName}}") {
-		streetAddress = strings.Replace(streetAddress, "{{streetName}}", a.StreetName(), 1)
-	}
+	streetAddress = strings.Replace(streetAddress, "{{streetName}}", a.StreetName(), 1)
 
 	// {{secondaryAddress}}
-	if strings.Contains(streetAddress, "{{secondaryAddress}}") {
-		streetAddress = strings.Replace(streetAddress, "{{secondaryAddress}}", a.SecondaryAddress(), 1)
-	}
+	streetAddress = strings.Replace(streetAddress, "{{secondaryAddress}}", a.SecondaryAddress(), 1)
 
 	return streetAddress
 }
@@ -220,24 +236,16 @@ func (a Address) Address() string {
 	address := a.Faker.RandomStringElement(addressFormats)
 
 	// {{streetAddress}}
-	if strings.Contains(address, "{{streetAddress}}") {
-		address = strings.Replace(address, "{{streetAddress}}", a.StreetAddress(), 1)
-	}
+	address = strings.Replace(address, "{{streetAddress}}", a.StreetAddress(), 1)
 
 	// {{city}}
-	if strings.Contains(address, "{{city}}") {
-		address = strings.Replace(address, "{{city}}", a.City(), 1)
-	}
+	address = strings.Replace(address, "{{city}}", a.City(), 1)
 
 	// {{stateAbbr}}
-	if strings.Contains(address, "{{stateAbbr}}") {
-		address = strings.Replace(address, "{{stateAbbr}}", a.StateAbbr(), 1)
-	}
+	address = strings.Replace(address, "{{stateAbbr}}", a.StateAbbr(), 1)
 
 	// {{postCode}}
-	if strings.Contains(address, "{{postCode}}") {
-		address = strings.Replace(address, "{{postCode}}", a.PostCode(), 1)
-	}
+	address = strings.Replace(address, "{{postCode}}", a.PostCode(), 1)
 
 	return address
 }
@@ -252,6 +260,11 @@ func (a Address) CountryAbbr() string {
 	return a.Faker.RandomStringElement(countryAbbr)
 }
 
+// CountryCode returns a fake country code for Address
+func (a Address) CountryCode() string {
+	return a.Faker.RandomStringElement(countryCode)
+}
+
 // Latitude returns a fake latitude for Address
 func (a Address) Latitude() (latitude float64) {
 	latitude, _ = strconv.ParseFloat(a.Faker.Numerify("##.######"), 64)
@@ -259,7 +272,7 @@ func (a Address) Latitude() (latitude float64) {
 }
 
 // Longitude returns a fake longitude for Address
-func (a Address) Longitude() (latitude float64) {
-	latitude, _ = strconv.ParseFloat(a.Faker.Numerify("##.######"), 64)
+func (a Address) Longitude() (longitude float64) {
+	longitude, _ = strconv.ParseFloat(a.Faker.Numerify("##.######"), 64)
 	return
 }

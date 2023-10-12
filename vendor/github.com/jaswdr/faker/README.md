@@ -8,15 +8,17 @@ Faker is heavily inspired by PHP"s [Faker](https://github.com/fzaninotto/Faker)
 
 Faker requires Go >= 1.11
 
-<a href="https://www.buymeacoffee.com/jaswdr" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 11px !important;width: 104px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
-
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/jaswdr/faker)](https://pkg.go.dev/github.com/jaswdr/faker)
+[![Test](https://github.com/jaswdr/faker/actions/workflows/test.yml/badge.svg)](https://github.com/jaswdr/faker/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/jaswdr/faker/branch/master/graph/badge.svg)](https://codecov.io/gh/jaswdr/faker)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jaswdr/faker)](https://goreportcard.com/report/github.com/jaswdr/faker)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ba14f84a3f824410be0a6f6670de012a)](https://app.codacy.com/gh/jaswdr/faker?utm_source=github.com&utm_medium=referral&utm_content=jaswdr/faker&utm_campaign=Badge_Grade)
+[![CodeFactor](https://www.codefactor.io/repository/github/jaswdr/faker/badge)](https://www.codefactor.io/repository/github/jaswdr/faker)
+[![Release](https://img.shields.io/github/release/jaswdr/faker.svg?style=flat-square)](https://github.com/jaswdr/faker/releases)
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/jaswdr/faker)
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fjaswdr%2Ffaker&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
-## Test it in Go Playground
+## Test it directly from your browser
 
 Start at https://play.golang.org/p/JpTagDGBaHK
 
@@ -38,15 +40,15 @@ Use `faker.New()` to create and initialize a faker generator, which can generate
 import "github.com/jaswdr/faker"
 
 func main() {
-    faker := faker.New()
+    fake := faker.New()
 
-    faker.Person().Name()
+    fake.Person().Name()
     // Lucy Cechtelar
 
-    faker.Address().Address()
+    fake.Address().Address()
     // 426 Jordy Lodge
 
-    faker.Lorem().Text(100)
+    fake.Lorem().Text(100)
     // Dolores sit sint laboriosam dolorem culpa et autem. Beatae nam sunt fugit
     // et sit et mollitia sed.
     // Fuga deserunt tempora facere magni omnis. Omnis quia temporibus laudantium
@@ -54,10 +56,10 @@ func main() {
 }
 ```
 
-Even if this example shows a method access, each call to `faker.Name()` yields a different (random) result.
+Even if this example shows a method access, each call to `fake.Name()` yields a different (random) result.
 
 ```go
-p := faker.Person()
+p := fake.Person()
 
 for i:=0; i < 10; i++ {
   fmt.Println(p.Name())
@@ -124,10 +126,6 @@ fmt.Println(profileImage.Name())
 
 See more formatters in [docs](https://pkg.go.dev/github.com/jaswdr/faker?tab=doc)
 
-## Get involved
-
-Have a question? Use the [Discussions](https://github.com/jaswdr/faker/discussions) page.
-
 ## Development
 
 Create a fork and get the code.
@@ -149,3 +147,7 @@ Push to your fork and send a new pull request from your fork to this repository.
 ## License
 
 Faker is released under the MIT Licence. See the bundled LICENSE file for details.
+
+## Maintainer
+
+Created and maitained by Jonathan Schweder ([@jaswdr](https://github.com/jaswdr)) and [many others](https://github.com/jaswdr/faker/graphs/contributors)
