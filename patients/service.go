@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/tidepool-org/clinic/clinics"
 	errors2 "github.com/tidepool-org/clinic/errors"
-
 	"github.com/tidepool-org/clinic/store"
 	"go.uber.org/zap"
 )
@@ -260,6 +259,10 @@ func getUpdatedBy(update PatientUpdate) *string {
 	}
 
 	return update.Patient.InvitedBy
+}
+
+func (s *service) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
+	return s.repo.TideReport(ctx, clinicId, params)
 }
 
 func mrnChanged(existing Patient, updated Patient) bool {

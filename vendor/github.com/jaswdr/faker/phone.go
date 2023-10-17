@@ -34,7 +34,8 @@ var (
 		"{{areaCode}}-{{exchangeCode}}-#### x#####",
 		"({{areaCode}}) {{exchangeCode}}-#### x#####",
 		"1-{{areaCode}}-{{exchangeCode}}-#### x#####",
-		"{{areaCode}}.{{exchangeCode}}.#### x#####"}
+		"{{areaCode}}.{{exchangeCode}}.#### x#####",
+	}
 
 	tollFreeAreaCodes = []string{"800", "844", "855", "866", "877", "888"}
 
@@ -42,7 +43,8 @@ var (
 		"{{tollFreeAreaCode}}-{{exchangeCode}}-####",
 		"({{tollFreeAreaCode}}) {{exchangeCode}}-####",
 		"1-{{tollFreeAreaCode}}-{{exchangeCode}}-####",
-		"{{tollFreeAreaCode}}.{{exchangeCode}}.####"}
+		"{{tollFreeAreaCode}}.{{exchangeCode}}.####",
+	}
 )
 
 // Phone is a faker struct for Phone
@@ -76,14 +78,10 @@ func (p Phone) Number() string {
 	number := p.Faker.RandomStringElement(phoneFormats)
 
 	// {{areaCode}}
-	if strings.Contains(number, "{{areaCode}}") {
-		number = strings.Replace(number, "{{areaCode}}", p.AreaCode(), 1)
-	}
+	number = strings.Replace(number, "{{areaCode}}", p.AreaCode(), 1)
 
 	// {{exchangeCode}}
-	if strings.Contains(number, "{{exchangeCode}}") {
-		number = strings.Replace(number, "{{exchangeCode}}", p.ExchangeCode(), 1)
-	}
+	number = strings.Replace(number, "{{exchangeCode}}", p.ExchangeCode(), 1)
 
 	return p.Faker.Numerify(number)
 }
@@ -98,14 +96,10 @@ func (p Phone) ToolFreeNumber() string {
 	number := p.Faker.RandomStringElement(tollFreeFormats)
 
 	// {{tollFreeAreaCode}}
-	if strings.Contains(number, "{{tollFreeAreaCode}}") {
-		number = strings.Replace(number, "{{tollFreeAreaCode}}", p.TollFreeAreaCode(), 1)
-	}
+	number = strings.Replace(number, "{{tollFreeAreaCode}}", p.TollFreeAreaCode(), 1)
 
 	// {{exchangeCode}}
-	if strings.Contains(number, "{{exchangeCode}}") {
-		number = strings.Replace(number, "{{exchangeCode}}", p.ExchangeCode(), 1)
-	}
+	number = strings.Replace(number, "{{exchangeCode}}", p.ExchangeCode(), 1)
 
 	return p.Faker.Numerify(number)
 }

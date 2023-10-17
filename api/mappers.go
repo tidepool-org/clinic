@@ -55,7 +55,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		tier = c.Tier
 	}
 
-	units := ClinicPreferredBgUnitsMgdL
+	units := MgdL
 	if c.PreferredBgUnits != "" {
 		units = ClinicPreferredBgUnits(c.PreferredBgUnits)
 	}
@@ -238,233 +238,57 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 	patientSummary := &patients.Summary{}
 
 	if dto.CgmStats != nil {
-		patientSummary.CGM = &patients.CGMStats{
-			Periods:    make(map[string]*patients.CGMPeriod),
-			TotalHours: dto.CgmStats.TotalHours,
-		}
-
-		if dto.CgmStats.Dates != nil {
-			patientSummary.CGM.Dates = &patients.Dates{
-				LastUpdatedDate: dto.CgmStats.Dates.LastUpdatedDate,
-
-				HasLastUploadDate: dto.CgmStats.Dates.HasLastUploadDate,
-				LastUploadDate:    dto.CgmStats.Dates.LastUploadDate,
-
-				HasOutdatedSince: dto.CgmStats.Dates.HasOutdatedSince,
-				OutdatedSince:    dto.CgmStats.Dates.OutdatedSince,
-
-				HasFirstData: dto.CgmStats.Dates.HasFirstData,
-				FirstData:    dto.CgmStats.Dates.FirstData,
-
-				HasLastData: dto.CgmStats.Dates.HasLastData,
-				LastData:    dto.CgmStats.Dates.LastData,
-			}
+		patientSummary.CGM = &patients.PatientCGMStats{
+			Periods:       &patients.PatientCGMPeriods{},
+			OffsetPeriods: &patients.PatientCGMPeriods{},
+			TotalHours:    dto.CgmStats.TotalHours,
 		}
 
 		if dto.CgmStats.Config != nil {
-			patientSummary.CGM.Config = &patients.Config{
-				SchemaVersion:            dto.CgmStats.Config.SchemaVersion,
-				HighGlucoseThreshold:     dto.CgmStats.Config.HighGlucoseThreshold,
-				VeryHighGlucoseThreshold: dto.CgmStats.Config.VeryLowGlucoseThreshold,
-				LowGlucoseThreshold:      dto.CgmStats.Config.LowGlucoseThreshold,
-				VeryLowGlucoseThreshold:  dto.CgmStats.Config.VeryLowGlucoseThreshold,
-			}
+			config := patients.PatientSummaryConfig(*dto.CgmStats.Config)
+			patientSummary.CGM.Config = &config
+		}
+		if dto.CgmStats.Dates != nil {
+			dates := patients.PatientSummaryDates(*dto.CgmStats.Dates)
+			patientSummary.CGM.Dates = &dates
 		}
 
 		if dto.CgmStats.Periods != nil {
-			var averageGlucose *patients.AverageGlucose
-			// this is bad, but it's better than copy and pasting the copy code N times
-			sourcePeriods := map[string]*PatientCGMPeriod{}
-			if dto.CgmStats.Periods.N1d != nil {
-				sourcePeriods["1d"] = dto.CgmStats.Periods.N1d
+			for k, source := range *dto.CgmStats.Periods {
+				(*patientSummary.CGM.Periods)[k] = patients.PatientCGMPeriod(source)
 			}
-			if dto.CgmStats.Periods.N7d != nil {
-				sourcePeriods["7d"] = dto.CgmStats.Periods.N7d
-			}
-			if dto.CgmStats.Periods.N14d != nil {
-				sourcePeriods["14d"] = dto.CgmStats.Periods.N14d
-			}
-			if dto.CgmStats.Periods.N30d != nil {
-				sourcePeriods["30d"] = dto.CgmStats.Periods.N30d
-			}
+		}
 
-			for i := range sourcePeriods {
-				if sourcePeriods[i].AverageGlucose != nil {
-					averageGlucose = &patients.AverageGlucose{
-						Units: string(sourcePeriods[i].AverageGlucose.Units),
-						Value: float64(sourcePeriods[i].AverageGlucose.Value),
-					}
-				}
-
-				patientSummary.CGM.Periods[i] = &patients.CGMPeriod{
-					HasTimeCGMUsePercent: sourcePeriods[i].HasTimeCGMUsePercent,
-					TimeCGMUsePercent:    sourcePeriods[i].TimeCGMUsePercent,
-
-					HasTimeCGMUseMinutes: sourcePeriods[i].HasTimeCGMUseMinutes,
-					TimeCGMUseMinutes:    sourcePeriods[i].TimeCGMUseMinutes,
-
-					HasTimeCGMUseRecords: sourcePeriods[i].HasTimeCGMUseRecords,
-					TimeCGMUseRecords:    sourcePeriods[i].TimeCGMUseRecords,
-
-					HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
-					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
-
-					HasTimeInVeryLowMinutes: sourcePeriods[i].HasTimeInVeryLowMinutes,
-					TimeInVeryLowMinutes:    sourcePeriods[i].TimeInVeryLowMinutes,
-
-					HasTimeInVeryLowRecords: sourcePeriods[i].HasTimeInVeryLowRecords,
-					TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
-
-					HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
-					TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
-
-					HasTimeInLowMinutes: sourcePeriods[i].HasTimeInLowMinutes,
-					TimeInLowMinutes:    sourcePeriods[i].TimeInLowMinutes,
-
-					HasTimeInLowRecords: sourcePeriods[i].HasTimeInLowRecords,
-					TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
-
-					HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
-					TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
-
-					HasTimeInTargetMinutes: sourcePeriods[i].HasTimeInTargetMinutes,
-					TimeInTargetMinutes:    sourcePeriods[i].TimeInTargetMinutes,
-
-					HasTimeInTargetRecords: sourcePeriods[i].HasTimeInTargetRecords,
-					TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
-
-					HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
-					TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
-
-					HasTimeInHighMinutes: sourcePeriods[i].HasTimeInHighMinutes,
-					TimeInHighMinutes:    sourcePeriods[i].TimeInHighMinutes,
-
-					HasTimeInHighRecords: sourcePeriods[i].HasTimeInHighRecords,
-					TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
-
-					HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
-					TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
-
-					HasTimeInVeryHighMinutes: sourcePeriods[i].HasTimeInVeryHighMinutes,
-					TimeInVeryHighMinutes:    sourcePeriods[i].TimeInVeryHighMinutes,
-
-					HasTimeInVeryHighRecords: sourcePeriods[i].HasTimeInVeryHighRecords,
-					TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
-
-					HasGlucoseManagementIndicator: sourcePeriods[i].HasGlucoseManagementIndicator,
-					GlucoseManagementIndicator:    sourcePeriods[i].GlucoseManagementIndicator,
-
-					HasAverageGlucose: sourcePeriods[i].HasAverageGlucose,
-					AverageGlucose:    averageGlucose,
-
-					HasTotalRecords: sourcePeriods[i].HasTotalRecords,
-					TotalRecords:    sourcePeriods[i].TotalRecords,
-
-					HasAverageDailyRecords: sourcePeriods[i].HasAverageDailyRecords,
-					AverageDailyRecords:    sourcePeriods[i].AverageDailyRecords,
-				}
+		if dto.CgmStats.OffsetPeriods != nil {
+			for k, source := range *dto.CgmStats.OffsetPeriods {
+				(*patientSummary.CGM.OffsetPeriods)[k] = patients.PatientCGMPeriod(source)
 			}
 		}
 	}
 
 	if dto.BgmStats != nil {
-		patientSummary.BGM = &patients.BGMStats{
-			Periods:    make(map[string]*patients.BGMPeriod),
-			TotalHours: dto.BgmStats.TotalHours,
+		patientSummary.BGM = &patients.PatientBGMStats{
+			Periods:       &patients.PatientBGMPeriods{},
+			OffsetPeriods: &patients.PatientBGMPeriods{},
+			TotalHours:    dto.BgmStats.TotalHours,
 		}
 
 		if dto.BgmStats.Config != nil {
-			patientSummary.BGM.Config = &patients.Config{
-				SchemaVersion:            dto.BgmStats.Config.SchemaVersion,
-				HighGlucoseThreshold:     dto.BgmStats.Config.HighGlucoseThreshold,
-				VeryHighGlucoseThreshold: dto.BgmStats.Config.VeryLowGlucoseThreshold,
-				LowGlucoseThreshold:      dto.BgmStats.Config.LowGlucoseThreshold,
-				VeryLowGlucoseThreshold:  dto.BgmStats.Config.VeryLowGlucoseThreshold,
-			}
+			patientSummary.BGM.Config = (*patients.PatientSummaryConfig)(dto.BgmStats.Config)
 		}
 		if dto.BgmStats.Dates != nil {
-			patientSummary.BGM.Dates = &patients.Dates{
-				LastUpdatedDate: dto.BgmStats.Dates.LastUpdatedDate,
-
-				HasLastUploadDate: dto.BgmStats.Dates.HasLastUploadDate,
-				LastUploadDate:    dto.BgmStats.Dates.LastUploadDate,
-
-				HasOutdatedSince: dto.BgmStats.Dates.HasOutdatedSince,
-				OutdatedSince:    dto.BgmStats.Dates.OutdatedSince,
-
-				HasFirstData: dto.BgmStats.Dates.HasFirstData,
-				FirstData:    dto.BgmStats.Dates.FirstData,
-
-				HasLastData: dto.BgmStats.Dates.HasLastData,
-				LastData:    dto.BgmStats.Dates.LastData,
-			}
+			patientSummary.BGM.Dates = (*patients.PatientSummaryDates)(dto.BgmStats.Dates)
 		}
 
 		if dto.BgmStats.Periods != nil {
-			var averageGlucose *patients.AverageGlucose
-			// this is bad, but it's better than copy and pasting the copy code N times
-			sourcePeriods := map[string]*PatientBGMPeriod{}
-			if dto.BgmStats.Periods.N1d != nil {
-				sourcePeriods["1d"] = dto.BgmStats.Periods.N1d
+			for k, source := range *dto.BgmStats.Periods {
+				(*patientSummary.BGM.Periods)[k] = patients.PatientBGMPeriod(source)
 			}
-			if dto.BgmStats.Periods.N7d != nil {
-				sourcePeriods["7d"] = dto.BgmStats.Periods.N7d
-			}
-			if dto.BgmStats.Periods.N14d != nil {
-				sourcePeriods["14d"] = dto.BgmStats.Periods.N14d
-			}
-			if dto.BgmStats.Periods.N30d != nil {
-				sourcePeriods["30d"] = dto.BgmStats.Periods.N30d
-			}
+		}
 
-			for i := range sourcePeriods {
-				if sourcePeriods[i].AverageGlucose != nil {
-					averageGlucose = &patients.AverageGlucose{
-						Units: string(sourcePeriods[i].AverageGlucose.Units),
-						Value: float64(sourcePeriods[i].AverageGlucose.Value),
-					}
-				}
-
-				patientSummary.BGM.Periods[i] = &patients.BGMPeriod{
-					HasTimeInVeryLowPercent: sourcePeriods[i].HasTimeInVeryLowPercent,
-					TimeInVeryLowPercent:    sourcePeriods[i].TimeInVeryLowPercent,
-
-					HasTimeInVeryLowRecords: sourcePeriods[i].HasTimeInVeryLowRecords,
-					TimeInVeryLowRecords:    sourcePeriods[i].TimeInVeryLowRecords,
-
-					HasTimeInLowPercent: sourcePeriods[i].HasTimeInLowPercent,
-					TimeInLowPercent:    sourcePeriods[i].TimeInLowPercent,
-
-					HasTimeInLowRecords: sourcePeriods[i].HasTimeInLowRecords,
-					TimeInLowRecords:    sourcePeriods[i].TimeInLowRecords,
-
-					HasTimeInTargetPercent: sourcePeriods[i].HasTimeInTargetPercent,
-					TimeInTargetPercent:    sourcePeriods[i].TimeInTargetPercent,
-
-					HasTimeInTargetRecords: sourcePeriods[i].HasTimeInTargetRecords,
-					TimeInTargetRecords:    sourcePeriods[i].TimeInTargetRecords,
-
-					HasTimeInHighPercent: sourcePeriods[i].HasTimeInHighPercent,
-					TimeInHighPercent:    sourcePeriods[i].TimeInHighPercent,
-
-					HasTimeInHighRecords: sourcePeriods[i].HasTimeInHighRecords,
-					TimeInHighRecords:    sourcePeriods[i].TimeInHighRecords,
-
-					HasTimeInVeryHighPercent: sourcePeriods[i].HasTimeInVeryHighPercent,
-					TimeInVeryHighPercent:    sourcePeriods[i].TimeInVeryHighPercent,
-
-					HasTimeInVeryHighRecords: sourcePeriods[i].HasTimeInVeryHighRecords,
-					TimeInVeryHighRecords:    sourcePeriods[i].TimeInVeryHighRecords,
-
-					HasAverageGlucose: sourcePeriods[i].HasAverageGlucose,
-					AverageGlucose:    averageGlucose,
-
-					HasTotalRecords: sourcePeriods[i].HasTotalRecords,
-					TotalRecords:    sourcePeriods[i].TotalRecords,
-
-					HasAverageDailyRecords: sourcePeriods[i].HasAverageDailyRecords,
-					AverageDailyRecords:    sourcePeriods[i].AverageDailyRecords,
-				}
+		if dto.BgmStats.OffsetPeriods != nil {
+			for k, source := range *dto.BgmStats.OffsetPeriods {
+				(*patientSummary.BGM.OffsetPeriods)[k] = patients.PatientBGMPeriod(source)
 			}
 		}
 	}
@@ -481,233 +305,106 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 	if summary.CGM != nil {
 		patientSummary.CgmStats = &PatientCGMStats{
-			Periods:    &PatientCGMPeriods{},
-			TotalHours: summary.CGM.TotalHours,
+			Periods:       &PatientCGMPeriods{},
+			OffsetPeriods: &PatientCGMPeriods{},
+			TotalHours:    summary.CGM.TotalHours,
 		}
 
 		if summary.CGM.Config != nil {
-			patientSummary.CgmStats.Config = &PatientSummaryConfig{
-				SchemaVersion:            summary.CGM.Config.SchemaVersion,
-				HighGlucoseThreshold:     summary.CGM.Config.HighGlucoseThreshold,
-				VeryHighGlucoseThreshold: summary.CGM.Config.VeryHighGlucoseThreshold,
-				LowGlucoseThreshold:      summary.CGM.Config.LowGlucoseThreshold,
-				VeryLowGlucoseThreshold:  summary.CGM.Config.VeryLowGlucoseThreshold,
-			}
+			patientSummary.CgmStats.Config = (*PatientSummaryConfig)(summary.CGM.Config)
 		}
 
 		if summary.CGM.Dates != nil {
-			patientSummary.CgmStats.Dates = &PatientSummaryDates{
-				LastUpdatedDate: summary.CGM.Dates.LastUpdatedDate,
-
-				HasFirstData: summary.CGM.Dates.HasFirstData,
-				FirstData:    summary.CGM.Dates.FirstData,
-
-				HasLastUploadDate: summary.CGM.Dates.HasLastUploadDate,
-				LastUploadDate:    summary.CGM.Dates.LastUploadDate,
-
-				HasLastData: summary.CGM.Dates.HasLastData,
-				LastData:    summary.CGM.Dates.LastData,
-
-				HasOutdatedSince: summary.CGM.Dates.HasOutdatedSince,
-				OutdatedSince:    summary.CGM.Dates.OutdatedSince,
-			}
+			patientSummary.CgmStats.Dates = (*PatientSummaryDates)(summary.CGM.Dates)
 		}
 
 		if summary.CGM.Periods != nil {
-			// this is bad, but it's better than copy and pasting the copy code N times
-			destPeriods := map[string]*PatientCGMPeriod{}
-			if _, exists := summary.CGM.Periods["1d"]; exists {
-				patientSummary.CgmStats.Periods.N1d = &PatientCGMPeriod{}
-				destPeriods["1d"] = patientSummary.CgmStats.Periods.N1d
+			for k, source := range *summary.CGM.Periods {
+				(*patientSummary.CgmStats.Periods)[k] = PatientCGMPeriod(source)
 			}
-			if _, exists := summary.CGM.Periods["7d"]; exists {
-				patientSummary.CgmStats.Periods.N7d = &PatientCGMPeriod{}
-				destPeriods["7d"] = patientSummary.CgmStats.Periods.N7d
-			}
-			if _, exists := summary.CGM.Periods["14d"]; exists {
-				patientSummary.CgmStats.Periods.N14d = &PatientCGMPeriod{}
-				destPeriods["14d"] = patientSummary.CgmStats.Periods.N14d
-			}
-			if _, exists := summary.CGM.Periods["30d"]; exists {
-				patientSummary.CgmStats.Periods.N30d = &PatientCGMPeriod{}
-				destPeriods["30d"] = patientSummary.CgmStats.Periods.N30d
-			}
+		}
 
-			for i := range destPeriods {
-				if summary.CGM.Periods[i].AverageGlucose != nil {
-					destPeriods[i].AverageGlucose = &AverageGlucose{
-						Value: float32(summary.CGM.Periods[i].AverageGlucose.Value),
-						Units: AverageGlucoseUnits(summary.CGM.Periods[i].AverageGlucose.Units)}
-				}
-				destPeriods[i].HasAverageGlucose = summary.CGM.Periods[i].HasAverageGlucose
-
-				destPeriods[i].GlucoseManagementIndicator = summary.CGM.Periods[i].GlucoseManagementIndicator
-				destPeriods[i].HasGlucoseManagementIndicator = summary.CGM.Periods[i].HasGlucoseManagementIndicator
-
-				destPeriods[i].HasAverageDailyRecords = summary.CGM.Periods[i].HasAverageDailyRecords
-				destPeriods[i].AverageDailyRecords = summary.CGM.Periods[i].AverageDailyRecords
-
-				destPeriods[i].HasTotalRecords = summary.CGM.Periods[i].HasTotalRecords
-				destPeriods[i].TotalRecords = summary.CGM.Periods[i].TotalRecords
-
-				destPeriods[i].HasTimeCGMUsePercent = summary.CGM.Periods[i].HasTimeCGMUsePercent
-				destPeriods[i].TimeCGMUsePercent = summary.CGM.Periods[i].TimeCGMUsePercent
-
-				destPeriods[i].HasTimeCGMUseMinutes = summary.CGM.Periods[i].HasTimeCGMUseMinutes
-				destPeriods[i].TimeCGMUseMinutes = summary.CGM.Periods[i].TimeCGMUseMinutes
-
-				destPeriods[i].HasTimeCGMUseRecords = summary.CGM.Periods[i].HasTimeCGMUseRecords
-				destPeriods[i].TimeCGMUseRecords = summary.CGM.Periods[i].TimeCGMUseRecords
-
-				destPeriods[i].HasTimeInHighPercent = summary.CGM.Periods[i].HasTimeInHighPercent
-				destPeriods[i].TimeInHighPercent = summary.CGM.Periods[i].TimeInHighPercent
-
-				destPeriods[i].HasTimeInHighMinutes = summary.CGM.Periods[i].HasTimeInHighMinutes
-				destPeriods[i].TimeInHighMinutes = summary.CGM.Periods[i].TimeInHighMinutes
-
-				destPeriods[i].HasTimeInHighRecords = summary.CGM.Periods[i].HasTimeInHighRecords
-				destPeriods[i].TimeInHighRecords = summary.CGM.Periods[i].TimeInHighRecords
-
-				destPeriods[i].HasTimeInLowPercent = summary.CGM.Periods[i].HasTimeInLowPercent
-				destPeriods[i].TimeInLowPercent = summary.CGM.Periods[i].TimeInLowPercent
-
-				destPeriods[i].HasTimeInLowMinutes = summary.CGM.Periods[i].HasTimeInLowMinutes
-				destPeriods[i].TimeInLowMinutes = summary.CGM.Periods[i].TimeInLowMinutes
-
-				destPeriods[i].HasTimeInLowRecords = summary.CGM.Periods[i].HasTimeInLowRecords
-				destPeriods[i].TimeInLowRecords = summary.CGM.Periods[i].TimeInLowRecords
-
-				destPeriods[i].HasTimeInTargetPercent = summary.CGM.Periods[i].HasTimeInTargetPercent
-				destPeriods[i].TimeInTargetPercent = summary.CGM.Periods[i].TimeInTargetPercent
-
-				destPeriods[i].HasTimeInTargetRecords = summary.CGM.Periods[i].HasTimeInTargetRecords
-				destPeriods[i].TimeInTargetRecords = summary.CGM.Periods[i].TimeInTargetRecords
-
-				destPeriods[i].HasTimeInTargetMinutes = summary.CGM.Periods[i].HasTimeInTargetMinutes
-				destPeriods[i].TimeInTargetMinutes = summary.CGM.Periods[i].TimeInTargetMinutes
-
-				destPeriods[i].HasTimeInVeryHighPercent = summary.CGM.Periods[i].HasTimeInVeryHighPercent
-				destPeriods[i].TimeInVeryHighPercent = summary.CGM.Periods[i].TimeInVeryHighPercent
-
-				destPeriods[i].HasTimeInVeryHighMinutes = summary.CGM.Periods[i].HasTimeInVeryHighMinutes
-				destPeriods[i].TimeInVeryHighMinutes = summary.CGM.Periods[i].TimeInVeryHighMinutes
-
-				destPeriods[i].HasTimeInVeryHighRecords = summary.CGM.Periods[i].HasTimeInVeryHighRecords
-				destPeriods[i].TimeInVeryHighRecords = summary.CGM.Periods[i].TimeInVeryHighRecords
-
-				destPeriods[i].HasTimeInVeryLowPercent = summary.CGM.Periods[i].HasTimeInVeryLowPercent
-				destPeriods[i].TimeInVeryLowPercent = summary.CGM.Periods[i].TimeInVeryLowPercent
-
-				destPeriods[i].HasTimeInVeryLowMinutes = summary.CGM.Periods[i].HasTimeInVeryLowMinutes
-				destPeriods[i].TimeInVeryLowMinutes = summary.CGM.Periods[i].TimeInVeryLowMinutes
-
-				destPeriods[i].HasTimeInVeryLowRecords = summary.CGM.Periods[i].HasTimeInVeryLowRecords
-				destPeriods[i].TimeInVeryLowRecords = summary.CGM.Periods[i].TimeInVeryLowRecords
+		if summary.CGM.OffsetPeriods != nil {
+			for k, source := range *summary.CGM.OffsetPeriods {
+				(*patientSummary.CgmStats.OffsetPeriods)[k] = PatientCGMPeriod(source)
 			}
 		}
 	}
 
 	if summary.BGM != nil {
 		patientSummary.BgmStats = &PatientBGMStats{
-			Periods:    &PatientBGMPeriods{},
-			TotalHours: summary.BGM.TotalHours,
+			Periods:       &PatientBGMPeriods{},
+			OffsetPeriods: &PatientBGMPeriods{},
+			TotalHours:    summary.BGM.TotalHours,
 		}
 
 		if summary.BGM.Config != nil {
-			patientSummary.BgmStats.Config = &PatientSummaryConfig{
-				SchemaVersion:            summary.BGM.Config.SchemaVersion,
-				HighGlucoseThreshold:     summary.BGM.Config.HighGlucoseThreshold,
-				VeryHighGlucoseThreshold: summary.BGM.Config.VeryHighGlucoseThreshold,
-				LowGlucoseThreshold:      summary.BGM.Config.LowGlucoseThreshold,
-				VeryLowGlucoseThreshold:  summary.BGM.Config.VeryLowGlucoseThreshold,
-			}
+			patientSummary.BgmStats.Config = (*PatientSummaryConfig)(summary.BGM.Config)
 		}
+
 		if summary.BGM.Dates != nil {
-			patientSummary.BgmStats.Dates = &PatientSummaryDates{
-				LastUpdatedDate: summary.BGM.Dates.LastUpdatedDate,
-
-				HasFirstData: summary.BGM.Dates.HasFirstData,
-				FirstData:    summary.BGM.Dates.FirstData,
-
-				HasLastUploadDate: summary.BGM.Dates.HasLastUploadDate,
-				LastUploadDate:    summary.BGM.Dates.LastUploadDate,
-
-				HasLastData: summary.BGM.Dates.HasLastData,
-				LastData:    summary.BGM.Dates.LastData,
-
-				HasOutdatedSince: summary.BGM.Dates.HasOutdatedSince,
-				OutdatedSince:    summary.BGM.Dates.OutdatedSince,
-			}
+			patientSummary.BgmStats.Dates = (*PatientSummaryDates)(summary.BGM.Dates)
 		}
 
 		if summary.BGM.Periods != nil {
-			// this is bad, but it's better than copy and pasting the copy code N times
-			destPeriods := map[string]*PatientBGMPeriod{}
-			if _, exists := summary.BGM.Periods["1d"]; exists {
-				patientSummary.BgmStats.Periods.N1d = &PatientBGMPeriod{}
-				destPeriods["1d"] = patientSummary.BgmStats.Periods.N1d
+			for k, source := range *summary.BGM.Periods {
+				(*patientSummary.BgmStats.Periods)[k] = PatientBGMPeriod(source)
 			}
-			if _, exists := summary.BGM.Periods["7d"]; exists {
-				patientSummary.BgmStats.Periods.N7d = &PatientBGMPeriod{}
-				destPeriods["7d"] = patientSummary.BgmStats.Periods.N7d
-			}
-			if _, exists := summary.BGM.Periods["14d"]; exists {
-				patientSummary.BgmStats.Periods.N14d = &PatientBGMPeriod{}
-				destPeriods["14d"] = patientSummary.BgmStats.Periods.N14d
-			}
-			if _, exists := summary.BGM.Periods["30d"]; exists {
-				patientSummary.BgmStats.Periods.N30d = &PatientBGMPeriod{}
-				destPeriods["30d"] = patientSummary.BgmStats.Periods.N30d
-			}
+		}
 
-			for i := range destPeriods {
-				if summary.BGM.Periods[i].AverageGlucose != nil {
-					destPeriods[i].AverageGlucose = &AverageGlucose{
-						Value: float32(summary.BGM.Periods[i].AverageGlucose.Value),
-						Units: AverageGlucoseUnits(summary.BGM.Periods[i].AverageGlucose.Units)}
-				}
-				destPeriods[i].HasAverageGlucose = summary.BGM.Periods[i].HasAverageGlucose
-
-				destPeriods[i].HasAverageDailyRecords = summary.BGM.Periods[i].HasAverageDailyRecords
-				destPeriods[i].AverageDailyRecords = summary.BGM.Periods[i].AverageDailyRecords
-
-				destPeriods[i].HasTotalRecords = summary.BGM.Periods[i].HasTotalRecords
-				destPeriods[i].TotalRecords = summary.BGM.Periods[i].TotalRecords
-
-				destPeriods[i].HasTimeInHighPercent = summary.BGM.Periods[i].HasTimeInHighPercent
-				destPeriods[i].TimeInHighPercent = summary.BGM.Periods[i].TimeInHighPercent
-
-				destPeriods[i].HasTimeInHighRecords = summary.BGM.Periods[i].HasTimeInHighRecords
-				destPeriods[i].TimeInHighRecords = summary.BGM.Periods[i].TimeInHighRecords
-
-				destPeriods[i].HasTimeInLowPercent = summary.BGM.Periods[i].HasTimeInLowPercent
-				destPeriods[i].TimeInLowPercent = summary.BGM.Periods[i].TimeInLowPercent
-
-				destPeriods[i].HasTimeInLowRecords = summary.BGM.Periods[i].HasTimeInLowRecords
-				destPeriods[i].TimeInLowRecords = summary.BGM.Periods[i].TimeInLowRecords
-
-				destPeriods[i].HasTimeInTargetPercent = summary.BGM.Periods[i].HasTimeInTargetPercent
-				destPeriods[i].TimeInTargetPercent = summary.BGM.Periods[i].TimeInTargetPercent
-
-				destPeriods[i].HasTimeInTargetRecords = summary.BGM.Periods[i].HasTimeInTargetRecords
-				destPeriods[i].TimeInTargetRecords = summary.BGM.Periods[i].TimeInTargetRecords
-
-				destPeriods[i].HasTimeInVeryHighPercent = summary.BGM.Periods[i].HasTimeInVeryHighPercent
-				destPeriods[i].TimeInVeryHighPercent = summary.BGM.Periods[i].TimeInVeryHighPercent
-
-				destPeriods[i].HasTimeInVeryHighRecords = summary.BGM.Periods[i].HasTimeInVeryHighRecords
-				destPeriods[i].TimeInVeryHighRecords = summary.BGM.Periods[i].TimeInVeryHighRecords
-
-				destPeriods[i].HasTimeInVeryLowPercent = summary.BGM.Periods[i].HasTimeInVeryLowPercent
-				destPeriods[i].TimeInVeryLowPercent = summary.BGM.Periods[i].TimeInVeryLowPercent
-
-				destPeriods[i].HasTimeInVeryLowRecords = summary.BGM.Periods[i].HasTimeInVeryLowRecords
-				destPeriods[i].TimeInVeryLowRecords = summary.BGM.Periods[i].TimeInVeryLowRecords
+		if summary.BGM.OffsetPeriods != nil {
+			for k, source := range *summary.BGM.OffsetPeriods {
+				(*patientSummary.BgmStats.OffsetPeriods)[k] = PatientBGMPeriod(source)
 			}
 		}
 	}
 
 	return patientSummary
+}
+
+func NewTideDto(tide *patients.Tide) *Tide {
+	if tide == nil {
+		return nil
+	}
+
+	tideResult := &Tide{
+		Config: &TideConfig{
+			ClinicId:                 tide.Config.ClinicId,
+			Filters:                  (*TideFilters)(tide.Config.Filters),
+			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
+			LastUploadDateFrom:       tide.Config.LastUploadDateFrom,
+			LastUploadDateTo:         tide.Config.LastUploadDateTo,
+			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
+			Period:                   tide.Config.Period,
+			SchemaVersion:            tide.Config.SchemaVersion,
+			Tags:                     tide.Config.Tags,
+			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
+		},
+		Results: &TideResults{},
+	}
+
+	for category, tidePatients := range *tide.Results {
+		c := make([]TideResultPatient, 0, 50)
+		for _, patient := range *tidePatients {
+			c = append(c, TideResultPatient{
+				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
+				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
+				Patient:                    (*TidePatient)(patient.Patient),
+				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
+				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
+				TimeInHighPercent:          patient.TimeInHighPercent,
+				TimeInLowPercent:           patient.TimeInLowPercent,
+				TimeInTargetPercent:        patient.TimeInTargetPercent,
+				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
+				TimeInVeryHighPercent:      patient.TimeInVeryHighPercent,
+				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
+			})
+		}
+		(*tideResult.Results)[category] = c
+	}
+
+	return tideResult
 }
 
 func NewPermissions(dto *PatientPermissions) *patients.Permissions {
@@ -971,7 +668,7 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 	return dto
 }
 
-func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
+func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil
 	}
@@ -988,25 +685,29 @@ func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid period", errors.BadRequest)
 	}
 
-	str := string(*sort)
-	var result store.Sort
+	periodVersion := "periods"
+	if offset != nil && *offset == true {
+		periodVersion = "offsetPeriods"
+	}
 
-	if strings.HasPrefix(str, "+") {
+	result := store.Sort{}
+
+	if strings.HasPrefix(*sort, "+") {
 		result.Ascending = true
-	} else if strings.HasPrefix(str, "-") {
+	} else if strings.HasPrefix(*sort, "-") {
 		result.Ascending = false
 	} else {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort order", errors.BadRequest)
 	}
 
-	result.Attribute = str[1:]
+	result.Attribute = (*sort)[1:]
 	if result.Attribute == "" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort attribute", errors.BadRequest)
 	} else if !isSortAttributeValid(result.Attribute, *typ) {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid sort attribute", errors.BadRequest)
 	}
 
-	var expandedSorts = map[string]string{
+	expandedSorts := map[string]string{
 		"lastUpdatedDate": "summary." + *typ + "Stats.dates.lastUpdatedDate",
 
 		"hasLastUploadDate": "summary." + *typ + "Stats.dates.hasLastUploadDate",
@@ -1021,107 +722,154 @@ func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 		"hasOutdatedSince": "summary." + *typ + "Stats.dates.hasOutdatedSince",
 		"outdatedSince":    "summary." + *typ + "Stats.dates.outdatedSince",
 
-		"hasAverageGlucose": "summary." + *typ + "Stats.periods." + *period + ".hasAverageGlucose",
-		"averageGlucose":    "summary." + *typ + "Stats.periods." + *period + ".averageGlucose.value",
+		"hasAverageGlucoseMmol":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasAverageGlucoseMmol",
+		"averageGlucoseMmol":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageGlucoseMmol",
+		"averageGlucoseMmolDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageGlucoseMmolDelta",
 
-		"hasGlucoseManagementIndicator": "summary." + *typ + "Stats.periods." + *period + ".hasGlucoseManagementIndicator",
-		"glucoseManagementIndicator":    "summary." + *typ + "Stats.periods." + *period + ".glucoseManagementIndicator",
+		"hasGlucoseManagementIndicator":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasGlucoseManagementIndicator",
+		"glucoseManagementIndicator":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".glucoseManagementIndicator",
+		"glucoseManagementIndicatorDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".glucoseManagementIndicatorDelta",
 
-		"hasTimeCGMUsePercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUsePercent",
-		"timeCGMUsePercent":    "summary." + *typ + "Stats.periods." + *period + ".timeCGMUsePercent",
+		"hasTimeCGMUsePercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeCGMUsePercent",
+		"timeCGMUsePercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUsePercent",
+		"timeCGMUsePercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUsePercentDelta",
 
-		"hasTimeCGMUseRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUseRecords",
-		"timeCGMUseRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeCGMUseRecords",
+		"hasTimeCGMUseRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeCGMUseRecords",
+		"timeCGMUseRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUseRecords",
+		"timeCGMUseRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUseRecordsDelta",
 
-		"hasTimeCGMUseMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUseMinutes",
-		"timeCGMUseMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeCGMUseMinutes",
+		"hasTimeCGMUseMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeCGMUseMinutes",
+		"timeCGMUseMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUseMinutes",
+		"timeCGMUseMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUseMinutesDelta",
 
-		"hasTimeInTargetPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetPercent",
-		"timeInTargetPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInTargetPercent",
+		"hasTimeInTargetPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInTargetPercent",
+		"timeInTargetPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetPercent",
+		"timeInTargetPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetPercentDelta",
 
-		"hasTimeInTargetRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetRecords",
-		"timeInTargetRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInTargetRecords",
+		"hasTimeInTargetRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInTargetRecords",
+		"timeInTargetRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetRecords",
+		"timeInTargetRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetRecordsDelta",
 
-		"hasTimeInTargetMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetMinutes",
-		"timeInTargetMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInTargetMinutes",
+		"hasTimeInTargetMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInTargetMinutes",
+		"timeInTargetMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetMinutes",
+		"timeInTargetMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetMinutesDelta",
 
-		"hasTimeInLowPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowPercent",
-		"timeInLowPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInLowPercent",
+		"hasTimeInLowPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInLowPercent",
+		"timeInLowPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowPercent",
+		"timeInLowPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowPercentDelta",
 
-		"hasTimeInLowRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowRecords",
-		"timeInLowRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInLowRecords",
+		"hasTimeInLowRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInLowRecords",
+		"timeInLowRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowRecords",
+		"timeInLowRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowRecordsDelta",
 
-		"hasTimeInLowMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowMinutes",
-		"timeInLowMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInLowMinutes",
+		"hasTimeInLowMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInLowMinutes",
+		"timeInLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowMinutes",
+		"timeInLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowMinutesDelta",
 
-		"hasTimeInVeryLowPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowPercent",
-		"timeInVeryLowPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowPercent",
+		"hasTimeInVeryLowPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryLowPercent",
+		"timeInVeryLowPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowPercent",
+		"timeInVeryLowPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowPercentDelta",
 
-		"hasTimeInVeryLowRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowRecords",
-		"timeInVeryLowRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowRecords",
+		"hasTimeInVeryLowRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryLowRecords",
+		"timeInVeryLowRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowRecords",
+		"timeInVeryLowRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowRecordsDelta",
 
-		"hasTimeInVeryLowMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowMinutes",
-		"timeInVeryLowMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowMinutes",
+		"hasTimeInVeryLowMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryLowMinutes",
+		"timeInVeryLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowMinutes",
+		"timeInVeryLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowMinutesDelta",
 
-		"hasTimeInHighPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighPercent",
-		"timeInHighPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInHighPercent",
+		"hasTimeInHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInHighPercent",
+		"timeInHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighPercent",
+		"timeInHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighPercentDelta",
 
-		"hasTimeInHighMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighMinutes",
-		"timeInHighMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInHighMinutes",
+		"hasTimeInHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInHighMinutes",
+		"timeInHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighMinutes",
+		"timeInHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighMinutesDelta",
 
-		"hasTimeInHighRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighRecords",
-		"timeInHighRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInHighRecords",
+		"hasTimeInHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInHighRecords",
+		"timeInHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighRecords",
+		"timeInHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighRecordsDelta",
 
-		"hasTimeInVeryHighPercent": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighPercent",
-		"timeInVeryHighPercent":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighPercent",
+		"hasTimeInVeryHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryHighPercent",
+		"timeInVeryHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighPercent",
+		"timeInVeryHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighPercentDelta",
 
-		"hasTimeInVeryHighRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighRecords",
-		"timeInVeryHighRecords":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighRecords",
+		"hasTimeInVeryHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryHighRecords",
+		"timeInVeryHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighRecords",
+		"timeInVeryHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighRecordsDelta",
 
-		"hasTimeInVeryHighMinutes": "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighMinutes",
-		"timeInVeryHighMinutes":    "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighMinutes",
+		"hasTimeInVeryHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryHighMinutes",
+		"timeInVeryHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutes",
+		"timeInVeryHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutesDelta",
 
-		"hasAverageDailyRecords": "summary." + *typ + "Stats.periods." + *period + ".hasAverageDailyRecords",
-		"averageDailyRecords":    "summary." + *typ + "Stats.periods." + *period + ".averageDailyRecords",
+		"hasAverageDailyRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasAverageDailyRecords",
+		"averageDailyRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageDailyRecords",
+		"averageDailyRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageDailyRecordsDelta",
 
-		"hasTotalRecords": "summary." + *typ + "Stats.periods." + *period + ".hasTotalRecords",
-		"totalRecords":    "summary." + *typ + "Stats.periods." + *period + ".totalRecords",
+		"hasTotalRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTotalRecords",
+		"totalRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".totalRecords",
+		"totalRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".totalRecordsDelta",
 	}
 
-	var extraSort = map[string]string{
+	extraSort := map[string]string{
 		expandedSorts["lastUploadDate"]: expandedSorts["hasLastUploadDate"],
 		expandedSorts["lastData"]:       expandedSorts["hasLastData"],
 		expandedSorts["firstData"]:      expandedSorts["hasFirstData"],
 		expandedSorts["outdatedSince"]:  expandedSorts["hasOutdatedSince"],
 
-		expandedSorts["glucoseManagementIndicator"]: expandedSorts["hasGlucoseManagementIndicator"],
-		expandedSorts["averageGlucose"]:             expandedSorts["hasAverageGlucose"],
-		expandedSorts["totalRecords"]:               expandedSorts["hasTotalRecords"],
-		expandedSorts["averageDailyRecords"]:        expandedSorts["hasAverageDailyRecords"],
+		expandedSorts["glucoseManagementIndicator"]:      expandedSorts["hasGlucoseManagementIndicator"],
+		expandedSorts["glucoseManagementIndicatorDelta"]: expandedSorts["hasGlucoseManagementIndicator"],
 
-		expandedSorts["timeCGMUsePercent"]: expandedSorts["hasTimeCGMUsePercent"],
-		expandedSorts["timeCGMUseRecords"]: expandedSorts["hasTimeCGMUseRecords"],
-		expandedSorts["timeCGMUseMinutes"]: expandedSorts["hasTimeCGMUseMinutes"],
+		expandedSorts["averageGlucoseMmol"]:      expandedSorts["hasAverageGlucoseMmol"],
+		expandedSorts["averageGlucoseMmolDelta"]: expandedSorts["hasAverageGlucoseMmol"],
 
-		expandedSorts["timeInTargetPercent"]: expandedSorts["hasTimeInTargetPercent"],
-		expandedSorts["timeInTargetRecords"]: expandedSorts["hasTimeInTargetRecords"],
-		expandedSorts["timeInTargetMinutes"]: expandedSorts["hasTimeInTargetMinutes"],
+		expandedSorts["totalRecords"]:      expandedSorts["hasTotalRecords"],
+		expandedSorts["totalRecordsDelta"]: expandedSorts["hasTotalRecords"],
 
-		expandedSorts["timeInLowPercent"]: expandedSorts["hasTimeInLowPercent"],
-		expandedSorts["timeInLowRecords"]: expandedSorts["hasTimeInLowRecords"],
-		expandedSorts["timeInLowMinutes"]: expandedSorts["hasTimeInLowMinutes"],
+		expandedSorts["averageDailyRecords"]:      expandedSorts["hasAverageDailyRecords"],
+		expandedSorts["averageDailyRecordsDelta"]: expandedSorts["hasAverageDailyRecords"],
 
-		expandedSorts["timeInVeryLowPercent"]: expandedSorts["hasTimeInVeryLowPercent"],
-		expandedSorts["timeInVeryLowRecords"]: expandedSorts["hasTimeInVeryLowRecords"],
-		expandedSorts["timeInVeryLowMinutes"]: expandedSorts["hasTimeInVeryLowMinutes"],
+		expandedSorts["timeCGMUsePercent"]:      expandedSorts["hasTimeCGMUsePercent"],
+		expandedSorts["timeCGMUsePercentDelta"]: expandedSorts["hasTimeCGMUsePercent"],
+		expandedSorts["timeCGMUseRecords"]:      expandedSorts["hasTimeCGMUseRecords"],
+		expandedSorts["timeCGMUseRecordsDelta"]: expandedSorts["hasTimeCGMUseRecords"],
+		expandedSorts["timeCGMUseMinutes"]:      expandedSorts["hasTimeCGMUseMinutes"],
+		expandedSorts["timeCGMUseMinutesDelta"]: expandedSorts["hasTimeCGMUseMinutes"],
 
-		expandedSorts["timeInHighPercent"]: expandedSorts["hasTimeInHighPercent"],
-		expandedSorts["timeInHighRecords"]: expandedSorts["hasTimeInHighRecords"],
-		expandedSorts["timeInHighMinutes"]: expandedSorts["hasTimeInHighMinutes"],
+		expandedSorts["timeInTargetPercent"]:      expandedSorts["hasTimeInTargetPercent"],
+		expandedSorts["timeInTargetPercentDelta"]: expandedSorts["hasTimeInTargetPercent"],
+		expandedSorts["timeInTargetRecords"]:      expandedSorts["hasTimeInTargetRecords"],
+		expandedSorts["timeInTargetRecordsDelta"]: expandedSorts["hasTimeInTargetRecords"],
+		expandedSorts["timeInTargetMinutes"]:      expandedSorts["hasTimeInTargetMinutes"],
+		expandedSorts["timeInTargetMinutesDelta"]: expandedSorts["hasTimeInTargetMinutes"],
 
-		expandedSorts["timeInVeryHighPercent"]: expandedSorts["hasTimeInVeryHighPercent"],
-		expandedSorts["timeInVeryHighRecords"]: expandedSorts["hasTimeInVeryHighRecords"],
-		expandedSorts["timeInVeryHighMinutes"]: expandedSorts["hasTimeInVeryHighMinutes"],
+		expandedSorts["timeInLowPercent"]:      expandedSorts["hasTimeInLowPercent"],
+		expandedSorts["timeInLowPercentDelta"]: expandedSorts["hasTimeInLowPercent"],
+		expandedSorts["timeInLowRecords"]:      expandedSorts["hasTimeInLowRecords"],
+		expandedSorts["timeInLowRecordsDelta"]: expandedSorts["hasTimeInLowRecords"],
+		expandedSorts["timeInLowMinutes"]:      expandedSorts["hasTimeInLowMinutes"],
+		expandedSorts["timeInLowMinutesDelta"]: expandedSorts["hasTimeInLowMinutes"],
+
+		expandedSorts["timeInVeryLowPercent"]:      expandedSorts["hasTimeInVeryLowPercent"],
+		expandedSorts["timeInVeryLowPercentDelta"]: expandedSorts["hasTimeInVeryLowPercent"],
+		expandedSorts["timeInVeryLowRecords"]:      expandedSorts["hasTimeInVeryLowRecords"],
+		expandedSorts["timeInVeryLowRecordsDelta"]: expandedSorts["hasTimeInVeryLowRecords"],
+		expandedSorts["timeInVeryLowMinutes"]:      expandedSorts["hasTimeInVeryLowMinutes"],
+		expandedSorts["timeInVeryLowMinutesDelta"]: expandedSorts["hasTimeInVeryLowMinutes"],
+
+		expandedSorts["timeInHighPercent"]:      expandedSorts["hasTimeInHighPercent"],
+		expandedSorts["timeInHighPercentDelta"]: expandedSorts["hasTimeInHighPercent"],
+		expandedSorts["timeInHighRecords"]:      expandedSorts["hasTimeInHighRecords"],
+		expandedSorts["timeInHighRecordsDelta"]: expandedSorts["hasTimeInHighRecords"],
+		expandedSorts["timeInHighMinutes"]:      expandedSorts["hasTimeInHighMinutes"],
+		expandedSorts["timeInHighMinutesDelta"]: expandedSorts["hasTimeInHighMinutes"],
+
+		expandedSorts["timeInVeryHighPercent"]:      expandedSorts["hasTimeInVeryHighPercent"],
+		expandedSorts["timeInVeryHighPercentDelta"]: expandedSorts["hasTimeInVeryHighPercent"],
+		expandedSorts["timeInVeryHighRecords"]:      expandedSorts["hasTimeInVeryHighRecords"],
+		expandedSorts["timeInVeryHighRecordsDelta"]: expandedSorts["hasTimeInVeryHighRecords"],
+		expandedSorts["timeInVeryHighMinutes"]:      expandedSorts["hasTimeInVeryHighMinutes"],
+		expandedSorts["timeInVeryHighMinutesDelta"]: expandedSorts["hasTimeInVeryHighMinutes"],
 	}
 
 	// expand the original param now that we are done using it as a map key
@@ -1147,32 +895,55 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"firstData":      {},
 		"outdatedSince":  {},
 
-		"timeCGMUsePercent":          {},
-		"glucoseManagementIndicator": {},
-		"averageGlucose":             {},
+		"timeCGMUsePercent":      {},
+		"timeCGMUsePercentDelta": {},
 
-		"timeInLowPercent": {},
-		"timeInLowRecords": {},
-		"timeInLowMinutes": {},
+		"glucoseManagementIndicator":      {},
+		"glucoseManagementIndicatorDelta": {},
 
-		"timeInVeryLowPercent": {},
-		"timeInVeryLowRecords": {},
-		"timeInVeryLowMinutes": {},
+		"averageGlucoseMmol":      {},
+		"averageGlucoseMmolDelta": {},
 
-		"timeInHighPercent": {},
-		"timeInHighMinutes": {},
-		"timeInHighRecords": {},
+		"timeInLowPercent":      {},
+		"timeInLowPercentDelta": {},
+		"timeInLowRecords":      {},
+		"timeInLowRecordsDelta": {},
+		"timeInLowMinutes":      {},
+		"timeInLowMinutesDelta": {},
 
-		"timeInVeryHighPercent": {},
-		"timeInVeryHighRecords": {},
-		"timeInVeryHighMinutes": {},
+		"timeInVeryLowPercent":      {},
+		"timeInVeryLowPercentDelta": {},
+		"timeInVeryLowRecords":      {},
+		"timeInVeryLowRecordsDelta": {},
+		"timeInVeryLowMinutes":      {},
+		"timeInVeryLowMinutesDelta": {},
 
-		"timeInTargetPercent": {},
-		"timeInTargetRecords": {},
-		"timeInTargetMinutes": {},
+		"timeInHighPercent":      {},
+		"timeInHighPercentDelta": {},
+		"timeInHighMinutes":      {},
+		"timeInHighMinutesDelta": {},
+		"timeInHighRecords":      {},
+		"timeInHighRecordsDelta": {},
 
-		"totalRecords":        {},
-		"averageDailyRecords": {},
+		"timeInVeryHighPercent":      {},
+		"timeInVeryHighPercentDelta": {},
+		"timeInVeryHighRecords":      {},
+		"timeInVeryHighRecordsDelta": {},
+		"timeInVeryHighMinutes":      {},
+		"timeInVeryHighMinutesDelta": {},
+
+		"timeInTargetPercent":      {},
+		"timeInTargetPercentDelta": {},
+		"timeInTargetRecords":      {},
+		"timeInTargetRecordsDelta": {},
+		"timeInTargetMinutes":      {},
+		"timeInTargetMinutesDelta": {},
+
+		"totalRecords":      {},
+		"totalRecordsDelta": {},
+
+		"averageDailyRecords":      {},
+		"averageDailyRecordsDelta": {},
 	},
 	"bgm": {
 		"fullName":       {},
@@ -1182,21 +953,39 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"firstData":      {},
 		"outdatedSince":  {},
 
-		"averageGlucose": {},
+		"averageGlucoseMmol":      {},
+		"averageGlucoseMmolDelta": {},
 
 		"timeInLowPercent":      {},
+		"timeInLowPercentDelta": {},
 		"timeInLowRecords":      {},
-		"timeInVeryLowPercent":  {},
-		"timeInVeryLowRecords":  {},
-		"timeInHighPercent":     {},
-		"timeInHighRecords":     {},
-		"timeInVeryHighPercent": {},
-		"timeInVeryHighRecords": {},
-		"timeInTargetPercent":   {},
-		"timeInTargetRecords":   {},
+		"timeInLowRecordsDelta": {},
 
-		"totalRecords":        {},
-		"averageDailyRecords": {},
+		"timeInVeryLowPercent":      {},
+		"timeInVeryLowPercentDelta": {},
+		"timeInVeryLowRecords":      {},
+		"timeInVeryLowRecordsDelta": {},
+
+		"timeInHighPercent":      {},
+		"timeInHighPercentDelta": {},
+		"timeInHighRecords":      {},
+		"timeInHighRecordsDelta": {},
+
+		"timeInVeryHighPercent":      {},
+		"timeInVeryHighPercentDelta": {},
+		"timeInVeryHighRecords":      {},
+		"timeInVeryHighRecordsDelta": {},
+
+		"timeInTargetPercent":      {},
+		"timeInTargetPercentDelta": {},
+		"timeInTargetRecords":      {},
+		"timeInTargetRecordsDelta": {},
+
+		"totalRecords":      {},
+		"totalRecordsDelta": {},
+
+		"averageDailyRecords":      {},
+		"averageDailyRecordsDelta": {},
 	},
 }
 

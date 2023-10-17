@@ -4,9 +4,7 @@ import (
 	"strings"
 )
 
-var (
-	wordsList = []string{"alias", "consequatur", "aut", "perferendis", "sit", "voluptatem", "accusantium", "doloremque", "aperiam", "eaque", "ipsa", "quae", "ab", "illo", "inventore", "veritatis", "et", "quasi", "architecto", "beatae", "vitae", "dicta", "sunt", "explicabo", "aspernatur", "aut", "odit", "aut", "fugit", "sed", "quia", "consequuntur", "magni", "dolores", "eos", "qui", "ratione", "voluptatem", "sequi", "nesciunt", "neque", "dolorem", "ipsum", "quia", "dolor", "sit", "amet", "consectetur", "adipisci", "velit", "sed", "quia", "non", "numquam", "eius", "modi", "tempora", "incidunt", "ut", "labore", "et", "dolore", "magnam", "aliquam", "quaerat", "voluptatem", "ut", "enim", "ad", "minima", "veniam", "quis", "nostrum", "exercitationem", "ullam", "corporis", "nemo", "enim", "ipsam", "voluptatem", "quia", "voluptas", "sit", "suscipit", "laboriosam", "nisi", "ut", "aliquid", "ex", "ea", "commodi", "consequatur", "quis", "autem", "vel", "eum", "iure", "reprehenderit", "qui", "in", "ea", "voluptate", "velit", "esse", "quam", "nihil", "molestiae", "et", "iusto", "odio", "dignissimos", "ducimus", "qui", "blanditiis", "praesentium", "laudantium", "totam", "rem", "voluptatum", "deleniti", "atque", "corrupti", "quos", "dolores", "et", "quas", "molestias", "excepturi", "sint", "occaecati", "cupiditate", "non", "provident", "sed", "ut", "perspiciatis", "unde", "omnis", "iste", "natus", "error", "similique", "sunt", "in", "culpa", "qui", "officia", "deserunt", "mollitia", "animi", "id", "est", "laborum", "et", "dolorum", "fuga", "et", "harum", "quidem", "rerum", "facilis", "est", "et", "expedita", "distinctio", "nam", "libero", "tempore", "cum", "soluta", "nobis", "est", "eligendi", "optio", "cumque", "nihil", "impedit", "quo", "porro", "quisquam", "est", "qui", "minus", "id", "quod", "maxime", "placeat", "facere", "possimus", "omnis", "voluptas", "assumenda", "est", "omnis", "dolor", "repellendus", "temporibus", "autem", "quibusdam", "et", "aut", "consequatur", "vel", "illum", "qui", "dolorem", "eum", "fugiat", "quo", "voluptas", "nulla", "pariatur", "at", "vero", "eos", "et", "accusamus", "officiis", "debitis", "aut", "rerum", "necessitatibus", "saepe", "eveniet", "ut", "et", "voluptates", "repudiandae", "sint", "et", "molestiae", "non", "recusandae", "itaque", "earum", "rerum", "hic", "tenetur", "a", "sapiente", "delectus", "ut", "aut", "reiciendis", "voluptatibus", "maiores", "doloribus", "asperiores", "repellat"}
-)
+var wordsList = []string{"a", "in", "et", "ut", "ut", "ad", "et", "at", "id", "et", "ut", "in", "ab", "ea", "ut", "et", "et", "et", "et", "et", "et", "ea", "id", "et", "et", "ut", "ut", "ex", "est", "sed", "qui", "est", "est", "aut", "eos", "qui", "cum", "nam", "non", "aut", "qui", "sed", "qui", "vel", "non", "sit", "rem", "eos", "qui", "qui", "sed", "est", "non", "est", "sit", "eum", "hic", "quo", "sit", "aut", "aut", "vel", "aut", "eum", "aut", "quo", "odio", "enim", "unde", "illo", "sunt", "quis", "sint", "sint", "quas", "fuga", "modi", "enim", "quos", "odit", "quia", "sunt", "eius", "quia", "quia", "nisi", "iste", "quam", "vero", "amet", "ipsa", "esse", "quis", "quae", "quia", "nemo", "iure", "quod", "illum", "ipsum", "dolor", "rerum", "velit", "culpa", "omnis", "nihil", "minus", "saepe", "iusto", "velit", "magni", "alias", "omnis", "porro", "autem", "nihil", "totam", "fugit", "dolor", "optio", "atque", "autem", "ipsam", "nobis", "nulla", "ullam", "rerum", "harum", "eaque", "error", "animi", "dicta", "vitae", "quasi", "natus", "earum", "rerum", "omnis", "neque", "sequi", "libero", "soluta", "cumque", "beatae", "maxime", "facere", "quidem", "labore", "dolore", "veniam", "minima", "fugiat", "itaque", "magnam", "dolorem", "laborum", "nostrum", "quaerat", "officia", "maiores", "facilis", "dolorem", "aliquam", "numquam", "aliquid", "dolorum", "aperiam", "tempore", "dolores", "eveniet", "dolores", "debitis", "commodi", "tempora", "ratione", "ducimus", "tenetur", "placeat", "impedit", "quisquam", "nesciunt", "adipisci", "pariatur", "deleniti", "voluptas", "incidunt", "repellat", "eligendi", "possimus", "corporis", "expedita", "sapiente", "delectus", "suscipit", "voluptas", "deserunt", "mollitia", "corrupti", "voluptas", "officiis", "accusamus", "similique", "doloribus", "provident", "occaecati", "quibusdam", "assumenda", "inventore", "veritatis", "explicabo", "voluptate", "molestiae", "molestias", "excepturi", "molestiae", "recusandae", "asperiores", "voluptatem", "reiciendis", "laudantium", "voluptatem", "temporibus", "voluptatum", "voluptatem", "laboriosam", "aspernatur", "voluptates", "voluptatem", "distinctio", "architecto", "cupiditate", "doloremque", "blanditiis", "dignissimos", "repellendus", "consequatur", "accusantium", "consectetur", "repudiandae", "consequatur", "praesentium", "perferendis", "consequatur", "voluptatibus", "perspiciatis", "consequuntur", "reprehenderit", "necessitatibus", "exercitationem"}
 
 // Lorem is a faker struct for Lorem
 type Lorem struct {
@@ -20,12 +18,13 @@ func (l Lorem) Word() string {
 }
 
 // Words returns fake words for Lorem
-func (l Lorem) Words(nbWords int) (words []string) {
+func (l Lorem) Words(nbWords int) []string {
+	words := make([]string, 0, nbWords)
 	for i := 0; i < nbWords; i++ {
 		words = append(words, l.Word())
 	}
 
-	return
+	return words
 }
 
 // Sentence returns a fake sentence for Lorem
@@ -34,12 +33,13 @@ func (l Lorem) Sentence(nbWords int) string {
 }
 
 // Sentences returns fake sentences for Lorem
-func (l Lorem) Sentences(nbSentences int) (sentences []string) {
+func (l Lorem) Sentences(nbSentences int) []string {
+	sentences := make([]string, 0, nbSentences)
 	for i := 0; i < nbSentences; i++ {
 		sentences = append(sentences, l.Sentence(l.Faker.RandomNumber(2)))
 	}
 
-	return
+	return sentences
 }
 
 // Paragraph returns a fake paragraph for Lorem
@@ -48,16 +48,17 @@ func (l Lorem) Paragraph(nbSentences int) string {
 }
 
 // Paragraphs returns fake paragraphs for Lorem
-func (l Lorem) Paragraphs(nbParagraph int) (out []string) {
+func (l Lorem) Paragraphs(nbParagraph int) []string {
+	out := make([]string, 0, nbParagraph)
 	for i := 0; i < nbParagraph; i++ {
 		out = append(out, l.Paragraph(l.Faker.RandomNumber(2)))
 	}
 
-	return
+	return out
 }
 
 // Text returns a fake text for Lorem
-func (l Lorem) Text(maxNbChars int) (out string) {
+func (Lorem) Text(maxNbChars int) (out string) {
 	for _, w := range wordsList {
 		if len(out)+len(w) > maxNbChars {
 			break

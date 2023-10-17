@@ -6,8 +6,8 @@
 package bundle
 
 import (
+	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/open-policy-agent/opa/internal/jwx/jwa"
@@ -76,6 +76,7 @@ func (vc *VerificationConfig) GetPublicKey(id string) (*KeyConfig, error) {
 
 // SigningConfig represents the key configuration used to generate a signed bundle
 type SigningConfig struct {
+	Plugin     string
 	Key        string
 	Algorithm  string
 	ClaimsPath string
@@ -88,17 +89,32 @@ func NewSigningConfig(key, alg, claimsPath string) *SigningConfig {
 	}
 
 	return &SigningConfig{
+		Plugin:     defaultSignerID,
 		Key:        key,
 		Algorithm:  alg,
 		ClaimsPath: claimsPath,
 	}
 }
 
+// WithPlugin sets the signing plugin in the signing config
+func (s *SigningConfig) WithPlugin(plugin string) *SigningConfig {
+	if plugin != "" {
+		s.Plugin = plugin
+	}
+	return s
+}
+
 // GetPrivateKey returns the private key or secret from the signing config
 func (s *SigningConfig) GetPrivateKey() (interface{}, error) {
+
+	block, _ := pem.Decode([]byte(s.Key))
+	if block != nil {
+		return sign.GetSigningKey(s.Key, jwa.SignatureAlgorithm(s.Algorithm))
+	}
+
 	var priv string
 	if _, err := os.Stat(s.Key); err == nil {
-		bs, err := ioutil.ReadFile(s.Key)
+		bs, err := os.ReadFile(s.Key)
 		if err != nil {
 			return nil, err
 		}
@@ -108,6 +124,7 @@ func (s *SigningConfig) GetPrivateKey() (interface{}, error) {
 	} else {
 		return nil, err
 	}
+
 	return sign.GetSigningKey(priv, jwa.SignatureAlgorithm(s.Algorithm))
 }
 
@@ -115,7 +132,7 @@ func (s *SigningConfig) GetPrivateKey() (interface{}, error) {
 func (s *SigningConfig) GetClaims() (map[string]interface{}, error) {
 	var claims map[string]interface{}
 
-	bs, err := ioutil.ReadFile(s.ClaimsPath)
+	bs, err := os.ReadFile(s.ClaimsPath)
 	if err != nil {
 		return claims, err
 	}

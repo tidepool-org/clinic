@@ -33,6 +33,14 @@ func (mock *GatekeeperMock) UsersInGroup(groupID string) (UsersPermissions, erro
 	}
 }
 
+func (mock *GatekeeperMock) GroupsForUser(userID string) (UsersPermissions, error) {
+	if mock.expectedPermissions != nil || mock.expectedError != nil {
+		return UsersPermissions{userID: mock.expectedPermissions}, mock.expectedError
+	} else {
+		return UsersPermissions{userID: Permissions{userID: Allowed}}, nil
+	}
+}
+
 func (mock *GatekeeperMock) SetPermissions(userID, groupID string, permissions Permissions) (Permissions, error) {
 	return Permissions{userID: Allowed}, nil
 }

@@ -52,6 +52,7 @@ type Service interface {
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
+	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 }
@@ -178,163 +179,9 @@ type LastRequestedDexcomConnectUpdate struct {
 	Time      time.Time
 }
 
-type CGMPeriod struct {
-	HasAverageGlucose *bool           `json:"hasAverageGlucose" bson:"hasAverageGlucose"`
-	AverageGlucose    *AverageGlucose `json:"averageGlucose" bson:"averageGlucose"`
-
-	HasGlucoseManagementIndicator *bool    `json:"hasGlucoseManagementIndicator" bson:"hasGlucoseManagementIndicator"`
-	GlucoseManagementIndicator    *float64 `json:"glucoseManagementIndicator" bson:"glucoseManagementIndicator"`
-
-	HasTotalRecords *bool `json:"hasTotalRecords" bson:"hasTotalRecords"`
-	TotalRecords    *int  `json:"totalRecords" bson:"totalRecords"`
-
-	HasAverageDailyRecords *bool    `json:"hasAverageDailyRecords" bson:"hasAverageDailyRecords"`
-	AverageDailyRecords    *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
-
-	HasTimeCGMUsePercent *bool    `json:"hasTimeCGMUsePercent" bson:"hasTimeCGMUsePercent"`
-	TimeCGMUsePercent    *float64 `json:"timeCGMUsePercent" bson:"timeCGMUsePercent"`
-
-	HasTimeCGMUseMinutes *bool `json:"hasTimeCGMUseMinutes" bson:"hasTimeCGMUseMinutes"`
-	TimeCGMUseMinutes    *int  `json:"timeCGMUseMinutes" bson:"timeCGMUseMinutes"`
-
-	HasTimeCGMUseRecords *bool `json:"hasTimeCGMUseRecords" bson:"hasTimeCGMUseRecords"`
-	TimeCGMUseRecords    *int  `json:"timeCGMUseRecords" bson:"timeCGMUseRecords"`
-
-	HasTimeInTargetPercent *bool    `json:"hasTimeInTargetPercent" bson:"hasTimeInTargetPercent"`
-	TimeInTargetPercent    *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
-
-	HasTimeInTargetMinutes *bool `json:"hasTimeInTargetMinutes" bson:"hasTimeInTargetMinutes"`
-	TimeInTargetMinutes    *int  `json:"timeInTargetMinutes" bson:"timeInTargetMinutes"`
-
-	HasTimeInTargetRecords *bool `json:"hasTimeInTargetRecords" bson:"hasTimeTimeInTargetRecords"`
-	TimeInTargetRecords    *int  `json:"timeInTargetRecords" bson:"timeInTargetRecords"`
-
-	HasTimeInLowPercent *bool    `json:"hasTimeInLowPercent" bson:"hasTimeInLowPercent"`
-	TimeInLowPercent    *float64 `json:"timeInLowPercent" bson:"timeInLowPercent"`
-
-	HasTimeInLowMinutes *bool `json:"hasTimeInLowMinutes" bson:"hasTimeInLowMinutes"`
-	TimeInLowMinutes    *int  `json:"timeInLowMinutes" bson:"timeInLowMinutes"`
-
-	HasTimeInLowRecords *bool `json:"hasTimeInLowRecords" bson:"hasTimeInLowRecords"`
-	TimeInLowRecords    *int  `json:"timeInLowRecords" bson:"timeInLowRecords"`
-
-	HasTimeInVeryLowPercent *bool    `json:"hasTimeInVeryLowPercent" bson:"hasTimeInVeryLowPercent"`
-	TimeInVeryLowPercent    *float64 `json:"timeInVeryLowPercent" bson:"timeInVeryLowPercent"`
-
-	HasTimeInVeryLowMinutes *bool `json:"hasTimeInVeryLowMinutes" bson:"hasTimeInVeryLowMinutes"`
-	TimeInVeryLowMinutes    *int  `json:"timeInVeryLowMinutes" bson:"timeInVeryLowMinutes"`
-
-	HasTimeInVeryLowRecords *bool `json:"hasTimeInVeryLowRecords" bson:"hasTimeInVeryLowRecords"`
-	TimeInVeryLowRecords    *int  `json:"timeInVeryLowRecords" bson:"timeInVeryLowRecords"`
-
-	HasTimeInHighPercent *bool    `json:"hasTimeInHighPercent" bson:"hasTimeInHighPercent"`
-	TimeInHighPercent    *float64 `json:"timeInHighPercent" bson:"timeInHighPercent"`
-
-	HasTimeInHighMinutes *bool `json:"hasTimeInHighMinutes" bson:"hasTimeInHighMinutes"`
-	TimeInHighMinutes    *int  `json:"timeInHighMinutes" bson:"timeInHighMinutes"`
-
-	HasTimeInHighRecords *bool `json:"hasTimeInHighRecords" bson:"hasTimeInHighRecords"`
-	TimeInHighRecords    *int  `json:"timeInHighRecords" bson:"timeInHighRecords"`
-
-	HasTimeInVeryHighPercent *bool    `json:"hasTimeInVeryHighPercent" bson:"hasTimeInVeryHighPercent"`
-	TimeInVeryHighPercent    *float64 `json:"timeInVeryHighPercent" bson:"timeInVeryHighPercent"`
-
-	HasTimeInVeryHighMinutes *bool `json:"hasTimeInVeryHighMinutes" bson:"hasTimeInVeryHighMinutes"`
-	TimeInVeryHighMinutes    *int  `json:"timeInVeryHighMinutes" bson:"timeInVeryHighMinutes"`
-
-	HasTimeInVeryHighRecords *bool `json:"hasTimeInVeryHighRecords" bson:"hasTimeInVeryHighRecords"`
-	TimeInVeryHighRecords    *int  `json:"timeInVeryHighRecords" bson:"timeInVeryHighRecords"`
-}
-
-type CGMStats struct {
-	Config     *Config               `json:"config" bson:"config"`
-	Dates      *Dates                `json:"dates" bson:"dates"`
-	Periods    map[string]*CGMPeriod `json:"periods" bson:"periods"`
-	TotalHours *int                  `json:"totalHours" bson:"totalHours"`
-}
-
-type BGMPeriod struct {
-	HasAverageGlucose *bool           `json:"hasAverageGlucose" bson:"hasAverageGlucose"`
-	AverageGlucose    *AverageGlucose `json:"averageGlucose" bson:"averageGlucose"`
-
-	HasTotalRecords *bool `json:"hasTotalRecords" bson:"hasTotalRecords"`
-	TotalRecords    *int  `json:"totalRecords" bson:"totalRecords"`
-
-	HasAverageDailyRecords *bool    `json:"hasAverageDailyRecords" bson:"hasAverageDailyRecords"`
-	AverageDailyRecords    *float64 `json:"averageDailyRecords" bson:"averageDailyRecords"`
-
-	HasTimeInTargetPercent *bool    `json:"hasTimeInTargetPercent" bson:"hasTimeInTargetPercent"`
-	TimeInTargetPercent    *float64 `json:"timeInTargetPercent" bson:"timeInTargetPercent"`
-
-	HasTimeInTargetRecords *bool `json:"hasTimeInTargetRecords" bson:"hasTimeTimeInTargetRecords"`
-	TimeInTargetRecords    *int  `json:"timeInTargetRecords" bson:"timeInTargetRecords"`
-
-	HasTimeInLowPercent *bool    `json:"hasTimeInLowPercent" bson:"hasTimeInLowPercent"`
-	TimeInLowPercent    *float64 `json:"timeInLowPercent" bson:"timeInLowPercent"`
-
-	HasTimeInLowRecords *bool `json:"hasTimeInLowRecords" bson:"hasTimeInLowRecords"`
-	TimeInLowRecords    *int  `json:"timeInLowRecords" bson:"timeInLowRecords"`
-
-	HasTimeInVeryLowPercent *bool    `json:"hasTimeInVeryLowPercent" bson:"hasTimeInVeryLowPercent"`
-	TimeInVeryLowPercent    *float64 `json:"timeInVeryLowPercent" bson:"timeInVeryLowPercent"`
-
-	HasTimeInVeryLowRecords *bool `json:"hasTimeInVeryLowRecords" bson:"hasTimeInVeryLowRecords"`
-	TimeInVeryLowRecords    *int  `json:"timeInVeryLowRecords" bson:"timeInVeryLowRecords"`
-
-	HasTimeInHighPercent *bool    `json:"hasTimeInHighPercent" bson:"hasTimeInHighPercent"`
-	TimeInHighPercent    *float64 `json:"timeInHighPercent" bson:"timeInHighPercent"`
-
-	HasTimeInHighRecords *bool `json:"hasTimeInHighRecords" bson:"hasTimeInHighRecords"`
-	TimeInHighRecords    *int  `json:"timeInHighRecords" bson:"timeInHighRecords"`
-
-	HasTimeInVeryHighPercent *bool    `json:"hasTimeInVeryHighPercent" bson:"hasTimeInVeryHighPercent"`
-	TimeInVeryHighPercent    *float64 `json:"timeInVeryHighPercent" bson:"timeInVeryHighPercent"`
-
-	HasTimeInVeryHighRecords *bool `json:"hasTimeInVeryHighRecords" bson:"hasTimeInVeryHighRecords"`
-	TimeInVeryHighRecords    *int  `json:"timeInVeryHighRecords" bson:"timeInVeryHighRecords"`
-}
-
-type BGMStats struct {
-	Config     *Config               `json:"config" bson:"config"`
-	Dates      *Dates                `json:"dates" bson:"dates"`
-	Periods    map[string]*BGMPeriod `json:"periods" bson:"periods"`
-	TotalHours *int                  `json:"totalHours" bson:"totalHours"`
-}
-
-type Config struct {
-	SchemaVersion *int `json:"schemaVersion" bson:"schemaVersion"`
-
-	// these are just constants right now.
-	HighGlucoseThreshold     *float64 `json:"highGlucoseThreshold" bson:"highGlucoseThreshold"`
-	VeryHighGlucoseThreshold *float64 `json:"veryHighGlucoseThreshold" bson:"veryHighGlucoseThreshold"`
-	LowGlucoseThreshold      *float64 `json:"lowGlucoseThreshold" bson:"lowGlucoseThreshold"`
-	VeryLowGlucoseThreshold  *float64 `json:"VeryLowGlucoseThreshold" bson:"VeryLowGlucoseThreshold"`
-}
-
-type Dates struct {
-	LastUpdatedDate *time.Time `json:"lastUpdatedDate" bson:"lastUpdatedDate"`
-
-	HasLastUploadDate *bool      `json:"hasLastUploadDate" bson:"hasLastUploadDate"`
-	LastUploadDate    *time.Time `json:"lastUploadDate" bson:"lastUploadDate"`
-
-	HasFirstData *bool      `json:"hasFirstData" bson:"hasFirstData"`
-	FirstData    *time.Time `json:"firstData" bson:"firstData"`
-
-	HasLastData *bool      `json:"hasLastData" bson:"hasLastData"`
-	LastData    *time.Time `json:"lastData" bson:"lastData"`
-
-	HasOutdatedSince *bool      `json:"hasOutdatedSince" bson:"hasOutdatedSince"`
-	OutdatedSince    *time.Time `json:"outdatedSince" bson:"outdatedSince"`
-}
-
 type Summary struct {
-	CGM *CGMStats `json:"cgmStats" bson:"cgmStats"`
-	BGM *BGMStats `json:"bgmStats" bson:"bgmStats"`
-}
-
-type AverageGlucose struct {
-	Units string  `bson:"units"`
-	Value float64 `bson:"value"`
+	CGM *PatientCGMStats `json:"cgmStats" bson:"cgmStats"`
+	BGM *PatientBGMStats `json:"bgmStats" bson:"bgmStats"`
 }
 
 type DataSources []DataSource
@@ -344,4 +191,11 @@ type DataSource struct {
 	ExpirationTime *time.Time          `bson:"expirationTime,omitempty"`
 	ProviderName   string              `bson:"providerName"`
 	State          string              `bson:"state"`
+}
+
+type TideReportParams struct {
+	Period                *string
+	Tags                  *[]string
+	CgmLastUploadDateFrom *time.Time
+	CgmLastUploadDateTo   *time.Time
 }

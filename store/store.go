@@ -43,7 +43,7 @@ func (s *Sort) Order() int {
 }
 
 func ObjectIDSFromStringArray(ids []string) []primitive.ObjectID {
-	var objectIds []primitive.ObjectID
+	objectIds := make([]primitive.ObjectID, 0, len(ids))
 	for _, id := range ids {
 		if objectId, err := primitive.ObjectIDFromHex(id); err == nil {
 			objectIds = append(objectIds, objectId)

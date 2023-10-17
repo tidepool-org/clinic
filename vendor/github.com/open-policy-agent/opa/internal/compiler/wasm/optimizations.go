@@ -33,7 +33,9 @@ func (c *Compiler) optimizeBinaryen() error {
 		c.debug.Printf("wasm-opt binary not found, skipping optimization")
 		return nil
 	}
-	fmt.Fprintln(os.Stderr, warning)
+	if os.Getenv("EXPERIMENTAL_WASM_OPT") != "silent" { // for benchmarks
+		fmt.Fprintln(os.Stderr, warning)
+	}
 	args := []string{ // WARNING: flags with typos are ignored!
 		"-O2",
 		"--debuginfo", // don't strip name section
@@ -111,10 +113,7 @@ func unquote(s string) (string, error) {
 }
 
 func (c *Compiler) removeUnusedCode() error {
-	cgCSV, err := opa.CallGraphCSV()
-	if err != nil {
-		return fmt.Errorf("csv unpack: %w", err)
-	}
+	cgCSV := opa.CallGraphCSV()
 	r := csv.NewReader(bytes.NewReader(cgCSV))
 	r.LazyQuotes = true
 	cg, err := r.ReadAll()

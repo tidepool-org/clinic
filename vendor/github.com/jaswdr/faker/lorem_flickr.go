@@ -2,24 +2,23 @@ package faker
 
 import (
 	"io"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"strconv"
 )
 
-const LOREM_FLICKR_BASE_URL = "https://loremflickr.com"
+const loremFlickrBaseURL = "https://loremflickr.com"
 
 // LoremFlickr is a faker struct for LoremFlickr
 type LoremFlickr struct {
-	faker *Faker
+	faker           *Faker
+	HTTPClient      HTTPClient
+	TempFileCreator TempFileCreator
 }
 
 // Image generates a *os.File with a random image using the loremflickr.com service
 func (lf LoremFlickr) Image(width, height int, categories []string, prefix string, categoriesStrict bool) *os.File {
-
-	url := LOREM_FLICKR_BASE_URL
+	url := loremFlickrBaseURL
 
 	switch prefix {
 	case "g":
@@ -49,18 +48,19 @@ func (lf LoremFlickr) Image(width, height int, categories []string, prefix strin
 		}
 	}
 
-	resp, err := http.Get(url)
+	resp, err := lf.HTTPClient.Get(url)
 	if err != nil {
 		log.Println("Error while requesting", url, ":", err)
+		panic(err)
 	}
-	defer resp.Body.Close()
 
-	f, err := ioutil.TempFile(os.TempDir(), "loremflickr-img-*.jpg")
+	defer resp.Body.Close()
+	f, err := lf.TempFileCreator.TempFile("loremflickr-img-*.jpg")
 	if err != nil {
+		log.Println("Error while creating a temp file:", err)
 		panic(err)
 	}
 
 	io.Copy(f, resp.Body)
-
 	return f
 }

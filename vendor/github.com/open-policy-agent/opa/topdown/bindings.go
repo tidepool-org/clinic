@@ -87,6 +87,9 @@ func (u *bindings) plugNamespaced(a *ast.Term, caller *bindings) *ast.Term {
 		}
 		return u.namespaceVar(b, caller)
 	case *ast.Array:
+		if a.IsGround() {
+			return a
+		}
 		cpy := *a
 		arr := make([]*ast.Term, v.Len())
 		for i := 0; i < len(arr); i++ {
@@ -104,6 +107,9 @@ func (u *bindings) plugNamespaced(a *ast.Term, caller *bindings) *ast.Term {
 		})
 		return &cpy
 	case ast.Set:
+		if a.IsGround() {
+			return a
+		}
 		cpy := *a
 		cpy.Value, _ = v.Map(func(x *ast.Term) (*ast.Term, error) {
 			return u.plugNamespaced(x, caller), nil
@@ -134,7 +140,7 @@ func (u *bindings) apply(a *ast.Term) (*ast.Term, *bindings) {
 	// Early exit for non-var terms. Only vars are bound in the binding list,
 	// so the lookup below will always fail for non-var terms. In some cases,
 	// the lookup may be expensive as it has to hash the term (which for large
-	// inputs can be costly.)
+	// inputs can be costly).
 	_, ok := a.Value.(ast.Var)
 	if !ok {
 		return a, u
@@ -242,6 +248,9 @@ func (vis namespacingVisitor) namespaceTerm(a *ast.Term) *ast.Term {
 	case ast.Var:
 		return vis.b.namespaceVar(a, vis.caller)
 	case *ast.Array:
+		if a.IsGround() {
+			return a
+		}
 		cpy := *a
 		arr := make([]*ast.Term, v.Len())
 		for i := 0; i < len(arr); i++ {
@@ -259,6 +268,9 @@ func (vis namespacingVisitor) namespaceTerm(a *ast.Term) *ast.Term {
 		})
 		return &cpy
 	case ast.Set:
+		if a.IsGround() {
+			return a
+		}
 		cpy := *a
 		cpy.Value, _ = v.Map(func(x *ast.Term) (*ast.Term, error) {
 			return vis.namespaceTerm(x), nil
@@ -278,7 +290,9 @@ func (vis namespacingVisitor) namespaceTerm(a *ast.Term) *ast.Term {
 
 const maxLinearScan = 16
 
-// bindingsArrayHashMap uses an array with linear scan instead of a hash map for smaller # of entries. Hash maps start to show off their performance advantage only after 16 keys.
+// bindingsArrayHashMap uses an array with linear scan instead
+// of a hash map for smaller # of entries. Hash maps start to
+// show off their performance advantage only after 16 keys.
 type bindingsArrayHashmap struct {
 	n int // Entries in the array.
 	a *[maxLinearScan]bindingArrayKeyValue

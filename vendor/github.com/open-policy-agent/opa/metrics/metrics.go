@@ -19,8 +19,10 @@ import (
 
 // Well-known metric names.
 const (
+	BundleRequest       = "bundle_request"
 	ServerHandler       = "server_handler"
 	ServerQueryCacheHit = "server_query_cache_hit"
+	SDKDecisionEval     = "sdk_decision_eval"
 	RegoQueryCompile    = "rego_query_compile"
 	RegoQueryEval       = "rego_query_eval"
 	RegoQueryParse      = "rego_query_parse"
@@ -51,6 +53,10 @@ type Metrics interface {
 	json.Marshaler
 }
 
+type TimerMetrics interface {
+	Timers() map[string]interface{}
+}
+
 type metrics struct {
 	mtx        sync.Mutex
 	timers     map[string]Timer
@@ -70,7 +76,7 @@ type metric struct {
 	Value interface{}
 }
 
-func (m *metrics) Info() Info {
+func (*metrics) Info() Info {
 	return Info{
 		Name: "<built-in>",
 	}
@@ -154,6 +160,16 @@ func (m *metrics) All() map[string]interface{} {
 	return result
 }
 
+func (m *metrics) Timers() map[string]interface{} {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
+	ts := map[string]interface{}{}
+	for n, t := range m.timers {
+		ts[m.formatKey(n, t)] = t.Value()
+	}
+	return ts
+}
+
 func (m *metrics) Clear() {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
@@ -199,7 +215,7 @@ func (t *timer) Start() {
 func (t *timer) Stop() int64 {
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
-	delta := time.Now().Sub(t.start).Nanoseconds()
+	delta := time.Since(t.start).Nanoseconds()
 	t.value += delta
 	return delta
 }
@@ -285,4 +301,12 @@ func (c *counter) Add(n uint64) {
 
 func (c *counter) Value() interface{} {
 	return atomic.LoadUint64(&c.c)
+}
+
+func Statistics(num ...int64) interface{} {
+	t := newHistogram()
+	for _, n := range num {
+		t.Update(n)
+	}
+	return t.Value()
 }
