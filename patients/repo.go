@@ -755,6 +755,9 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	if filter.BirthDate != nil {
 		selector["birthDate"] = filter.BirthDate
 	}
+	if filter.FullName != nil {
+		selector["fullName"] = filter.FullName
+	}
 	if filter.Search != nil {
 		search := regexp.QuoteMeta(*filter.Search)
 		filter := bson.M{"$regex": primitive.Regex{

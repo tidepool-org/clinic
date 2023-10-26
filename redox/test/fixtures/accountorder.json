@@ -276,9 +276,9 @@
       "ID": null
     },
     "Procedure": {
-      "Code": "49086-2",
+      "Code": "34567",
       "Codeset": null,
-      "Description": "First trimester maternal screen with nuchal translucency panel"
+      "Description": "Create account"
     },
     "Provider": {
       "NPI": "4356789876",

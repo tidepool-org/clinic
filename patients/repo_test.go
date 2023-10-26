@@ -685,6 +685,23 @@ var _ = Describe("Patients Repository", func() {
 				}
 			})
 
+			It("filters by full name correctly", func() {
+				filter := patients.Filter{
+					FullName: randomPatient.FullName,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).To(Equal(randomPatient.UserId))
+				}
+			})
+
 			It("filters by clinic id correctly", func() {
 				clinicId := randomPatient.ClinicId.Hex()
 				filter := patients.Filter{

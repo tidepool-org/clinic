@@ -92,26 +92,10 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	}
 
 	response := EHRMatchResponse{
-		Clinic: NewClinicDto(clinic),
-		Settings: EHRSettings{
-			Enabled:  clinic.EHRSettings.Enabled,
-			SourceId: clinic.EHRSettings.SourceId,
-			DestinationIds: EHRDestinationIds{
-				Flowsheet: clinic.EHRSettings.DestinationIds.Flowsheet,
-				Notes:     clinic.EHRSettings.DestinationIds.Notes,
-				Results:   clinic.EHRSettings.DestinationIds.Results,
-			},
-			ProcedureCodes: EHRProcedureCodes{
-				EnableSummaryReports:  clinic.EHRSettings.ProcedureCodes.EnableSummaryReports,
-				DisableSummaryReports: clinic.EHRSettings.ProcedureCodes.DisableSummaryReports,
-			},
-		},
+		Clinic:   NewClinicDto(clinic),
+		Settings: *NewEHRSettingsDto(clinic.EHRSettings),
 	}
-	if clinic.EHRSettings.Facility != nil && clinic.EHRSettings.Facility.Name != "" {
-		response.Settings.Facility = &EHRFacility{
-			Name: clinic.EHRSettings.Facility.Name,
-		}
-	}
+
 	if matchedPatients != nil {
 		dto := NewPatientsDto(matchedPatients)
 		response.Patients = &dto

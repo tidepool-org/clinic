@@ -17,6 +17,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -264,6 +265,24 @@ func (h *Handler) RescheduleSubscriptionOrders(ctx context.Context, clinicId str
 }
 
 func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error) {
+	if clinic.EHRSettings == nil {
+		return nil, fmt.Errorf("%w: clinic has no EHR settings", errors.BadRequest)
+	}
+
+	code := GetProcedureCodeFromOrder(order)
+	procedureCodes := clinic.EHRSettings.ProcedureCodes
+	if code == nil {
+		return nil, nil
+	} else if *code == procedureCodes.EnableSummaryReports || *code == procedureCodes.DisableSummaryReports {
+		return h.MatchPatientsForSubscriptionOrder(ctx, clinic, order, update)
+	} else if procedureCodes.CreateAccount != nil && *code == *procedureCodes.CreateAccount {
+		return h.FindMatchingPatientsForAccountCreationOrder(ctx, clinic, order)
+	}
+
+	return nil, nil
+}
+
+func (h *Handler) MatchPatientsForSubscriptionOrder(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error) {
 	criteria, err := GetPatientMatchingCriteriaFromNewOrder(order, clinic)
 	if err != nil {
 		return nil, err
@@ -297,6 +316,71 @@ func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Cli
 	return result.Patients, err
 }
 
+func (h *Handler) FindMatchingPatientsForAccountCreationOrder(ctx context.Context, clinic clinics.Clinic, order models.NewOrder) ([]*patients.Patient, error) {
+	criteria, err := GetPatientMatchingCriteriaFromNewOrder(order, clinic)
+	if err != nil {
+		return nil, err
+	}
+	if criteria == nil {
+		return nil, nil
+	}
+
+	var matchingPatients []*patients.Patient
+
+	clinicId := clinic.Id.Hex()
+	page := store.Pagination{
+		Offset: 0,
+		Limit:  100,
+	}
+
+	filter := patients.Filter{
+		ClinicId: &clinicId,
+		Mrn:      &criteria.Mrn,
+	}
+	result, err := h.patients.List(ctx, &filter, page, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	unique := map[string]struct{}{}
+	if result.TotalCount > 0 {
+		for _, patient := range result.Patients {
+			if patient == nil || patient.UserId == nil {
+				continue
+			}
+			if _, ok := unique[*patient.UserId]; ok {
+				continue
+			}
+			unique[*patient.UserId] = struct{}{}
+			matchingPatients = append(matchingPatients, patient)
+		}
+	}
+
+	filter = patients.Filter{
+		ClinicId:  &clinicId,
+		BirthDate: &criteria.DateOfBirth,
+		FullName:  &criteria.FullName,
+	}
+	result, err = h.patients.List(ctx, &filter, page, nil)
+	if err != nil {
+		return nil, err
+	}
+	if result.TotalCount > 0 {
+		for _, patient := range result.Patients {
+			if patient == nil || patient.UserId == nil {
+				continue
+			}
+			if _, ok := unique[*patient.UserId]; ok {
+				continue
+			}
+			unique[*patient.UserId] = struct{}{}
+			matchingPatients = append(matchingPatients, patient)
+		}
+	}
+
+	return matchingPatients, nil
+}
+
 type VerificationRequest struct {
 	VerificationToken string `json:"verification-token"`
 	Challenge         string `json:"challenge"`
@@ -307,6 +391,9 @@ type VerificationResponse struct {
 }
 
 type PatientMatchingCriteria struct {
+	FirstName   string
+	LastName    string
+	FullName    string
 	Mrn         string
 	DateOfBirth string
 }
@@ -334,30 +421,44 @@ func GetPatientMatchingCriteriaFromNewOrder(order models.NewOrder, clinic clinic
 	if clinic.EHRSettings == nil {
 		return nil, fmt.Errorf("%w: clinic has no EHR settings", errors.BadRequest)
 	}
-	var mrn string
-	var dob string
+	criteria := &PatientMatchingCriteria{}
 
 	mrnIdType := clinic.EHRSettings.GetMrnIDType()
 	for _, identifier := range order.Patient.Identifiers {
 		if identifier.IDType == mrnIdType {
-			mrn = identifier.ID
+			criteria.Mrn = identifier.ID
 		}
 	}
-	if mrn == "" {
+
+	if order.Patient.Demographics != nil {
+		names := make([]string, 0, 2)
+		if order.Patient.Demographics.DOB != nil {
+			criteria.DateOfBirth = *order.Patient.Demographics.DOB
+		}
+		if order.Patient.Demographics.FirstName != nil {
+			criteria.FirstName = *order.Patient.Demographics.FirstName
+			names = append(names, criteria.FirstName)
+		}
+		if order.Patient.Demographics.LastName != nil {
+			criteria.LastName = *order.Patient.Demographics.LastName
+			names = append(names, criteria.LastName)
+		}
+		if len(names) > 0 {
+			criteria.FullName = strings.Join(names, " ")
+		}
+	}
+
+	if criteria.Mrn == "" {
 		return nil, nil
 	}
-
-	if order.Patient.Demographics != nil && order.Patient.Demographics.DOB != nil {
-		dob = *order.Patient.Demographics.DOB
-	}
-	if dob == "" {
+	if criteria.DateOfBirth == "" {
 		return nil, fmt.Errorf("%w: date of birth is missing", errors.BadRequest)
 	}
+	if criteria.FullName == "" {
+		return nil, fmt.Errorf("%w: full name is missing", errors.BadRequest)
+	}
 
-	return &PatientMatchingCriteria{
-		Mrn:         mrn,
-		DateOfBirth: dob,
-	}, nil
+	return criteria, nil
 }
 
 type Model interface {
@@ -374,7 +475,8 @@ func UnmarshallMessage[S *T, T Model](envelope models.MessageEnvelope) (S, error
 }
 
 func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID, order models.NewOrder) *patients.SubscriptionUpdate {
-	if clinic.EHRSettings == nil || order.Order.Procedure == nil || order.Order.Procedure.Code == nil {
+	code := GetProcedureCodeFromOrder(order)
+	if clinic.EHRSettings == nil || code == nil {
 		return nil
 	}
 
@@ -386,7 +488,7 @@ func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID,
 		},
 	}
 
-	switch *order.Order.Procedure.Code {
+	switch *code {
 	case clinic.EHRSettings.ProcedureCodes.EnableSummaryReports:
 		update.Name = patients.SummaryAndReportsSubscription
 		update.Active = true
@@ -398,4 +500,12 @@ func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID,
 	}
 
 	return nil
+}
+
+func GetProcedureCodeFromOrder(order models.NewOrder) *string {
+	if order.Order.Procedure == nil || order.Order.Procedure.Code == nil {
+		return nil
+	}
+
+	return order.Order.Procedure.Code
 }

@@ -401,7 +401,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
 			})
 		}
-		(*tideResult.Results)[category] = &c
+		(*tideResult.Results)[category] = c
 	}
 
 	return tideResult
@@ -614,6 +614,58 @@ func NewMembershipRestrictions(dto MembershipRestrictions) []clinics.MembershipR
 	}
 
 	return restrictions
+}
+
+func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
+	settings := &clinics.EHRSettings{
+		Enabled:  dto.Enabled,
+		SourceId: dto.SourceId,
+		DestinationIds: clinics.EHRDestinationIds{
+			Flowsheet: dto.DestinationIds.Flowsheet,
+			Notes:     dto.DestinationIds.Notes,
+			Results:   dto.DestinationIds.Results,
+		},
+		ProcedureCodes: clinics.EHRProcedureCodes{
+			EnableSummaryReports:  dto.ProcedureCodes.EnableSummaryReports,
+			DisableSummaryReports: dto.ProcedureCodes.DisableSummaryReports,
+			CreateAccount:         dto.ProcedureCodes.CreateAccount,
+		},
+	}
+	if dto.Facility != nil {
+		settings.Facility = &clinics.EHRFacility{
+			Name: dto.Facility.Name,
+		}
+	}
+
+	return settings
+}
+
+func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
+	if settings == nil {
+		return nil
+	}
+
+	dto := &EHRSettings{
+		Enabled:  settings.Enabled,
+		SourceId: settings.SourceId,
+		DestinationIds: EHRDestinationIds{
+			Flowsheet: settings.DestinationIds.Flowsheet,
+			Notes:     settings.DestinationIds.Notes,
+			Results:   settings.DestinationIds.Results,
+		},
+		ProcedureCodes: EHRProcedureCodes{
+			EnableSummaryReports:  settings.ProcedureCodes.EnableSummaryReports,
+			DisableSummaryReports: settings.ProcedureCodes.DisableSummaryReports,
+			CreateAccount:         settings.ProcedureCodes.CreateAccount,
+		},
+	}
+	if settings.Facility != nil {
+		dto.Facility = &EHRFacility{
+			Name: settings.Facility.Name,
+		}
+	}
+
+	return dto
 }
 
 func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.Sort, error) {
