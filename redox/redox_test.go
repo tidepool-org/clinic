@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"

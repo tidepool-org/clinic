@@ -142,14 +142,47 @@ type PatientSummaryConfig struct {
 }
 
 // PatientSummaryDates dates tracked for summary calculation
+//type PatientSummaryDates struct {
+//	FirstData          *time.Time `bson:"firstData,omitempty" json:"firstData,omitempty"`
+//	HasFirstData       *bool      `bson:"hasFirstData,omitempty" json:"hasFirstData,omitempty"`
+//	HasLastData        *bool      `bson:"hasLastData,omitempty" json:"hasLastData,omitempty"`
+//	HasLastUploadDate  *bool      `bson:"hasLastUploadDate,omitempty" json:"hasLastUploadDate,omitempty"`
+//	HasOutdatedSince   *bool      `bson:"hasOutdatedSince,omitempty" json:"hasOutdatedSince,omitempty"`
+//	LastData           *time.Time `bson:"lastData,omitempty" json:"lastData,omitempty"`
+//	LastUpdatedDate    *time.Time `bson:"lastUpdatedDate,omitempty" json:"lastUpdatedDate,omitempty"`
+//	LastUpdatedReason  *[]string  `bson:"lastUpdatedReason,omitempty" json:"lastUpdatedReason,omitempty"`
+//	LastUploadDate     *time.Time `bson:"lastUploadDate,omitempty" json:"lastUploadDate,omitempty"`
+//	OutdatedSince      *time.Time `bson:"outdatedSince,omitempty" json:"outdatedSince,omitempty"`
+//	OutdatedReason     *[]string  `bson:"outdatedReason,omitempty" json:"outdatedReason,omitempty"`
+//	OutdatedSinceLimit *time.Time `bson:"outdatedSinceLimit,omitempty" json:"outdatedSinceLimit,omitempty"`
+//}
+
 type PatientSummaryDates struct {
-	FirstData         *time.Time `bson:"firstData,omitempty" json:"firstData,omitempty"`
-	HasFirstData      *bool      `bson:"hasFirstData,omitempty" json:"hasFirstData,omitempty"`
-	HasLastData       *bool      `bson:"hasLastData,omitempty" json:"hasLastData,omitempty"`
-	HasLastUploadDate *bool      `bson:"hasLastUploadDate,omitempty" json:"hasLastUploadDate,omitempty"`
-	HasOutdatedSince  *bool      `bson:"hasOutdatedSince,omitempty" json:"hasOutdatedSince,omitempty"`
-	LastData          *time.Time `bson:"lastData,omitempty" json:"lastData,omitempty"`
-	LastUpdatedDate   *time.Time `bson:"lastUpdatedDate,omitempty" json:"lastUpdatedDate,omitempty"`
-	LastUploadDate    *time.Time `bson:"lastUploadDate,omitempty" json:"lastUploadDate,omitempty"`
-	OutdatedSince     *time.Time `bson:"outdatedSince,omitempty" json:"outdatedSince,omitempty"`
+	// FirstData Date of the first included value
+	FirstData         *time.Time `json:"firstData,omitempty"`
+	HasFirstData      *bool      `json:"hasFirstData,omitempty"`
+	HasLastData       *bool      `json:"hasLastData,omitempty"`
+	HasLastUploadDate *bool      `json:"hasLastUploadDate,omitempty"`
+	HasOutdatedSince  *bool      `json:"hasOutdatedSince,omitempty"`
+
+	// LastData Date of the last calculated value
+	LastData *time.Time `json:"lastData,omitempty"`
+
+	// LastUpdatedDate Date of the last calculation
+	LastUpdatedDate *time.Time `json:"lastUpdatedDate,omitempty"`
+
+	// LastUpdatedReason List of reasons the summary was updated for
+	LastUpdatedReason *[]string `json:"lastUpdatedReason,omitempty"`
+
+	// LastUploadDate Created date of the last calculated value
+	LastUploadDate *time.Time `json:"lastUploadDate,omitempty"`
+
+	// OutdatedReason List of reasons the summary was marked outdated for
+	OutdatedReason *[]string `json:"outdatedReason,omitempty"`
+
+	// OutdatedSince Date of the first user upload after lastData, removed when calculated
+	OutdatedSince *time.Time `json:"outdatedSince,omitempty"`
+
+	// OutdatedSinceLimit Upper limit of the OutdatedSince value to prevent infinite queue duration
+	OutdatedSinceLimit *time.Time `json:"outdatedSinceLimit,omitempty"`
 }

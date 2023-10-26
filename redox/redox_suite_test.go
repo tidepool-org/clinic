@@ -5,7 +5,7 @@ import (
 	"github.com/tidepool-org/clinic/test"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 )
 
 func TestSuite(t *testing.T) {
