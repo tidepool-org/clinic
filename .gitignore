@@ -9,3 +9,5 @@ dist/
 
 # Linkerd Service Profile
 service-profile/
+
+artifact_docker.sh
