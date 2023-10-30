@@ -2,7 +2,7 @@ package test
 
 import (
 	"github.com/jaswdr/faker"
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	Faker = faker.NewWithSeed(rand.NewSource(config.GinkgoConfig.RandomSeed))
+	Faker = faker.NewWithSeed(rand.NewSource(ginkgo.GinkgoRandomSeed()))
 )
 
 func strp(val string) *string {
