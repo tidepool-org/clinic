@@ -127,7 +127,7 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 		if err := s.Remove(ctx, clinicId, userId); err != nil {
 			// the patient was removed by concurrent request which is not a problem,
 			// because it had to be removed as a result of the current operation
-			if err == ErrNotFound {
+			if errors.Is(err, ErrNotFound) {
 				return nil, nil
 			}
 			return nil, err

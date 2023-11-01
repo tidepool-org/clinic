@@ -2,8 +2,8 @@ package patients
 
 import (
 	"context"
-	errs "errors"
-	"github.com/tidepool-org/clinic/errors"
+	"errors"
+	clinicErrs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
@@ -64,7 +64,7 @@ func (s *userService) CreateCustodialAccount(ctx context.Context, patient Patien
 
 func (s *userService) UpdateCustodialAccount(ctx context.Context, patient Patient) error {
 	if patient.UserId == nil {
-		return errs.New("user id is missing")
+		return errors.New("user id is missing")
 	}
 
 	emails := make([]string, 0)
@@ -76,7 +76,8 @@ func (s *userService) UpdateCustodialAccount(ctx context.Context, patient Patien
 		Username: patient.Email,
 		Emails:   &emails,
 	}, s.shorelineClient.TokenProvide())
-	if statusErr, ok := err.(*status.StatusError); ok && statusErr.Code == http.StatusConflict {
+	var statusErr *status.StatusError
+	if errors.As(err, &statusErr) && statusErr.Code == http.StatusConflict {
 		return ErrDuplicateEmail
 	}
 	return err
@@ -85,8 +86,9 @@ func (s *userService) UpdateCustodialAccount(ctx context.Context, patient Patien
 func (s *userService) GetUser(userId string) (*shoreline.UserData, error) {
 	user, err := s.shorelineClient.GetUser(userId, s.shorelineClient.TokenProvide())
 	if err != nil {
-		if e, ok := err.(*status.StatusError); ok && e.Code == http.StatusNotFound {
-			return nil, errors.NotFound
+		var e *status.StatusError
+		if errors.As(err, &e) && e.Code == http.StatusNotFound {
+			return nil, clinicErrs.NotFound
 		}
 		return nil, err
 	}
