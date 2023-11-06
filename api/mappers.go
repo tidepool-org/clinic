@@ -2,12 +2,12 @@ package api
 
 import (
 	"fmt"
+	"github.com/oapi-codegen/runtime/types"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/migration"
@@ -401,7 +401,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
 			})
 		}
-		(*tideResult.Results)[category] = c
+		(*tideResult.Results)[category] = &c
 	}
 
 	return tideResult
@@ -996,7 +996,7 @@ func isSortAttributeValid(attribute string, t string) bool {
 
 const dateFormat = "2006-01-02"
 
-func strtodatep(s *string) *openapi_types.Date {
+func strtodatep(s *string) *types.Date {
 	if s == nil {
 		return nil
 	}
@@ -1004,7 +1004,7 @@ func strtodatep(s *string) *openapi_types.Date {
 	if err != nil {
 		return nil
 	}
-	return &openapi_types.Date{Time: t}
+	return &types.Date{Time: t}
 }
 
 func pstr(p *string) string {

@@ -60,7 +60,7 @@ type PatientCGMPeriod struct {
 	AverageGlucoseMmol              *float64 `bson:"averageGlucoseMmol,omitempty" json:"averageGlucoseMmol,omitempty"`
 	AverageGlucoseMmolDelta         *float64 `bson:"averageGlucoseMmolDelta,omitempty" json:"averageGlucoseMmolDelta,omitempty"`
 	GlucoseManagementIndicator      *float64 `bson:"glucoseManagementIndicator,omitempty" json:"glucoseManagementIndicator,omitempty"`
-	GlucoseManagementIndicatorDelta *float64 `bson:"glucoseManagementIndicatorDelta,omitempty"json:"glucoseManagementIndicatorDelta,omitempty"`
+	GlucoseManagementIndicatorDelta *float64 `bson:"glucoseManagementIndicatorDelta,omitempty" json:"glucoseManagementIndicatorDelta,omitempty"`
 	HasAverageDailyRecords          *bool    `bson:"hasAverageDailyRecords,omitempty" json:"hasAverageDailyRecords,omitempty"`
 	HasAverageGlucoseMmol           *bool    `bson:"hasAverageGlucoseMmol,omitempty" json:"hasAverageGlucoseMmol,omitempty"`
 	HasGlucoseManagementIndicator   *bool    `bson:"hasGlucoseManagementIndicator,omitempty" json:"hasGlucoseManagementIndicator,omitempty"`
@@ -141,15 +141,17 @@ type PatientSummaryConfig struct {
 	VeryLowGlucoseThreshold  *float64 `bson:"veryLowGlucoseThreshold,omitempty" json:"veryLowGlucoseThreshold,omitempty"`
 }
 
-// PatientSummaryDates dates tracked for summary calculation
 type PatientSummaryDates struct {
-	FirstData         *time.Time `bson:"firstData,omitempty" json:"firstData,omitempty"`
-	HasFirstData      *bool      `bson:"hasFirstData,omitempty" json:"hasFirstData,omitempty"`
-	HasLastData       *bool      `bson:"hasLastData,omitempty" json:"hasLastData,omitempty"`
-	HasLastUploadDate *bool      `bson:"hasLastUploadDate,omitempty" json:"hasLastUploadDate,omitempty"`
-	HasOutdatedSince  *bool      `bson:"hasOutdatedSince,omitempty" json:"hasOutdatedSince,omitempty"`
-	LastData          *time.Time `bson:"lastData,omitempty" json:"lastData,omitempty"`
-	LastUpdatedDate   *time.Time `bson:"lastUpdatedDate,omitempty" json:"lastUpdatedDate,omitempty"`
-	LastUploadDate    *time.Time `bson:"lastUploadDate,omitempty" json:"lastUploadDate,omitempty"`
-	OutdatedSince     *time.Time `bson:"outdatedSince,omitempty" json:"outdatedSince,omitempty"`
+	FirstData          *time.Time `bson:"firstData,omitempty" json:"firstData,omitempty"`
+	HasFirstData       *bool      `bson:"hasFirstData,omitempty" json:"hasFirstData,omitempty"`
+	HasLastData        *bool      `bson:"hasLastData,omitempty" json:"hasLastData,omitempty"`
+	HasLastUploadDate  *bool      `bson:"hasLastUploadDate,omitempty" json:"hasLastUploadDate,omitempty"`
+	HasOutdatedSince   *bool      `bson:"hasOutdatedSince,omitempty" json:"hasOutdatedSince,omitempty"`
+	LastData           *time.Time `bson:"lastData,omitempty" json:"lastData,omitempty"`
+	LastUpdatedDate    *time.Time `bson:"lastUpdatedDate,omitempty" json:"lastUpdatedDate,omitempty"`
+	LastUpdatedReason  *[]string  `bson:"lastUpdatedReason,omitempty" json:"lastUpdatedReason,omitempty"`
+	LastUploadDate     *time.Time `bson:"lastUploadDate,omitempty" json:"lastUploadDate,omitempty"`
+	OutdatedReason     *[]string  `bson:"outdatedReason,omitempty" json:"outdatedReason,omitempty"`
+	OutdatedSince      *time.Time `bson:"outdatedSince,omitempty" json:"outdatedSince,omitempty"`
+	OutdatedSinceLimit *time.Time `bson:"outdatedSinceLimit,omitempty" json:"outdatedSinceLimit,omitempty"`
 }

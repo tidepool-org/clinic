@@ -32,13 +32,13 @@ go-flags:
 .PHONY: ginkgo
 ginkgo:
 ifeq ($(shell which ginkgo),)
-	go install github.com/onsi/ginkgo/ginkgo
+	go install github.com/onsi/ginkgo/v2/ginkgo
 endif
 
 # Runs tests
 .PHONY: test
 test: go-flags ginkgo
-	ginkgo -requireSuite -slowSpecThreshold=10 --compilers=2 -r -randomizeSuites -randomizeAllSpecs -succinct -failOnPending -trace -race -progress -keepGoing ./...
+	ginkgo --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
 
 # Builds package
 .PHONY: build

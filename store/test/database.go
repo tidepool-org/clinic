@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jaswdr/faker"
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	Faker    = faker.NewWithSeed(rand.NewSource(config.GinkgoConfig.RandomSeed))
+	Faker    = faker.NewWithSeed(rand.NewSource(ginkgo.GinkgoRandomSeed()))
 	database *mongo.Database
 )
 
@@ -31,7 +31,7 @@ func SetupDatabase() {
 	err = client.Ping(ctx, nil)
 	Expect(err).ToNot(HaveOccurred())
 
-	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.Letter(), config.GinkgoConfig.ParallelNode)
+	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.Letter(), ginkgo.GinkgoParallelProcess())
 	database = client.Database(databaseName)
 }
 

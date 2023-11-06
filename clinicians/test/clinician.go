@@ -2,14 +2,14 @@ package test
 
 import (
 	"github.com/jaswdr/faker"
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/tidepool-org/clinic/clinicians"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"math/rand"
 )
 
 var (
-	Faker = faker.NewWithSeed(rand.NewSource(config.GinkgoConfig.RandomSeed))
+	Faker = faker.NewWithSeed(rand.NewSource(ginkgo.GinkgoRandomSeed()))
 )
 
 func RandomClinician() *clinicians.Clinician {
