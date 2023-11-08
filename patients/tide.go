@@ -25,7 +25,7 @@ type TideConfig struct {
 type TideFilters struct {
 	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
 	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
-	TimeInLowPercent          *string `json:"timeInLowPercent,omitempty"`
+	TimeInAnyLowPercent       *string `json:"timeInAnyLowPercent,omitempty"`
 	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
 	TimeInVeryLowPercent      *string `json:"timeInVeryLowPercent,omitempty"`
 }
@@ -49,6 +49,8 @@ type TideResultPatient struct {
 	TimeInTargetPercentDelta   *float64     `json:"timeInTargetPercentDelta,omitempty"`
 	TimeInVeryHighPercent      *float64     `json:"timeInVeryHighPercent,omitempty"`
 	TimeInVeryLowPercent       *float64     `json:"timeInVeryLowPercent,omitempty"`
+	TimeInAnyLowPercent        *float64     `json:"timeInAnyLowPercent,omitempty"`
+	TimeInAnyHighPercent       *float64     `json:"timeInAnyHighPercent,omitempty"`
 }
 
 type TideResults map[string]*[]TideResultPatient

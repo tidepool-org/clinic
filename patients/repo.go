@@ -986,8 +986,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			Value:      0.01,
 		},
 		{
-			Heading:    "timeInLowPercent",
-			Field:      "timeInLowPercent",
+			Heading:    "timeInAnyLowPercent",
+			Field:      "timeInAnyLowPercent",
 			Comparison: "$gt",
 			Value:      0.04,
 		},
@@ -1018,7 +1018,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			ClinicId: &clinicId,
 			Filters: &TideFilters{
 				TimeInVeryLowPercent:      ptr(">0.01"),
-				TimeInLowPercent:          ptr(">0.04"),
+				TimeInAnyLowPercent:       ptr(">0.04"),
 				DropInTimeInTargetPercent: ptr("<-0.15"),
 				TimeInTargetPercent:       ptr("<0.7"),
 				TimeCGMUsePercent:         ptr("<0.7"),
@@ -1097,6 +1097,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
 				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
 				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
+				TimeInAnyLowPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInAnyLowPercent,
+				TimeInAnyHighPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInAnyHighPercent,
 			})
 		}
 
@@ -1160,6 +1162,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
 				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
 				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
+				TimeInAnyLowPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInAnyLowPercent,
+				TimeInAnyHighPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInAnyHighPercent,
 			})
 		}
 

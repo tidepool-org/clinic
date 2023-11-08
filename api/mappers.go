@@ -778,6 +778,18 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"timeInVeryLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowMinutes",
 		"timeInVeryLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowMinutesDelta",
 
+		"hasTimeInAnyLowPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowPercent",
+		"timeInAnyLowPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowPercent",
+		"timeInAnyLowPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowPercentDelta",
+
+		"hasTimeInAnyLowRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowRecords",
+		"timeInAnyLowRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowRecords",
+		"timeInAnyLowRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowRecordsDelta",
+
+		"hasTimeInAnyLowMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowMinutes",
+		"timeInAnyLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowMinutes",
+		"timeInAnyLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowMinutesDelta",
+
 		"hasTimeInHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInHighPercent",
 		"timeInHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighPercent",
 		"timeInHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighPercentDelta",
@@ -801,6 +813,18 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"hasTimeInVeryHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryHighMinutes",
 		"timeInVeryHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutes",
 		"timeInVeryHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutesDelta",
+
+		"hasTimeInAnyHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighPercent",
+		"timeInAnyHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighPercent",
+		"timeInAnyHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighPercentDelta",
+
+		"hasTimeInAnyHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighRecords",
+		"timeInAnyHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighRecords",
+		"timeInAnyHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighRecordsDelta",
+
+		"hasTimeInAnyHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighMinutes",
+		"timeInAnyHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighMinutes",
+		"timeInAnyHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighMinutesDelta",
 
 		"hasAverageDailyRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasAverageDailyRecords",
 		"averageDailyRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageDailyRecords",
@@ -857,6 +881,13 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		expandedSorts["timeInVeryLowMinutes"]:      expandedSorts["hasTimeInVeryLowMinutes"],
 		expandedSorts["timeInVeryLowMinutesDelta"]: expandedSorts["hasTimeInVeryLowMinutes"],
 
+		expandedSorts["timeInAnyLowPercent"]:      expandedSorts["hasTimeInAnyLowPercent"],
+		expandedSorts["timeInAnyLowPercentDelta"]: expandedSorts["hasTimeInAnyLowPercent"],
+		expandedSorts["timeInAnyLowRecords"]:      expandedSorts["hasTimeInAnyLowRecords"],
+		expandedSorts["timeInAnyLowRecordsDelta"]: expandedSorts["hasTimeInAnyLowRecords"],
+		expandedSorts["timeInAnyLowMinutes"]:      expandedSorts["hasTimeInAnyLowMinutes"],
+		expandedSorts["timeInAnyLowMinutesDelta"]: expandedSorts["hasTimeInAnyLowMinutes"],
+
 		expandedSorts["timeInHighPercent"]:      expandedSorts["hasTimeInHighPercent"],
 		expandedSorts["timeInHighPercentDelta"]: expandedSorts["hasTimeInHighPercent"],
 		expandedSorts["timeInHighRecords"]:      expandedSorts["hasTimeInHighRecords"],
@@ -870,6 +901,13 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		expandedSorts["timeInVeryHighRecordsDelta"]: expandedSorts["hasTimeInVeryHighRecords"],
 		expandedSorts["timeInVeryHighMinutes"]:      expandedSorts["hasTimeInVeryHighMinutes"],
 		expandedSorts["timeInVeryHighMinutesDelta"]: expandedSorts["hasTimeInVeryHighMinutes"],
+
+		expandedSorts["timeInAnyHighPercent"]:      expandedSorts["hasTimeInAnyHighPercent"],
+		expandedSorts["timeInAnyHighPercentDelta"]: expandedSorts["hasTimeInAnyHighPercent"],
+		expandedSorts["timeInAnyHighRecords"]:      expandedSorts["hasTimeInAnyHighRecords"],
+		expandedSorts["timeInAnyHighRecordsDelta"]: expandedSorts["hasTimeInAnyHighRecords"],
+		expandedSorts["timeInAnyHighMinutes"]:      expandedSorts["hasTimeInAnyHighMinutes"],
+		expandedSorts["timeInAnyHighMinutesDelta"]: expandedSorts["hasTimeInAnyHighMinutes"],
 	}
 
 	// expand the original param now that we are done using it as a map key
@@ -918,6 +956,13 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryLowMinutes":      {},
 		"timeInVeryLowMinutesDelta": {},
 
+		"timeInAnyLowPercent":      {},
+		"timeInAnyLowPercentDelta": {},
+		"timeInAnyLowRecords":      {},
+		"timeInAnyLowRecordsDelta": {},
+		"timeInAnyLowMinutes":      {},
+		"timeInAnyLowMinutesDelta": {},
+
 		"timeInHighPercent":      {},
 		"timeInHighPercentDelta": {},
 		"timeInHighMinutes":      {},
@@ -931,6 +976,13 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryHighRecordsDelta": {},
 		"timeInVeryHighMinutes":      {},
 		"timeInVeryHighMinutesDelta": {},
+
+		"timeInAnyHighPercent":      {},
+		"timeInAnyHighPercentDelta": {},
+		"timeInAnyHighRecords":      {},
+		"timeInAnyHighRecordsDelta": {},
+		"timeInAnyHighMinutes":      {},
+		"timeInAnyHighMinutesDelta": {},
 
 		"timeInTargetPercent":      {},
 		"timeInTargetPercentDelta": {},
@@ -966,6 +1018,11 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryLowRecords":      {},
 		"timeInVeryLowRecordsDelta": {},
 
+		"timeInAnyLowPercent":      {},
+		"timeInAnyLowPercentDelta": {},
+		"timeInAnyLowRecords":      {},
+		"timeInAnyLowRecordsDelta": {},
+
 		"timeInHighPercent":      {},
 		"timeInHighPercentDelta": {},
 		"timeInHighRecords":      {},
@@ -975,6 +1032,11 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryHighPercentDelta": {},
 		"timeInVeryHighRecords":      {},
 		"timeInVeryHighRecordsDelta": {},
+
+		"timeInAnyHighPercent":      {},
+		"timeInAnyHighPercentDelta": {},
+		"timeInAnyHighRecords":      {},
+		"timeInAnyHighRecordsDelta": {},
 
 		"timeInTargetPercent":      {},
 		"timeInTargetPercentDelta": {},
@@ -1173,9 +1235,11 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 		"timeInTargetPercent":   params.CgmTimeInTargetPercent,
 		"timeInHighPercent":     params.CgmTimeInHighPercent,
 		"timeInVeryHighPercent": params.CgmTimeInVeryHighPercent,
+		"timeInAnyHighPercent":  params.CgmTimeInAnyHighPercent,
 
 		"timeCGMUseRecords":     params.CgmTimeCGMUseRecords,
 		"timeInVeryLowRecords":  params.CgmTimeInVeryLowRecords,
+		"timeInAnyLowRecords":   params.CgmTimeInAnyLowRecords,
 		"timeInLowRecords":      params.CgmTimeInLowRecords,
 		"timeInTargetRecords":   params.CgmTimeInTargetRecords,
 		"timeInHighRecords":     params.CgmTimeInHighRecords,
@@ -1203,12 +1267,14 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 		"timeInTargetPercent":   params.BgmTimeInTargetPercent,
 		"timeInHighPercent":     params.BgmTimeInHighPercent,
 		"timeInVeryHighPercent": params.BgmTimeInVeryHighPercent,
+		"timeInAnyHighPercent":  params.BgmTimeInAnyHighPercent,
 
 		"timeInVeryLowRecords":  params.BgmTimeInVeryLowRecords,
 		"timeInLowRecords":      params.BgmTimeInLowRecords,
 		"timeInTargetRecords":   params.BgmTimeInTargetRecords,
 		"timeInHighRecords":     params.BgmTimeInHighRecords,
 		"timeInVeryHighRecords": params.BgmTimeInVeryHighRecords,
+		"timeInAnyHighRecords":  params.BgmTimeInAnyHighRecords,
 		"averageDailyRecords":   params.BgmAverageDailyRecords,
 		"totalRecords":          params.BgmTotalRecords,
 	}
