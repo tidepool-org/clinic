@@ -1231,6 +1231,7 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	fieldsMap := map[string]*string{
 		"timeCGMUsePercent":     params.CgmTimeCGMUsePercent,
 		"timeInVeryLowPercent":  params.CgmTimeInVeryLowPercent,
+		"timeInAnyLowPercent":   params.CgmTimeInAnyLowPercent,
 		"timeInLowPercent":      params.CgmTimeInLowPercent,
 		"timeInTargetPercent":   params.CgmTimeInTargetPercent,
 		"timeInHighPercent":     params.CgmTimeInHighPercent,
@@ -1244,6 +1245,7 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 		"timeInTargetRecords":   params.CgmTimeInTargetRecords,
 		"timeInHighRecords":     params.CgmTimeInHighRecords,
 		"timeInVeryHighRecords": params.CgmTimeInVeryHighRecords,
+		"timeInAnyHighRecords":  params.CgmTimeInAnyHighRecords,
 		"averageDailyRecords":   params.CgmAverageDailyRecords,
 		"totalRecords":          params.CgmTotalRecords,
 	}
@@ -1263,6 +1265,7 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 
 	fieldsMap := map[string]*string{
 		"timeInVeryLowPercent":  params.BgmTimeInVeryLowPercent,
+		"timeInAnyLowPercent":   params.BgmTimeInAnyLowPercent,
 		"timeInLowPercent":      params.BgmTimeInLowPercent,
 		"timeInTargetPercent":   params.BgmTimeInTargetPercent,
 		"timeInHighPercent":     params.BgmTimeInHighPercent,
@@ -1270,6 +1273,7 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 		"timeInAnyHighPercent":  params.BgmTimeInAnyHighPercent,
 
 		"timeInVeryLowRecords":  params.BgmTimeInVeryLowRecords,
+		"timeInAnyLowRecords":   params.BgmTimeInAnyLowRecords,
 		"timeInLowRecords":      params.BgmTimeInLowRecords,
 		"timeInTargetRecords":   params.BgmTimeInTargetRecords,
 		"timeInHighRecords":     params.BgmTimeInHighRecords,
