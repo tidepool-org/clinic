@@ -16,9 +16,6 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
-
-	"github.com/open-policy-agent/opa/ast/internal/tokens"
-	astJSON "github.com/open-policy-agent/opa/ast/json"
 )
 
 // MustParseBody returns a parsed body.
@@ -247,9 +244,7 @@ func ParseCompleteDocRuleFromEqExpr(module *Module, lhs, rhs *Term) (*Rule, erro
 	var head *Head
 
 	if v, ok := lhs.Value.(Var); ok {
-		// Modify the code to add the location to the head ref
-		// and set the head ref's jsonOptions.
-		head = VarHead(v, lhs.Location, &lhs.jsonOptions)
+		head = NewHead(v)
 	} else if r, ok := lhs.Value.(Ref); ok { // groundness ?
 		if _, ok := r[0].Value.(Var); !ok {
 			return nil, fmt.Errorf("invalid rule head: %v", r)
@@ -287,7 +282,6 @@ func ParseCompleteDocRuleWithDotsFromTerm(module *Module, term *Term) (*Rule, er
 		return nil, fmt.Errorf("invalid rule head: %v", ref)
 	}
 	head := RefHead(ref, BooleanTerm(true).SetLocation(term.Location))
-	head.generatedValue = true
 	head.Location = term.Location
 	head.jsonOptions = term.jsonOptions
 
@@ -356,9 +350,7 @@ func ParsePartialSetDocRuleFromTerm(module *Module, term *Term) (*Rule, error) {
 		if !ok {
 			return nil, fmt.Errorf("%vs cannot be used for rule head", TypeName(term.Value))
 		}
-		// Modify the code to add the location to the head ref
-		// and set the head ref's jsonOptions.
-		head = VarHead(v, ref[0].Location, &ref[0].jsonOptions)
+		head = NewHead(v)
 		head.Key = ref[1]
 	}
 	head.Location = term.Location
@@ -663,9 +655,6 @@ func parseModule(filename string, stmts []Statement, comments []*Comment) (*Modu
 		switch stmt := stmt.(type) {
 		case *Import:
 			mod.Imports = append(mod.Imports, stmt)
-			if Compare(stmt.Path.Value, regoV1CompatibleRef) == 0 {
-				mod.regoV1Compatible = true
-			}
 		case *Rule:
 			setRuleModule(stmt, mod)
 			mod.Rules = append(mod.Rules, stmt)
@@ -675,7 +664,6 @@ func parseModule(filename string, stmts []Statement, comments []*Comment) (*Modu
 				errs = append(errs, NewError(ParseErr, stmt[0].Location, err.Error()))
 				continue
 			}
-			rule.generatedBody = true
 			mod.Rules = append(mod.Rules, rule)
 
 			// NOTE(tsandall): the statement should now be interpreted as a
@@ -693,22 +681,6 @@ func parseModule(filename string, stmts []Statement, comments []*Comment) (*Modu
 		}
 	}
 
-	if mod.regoV1Compatible {
-		for _, rule := range mod.Rules {
-			for r := rule; r != nil; r = r.Else {
-				if r.generatedBody && r.Head.generatedValue {
-					errs = append(errs, NewError(ParseErr, r.Location, "rule must have value assignment and/or body declaration"))
-				}
-				if r.Body != nil && !r.generatedBody && !ruleDeclarationHasKeyword(r, tokens.If) {
-					errs = append(errs, NewError(ParseErr, r.Location, "`if` keyword is required before rule body"))
-				}
-				if r.Head.RuleKind() == MultiValue && !ruleDeclarationHasKeyword(r, tokens.Contains) {
-					errs = append(errs, NewError(ParseErr, r.Location, "`contains` keyword is required for partial set rules"))
-				}
-			}
-		}
-	}
-
 	if len(errs) > 0 {
 		return nil, errs
 	}
@@ -720,15 +692,6 @@ func parseModule(filename string, stmts []Statement, comments []*Comment) (*Modu
 	}
 
 	return mod, nil
-}
-
-func ruleDeclarationHasKeyword(rule *Rule, keyword tokens.Token) bool {
-	for _, kw := range rule.Head.keywords {
-		if kw == keyword {
-			return true
-		}
-	}
-	return false
 }
 
 func newScopeAttachmentErr(a *Annotations, want string) *Error {
@@ -746,7 +709,7 @@ func setRuleModule(rule *Rule, module *Module) {
 	}
 }
 
-func setJSONOptions(x interface{}, jsonOptions *astJSON.Options) {
+func setJSONOptions(x interface{}, jsonOptions *JSONOptions) {
 	vis := NewGenericVisitor(func(x interface{}) bool {
 		if x, ok := x.(customJSON); ok {
 			x.setJSONOptions(*jsonOptions)

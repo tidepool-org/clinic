@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"sigs.k8s.io/yaml"
+	"github.com/ghodss/yaml"
 
 	"github.com/open-policy-agent/opa/internal/strvals"
 	"github.com/open-policy-agent/opa/keys"

@@ -207,11 +207,5 @@ func (pathItem *PathItem) Validate(ctx context.Context, opts ...ValidationOption
 		}
 	}
 
-	if v := pathItem.Parameters; v != nil {
-		if err := v.Validate(ctx); err != nil {
-			return err
-		}
-	}
-
 	return validateExtensions(ctx, pathItem.Extensions)
 }

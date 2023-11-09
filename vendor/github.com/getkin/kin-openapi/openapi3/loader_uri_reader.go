@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"sync"
 )
@@ -76,7 +75,7 @@ func ReadFromFile(loader *Loader, location *url.URL) ([]byte, error) {
 	if location.Scheme != "" && location.Scheme != "file" {
 		return nil, ErrURINotSupported
 	}
-	return os.ReadFile(location.Path)
+	return ioutil.ReadFile(location.Path)
 }
 
 // URIMapCache returns a ReadFromURIFunc that caches the contents read from URI

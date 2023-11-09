@@ -11,7 +11,7 @@ import (
 	"io"
 	"reflect"
 
-	"sigs.k8s.io/yaml"
+	"github.com/ghodss/yaml"
 
 	"github.com/open-policy-agent/opa/loader/extension"
 )

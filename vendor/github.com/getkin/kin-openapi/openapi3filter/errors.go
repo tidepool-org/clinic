@@ -79,7 +79,8 @@ type SecurityRequirementsError struct {
 }
 
 func (err *SecurityRequirementsError) Error() string {
-	buff := bytes.NewBufferString("security requirements failed: ")
+	buff := &bytes.Buffer{}
+	buff.WriteString("security requirements failed: ")
 	for i, e := range err.Errors {
 		buff.WriteString(e.Error())
 		if i != len(err.Errors)-1 {

@@ -12,10 +12,10 @@ import (
 
 type SecuritySchemes map[string]*SecuritySchemeRef
 
-// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
 func (s SecuritySchemes) JSONLookup(token string) (interface{}, error) {
 	ref, ok := s[token]
-	if ref == nil || !ok {
+	if ref == nil || ok == false {
 		return nil, fmt.Errorf("object has no field %q", token)
 	}
 

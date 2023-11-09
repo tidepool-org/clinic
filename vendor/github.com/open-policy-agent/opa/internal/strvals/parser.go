@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sigs.k8s.io/yaml"
+	"github.com/ghodss/yaml"
 )
 
 // ErrNotList indicates that a non-list was treated as a list.

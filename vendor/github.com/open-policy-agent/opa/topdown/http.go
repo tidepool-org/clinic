@@ -839,7 +839,10 @@ func (c *interQueryCache) checkHTTPSendInterQueryCache() (ast.Value, error) {
 		return nil, handleHTTPSendErr(c.bctx, err)
 	}
 
-	headers := parseResponseHeaders(cachedRespData.Headers)
+	headers, err := parseResponseHeaders(cachedRespData.Headers)
+	if err != nil {
+		return nil, err
+	}
 
 	// check with the server if the stale response is still up-to-date.
 	// If server returns a new response (ie. status_code=200), update the cache with the new response
@@ -861,16 +864,11 @@ func (c *interQueryCache) checkHTTPSendInterQueryCache() (ast.Value, error) {
 			}
 		}
 
-		if forceCaching(c.forceCacheParams) {
-			createdAt := getCurrentTime(c.bctx)
-			cachedRespData.ExpiresAt = createdAt.Add(time.Second * time.Duration(c.forceCacheParams.forceCacheDurationSeconds))
-		} else {
-			expiresAt, err := expiryFromHeaders(result.Header)
-			if err != nil {
-				return nil, err
-			}
-			cachedRespData.ExpiresAt = expiresAt
+		expiresAt, err := expiryFromHeaders(result.Header)
+		if err != nil {
+			return nil, err
 		}
+		cachedRespData.ExpiresAt = expiresAt
 
 		cachingMode, err := getCachingMode(c.key)
 		if err != nil {
@@ -1145,22 +1143,40 @@ func (c *interQueryCacheData) Clone() (cache.InterQueryCacheValue, error) {
 }
 
 type responseHeaders struct {
-	etag         string // identifier for a specific version of the response
-	lastModified string // date and time response was last modified as per origin server
+	date         time.Time         // origination date and time of response
+	cacheControl map[string]string // response cache-control header
+	maxAge       deltaSeconds      // max-age cache control directive
+	expires      time.Time         // date/time after which the response is considered stale
+	etag         string            // identifier for a specific version of the response
+	lastModified string            // date and time response was last modified as per origin server
 }
 
 // deltaSeconds specifies a non-negative integer, representing
 // time in seconds: http://tools.ietf.org/html/rfc7234#section-1.2.1
 type deltaSeconds int32
 
-func parseResponseHeaders(headers http.Header) *responseHeaders {
+func parseResponseHeaders(headers http.Header) (*responseHeaders, error) {
+	var err error
 	result := responseHeaders{}
+
+	result.date, err = getResponseHeaderDate(headers)
+	if err != nil {
+		return nil, err
+	}
+
+	result.cacheControl = parseCacheControlHeader(headers)
+	result.maxAge, err = parseMaxAgeCacheDirective(result.cacheControl)
+	if err != nil {
+		return nil, err
+	}
+
+	result.expires = getResponseHeaderExpires(headers)
 
 	result.etag = headers.Get("etag")
 
 	result.lastModified = headers.Get("last-modified")
 
-	return &result
+	return &result, nil
 }
 
 func revalidateCachedResponse(req *http.Request, client *http.Client, inputReqObj ast.Object, headers *responseHeaders) (*http.Response, bool, error) {

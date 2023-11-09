@@ -338,30 +338,32 @@ func (doc *T) derefRequestBody(r RequestBody, refNameResolver RefNameResolver, p
 
 func (doc *T) derefPaths(paths map[string]*PathItem, refNameResolver RefNameResolver, parentIsExternal bool) {
 	for _, ops := range paths {
-		pathIsExternal := isExternalRef(ops.Ref, parentIsExternal)
+		if isExternalRef(ops.Ref, parentIsExternal) {
+			parentIsExternal = true
+		}
 		// inline full operations
 		ops.Ref = ""
 
 		for _, param := range ops.Parameters {
-			doc.addParameterToSpec(param, refNameResolver, pathIsExternal)
+			doc.addParameterToSpec(param, refNameResolver, parentIsExternal)
 		}
 
 		for _, op := range ops.Operations() {
-			isExternal := doc.addRequestBodyToSpec(op.RequestBody, refNameResolver, pathIsExternal)
+			isExternal := doc.addRequestBodyToSpec(op.RequestBody, refNameResolver, parentIsExternal)
 			if op.RequestBody != nil && op.RequestBody.Value != nil {
-				doc.derefRequestBody(*op.RequestBody.Value, refNameResolver, pathIsExternal || isExternal)
+				doc.derefRequestBody(*op.RequestBody.Value, refNameResolver, parentIsExternal || isExternal)
 			}
 			for _, cb := range op.Callbacks {
-				isExternal := doc.addCallbackToSpec(cb, refNameResolver, pathIsExternal)
+				isExternal := doc.addCallbackToSpec(cb, refNameResolver, parentIsExternal)
 				if cb.Value != nil {
-					doc.derefPaths(*cb.Value, refNameResolver, pathIsExternal || isExternal)
+					doc.derefPaths(*cb.Value, refNameResolver, parentIsExternal || isExternal)
 				}
 			}
-			doc.derefResponses(op.Responses, refNameResolver, pathIsExternal)
+			doc.derefResponses(op.Responses, refNameResolver, parentIsExternal)
 			for _, param := range op.Parameters {
-				isExternal := doc.addParameterToSpec(param, refNameResolver, pathIsExternal)
+				isExternal := doc.addParameterToSpec(param, refNameResolver, parentIsExternal)
 				if param.Value != nil {
-					doc.derefParameter(*param.Value, refNameResolver, pathIsExternal || isExternal)
+					doc.derefParameter(*param.Value, refNameResolver, parentIsExternal || isExternal)
 				}
 			}
 		}
@@ -374,7 +376,7 @@ func (doc *T) derefPaths(paths map[string]*PathItem, refNameResolver RefNameReso
 // refNameResolver takes in references to returns a name to store the reference under locally.
 // It MUST return a unique name for each reference type.
 // A default implementation is provided that will suffice for most use cases. See the function
-// documentation for more details.
+// documention for more details.
 //
 // Example:
 //

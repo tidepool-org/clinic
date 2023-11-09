@@ -13,10 +13,10 @@ type RequestBodies map[string]*RequestBodyRef
 
 var _ jsonpointer.JSONPointable = (*RequestBodyRef)(nil)
 
-// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
 func (r RequestBodies) JSONLookup(token string) (interface{}, error) {
 	ref, ok := r[token]
-	if !ok {
+	if ok == false {
 		return nil, fmt.Errorf("object has no field %q", token)
 	}
 

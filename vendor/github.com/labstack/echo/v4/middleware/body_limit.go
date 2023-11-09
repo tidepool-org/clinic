@@ -23,8 +23,9 @@ type (
 
 	limitedReader struct {
 		BodyLimitConfig
-		reader io.ReadCloser
-		read   int64
+		reader  io.ReadCloser
+		read    int64
+		context echo.Context
 	}
 )
 
@@ -79,7 +80,7 @@ func BodyLimitWithConfig(config BodyLimitConfig) echo.MiddlewareFunc {
 
 			// Based on content read
 			r := pool.Get().(*limitedReader)
-			r.Reset(req.Body)
+			r.Reset(req.Body, c)
 			defer pool.Put(r)
 			req.Body = r
 
@@ -101,8 +102,9 @@ func (r *limitedReader) Close() error {
 	return r.reader.Close()
 }
 
-func (r *limitedReader) Reset(reader io.ReadCloser) {
+func (r *limitedReader) Reset(reader io.ReadCloser, context echo.Context) {
 	r.reader = reader
+	r.context = context
 	r.read = 0
 }
 

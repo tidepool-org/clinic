@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"unicode"
 
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/internal/future"
@@ -120,9 +119,6 @@ func AstWithOpts(x interface{}, opts Opts) ([]byte, error) {
 
 		case *ast.Import:
 			switch {
-			case isRegoV1Compatible(n):
-				o.contains = true
-				o.ifs = true
 			case future.IsAllFutureKeywords(n):
 				o.contains = true
 				o.ifs = true
@@ -267,11 +263,12 @@ func (w *writer) writeModule(module *ast.Module, o fmtOpts) {
 		return locLess(comments[i], comments[j])
 	})
 
+	// XXX: The parser currently duplicates comments for some reason, so we need
+	// to remove duplicates here.
+	comments = dedupComments(comments)
 	sort.Slice(others, func(i, j int) bool {
 		return locLess(others[i], others[j])
 	})
-
-	comments = trimTrailingWhitespaceInComments(comments)
 
 	comments = w.writePackage(pkg, comments)
 	var imports []*ast.Import
@@ -289,14 +286,6 @@ func (w *writer) writeModule(module *ast.Module, o fmtOpts) {
 			w.write("\n")
 		}
 	}
-}
-
-func trimTrailingWhitespaceInComments(comments []*ast.Comment) []*ast.Comment {
-	for _, c := range comments {
-		c.Text = bytes.TrimRightFunc(c.Text, unicode.IsSpace)
-	}
-
-	return comments
 }
 
 func (w *writer) writePackage(pkg *ast.Package, comments []*ast.Comment) []*ast.Comment {
@@ -464,7 +453,7 @@ func (w *writer) writeElse(rule *ast.Rule, o fmtOpts, comments []*ast.Comment) [
 
 func (w *writer) writeHead(head *ast.Head, isDefault, isExpandedConst bool, o fmtOpts, comments []*ast.Comment) []*ast.Comment {
 	ref := head.Ref()
-	if head.Key != nil && head.Value == nil && !head.HasDynamicRef() {
+	if head.Key != nil && head.Value == nil {
 		ref = ref.GroundPrefix()
 	}
 	if o.refHeads || len(ref) == 1 {
@@ -495,17 +484,7 @@ func (w *writer) writeHead(head *ast.Head, isDefault, isExpandedConst bool, o fm
 			w.write("]")
 		}
 	}
-
-	if head.Value != nil &&
-		(head.Key != nil || ast.Compare(head.Value, ast.BooleanTerm(true)) != 0 || isExpandedConst || isDefault) {
-
-		if head.Location == head.Value.Location && head.Name != "else" {
-			// If the value location is the same as the location of the head,
-			// we know that the value is generated, i.e. f(1)
-			// Don't print the value (` = true`) as it is implied.
-			return comments
-		}
-
+	if head.Value != nil && (head.Key != nil || ast.Compare(head.Value, ast.BooleanTerm(true)) != 0 || isExpandedConst || isDefault) {
 		if head.Assign {
 			w.write(" := ")
 		} else {
@@ -833,7 +812,6 @@ func (w *writer) writeCall(parens bool, x ast.Call, loc *ast.Location, comments 
 }
 
 func (w *writer) writeInOperator(parens bool, operands []*ast.Term, comments []*ast.Comment, loc *ast.Location, f *types.Function) []*ast.Comment {
-
 	if len(operands) != len(f.Args()) {
 		// The number of operands does not math the arity of the `in` operator
 		operator := ast.Member.Name
@@ -1312,6 +1290,21 @@ func skipPast(open, close byte, loc *ast.Location) (int, int) {
 	return i, offset
 }
 
+func dedupComments(comments []*ast.Comment) []*ast.Comment {
+	if len(comments) == 0 {
+		return nil
+	}
+
+	filtered := []*ast.Comment{comments[0]}
+	for i := 1; i < len(comments); i++ {
+		if comments[i].Location.Equal(comments[i-1].Location) {
+			continue
+		}
+		filtered = append(filtered, comments[i])
+	}
+	return filtered
+}
+
 // startLine begins a line with the current indentation level.
 func (w *writer) startLine() {
 	w.inline = true
@@ -1434,12 +1427,4 @@ func (d *ArityFormatErrDetail) Lines() []string {
 		"have: " + "(" + strings.Join(d.Have, ",") + ")",
 		"want: " + "(" + strings.Join(d.Want, ",") + ")",
 	}
-}
-
-// isRegoV1Compatible returns true if the passed *ast.Import is `rego.v1`
-func isRegoV1Compatible(imp *ast.Import) bool {
-	path := imp.Path.Value.(ast.Ref)
-	return len(path) == 2 &&
-		ast.RegoRootDocument.Equal(path[0]) &&
-		path[1].Equal(ast.StringTerm("v1"))
 }

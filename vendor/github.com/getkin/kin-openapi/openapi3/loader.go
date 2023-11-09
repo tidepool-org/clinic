@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -132,15 +130,6 @@ func (loader *Loader) readURL(location *url.URL) ([]byte, error) {
 	return DefaultReadFromURI(loader, location)
 }
 
-// LoadFromStdin loads a spec from stdin
-func (loader *Loader) LoadFromStdin() (*T, error) {
-	data, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		return nil, fmt.Errorf("read from stdin: %w", err)
-	}
-	return loader.LoadFromData(data)
-}
-
 // LoadFromData loads a spec from a byte array
 func (loader *Loader) LoadFromData(data []byte) (*T, error) {
 	loader.resetVisitedPathItemRefs()
@@ -193,7 +182,7 @@ func unmarshal(data []byte, v interface{}) error {
 	return nil
 }
 
-// ResolveRefsIn expands references if for instance spec was just unmarshaled
+// ResolveRefsIn expands references if for instance spec was just unmarshalled
 func (loader *Loader) ResolveRefsIn(doc *T, location *url.URL) (err error) {
 	if loader.Context == nil {
 		loader.Context = context.Background()
@@ -970,10 +959,10 @@ func (loader *Loader) resolveLinkRef(doc *T, component *LinkRef, documentPath *u
 
 func (loader *Loader) resolvePathItemRef(doc *T, pathItem *PathItem, documentPath *url.URL) (err error) {
 	if pathItem == nil {
-		err = errors.New("invalid path item: value MUST be an object")
-		return
+		return errors.New("invalid path item: value MUST be an object")
 	}
-	if ref := pathItem.Ref; ref != "" {
+	ref := pathItem.Ref
+	if ref != "" {
 		if pathItem.Summary != "" ||
 			pathItem.Description != "" ||
 			pathItem.Connect != nil ||
@@ -987,18 +976,18 @@ func (loader *Loader) resolvePathItemRef(doc *T, pathItem *PathItem, documentPat
 			pathItem.Trace != nil ||
 			len(pathItem.Servers) != 0 ||
 			len(pathItem.Parameters) != 0 {
-			return
+			return nil
 		}
 		if isSingleRefElement(ref) {
 			var p PathItem
 			if documentPath, err = loader.loadSingleElementFromURI(ref, documentPath, &p); err != nil {
-				return
+				return err
 			}
 			*pathItem = p
 		} else {
 			var resolved PathItem
 			if doc, documentPath, err = loader.resolveComponent(doc, ref, documentPath, &resolved); err != nil {
-				return
+				return err
 			}
 			*pathItem = resolved
 		}

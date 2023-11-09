@@ -1694,6 +1694,26 @@ func (mr *MockClientInterfaceMockRecorder) VerifyEndpoint(ctx interface{}, reqEd
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyEndpoint", reflect.TypeOf((*MockClientInterface)(nil).VerifyEndpoint), varargs...)
 }
 
+// XealthPreorder mocks base method.
+func (m *MockClientInterface) XealthPreorder(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "XealthPreorder", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// XealthPreorder indicates an expected call of XealthPreorder.
+func (mr *MockClientInterfaceMockRecorder) XealthPreorder(ctx interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XealthPreorder", reflect.TypeOf((*MockClientInterface)(nil).XealthPreorder), varargs...)
+}
+
 // MockClientWithResponsesInterface is a mock of ClientWithResponsesInterface interface.
 type MockClientWithResponsesInterface struct {
 	ctrl     *gomock.Controller
@@ -3335,4 +3355,24 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) VerifyEndpointWithRespon
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyEndpointWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).VerifyEndpointWithResponse), varargs...)
+}
+
+// XealthPreorderWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) XealthPreorderWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthPreorderResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "XealthPreorderWithResponse", varargs...)
+	ret0, _ := ret[0].(*XealthPreorderResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// XealthPreorderWithResponse indicates an expected call of XealthPreorderWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) XealthPreorderWithResponse(ctx interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XealthPreorderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).XealthPreorderWithResponse), varargs...)
 }
