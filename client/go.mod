@@ -2,7 +2,7 @@ module github.com/tidepool-org/clinic/client
 
 go 1.21
 
-toolchain go1.21.3
+toolchain go1.21.0
 
 require (
 	github.com/deepmap/oapi-codegen v1.9.0

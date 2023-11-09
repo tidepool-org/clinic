@@ -948,7 +948,7 @@ type Patient struct {
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
-	Tags          *PatientTagIds  `json:"tags"`
+	Tags          *[]string       `json:"tags"`
 	TargetDevices *[]string       `json:"targetDevices,omitempty"`
 	UpdatedTime   *time.Time      `json:"updatedTime,omitempty"`
 }

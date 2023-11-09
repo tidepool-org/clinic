@@ -210,6 +210,7 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 
 	enabled := true
 	filter := clinics.Filter{
+		EHRProvider:     &clinics.EHRProviderRedox,
 		EHRSourceId:     &criteria.SourceId,
 		EHRFacilityName: criteria.FacilityName,
 		EHREnabled:      &enabled,
@@ -236,8 +237,9 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 func (h *Handler) RescheduleSubscriptionOrders(ctx context.Context, clinicId string) error {
 	enabled := true
 	filter := clinics.Filter{
-		Ids:        []string{clinicId},
-		EHREnabled: &enabled,
+		Ids:         []string{clinicId},
+		EHRProvider: &clinics.EHRProviderRedox,
+		EHREnabled:  &enabled,
 	}
 	page := store.Pagination{
 		Offset: 0,

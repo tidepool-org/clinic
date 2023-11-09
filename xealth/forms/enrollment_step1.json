@@ -1,0 +1,25 @@
+{
+  "formId": "enrollment_step1",
+  "formData": {
+    "confirmation": true
+  },
+  "formSchema": {
+    "title": "Patient enrollment form",
+    "description": "Please confirm you'd like to enrol the patient",
+    "type": "object",
+    "required": [
+      "confirmation"
+    ],
+    "properties": {
+      "confirmation": {
+        "type": "boolean",
+        "title": "I want to enroll the patient in Tidepool"
+      }
+    }
+  },
+  "uiSchema": {
+    "confirmation": {
+      "ui:autofocus": false
+    }
+  }
+}

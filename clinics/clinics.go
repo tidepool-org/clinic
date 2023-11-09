@@ -14,6 +14,13 @@ const (
 	DefaultMrnIdType = "MRN"
 )
 
+var (
+	EHRProviderRedox  = "Redox"
+	EHRProviderXealth = "Xealth"
+)
+
+type EHRProvider string
+
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
 var ErrPatientTagNotFound = fmt.Errorf("patient tag %w", errors.NotFound)
 var ErrDuplicatePatientTagName = fmt.Errorf("%w patient tag", errors.Duplicate)
@@ -51,6 +58,7 @@ type Filter struct {
 	ShareCodes       []string
 	CreatedTimeStart *time.Time
 	CreatedTimeEnd   *time.Time
+	EHRProvider      *string
 	EHRSourceId      *string
 	EHRFacilityName  *string
 	EHREnabled       *bool
@@ -86,6 +94,7 @@ type Clinic struct {
 
 type EHRSettings struct {
 	Enabled        bool              `bson:"enabled"`
+	Provider       string            `bson:"provider"`
 	DestinationIds EHRDestinationIds `bson:"destinationIds"`
 	Facility       *EHRFacility      `bson:"facility"`
 	ProcedureCodes EHRProcedureCodes `bson:"procedureCodes"`
