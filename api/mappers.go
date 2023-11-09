@@ -120,7 +120,7 @@ func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
 
 func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
 	dto := Clinician{
-		Id:          strpuseridp(clinician.UserId),
+		Id:          clinician.UserId,
 		InviteId:    clinician.InviteId,
 		Name:        clinician.Name,
 		Email:       pstr(clinician.Email),
@@ -144,7 +144,7 @@ func NewCliniciansDto(clinicians []*clinicians.Clinician) []Clinician {
 func NewClinician(clinician Clinician) *clinicians.Clinician {
 	return &clinicians.Clinician{
 		Name:     clinician.Name,
-		UserId:   useridpstrp(clinician.Id),
+		UserId:   clinician.Id,
 		InviteId: clinician.InviteId,
 		Roles:    clinician.Roles,
 		Email:    strp(strings.ToLower(clinician.Email)),
@@ -162,7 +162,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	dto := Patient{
 		Email:         patient.Email,
 		FullName:      pstr(patient.FullName),
-		Id:            strpuseridp(patient.UserId),
+		Id:            patient.UserId,
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
 		Tags:          NewPatientTagsDto(patient.Tags),
@@ -239,56 +239,46 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 
 	if dto.CgmStats != nil {
 		patientSummary.CGM = &patients.PatientCGMStats{
-			Periods:       &patients.PatientCGMPeriods{},
-			OffsetPeriods: &patients.PatientCGMPeriods{},
+			Periods:       patients.PatientCGMPeriods{},
+			OffsetPeriods: patients.PatientCGMPeriods{},
 			TotalHours:    dto.CgmStats.TotalHours,
 		}
 
-		if dto.CgmStats.Config != nil {
-			config := patients.PatientSummaryConfig(*dto.CgmStats.Config)
-			patientSummary.CGM.Config = &config
-		}
-		if dto.CgmStats.Dates != nil {
-			dates := patients.PatientSummaryDates(*dto.CgmStats.Dates)
-			patientSummary.CGM.Dates = &dates
-		}
+		patientSummary.CGM.Config = patients.PatientSummaryConfig(dto.CgmStats.Config)
+		patientSummary.CGM.Dates = patients.PatientSummaryDates(dto.CgmStats.Dates)
 
 		if dto.CgmStats.Periods != nil {
-			for k, source := range *dto.CgmStats.Periods {
-				(*patientSummary.CGM.Periods)[k] = patients.PatientCGMPeriod(source)
+			for k, source := range dto.CgmStats.Periods {
+				patientSummary.CGM.Periods[k] = patients.PatientCGMPeriod(source)
 			}
 		}
 
 		if dto.CgmStats.OffsetPeriods != nil {
-			for k, source := range *dto.CgmStats.OffsetPeriods {
-				(*patientSummary.CGM.OffsetPeriods)[k] = patients.PatientCGMPeriod(source)
+			for k, source := range dto.CgmStats.OffsetPeriods {
+				patientSummary.CGM.OffsetPeriods[k] = patients.PatientCGMPeriod(source)
 			}
 		}
 	}
 
 	if dto.BgmStats != nil {
 		patientSummary.BGM = &patients.PatientBGMStats{
-			Periods:       &patients.PatientBGMPeriods{},
-			OffsetPeriods: &patients.PatientBGMPeriods{},
+			Periods:       patients.PatientBGMPeriods{},
+			OffsetPeriods: patients.PatientBGMPeriods{},
 			TotalHours:    dto.BgmStats.TotalHours,
 		}
 
-		if dto.BgmStats.Config != nil {
-			patientSummary.BGM.Config = (*patients.PatientSummaryConfig)(dto.BgmStats.Config)
-		}
-		if dto.BgmStats.Dates != nil {
-			patientSummary.BGM.Dates = (*patients.PatientSummaryDates)(dto.BgmStats.Dates)
-		}
+		patientSummary.BGM.Config = patients.PatientSummaryConfig(dto.BgmStats.Config)
+		patientSummary.BGM.Dates = patients.PatientSummaryDates(dto.BgmStats.Dates)
 
 		if dto.BgmStats.Periods != nil {
-			for k, source := range *dto.BgmStats.Periods {
-				(*patientSummary.BGM.Periods)[k] = patients.PatientBGMPeriod(source)
+			for k, source := range dto.BgmStats.Periods {
+				patientSummary.BGM.Periods[k] = patients.PatientBGMPeriod(source)
 			}
 		}
 
 		if dto.BgmStats.OffsetPeriods != nil {
-			for k, source := range *dto.BgmStats.OffsetPeriods {
-				(*patientSummary.BGM.OffsetPeriods)[k] = patients.PatientBGMPeriod(source)
+			for k, source := range dto.BgmStats.OffsetPeriods {
+				patientSummary.BGM.OffsetPeriods[k] = patients.PatientBGMPeriod(source)
 			}
 		}
 	}
@@ -305,56 +295,46 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 	if summary.CGM != nil {
 		patientSummary.CgmStats = &PatientCGMStats{
-			Periods:       &PatientCGMPeriods{},
-			OffsetPeriods: &PatientCGMPeriods{},
+			Periods:       PatientCGMPeriods{},
+			OffsetPeriods: PatientCGMPeriods{},
 			TotalHours:    summary.CGM.TotalHours,
 		}
 
-		if summary.CGM.Config != nil {
-			patientSummary.CgmStats.Config = (*PatientSummaryConfig)(summary.CGM.Config)
-		}
-
-		if summary.CGM.Dates != nil {
-			patientSummary.CgmStats.Dates = (*PatientSummaryDates)(summary.CGM.Dates)
-		}
+		patientSummary.CgmStats.Config = PatientSummaryConfig(summary.CGM.Config)
+		patientSummary.CgmStats.Dates = PatientSummaryDates(summary.CGM.Dates)
 
 		if summary.CGM.Periods != nil {
-			for k, source := range *summary.CGM.Periods {
-				(*patientSummary.CgmStats.Periods)[k] = PatientCGMPeriod(source)
+			for k, source := range summary.CGM.Periods {
+				patientSummary.CgmStats.Periods[k] = PatientCGMPeriod(source)
 			}
 		}
 
 		if summary.CGM.OffsetPeriods != nil {
-			for k, source := range *summary.CGM.OffsetPeriods {
-				(*patientSummary.CgmStats.OffsetPeriods)[k] = PatientCGMPeriod(source)
+			for k, source := range summary.CGM.OffsetPeriods {
+				patientSummary.CgmStats.OffsetPeriods[k] = PatientCGMPeriod(source)
 			}
 		}
 	}
 
 	if summary.BGM != nil {
 		patientSummary.BgmStats = &PatientBGMStats{
-			Periods:       &PatientBGMPeriods{},
-			OffsetPeriods: &PatientBGMPeriods{},
+			Periods:       PatientBGMPeriods{},
+			OffsetPeriods: PatientBGMPeriods{},
 			TotalHours:    summary.BGM.TotalHours,
 		}
 
-		if summary.BGM.Config != nil {
-			patientSummary.BgmStats.Config = (*PatientSummaryConfig)(summary.BGM.Config)
-		}
-
-		if summary.BGM.Dates != nil {
-			patientSummary.BgmStats.Dates = (*PatientSummaryDates)(summary.BGM.Dates)
-		}
+		patientSummary.BgmStats.Config = PatientSummaryConfig(summary.BGM.Config)
+		patientSummary.BgmStats.Dates = PatientSummaryDates(summary.BGM.Dates)
 
 		if summary.BGM.Periods != nil {
-			for k, source := range *summary.BGM.Periods {
-				(*patientSummary.BgmStats.Periods)[k] = PatientBGMPeriod(source)
+			for k, source := range summary.BGM.Periods {
+				patientSummary.BgmStats.Periods[k] = PatientBGMPeriod(source)
 			}
 		}
 
 		if summary.BGM.OffsetPeriods != nil {
-			for k, source := range *summary.BGM.OffsetPeriods {
-				(*patientSummary.BgmStats.OffsetPeriods)[k] = PatientBGMPeriod(source)
+			for k, source := range summary.BGM.OffsetPeriods {
+				patientSummary.BgmStats.OffsetPeriods[k] = PatientBGMPeriod(source)
 			}
 		}
 	}
@@ -368,9 +348,9 @@ func NewTideDto(tide *patients.Tide) *Tide {
 	}
 
 	tideResult := &Tide{
-		Config: &TideConfig{
-			ClinicId:                 tide.Config.ClinicId,
-			Filters:                  (*TideFilters)(tide.Config.Filters),
+		Config: TideConfig{
+			ClinicId:                 &tide.Config.ClinicId,
+			Filters:                  TideFilters(tide.Config.Filters),
 			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
 			LastUploadDateFrom:       tide.Config.LastUploadDateFrom,
 			LastUploadDateTo:         tide.Config.LastUploadDateTo,
@@ -381,16 +361,16 @@ func NewTideDto(tide *patients.Tide) *Tide {
 			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
 		},
-		Results: &TideResults{},
+		Results: TideResults{},
 	}
 
-	for category, tidePatients := range *tide.Results {
+	for category, tidePatients := range tide.Results {
 		c := make([]TideResultPatient, 0, 50)
 		for _, patient := range *tidePatients {
 			c = append(c, TideResultPatient{
 				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
-				Patient:                    (*TidePatient)(patient.Patient),
+				Patient:                    TidePatient(patient.Patient),
 				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
 				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
 				TimeInHighPercent:          patient.TimeInHighPercent,
@@ -401,7 +381,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
 			})
 		}
-		(*tideResult.Results)[category] = &c
+		tideResult.Results[category] = c
 	}
 
 	return tideResult
