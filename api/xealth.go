@@ -12,7 +12,7 @@ func (h *Handler) XealthPreorder(ec echo.Context) error {
 	ctx := ec.Request().Context()
 
 	// Make sure the request is initiated by redox
-	if err := h.redox.AuthorizeRequest(ec.Request()); err != nil {
+	if err := h.xealth.AuthorizeRequest(ec.Request()); err != nil {
 		return err
 	}
 
