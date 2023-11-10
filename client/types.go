@@ -948,7 +948,7 @@ type Patient struct {
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
-	Tags          *PatientTagIds  `json:"tags,omitempty"`
+	Tags          *PatientTagIds  `json:"tags"`
 	TargetDevices *[]string       `json:"targetDevices,omitempty"`
 	UpdatedTime   *time.Time      `json:"updatedTime,omitempty"`
 }
@@ -1446,8 +1446,8 @@ type TideConfig struct {
 	Period              string  `json:"period"`
 
 	// SchemaVersion TIDE schema version
-	SchemaVersion int           `json:"schemaVersion"`
-	Tags          PatientTagIds `json:"tags"`
+	SchemaVersion int            `json:"schemaVersion"`
+	Tags          *PatientTagIds `json:"tags"`
 
 	// VeryHighGlucoseThreshold Threshold used for determining if a value is very high
 	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold"`
@@ -1474,7 +1474,7 @@ type TidePatient struct {
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id   *TidepoolUserId `json:"id,omitempty"`
-	Tags PatientTagIds   `json:"tags"`
+	Tags *PatientTagIds  `json:"tags"`
 }
 
 // TideResultPatient defines model for TideResultPatient.

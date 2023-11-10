@@ -357,7 +357,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
 			Period:                   tide.Config.Period,
 			SchemaVersion:            tide.Config.SchemaVersion,
-			Tags:                     tide.Config.Tags,
+			Tags:                     &tide.Config.Tags,
 			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
 		},
