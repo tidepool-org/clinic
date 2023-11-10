@@ -10,7 +10,7 @@ go:
 env:
   global:
     - MONGODB=6.0.11
-    - MONGOSH=1.10.6
+    - MONGOSH=2.0.2
     - DIST=jammy
 
 before_install:
