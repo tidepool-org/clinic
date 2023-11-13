@@ -3,6 +3,7 @@ package xealth
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
@@ -82,7 +83,9 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 			return nil, err
 		}
 	} else if count == 0 {
-		formResponse := xealth_models.PreorderFormResponse0{}
+		formResponse := xealth_models.PreorderFormResponse0{
+			DataTrackingId: uuid.NewString(),
+		}
 		if err := SetEnrollmentStep1(&formResponse); err != nil {
 			return nil, err
 		}
