@@ -74,10 +74,12 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 
 	healthcheckRoutes := []string{"/ready", "/metrics"}
 	redoxRoutes := []string{"/v1/redox", "/v1/redox/verify"}
+	xealthRoutes := []string{"/v1/xealth/preorder"}
+	externalRoutes := append(append(healthcheckRoutes, redoxRoutes...), xealthRoutes...)
 
-	// Skip common auth logic for healthcheck routes and redox
+	// Skip common auth logic for healthcheck routes, redox and xealth
 	authMiddleware := auth.NewAuthMiddleware(authenticator, auth.AuthMiddlewareOpts{
-		Skipper: RouteSkipper(append(healthcheckRoutes, redoxRoutes...)),
+		Skipper: RouteSkipper(externalRoutes),
 	})
 	requestValidator := oapiMiddleware.OapiRequestValidatorWithOptions(swagger, &oapiMiddleware.Options{
 		Options: openapi3filter.Options{
@@ -85,7 +87,7 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 			ExcludeReadOnlyValidations:  true,
 			ExcludeWriteOnlyValidations: true,
 		},
-		Skipper: RouteSkipper(append(healthcheckRoutes, redoxRoutes...)),
+		Skipper: RouteSkipper(externalRoutes),
 	})
 	loggerConfig := middleware.DefaultLoggerConfig
 	loggerConfig.Skipper = RouteSkipper(healthcheckRoutes)
