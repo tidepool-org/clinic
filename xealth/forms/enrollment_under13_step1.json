@@ -6,13 +6,23 @@
     "description": "Fill in the form to add a patient to Tidepool",
     "type": "object",
     "properties": {
-      "patient": {
+      "guardian": {
         "type": "object",
-        "title": "Patient",
+        "title": "Legal Guardian",
         "required": [
+          "firstName",
+          "lastName",
           "email"
         ],
         "properties": {
+          "firstName": {
+            "title": "First Name",
+            "type": "string"
+          },
+          "lastName": {
+            "title": "Last Name",
+            "type": "string"
+          },
           "email": {
             "title": "Email",
             "type": "string",

@@ -7,6 +7,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.3.1
 	github.com/hashicorp/golang-lru v1.0.2
 	github.com/jaswdr/faker v1.18.1
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -50,7 +51,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
-	github.com/google/uuid v1.3.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/oapi-codegen/runtime/types"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
@@ -12,6 +13,7 @@ import (
 	"github.com/tidepool-org/clinic/xealth_models"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
@@ -69,10 +71,17 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	} else if clinic == nil {
-		return nil, fmt.Errorf("couldn't find matching clinic")
+		return nil, fmt.Errorf("%w: couldn't find matching clinic", errors.NotFound)
 	}
 
-	matchingPatients, err := h.FindMatchingPatients(ctx, request.Datasets, clinic)
+	criteria, err := GetPatientMatchingCriteria(request.Datasets, clinic)
+	if err != nil {
+		return nil, err
+	} else if criteria == nil {
+		return nil, nil
+	}
+
+	matchingPatients, err := h.FindMatchingPatients(ctx, criteria, clinic)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +95,11 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 		formResponse := xealth_models.PreorderFormResponse0{
 			DataTrackingId: uuid.NewString(),
 		}
-		if err := SetEnrollmentStep1(&formResponse); err != nil {
+		enrollmentFunc := SetEnrollmentStep1
+		if criteria.IsPatientUnder13() {
+			enrollmentFunc = SetEnrollmentUnder13Step1
+		}
+		if err := enrollmentFunc(&formResponse, nil); err != nil {
 			return nil, err
 		}
 		if err := response.FromPreorderFormResponse0(formResponse); err != nil {
@@ -100,6 +113,7 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 }
 
 func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_models.PreorderFormRequest1) (*xealth_models.PreorderFormResponse, error) {
+
 	//TODO implement me
 	panic("implement me")
 }
@@ -135,20 +149,14 @@ func (h *defaultHandler) FindMatchingClinic(ctx context.Context, deployment stri
 
 	if len(result) > 1 {
 		return nil, fmt.Errorf("%w: found multiple clinics matching the deployment", errors.Duplicate)
+	} else if len(result) == 0 {
+		return nil, nil
 	}
 
 	return result[0], nil
 }
 
-func (h *defaultHandler) FindMatchingPatients(ctx context.Context, datasets *xealth_models.GeneralDatasets, clinic *clinics.Clinic) ([]*patients.Patient, error) {
-	criteria, err := GetPatientMatchingCriteria(datasets, clinic)
-	if err != nil {
-		return nil, err
-	}
-	if criteria == nil {
-		return nil, nil
-	}
-
+func (h *defaultHandler) FindMatchingPatients(ctx context.Context, criteria *PatientMatchingCriteria, clinic *clinics.Clinic) ([]*patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
 	page := store.Pagination{
 		Offset: 0,
@@ -176,6 +184,14 @@ type PatientMatchingCriteria struct {
 	FullName    string
 	Mrn         string
 	DateOfBirth string
+}
+
+func (p *PatientMatchingCriteria) IsPatientUnder13() bool {
+	dob, err := time.Parse(types.DateFormat, p.DateOfBirth)
+	if err != nil {
+		return false
+	}
+	return dob.AddDate(13, 0, 0).After(time.Now())
 }
 
 func GetPatientMatchingCriteria(datasets *xealth_models.GeneralDatasets, clinic *clinics.Clinic) (*PatientMatchingCriteria, error) {
