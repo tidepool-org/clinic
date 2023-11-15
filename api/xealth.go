@@ -27,7 +27,7 @@ func (h *Handler) XealthPreorder(ec echo.Context) error {
 	}
 
 	if request.EventType != string(xealth_models.PreorderFormRequest0EventTypePreorder) {
-		return fmt.Errorf("%w: expected eventType='preorder'", errors.BadRequest)
+		return fmt.Errorf("%w: expected eventType='preorder' got %s", errors.BadRequest, request.EventType)
 	}
 
 	switch request.EventContext {

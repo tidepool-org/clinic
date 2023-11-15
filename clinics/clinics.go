@@ -19,8 +19,6 @@ var (
 	EHRProviderXealth = "Xealth"
 )
 
-type EHRProvider string
-
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
 var ErrPatientTagNotFound = fmt.Errorf("patient tag %w", errors.NotFound)
 var ErrDuplicatePatientTagName = fmt.Errorf("%w patient tag", errors.Duplicate)
