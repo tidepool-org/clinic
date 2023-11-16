@@ -49,9 +49,9 @@ func populateEnrollmentForm[T any, E any](response *xealth_models.PreorderFormRe
 
 type GuardianFormData struct {
 	Guardian struct {
-		FirstName string
-		LastName  string
-		Email     string
+		FirstName string `json:"firstName"`
+		LastName  string `json:"lastName"`
+		Email     string `json:"email"`
 	} `json:"guardian"`
 	Dexcom Dexcom `json:"dexcom"`
 }
@@ -88,7 +88,7 @@ type GuardianFormValidationErrors struct {
 
 type PatientFormData struct {
 	Patient struct {
-		Email string
+		Email string `json:"email"`
 	} `json:"patient"`
 }
 

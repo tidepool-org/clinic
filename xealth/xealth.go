@@ -182,7 +182,7 @@ func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 	if err := response.FromPreorderFormResponse1(xealth_models.PreorderFormResponse1{}); err != nil {
 		return nil, err
 	}
-	
+
 	return response, nil
 }
 
