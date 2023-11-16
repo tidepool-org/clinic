@@ -15,8 +15,8 @@ const (
 )
 
 var (
-	EHRProviderRedox  = "Redox"
-	EHRProviderXealth = "Xealth"
+	EHRProviderRedox  = "redox"
+	EHRProviderXealth = "xealth"
 )
 
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
