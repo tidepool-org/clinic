@@ -34,6 +34,7 @@
     }
   },
   "uiSchema": {
+    "ui:order": ["patient", "dexcom"],
     "dexcom": {
       "connect": {
         "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"

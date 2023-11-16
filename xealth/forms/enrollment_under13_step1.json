@@ -44,6 +44,10 @@
     }
   },
   "uiSchema": {
+    "ui:order": ["guardian", "dexcom"],
+    "guardian": {
+      "ui:order": ["firstName", "lastName", "email"]
+    },
     "dexcom": {
       "connect": {
         "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
