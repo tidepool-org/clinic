@@ -3,6 +3,7 @@ module github.com/tidepool-org/clinic
 go 1.21
 
 require (
+	github.com/RaveNoX/go-jsonmerge v1.0.0
 	github.com/deepmap/oapi-codegen v1.13.4
 	github.com/fatih/structs v1.1.0
 	github.com/getkin/kin-openapi v0.118.0
@@ -12,6 +13,7 @@ require (
 	github.com/jaswdr/faker v1.18.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/labstack/echo/v4 v4.11.1
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oapi-codegen/runtime v1.0.0
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10

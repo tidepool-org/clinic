@@ -19,6 +19,7 @@ import (
 const (
 	authorizationHeader = "Authorization"
 	bearerPrefix        = "Bearer "
+	emailSystem         = "email"
 )
 
 type ModuleConfig struct {
@@ -95,13 +96,18 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 		formResponse := xealth_models.PreorderFormResponse0{
 			DataTrackingId: uuid.NewString(),
 		}
-		enrollmentFunc := SetEnrollmentStep1
 		if criteria.IsPatientUnder13() {
-			enrollmentFunc = SetEnrollmentUnder13Step1
+			if err := PopulateGuardianEnrollmentForm(&formResponse, GuardianFormData{}, GuardianFormValidationErrors{}); err != nil {
+				return nil, err
+			}
+		} else {
+			formData := PatientFormData{}
+			formData.Patient.Email = criteria.Email
+			if err := PopulatePatientEnrollmentForm(&formResponse, formData, PatientFormValidationErrors{}); err != nil {
+				return nil, err
+			}
 		}
-		if err := enrollmentFunc(&formResponse, nil); err != nil {
-			return nil, err
-		}
+
 		if err := response.FromPreorderFormResponse0(formResponse); err != nil {
 			return nil, err
 		}
@@ -113,9 +119,71 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 }
 
 func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_models.PreorderFormRequest1) (*xealth_models.PreorderFormResponse, error) {
+	clinic, err := h.FindMatchingClinic(ctx, request.Deployment)
+	if err != nil {
+		return nil, err
+	} else if clinic == nil {
+		return nil, fmt.Errorf("%w: couldn't find matching clinic", errors.NotFound)
+	}
 
-	//TODO implement me
-	panic("implement me")
+	criteria, err := GetPatientMatchingCriteria(request.Datasets, clinic)
+	if err != nil {
+		return nil, err
+	} else if criteria == nil {
+		return nil, nil
+	}
+
+	matchingPatients, err := h.FindMatchingPatients(ctx, criteria, clinic)
+	if err != nil {
+		return nil, err
+	}
+
+	if count := len(matchingPatients); count != 0 {
+		return nil, fmt.Errorf("a matching patient already exists")
+	}
+
+	response := &xealth_models.PreorderFormResponse{}
+	if criteria.IsPatientUnder13() {
+		formData, err := DecodeFormData[GuardianFormData](request.FormData.UserInput)
+		if err != nil {
+			return nil, err
+		}
+		errs := formData.Validate()
+		if errs != nil {
+			formResponse := xealth_models.PreorderFormResponse0{
+				DataTrackingId: request.FormData.DataTrackingId,
+			}
+			if err := PopulateGuardianEnrollmentForm(&formResponse, formData, *errs); err != nil {
+				return nil, err
+			}
+			if err := response.FromPreorderFormResponse0(formResponse); err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		formData, err := DecodeFormData[PatientFormData](request.FormData.UserInput)
+		if err != nil {
+			return nil, err
+		}
+		errs := formData.Validate()
+		if errs != nil {
+			formResponse := xealth_models.PreorderFormResponse0{
+				DataTrackingId: request.FormData.DataTrackingId,
+			}
+			if err := PopulatePatientEnrollmentForm(&formResponse, formData, *errs); err != nil {
+				return nil, err
+			}
+			if err := response.FromPreorderFormResponse0(formResponse); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if err := response.FromPreorderFormResponse1(xealth_models.PreorderFormResponse1{}); err != nil {
+		return nil, err
+	}
+	
+	return response, nil
 }
 
 func (h *defaultHandler) AuthorizeRequest(req *http.Request) error {
@@ -184,6 +252,7 @@ type PatientMatchingCriteria struct {
 	FullName    string
 	Mrn         string
 	DateOfBirth string
+	Email       string
 }
 
 func (p *PatientMatchingCriteria) IsPatientUnder13() bool {
@@ -235,6 +304,14 @@ func GetPatientMatchingCriteria(datasets *xealth_models.GeneralDatasets, clinic 
 
 	if datasets.DemographicsV1.BirthDate != nil {
 		criteria.DateOfBirth = datasets.DemographicsV1.BirthDate.String()
+	}
+
+	if datasets.DemographicsV1.Telecom != nil {
+		for _, v := range *datasets.DemographicsV1.Telecom {
+			if v.System != nil && *v.System == xealth_models.GeneralDatasetsDemographicsV1TelecomSystemEmail && v.Value != nil {
+				criteria.Email = *v.Value
+			}
+		}
 	}
 
 	if criteria.Mrn == "" {
