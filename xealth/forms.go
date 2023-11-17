@@ -91,6 +91,7 @@ type PatientFormData struct {
 	Patient struct {
 		Email string `json:"email"`
 	} `json:"patient"`
+	Dexcom Dexcom `json:"dexcom"`
 }
 
 func (p PatientFormData) Validate() (bool, PatientFormValidationErrors) {

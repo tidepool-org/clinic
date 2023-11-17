@@ -3,12 +3,11 @@ package xealth
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/RaveNoX/go-jsonmerge"
+	"github.com/TwiN/deepmerge"
 	"github.com/tidepool-org/clinic/xealth_models"
 )
 
 type ResponseBuilder[T Validatable[E], E any] interface {
-	WithFormTemplate(form []byte) ResponseBuilder[T, E]
 	WithDataTrackingId(id string) ResponseBuilder[T, E]
 	WithDataValidation() ResponseBuilder[T, E]
 	WithData(T) ResponseBuilder[T, E]
@@ -39,11 +38,6 @@ type responseBuilder[T Validatable[E], E any] struct {
 	jsonErrors         []byte
 	jsonFormWithErrors []byte
 	response           xealth_models.PreorderFormResponse
-}
-
-func (g *responseBuilder[T, E]) WithFormTemplate(form []byte) ResponseBuilder[T, E] {
-	g.jsonForm = form
-	return g
 }
 
 func (g *responseBuilder[T, E]) WithDataTrackingId(id string) ResponseBuilder[T, E] {
@@ -127,7 +121,7 @@ func (g *responseBuilder[T, E]) maybeValidateData() (err error) {
 
 func (g *responseBuilder[T, E]) maybeMergeErrors() (err error) {
 	if g.isErrorResponse() {
-		g.jsonFormWithErrors, _, err = jsonmerge.MergeBytes(g.jsonForm, g.jsonErrors)
+		g.jsonFormWithErrors, err = deepmerge.JSON(g.jsonForm, g.jsonErrors)
 	}
 	return
 }

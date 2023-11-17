@@ -1,0 +1,76 @@
+{
+  "dataTrackingId": "1234567890",
+  "preorderFormInfo": {
+    "formData": {
+      "dexcom": {
+        "connect": false
+      },
+      "guardian": {
+        "email": "",
+        "firstName": "",
+        "lastName": ""
+      }
+    },
+    "formId": "guardian_enrollment_form",
+    "formSchema": {
+      "description": "Fill in the form to add a patient to Tidepool",
+      "properties": {
+        "dexcom": {
+          "properties": {
+            "connect": {
+              "description": "",
+              "title": "Connect with Dexcom",
+              "type": "boolean"
+            }
+          },
+          "title": "Connect Dexcom",
+          "type": "object"
+        },
+        "guardian": {
+          "properties": {
+            "email": {
+              "format": "email",
+              "title": "Email",
+              "type": "string"
+            },
+            "firstName": {
+              "title": "First Name",
+              "type": "string"
+            },
+            "lastName": {
+              "title": "Last Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "firstName",
+            "lastName",
+            "email"
+          ],
+          "title": "Legal Guardian",
+          "type": "object"
+        }
+      },
+      "title": "Patient enrollment form",
+      "type": "object"
+    },
+    "uiSchema": {
+      "dexcom": {
+        "connect": {
+          "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+        }
+      },
+      "guardian": {
+        "ui:order": [
+          "firstName",
+          "lastName",
+          "email"
+        ]
+      },
+      "ui:order": [
+        "guardian",
+        "dexcom"
+      ]
+    }
+  }
+}
