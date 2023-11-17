@@ -3,9 +3,7 @@ package xealth
 import (
 	_ "embed"
 	"encoding/json"
-	jsonmerge "github.com/RaveNoX/go-jsonmerge"
 	"github.com/mitchellh/mapstructure"
-	"github.com/tidepool-org/clinic/xealth_models"
 	"net/mail"
 	"strings"
 )
@@ -13,38 +11,45 @@ import (
 //go:embed forms/patient_enrollment_form.json
 var patientEnrollmentForm []byte
 
-func PopulatePatientEnrollmentForm(response *xealth_models.PreorderFormResponse0, data PatientFormData, errors PatientFormValidationErrors) error {
-	return populateEnrollmentForm(response, patientEnrollmentForm, data, errors)
-}
-
 //go:embed forms/guardian_enrollment_form.json
 var guardianEnrollmentForm []byte
 
-func PopulateGuardianEnrollmentForm(response *xealth_models.PreorderFormResponse0, data GuardianFormData, errors GuardianFormValidationErrors) error {
-	return populateEnrollmentForm(response, guardianEnrollmentForm, data, errors)
-}
+//
+//func PopulatePatientEnrollmentForm(response *xealth_models.PreorderFormResponse0, data PatientFormData, errors PatientFormValidationErrors) error {
+//	return populateEnrollmentForm(response, patientEnrollmentForm, data, errors)
+//}
+//
 
-func populateEnrollmentForm[T any, E any](response *xealth_models.PreorderFormResponse0, formFixture []byte, data T, errors E) error {
-	jsonErrors, err := json.Marshal(errors)
-	if err != nil {
-		return err
-	}
+//
+//func PopulateGuardianEnrollmentForm(response *xealth_models.PreorderFormResponse0, data GuardianFormData, errors GuardianFormValidationErrors) error {
+//	return populateEnrollmentForm(response, guardianEnrollmentForm, data, errors)
+//}
+//
+//func populateEnrollmentForm[T any, E any](response *xealth_models.PreorderFormResponse0, formFixture []byte, data T, errors E) error {
+//	jsonErrors, err := json.Marshal(errors)
+//	if err != nil {
+//		return err
+//	}
+//
+//	formWithErrors, _, err := jsonmerge.MergeBytes(formFixture, jsonErrors)
+//	if err != nil {
+//		return err
+//	}
+//
+//	if err := json.Unmarshal(formWithErrors, &response.PreorderFormInfo); err != nil {
+//		return err
+//	}
+//	formData, err := EncodeFormData(data)
+//	if err != nil {
+//		return err
+//	}
+//	response.PreorderFormInfo.FormData = formData
+//
+//	return nil
+//}
 
-	formWithErrors, _, err := jsonmerge.MergeBytes(formFixture, jsonErrors)
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal(formWithErrors, &response.PreorderFormInfo); err != nil {
-		return err
-	}
-	formData, err := EncodeFormData(data)
-	if err != nil {
-		return err
-	}
-	response.PreorderFormInfo.FormData = formData
-
-	return nil
+type Validatable[E any] interface {
+	Validate() (bool, E)
 }
 
 type GuardianFormData struct {
@@ -56,9 +61,9 @@ type GuardianFormData struct {
 	Dexcom Dexcom `json:"dexcom"`
 }
 
-func (g *GuardianFormData) Validate() *GuardianFormValidationErrors {
+func (g GuardianFormData) Validate() (bool, GuardianFormValidationErrors) {
 	hasError := false
-	errors := &GuardianFormValidationErrors{}
+	errors := GuardianFormValidationErrors{}
 	if strings.TrimSpace(g.Guardian.FirstName) == "" {
 		hasError = true
 		errors.Guardian.FirstName = NewValidationError("First name is required")
@@ -71,11 +76,7 @@ func (g *GuardianFormData) Validate() *GuardianFormValidationErrors {
 		hasError = true
 		errors.Guardian.Email = NewValidationError("The email address is not valid")
 	}
-	if !hasError {
-		return nil
-	}
-
-	return errors
+	return hasError, errors
 }
 
 type GuardianFormValidationErrors struct {
@@ -92,18 +93,15 @@ type PatientFormData struct {
 	} `json:"patient"`
 }
 
-func (p *PatientFormData) Validate() *PatientFormValidationErrors {
+func (p PatientFormData) Validate() (bool, PatientFormValidationErrors) {
 	hasError := false
-	errors := &PatientFormValidationErrors{}
+	errors := PatientFormValidationErrors{}
 	if !isValidEmail(p.Patient.Email) {
 		hasError = true
 		errors.Patient.Email = NewValidationError("The email address is not valid")
 	}
-	if !hasError {
-		return nil
-	}
 
-	return errors
+	return hasError, errors
 }
 
 type PatientFormValidationErrors struct {

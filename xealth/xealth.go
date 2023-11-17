@@ -19,7 +19,6 @@ import (
 const (
 	authorizationHeader = "Authorization"
 	bearerPrefix        = "Bearer "
-	emailSystem         = "email"
 )
 
 type ModuleConfig struct {
@@ -71,15 +70,11 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 	clinic, err := h.FindMatchingClinic(ctx, request.Deployment)
 	if err != nil {
 		return nil, err
-	} else if clinic == nil {
-		return nil, fmt.Errorf("%w: couldn't find matching clinic", errors.NotFound)
 	}
 
 	criteria, err := GetPatientMatchingCriteria(request.Datasets, clinic)
 	if err != nil {
 		return nil, err
-	} else if criteria == nil {
-		return nil, nil
 	}
 
 	matchingPatients, err := h.FindMatchingPatients(ctx, criteria, clinic)
@@ -87,50 +82,36 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 		return nil, err
 	}
 
-	response := &xealth_models.PreorderFormResponse{}
 	if count := len(matchingPatients); count == 1 {
-		if err := response.FromPreorderFormResponse1(xealth_models.PreorderFormResponse1{}); err != nil {
-			return nil, err
-		}
-	} else if count == 0 {
-		formResponse := xealth_models.PreorderFormResponse0{
-			DataTrackingId: uuid.NewString(),
-		}
-		if criteria.IsPatientUnder13() {
-			if err := PopulateGuardianEnrollmentForm(&formResponse, GuardianFormData{}, GuardianFormValidationErrors{}); err != nil {
-				return nil, err
-			}
-		} else {
-			formData := PatientFormData{}
-			formData.Patient.Email = criteria.Email
-			if err := PopulatePatientEnrollmentForm(&formResponse, formData, PatientFormValidationErrors{}); err != nil {
-				return nil, err
-			}
-		}
-
-		if err := response.FromPreorderFormResponse0(formResponse); err != nil {
-			return nil, err
-		}
-	} else {
+		return NewFinalResponse()
+	} else if count == 2 {
 		return nil, fmt.Errorf("%w: multiple matching patients were found", errors.BadRequest)
 	}
 
-	return response, nil
+	dataTrackingId := uuid.NewString()
+	if criteria.IsPatientUnder13() {
+		return NewGuardianFlowResponseBuilder().
+			WithDataTrackingId(dataTrackingId).
+			BuildInitialResponse()
+	} else {
+		formData := PatientFormData{}
+		formData.Patient.Email = criteria.Email
+
+		return NewPatientFlowResponseBuilder().
+			WithDataTrackingId(dataTrackingId).
+			BuildInitialResponse()
+	}
 }
 
 func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_models.PreorderFormRequest1) (*xealth_models.PreorderFormResponse, error) {
 	clinic, err := h.FindMatchingClinic(ctx, request.Deployment)
 	if err != nil {
 		return nil, err
-	} else if clinic == nil {
-		return nil, fmt.Errorf("%w: couldn't find matching clinic", errors.NotFound)
 	}
 
 	criteria, err := GetPatientMatchingCriteria(request.Datasets, clinic)
 	if err != nil {
 		return nil, err
-	} else if criteria == nil {
-		return nil, nil
 	}
 
 	matchingPatients, err := h.FindMatchingPatients(ctx, criteria, clinic)
@@ -142,48 +123,18 @@ func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 		return nil, fmt.Errorf("a matching patient already exists")
 	}
 
-	response := &xealth_models.PreorderFormResponse{}
 	if criteria.IsPatientUnder13() {
-		formData, err := DecodeFormData[GuardianFormData](request.FormData.UserInput)
-		if err != nil {
-			return nil, err
-		}
-		errs := formData.Validate()
-		if errs != nil {
-			formResponse := xealth_models.PreorderFormResponse0{
-				DataTrackingId: request.FormData.DataTrackingId,
-			}
-			if err := PopulateGuardianEnrollmentForm(&formResponse, formData, *errs); err != nil {
-				return nil, err
-			}
-			if err := response.FromPreorderFormResponse0(formResponse); err != nil {
-				return nil, err
-			}
-		}
+		return NewGuardianFlowResponseBuilder().
+			WithDataTrackingId(request.FormData.DataTrackingId).
+			WithUserInput(request.FormData.UserInput).
+			WithDataValidation().
+			BuildSubsequentResponse()
 	} else {
-		formData, err := DecodeFormData[PatientFormData](request.FormData.UserInput)
-		if err != nil {
-			return nil, err
-		}
-		errs := formData.Validate()
-		if errs != nil {
-			formResponse := xealth_models.PreorderFormResponse0{
-				DataTrackingId: request.FormData.DataTrackingId,
-			}
-			if err := PopulatePatientEnrollmentForm(&formResponse, formData, *errs); err != nil {
-				return nil, err
-			}
-			if err := response.FromPreorderFormResponse0(formResponse); err != nil {
-				return nil, err
-			}
-		}
+		return NewPatientFlowResponseBuilder().
+			WithDataTrackingId(request.FormData.DataTrackingId).
+			WithUserInput(request.FormData.UserInput).
+			BuildSubsequentResponse()
 	}
-
-	if err := response.FromPreorderFormResponse1(xealth_models.PreorderFormResponse1{}); err != nil {
-		return nil, err
-	}
-
-	return response, nil
 }
 
 func (h *defaultHandler) AuthorizeRequest(req *http.Request) error {
@@ -218,7 +169,7 @@ func (h *defaultHandler) FindMatchingClinic(ctx context.Context, deployment stri
 	if len(result) > 1 {
 		return nil, fmt.Errorf("%w: found multiple clinics matching the deployment", errors.Duplicate)
 	} else if len(result) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("%w: couldn't find matching clinic", errors.NotFound)
 	}
 
 	return result[0], nil
