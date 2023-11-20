@@ -92,6 +92,7 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 	if criteria.IsPatientUnder13() {
 		return NewGuardianFlowResponseBuilder().
 			WithDataTrackingId(dataTrackingId).
+			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
 			BuildInitialResponse()
 	} else {
 		formData := PatientFormData{}
@@ -99,6 +100,7 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 
 		return NewPatientFlowResponseBuilder().
 			WithDataTrackingId(dataTrackingId).
+			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
 			BuildInitialResponse()
 	}
 }
@@ -128,11 +130,13 @@ func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 			WithDataTrackingId(request.FormData.DataTrackingId).
 			WithUserInput(request.FormData.UserInput).
 			WithDataValidation().
+			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
 			BuildSubsequentResponse()
 	} else {
 		return NewPatientFlowResponseBuilder().
 			WithDataTrackingId(request.FormData.DataTrackingId).
 			WithUserInput(request.FormData.UserInput).
+			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
 			BuildSubsequentResponse()
 	}
 }
@@ -249,7 +253,7 @@ func GetPatientMatchingCriteria(datasets *xealth_models.GeneralDatasets, clinic 
 			names = append(names, criteria.LastName)
 		}
 		if len(names) > 0 {
-			criteria.FullName = strings.Join(names, " ")
+			criteria.FullName = strings.TrimSpace(strings.Join(names, " "))
 		}
 	}
 

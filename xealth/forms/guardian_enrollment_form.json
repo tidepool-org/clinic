@@ -2,13 +2,12 @@
   "formId": "guardian_enrollment_form",
   "formData": {},
   "formSchema": {
-    "title": "Patient enrollment form",
-    "description": "Fill in the form to add a patient to Tidepool",
+    "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
     "type": "object",
     "properties": {
       "guardian": {
         "type": "object",
-        "title": "Legal Guardian",
+        "title": "",
         "required": [
           "firstName",
           "lastName",
@@ -16,15 +15,16 @@
         ],
         "properties": {
           "firstName": {
-            "title": "First Name",
+            "title": "Parent/Guardian First Name",
             "type": "string"
           },
           "lastName": {
-            "title": "Last Name",
+            "title": "Parent/Guardian Last Name",
             "type": "string"
           },
           "email": {
-            "title": "Email",
+            "title": "Parent/Guardian Email",
+            "description": "Email allows your patient’s parent/guardian to claim their account and upload their data from home.",
             "type": "string",
             "format": "email"
           }
@@ -32,7 +32,7 @@
       },
       "dexcom": {
         "type": "object",
-        "title": "Connect Dexcom",
+        "title": "",
         "properties": {
           "connect": {
             "title": "Connect with Dexcom",

@@ -13,7 +13,7 @@
     },
     "formId": "guardian_enrollment_form",
     "formSchema": {
-      "description": "Fill in the form to add a patient to Tidepool",
+      "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
       "properties": {
         "dexcom": {
           "properties": {
@@ -23,22 +23,23 @@
               "type": "boolean"
             }
           },
-          "title": "Connect Dexcom",
+          "title": "",
           "type": "object"
         },
         "guardian": {
           "properties": {
             "email": {
               "format": "email",
-              "title": "Email",
+              "title": "Parent/Guardian Email",
+              "description": "Email allows your patient’s parent/guardian to claim their account and upload their data from home.",
               "type": "string"
             },
             "firstName": {
-              "title": "First Name",
+              "title": "Parent/Guardian First Name",
               "type": "string"
             },
             "lastName": {
-              "title": "Last Name",
+              "title": "Parent/Guardian Last Name",
               "type": "string"
             }
           },
@@ -47,11 +48,11 @@
             "lastName",
             "email"
           ],
-          "title": "Legal Guardian",
+          "title": "",
           "type": "object"
         }
       },
-      "title": "Patient enrollment form",
+      "title": "Add James Jellyfish to Tidepool",
       "type": "object"
     },
     "uiSchema": {

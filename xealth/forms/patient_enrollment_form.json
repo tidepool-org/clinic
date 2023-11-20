@@ -2,19 +2,19 @@
   "formId": "patient_enrollment_form",
   "formData": {},
   "formSchema": {
-    "title": "Patient enrollment form",
-    "description": "Fill in the form to add a patient to Tidepool",
+    "description": "Please confirm a few details to complete set up. Email allows your patient to claim their account and upload their data from home.",
     "type": "object",
     "properties": {
       "patient": {
         "type": "object",
-        "title": "Patient",
+        "title": "",
         "required": [
           "email"
         ],
         "properties": {
           "email": {
-            "title": "Email",
+            "title": "Patient's Email",
+            "description": "Email allows your patient to claim their account and upload their data from home.",
             "type": "string",
             "format": "email"
           }
@@ -22,7 +22,7 @@
       },
       "dexcom": {
         "type": "object",
-        "title": "Connect Dexcom",
+        "title": "",
         "properties": {
           "connect": {
             "title": "Connect with Dexcom",

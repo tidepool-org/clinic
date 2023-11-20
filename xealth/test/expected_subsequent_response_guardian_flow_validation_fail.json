@@ -13,46 +13,47 @@
     },
     "formId": "guardian_enrollment_form",
     "formSchema": {
-      "description": "Fill in the form to add a patient to Tidepool",
+      "title": "Add James Jellyfish to Tidepool",
+      "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
+      "type": "object",
       "properties": {
-        "dexcom": {
-          "properties": {
-            "connect": {
-              "description": "",
-              "title": "Connect with Dexcom",
-              "type": "boolean"
-            }
-          },
-          "title": "Connect Dexcom",
-          "type": "object"
-        },
         "guardian": {
-          "properties": {
-            "email": {
-              "format": "email",
-              "title": "Email",
-              "type": "string"
-            },
-            "firstName": {
-              "title": "First Name",
-              "type": "string"
-            },
-            "lastName": {
-              "title": "Last Name",
-              "type": "string"
-            }
-          },
+          "type": "object",
+          "title": "",
           "required": [
             "firstName",
             "lastName",
             "email"
           ],
-          "title": "Legal Guardian",
-          "type": "object"
+          "properties": {
+            "firstName": {
+              "title": "Parent/Guardian First Name",
+              "type": "string"
+            },
+            "lastName": {
+              "title": "Parent/Guardian Last Name",
+              "type": "string"
+            },
+            "email": {
+              "title": "Parent/Guardian Email",
+              "description": "Email allows your patient’s parent/guardian to claim their account and upload their data from home.",
+              "type": "string",
+              "format": "email"
+            }
+          }
+        },
+        "dexcom": {
+          "type": "object",
+          "title": "",
+          "properties": {
+            "connect": {
+              "title": "Connect with Dexcom",
+              "description": "",
+              "type": "boolean"
+            }
+          }
         }
-      },
-      "title": "Patient enrollment form",
-      "type": "object"
+      }
     },
     "uiSchema": {
       "dexcom": {

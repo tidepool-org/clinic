@@ -7,37 +7,43 @@ import (
 	"github.com/tidepool-org/clinic/xealth_models"
 )
 
-type ResponseBuilder[T Validatable[E], E any] interface {
+type ResponseBuilder[T FormData[E], E any] interface {
 	WithDataTrackingId(id string) ResponseBuilder[T, E]
 	WithDataValidation() ResponseBuilder[T, E]
 	WithData(T) ResponseBuilder[T, E]
+	WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T, E]
+	WithTitle(string) ResponseBuilder[T, E]
 	WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T, E]
 	BuildInitialResponse() (*xealth_models.PreorderFormResponse, error)
 	BuildSubsequentResponse() (*xealth_models.PreorderFormResponse, error)
 }
 
 func NewGuardianFlowResponseBuilder() ResponseBuilder[GuardianFormData, GuardianFormValidationErrors] {
-	return &responseBuilder[GuardianFormData, GuardianFormValidationErrors]{
+	builder := &responseBuilder[GuardianFormData, GuardianFormValidationErrors]{
 		jsonForm: guardianEnrollmentForm,
 	}
+	return builder.WithTitle(DefaultFormTitle)
 }
 
 func NewPatientFlowResponseBuilder() ResponseBuilder[PatientFormData, PatientFormValidationErrors] {
-	return &responseBuilder[PatientFormData, PatientFormValidationErrors]{
+	builder := &responseBuilder[PatientFormData, PatientFormValidationErrors]{
 		jsonForm: patientEnrollmentForm,
 	}
+	return builder.WithTitle(DefaultFormTitle)
 }
 
-type responseBuilder[T Validatable[E], E any] struct {
+type responseBuilder[T FormData[E], E any] struct {
 	data               T
 	userInput          *map[string]interface{}
 	shouldValidateData bool
 	dataTrackingId     string
 	jsonForm           []byte
+	formOverrides      FormOverrides
 
-	jsonErrors         []byte
-	jsonFormWithErrors []byte
-	response           xealth_models.PreorderFormResponse
+	formDataHasErrors     bool
+	jsonOverrides         []byte
+	jsonFormWithOverrides []byte
+	response              xealth_models.PreorderFormResponse
 }
 
 func (g *responseBuilder[T, E]) WithDataTrackingId(id string) ResponseBuilder[T, E] {
@@ -55,14 +61,31 @@ func (g *responseBuilder[T, E]) WithData(data T) ResponseBuilder[T, E] {
 	return g
 }
 
+func (g *responseBuilder[T, E]) WithTitle(title string) ResponseBuilder[T, E] {
+	g.formOverrides.FormSchema.Title = title
+	return g
+}
+
+func (g *responseBuilder[T, E]) WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T, E] {
+	return g.WithTitle(fmt.Sprintf(template, vars...))
+}
+
 func (g *responseBuilder[T, E]) WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T, E] {
 	g.userInput = userInput
 	return g
 }
 
 func (g *responseBuilder[T, E]) BuildInitialResponse() (*xealth_models.PreorderFormResponse, error) {
-	if err := g.assertFromTemplateIsSet(); err != nil {
-		return nil, err
+	type buildStageFn func() error
+	pipeline := []buildStageFn{
+		g.assertFormTemplateIsSet,
+		g.processOverrides,
+	}
+
+	for _, fn := range pipeline {
+		if err := fn(); err != nil {
+			return nil, err
+		}
 	}
 
 	return g.buildInitialPreorderFormResponse()
@@ -71,10 +94,10 @@ func (g *responseBuilder[T, E]) BuildInitialResponse() (*xealth_models.PreorderF
 func (g *responseBuilder[T, E]) BuildSubsequentResponse() (*xealth_models.PreorderFormResponse, error) {
 	type buildStageFn func() error
 	pipeline := []buildStageFn{
-		g.assertFromTemplateIsSet,
+		g.assertFormTemplateIsSet,
 		g.maybeDecodeUserInput,
 		g.maybeValidateData,
-		g.maybeMergeErrors,
+		g.processOverrides,
 	}
 
 	for _, fn := range pipeline {
@@ -94,7 +117,7 @@ func (g *responseBuilder[T, E]) BuildSubsequentResponse() (*xealth_models.Preord
 	return NewFinalResponse()
 }
 
-func (g *responseBuilder[T, E]) assertFromTemplateIsSet() error {
+func (g *responseBuilder[T, E]) assertFormTemplateIsSet() error {
 	if len(g.jsonForm) == 0 {
 		return fmt.Errorf("the form template is required")
 	}
@@ -111,18 +134,19 @@ func (g *responseBuilder[T, E]) maybeDecodeUserInput() (err error) {
 func (g *responseBuilder[T, E]) maybeValidateData() (err error) {
 	if g.shouldValidateData {
 		if hasError, errors := g.data.Validate(); hasError {
-			g.jsonErrors, err = json.Marshal(ValidationErrors{
-				UiSchema: errors,
-			})
+			g.formDataHasErrors = hasError
+			g.formOverrides.UiSchema = errors
 		}
 	}
 	return
 }
 
-func (g *responseBuilder[T, E]) maybeMergeErrors() (err error) {
-	if g.isErrorResponse() {
-		g.jsonFormWithErrors, err = deepmerge.JSON(g.jsonForm, g.jsonErrors)
-	}
+func (g *responseBuilder[T, E]) processOverrides() (err error) {
+	// deepmerge.JSON will error out if both the json form (dst) and the overrides (src) define
+	// the same key with a primitive type. Make sure the json form template doesn't have keys
+	// which are defined in FormOverrides.
+	jsonOverrides, err := json.Marshal(g.formOverrides)
+	g.jsonFormWithOverrides, err = deepmerge.JSON(g.jsonForm, jsonOverrides)
 	return
 }
 
@@ -140,12 +164,7 @@ func (g *responseBuilder[T, E]) buildInitialPreorderFormResponse() (*xealth_mode
 }
 
 func (g *responseBuilder[T, E]) populatePreorderFormInfo(response *xealth_models.PreorderFormResponse0) (err error) {
-	jsonForm := g.jsonForm
-	if g.isErrorResponse() {
-		jsonForm = g.jsonFormWithErrors
-	}
-
-	if err = json.Unmarshal(jsonForm, &response.PreorderFormInfo); err != nil {
+	if err = json.Unmarshal(g.jsonFormWithOverrides, &response.PreorderFormInfo); err != nil {
 		return
 	}
 
@@ -154,7 +173,7 @@ func (g *responseBuilder[T, E]) populatePreorderFormInfo(response *xealth_models
 }
 
 func (g *responseBuilder[T, E]) isErrorResponse() bool {
-	return len(g.jsonErrors) > 0
+	return g.formDataHasErrors
 }
 
 func NewFinalResponse() (*xealth_models.PreorderFormResponse, error) {

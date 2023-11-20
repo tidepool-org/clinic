@@ -8,47 +8,18 @@ import (
 	"strings"
 )
 
+const (
+	DefaultFormTitle             = "Add patient to Tidepool"
+	FormTitlePatientNameTemplate = "Add %s to Tidepool"
+)
+
 //go:embed forms/patient_enrollment_form.json
 var patientEnrollmentForm []byte
 
 //go:embed forms/guardian_enrollment_form.json
 var guardianEnrollmentForm []byte
 
-//
-//func PopulatePatientEnrollmentForm(response *xealth_models.PreorderFormResponse0, data PatientFormData, errors PatientFormValidationErrors) error {
-//	return populateEnrollmentForm(response, patientEnrollmentForm, data, errors)
-//}
-//
-
-//
-//func PopulateGuardianEnrollmentForm(response *xealth_models.PreorderFormResponse0, data GuardianFormData, errors GuardianFormValidationErrors) error {
-//	return populateEnrollmentForm(response, guardianEnrollmentForm, data, errors)
-//}
-//
-//func populateEnrollmentForm[T any, E any](response *xealth_models.PreorderFormResponse0, formFixture []byte, data T, errors E) error {
-//	jsonErrors, err := json.Marshal(errors)
-//	if err != nil {
-//		return err
-//	}
-//
-//	formWithErrors, _, err := jsonmerge.MergeBytes(formFixture, jsonErrors)
-//	if err != nil {
-//		return err
-//	}
-//
-//	if err := json.Unmarshal(formWithErrors, &response.PreorderFormInfo); err != nil {
-//		return err
-//	}
-//	formData, err := EncodeFormData(data)
-//	if err != nil {
-//		return err
-//	}
-//	response.PreorderFormInfo.FormData = formData
-//
-//	return nil
-//}
-
-type Validatable[E any] interface {
+type FormData[E any] interface {
 	Validate() (bool, E)
 }
 
@@ -135,8 +106,13 @@ func EncodeFormData[A any](data A) (*map[string]interface{}, error) {
 	return &formData, err
 }
 
-type ValidationErrors struct {
-	UiSchema any `json:"uiSchema"`
+type FormOverrides struct {
+	FormSchema FormSchemaOverride `json:"formSchema"`
+	UiSchema   any                `json:"uiSchema,omitempty"`
+}
+
+type FormSchemaOverride struct {
+	Title string `json:"title"`
 }
 
 type ValidationError struct {

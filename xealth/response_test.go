@@ -17,6 +17,7 @@ var _ = Describe("Response Builder", func() {
 			response, err := xealth.NewPatientFlowResponseBuilder().
 				WithDataTrackingId("1234567890").
 				WithData(data).
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildInitialResponse()
 			Expect(err).ToNot(HaveOccurred())
 			ExpectResponseToMatchFixture(response, "test/expected_initial_response_patient_flow.json")
@@ -32,6 +33,7 @@ var _ = Describe("Response Builder", func() {
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
 				WithDataValidation().
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 			Expect(err).ToNot(HaveOccurred())
 			ExpectResponseToMatchFixture(response, "test/expected_subsequent_response_patient_flow_validation_fail.json")
@@ -47,6 +49,7 @@ var _ = Describe("Response Builder", func() {
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
 				WithDataValidation().
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 
 			Expect(err).ToNot(HaveOccurred())
@@ -58,6 +61,7 @@ var _ = Describe("Response Builder", func() {
 		It("Returns the expected initial response", func() {
 			response, err := xealth.NewGuardianFlowResponseBuilder().
 				WithDataTrackingId("1234567890").
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildInitialResponse()
 			Expect(err).ToNot(HaveOccurred())
 			ExpectResponseToMatchFixture(response, "test/expected_initial_response_guardian_flow.json")
@@ -69,6 +73,7 @@ var _ = Describe("Response Builder", func() {
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
 				WithDataValidation().
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 			Expect(err).ToNot(HaveOccurred())
 			ExpectResponseToMatchFixture(response, "test/expected_subsequent_response_guardian_flow_validation_fail.json")
@@ -86,6 +91,7 @@ var _ = Describe("Response Builder", func() {
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
 				WithDataValidation().
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 
 			Expect(err).ToNot(HaveOccurred())
