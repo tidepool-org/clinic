@@ -100,6 +100,7 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 
 		return NewPatientFlowResponseBuilder().
 			WithDataTrackingId(dataTrackingId).
+			WithData(formData).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
 			BuildInitialResponse()
 	}
