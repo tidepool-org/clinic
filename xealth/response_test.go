@@ -2,14 +2,25 @@ package xealth_test
 
 import (
 	"encoding/json"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/test"
 	"github.com/tidepool-org/clinic/xealth"
 	"github.com/tidepool-org/clinic/xealth_models"
 )
 
 var _ = Describe("Response Builder", func() {
+	var ctrl *gomock.Controller
+	var users *patientsTest.MockUserService
+
+	BeforeEach(func() {
+		tb := GinkgoT()
+		ctrl = gomock.NewController(tb)
+		users = patientsTest.NewMockUserService(ctrl)
+	})
+
 	Describe("Patient Flow", func() {
 		It("Returns the expected initial response", func() {
 			data := xealth.PatientFormData{}
@@ -32,7 +43,7 @@ var _ = Describe("Response Builder", func() {
 			response, err := xealth.NewPatientFlowResponseBuilder().
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
-				WithDataValidation().
+				WithDataValidator(xealth.NewPatientDataValidator(users)).
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 			Expect(err).ToNot(HaveOccurred())
@@ -45,10 +56,14 @@ var _ = Describe("Response Builder", func() {
 					"email": "james.jellyfish@tidepool.org",
 				},
 			}
+			users.EXPECT().
+				GetUser("james.jellyfish@tidepool.org").
+				Return(nil, nil)
+			
 			response, err := xealth.NewPatientFlowResponseBuilder().
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
-				WithDataValidation().
+				WithDataValidator(xealth.NewPatientDataValidator(users)).
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 
@@ -69,10 +84,11 @@ var _ = Describe("Response Builder", func() {
 
 		It("Returns the expected subsequent response when validation fails for all fields", func() {
 			userInput := map[string]interface{}{}
+
 			response, err := xealth.NewGuardianFlowResponseBuilder().
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
-				WithDataValidation().
+				WithDataValidator(xealth.NewGuardianDataValidator(users)).
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 			Expect(err).ToNot(HaveOccurred())
@@ -87,10 +103,14 @@ var _ = Describe("Response Builder", func() {
 					"email":     "james.jellyfish@tidepool.org",
 				},
 			}
+			users.EXPECT().
+				GetUser("james.jellyfish@tidepool.org").
+				Return(nil, nil)
+
 			response, err := xealth.NewGuardianFlowResponseBuilder().
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
-				WithDataValidation().
+				WithDataValidator(xealth.NewGuardianDataValidator(users)).
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 

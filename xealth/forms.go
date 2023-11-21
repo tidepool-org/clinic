@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/mitchellh/mapstructure"
 	"net/mail"
-	"strings"
 )
 
 const (
@@ -19,8 +18,12 @@ var patientEnrollmentForm []byte
 //go:embed forms/guardian_enrollment_form.json
 var guardianEnrollmentForm []byte
 
-type FormData[E any] interface {
-	Validate() (bool, E)
+type DataValidator[D any, E FormErrors] interface {
+	Validate(D) (E, error)
+}
+
+type FormErrors interface {
+	HasErrors() bool
 }
 
 type GuardianFormData struct {
@@ -32,30 +35,17 @@ type GuardianFormData struct {
 	Dexcom Dexcom `json:"dexcom"`
 }
 
-func (g GuardianFormData) Validate() (bool, GuardianFormValidationErrors) {
-	hasError := false
-	errors := GuardianFormValidationErrors{}
-	if strings.TrimSpace(g.Guardian.FirstName) == "" {
-		hasError = true
-		errors.Guardian.FirstName = NewValidationError("First name is required")
-	}
-	if strings.TrimSpace(g.Guardian.LastName) == "" {
-		hasError = true
-		errors.Guardian.LastName = NewValidationError("Last name is required")
-	}
-	if !isValidEmail(g.Guardian.Email) {
-		hasError = true
-		errors.Guardian.Email = NewValidationError("The email address is not valid")
-	}
-	return hasError, errors
-}
-
 type GuardianFormValidationErrors struct {
-	Guardian struct {
+	FormHasErrors bool `json:"-"`
+	Guardian      struct {
 		FirstName *ValidationError `json:"firstName,omitempty"`
 		LastName  *ValidationError `json:"lastName,omitempty"`
 		Email     *ValidationError `json:"email,omitempty"`
 	} `json:"guardian"`
+}
+
+func (p GuardianFormValidationErrors) HasErrors() bool {
+	return p.FormHasErrors
 }
 
 type PatientFormData struct {
@@ -65,21 +55,15 @@ type PatientFormData struct {
 	Dexcom Dexcom `json:"dexcom"`
 }
 
-func (p PatientFormData) Validate() (bool, PatientFormValidationErrors) {
-	hasError := false
-	errors := PatientFormValidationErrors{}
-	if !isValidEmail(p.Patient.Email) {
-		hasError = true
-		errors.Patient.Email = NewValidationError("The email address is not valid")
-	}
-
-	return hasError, errors
-}
-
 type PatientFormValidationErrors struct {
-	Patient struct {
+	FormHasErrors bool `json:"-"`
+	Patient       struct {
 		Email *ValidationError `json:"email,omitempty"`
 	} `json:"patient"`
+}
+
+func (p PatientFormValidationErrors) HasErrors() bool {
+	return p.FormHasErrors
 }
 
 type Dexcom struct {

@@ -7,9 +7,9 @@ import (
 	"github.com/tidepool-org/clinic/xealth_models"
 )
 
-type ResponseBuilder[T FormData[E], E any] interface {
+type ResponseBuilder[T any, E FormErrors] interface {
 	WithDataTrackingId(id string) ResponseBuilder[T, E]
-	WithDataValidation() ResponseBuilder[T, E]
+	WithDataValidator(validator DataValidator[T, E]) ResponseBuilder[T, E]
 	WithData(T) ResponseBuilder[T, E]
 	WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T, E]
 	WithTitle(string) ResponseBuilder[T, E]
@@ -32,13 +32,14 @@ func NewPatientFlowResponseBuilder() ResponseBuilder[PatientFormData, PatientFor
 	return builder.WithTitle(DefaultFormTitle)
 }
 
-type responseBuilder[T FormData[E], E any] struct {
-	data               T
-	userInput          *map[string]interface{}
-	shouldValidateData bool
-	dataTrackingId     string
-	jsonForm           []byte
-	formOverrides      FormOverrides
+type responseBuilder[T any, E FormErrors] struct {
+	data           T
+	dataTrackingId string
+	userInput      *map[string]interface{}
+	validator      DataValidator[T, E]
+
+	jsonForm      []byte
+	formOverrides FormOverrides
 
 	formDataHasErrors     bool
 	jsonOverrides         []byte
@@ -51,8 +52,8 @@ func (g *responseBuilder[T, E]) WithDataTrackingId(id string) ResponseBuilder[T,
 	return g
 }
 
-func (g *responseBuilder[T, E]) WithDataValidation() ResponseBuilder[T, E] {
-	g.shouldValidateData = true
+func (g *responseBuilder[T, E]) WithDataValidator(validator DataValidator[T, E]) ResponseBuilder[T, E] {
+	g.validator = validator
 	return g
 }
 
@@ -132,9 +133,12 @@ func (g *responseBuilder[T, E]) maybeDecodeUserInput() (err error) {
 }
 
 func (g *responseBuilder[T, E]) maybeValidateData() (err error) {
-	if g.shouldValidateData {
-		if hasError, errors := g.data.Validate(); hasError {
-			g.formDataHasErrors = hasError
+	if g.validator != nil {
+		if errors, e := g.validator.Validate(g.data); e != nil {
+			err = e
+			return
+		} else {
+			g.formDataHasErrors = errors.HasErrors()
 			g.formOverrides.UiSchema = errors
 		}
 	}

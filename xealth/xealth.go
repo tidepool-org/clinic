@@ -42,9 +42,10 @@ type defaultHandler struct {
 
 	clinics  clinics.Service
 	patients patients.Service
+	users    patients.UserService
 }
 
-func NewHandler(clinics clinics.Service, patients patients.Service) (Xealth, error) {
+func NewHandler(clinics clinics.Service, patients patients.Service, users patients.UserService) (Xealth, error) {
 	cfg := ModuleConfig{}
 	if err := envconfig.Process("", &cfg); err != nil {
 		return nil, err
@@ -63,11 +64,12 @@ func NewHandler(clinics clinics.Service, patients patients.Service) (Xealth, err
 		config:   clientConfig,
 		clinics:  clinics,
 		patients: patients,
+		users:    users,
 	}, nil
 }
 
-func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, request xealth_models.PreorderFormRequest0) (*xealth_models.PreorderFormResponse, error) {
-	clinic, err := h.FindMatchingClinic(ctx, request.Deployment)
+func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, request xealth_models.PreorderFormRequest0) (*xealth_models.PreorderFormResponse, error) {
+	clinic, err := d.FindMatchingClinic(ctx, request.Deployment)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +79,7 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 		return nil, err
 	}
 
-	matchingPatients, err := h.FindMatchingPatients(ctx, criteria, clinic)
+	matchingPatients, err := d.FindMatchingPatients(ctx, criteria, clinic)
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +108,8 @@ func (h *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 	}
 }
 
-func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_models.PreorderFormRequest1) (*xealth_models.PreorderFormResponse, error) {
-	clinic, err := h.FindMatchingClinic(ctx, request.Deployment)
+func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_models.PreorderFormRequest1) (*xealth_models.PreorderFormResponse, error) {
+	clinic, err := d.FindMatchingClinic(ctx, request.Deployment)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +119,7 @@ func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 		return nil, err
 	}
 
-	matchingPatients, err := h.FindMatchingPatients(ctx, criteria, clinic)
+	matchingPatients, err := d.FindMatchingPatients(ctx, criteria, clinic)
 	if err != nil {
 		return nil, err
 	}
@@ -130,31 +132,32 @@ func (h *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 		return NewGuardianFlowResponseBuilder().
 			WithDataTrackingId(request.FormData.DataTrackingId).
 			WithUserInput(request.FormData.UserInput).
-			WithDataValidation().
+			WithDataValidator(NewGuardianDataValidator(d.users)).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
 			BuildSubsequentResponse()
 	} else {
 		return NewPatientFlowResponseBuilder().
 			WithDataTrackingId(request.FormData.DataTrackingId).
 			WithUserInput(request.FormData.UserInput).
+			WithDataValidator(NewPatientDataValidator(d.users)).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
 			BuildSubsequentResponse()
 	}
 }
 
-func (h *defaultHandler) AuthorizeRequest(req *http.Request) error {
+func (d *defaultHandler) AuthorizeRequest(req *http.Request) error {
 	authz := req.Header.Get(authorizationHeader)
 	if authz == "" || !strings.HasPrefix(authz, bearerPrefix) {
 		return fmt.Errorf("%w: bearer token is required", errors.Unauthorized)
 	}
 	bearer := strings.TrimPrefix(authz, bearerPrefix)
-	if bearer == "" || bearer != h.config.BearerToken {
+	if bearer == "" || bearer != d.config.BearerToken {
 		return fmt.Errorf("%w: bearer token is invalid", errors.Unauthorized)
 	}
 	return nil
 }
 
-func (h *defaultHandler) FindMatchingClinic(ctx context.Context, deployment string) (*clinics.Clinic, error) {
+func (d *defaultHandler) FindMatchingClinic(ctx context.Context, deployment string) (*clinics.Clinic, error) {
 	enabled := true
 	filter := &clinics.Filter{
 		EHRProvider: &clinics.EHRProviderXealth,
@@ -166,7 +169,7 @@ func (h *defaultHandler) FindMatchingClinic(ctx context.Context, deployment stri
 		Limit:  2,
 	}
 
-	result, err := h.clinics.List(ctx, filter, page)
+	result, err := d.clinics.List(ctx, filter, page)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +183,7 @@ func (h *defaultHandler) FindMatchingClinic(ctx context.Context, deployment stri
 	return result[0], nil
 }
 
-func (h *defaultHandler) FindMatchingPatients(ctx context.Context, criteria *PatientMatchingCriteria, clinic *clinics.Clinic) ([]*patients.Patient, error) {
+func (d *defaultHandler) FindMatchingPatients(ctx context.Context, criteria *PatientMatchingCriteria, clinic *clinics.Clinic) ([]*patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
 	page := store.Pagination{
 		Offset: 0,
@@ -192,7 +195,7 @@ func (h *defaultHandler) FindMatchingPatients(ctx context.Context, criteria *Pat
 		Mrn:       &criteria.Mrn,
 		BirthDate: &criteria.DateOfBirth,
 	}
-	result, err := h.patients.List(ctx, &filter, page, nil)
+	result, err := d.patients.List(ctx, &filter, page, nil)
 	if err != nil {
 		return nil, err
 	}
