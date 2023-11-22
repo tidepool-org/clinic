@@ -432,7 +432,7 @@ func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error
 	filter := patients.Filter{
 		ClinicIds: clinicIds,
 		Mrn:       params.Mrn,
-		BirthDate: params.Dob,
+		BirthDate: params.BirthDate,
 	}
 	list, err := h.patients.List(ctx, &filter, page, nil)
 	if err != nil {
