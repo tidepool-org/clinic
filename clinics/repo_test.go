@@ -1,19 +1,11 @@
-package clinics
+package clinics_test
 
 import (
 	"fmt"
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	"github.com/tidepool-org/clinic/test"
 )
-
-func TestSuite(t *testing.T) {
-	test.Test(t)
-}
 
 var _ = Describe("canAddPatientTag", func() {
 	It("returns an error when tags exceed the maximum value", func() {
