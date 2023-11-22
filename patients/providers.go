@@ -15,7 +15,7 @@ import (
 type DependenciesConfig struct {
 	ShorelineHost  string `envconfig:"TIDEPOOL_SHORELINE_CLIENT_ADDRESS" default:"http://shoreline:9107"`
 	SeagullHost    string `envconfig:"TIDEPOOL_SEAGULL_CLIENT_ADDRESS" default:"http://seagull:9120"`
-	GatekeeperHost string `enbconfig:"TIDEPOOL_PERMISSION_CLIENT_ADDRESS" default:"http://gatekeeper:9123"`
+	GatekeeperHost string `envconfig:"TIDEPOOL_PERMISSION_CLIENT_ADDRESS" default:"http://gatekeeper:9123"`
 	ServerSecret   string `envconfig:"TIDEPOOL_SERVER_TOKEN"`
 }
 

@@ -7,7 +7,6 @@ package scanner
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"unicode"
 	"unicode/utf8"
 
@@ -19,14 +18,15 @@ const bom = 0xFEFF
 // Scanner is used to tokenize an input stream of
 // Rego source code.
 type Scanner struct {
-	offset   int
-	row      int
-	col      int
-	bs       []byte
-	curr     rune
-	width    int
-	errors   []Error
-	filename string
+	offset           int
+	row              int
+	col              int
+	bs               []byte
+	curr             rune
+	width            int
+	errors           []Error
+	keywords         map[string]tokens.Token
+	regoV1Compatible bool
 }
 
 // Error represents a scanner error.
@@ -47,18 +47,19 @@ type Position struct {
 // through the source code provided by the io.Reader.
 func New(r io.Reader) (*Scanner, error) {
 
-	bs, err := ioutil.ReadAll(r)
+	bs, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 
 	s := &Scanner{
-		offset: 0,
-		row:    1,
-		col:    0,
-		bs:     bs,
-		curr:   -1,
-		width:  0,
+		offset:   0,
+		row:      1,
+		col:      0,
+		bs:       bs,
+		curr:     -1,
+		width:    0,
+		keywords: tokens.Keywords(),
 	}
 
 	s.next()
@@ -81,6 +82,73 @@ func (s *Scanner) String() string {
 	return fmt.Sprintf("<curr: %q, offset: %d, len: %d>", s.curr, s.offset, len(s.bs))
 }
 
+// Keyword will return a token for the passed in
+// literal value. If the value is a Rego keyword
+// then the appropriate token is returned. Everything
+// else is an Ident.
+func (s *Scanner) Keyword(lit string) tokens.Token {
+	if tok, ok := s.keywords[lit]; ok {
+		return tok
+	}
+	return tokens.Ident
+}
+
+// AddKeyword adds a string -> token mapping to this Scanner instance.
+func (s *Scanner) AddKeyword(kw string, tok tokens.Token) {
+	s.keywords[kw] = tok
+
+	switch tok {
+	case tokens.Every: // importing 'every' means also importing 'in'
+		s.keywords["in"] = tokens.In
+	}
+}
+
+func (s *Scanner) HasKeyword(keywords map[string]tokens.Token) bool {
+	for kw := range s.keywords {
+		if _, ok := keywords[kw]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Scanner) SetRegoV1Compatible() {
+	s.regoV1Compatible = true
+}
+
+func (s *Scanner) RegoV1Compatible() bool {
+	return s.regoV1Compatible
+}
+
+// WithKeywords returns a new copy of the Scanner struct `s`, with the set
+// of known keywords being that of `s` with `kws` added.
+func (s *Scanner) WithKeywords(kws map[string]tokens.Token) *Scanner {
+	cpy := *s
+	cpy.keywords = make(map[string]tokens.Token, len(s.keywords)+len(kws))
+	for kw, tok := range s.keywords {
+		cpy.AddKeyword(kw, tok)
+	}
+	for k, t := range kws {
+		cpy.AddKeyword(k, t)
+	}
+	return &cpy
+}
+
+// WithoutKeywords returns a new copy of the Scanner struct `s`, with the
+// set of known keywords being that of `s` with `kws` removed.
+// The previously known keywords are returned for a convenient reset.
+func (s *Scanner) WithoutKeywords(kws map[string]tokens.Token) (*Scanner, map[string]tokens.Token) {
+	cpy := *s
+	kw := s.keywords
+	cpy.keywords = make(map[string]tokens.Token, len(s.keywords)-len(kws))
+	for kw, tok := range s.keywords {
+		if _, ok := kws[kw]; !ok {
+			cpy.AddKeyword(kw, tok)
+		}
+	}
+	return &cpy, kw
+}
+
 // Scan will increment the scanners position in the source
 // code until the next token is found. The token, starting position
 // of the token, string literal, and any errors encountered are
@@ -98,7 +166,7 @@ func (s *Scanner) Scan() (tokens.Token, Position, string, []Error) {
 		tok = tokens.Whitespace
 	} else if isLetter(s.curr) {
 		lit = s.scanIdentifier()
-		tok = tokens.Keyword(lit)
+		tok = s.Keyword(lit)
 	} else if isDecimal(s.curr) {
 		lit = s.scanNumber()
 		tok = tokens.Number
@@ -345,13 +413,6 @@ func (s *Scanner) next() {
 	} else {
 		s.col++
 	}
-}
-
-func (s *Scanner) peek(i int) rune {
-	if s.offset+i < len(s.bs) {
-		return rune(s.bs[s.offset+i])
-	}
-	return 0
 }
 
 func (s *Scanner) literalStart() int {

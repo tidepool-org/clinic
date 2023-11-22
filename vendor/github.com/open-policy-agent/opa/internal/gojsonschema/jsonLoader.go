@@ -30,17 +30,48 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/xeipuuv/gojsonreference"
 )
+
+// NOTE(sr): We need to control from which hosts remote references are
+// allowed to be resolved via HTTP requests. It's quite cumbersome to
+// add extra parameters to all calls and interfaces involved, so we're
+// using a global variable instead:
+var allowNet map[string]struct{}
+var netMut sync.RWMutex
+
+func SetAllowNet(hosts []string) {
+	netMut.Lock()
+	defer netMut.Unlock()
+	if hosts == nil {
+		allowNet = nil // resetting the global
+		return
+	}
+	allowNet = make(map[string]struct{}, len(hosts))
+	for _, host := range hosts {
+		allowNet[host] = struct{}{}
+	}
+}
+
+func isAllowed(ref *url.URL) bool {
+	netMut.RLock()
+	defer netMut.RUnlock()
+	if allowNet == nil {
+		return true
+	}
+	_, ok := allowNet[ref.Hostname()]
+	return ok
+}
 
 var osFS = osFileSystem(os.Open)
 
@@ -141,8 +172,6 @@ func (l *jsonReferenceLoader) LoadJSON() (interface{}, error) {
 	refToURL := reference
 	refToURL.GetUrl().Fragment = ""
 
-	var document interface{}
-
 	if reference.HasFileScheme {
 
 		filename := strings.TrimPrefix(refToURL.String(), "file://")
@@ -159,31 +188,26 @@ func (l *jsonReferenceLoader) LoadJSON() (interface{}, error) {
 			filename = filepath.FromSlash(filename)
 		}
 
-		document, err = l.loadFromFile(filename)
-		if err != nil {
-			return nil, err
-		}
-
-	} else {
-
-		document, err = l.loadFromHTTP(refToURL.String())
-		if err != nil {
-			return nil, err
-		}
-
+		return l.loadFromFile(filename)
 	}
 
-	return document, nil
+	// NOTE(sr): hardcoded metaschema references are not subject to allow_net
+	// checking; their contents are hardcoded in the library!
+	//
+	// returned cached versions for metaschemas for drafts 4, 6 and 7
+	// for performance and allow for easier offline use
+	if metaSchema := drafts.GetMetaSchema(refToURL.String()); metaSchema != "" {
+		return decodeJSONUsingNumber(strings.NewReader(metaSchema))
+	}
 
+	if isAllowed(refToURL.GetUrl()) {
+		return l.loadFromHTTP(refToURL.String())
+	}
+
+	return nil, fmt.Errorf("remote reference loading disabled: %s", reference.String())
 }
 
 func (l *jsonReferenceLoader) loadFromHTTP(address string) (interface{}, error) {
-
-	// returned cached versions for metaschemas for drafts 4, 6 and 7
-	// for performance and allow for easier offline use
-	if metaSchema := drafts.GetMetaSchema(address); metaSchema != "" {
-		return decodeJSONUsingNumber(strings.NewReader(metaSchema))
-	}
 
 	resp, err := http.Get(address)
 	if err != nil {
@@ -195,7 +219,7 @@ func (l *jsonReferenceLoader) loadFromHTTP(address string) (interface{}, error) 
 		return nil, errors.New(formatErrorDescription(Locale.HTTPBadStatus(), ErrorDetails{"status": resp.Status}))
 	}
 
-	bodyBuff, err := ioutil.ReadAll(resp.Body)
+	bodyBuff, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +234,7 @@ func (l *jsonReferenceLoader) loadFromFile(path string) (interface{}, error) {
 	}
 	defer f.Close()
 
-	bodyBuff, err := ioutil.ReadAll(f)
+	bodyBuff, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}

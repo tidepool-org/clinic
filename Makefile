@@ -1,5 +1,7 @@
 # Clinic Makefile
 
+TOOLS_BIN = tools/bin
+
 # Generates server files
 .PHONY: generate
 generate:
@@ -29,16 +31,13 @@ service-profile:
 go-flags:
 	go env -w GOFLAGS=-mod=mod
 
-.PHONY: ginkgo
-ginkgo:
-ifeq ($(shell which ginkgo),)
-	go install github.com/onsi/ginkgo/ginkgo
-endif
+tools/bin/ginkgo:
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.13.0
 
 # Runs tests
 .PHONY: test
-test: go-flags ginkgo
-	ginkgo -requireSuite -slowSpecThreshold=10 --compilers=2 -r -randomizeSuites -randomizeAllSpecs -succinct -failOnPending -trace -race -progress -keepGoing ./...
+test: go-flags $(TOOLS_BIN)/ginkgo
+	$(TOOLS_BIN)/ginkgo --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
 
 # Builds package
 .PHONY: build

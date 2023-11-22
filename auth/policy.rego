@@ -296,12 +296,36 @@ allow {
   input.path = ["v1", "clinics", _, "patients"]
 }
 
+# Allow currently authenticated clinician to get tide reports
+# GET /v1/clinics/:clinicId/tide_report
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "tide_report"]
+  clinician_has_read_access
+}
+
+# Allow backend services to get tide reports
+# GET /v1/clinics/:clinicId/tide_report
+allow {
+  is_backend_service
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "tide_report"]
+}
+
 # Allow currently authenticated clinician to create a custodial account
 # POST /v1/clinics/:clinicId/patients
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients"]
   clinician_has_read_access
+}
+
+# Allow backend service create a custodial accounts
+# POST /v1/clinics/:clinicId/patients
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients"]
 }
 
 # Allow currently authenticated clinician to send an upload reminder

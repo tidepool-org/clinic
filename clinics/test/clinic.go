@@ -2,7 +2,7 @@ package test
 
 import (
 	"github.com/jaswdr/faker"
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	Faker = faker.NewWithSeed(rand.NewSource(config.GinkgoConfig.RandomSeed))
+	Faker = faker.NewWithSeed(rand.NewSource(ginkgo.GinkgoRandomSeed()))
 )
 
 func strp(val string) *string {
@@ -35,6 +35,7 @@ func RandomClinic() *clinics.Clinic {
 	shareCodes := []string{shareCode}
 	admins := []string{Faker.UUID().V4()}
 	id := primitive.NewObjectIDFromTimestamp(Faker.Time().TimeBetween(time.Now().Add(-time.Hour*24*365), time.Now()))
+	createAccountCode := "34567"
 
 	return &clinics.Clinic{
 		Id:                 &id,
@@ -57,6 +58,11 @@ func RandomClinic() *clinics.Clinic {
 			Enabled: true,
 			Facility: &clinics.EHRFacility{
 				Name: Faker.Company().Name(),
+			},
+			ProcedureCodes: clinics.EHRProcedureCodes{
+				EnableSummaryReports:  "12345",
+				DisableSummaryReports: "23456",
+				CreateAccount:         &createAccountCode,
 			},
 			SourceId: Faker.UUID().V4(),
 		},

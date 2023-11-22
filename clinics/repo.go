@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+
+	"github.com/tidepool-org/clinic/store"
 )
 
 const (
@@ -286,8 +287,7 @@ func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (
 		Name: strings.TrimSpace(tagName),
 	}
 
-	canAdd, err := canAddPatientTag(*clinic, tag)
-	if !canAdd {
+	if err := assertCanAddPatientTag(*clinic, tag); err != nil {
 		return nil, err
 	}
 
@@ -462,16 +462,16 @@ func (c *repository) UpdateMRNSettings(ctx context.Context, id string, settings 
 	return err
 }
 
-func canAddPatientTag(clinic Clinic, tag PatientTag) (bool, error) {
+func assertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
 	if len(clinic.PatientTags) >= MaximumPatientTags {
-		return false, ErrMaximumPatientTagsExceeded
+		return ErrMaximumPatientTagsExceeded
 	}
 
 	if isDuplicatePatientTag(clinic, tag) {
-		return false, ErrDuplicatePatientTagName
+		return ErrDuplicatePatientTagName
 	}
 
-	return true, nil
+	return nil
 }
 
 func isDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {

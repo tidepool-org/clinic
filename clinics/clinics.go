@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -21,7 +22,7 @@ var ErrPatientTagNotFound = fmt.Errorf("patient tag %w", errors.NotFound)
 var ErrDuplicatePatientTagName = fmt.Errorf("%w patient tag", errors.Duplicate)
 var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin", errors.ConstraintViolation)
-var MaximumPatientTags = 20
+var MaximumPatientTags = 50
 var ErrMaximumPatientTagsExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %v patient tags", errors.ConstraintViolation, MaximumPatientTags)
 
 //go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockRepository
@@ -113,8 +114,9 @@ type EHRDestinationIds struct {
 }
 
 type EHRProcedureCodes struct {
-	EnableSummaryReports  string `bson:"enableSummaryReports"`
-	DisableSummaryReports string `bson:"disableSummaryReports"`
+	EnableSummaryReports  string  `bson:"enableSummaryReports"`
+	DisableSummaryReports string  `bson:"disableSummaryReports"`
+	CreateAccount         *string `bson:"createAccount"`
 }
 
 type MRNSettings struct {

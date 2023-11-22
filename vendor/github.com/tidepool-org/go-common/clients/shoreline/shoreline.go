@@ -35,6 +35,7 @@ type Client interface {
 	GetUser(userID, token string) (*UserData, error)
 	UpdateUser(userID string, userUpdate UserUpdate, token string) error
 	CreateCustodialUserForClinic(clinicId string, userData CustodialUserData, token string) (*UserData, error)
+	DeleteUserSessions(userID, token string) error
 }
 
 // ShorelineClient manages the local data for a client. A client is intended to be shared among multiple
@@ -82,8 +83,9 @@ type CustodialUserData struct {
 
 // TokenData is the data structure returned from a successful CheckToken query.
 type TokenData struct {
-	UserID   string // the UserID stored in the token
-	IsServer bool   // true or false depending on whether the token was a servertoken
+	UserID           string // the UserID stored in the token
+	IsServer         bool   // true or false depending on whether the token was a servertoken
+	IdentityProvider string `json:"identityProvider,omitempty"` // The identity provider used for authenticating the current user
 }
 
 type ShorelineClientBuilder struct {
@@ -480,6 +482,34 @@ func (client *ShorelineClient) CreateCustodialUserForClinic(clinicId string, use
 			return nil, ErrDuplicateUser
 		default:
 			return nil, fmt.Errorf("unexpected status code from service: %v", res.StatusCode)
+		}
+	}
+}
+
+// DeleteUserSession deletes all active sessions for a given user
+func (client *ShorelineClient) DeleteUserSessions(userID, token string) error {
+	host := client.getHost()
+	if host == nil {
+		return errors.New("No known user-api hosts.")
+	}
+
+	host.Path = path.Join(host.Path, "user", userID, "sessions")
+
+	req, _ := http.NewRequest("DELETE", host.String(), nil)
+	req.Header.Add("x-tidepool-session-token", token)
+
+	res, err := client.httpClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "couldn't delete user sessions")
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusNoContent:
+		return nil
+	default:
+		return &status.StatusError{
+			Status: status.NewStatusf(res.StatusCode, "Unknown response code from service[%s]", req.URL),
 		}
 	}
 }

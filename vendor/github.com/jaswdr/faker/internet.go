@@ -2,8 +2,10 @@ package faker
 
 import (
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 var (
@@ -11,14 +13,10 @@ var (
 
 	tld = []string{"com", "com", "com", "com", "com", "com", "biz", "info", "net", "org"}
 
-	userFormats = []string{"{{lastName}}.{{firstName}}",
-		"{{firstName}}.{{lastName}}",
-		"{{firstName}}",
-		"{{lastName}}"}
-
 	emailFormats = []string{"{{user}}@{{domain}}", "{{user}}@{{freeEmailDomain}}"}
 
-	urlFormats = []string{"http://www.{{domain}}/",
+	urlFormats = []string{
+		"http://www.{{domain}}/",
 		"http://{{domain}}/",
 		"http://www.{{domain}}/{{slug}}",
 		"http://www.{{domain}}/{{slug}}",
@@ -39,23 +37,53 @@ type Internet struct {
 	Faker *Faker
 }
 
+var validEmailOnlyValidCharacters = regexp.MustCompile(`[^a-z0-9._%+\-]+`)
+
+func transformIntoValidEmailName(name string) string {
+	name = strings.ToLower(name)
+	name = validEmailOnlyValidCharacters.ReplaceAllString(name, "_")
+	return name
+}
+
+var (
+	cacheInternetUserFirstName []string
+	cacheInternetUserLastName  []string
+	cacheInternetUserOnce      sync.Once
+	cacheInternetUserFunc      = func() {
+		cacheFirstNamesOnce.Do(cacheFirstNamesFunc)
+		for _, fn := range cacheFirstNames {
+			cacheInternetUserFirstName = append(cacheInternetUserFirstName, transformIntoValidEmailName(fn))
+		}
+
+		for _, ln := range lastName {
+			cacheInternetUserLastName = append(cacheInternetUserLastName, transformIntoValidEmailName(ln))
+		}
+	}
+)
+
 // User returns a fake user for Internet
 func (i Internet) User() string {
-	user := i.Faker.RandomStringElement(userFormats)
+	cacheInternetUserOnce.Do(cacheInternetUserFunc)
 
-	p := i.Faker.Person()
-
-	// {{firstName}}
-	if strings.Contains(user, "{{firstName}}") {
-		user = strings.Replace(user, "{{firstName}}", strings.ToLower(p.FirstName()), 1)
+	variant := i.Faker.IntBetween(0, 3)
+	switch variant {
+	case 0:
+		ln := i.Faker.RandomStringElement(cacheInternetUserLastName)
+		fn := i.Faker.RandomStringElement(cacheInternetUserFirstName)
+		return ln + "." + fn
+	case 1:
+		fn := i.Faker.RandomStringElement(cacheInternetUserFirstName)
+		ln := i.Faker.RandomStringElement(cacheInternetUserLastName)
+		return fn + "." + ln
+	case 2:
+		fn := i.Faker.RandomStringElement(cacheInternetUserFirstName)
+		return fn
+	case 3:
+		ln := i.Faker.RandomStringElement(cacheInternetUserLastName)
+		return ln
+	default:
+		panic("bad")
 	}
-
-	// {{lastName}}
-	if strings.Contains(user, "{{lastName}}") {
-		user = strings.Replace(user, "{{lastName}}", strings.ToLower(p.LastName()), 1)
-	}
-
-	return user
 }
 
 // Password returns a fake password for Internet
@@ -67,7 +95,7 @@ func (i Internet) Password() string {
 // Domain returns a fake domain for Internet
 func (i Internet) Domain() string {
 	domain := strings.ToLower(i.Faker.Lexify("???"))
-	return strings.Join([]string{domain, i.TLD()}, ".")
+	return domain + "." + i.TLD()
 }
 
 // FreeEmailDomain returns a fake free email domain for Internet
@@ -76,7 +104,7 @@ func (i Internet) FreeEmailDomain() string {
 }
 
 // SafeEmailDomain returns a fake safe email domain for Internet
-func (i Internet) SafeEmailDomain() string {
+func (Internet) SafeEmailDomain() string {
 	return "example.org"
 }
 
@@ -85,19 +113,13 @@ func (i Internet) Email() string {
 	email := i.Faker.RandomStringElement(emailFormats)
 
 	// {{user}}
-	if strings.Contains(email, "{{user}}") {
-		email = strings.Replace(email, "{{user}}", i.User(), 1)
-	}
+	email = strings.Replace(email, "{{user}}", transformIntoValidEmailName(i.User()), 1)
 
 	// {{domain}}
-	if strings.Contains(email, "{{domain}}") {
-		email = strings.Replace(email, "{{domain}}", i.Domain(), 1)
-	}
+	email = strings.Replace(email, "{{domain}}", i.Domain(), 1)
 
 	// {{freeEmailDomain}}
-	if strings.Contains(email, "{{freeEmailDomain}}") {
-		email = strings.Replace(email, "{{freeEmailDomain}}", i.FreeEmailDomain(), 1)
-	}
+	email = strings.Replace(email, "{{freeEmailDomain}}", i.FreeEmailDomain(), 1)
 
 	return email
 }
@@ -106,25 +128,23 @@ func (i Internet) Email() string {
 func (i Internet) FreeEmail() string {
 	domain := i.Faker.RandomStringElement(freeEmailDomain)
 
-	return strings.Join([]string{i.User(), domain}, "@")
+	return transformIntoValidEmailName(i.User()) + "@" + domain
 }
 
 // SafeEmail returns a fake safe email address for Internet
 func (i Internet) SafeEmail() string {
-	return strings.Join([]string{i.User(), i.SafeEmailDomain()}, "@")
+	return transformIntoValidEmailName(i.User()) + "@" + i.SafeEmailDomain()
 }
 
 // CompanyEmail returns a fake company email address for Internet
 func (i Internet) CompanyEmail() string {
 	c := i.Faker.Company()
 
-	companyName := c.Name()
-	companyName = strings.ToLower(companyName)
-	companyName = strings.Replace(companyName, " ", ".", 0)
+	companyName := transformIntoValidEmailName(c.Name())
 
-	domain := strings.Join([]string{companyName, i.Domain()}, ".")
+	domain := companyName + "." + i.Domain()
 
-	return strings.Join([]string{i.User(), domain}, "@")
+	return transformIntoValidEmailName(i.User()) + "@" + domain
 }
 
 // TLD returns a fake tld for Internet
@@ -146,24 +166,21 @@ func (i Internet) URL() string {
 	url := i.Faker.RandomStringElement(urlFormats)
 
 	// {{domain}}
-	if strings.Contains(url, "{{domain}}") {
-		url = strings.Replace(url, "{{domain}}", i.Domain(), 1)
-	}
+	url = strings.Replace(url, "{{domain}}", i.Domain(), 1)
 
 	// {{slug}}
-	if strings.Contains(url, "{{slug}}") {
-		url = strings.Replace(url, "{{slug}}", i.Slug(), 1)
-	}
+	url = strings.Replace(url, "{{slug}}", i.Slug(), 1)
 
 	return url
 }
 
 // Ipv4 returns a fake ipv4 for Internet
 func (i Internet) Ipv4() string {
-	ips := []string{}
+	ips := make([]string, 0, 4)
 
-	for j := 0; j < 4; j++ {
-		ips = append(ips, strconv.Itoa(i.Faker.IntBetween(1, 255)))
+	ips = append(ips, strconv.Itoa(i.Faker.IntBetween(1, 255)))
+	for j := 0; j < 3; j++ {
+		ips = append(ips, strconv.Itoa(i.Faker.IntBetween(0, 255)))
 	}
 
 	return strings.Join(ips, ".")
@@ -171,11 +188,12 @@ func (i Internet) Ipv4() string {
 
 // LocalIpv4 returns a fake local ipv4 for Internet
 func (i Internet) LocalIpv4() string {
-	ips := []string{i.Faker.RandomStringElement([]string{"10", "172", "192"})}
+	ips := make([]string, 0, 4)
+	ips = append(ips, i.Faker.RandomStringElement([]string{"10", "172", "192"}))
 
 	if ips[0] == "10" {
 		for j := 0; j < 3; j++ {
-			ips = append(ips, strconv.Itoa(i.Faker.IntBetween(1, 255)))
+			ips = append(ips, strconv.Itoa(i.Faker.IntBetween(0, 255)))
 		}
 	}
 
@@ -183,7 +201,7 @@ func (i Internet) LocalIpv4() string {
 		ips = append(ips, strconv.Itoa(i.Faker.IntBetween(16, 31)))
 
 		for j := 0; j < 2; j++ {
-			ips = append(ips, strconv.Itoa(i.Faker.IntBetween(1, 255)))
+			ips = append(ips, strconv.Itoa(i.Faker.IntBetween(0, 255)))
 		}
 	}
 
@@ -191,7 +209,7 @@ func (i Internet) LocalIpv4() string {
 		ips = append(ips, "168")
 
 		for j := 0; j < 2; j++ {
-			ips = append(ips, strconv.Itoa(i.Faker.IntBetween(1, 255)))
+			ips = append(ips, strconv.Itoa(i.Faker.IntBetween(0, 255)))
 		}
 	}
 
@@ -200,7 +218,7 @@ func (i Internet) LocalIpv4() string {
 
 // Ipv6 returns a fake ipv6 for Internet
 func (i Internet) Ipv6() string {
-	ips := []string{}
+	ips := make([]string, 0, 8)
 
 	for j := 0; j < 8; j++ {
 		block := ""
@@ -218,7 +236,7 @@ func (i Internet) Ipv6() string {
 func (i Internet) MacAddress() string {
 	values := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"}
 
-	mac := []string{}
+	mac := make([]string, 0, 6)
 	for j := 0; j < 6; j++ {
 		m := i.Faker.RandomStringElement(values)
 		m = m + i.Faker.RandomStringElement(values)

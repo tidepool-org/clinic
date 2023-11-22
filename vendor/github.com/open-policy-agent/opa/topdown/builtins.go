@@ -6,27 +6,30 @@ package topdown
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"io"
-
-	"github.com/open-policy-agent/opa/metrics"
-	"github.com/open-policy-agent/opa/topdown/cache"
+	"math/rand"
 
 	"github.com/open-policy-agent/opa/ast"
+	"github.com/open-policy-agent/opa/metrics"
 	"github.com/open-policy-agent/opa/topdown/builtins"
+	"github.com/open-policy-agent/opa/topdown/cache"
+	"github.com/open-policy-agent/opa/topdown/print"
+	"github.com/open-policy-agent/opa/tracing"
 )
 
 type (
-	// FunctionalBuiltin1 is deprecated. Use BuiltinFunc instead.
+	// Deprecated: Functional-style builtins are deprecated. Use BuiltinFunc instead.
 	FunctionalBuiltin1 func(op1 ast.Value) (output ast.Value, err error)
 
-	// FunctionalBuiltin2 is deprecated. Use BuiltinFunc instead.
+	// Deprecated: Functional-style builtins are deprecated. Use BuiltinFunc instead.
 	FunctionalBuiltin2 func(op1, op2 ast.Value) (output ast.Value, err error)
 
-	// FunctionalBuiltin3 is deprecated. Use BuiltinFunc instead.
+	// Deprecated: Functional-style builtins are deprecated. Use BuiltinFunc instead.
 	FunctionalBuiltin3 func(op1, op2, op3 ast.Value) (output ast.Value, err error)
 
-	// FunctionalBuiltin4 is deprecated. Use BuiltinFunc instead.
+	// Deprecated: Functional-style builtins are deprecated. Use BuiltinFunc instead.
 	FunctionalBuiltin4 func(op1, op2, op3, op4 ast.Value) (output ast.Value, err error)
 
 	// BuiltinContext contains context from the evaluator that may be used by
@@ -34,18 +37,23 @@ type (
 	BuiltinContext struct {
 		Context                context.Context       // request context that was passed when query started
 		Metrics                metrics.Metrics       // metrics registry for recording built-in specific metrics
-		Seed                   io.Reader             // randomization seed
+		Seed                   io.Reader             // randomization source
 		Time                   *ast.Term             // wall clock time
 		Cancel                 Cancel                // atomic value that signals evaluation to halt
 		Runtime                *ast.Term             // runtime information on the OPA instance
 		Cache                  builtins.Cache        // built-in function state cache
 		InterQueryBuiltinCache cache.InterQueryCache // cross-query built-in function state cache
+		NDBuiltinCache         builtins.NDBCache     // cache for non-deterministic built-in state
 		Location               *ast.Location         // location of built-in call
 		Tracers                []Tracer              // Deprecated: Use QueryTracers instead
 		QueryTracers           []QueryTracer         // tracer objects for trace() built-in function
 		TraceEnabled           bool                  // indicates whether tracing is enabled for the evaluation
 		QueryID                uint64                // identifies query being evaluated
 		ParentID               uint64                // identifies parent of query being evaluated
+		PrintHook              print.Hook            // provides callback function to use for printing
+		DistributedTracingOpts tracing.Options       // options to be used by distributed tracing.
+		rand                   *rand.Rand            // randomization source for non-security-sensitive operations
+		Capabilities           *ast.Capabilities
 	}
 
 	// BuiltinFunc defines an interface for implementing built-in functions.
@@ -56,27 +64,46 @@ type (
 	BuiltinFunc func(bctx BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error
 )
 
+// Rand returns a random number generator based on the Seed for this built-in
+// context. The random number will be re-used across multiple calls to this
+// function. If a random number generator cannot be created, an error is
+// returned.
+func (bctx *BuiltinContext) Rand() (*rand.Rand, error) {
+
+	if bctx.rand != nil {
+		return bctx.rand, nil
+	}
+
+	seed, err := readInt64(bctx.Seed)
+	if err != nil {
+		return nil, err
+	}
+
+	bctx.rand = rand.New(rand.NewSource(seed))
+	return bctx.rand, nil
+}
+
 // RegisterBuiltinFunc adds a new built-in function to the evaluation engine.
 func RegisterBuiltinFunc(name string, f BuiltinFunc) {
 	builtinFunctions[name] = builtinErrorWrapper(name, f)
 }
 
-// RegisterFunctionalBuiltin1 is deprecated use RegisterBuiltinFunc instead.
+// Deprecated: Functional-style builtins are deprecated. Use RegisterBuiltinFunc instead.
 func RegisterFunctionalBuiltin1(name string, fun FunctionalBuiltin1) {
 	builtinFunctions[name] = functionalWrapper1(name, fun)
 }
 
-// RegisterFunctionalBuiltin2 is deprecated use RegisterBuiltinFunc instead.
+// Deprecated: Functional-style builtins are deprecated. Use RegisterBuiltinFunc instead.
 func RegisterFunctionalBuiltin2(name string, fun FunctionalBuiltin2) {
 	builtinFunctions[name] = functionalWrapper2(name, fun)
 }
 
-// RegisterFunctionalBuiltin3 is deprecated use RegisterBuiltinFunc instead.
+// Deprecated: Functional-style builtins are deprecated. Use RegisterBuiltinFunc instead.
 func RegisterFunctionalBuiltin3(name string, fun FunctionalBuiltin3) {
 	builtinFunctions[name] = functionalWrapper3(name, fun)
 }
 
-// RegisterFunctionalBuiltin4 is deprecated use RegisterBuiltinFunc instead.
+// Deprecated: Functional-style builtins are deprecated. Use RegisterBuiltinFunc instead.
 func RegisterFunctionalBuiltin4(name string, fun FunctionalBuiltin4) {
 	builtinFunctions[name] = functionalWrapper4(name, fun)
 }
@@ -86,7 +113,7 @@ func GetBuiltin(name string) BuiltinFunc {
 	return builtinFunctions[name]
 }
 
-// BuiltinEmpty is deprecated.
+// Deprecated: The BuiltinEmpty type is no longer needed. Use nil return values instead.
 type BuiltinEmpty struct{}
 
 func (BuiltinEmpty) Error() string {
@@ -155,16 +182,41 @@ func handleBuiltinErr(name string, loc *ast.Location, err error) error {
 	case *Error, Halt:
 		return err
 	case builtins.ErrOperand:
-		return &Error{
+		e := &Error{
 			Code:     TypeErr,
-			Message:  fmt.Sprintf("%v: %v", string(name), err.Error()),
+			Message:  fmt.Sprintf("%v: %v", name, err.Error()),
 			Location: loc,
 		}
+		return e.Wrap(err)
 	default:
-		return &Error{
+		e := &Error{
 			Code:     BuiltinErr,
-			Message:  fmt.Sprintf("%v: %v", string(name), err.Error()),
+			Message:  fmt.Sprintf("%v: %v", name, err.Error()),
 			Location: loc,
 		}
+		return e.Wrap(err)
 	}
+}
+
+func readInt64(r io.Reader) (int64, error) {
+	bs := make([]byte, 8)
+	n, err := io.ReadFull(r, bs)
+	if n != len(bs) || err != nil {
+		return 0, err
+	}
+	return int64(binary.BigEndian.Uint64(bs)), nil
+}
+
+// Used to get older-style (ast.Term, error) tuples out of newer functions.
+func getResult(fn BuiltinFunc, operands ...*ast.Term) (*ast.Term, error) {
+	var result *ast.Term
+	extractionFn := func(r *ast.Term) error {
+		result = r
+		return nil
+	}
+	err := fn(BuiltinContext{}, operands, extractionFn)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

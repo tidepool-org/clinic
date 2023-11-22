@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
@@ -120,7 +120,7 @@ var _ = Describe("Redox", func() {
 
 		It("inserts the message if the data is valid", func() {
 			ctx := context.Background()
-			payload, err := test.LoadFixture("test/fixtures/neworder.json")
+			payload, err := test.LoadFixture("test/fixtures/subscribeorder.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(payload).ToNot(HaveLen(0))
 
@@ -203,118 +203,166 @@ var _ = Describe("Redox", func() {
 		})
 	})
 
-	Describe("MatchPatient", func() {
+	Describe("MatchNewOrderToPatient", func() {
 		var clinic clinics.Clinic
 		var patient patients.Patient
 		var order models.NewOrder
-		var update patients.SubscriptionUpdate
+		var update *patients.SubscriptionUpdate
 
-		BeforeEach(func() {
-			clinic = *clinicsTest.RandomClinic()
-			patient = patientsTest.RandomPatient()
+		Context("with a subscription order", func() {
+			BeforeEach(func() {
+				clinic = *clinicsTest.RandomClinic()
+				patient = patientsTest.RandomPatient()
 
-			payload, err := test.LoadFixture("test/fixtures/neworder.json")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(payload).ToNot(HaveLen(0))
+				payload, err := test.LoadFixture("test/fixtures/subscribeorder.json")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(payload).ToNot(HaveLen(0))
 
-			err = json.Unmarshal(payload, &order)
-			Expect(err).ToNot(HaveOccurred())
+				err = json.Unmarshal(payload, &order)
+				Expect(err).ToNot(HaveOccurred())
 
-			update = patients.SubscriptionUpdate{
-				Name:   "test",
-				Active: false,
-				MatchedMessage: patients.MatchedMessage{
-					DocumentId: primitive.NewObjectID(),
-					DataModel:  "Order",
-					EventType:  "New",
-				},
-			}
+				update = &patients.SubscriptionUpdate{
+					Name:   "test",
+					Active: false,
+					MatchedMessage: patients.MatchedMessage{
+						DocumentId: primitive.NewObjectID(),
+						DataModel:  "Order",
+						EventType:  "New",
+					},
+				}
+			})
+
+			It("does not return an error when mrn cannot be found", func() {
+				order.Patient.Identifiers = nil
+				res, err := handler.MatchNewOrderToPatient(nil, clinic, order, update)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(res).To(BeNil())
+			})
+
+			It("returns an error when demographics is empty", func() {
+				order.Patient.Demographics = nil
+				res, err := handler.MatchNewOrderToPatient(nil, clinic, order, update)
+				Expect(err).To(MatchError(errors.BadRequest))
+				Expect(res).To(BeNil())
+			})
+
+			It("returns an error when date of birth is empty", func() {
+				order.Patient.Demographics.DOB = nil
+				res, err := handler.MatchNewOrderToPatient(nil, clinic, order, update)
+				Expect(err).To(MatchError(errors.BadRequest))
+				Expect(res).To(BeNil())
+			})
+
+			It("successfully matches a patient", func() {
+				fixtureMrn := "0000000001"
+				fixtureDateOfBirth := "2008-01-06"
+				clinicId := clinic.Id.Hex()
+				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+					ClinicId:  &clinicId,
+					Mrn:       &fixtureMrn,
+					BirthDate: &fixtureDateOfBirth,
+				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+					Patients:   []*patients.Patient{&patient},
+					TotalCount: 1,
+				}, nil)
+
+				patientsService.EXPECT().UpdateEHRSubscription(
+					gomock.Any(),
+					gomock.Eq(patient.ClinicId.Hex()),
+					gomock.Eq(*patient.UserId),
+					gomock.Eq(*update),
+				).Return(nil)
+
+				res, err := handler.MatchNewOrderToPatient(nil, clinic, order, update)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(1))
+			})
+
+			It("returns all patients when multiple matches are found", func() {
+				fixtureMrn := "0000000001"
+				fixtureDateOfBirth := "2008-01-06"
+				second := patientsTest.RandomPatient()
+				clinicId := clinic.Id.Hex()
+
+				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+					ClinicId:  &clinicId,
+					Mrn:       &fixtureMrn,
+					BirthDate: &fixtureDateOfBirth,
+				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+					Patients:   []*patients.Patient{&patient, &second},
+					TotalCount: 2,
+				}, nil)
+
+				res, err := handler.MatchNewOrderToPatient(nil, clinic, order, update)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(2))
+			})
+
+			It("does not return error when no patients are found", func() {
+				fixtureMrn := "0000000001"
+				fixtureDateOfBirth := "2008-01-06"
+				clinicId := clinic.Id.Hex()
+
+				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+					ClinicId:  &clinicId,
+					Mrn:       &fixtureMrn,
+					BirthDate: &fixtureDateOfBirth,
+				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+					Patients:   []*patients.Patient{},
+					TotalCount: 0,
+				}, nil)
+
+				res, err := handler.MatchNewOrderToPatient(nil, clinic, order, update)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(0))
+			})
 		})
 
-		It("does not return an error when mrn cannot be found", func() {
-			order.Patient.Identifiers = nil
-			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
+		Context("with an account creation order", func() {
+			BeforeEach(func() {
+				clinic = *clinicsTest.RandomClinic()
+				patient = patientsTest.RandomPatient()
 
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res).To(BeNil())
+				payload, err := test.LoadFixture("test/fixtures/accountorder.json")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(payload).ToNot(HaveLen(0))
+
+				err = json.Unmarshal(payload, &order)
+				Expect(err).ToNot(HaveOccurred())
+
+				update = nil
+			})
+
+			It("returns unique patients when multiple matches are found", func() {
+				fixtureMrn := "0000000001"
+				fixtureDateOfBirth := "2008-01-06"
+				fixtureFullName := "Timothy Bixby"
+				clinicId := clinic.Id.Hex()
+
+				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+					ClinicId: &clinicId,
+					Mrn:      &fixtureMrn,
+				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+					Patients:   []*patients.Patient{&patient, &patient},
+					TotalCount: 2,
+				}, nil)
+
+				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+					ClinicId:  &clinicId,
+					BirthDate: &fixtureDateOfBirth,
+					FullName:  &fixtureFullName,
+				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+					Patients:   []*patients.Patient{&patient},
+					TotalCount: 1,
+				}, nil)
+
+				res, err := handler.MatchNewOrderToPatient(nil, clinic, order, update)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(1))
+			})
+
 		})
 
-		It("returns an error when demographics is empty", func() {
-			order.Patient.Demographics = nil
-			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
-			Expect(err).To(MatchError(errors.BadRequest))
-			Expect(res).To(BeNil())
-		})
-
-		It("returns an error when date of birth is empty", func() {
-			order.Patient.Demographics.DOB = nil
-			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
-			Expect(err).To(MatchError(errors.BadRequest))
-			Expect(res).To(BeNil())
-		})
-
-		It("successfully matches a patient", func() {
-			fixtureMrn := "0000000001"
-			fixtureDateOfBirth := "2008-01-06"
-			clinicId := clinic.Id.Hex()
-			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
-				ClinicId:  &clinicId,
-				Mrn:       &fixtureMrn,
-				BirthDate: &fixtureDateOfBirth,
-			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-				Patients:   []*patients.Patient{&patient},
-				TotalCount: 1,
-			}, nil)
-
-			patientsService.EXPECT().UpdateEHRSubscription(
-				gomock.Any(),
-				gomock.Eq(patient.ClinicId.Hex()),
-				gomock.Eq(*patient.UserId),
-				gomock.Eq(update),
-			).Return(nil)
-
-			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
-			Expect(err).To(BeNil())
-			Expect(res).To(HaveLen(1))
-		})
-
-		It("returns all patients when multiple matches are found", func() {
-			fixtureMrn := "0000000001"
-			fixtureDateOfBirth := "2008-01-06"
-			second := patientsTest.RandomPatient()
-			clinicId := clinic.Id.Hex()
-
-			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
-				ClinicId:  &clinicId,
-				Mrn:       &fixtureMrn,
-				BirthDate: &fixtureDateOfBirth,
-			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-				Patients:   []*patients.Patient{&patient, &second},
-				TotalCount: 2,
-			}, nil)
-
-			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
-			Expect(err).To(BeNil())
-			Expect(res).To(HaveLen(2))
-		})
-
-		It("does not return error when no patients are found", func() {
-			fixtureMrn := "0000000001"
-			fixtureDateOfBirth := "2008-01-06"
-			clinicId := clinic.Id.Hex()
-
-			patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
-				ClinicId:  &clinicId,
-				Mrn:       &fixtureMrn,
-				BirthDate: &fixtureDateOfBirth,
-			}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-				Patients:   []*patients.Patient{},
-				TotalCount: 0,
-			}, nil)
-
-			res, err := handler.MatchNewOrderToPatient(nil, clinic, order, &update)
-			Expect(err).To(BeNil())
-			Expect(res).To(HaveLen(0))
-		})
 	})
 })

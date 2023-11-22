@@ -343,24 +343,7 @@ func (h *Handler) GetEHRSettings(ec echo.Context, clinicId ClinicId) error {
 		return errors.NotFound
 	}
 
-	response := EHRSettings{
-		Enabled:  settings.Enabled,
-		SourceId: settings.SourceId,
-		DestinationIds: EHRDestinationIds{
-			Flowsheet: settings.DestinationIds.Flowsheet,
-			Notes:     settings.DestinationIds.Notes,
-			Results:   settings.DestinationIds.Results,
-		},
-		ProcedureCodes: EHRProcedureCodes{
-			EnableSummaryReports:  settings.ProcedureCodes.EnableSummaryReports,
-			DisableSummaryReports: settings.ProcedureCodes.DisableSummaryReports,
-		},
-	}
-	if settings.Facility != nil {
-		response.Facility = &EHRFacility{
-			Name: settings.Facility.Name,
-		}
-	}
+	response := NewEHRSettingsDto(settings)
 	return ec.JSON(http.StatusOK, response)
 }
 
@@ -371,26 +354,8 @@ func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	settings := &clinics.EHRSettings{
-		Enabled:  dto.Enabled,
-		SourceId: dto.SourceId,
-		DestinationIds: clinics.EHRDestinationIds{
-			Flowsheet: dto.DestinationIds.Flowsheet,
-			Notes:     dto.DestinationIds.Notes,
-			Results:   dto.DestinationIds.Results,
-		},
-		ProcedureCodes: clinics.EHRProcedureCodes{
-			EnableSummaryReports:  dto.ProcedureCodes.EnableSummaryReports,
-			DisableSummaryReports: dto.ProcedureCodes.DisableSummaryReports,
-		},
-	}
-	if dto.Facility != nil {
-		settings.Facility = &clinics.EHRFacility{
-			Name: dto.Facility.Name,
-		}
-	}
+	settings := NewEHRSettings(dto)
 	err := h.clinics.UpdateEHRSettings(ctx, clinicId, settings)
-
 	if err != nil {
 		return err
 	}
