@@ -4,36 +4,37 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/tidepool-org/clinic/clinics"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var _ = Describe("canAddPatientTag", func() {
 	It("returns an error when tags exceed the maximum value", func() {
-		clinicWithMaxTags := Clinic{
-			PatientTags: genRandomTags(MaximumPatientTags),
+		clinicWithMaxTags := clinics.Clinic{
+			PatientTags: genRandomTags(clinics.MaximumPatientTags),
 		}
 
-		err := assertCanAddPatientTag(clinicWithMaxTags, PatientTag{})
+		err := clinics.AssertCanAddPatientTag(clinicWithMaxTags, clinics.PatientTag{})
 
-		Expect(err).To(MatchError(ErrMaximumPatientTagsExceeded))
+		Expect(err).To(MatchError(clinics.ErrMaximumPatientTagsExceeded))
 	})
 
 	It("returns an error when the tag to be added is a duplicate", func() {
 		tagName := "first"
-		firstTag := PatientTag{Name: tagName, Id: ptr(primitive.NewObjectID())}
-		clinicWithDupTag := Clinic{PatientTags: []PatientTag{firstTag}}
+		firstTag := clinics.PatientTag{Name: tagName, Id: ptr(primitive.NewObjectID())}
+		clinicWithDupTag := clinics.Clinic{PatientTags: []clinics.PatientTag{firstTag}}
 
-		dupTag := PatientTag{Name: tagName, Id: ptr(primitive.NewObjectID())}
-		err := assertCanAddPatientTag(clinicWithDupTag, dupTag)
+		dupTag := clinics.PatientTag{Name: tagName, Id: ptr(primitive.NewObjectID())}
+		err := clinics.AssertCanAddPatientTag(clinicWithDupTag, dupTag)
 
-		Expect(err).To(MatchError(ErrDuplicatePatientTagName))
+		Expect(err).To(MatchError(clinics.ErrDuplicatePatientTagName))
 	})
 })
 
-func genRandomTags(n int) []PatientTag {
-	tags := make([]PatientTag, n)
+func genRandomTags(n int) []clinics.PatientTag {
+	tags := make([]clinics.PatientTag, n)
 	for i := 0; i < n; i++ {
-		tags[i] = PatientTag{
+		tags[i] = clinics.PatientTag{
 			Name: fmt.Sprintf("tag%d", i),
 		}
 	}
