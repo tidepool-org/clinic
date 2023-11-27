@@ -426,6 +426,11 @@ func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error
 		if err != nil {
 			return err
 		}
+
+		clinicIds = make([]string, 0, len(clinicList))
+		for _, clinic := range clinicList {
+			clinicIds = append(clinicIds, clinic.Id.Hex())
+		}
 	}
 
 	page := pagination(params.Offset, params.Limit)

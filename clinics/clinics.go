@@ -220,7 +220,7 @@ func FilterByWorkspaceId(clinics []*Clinic, workspaceId, workspaceIdType string)
 	case WorkspaceIdTypeEHRSourceId:
 		return filterByEHRSourceId(clinics, workspaceId)
 	}
-	return nil, fmt.Errorf("unknown workspace identifier type")
+	return nil, fmt.Errorf("%w: unknown workspace identifier type", errors.BadRequest)
 }
 
 func filterByClinicId(clinics []*Clinic, clinicId string) ([]*Clinic, error) {
@@ -235,11 +235,11 @@ func filterByClinicId(clinics []*Clinic, clinicId string) ([]*Clinic, error) {
 	return results, nil
 }
 
-func filterByEHRSourceId(clinics []*Clinic, clinicId string) ([]*Clinic, error) {
+func filterByEHRSourceId(clinics []*Clinic, sourceId string) ([]*Clinic, error) {
 	var results []*Clinic
 	for _, clinic := range clinics {
 		clinic := clinic
-		if clinic != nil && clinic.EHRSettings != nil && clinic.EHRSettings.SourceId == clinicId {
+		if clinic != nil && clinic.EHRSettings != nil && clinic.EHRSettings.SourceId == sourceId {
 			results = append(results, clinic)
 		}
 	}
