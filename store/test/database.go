@@ -24,10 +24,12 @@ var (
 )
 
 func SetupDatabase() {
+	ctx, cancel := context.WithTimeout(context.Background(), mongoTimeout)
+	defer cancel()
+
 	client, err := store.NewClient(mongoTestHost)
 	Expect(err).ToNot(HaveOccurred())
 
-	ctx, _ := context.WithTimeout(context.Background(), mongoTimeout)
 	err = client.Ping(ctx, nil)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -36,11 +38,13 @@ func SetupDatabase() {
 }
 
 func TeardownDatabase() {
+	ctx, cancel := context.WithTimeout(context.Background(), mongoTimeout)
+	defer cancel()
+
 	Expect(database).ToNot(BeNil())
-	err := database.Drop(context.Background())
+	err := database.Drop(ctx)
 	Expect(err).ToNot(HaveOccurred())
 
-	ctx, _ := context.WithTimeout(context.Background(), mongoTimeout)
 	Expect(database.Client().Disconnect(ctx)).ToNot(HaveOccurred())
 	database = nil
 }
