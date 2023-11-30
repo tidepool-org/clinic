@@ -12,7 +12,9 @@ import (
 )
 
 const (
-	DefaultMrnIdType = "MRN"
+	DefaultMrnIdType           = "MRN"
+	WorkspaceIdTypeClinicId    = "clinicId"
+	WorkspaceIdTypeEHRSourceId = "ehrSourceId"
 )
 
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
@@ -209,4 +211,38 @@ func hasValidPatientTags(patientTags []PatientTag) bool {
 
 func isStringSet(s *string) bool {
 	return s != nil && *s != ""
+}
+
+func FilterByWorkspaceId(clinics []*Clinic, workspaceId, workspaceIdType string) ([]*Clinic, error) {
+	switch workspaceIdType {
+	case WorkspaceIdTypeClinicId:
+		return filterByClinicId(clinics, workspaceId)
+	case WorkspaceIdTypeEHRSourceId:
+		return filterByEHRSourceId(clinics, workspaceId)
+	}
+	return nil, fmt.Errorf("%w: unknown workspace identifier type", errors.BadRequest)
+}
+
+func filterByClinicId(clinics []*Clinic, clinicId string) ([]*Clinic, error) {
+	var results []*Clinic
+	for _, clinic := range clinics {
+		clinic := clinic
+		if clinic != nil && clinic.Id != nil && clinic.Id.Hex() == clinicId {
+			results = append(results, clinic)
+		}
+	}
+
+	return results, nil
+}
+
+func filterByEHRSourceId(clinics []*Clinic, sourceId string) ([]*Clinic, error) {
+	var results []*Clinic
+	for _, clinic := range clinics {
+		clinic := clinic
+		if clinic != nil && clinic.EHRSettings != nil && clinic.EHRSettings.SourceId == sourceId {
+			results = append(results, clinic)
+		}
+	}
+
+	return results, nil
 }

@@ -23,6 +23,16 @@ type Pagination struct {
 	Limit  int
 }
 
+func (p Pagination) WithOffset(value int) Pagination {
+	p.Offset = value
+	return p
+}
+
+func (p Pagination) WithLimit(value int) Pagination {
+	p.Limit = value
+	return p
+}
+
 func DefaultPagination() Pagination {
 	return Pagination{
 		Offset: 0,

@@ -18,6 +18,18 @@ func strp(val string) *string {
 	return &val
 }
 
+func RandomClinics(count int) []*clinics.Clinic {
+	if count <= 0 {
+		panic("count must be positive")
+	}
+
+	clinics := make([]*clinics.Clinic, count)
+	for i := 0; i < count; i++ {
+		clinics[i] = RandomClinic()
+	}
+	return clinics
+}
+
 func RandomClinic() *clinics.Clinic {
 	shareCode := Faker.UUID().V4()
 	shareCodes := []string{shareCode}

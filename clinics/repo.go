@@ -287,7 +287,7 @@ func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (
 		Name: strings.TrimSpace(tagName),
 	}
 
-	if err := assertCanAddPatientTag(*clinic, tag); err != nil {
+	if err := AssertCanAddPatientTag(*clinic, tag); err != nil {
 		return nil, err
 	}
 
@@ -462,7 +462,7 @@ func (c *repository) UpdateMRNSettings(ctx context.Context, id string, settings 
 	return err
 }
 
-func assertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
+func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
 	if len(clinic.PatientTags) >= MaximumPatientTags {
 		return ErrMaximumPatientTagsExceeded
 	}

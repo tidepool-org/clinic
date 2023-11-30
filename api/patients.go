@@ -1,6 +1,9 @@
 package api
 
 import (
+	"fmt"
+	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/errors"
 	"net/http"
 	"time"
 
@@ -379,4 +382,72 @@ func (h *Handler) UpdatePatientDataSources(ec echo.Context, userId UserId) error
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error {
+	ctx := ec.Request().Context()
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" || authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusUnauthorized,
+			Message: "expected authenticated user id",
+		}
+	}
+
+	maxClinics := store.DefaultPagination().WithLimit(1000)
+	cliniciansFilter := &clinicians.Filter{
+		UserId: &authData.SubjectId,
+	}
+	clinicianList, err := h.clinicians.List(ctx, cliniciansFilter, maxClinics)
+	if err != nil {
+		return err
+	}
+
+	clinicIds := make([]string, 0, len(clinicianList))
+	for _, clinician := range clinicianList {
+		if clinician != nil && clinician.ClinicId != nil {
+			clinicIds = append(clinicIds, clinician.ClinicId.Hex())
+		}
+	}
+
+	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, maxClinics)
+	if err != nil {
+		return err
+	}
+
+	workspaceId := pstr(params.WorkspaceId)
+	if workspaceId != "" {
+		if params.WorkspaceIdType == nil {
+			return fmt.Errorf("%w: workspace id type is required", errors.BadRequest)
+		}
+
+		workspaceIdType := string(*params.WorkspaceIdType)
+		clinicList, err = clinics.FilterByWorkspaceId(clinicList, workspaceId, workspaceIdType)
+		if err != nil {
+			return err
+		}
+
+		clinicIds = make([]string, 0, len(clinicList))
+		for _, clinic := range clinicList {
+			clinicIds = append(clinicIds, clinic.Id.Hex())
+		}
+	}
+
+	page := pagination(params.Offset, params.Limit)
+	filter := patients.Filter{
+		ClinicIds: clinicIds,
+		Mrn:       params.Mrn,
+		BirthDate: params.BirthDate,
+	}
+	list, err := h.patients.List(ctx, &filter, page, nil)
+	if err != nil {
+		return err
+	}
+
+	dtos, err := NewPatientClinicRelationshipsDto(list.Patients, clinicList)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, dtos)
 }

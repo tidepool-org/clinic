@@ -720,6 +720,32 @@ var _ = Describe("Patients Repository", func() {
 				}
 			})
 
+			It("filters by clinic ids correctly", func() {
+				clinicIds := []string{
+					allPatients[1].ClinicId.Hex(),
+					allPatients[2].ClinicId.Hex(),
+				}
+				clinicIdsMap := map[string]struct{}{}
+				for _, id := range clinicIds {
+					clinicIdsMap[id] = struct{}{}
+				}
+
+				filter := patients.Filter{
+					ClinicIds: clinicIds,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  10,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(clinicIdsMap).To(HaveKey(patient.ClinicId.Hex()))
+				}
+			})
+
 			It("filters by patient tag correctly", func() {
 				randomPatientTags := *randomPatient.Tags
 				tags := []string{randomPatientTags[0].Hex()}
