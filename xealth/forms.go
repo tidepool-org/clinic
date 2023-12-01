@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"github.com/mitchellh/mapstructure"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/mail"
 )
 
@@ -18,21 +19,33 @@ var patientEnrollmentForm []byte
 //go:embed forms/guardian_enrollment_form.json
 var guardianEnrollmentForm []byte
 
-type DataValidator[D any, E FormErrors] interface {
+type DataValidator[D FormData, E FormErrors] interface {
 	Validate(D) (E, error)
+}
+
+type FormData interface {
+	Normalize() PreorderFormData
 }
 
 type FormErrors interface {
 	HasErrors() bool
 }
 
+type Guardian struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+}
 type GuardianFormData struct {
-	Guardian struct {
-		FirstName string `json:"firstName"`
-		LastName  string `json:"lastName"`
-		Email     string `json:"email"`
-	} `json:"guardian"`
-	Dexcom Dexcom `json:"dexcom"`
+	Guardian Guardian `json:"guardian"`
+	Dexcom   Dexcom   `json:"dexcom"`
+}
+
+func (g GuardianFormData) Normalize() PreorderFormData {
+	return PreorderFormData{
+		Guardian: &g.Guardian,
+		Dexcom:   g.Dexcom,
+	}
 }
 
 type GuardianFormValidationErrors struct {
@@ -48,11 +61,20 @@ func (p GuardianFormValidationErrors) HasErrors() bool {
 	return p.FormHasErrors
 }
 
+type Patient struct {
+	Email string `json:"email"`
+}
+
 type PatientFormData struct {
-	Patient struct {
-		Email string `json:"email"`
-	} `json:"patient"`
-	Dexcom Dexcom `json:"dexcom"`
+	Patient Patient `json:"patient"`
+	Dexcom  Dexcom  `json:"dexcom"`
+}
+
+func (p PatientFormData) Normalize() PreorderFormData {
+	return PreorderFormData{
+		Patient: &p.Patient,
+		Dexcom:  p.Dexcom,
+	}
 }
 
 type PatientFormValidationErrors struct {
@@ -104,6 +126,14 @@ type ValidationError struct {
 	UiOptions   struct {
 		ErrorMessage string `json:"errorMessage"`
 	} `json:"ui:options"`
+}
+
+type PreorderFormData struct {
+	Id             *primitive.ObjectID `bson:"_id""`
+	DataTrackingId string              `bson:"dataTrackingId,omitempty"`
+	Patient        *Patient            `bson:"patient,omitempty"`
+	Guardian       *Guardian           `bson:"guardian,omitempty"`
+	Dexcom         Dexcom              `bson:"dexcom"`
 }
 
 func NewValidationError(message string) *ValidationError {

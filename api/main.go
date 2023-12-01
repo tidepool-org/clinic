@@ -119,6 +119,7 @@ func MainLoop() {
 			patients.NewService,
 			redox.NewConfig,
 			redox.NewHandler,
+			xealth.NewStore,
 			xealth.NewHandler,
 			clinicians.NewRepository,
 			clinicians.NewService,

@@ -307,8 +307,17 @@ type ClientInterface interface {
 
 	UpdateClinicUserDetails(ctx context.Context, userId UserId, body UpdateClinicUserDetailsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// XealthNotification request
+	XealthNotification(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// XealthPreorder request
 	XealthPreorder(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// XelathGetProgramUrl request
+	XelathGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// XealthGetPrograms request
+	XealthGetPrograms(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ListAllClinicians(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -1283,8 +1292,44 @@ func (c *Client) UpdateClinicUserDetails(ctx context.Context, userId UserId, bod
 	return c.Client.Do(req)
 }
 
+func (c *Client) XealthNotification(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewXealthNotificationRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) XealthPreorder(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewXealthPreorderRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) XelathGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewXelathGetProgramUrlRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) XealthGetPrograms(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewXealthGetProgramsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -4626,6 +4671,33 @@ func NewUpdateClinicUserDetailsRequestWithBody(server string, userId UserId, con
 	return req, nil
 }
 
+// NewXealthNotificationRequest generates requests for XealthNotification
+func NewXealthNotificationRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/xealth/notification")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewXealthPreorderRequest generates requests for XealthPreorder
 func NewXealthPreorderRequest(server string) (*http.Request, error) {
 	var err error
@@ -4646,6 +4718,60 @@ func NewXealthPreorderRequest(server string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewXelathGetProgramUrlRequest generates requests for XelathGetProgramUrl
+func NewXelathGetProgramUrlRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/xealth/program")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewXealthGetProgramsRequest generates requests for XealthGetPrograms
+func NewXealthGetProgramsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/xealth/programs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -4913,8 +5039,17 @@ type ClientWithResponsesInterface interface {
 
 	UpdateClinicUserDetailsWithResponse(ctx context.Context, userId UserId, body UpdateClinicUserDetailsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClinicUserDetailsResponse, error)
 
+	// XealthNotificationWithResponse request
+	XealthNotificationWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthNotificationResponse, error)
+
 	// XealthPreorderWithResponse request
 	XealthPreorderWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthPreorderResponse, error)
+
+	// XelathGetProgramUrlWithResponse request
+	XelathGetProgramUrlWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XelathGetProgramUrlResponse, error)
+
+	// XealthGetProgramsWithResponse request
+	XealthGetProgramsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthGetProgramsResponse, error)
 }
 
 type ListAllCliniciansResponse struct {
@@ -6107,6 +6242,27 @@ func (r UpdateClinicUserDetailsResponse) StatusCode() int {
 	return 0
 }
 
+type XealthNotificationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r XealthNotificationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r XealthNotificationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type XealthPreorderResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -6122,6 +6278,48 @@ func (r XealthPreorderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r XealthPreorderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type XelathGetProgramUrlResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r XelathGetProgramUrlResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r XelathGetProgramUrlResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type XealthGetProgramsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r XealthGetProgramsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r XealthGetProgramsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -6831,6 +7029,15 @@ func (c *ClientWithResponses) UpdateClinicUserDetailsWithResponse(ctx context.Co
 	return ParseUpdateClinicUserDetailsResponse(rsp)
 }
 
+// XealthNotificationWithResponse request returning *XealthNotificationResponse
+func (c *ClientWithResponses) XealthNotificationWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthNotificationResponse, error) {
+	rsp, err := c.XealthNotification(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseXealthNotificationResponse(rsp)
+}
+
 // XealthPreorderWithResponse request returning *XealthPreorderResponse
 func (c *ClientWithResponses) XealthPreorderWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthPreorderResponse, error) {
 	rsp, err := c.XealthPreorder(ctx, reqEditors...)
@@ -6838,6 +7045,24 @@ func (c *ClientWithResponses) XealthPreorderWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseXealthPreorderResponse(rsp)
+}
+
+// XelathGetProgramUrlWithResponse request returning *XelathGetProgramUrlResponse
+func (c *ClientWithResponses) XelathGetProgramUrlWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XelathGetProgramUrlResponse, error) {
+	rsp, err := c.XelathGetProgramUrl(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseXelathGetProgramUrlResponse(rsp)
+}
+
+// XealthGetProgramsWithResponse request returning *XealthGetProgramsResponse
+func (c *ClientWithResponses) XealthGetProgramsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthGetProgramsResponse, error) {
+	rsp, err := c.XealthGetPrograms(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseXealthGetProgramsResponse(rsp)
 }
 
 // ParseListAllCliniciansResponse parses an HTTP response from a ListAllCliniciansWithResponse call
@@ -8058,6 +8283,22 @@ func ParseUpdateClinicUserDetailsResponse(rsp *http.Response) (*UpdateClinicUser
 	return response, nil
 }
 
+// ParseXealthNotificationResponse parses an HTTP response from a XealthNotificationWithResponse call
+func ParseXealthNotificationResponse(rsp *http.Response) (*XealthNotificationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &XealthNotificationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ParseXealthPreorderResponse parses an HTTP response from a XealthPreorderWithResponse call
 func ParseXealthPreorderResponse(rsp *http.Response) (*XealthPreorderResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -8067,6 +8308,38 @@ func ParseXealthPreorderResponse(rsp *http.Response) (*XealthPreorderResponse, e
 	}
 
 	response := &XealthPreorderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseXelathGetProgramUrlResponse parses an HTTP response from a XelathGetProgramUrlWithResponse call
+func ParseXelathGetProgramUrlResponse(rsp *http.Response) (*XelathGetProgramUrlResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &XelathGetProgramUrlResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseXealthGetProgramsResponse parses an HTTP response from a XealthGetProgramsWithResponse call
+func ParseXealthGetProgramsResponse(rsp *http.Response) (*XealthGetProgramsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &XealthGetProgramsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

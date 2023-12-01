@@ -846,20 +846,22 @@ type EHRMatchResponse struct {
 
 // EHRProcedureCodes defines model for EHRProcedureCodes.
 type EHRProcedureCodes struct {
-	CreateAccount         *string `json:"createAccount,omitempty"`
-	DisableSummaryReports string  `json:"disableSummaryReports"`
+	CreateAccount                 *string `json:"createAccount,omitempty"`
+	CreateAccountAndEnableReports *string `json:"createAccountAndEnableReports,omitempty"`
+	DisableSummaryReports         *string `json:"disableSummaryReports,omitempty"`
 
 	// EnableSummaryReports Procedure Code for Summary Statistics and PDF Reports subscription
-	EnableSummaryReports string `json:"enableSummaryReports"`
+	EnableSummaryReports *string `json:"enableSummaryReports,omitempty"`
 }
 
 // EHRSettings defines model for EHRSettings.
 type EHRSettings struct {
-	DestinationIds EHRDestinationIds `json:"destinationIds"`
+	DestinationIds *EHRDestinationIds `json:"destinationIds,omitempty"`
 
 	// Enabled Enable or disable the EHR integration
 	Enabled        bool              `json:"enabled"`
 	Facility       *EHRFacility      `json:"facility,omitempty"`
+	MrnIdType      string            `json:"mrnIdType"`
 	ProcedureCodes EHRProcedureCodes `json:"procedureCodes"`
 	SourceId       string            `json:"sourceId"`
 }

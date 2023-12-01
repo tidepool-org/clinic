@@ -89,6 +89,7 @@ type EHRSubscriptions map[string]EHRSubscription
 
 type EHRSubscription struct {
 	Active          bool             `bson:"active"`
+	Provider        string           `bson:"provider"`
 	MatchedMessages []MatchedMessage `bson:"matchedMessages,omitempty"`
 }
 
@@ -100,6 +101,7 @@ type MatchedMessage struct {
 
 type SubscriptionUpdate struct {
 	Name           string
+	Provider       string
 	Active         bool
 	MatchedMessage MatchedMessage
 }

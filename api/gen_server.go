@@ -178,9 +178,18 @@ type ServerInterface interface {
 	// Update User Details
 	// (POST /v1/users/{userId}/clinics)
 	UpdateClinicUserDetails(ctx echo.Context, userId UserId) error
+	// Notification Webhook
+	// (POST /v1/xealth/notification)
+	XealthNotification(ctx echo.Context) error
 	// Preorder Form Webhook
 	// (POST /v1/xealth/preorder)
 	XealthPreorder(ctx echo.Context) error
+	// Get Program Url
+	// (PUT /v1/xealth/program)
+	XelathGetProgramUrl(ctx echo.Context) error
+	// Get Programs
+	// (PUT /v1/xealth/programs)
+	XealthGetPrograms(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1745,6 +1754,17 @@ func (w *ServerInterfaceWrapper) UpdateClinicUserDetails(ctx echo.Context) error
 	return err
 }
 
+// XealthNotification converts echo context to params.
+func (w *ServerInterfaceWrapper) XealthNotification(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.XealthNotification(ctx)
+	return err
+}
+
 // XealthPreorder converts echo context to params.
 func (w *ServerInterfaceWrapper) XealthPreorder(ctx echo.Context) error {
 	var err error
@@ -1753,6 +1773,28 @@ func (w *ServerInterfaceWrapper) XealthPreorder(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.XealthPreorder(ctx)
+	return err
+}
+
+// XelathGetProgramUrl converts echo context to params.
+func (w *ServerInterfaceWrapper) XelathGetProgramUrl(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.XelathGetProgramUrl(ctx)
+	return err
+}
+
+// XealthGetPrograms converts echo context to params.
+func (w *ServerInterfaceWrapper) XealthGetPrograms(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.XealthGetPrograms(ctx)
 	return err
 }
 
@@ -1839,6 +1881,9 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/redox/verify", wrapper.VerifyEndpoint)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
+	router.POST(baseURL+"/v1/xealth/notification", wrapper.XealthNotification)
 	router.POST(baseURL+"/v1/xealth/preorder", wrapper.XealthPreorder)
+	router.PUT(baseURL+"/v1/xealth/program", wrapper.XelathGetProgramUrl)
+	router.PUT(baseURL+"/v1/xealth/programs", wrapper.XealthGetPrograms)
 
 }

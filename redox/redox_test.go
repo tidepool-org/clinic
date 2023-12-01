@@ -225,8 +225,9 @@ var _ = Describe("Redox", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				update = &patients.SubscriptionUpdate{
-					Name:   "test",
-					Active: false,
+					Name:     "test",
+					Provider: clinics.EHRProviderXealth,
+					Active:   false,
 					MatchedMessage: patients.MatchedMessage{
 						DocumentId: primitive.NewObjectID(),
 						DataModel:  "Order",

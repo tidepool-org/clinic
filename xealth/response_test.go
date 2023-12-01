@@ -8,7 +8,7 @@ import (
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/test"
 	"github.com/tidepool-org/clinic/xealth"
-	"github.com/tidepool-org/clinic/xealth_models"
+	"github.com/tidepool-org/clinic/xealth_client"
 )
 
 var _ = Describe("Response Builder", func() {
@@ -59,7 +59,7 @@ var _ = Describe("Response Builder", func() {
 			users.EXPECT().
 				GetUser("james.jellyfish@tidepool.org").
 				Return(nil, nil)
-			
+
 			response, err := xealth.NewPatientFlowResponseBuilder().
 				WithDataTrackingId("1234567890").
 				WithUserInput(&userInput).
@@ -120,13 +120,13 @@ var _ = Describe("Response Builder", func() {
 	})
 })
 
-func ExpectResponseToMatchFixture(response *xealth_models.PreorderFormResponse, fixturePath string) {
+func ExpectResponseToMatchFixture(response *xealth_client.PreorderFormResponse, fixturePath string) {
 	fixture, err := test.LoadFixture(fixturePath)
 	Expect(err).ToNot(HaveOccurred())
 	ExpectResponseToMatchString(response, fixture)
 }
 
-func ExpectResponseToMatchString(response *xealth_models.PreorderFormResponse, expected []byte) {
+func ExpectResponseToMatchString(response *xealth_client.PreorderFormResponse, expected []byte) {
 	actual, err := json.Marshal(response)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(response).ToNot(BeNil())

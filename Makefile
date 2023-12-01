@@ -11,7 +11,8 @@ generate:
 	oapi-codegen -exclude-tags=Confirmations -package=api -generate=client spec/clinic.v1.yaml > client/client.go
 	swagger-cli bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml -t yaml
 	oapi-codegen -package=redox_models -generate=types spec/redox.v1.yaml > redox_models/gen_types.go
-	oapi-codegen -include-tags=Webhooks -package=xealth_models -generate=client,types,skip-prune ../TidepoolApi/reference/xealth.v2.yaml > xealth_models/gen_types.go
+	oapi-codegen -include-tags="Orders (Healthsystem)",Webhooks -package=xealth_client -generate=types,skip-prune ../TidepoolApi/reference/xealth.v2.yaml > xealth_client/gen_types.go
+	oapi-codegen -include-tags="Orders (Healthsystem)" -package=xealth_client -generate=client ../TidepoolApi/reference/xealth.v2.yaml > xealth_client/gen_client.go
 	go generate ./...
 	cd client && go generate ./...
 

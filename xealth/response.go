@@ -1,21 +1,25 @@
 package xealth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/TwiN/deepmerge"
-	"github.com/tidepool-org/clinic/xealth_models"
+	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/xealth_client"
 )
 
-type ResponseBuilder[T any, E FormErrors] interface {
+type ResponseBuilder[T FormData, E FormErrors] interface {
 	WithDataTrackingId(id string) ResponseBuilder[T, E]
 	WithDataValidator(validator DataValidator[T, E]) ResponseBuilder[T, E]
 	WithData(T) ResponseBuilder[T, E]
 	WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T, E]
 	WithTitle(string) ResponseBuilder[T, E]
 	WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T, E]
-	BuildInitialResponse() (*xealth_models.PreorderFormResponse, error)
-	BuildSubsequentResponse() (*xealth_models.PreorderFormResponse, error)
+	PersistPreorderDataOnSuccess(ctx context.Context, store Store) ResponseBuilder[T, E]
+	WithMatchingPatients(criteria PatientMatchingCriteria, patients []*patients.Patient) ResponseBuilder[T, E]
+	BuildInitialResponse() (*xealth_client.PreorderFormResponse, error)
+	BuildSubsequentResponse() (*xealth_client.PreorderFormResponse, error)
 }
 
 func NewGuardianFlowResponseBuilder() ResponseBuilder[GuardianFormData, GuardianFormValidationErrors] {
@@ -32,11 +36,16 @@ func NewPatientFlowResponseBuilder() ResponseBuilder[PatientFormData, PatientFor
 	return builder.WithTitle(DefaultFormTitle)
 }
 
-type responseBuilder[T any, E FormErrors] struct {
-	data           T
-	dataTrackingId string
-	userInput      *map[string]interface{}
-	validator      DataValidator[T, E]
+type responseBuilder[T FormData, E FormErrors] struct {
+	data             T
+	dataTrackingId   string
+	userInput        *map[string]interface{}
+	validator        DataValidator[T, E]
+	dataStore        Store
+	dataStoreContext context.Context
+
+	criteria         *PatientMatchingCriteria
+	matchingPatients []*patients.Patient
 
 	jsonForm      []byte
 	formOverrides FormOverrides
@@ -44,7 +53,7 @@ type responseBuilder[T any, E FormErrors] struct {
 	formDataHasErrors     bool
 	jsonOverrides         []byte
 	jsonFormWithOverrides []byte
-	response              xealth_models.PreorderFormResponse
+	response              xealth_client.PreorderFormResponse
 }
 
 func (g *responseBuilder[T, E]) WithDataTrackingId(id string) ResponseBuilder[T, E] {
@@ -76,7 +85,19 @@ func (g *responseBuilder[T, E]) WithUserInput(userInput *map[string]interface{})
 	return g
 }
 
-func (g *responseBuilder[T, E]) BuildInitialResponse() (*xealth_models.PreorderFormResponse, error) {
+func (g *responseBuilder[T, E]) PersistPreorderDataOnSuccess(ctx context.Context, store Store) ResponseBuilder[T, E] {
+	g.dataStore = store
+	g.dataStoreContext = ctx
+	return g
+}
+
+func (g *responseBuilder[T, E]) WithMatchingPatients(criteria PatientMatchingCriteria, patients []*patients.Patient) ResponseBuilder[T, E] {
+	g.criteria = &criteria
+	g.matchingPatients = patients
+	return g
+}
+
+func (g *responseBuilder[T, E]) BuildInitialResponse() (*xealth_client.PreorderFormResponse, error) {
 	type buildStageFn func() error
 	pipeline := []buildStageFn{
 		g.assertFormTemplateIsSet,
@@ -92,13 +113,15 @@ func (g *responseBuilder[T, E]) BuildInitialResponse() (*xealth_models.PreorderF
 	return g.buildInitialPreorderFormResponse()
 }
 
-func (g *responseBuilder[T, E]) BuildSubsequentResponse() (*xealth_models.PreorderFormResponse, error) {
+func (g *responseBuilder[T, E]) BuildSubsequentResponse() (*xealth_client.PreorderFormResponse, error) {
 	type buildStageFn func() error
 	pipeline := []buildStageFn{
+		g.assertNoMatchingPatients,
 		g.assertFormTemplateIsSet,
 		g.maybeDecodeUserInput,
 		g.maybeValidateData,
 		g.processOverrides,
+		g.maybePersistData,
 	}
 
 	for _, fn := range pipeline {
@@ -125,6 +148,14 @@ func (g *responseBuilder[T, E]) assertFormTemplateIsSet() error {
 	return nil
 }
 
+func (g *responseBuilder[T, E]) assertNoMatchingPatients() error {
+	count := len(g.matchingPatients)
+	if count != 0 {
+		return fmt.Errorf("expected no patients to match the criteria, but found %v", count)
+	}
+	return nil
+}
+
 func (g *responseBuilder[T, E]) maybeDecodeUserInput() (err error) {
 	if g.userInput != nil {
 		g.data, err = DecodeFormData[T](g.userInput)
@@ -145,6 +176,20 @@ func (g *responseBuilder[T, E]) maybeValidateData() (err error) {
 	return
 }
 
+func (g *responseBuilder[T, E]) maybePersistData() (err error) {
+	if g.dataTrackingId == "" {
+		err = fmt.Errorf("data tracking is required")
+		return
+	}
+	if g.dataStore != nil && !g.isErrorResponse() {
+		normalized := g.data.Normalize()
+		normalized.DataTrackingId = g.dataTrackingId
+
+		err = g.dataStore.CreatePreorderData(g.dataStoreContext, normalized)
+	}
+	return
+}
+
 func (g *responseBuilder[T, E]) processOverrides() (err error) {
 	// deepmerge.JSON will error out if both the json form (dst) and the overrides (src) define
 	// the same key with a primitive type. Make sure the json form template doesn't have keys
@@ -154,9 +199,9 @@ func (g *responseBuilder[T, E]) processOverrides() (err error) {
 	return
 }
 
-func (g *responseBuilder[T, E]) buildInitialPreorderFormResponse() (*xealth_models.PreorderFormResponse, error) {
-	response := &xealth_models.PreorderFormResponse{}
-	initialResponse := xealth_models.PreorderFormResponse0{
+func (g *responseBuilder[T, E]) buildInitialPreorderFormResponse() (*xealth_client.PreorderFormResponse, error) {
+	response := &xealth_client.PreorderFormResponse{}
+	initialResponse := xealth_client.PreorderFormResponse0{
 		DataTrackingId: g.dataTrackingId,
 	}
 	if err := g.populatePreorderFormInfo(&initialResponse); err != nil {
@@ -167,7 +212,7 @@ func (g *responseBuilder[T, E]) buildInitialPreorderFormResponse() (*xealth_mode
 	return response, err
 }
 
-func (g *responseBuilder[T, E]) populatePreorderFormInfo(response *xealth_models.PreorderFormResponse0) (err error) {
+func (g *responseBuilder[T, E]) populatePreorderFormInfo(response *xealth_client.PreorderFormResponse0) (err error) {
 	if err = json.Unmarshal(g.jsonFormWithOverrides, &response.PreorderFormInfo); err != nil {
 		return
 	}
@@ -180,8 +225,8 @@ func (g *responseBuilder[T, E]) isErrorResponse() bool {
 	return g.formDataHasErrors
 }
 
-func NewFinalResponse() (*xealth_models.PreorderFormResponse, error) {
-	response := &xealth_models.PreorderFormResponse{}
-	err := response.FromPreorderFormResponse1(xealth_models.PreorderFormResponse1{})
+func NewFinalResponse() (*xealth_client.PreorderFormResponse, error) {
+	response := &xealth_client.PreorderFormResponse{}
+	err := response.FromPreorderFormResponse1(xealth_client.PreorderFormResponse1{})
 	return response, err
 }

@@ -723,6 +723,7 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 
 	subscription.Active = update.Active
 	subscription.MatchedMessages = append(subscription.MatchedMessages, update.MatchedMessage)
+	subscription.Provider = update.Provider
 	subscriptions[update.Name] = subscription
 
 	res, err := r.collection.UpdateOne(ctx, selector, bson.M{

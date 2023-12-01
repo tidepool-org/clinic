@@ -620,15 +620,16 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 	settings := &clinics.EHRSettings{
 		Enabled:  dto.Enabled,
 		SourceId: dto.SourceId,
-		DestinationIds: clinics.EHRDestinationIds{
+		DestinationIds: &clinics.EHRDestinationIds{
 			Flowsheet: dto.DestinationIds.Flowsheet,
 			Notes:     dto.DestinationIds.Notes,
 			Results:   dto.DestinationIds.Results,
 		},
 		ProcedureCodes: clinics.EHRProcedureCodes{
-			EnableSummaryReports:  dto.ProcedureCodes.EnableSummaryReports,
-			DisableSummaryReports: dto.ProcedureCodes.DisableSummaryReports,
-			CreateAccount:         dto.ProcedureCodes.CreateAccount,
+			EnableSummaryReports:          dto.ProcedureCodes.EnableSummaryReports,
+			DisableSummaryReports:         dto.ProcedureCodes.DisableSummaryReports,
+			CreateAccount:                 dto.ProcedureCodes.CreateAccount,
+			CreateAccountAndEnableReports: dto.ProcedureCodes.CreateAccountAndEnableReports,
 		},
 	}
 	if dto.Facility != nil {
@@ -648,15 +649,16 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 	dto := &EHRSettings{
 		Enabled:  settings.Enabled,
 		SourceId: settings.SourceId,
-		DestinationIds: EHRDestinationIds{
+		DestinationIds: &EHRDestinationIds{
 			Flowsheet: settings.DestinationIds.Flowsheet,
 			Notes:     settings.DestinationIds.Notes,
 			Results:   settings.DestinationIds.Results,
 		},
 		ProcedureCodes: EHRProcedureCodes{
-			EnableSummaryReports:  settings.ProcedureCodes.EnableSummaryReports,
-			DisableSummaryReports: settings.ProcedureCodes.DisableSummaryReports,
-			CreateAccount:         settings.ProcedureCodes.CreateAccount,
+			EnableSummaryReports:          settings.ProcedureCodes.EnableSummaryReports,
+			DisableSummaryReports:         settings.ProcedureCodes.DisableSummaryReports,
+			CreateAccount:                 settings.ProcedureCodes.CreateAccount,
+			CreateAccountAndEnableReports: settings.ProcedureCodes.CreateAccountAndEnableReports,
 		},
 	}
 	if settings.Facility != nil {

@@ -91,13 +91,13 @@ type Clinic struct {
 }
 
 type EHRSettings struct {
-	Enabled        bool              `bson:"enabled"`
-	Provider       string            `bson:"provider"`
-	DestinationIds EHRDestinationIds `bson:"destinationIds"`
-	Facility       *EHRFacility      `bson:"facility"`
-	ProcedureCodes EHRProcedureCodes `bson:"procedureCodes"`
-	SourceId       string            `bson:"sourceId"`
-	MrnIdType      string            `bson:"mrnIdType"`
+	Enabled        bool               `bson:"enabled"`
+	Provider       string             `bson:"provider"`
+	DestinationIds *EHRDestinationIds `bson:"destinationIds"`
+	Facility       *EHRFacility       `bson:"facility"`
+	ProcedureCodes EHRProcedureCodes  `bson:"procedureCodes"`
+	SourceId       string             `bson:"sourceId"`
+	MrnIdType      string             `bson:"mrnIdType"`
 }
 
 func (e *EHRSettings) GetMrnIDType() string {
@@ -118,9 +118,10 @@ type EHRDestinationIds struct {
 }
 
 type EHRProcedureCodes struct {
-	EnableSummaryReports  string  `bson:"enableSummaryReports"`
-	DisableSummaryReports string  `bson:"disableSummaryReports"`
-	CreateAccount         *string `bson:"createAccount"`
+	EnableSummaryReports          *string `bson:"enableSummaryReports,omitempty"`
+	DisableSummaryReports         *string `bson:"disableSummaryReports,omitempty"`
+	CreateAccount                 *string `bson:"createAccount,omitempty"`
+	CreateAccountAndEnableReports *string `bson:"createAccountAndEnableReports,omitempty"`
 }
 
 type MRNSettings struct {
