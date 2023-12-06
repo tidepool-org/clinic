@@ -7,13 +7,14 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic/store"
 )
 
 const (
@@ -604,7 +605,7 @@ func (r *repository) AssignPatientTagToClinicPatients(ctx context.Context, clini
 	// so we set the field to an empty array if that's the case
 	tagsFieldisNullSelector := bson.M{
 		"clinicId": clinicObjId,
-		"tags":     bson.M{"$type": 10}, // BSON type 10 is `null`
+		"tags":     bson.M{"$type": bson.TypeNull},
 		"userId":   bson.M{"$in": patientIds},
 	}
 
@@ -745,6 +746,17 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		clinicId := *filter.ClinicId
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 		selector["clinicId"] = clinicObjId
+	}
+	if filter.ClinicIds != nil {
+		clinicObjIds := make([]primitive.ObjectID, len(filter.ClinicIds))
+		for _, clinicId := range filter.ClinicIds {
+			if clinicObjId, err := primitive.ObjectIDFromHex(clinicId); err == nil {
+				clinicObjIds = append(clinicObjIds, clinicObjId)
+			}
+		}
+		selector["clinicId"] = bson.M{
+			"$in": clinicObjIds,
+		}
 	}
 	if filter.UserId != nil {
 		selector["userId"] = filter.UserId

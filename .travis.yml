@@ -9,8 +9,9 @@ go:
 
 env:
   global:
-    - MONGODB=7.0.2
+    - MONGODB=6.0.11
     - MONGOSH=2.0.2
+    - DIST=jammy
 
 before_install:
   - sudo apt update

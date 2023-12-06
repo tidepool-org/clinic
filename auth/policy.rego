@@ -600,3 +600,11 @@ allow {
   input.path = ["v1", "clinics", _, "ehr", "sync"]
   is_backend_service
 }
+
+# Allow any authenticated user to fetch patients they have access to
+# GET /v1/patients
+allow {
+  input.method == "GET"
+  input.path = ["v1", "patients"]
+  is_authenticated_user
+}
