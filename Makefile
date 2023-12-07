@@ -32,7 +32,7 @@ go-flags:
 	go env -w GOFLAGS=-mod=mod
 
 tools/bin/ginkgo:
-	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.13.0
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.13.2
 
 # Runs tests
 .PHONY: test
