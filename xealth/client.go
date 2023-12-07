@@ -73,6 +73,7 @@ func NewClient(config *ClientConfig, logger *zap.SugaredLogger) (xealth_client.C
 			return e
 		}
 
+		logger.Debugw("obtained token for xealth", "token", token)
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token.AccessToken))
 		return nil
 	}
