@@ -70,7 +70,7 @@ func NewHandler(clinics clinics.Service, patients patients.Service, users patien
 		return nil, err
 	}
 
-	client, err := NewClient(clientConfig)
+	client, err := NewClient(clientConfig, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xeal
 	}
 
 	if clinic.EHRSettings == nil || clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports == nil || event.ProgramId != *clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports {
-		d.logger.Infow("ignoring order with unknown program id", "clinicId", clinic.Id.Hex(), event.ProgramId)
+		d.logger.Infow("ignoring order with unknown program id", "clinicId", clinic.Id.Hex(), "programId", event.ProgramId)
 		return nil
 	}
 
