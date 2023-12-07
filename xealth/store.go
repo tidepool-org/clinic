@@ -25,9 +25,9 @@ type Store interface {
 }
 
 type OrderEvent struct {
-	Id                *primitive.ObjectID `bson:"_id"`
-	EventNotification xealth_client.EventNotification
-	OrderData         xealth_client.ReadOrderResponse
+	Id                *primitive.ObjectID             `bson:"_id,omitempty"`
+	EventNotification xealth_client.EventNotification `bson:"eventNotification"`
+	OrderData         xealth_client.ReadOrderResponse `bson:"orderData"`
 }
 
 type defaultStore struct {
