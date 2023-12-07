@@ -186,7 +186,7 @@ type ServerInterface interface {
 	XealthPreorder(ctx echo.Context) error
 	// Get Program Url
 	// (PUT /v1/xealth/program)
-	XelathGetProgramUrl(ctx echo.Context) error
+	XealthGetProgramUrl(ctx echo.Context) error
 	// Get Programs
 	// (PUT /v1/xealth/programs)
 	XealthGetPrograms(ctx echo.Context) error
@@ -1776,14 +1776,14 @@ func (w *ServerInterfaceWrapper) XealthPreorder(ctx echo.Context) error {
 	return err
 }
 
-// XelathGetProgramUrl converts echo context to params.
-func (w *ServerInterfaceWrapper) XelathGetProgramUrl(ctx echo.Context) error {
+// XealthGetProgramUrl converts echo context to params.
+func (w *ServerInterfaceWrapper) XealthGetProgramUrl(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(SessionTokenScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.XelathGetProgramUrl(ctx)
+	err = w.Handler.XealthGetProgramUrl(ctx)
 	return err
 }
 
@@ -1883,7 +1883,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
 	router.POST(baseURL+"/v1/xealth/notification", wrapper.XealthNotification)
 	router.POST(baseURL+"/v1/xealth/preorder", wrapper.XealthPreorder)
-	router.PUT(baseURL+"/v1/xealth/program", wrapper.XelathGetProgramUrl)
+	router.PUT(baseURL+"/v1/xealth/program", wrapper.XealthGetProgramUrl)
 	router.PUT(baseURL+"/v1/xealth/programs", wrapper.XealthGetPrograms)
 
 }

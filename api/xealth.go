@@ -90,7 +90,7 @@ func (h *Handler) XealthNotification(ec echo.Context) error {
 	return ec.NoContent(http.StatusOK)
 }
 
-func (h *Handler) XelathGetProgramUrl(ec echo.Context) error {
+func (h *Handler) XealthGetProgramUrl(ec echo.Context) error {
 	//TODO implement me
 	panic("implement me")
 }

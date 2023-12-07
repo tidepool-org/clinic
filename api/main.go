@@ -74,7 +74,7 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 
 	healthcheckRoutes := []string{"/ready", "/metrics"}
 	redoxRoutes := []string{"/v1/redox", "/v1/redox/verify"}
-	xealthRoutes := []string{"/v1/xealth/preorder"}
+	xealthRoutes := []string{"/v1/xealth/preorder", "/v1/xealth/notification", "/v1/xealth/programs", "/v1/xealth/program"}
 	externalRoutes := append(append(healthcheckRoutes, redoxRoutes...), xealthRoutes...)
 
 	// Skip common auth logic for healthcheck routes, redox and xealth
