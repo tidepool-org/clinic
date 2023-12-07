@@ -53,7 +53,7 @@ func (a *authenticator) GetToken(ctx context.Context) (*oauth2.Token, error) {
 }
 
 func (a *authenticator) tokenIsValid() bool {
-	if a.token == nil || a.token.Expiry.Add(-gracePeriod).After(time.Now()) {
+	if a.token == nil || a.token.Expiry.Add(-gracePeriod).Before(time.Now()) {
 		return false
 	}
 
