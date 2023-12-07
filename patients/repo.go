@@ -716,14 +716,18 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 		subscriptions = make(map[string]EHRSubscription)
 	}
 
+	now := time.Now()
 	subscription, ok := subscriptions[update.Name]
 	if !ok {
-		subscription = EHRSubscription{}
+		subscription = EHRSubscription{
+			CreatedAt: now,
+		}
 	}
 
 	subscription.Active = update.Active
 	subscription.MatchedMessages = append(subscription.MatchedMessages, update.MatchedMessage)
 	subscription.Provider = update.Provider
+	subscription.UpdatedAt = now
 	subscriptions[update.Name] = subscription
 
 	res, err := r.collection.UpdateOne(ctx, selector, bson.M{

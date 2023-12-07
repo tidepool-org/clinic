@@ -91,6 +91,8 @@ type EHRSubscription struct {
 	Active          bool             `bson:"active"`
 	Provider        string           `bson:"provider"`
 	MatchedMessages []MatchedMessage `bson:"matchedMessages,omitempty"`
+	CreatedAt       time.Time        `bson:"createdAt"`
+	UpdatedAt       time.Time        `bson:"updatedAt"`
 }
 
 type MatchedMessage struct {
