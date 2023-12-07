@@ -89,17 +89,28 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetHsReadOrderDeploymentOrderId request
-	GetHsReadOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *GetHsReadOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId request
+	GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId(ctx context.Context, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostHsWriteOrderDeploymentWithBody request with any body
-	PostHsWriteOrderDeploymentWithBody(ctx context.Context, deployment string, params *PostHsWriteOrderDeploymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetPartnerReadOrderDeploymentOrderId request
+	GetPartnerReadOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *GetPartnerReadOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostHsWriteOrderDeployment(ctx context.Context, deployment string, params *PostHsWriteOrderDeploymentParams, body PostHsWriteOrderDeploymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostPartnerWriteOrderDeploymentWithBody request with any body
+	PostPartnerWriteOrderDeploymentWithBody(ctx context.Context, deployment string, params *PostPartnerWriteOrderDeploymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostPartnerWriteOrderDeployment(ctx context.Context, deployment string, params *PostPartnerWriteOrderDeploymentParams, body PostPartnerWriteOrderDeploymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeletePartnerWriteOrderDeploymentOrderId request
+	DeletePartnerWriteOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *DeletePartnerWriteOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutPartnerWriteOrderDeploymentOrderIdWithBody request with any body
+	PutPartnerWriteOrderDeploymentOrderIdWithBody(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutPartnerWriteOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, body PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) GetHsReadOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *GetHsReadOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetHsReadOrderDeploymentOrderIdRequest(c.Server, deployment, orderId, params)
+func (c *Client) GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId(ctx context.Context, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdRequest(c.Server, deployment, batchFileSchemaId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +121,8 @@ func (c *Client) GetHsReadOrderDeploymentOrderId(ctx context.Context, deployment
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostHsWriteOrderDeploymentWithBody(ctx context.Context, deployment string, params *PostHsWriteOrderDeploymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostHsWriteOrderDeploymentRequestWithBody(c.Server, deployment, params, contentType, body)
+func (c *Client) GetPartnerReadOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *GetPartnerReadOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPartnerReadOrderDeploymentOrderIdRequest(c.Server, deployment, orderId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +133,8 @@ func (c *Client) PostHsWriteOrderDeploymentWithBody(ctx context.Context, deploym
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostHsWriteOrderDeployment(ctx context.Context, deployment string, params *PostHsWriteOrderDeploymentParams, body PostHsWriteOrderDeploymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostHsWriteOrderDeploymentRequest(c.Server, deployment, params, body)
+func (c *Client) PostPartnerWriteOrderDeploymentWithBody(ctx context.Context, deployment string, params *PostPartnerWriteOrderDeploymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPartnerWriteOrderDeploymentRequestWithBody(c.Server, deployment, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +145,56 @@ func (c *Client) PostHsWriteOrderDeployment(ctx context.Context, deployment stri
 	return c.Client.Do(req)
 }
 
-// NewGetHsReadOrderDeploymentOrderIdRequest generates requests for GetHsReadOrderDeploymentOrderId
-func NewGetHsReadOrderDeploymentOrderIdRequest(server string, deployment string, orderId string, params *GetHsReadOrderDeploymentOrderIdParams) (*http.Request, error) {
+func (c *Client) PostPartnerWriteOrderDeployment(ctx context.Context, deployment string, params *PostPartnerWriteOrderDeploymentParams, body PostPartnerWriteOrderDeploymentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPartnerWriteOrderDeploymentRequest(c.Server, deployment, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePartnerWriteOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *DeletePartnerWriteOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePartnerWriteOrderDeploymentOrderIdRequest(c.Server, deployment, orderId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutPartnerWriteOrderDeploymentOrderIdWithBody(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutPartnerWriteOrderDeploymentOrderIdRequestWithBody(c.Server, deployment, orderId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutPartnerWriteOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, body PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutPartnerWriteOrderDeploymentOrderIdRequest(c.Server, deployment, orderId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewGetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdRequest generates requests for GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId
+func NewGetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdRequest(server string, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -147,7 +206,7 @@ func NewGetHsReadOrderDeploymentOrderIdRequest(server string, deployment string,
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "orderId", runtime.ParamLocationPath, orderId)
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "batchFileSchemaId", runtime.ParamLocationPath, batchFileSchemaId)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +216,7 @@ func NewGetHsReadOrderDeploymentOrderIdRequest(server string, deployment string,
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/hs/read/order/%s/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/partner/read/batch_file_schema/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -188,19 +247,73 @@ func NewGetHsReadOrderDeploymentOrderIdRequest(server string, deployment string,
 	return req, nil
 }
 
-// NewPostHsWriteOrderDeploymentRequest calls the generic PostHsWriteOrderDeployment builder with application/json body
-func NewPostHsWriteOrderDeploymentRequest(server string, deployment string, params *PostHsWriteOrderDeploymentParams, body PostHsWriteOrderDeploymentJSONRequestBody) (*http.Request, error) {
+// NewGetPartnerReadOrderDeploymentOrderIdRequest generates requests for GetPartnerReadOrderDeploymentOrderId
+func NewGetPartnerReadOrderDeploymentOrderIdRequest(server string, deployment string, orderId string, params *GetPartnerReadOrderDeploymentOrderIdParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "deployment", runtime.ParamLocationPath, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "orderId", runtime.ParamLocationPath, orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/partner/read/order/%s/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Authorization", runtime.ParamLocationHeader, params.Authorization)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewPostPartnerWriteOrderDeploymentRequest calls the generic PostPartnerWriteOrderDeployment builder with application/json body
+func NewPostPartnerWriteOrderDeploymentRequest(server string, deployment string, params *PostPartnerWriteOrderDeploymentParams, body PostPartnerWriteOrderDeploymentJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostHsWriteOrderDeploymentRequestWithBody(server, deployment, params, "application/json", bodyReader)
+	return NewPostPartnerWriteOrderDeploymentRequestWithBody(server, deployment, params, "application/json", bodyReader)
 }
 
-// NewPostHsWriteOrderDeploymentRequestWithBody generates requests for PostHsWriteOrderDeployment with any type of body
-func NewPostHsWriteOrderDeploymentRequestWithBody(server string, deployment string, params *PostHsWriteOrderDeploymentParams, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostPartnerWriteOrderDeploymentRequestWithBody generates requests for PostPartnerWriteOrderDeployment with any type of body
+func NewPostPartnerWriteOrderDeploymentRequestWithBody(server string, deployment string, params *PostPartnerWriteOrderDeploymentParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -215,7 +328,7 @@ func NewPostHsWriteOrderDeploymentRequestWithBody(server string, deployment stri
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/hs/write/order/%s", pathParam0)
+	operationPath := fmt.Sprintf("/partner/write/order/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -226,6 +339,127 @@ func NewPostHsWriteOrderDeploymentRequestWithBody(server string, deployment stri
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Authorization", runtime.ParamLocationHeader, params.Authorization)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewDeletePartnerWriteOrderDeploymentOrderIdRequest generates requests for DeletePartnerWriteOrderDeploymentOrderId
+func NewDeletePartnerWriteOrderDeploymentOrderIdRequest(server string, deployment string, orderId string, params *DeletePartnerWriteOrderDeploymentOrderIdParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "deployment", runtime.ParamLocationPath, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "orderId", runtime.ParamLocationPath, orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/partner/write/order/%s/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Authorization", runtime.ParamLocationHeader, params.Authorization)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewPutPartnerWriteOrderDeploymentOrderIdRequest calls the generic PutPartnerWriteOrderDeploymentOrderId builder with application/json body
+func NewPutPartnerWriteOrderDeploymentOrderIdRequest(server string, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, body PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutPartnerWriteOrderDeploymentOrderIdRequestWithBody(server, deployment, orderId, params, "application/json", bodyReader)
+}
+
+// NewPutPartnerWriteOrderDeploymentOrderIdRequestWithBody generates requests for PutPartnerWriteOrderDeploymentOrderId with any type of body
+func NewPutPartnerWriteOrderDeploymentOrderIdRequestWithBody(server string, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "deployment", runtime.ParamLocationPath, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "orderId", runtime.ParamLocationPath, orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/partner/write/order/%s/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -291,16 +525,55 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetHsReadOrderDeploymentOrderIdWithResponse request
-	GetHsReadOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *GetHsReadOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*GetHsReadOrderDeploymentOrderIdResponse, error)
+	// GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse request
+	GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse(ctx context.Context, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams, reqEditors ...RequestEditorFn) (*GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse, error)
 
-	// PostHsWriteOrderDeploymentWithBodyWithResponse request with any body
-	PostHsWriteOrderDeploymentWithBodyWithResponse(ctx context.Context, deployment string, params *PostHsWriteOrderDeploymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostHsWriteOrderDeploymentResponse, error)
+	// GetPartnerReadOrderDeploymentOrderIdWithResponse request
+	GetPartnerReadOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *GetPartnerReadOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*GetPartnerReadOrderDeploymentOrderIdResponse, error)
 
-	PostHsWriteOrderDeploymentWithResponse(ctx context.Context, deployment string, params *PostHsWriteOrderDeploymentParams, body PostHsWriteOrderDeploymentJSONRequestBody, reqEditors ...RequestEditorFn) (*PostHsWriteOrderDeploymentResponse, error)
+	// PostPartnerWriteOrderDeploymentWithBodyWithResponse request with any body
+	PostPartnerWriteOrderDeploymentWithBodyWithResponse(ctx context.Context, deployment string, params *PostPartnerWriteOrderDeploymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPartnerWriteOrderDeploymentResponse, error)
+
+	PostPartnerWriteOrderDeploymentWithResponse(ctx context.Context, deployment string, params *PostPartnerWriteOrderDeploymentParams, body PostPartnerWriteOrderDeploymentJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPartnerWriteOrderDeploymentResponse, error)
+
+	// DeletePartnerWriteOrderDeploymentOrderIdWithResponse request
+	DeletePartnerWriteOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *DeletePartnerWriteOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*DeletePartnerWriteOrderDeploymentOrderIdResponse, error)
+
+	// PutPartnerWriteOrderDeploymentOrderIdWithBodyWithResponse request with any body
+	PutPartnerWriteOrderDeploymentOrderIdWithBodyWithResponse(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutPartnerWriteOrderDeploymentOrderIdResponse, error)
+
+	PutPartnerWriteOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, body PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutPartnerWriteOrderDeploymentOrderIdResponse, error)
 }
 
-type GetHsReadOrderDeploymentOrderIdResponse struct {
+type GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		// BatchFileSchema JSON schema of the batch file
+		BatchFileSchema map[string]interface{} `json:"batchFileSchema"`
+	}
+	JSON400 *struct {
+		Error string `json:"error"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPartnerReadOrderDeploymentOrderIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ReadOrderResponse
@@ -310,7 +583,7 @@ type GetHsReadOrderDeploymentOrderIdResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetHsReadOrderDeploymentOrderIdResponse) Status() string {
+func (r GetPartnerReadOrderDeploymentOrderIdResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -318,18 +591,54 @@ func (r GetHsReadOrderDeploymentOrderIdResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetHsReadOrderDeploymentOrderIdResponse) StatusCode() int {
+func (r GetPartnerReadOrderDeploymentOrderIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostHsWriteOrderDeploymentResponse struct {
+type PostPartnerWriteOrderDeploymentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *CreateOrderResponse
-	JSON400      *struct {
+	JSON200      *struct {
+		// Deployment The Xealth-defined ID of the Health System
+		Deployment string `json:"deployment"`
+
+		// OrderId Xealth-generated value that uniquely identifies the order
+		OrderId string `json:"orderId"`
+
+		// PartnerId Xealth-generated value that uniquely identifies the partner
+		PartnerId string `json:"partnerId"`
+
+		// PatientIdentity Object identifying the patient
+		PatientIdentity struct {
+			// HistoricalIds List of the historical identifiers related to the patient
+			HistoricalIds *[]struct {
+				// Id Value of the identifier for the patient
+				Id string `json:"id"`
+
+				// Origin Defines the originating system from which the id value was sourced
+				Origin N200PatientIdentityHistoricalIdsOrigin `json:"origin"`
+
+				// Type Defines the type of identifier associated with the id
+				Type string `json:"type"`
+			} `json:"historicalIds,omitempty"`
+
+			// Ids List of the current identifiers related to the patient
+			Ids []struct {
+				// Id Value of the identifier for the patient
+				Id string `json:"id"`
+
+				// Origin Defines the originating system from which the id value was sourced
+				Origin N200PatientIdentityIdsOrigin `json:"origin"`
+
+				// Type Defines the type of identifier associated with the id
+				Type string `json:"type"`
+			} `json:"ids"`
+		} `json:"patientIdentity"`
+	}
+	JSON400 *struct {
 		Error string `json:"error"`
 	}
 	JSON404 *struct {
@@ -338,7 +647,7 @@ type PostHsWriteOrderDeploymentResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PostHsWriteOrderDeploymentResponse) Status() string {
+func (r PostPartnerWriteOrderDeploymentResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -346,48 +655,169 @@ func (r PostHsWriteOrderDeploymentResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostHsWriteOrderDeploymentResponse) StatusCode() int {
+func (r PostPartnerWriteOrderDeploymentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-// GetHsReadOrderDeploymentOrderIdWithResponse request returning *GetHsReadOrderDeploymentOrderIdResponse
-func (c *ClientWithResponses) GetHsReadOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *GetHsReadOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*GetHsReadOrderDeploymentOrderIdResponse, error) {
-	rsp, err := c.GetHsReadOrderDeploymentOrderId(ctx, deployment, orderId, params, reqEditors...)
+type DeletePartnerWriteOrderDeploymentOrderIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *struct {
+		Error string `json:"error"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePartnerWriteOrderDeploymentOrderIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePartnerWriteOrderDeploymentOrderIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PutPartnerWriteOrderDeploymentOrderIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *struct {
+		Error string `json:"error"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r PutPartnerWriteOrderDeploymentOrderIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutPartnerWriteOrderDeploymentOrderIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse request returning *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse
+func (c *ClientWithResponses) GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse(ctx context.Context, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams, reqEditors ...RequestEditorFn) (*GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse, error) {
+	rsp, err := c.GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId(ctx, deployment, batchFileSchemaId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetHsReadOrderDeploymentOrderIdResponse(rsp)
+	return ParseGetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse(rsp)
 }
 
-// PostHsWriteOrderDeploymentWithBodyWithResponse request with arbitrary body returning *PostHsWriteOrderDeploymentResponse
-func (c *ClientWithResponses) PostHsWriteOrderDeploymentWithBodyWithResponse(ctx context.Context, deployment string, params *PostHsWriteOrderDeploymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostHsWriteOrderDeploymentResponse, error) {
-	rsp, err := c.PostHsWriteOrderDeploymentWithBody(ctx, deployment, params, contentType, body, reqEditors...)
+// GetPartnerReadOrderDeploymentOrderIdWithResponse request returning *GetPartnerReadOrderDeploymentOrderIdResponse
+func (c *ClientWithResponses) GetPartnerReadOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *GetPartnerReadOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*GetPartnerReadOrderDeploymentOrderIdResponse, error) {
+	rsp, err := c.GetPartnerReadOrderDeploymentOrderId(ctx, deployment, orderId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostHsWriteOrderDeploymentResponse(rsp)
+	return ParseGetPartnerReadOrderDeploymentOrderIdResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostHsWriteOrderDeploymentWithResponse(ctx context.Context, deployment string, params *PostHsWriteOrderDeploymentParams, body PostHsWriteOrderDeploymentJSONRequestBody, reqEditors ...RequestEditorFn) (*PostHsWriteOrderDeploymentResponse, error) {
-	rsp, err := c.PostHsWriteOrderDeployment(ctx, deployment, params, body, reqEditors...)
+// PostPartnerWriteOrderDeploymentWithBodyWithResponse request with arbitrary body returning *PostPartnerWriteOrderDeploymentResponse
+func (c *ClientWithResponses) PostPartnerWriteOrderDeploymentWithBodyWithResponse(ctx context.Context, deployment string, params *PostPartnerWriteOrderDeploymentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPartnerWriteOrderDeploymentResponse, error) {
+	rsp, err := c.PostPartnerWriteOrderDeploymentWithBody(ctx, deployment, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostHsWriteOrderDeploymentResponse(rsp)
+	return ParsePostPartnerWriteOrderDeploymentResponse(rsp)
 }
 
-// ParseGetHsReadOrderDeploymentOrderIdResponse parses an HTTP response from a GetHsReadOrderDeploymentOrderIdWithResponse call
-func ParseGetHsReadOrderDeploymentOrderIdResponse(rsp *http.Response) (*GetHsReadOrderDeploymentOrderIdResponse, error) {
+func (c *ClientWithResponses) PostPartnerWriteOrderDeploymentWithResponse(ctx context.Context, deployment string, params *PostPartnerWriteOrderDeploymentParams, body PostPartnerWriteOrderDeploymentJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPartnerWriteOrderDeploymentResponse, error) {
+	rsp, err := c.PostPartnerWriteOrderDeployment(ctx, deployment, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPartnerWriteOrderDeploymentResponse(rsp)
+}
+
+// DeletePartnerWriteOrderDeploymentOrderIdWithResponse request returning *DeletePartnerWriteOrderDeploymentOrderIdResponse
+func (c *ClientWithResponses) DeletePartnerWriteOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *DeletePartnerWriteOrderDeploymentOrderIdParams, reqEditors ...RequestEditorFn) (*DeletePartnerWriteOrderDeploymentOrderIdResponse, error) {
+	rsp, err := c.DeletePartnerWriteOrderDeploymentOrderId(ctx, deployment, orderId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePartnerWriteOrderDeploymentOrderIdResponse(rsp)
+}
+
+// PutPartnerWriteOrderDeploymentOrderIdWithBodyWithResponse request with arbitrary body returning *PutPartnerWriteOrderDeploymentOrderIdResponse
+func (c *ClientWithResponses) PutPartnerWriteOrderDeploymentOrderIdWithBodyWithResponse(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutPartnerWriteOrderDeploymentOrderIdResponse, error) {
+	rsp, err := c.PutPartnerWriteOrderDeploymentOrderIdWithBody(ctx, deployment, orderId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutPartnerWriteOrderDeploymentOrderIdResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutPartnerWriteOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, body PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutPartnerWriteOrderDeploymentOrderIdResponse, error) {
+	rsp, err := c.PutPartnerWriteOrderDeploymentOrderId(ctx, deployment, orderId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutPartnerWriteOrderDeploymentOrderIdResponse(rsp)
+}
+
+// ParseGetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse parses an HTTP response from a GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse call
+func ParseGetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse(rsp *http.Response) (*GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetHsReadOrderDeploymentOrderIdResponse{
+	response := &GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// BatchFileSchema JSON schema of the batch file
+			BatchFileSchema map[string]interface{} `json:"batchFileSchema"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPartnerReadOrderDeploymentOrderIdResponse parses an HTTP response from a GetPartnerReadOrderDeploymentOrderIdWithResponse call
+func ParseGetPartnerReadOrderDeploymentOrderIdResponse(rsp *http.Response) (*GetPartnerReadOrderDeploymentOrderIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPartnerReadOrderDeploymentOrderIdResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -414,22 +844,58 @@ func ParseGetHsReadOrderDeploymentOrderIdResponse(rsp *http.Response) (*GetHsRea
 	return response, nil
 }
 
-// ParsePostHsWriteOrderDeploymentResponse parses an HTTP response from a PostHsWriteOrderDeploymentWithResponse call
-func ParsePostHsWriteOrderDeploymentResponse(rsp *http.Response) (*PostHsWriteOrderDeploymentResponse, error) {
+// ParsePostPartnerWriteOrderDeploymentResponse parses an HTTP response from a PostPartnerWriteOrderDeploymentWithResponse call
+func ParsePostPartnerWriteOrderDeploymentResponse(rsp *http.Response) (*PostPartnerWriteOrderDeploymentResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostHsWriteOrderDeploymentResponse{
+	response := &PostPartnerWriteOrderDeploymentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest CreateOrderResponse
+		var dest struct {
+			// Deployment The Xealth-defined ID of the Health System
+			Deployment string `json:"deployment"`
+
+			// OrderId Xealth-generated value that uniquely identifies the order
+			OrderId string `json:"orderId"`
+
+			// PartnerId Xealth-generated value that uniquely identifies the partner
+			PartnerId string `json:"partnerId"`
+
+			// PatientIdentity Object identifying the patient
+			PatientIdentity struct {
+				// HistoricalIds List of the historical identifiers related to the patient
+				HistoricalIds *[]struct {
+					// Id Value of the identifier for the patient
+					Id string `json:"id"`
+
+					// Origin Defines the originating system from which the id value was sourced
+					Origin N200PatientIdentityHistoricalIdsOrigin `json:"origin"`
+
+					// Type Defines the type of identifier associated with the id
+					Type string `json:"type"`
+				} `json:"historicalIds,omitempty"`
+
+				// Ids List of the current identifiers related to the patient
+				Ids []struct {
+					// Id Value of the identifier for the patient
+					Id string `json:"id"`
+
+					// Origin Defines the originating system from which the id value was sourced
+					Origin N200PatientIdentityIdsOrigin `json:"origin"`
+
+					// Type Defines the type of identifier associated with the id
+					Type string `json:"type"`
+				} `json:"ids"`
+			} `json:"patientIdentity"`
+		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -452,6 +918,62 @@ func ParsePostHsWriteOrderDeploymentResponse(rsp *http.Response) (*PostHsWriteOr
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeletePartnerWriteOrderDeploymentOrderIdResponse parses an HTTP response from a DeletePartnerWriteOrderDeploymentOrderIdWithResponse call
+func ParseDeletePartnerWriteOrderDeploymentOrderIdResponse(rsp *http.Response) (*DeletePartnerWriteOrderDeploymentOrderIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePartnerWriteOrderDeploymentOrderIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutPartnerWriteOrderDeploymentOrderIdResponse parses an HTTP response from a PutPartnerWriteOrderDeploymentOrderIdWithResponse call
+func ParsePutPartnerWriteOrderDeploymentOrderIdResponse(rsp *http.Response) (*PutPartnerWriteOrderDeploymentOrderIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutPartnerWriteOrderDeploymentOrderIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	}
 

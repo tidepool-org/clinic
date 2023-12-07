@@ -31,3 +31,6 @@ const (
 type ProviderMessageRequestMessage0Priority string
 type ProviderMessageRequestMessage0Type string
 type ProviderMessageRequestMessage1Type string
+
+type N200PatientIdentityIdsOrigin string
+type N200PatientIdentityHistoricalIdsOrigin string

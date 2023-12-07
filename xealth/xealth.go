@@ -379,7 +379,7 @@ func GetPatientMatchingCriteriaFromOrder(order OrderEvent, clinic *clinics.Clini
 }
 
 func (d *defaultHandler) GetXealthOrder(ctx context.Context, deployment, orderId string) (*xealth_client.ReadOrderResponse, error) {
-	response, err := d.client.GetHsReadOrderDeploymentOrderIdWithResponse(ctx, deployment, orderId, nil)
+	response, err := d.client.GetPartnerReadOrderDeploymentOrderIdWithResponse(ctx, deployment, orderId, nil)
 	if err != nil {
 		return nil, err
 	} else if response.StatusCode() != http.StatusOK || response.JSON200 == nil {

@@ -404,7 +404,7 @@ const (
 
 // Defines values for HsCreateOrderRequestOrderType.
 const (
-	HsCreateOrderRequestOrderTypeOrder HsCreateOrderRequestOrderType = "order"
+	Order HsCreateOrderRequestOrderType = "order"
 )
 
 // Defines values for HsCreateOrderRequestPatientIdOrigin.
@@ -434,7 +434,7 @@ const (
 
 // Defines values for PartnerCreateOrderRequestOrderType.
 const (
-	Enrollment PartnerCreateOrderRequestOrderType = "enrollment"
+	PartnerCreateOrderRequestOrderTypeEnrollment PartnerCreateOrderRequestOrderType = "enrollment"
 )
 
 // Defines values for PartnerCreateOrderRequestPatientIdOrigin.
@@ -791,11 +791,11 @@ const (
 
 // Defines values for UpdateOrderRequestPartnerOrderUpdateProgramStatus.
 const (
-	Active         UpdateOrderRequestPartnerOrderUpdateProgramStatus = "active"
-	Completed      UpdateOrderRequestPartnerOrderUpdateProgramStatus = "completed"
-	Draft          UpdateOrderRequestPartnerOrderUpdateProgramStatus = "draft"
-	EnteredInError UpdateOrderRequestPartnerOrderUpdateProgramStatus = "entered-in-error"
-	Revoked        UpdateOrderRequestPartnerOrderUpdateProgramStatus = "revoked"
+	UpdateOrderRequestPartnerOrderUpdateProgramStatusActive         UpdateOrderRequestPartnerOrderUpdateProgramStatus = "active"
+	UpdateOrderRequestPartnerOrderUpdateProgramStatusCompleted      UpdateOrderRequestPartnerOrderUpdateProgramStatus = "completed"
+	UpdateOrderRequestPartnerOrderUpdateProgramStatusDraft          UpdateOrderRequestPartnerOrderUpdateProgramStatus = "draft"
+	UpdateOrderRequestPartnerOrderUpdateProgramStatusEnteredInError UpdateOrderRequestPartnerOrderUpdateProgramStatus = "entered-in-error"
+	UpdateOrderRequestPartnerOrderUpdateProgramStatusRevoked        UpdateOrderRequestPartnerOrderUpdateProgramStatus = "revoked"
 )
 
 // Defines values for Action.
@@ -806,17 +806,26 @@ const (
 	ActionVideo     Action = "video"
 )
 
-// Defines values for PostHsWriteOrderDeploymentJSONBodyOrderType.
+// Defines values for PostPartnerWriteOrderDeploymentJSONBodyOrderType.
 const (
-	PostHsWriteOrderDeploymentJSONBodyOrderTypeOrder PostHsWriteOrderDeploymentJSONBodyOrderType = "order"
+	PostPartnerWriteOrderDeploymentJSONBodyOrderTypeEnrollment PostPartnerWriteOrderDeploymentJSONBodyOrderType = "enrollment"
 )
 
-// Defines values for PostHsWriteOrderDeploymentJSONBodyPatientIdOrigin.
+// Defines values for PostPartnerWriteOrderDeploymentJSONBodyPatientIdOrigin.
 const (
-	Cerner   PostHsWriteOrderDeploymentJSONBodyPatientIdOrigin = "cerner"
-	Epic     PostHsWriteOrderDeploymentJSONBodyPatientIdOrigin = "epic"
-	Initiate PostHsWriteOrderDeploymentJSONBodyPatientIdOrigin = "initiate"
-	Xealth   PostHsWriteOrderDeploymentJSONBodyPatientIdOrigin = "xealth"
+	Cerner   PostPartnerWriteOrderDeploymentJSONBodyPatientIdOrigin = "cerner"
+	Epic     PostPartnerWriteOrderDeploymentJSONBodyPatientIdOrigin = "epic"
+	Initiate PostPartnerWriteOrderDeploymentJSONBodyPatientIdOrigin = "initiate"
+	Xealth   PostPartnerWriteOrderDeploymentJSONBodyPatientIdOrigin = "xealth"
+)
+
+// Defines values for PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus.
+const (
+	PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatusActive         PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus = "active"
+	PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatusCompleted      PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus = "completed"
+	PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatusDraft          PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus = "draft"
+	PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatusEnteredInError PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus = "entered-in-error"
+	PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatusRevoked        PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus = "revoked"
 )
 
 // BatchFileInfo Information related to the batch file associated with the order
@@ -10587,51 +10596,87 @@ type CreateOrderBadRequestError struct {
 	Error string `json:"error"`
 }
 
-// GetHsReadOrderDeploymentOrderIdParams defines parameters for GetHsReadOrderDeploymentOrderId.
-type GetHsReadOrderDeploymentOrderIdParams struct {
+// GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams defines parameters for GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId.
+type GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams struct {
 	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
 	Authorization string `json:"Authorization"`
 }
 
-// PostHsWriteOrderDeploymentJSONBody defines parameters for PostHsWriteOrderDeployment.
-type PostHsWriteOrderDeploymentJSONBody struct {
-	// OrderType Identifies the type of order being created
-	OrderType PostHsWriteOrderDeploymentJSONBodyOrderType `json:"orderType"`
+// GetPartnerReadOrderDeploymentOrderIdParams defines parameters for GetPartnerReadOrderDeploymentOrderId.
+type GetPartnerReadOrderDeploymentOrderIdParams struct {
+	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
+	Authorization string `json:"Authorization"`
+}
 
-	// PartnerId Value that uniquely identifies the partner associated with the order
+// PostPartnerWriteOrderDeploymentJSONBody defines parameters for PostPartnerWriteOrderDeployment.
+type PostPartnerWriteOrderDeploymentJSONBody struct {
+	// OrderType Identifies the type of order being created
+	OrderType PostPartnerWriteOrderDeploymentJSONBodyOrderType `json:"orderType"`
+
+	// PartnerId Value that uniquely identifies the partner associated with the enrollment
 	PartnerId string `json:"partnerId"`
 	PatientId struct {
 		// Id Value of the identifier for the patient
 		Id string `json:"id"`
 
 		// Origin Defines the originating system from which the id value was sourced
-		Origin PostHsWriteOrderDeploymentJSONBodyPatientIdOrigin `json:"origin"`
+		Origin PostPartnerWriteOrderDeploymentJSONBodyPatientIdOrigin `json:"origin"`
 
 		// Type Defines the type of identifier associated with the id
 		Type string `json:"type"`
 	} `json:"patientId"`
 
-	// ProgramId Value that identifies the digital content associated with the order
+	// ProgramId Value that identifies the digital content associated with the enrollment
 	ProgramId string `json:"programId"`
 
 	// ProgramTitle Value that describes the digital content associated with the order
 	ProgramTitle string `json:"programTitle"`
 }
 
-// PostHsWriteOrderDeploymentParams defines parameters for PostHsWriteOrderDeployment.
-type PostHsWriteOrderDeploymentParams struct {
+// PostPartnerWriteOrderDeploymentParams defines parameters for PostPartnerWriteOrderDeployment.
+type PostPartnerWriteOrderDeploymentParams struct {
 	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
 	Authorization string `json:"Authorization"`
 }
 
-// PostHsWriteOrderDeploymentJSONBodyOrderType defines parameters for PostHsWriteOrderDeployment.
-type PostHsWriteOrderDeploymentJSONBodyOrderType string
+// PostPartnerWriteOrderDeploymentJSONBodyOrderType defines parameters for PostPartnerWriteOrderDeployment.
+type PostPartnerWriteOrderDeploymentJSONBodyOrderType string
 
-// PostHsWriteOrderDeploymentJSONBodyPatientIdOrigin defines parameters for PostHsWriteOrderDeployment.
-type PostHsWriteOrderDeploymentJSONBodyPatientIdOrigin string
+// PostPartnerWriteOrderDeploymentJSONBodyPatientIdOrigin defines parameters for PostPartnerWriteOrderDeployment.
+type PostPartnerWriteOrderDeploymentJSONBodyPatientIdOrigin string
 
-// PostHsWriteOrderDeploymentJSONRequestBody defines body for PostHsWriteOrderDeployment for application/json ContentType.
-type PostHsWriteOrderDeploymentJSONRequestBody PostHsWriteOrderDeploymentJSONBody
+// DeletePartnerWriteOrderDeploymentOrderIdParams defines parameters for DeletePartnerWriteOrderDeploymentOrderId.
+type DeletePartnerWriteOrderDeploymentOrderIdParams struct {
+	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
+	Authorization string `json:"Authorization"`
+}
+
+// PutPartnerWriteOrderDeploymentOrderIdJSONBody defines parameters for PutPartnerWriteOrderDeploymentOrderId.
+type PutPartnerWriteOrderDeploymentOrderIdJSONBody struct {
+	// PartnerOrderUpdate Information related to the order update
+	PartnerOrderUpdate struct {
+		// ProgramLabel Programs or services in which the patient has been enrolled
+		ProgramLabel *[]string `json:"programLabel,omitempty"`
+
+		// ProgramStatus Indicates the current status of the order
+		ProgramStatus PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus `json:"programStatus"`
+	} `json:"partnerOrderUpdate"`
+}
+
+// PutPartnerWriteOrderDeploymentOrderIdParams defines parameters for PutPartnerWriteOrderDeploymentOrderId.
+type PutPartnerWriteOrderDeploymentOrderIdParams struct {
+	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
+	Authorization string `json:"Authorization"`
+}
+
+// PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus defines parameters for PutPartnerWriteOrderDeploymentOrderId.
+type PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus string
+
+// PostPartnerWriteOrderDeploymentJSONRequestBody defines body for PostPartnerWriteOrderDeployment for application/json ContentType.
+type PostPartnerWriteOrderDeploymentJSONRequestBody PostPartnerWriteOrderDeploymentJSONBody
+
+// PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody defines body for PutPartnerWriteOrderDeploymentOrderId for application/json ContentType.
+type PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody PutPartnerWriteOrderDeploymentOrderIdJSONBody
 
 // AsPreorderFormRequest0 returns the union data inside the PreorderFormRequest as a PreorderFormRequest0
 func (t PreorderFormRequest) AsPreorderFormRequest0() (PreorderFormRequest0, error) {
