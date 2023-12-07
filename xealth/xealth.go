@@ -34,7 +34,7 @@ type ClientConfig struct {
 	ClientId      string `envconfig:"TIDEPOOL_XEALTH_CLIENT_ID" required:"true"`
 	ClientSecret  string `envconfig:"TIDEPOOL_XEALTH_CLIENT_SECRET" required:"true"`
 	TokenUrl      string `envconfig:"TIDEPOOL_XEALTH_TOKEN_URL" default:"https://auth-sandbox.xealth.io/oauth2/token"`
-	ServerBaseUrl string `envconfig:"TIDEPOOL_XEALTH_SERVER_BASE_URL" default:"https://api-sandbox.xealth.io"`
+	ServerBaseUrl string `envconfig:"TIDEPOOL_XEALTH_SERVER_BASE_URL" default:"https://api-sandbox.xealth.io/v2"`
 }
 
 type Xealth interface {
