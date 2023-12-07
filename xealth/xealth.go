@@ -250,14 +250,30 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		if preorderData == nil {
 			return fmt.Errorf("%w: preorder data is required to create a new patient", errs.BadRequest)
 		}
+
 		create := patients.Patient{
 			ClinicId:    clinic.Id,
 			BirthDate:   &criteria.DateOfBirth,
-			Email:       nil,
-			FullName:    &criteria.FullName,
 			Mrn:         &criteria.Mrn,
 			Permissions: &patients.CustodialAccountPermissions,
 		}
+		if preorderData.Guardian != nil {
+			fullName := strings.Join([]string{preorderData.Guardian.FirstName, preorderData.Guardian.LastName}, "")
+			if strings.TrimSpace(fullName) == "" {
+				return fmt.Errorf("%w: unable to create patient because guardian name is missing", errs.BadRequest)
+			}
+			create.FullName = &fullName
+			create.Email = &preorderData.Guardian.Email
+		} else if preorderData.Patient != nil {
+			create.FullName = &criteria.FullName
+			create.Email = &preorderData.Patient.Email
+		} else {
+			return fmt.Errorf("%w: unable to create patient preorder data is missing", errs.BadRequest)
+		}
+		if preorderData.Dexcom.Connect {
+			create.LastRequestedDexcomConnectTime = time.Now()
+		}
+
 		patient, err = d.patients.Create(ctx, create)
 		if err != nil {
 			return err
