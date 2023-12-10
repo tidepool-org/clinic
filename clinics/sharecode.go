@@ -34,7 +34,7 @@ type shareCodeGenerator struct {
 
 func (s *shareCodeGenerator) Generate() string {
 	groups := make([]string, s.groupCount)
-	for i, _ := range groups {
+	for i := range groups {
 		groups[i] = generateRandomStringFromAlphabet(s.chars, s.groupLength)
 	}
 	return strings.Join(groups, s.separator)

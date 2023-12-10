@@ -1,7 +1,7 @@
 package clinicians_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
 	"testing"

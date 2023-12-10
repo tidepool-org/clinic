@@ -2,7 +2,7 @@ package test
 
 import (
 	"github.com/jaswdr/faker"
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -11,11 +11,23 @@ import (
 )
 
 var (
-	Faker = faker.NewWithSeed(rand.NewSource(config.GinkgoConfig.RandomSeed))
+	Faker = faker.NewWithSeed(rand.NewSource(ginkgo.GinkgoRandomSeed()))
 )
 
 func strp(val string) *string {
 	return &val
+}
+
+func RandomClinics(count int) []*clinics.Clinic {
+	if count <= 0 {
+		panic("count must be positive")
+	}
+
+	clinics := make([]*clinics.Clinic, count)
+	for i := 0; i < count; i++ {
+		clinics[i] = RandomClinic()
+	}
+	return clinics
 }
 
 func RandomClinic() *clinics.Clinic {

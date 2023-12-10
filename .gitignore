@@ -10,4 +10,7 @@ dist/
 # Linkerd Service Profile
 service-profile/
 
+# testing or other tools
+/tools/
+
 artifact_docker.sh

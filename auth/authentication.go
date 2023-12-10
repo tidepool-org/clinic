@@ -3,10 +3,10 @@ package auth
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/golang-lru/simplelru"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/tidepool-org/go-common/clients/shoreline"
-	"github.com/hashicorp/golang-lru/simplelru"
 	"net/http"
 	"sync"
 	"time"

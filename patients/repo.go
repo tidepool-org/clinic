@@ -7,13 +7,14 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic/store"
 )
 
 const (
@@ -160,7 +161,7 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 
 	patient := &Patient{}
 	err := r.collection.FindOne(ctx, selector).Decode(&patient)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, err
@@ -282,7 +283,7 @@ func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
@@ -346,7 +347,7 @@ func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
@@ -372,7 +373,7 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrPermissionNotFound
 		}
 		return nil, fmt.Errorf("error removing permission: %w", err)
@@ -449,7 +450,7 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
@@ -509,7 +510,7 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 
 	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
@@ -604,7 +605,7 @@ func (r *repository) AssignPatientTagToClinicPatients(ctx context.Context, clini
 	// so we set the field to an empty array if that's the case
 	tagsFieldisNullSelector := bson.M{
 		"clinicId": clinicObjId,
-		"tags":     bson.M{"$type": 10}, // BSON type 10 is `null`
+		"tags":     bson.M{"$type": bson.TypeNull},
 		"userId":   bson.M{"$in": patientIds},
 	}
 
@@ -745,6 +746,17 @@ func generateListFilterQuery(filter *Filter) bson.M {
 		clinicId := *filter.ClinicId
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 		selector["clinicId"] = clinicObjId
+	}
+	if filter.ClinicIds != nil {
+		clinicObjIds := make([]primitive.ObjectID, len(filter.ClinicIds))
+		for _, clinicId := range filter.ClinicIds {
+			if clinicObjId, err := primitive.ObjectIDFromHex(clinicId); err == nil {
+				clinicObjIds = append(clinicObjIds, clinicObjId)
+			}
+		}
+		selector["clinicId"] = bson.M{
+			"$in": clinicObjIds,
+		}
 	}
 	if filter.UserId != nil {
 		selector["userId"] = filter.UserId

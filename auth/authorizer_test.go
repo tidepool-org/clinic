@@ -3,7 +3,7 @@ package auth_test
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/auth"
 	"go.uber.org/zap"
@@ -993,6 +993,19 @@ var _ = Describe("Request Authorizer", func() {
 			"auth": map[string]interface{}{
 				"subjectId":    "task",
 				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it allows users to fetch list of patients they have access to", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "patients"},
+			"method": "GET",
+			"auth": map[string]interface{}{
+				"subjectId":    "task",
+				"serverAccess": false,
 			},
 		}
 		err := authorizer.EvaluatePolicy(context.Background(), input)

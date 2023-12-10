@@ -1574,6 +1574,44 @@ paths:
         - Internal
       x-internal: true
       parameters: []
+  /v1/patients:
+    get:
+      summary: Find Patients
+      tags:
+        - Clinics
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientClinicRelationships'
+      operationId: FindPatients
+      description: Returns all patients to which the clinician has access to
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: mrn
+        - schema:
+            type: string
+          in: query
+          name: birthDate
+        - schema:
+            type: string
+          in: query
+          name: workspaceId
+          description: The identifier of the workspace
+        - schema:
+            type: string
+            enum:
+              - clinicId
+              - ehrSourceId
+          in: query
+          name: workspaceIdType
+          description: The type of the workspace identifier
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
 components:
   schemas:
     Error:
@@ -3386,6 +3424,11 @@ components:
           description: Date of the last calculation
           type: string
           format: date-time
+        lastUpdatedReason:
+          description: List of reasons the summary was updated for
+          type: array
+          items:
+            type: string
         hasFirstData:
           type: boolean
         firstData:
@@ -3410,6 +3453,15 @@ components:
           description: 'Date of the first user upload after lastData, removed when calculated'
           type: string
           format: date-time
+        outdatedSinceLimit:
+          description: Upper limit of the OutdatedSince value to prevent infinite queue duration
+          type: string
+          format: date-time
+        outdatedReason:
+          description: List of reasons the summary was marked outdated for
+          type: array
+          items:
+            type: string
     PatientSummary:
       type: object
       title: patientsummary.v1

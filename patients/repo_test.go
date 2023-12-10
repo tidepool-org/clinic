@@ -6,7 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
@@ -49,7 +49,7 @@ var _ = Describe("Patients Repository", func() {
 			count = 10
 			documents := make([]interface{}, count)
 			allPatients = make([]patients.Patient, count)
-			for i, _ := range documents {
+			for i := range documents {
 				patient := patientsTest.RandomPatient()
 				documents[i] = patient
 				allPatients[i] = patient
@@ -566,13 +566,13 @@ var _ = Describe("Patients Repository", func() {
 				perms := patients.Permissions{
 					View: &patients.Permission{},
 				}
-				for i, _ := range custodial {
+				for i := range custodial {
 					patient := patientsTest.RandomPatient()
 					patient.ClinicId = &clinicId
 					patient.Permissions = &patients.CustodialAccountPermissions
 					custodial[i] = patient
 				}
-				for i, _ := range nonCustodial {
+				for i := range nonCustodial {
 					patient := patientsTest.RandomPatient()
 					patient.ClinicId = &clinicId
 					patient.Permissions = &perms
@@ -717,6 +717,32 @@ var _ = Describe("Patients Repository", func() {
 
 				for _, patient := range result.Patients {
 					Expect(patient.ClinicId.Hex()).To(Equal(randomPatient.ClinicId.Hex()))
+				}
+			})
+
+			It("filters by clinic ids correctly", func() {
+				clinicIds := []string{
+					allPatients[1].ClinicId.Hex(),
+					allPatients[2].ClinicId.Hex(),
+				}
+				clinicIdsMap := map[string]struct{}{}
+				for _, id := range clinicIds {
+					clinicIdsMap[id] = struct{}{}
+				}
+
+				filter := patients.Filter{
+					ClinicIds: clinicIds,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  10,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(clinicIdsMap).To(HaveKey(patient.ClinicId.Hex()))
 				}
 			})
 
