@@ -1,6 +1,8 @@
 package xealth
 
 import (
+	"errors"
+	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"strings"
 )
@@ -11,7 +13,9 @@ type DuplicateEmailValidator struct {
 
 func (d *DuplicateEmailValidator) IsDuplicate(email string) (bool, error) {
 	user, err := d.users.GetUser(email)
-	if err != nil {
+	if errors.Is(err, errs.NotFound) {
+		return false, nil
+	} else if err != nil {
 		return false, err
 	}
 	return user != nil && user.UserID != "", nil
