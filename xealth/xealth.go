@@ -197,12 +197,17 @@ func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xeal
 		return nil
 	}
 
+	// Retrieve the full order details from Xealth
 	data, err := d.GetXealthOrder(ctx, event.Deployment, event.OrderId)
 	if err != nil {
 		return err
 	}
 
-	order, err := d.store.CreateOrder(ctx, OrderEvent{OrderData: *data})
+	// Save the order in the database
+	order, err := d.store.CreateOrder(ctx, OrderEvent{
+		EventNotification: event,
+		OrderData:         *data,
+	})
 	if err != nil {
 		return err
 	}
