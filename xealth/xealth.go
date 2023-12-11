@@ -309,7 +309,7 @@ func GetSubscriptionUpdateFromOrderEvent(orderEvent OrderEvent, clinic *clinics.
 			DataModel:  string(orderEvent.EventNotification.EventType),
 			EventType:  string(orderEvent.EventNotification.EventContext),
 		},
-		Provider: clinics.EHRProviderRedox,
+		Provider: clinics.EHRProviderXealth,
 	}
 
 	if orderEvent.EventNotification.EventContext == xealth_client.EventNotificationEventContextNew {
