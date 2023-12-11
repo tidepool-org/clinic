@@ -69,7 +69,7 @@ func (s *defaultStore) Initialize(ctx context.Context) error {
 
 func (s *defaultStore) GetPreorderData(ctx context.Context, dataTrackingId string) (*PreorderFormData, error) {
 	selector := bson.M{
-		dataTrackingId: dataTrackingId,
+		"dataTrackingId": dataTrackingId,
 	}
 	data := &PreorderFormData{}
 	err := s.preorderData.FindOne(ctx, selector).Decode(data)
