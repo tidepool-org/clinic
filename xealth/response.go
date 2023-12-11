@@ -26,14 +26,14 @@ func NewGuardianFlowResponseBuilder() ResponseBuilder[GuardianFormData, Guardian
 	builder := &responseBuilder[GuardianFormData, GuardianFormValidationErrors]{
 		jsonForm: guardianEnrollmentForm,
 	}
-	return builder.WithTitle(DefaultFormTitle)
+	return builder
 }
 
 func NewPatientFlowResponseBuilder() ResponseBuilder[PatientFormData, PatientFormValidationErrors] {
 	builder := &responseBuilder[PatientFormData, PatientFormValidationErrors]{
 		jsonForm: patientEnrollmentForm,
 	}
-	return builder.WithTitle(DefaultFormTitle)
+	return builder
 }
 
 type responseBuilder[T FormData, E FormErrors] struct {
@@ -191,11 +191,8 @@ func (g *responseBuilder[T, E]) maybePersistData() (err error) {
 }
 
 func (g *responseBuilder[T, E]) processOverrides() (err error) {
-	// deepmerge.JSON will error out if both the json form (dst) and the overrides (src) define
-	// the same key with a primitive type. Make sure the json form template doesn't have keys
-	// which are defined in FormOverrides.
 	jsonOverrides, err := json.Marshal(g.formOverrides)
-	g.jsonFormWithOverrides, err = deepmerge.JSON(g.jsonForm, jsonOverrides)
+	g.jsonFormWithOverrides, err = deepmerge.JSON(g.jsonForm, jsonOverrides, deepmerge.Config{PreventMultipleDefinitionsOfKeysWithPrimitiveValue: false})
 	return
 }
 

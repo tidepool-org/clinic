@@ -3,6 +3,7 @@
   "formData": {},
   "formSchema": {
     "description": "Please confirm a few details to complete set up. Email allows your patient to claim their account and upload their data from home.",
+    "title": "Add patient to Tidepool",
     "type": "object",
     "properties": {
       "patient": {

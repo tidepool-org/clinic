@@ -3,6 +3,7 @@
   "formData": {},
   "formSchema": {
     "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
+    "title": "Add patient to Tidepool",
     "type": "object",
     "properties": {
       "guardian": {

@@ -32,26 +32,26 @@ func NewGuardianDataValidator(users patients.UserService) *GuardianDataValidator
 }
 
 func (g *GuardianDataValidator) Validate(d GuardianFormData) (GuardianFormValidationErrors, error) {
-	errors := GuardianFormValidationErrors{}
+	formValidationErrors := GuardianFormValidationErrors{}
 	if strings.TrimSpace(d.Guardian.FirstName) == "" {
-		errors.FormHasErrors = true
-		errors.Guardian.FirstName = NewValidationError("First name is required")
+		formValidationErrors.FormHasErrors = true
+		formValidationErrors.Guardian.FirstName = NewValidationError("First name is required")
 	}
 	if strings.TrimSpace(d.Guardian.LastName) == "" {
-		errors.FormHasErrors = true
-		errors.Guardian.LastName = NewValidationError("Last name is required")
+		formValidationErrors.FormHasErrors = true
+		formValidationErrors.Guardian.LastName = NewValidationError("Last name is required")
 	}
 	if !isValidEmail(d.Guardian.Email) {
-		errors.FormHasErrors = true
-		errors.Guardian.Email = NewValidationError("The email address is not valid")
+		formValidationErrors.FormHasErrors = true
+		formValidationErrors.Guardian.Email = NewValidationError("The email address is not valid")
 	} else if duplicate, err := g.duplicateEmailValidator.IsDuplicate(d.Guardian.Email); err != nil {
-		return errors, err
+		return formValidationErrors, err
 	} else if duplicate {
-		errors.FormHasErrors = true
-		errors.Guardian.Email = NewValidationError("A user with this email address already exists")
+		formValidationErrors.FormHasErrors = true
+		formValidationErrors.Guardian.Email = NewValidationError("A user with this email address already exists")
 	}
 
-	return errors, nil
+	return formValidationErrors, nil
 }
 
 type PatientDataValidator struct {
@@ -65,16 +65,16 @@ func NewPatientDataValidator(users patients.UserService) *PatientDataValidator {
 }
 
 func (g *PatientDataValidator) Validate(d PatientFormData) (PatientFormValidationErrors, error) {
-	errors := PatientFormValidationErrors{}
+	formValidationErrors := PatientFormValidationErrors{}
 	if !isValidEmail(d.Patient.Email) {
-		errors.FormHasErrors = true
-		errors.Patient.Email = NewValidationError("The email address is not valid")
+		formValidationErrors.FormHasErrors = true
+		formValidationErrors.Patient.Email = NewValidationError("The email address is not valid")
 	} else if duplicate, err := g.duplicateEmailValidator.IsDuplicate(d.Patient.Email); err != nil {
-		return errors, err
+		return formValidationErrors, err
 	} else if duplicate {
-		errors.FormHasErrors = true
-		errors.Patient.Email = NewValidationError("A user with this email address already exists")
+		formValidationErrors.FormHasErrors = true
+		formValidationErrors.Patient.Email = NewValidationError("A user with this email address already exists")
 	}
 
-	return errors, nil
+	return formValidationErrors, nil
 }
