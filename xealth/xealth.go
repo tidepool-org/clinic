@@ -22,7 +22,8 @@ const (
 	authorizationHeader = "Authorization"
 	bearerPrefix        = "Bearer "
 
-	eventNewOrder = "order:new"
+	eventNewOrder    = "order:new"
+	eventCancelOrder = "order:cancel"
 )
 
 type ModuleConfig struct {
@@ -179,7 +180,7 @@ func (d *defaultHandler) AuthorizeRequest(req *http.Request) error {
 
 func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xealth_client.EventNotification) error {
 	eventKey := fmt.Sprintf("%s:%s", event.EventType, event.EventContext)
-	if eventKey != eventNewOrder {
+	if eventKey != eventNewOrder && eventKey != eventCancelOrder {
 		d.logger.Infof("ignoring unexpected event %v", eventKey)
 		return nil
 	}
