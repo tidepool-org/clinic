@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	SummaryAndReportsSubscription = "summaryAndReports"
+	SubscriptionRedoxSummaryAndReports = "summaryAndReports"
+	SubscriptionXealthReports          = "xealthReports"
 )
 
 var (
@@ -186,6 +187,17 @@ type LastRequestedDexcomConnectUpdate struct {
 type Summary struct {
 	CGM *PatientCGMStats `json:"cgmStats" bson:"cgmStats"`
 	BGM *PatientBGMStats `json:"bgmStats" bson:"bgmStats"`
+}
+
+func (s *Summary) GetLastUploadDate() time.Time {
+	last := time.Time{}
+	if s.CGM != nil && s.CGM.GetLastUploadDate().After(last) {
+		last = s.CGM.GetLastUploadDate()
+	}
+	if s.BGM != nil && s.BGM.GetLastUploadDate().After(last) {
+		last = s.BGM.GetLastUploadDate()
+	}
+	return last
 }
 
 type DataSources []DataSource

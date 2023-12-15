@@ -2,15 +2,12 @@ package xealth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/oapi-codegen/runtime/types"
 	"github.com/tidepool-org/clinic/clinics"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/xealth_client"
 	"go.uber.org/zap"
 	"net/http"
@@ -43,6 +40,7 @@ type Xealth interface {
 	ProcessInitialPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest0) (*xealth_client.PreorderFormResponse, error)
 	ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest1) (*xealth_client.PreorderFormResponse, error)
 	HandleEventNotification(ctx context.Context, event xealth_client.EventNotification) error
+	GetPrograms(ctx context.Context, requestrequest xealth_client.GetProgramsRequest) (*xealth_client.GetProgramsResponse, error)
 }
 
 type defaultHandler struct {
@@ -88,71 +86,63 @@ func NewHandler(clinics clinics.Service, patients patients.Service, users patien
 }
 
 func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest0) (*xealth_client.PreorderFormResponse, error) {
-	clinic, err := d.FindMatchingClinic(ctx, request.Deployment)
+	match, err := NewMatcher[*xealth_client.PreorderFormResponse](d.clinics, d.patients).
+		FromInitialPreorderForRequest(request).
+		OnNoMatchingClinicsRespondWith(nil, NoClinicsErr).
+		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
+		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		Match(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	criteria, err := GetPatientMatchingCriteria(request.Datasets, clinic)
-	if err != nil {
-		return nil, err
+	if match.Error != nil || match.Response != nil {
+		return match.Response, match.Error
 	}
-
-	matchingPatients, err := d.FindMatchingPatients(ctx, criteria, clinic)
-	if err != nil {
-		return nil, err
-	}
-
-	if count := len(matchingPatients); count == 1 {
+	if match.Patient != nil {
 		return NewFinalResponse()
-	} else if count > 1 {
-		return nil, fmt.Errorf("%w: multiple matching patients were found", errs.BadRequest)
 	}
 
 	dataTrackingId := uuid.NewString()
-	if criteria.IsPatientUnder13() {
+	if match.Criteria.IsPatientUnder13() {
 		return NewGuardianFlowResponseBuilder().
 			WithDataTrackingId(dataTrackingId).
-			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
+			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
 			BuildInitialResponse()
 	} else {
 		formData := PatientFormData{}
-		formData.Patient.Email = criteria.Email
+		formData.Patient.Email = match.Criteria.Email
 
 		return NewPatientFlowResponseBuilder().
 			WithDataTrackingId(dataTrackingId).
 			WithData(formData).
-			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
+			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
 			BuildInitialResponse()
 	}
 }
 
 func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest1) (*xealth_client.PreorderFormResponse, error) {
-	clinic, err := d.FindMatchingClinic(ctx, request.Deployment)
+	match, err := NewMatcher[*xealth_client.PreorderFormResponse](d.clinics, d.patients).
+		FromSubsequentPreorderForRequest(request).
+		OnNoMatchingClinicsRespondWith(nil, NoClinicsErr).
+		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
+		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		Match(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	criteria, err := GetPatientMatchingCriteria(request.Datasets, clinic)
-	if err != nil {
-		return nil, err
+	if match.Error != nil || match.Response != nil {
+		return match.Response, match.Error
 	}
-
-	matchingPatients, err := d.FindMatchingPatients(ctx, criteria, clinic)
-	if err != nil {
-		return nil, err
-	}
-
-	if count := len(matchingPatients); count != 0 {
+	if match.Patient != nil {
 		return nil, fmt.Errorf("a matching patient already exists")
 	}
 
-	if criteria.IsPatientUnder13() {
+	if match.Criteria.IsPatientUnder13() {
 		return NewGuardianFlowResponseBuilder().
 			WithDataTrackingId(request.FormData.DataTrackingId).
 			WithUserInput(request.FormData.UserInput).
 			WithDataValidator(NewGuardianDataValidator(d.users)).
-			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
+			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
 			PersistPreorderDataOnSuccess(ctx, d.store).
 			BuildSubsequentResponse()
 	} else {
@@ -160,7 +150,7 @@ func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 			WithDataTrackingId(request.FormData.DataTrackingId).
 			WithUserInput(request.FormData.UserInput).
 			WithDataValidator(NewPatientDataValidator(d.users)).
-			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, criteria.FullName).
+			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
 			PersistPreorderDataOnSuccess(ctx, d.store).
 			BuildSubsequentResponse()
 	}
@@ -185,16 +175,27 @@ func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xeal
 		return nil
 	}
 
-	clinic, err := d.FindMatchingClinic(ctx, event.Deployment)
-	if errors.Is(err, errs.NotFound) {
-		d.logger.Infof("ignoring order for unknown deployment %v", event.Deployment)
-		return nil
-	} else if err != nil {
+	match, err := NewMatcher[any](d.clinics, d.patients).
+		FromEventNotification(event).
+		OnNoMatchingClinicsRespondWith(nil, nil).
+		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
+		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		Match(ctx)
+	if err != nil {
 		return err
 	}
 
-	if clinic.EHRSettings == nil || clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports == nil || event.ProgramId != *clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports {
-		d.logger.Infow("ignoring order with unknown program id", "clinicId", clinic.Id.Hex(), "programId", event.ProgramId)
+	if match.Error != nil {
+		return match.Error
+	}
+
+	if match.Clinic == nil {
+		d.logger.Infof("ignoring order for unknown deployment %v", event.Deployment)
+		return nil
+	}
+
+	if match.Clinic.EHRSettings == nil || match.Clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports == nil || event.ProgramId != *match.Clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports {
+		d.logger.Infow("ignoring order with unknown program id", "clinicId", match.Clinic.Id.Hex(), "programId", event.ProgramId)
 		return nil
 	}
 
@@ -216,6 +217,99 @@ func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xeal
 	return d.handleNewOrder(ctx, order.Id.Hex())
 }
 
+func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.GetProgramUrlRequest) (*xealth_client.GetProgramUrlResponse, error) {
+	return nil, nil
+}
+
+func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.GetProgramsRequest) (*xealth_client.GetProgramsResponse, error) {
+	response := &xealth_client.GetProgramsResponse{}
+	if err := response.FromGetProgramsResponse1(xealth_client.GetProgramsResponse1{Present: false}); err != nil {
+		return nil, err
+	}
+
+	match, err := NewMatcher[*xealth_client.GetProgramsResponse](d.clinics, d.patients).
+		FromProgramsRequest(event).
+		OnNoMatchingClinicsRespondWith(response, nil).
+		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
+		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		Match(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if match.Error != nil || match.Response != nil {
+		return match.Response, match.Error
+	}
+
+	patient := match.Patient
+	var subscription *patients.EHRSubscription
+
+	if patient != nil {
+		if subs, ok := patient.EHRSubscriptions[patients.SubscriptionXealthReports]; ok {
+			subscription = &subs
+		}
+	}
+
+	if patient == nil || subscription == nil || subscription.Provider != clinics.EHRProviderXealth {
+		return response, nil
+	}
+
+	response = &xealth_client.GetProgramsResponse{}
+	programs := xealth_client.GetProgramsResponse0{
+		Present: true,
+		Programs: []struct {
+			// Description Description of the enrolled program
+			Description *string `json:"description,omitempty"`
+
+			// EnrolledDate Date when the patient was enrolled into this program. (Format is YYYY-MM-DD)
+			EnrolledDate *string `json:"enrolledDate,omitempty"`
+
+			// HasStatusView Indicates whether or not a subscriber dashboard exists for this patient. Setting this field to false will disable the ability for getProgramUrl request to be made for this program
+			HasStatusView *bool `json:"hasStatusView,omitempty"`
+
+			// HasAlert Indicates if new information is available for this patient. If true, Xealth will highlight the program in Monitor view to alert the user
+			HasAlert *bool `json:"has_alert,omitempty"`
+
+			// ProgramId Subscriber-defined identifier for the program
+			ProgramId *string `json:"programId,omitempty"`
+
+			// Status Patient's current enrollment status in the program
+			Status *string `json:"status,omitempty"`
+
+			// Title Title of the enrolled program
+			Title *string `json:"title,omitempty"`
+		}{{}},
+	}
+
+	order, err := d.store.GetOrder(ctx, subscription.MatchedMessages[0].DocumentId.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	lastUpload := GetLastUploadDate(patient)
+	lastViewed, err := d.GetLastViewedDate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	programs.Programs[0].Description = GetProgramDescription(lastUpload, lastViewed)
+	programs.Programs[0].EnrolledDate = GetProgramEnrollmentDateFromOrder(order)
+	programs.Programs[0].HasAlert = IsProgramAlertActive(lastUpload, lastViewed)
+	programs.Programs[0].HasStatusView = IsSubscriptionActive(subscription)
+	programs.Programs[0].ProgramId = GetProgramIdFromOrder(order)
+	programs.Programs[0].Title = GetProgramTitle()
+
+	if err := response.FromGetProgramsResponse0(programs); err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (d *defaultHandler) GetLastViewedDate(ctx context.Context) (time.Time, error) {
+	return time.Time{}, nil
+}
+
 func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) error {
 	order, err := d.store.GetOrder(ctx, documentId)
 	if err != nil {
@@ -230,37 +324,37 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		}
 	}
 
-	clinic, err := d.FindMatchingClinic(ctx, order.OrderData.OrderInfo.Deployment)
-	if errors.Is(err, errs.NotFound) {
+	match, err := NewMatcher[any](d.clinics, d.patients).
+		FromOrder(*order).
+		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
+		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		Match(ctx)
+	if err != nil {
+		return err
+	}
+	if match.Error != nil {
+		return match.Error
+	}
+
+	if match.Clinic == nil {
 		d.logger.Errorw("unable to find matching clinic for xealth deployment", "deploymentId", order.OrderData.OrderInfo.Deployment)
 		return nil
 	}
 
-	criteria, err := GetPatientMatchingCriteriaFromOrder(*order, clinic)
-	if err != nil {
-		return err
-	}
-	update, err := GetSubscriptionUpdateFromOrderEvent(*order, clinic)
-	if err != nil {
-		return err
-	}
-	matchingPatients, err := d.FindMatchingPatients(ctx, criteria, clinic)
+	update, err := GetSubscriptionUpdateFromOrderEvent(*order, match.Clinic)
 	if err != nil {
 		return err
 	}
 
-	count := len(matchingPatients)
-	var patient *patients.Patient
-
-	if count == 0 {
+	if match.Patient == nil {
 		if preorderData == nil {
 			return fmt.Errorf("%w: preorder data is required to create a new patient", errs.BadRequest)
 		}
 
 		create := patients.Patient{
-			ClinicId:    clinic.Id,
-			BirthDate:   &criteria.DateOfBirth,
-			Mrn:         &criteria.Mrn,
+			ClinicId:    match.Clinic.Id,
+			BirthDate:   &match.Criteria.DateOfBirth,
+			Mrn:         &match.Criteria.Mrn,
 			Permissions: &patients.CustodialAccountPermissions,
 		}
 		if preorderData.Guardian != nil {
@@ -271,7 +365,7 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			create.FullName = &fullName
 			create.Email = &preorderData.Guardian.Email
 		} else if preorderData.Patient != nil {
-			create.FullName = &criteria.FullName
+			create.FullName = &match.Criteria.FullName
 			create.Email = &preorderData.Patient.Email
 		} else {
 			return fmt.Errorf("%w: unable to create patient preorder data is missing", errs.BadRequest)
@@ -280,17 +374,13 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			create.LastRequestedDexcomConnectTime = time.Now()
 		}
 
-		patient, err = d.patients.Create(ctx, create)
+		match.Patient, err = d.patients.Create(ctx, create)
 		if err != nil {
 			return err
 		}
-	} else if count == 1 {
-		patient = matchingPatients[0]
-	} else if count > 1 {
-		return fmt.Errorf("%w: multiple matching patients found, cannot fulfill order", errs.BadRequest)
 	}
 
-	return d.patients.UpdateEHRSubscription(ctx, clinic.Id.Hex(), *patient.UserId, *update)
+	return d.patients.UpdateEHRSubscription(ctx, match.Clinic.Id.Hex(), *match.Patient.UserId, *update)
 }
 
 func GetSubscriptionUpdateFromOrderEvent(orderEvent OrderEvent, clinic *clinics.Clinic) (*patients.SubscriptionUpdate, error) {
@@ -298,13 +388,13 @@ func GetSubscriptionUpdateFromOrderEvent(orderEvent OrderEvent, clinic *clinics.
 		return nil, fmt.Errorf("%w: unsupported event type %s", errs.BadRequest, orderEvent.EventNotification.EventType)
 	}
 
-	programId := GetProgramIdFromOrder(orderEvent)
-	if clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports == nil || *clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports != programId {
-		return nil, fmt.Errorf("%w: unknown program id %s", errs.BadRequest, programId)
+	programId := GetProgramIdFromOrder(&orderEvent)
+	if clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports == nil || programId == nil || *clinic.EHRSettings.ProcedureCodes.CreateAccountAndEnableReports != *programId {
+		return nil, fmt.Errorf("%w: unknown program id in order %s", errs.BadRequest, orderEvent.OrderData.OrderInfo.OrderId)
 	}
 
 	update := patients.SubscriptionUpdate{
-		Name: patients.SummaryAndReportsSubscription,
+		Name: patients.SubscriptionXealthReports,
 		MatchedMessage: patients.MatchedMessage{
 			DocumentId: *orderEvent.Id,
 			DataModel:  string(orderEvent.EventNotification.EventType),
@@ -324,66 +414,6 @@ func GetSubscriptionUpdateFromOrderEvent(orderEvent OrderEvent, clinic *clinics.
 	return &update, nil
 }
 
-func GetProgramIdFromOrder(orderEvent OrderEvent) string {
-	return orderEvent.OrderData.OrderInfo.ProgramId
-}
-
-func GetPatientMatchingCriteriaFromOrder(order OrderEvent, clinic *clinics.Clinic) (*PatientMatchingCriteria, error) {
-	if clinic.EHRSettings == nil {
-		return nil, fmt.Errorf("%w: clinic has no EHR settings", errs.BadRequest)
-	}
-
-	if order.OrderData.Datasets == nil {
-		return nil, fmt.Errorf("%w: datasets is required", errs.BadRequest)
-	}
-	datasets := order.OrderData.Datasets
-	if datasets.DemographicsV1 == nil {
-		return nil, fmt.Errorf("%w: demographics is required", errs.BadRequest)
-	}
-	if datasets.DemographicsV1.Ids == nil || len(*datasets.DemographicsV1.Ids) == 0 {
-		return nil, fmt.Errorf("%w: demographics ids are required", errs.BadRequest)
-	}
-
-	criteria := &PatientMatchingCriteria{}
-
-	mrnIdType := strings.ToLower(clinic.EHRSettings.GetMrnIDType())
-	for _, identifier := range *datasets.DemographicsV1.Ids {
-		if identifier.Type != nil && strings.ToLower(*identifier.Type) == mrnIdType && identifier.Id != nil {
-			criteria.Mrn = *identifier.Id
-			break
-		}
-	}
-
-	if datasets.DemographicsV1.Name != nil {
-		names := make([]string, 0, 2)
-		if datasets.DemographicsV1.Name.Given != nil && len(*datasets.DemographicsV1.Name.Given) > 0 {
-			criteria.FirstName = strings.Join(*datasets.DemographicsV1.Name.Given, " ")
-			names = append(names, criteria.FirstName)
-		}
-		if datasets.DemographicsV1.Name.Family != nil && len(*datasets.DemographicsV1.Name.Family) > 0 {
-			criteria.LastName = strings.Join(*datasets.DemographicsV1.Name.Family, " ")
-			names = append(names, criteria.LastName)
-		}
-		if len(names) > 0 {
-			criteria.FullName = strings.TrimSpace(strings.Join(names, " "))
-		}
-	}
-
-	if datasets.DemographicsV1.BirthDate != nil {
-		criteria.DateOfBirth = datasets.DemographicsV1.BirthDate.String()
-	}
-
-	if datasets.DemographicsV1.Telecom != nil {
-		for _, v := range *datasets.DemographicsV1.Telecom {
-			if v.System != nil && *v.System == xealth_client.ReadOrderResponseDatasetsDemographicsV1TelecomSystemEmail && v.Value != nil {
-				criteria.Email = *v.Value
-			}
-		}
-	}
-
-	return criteria, criteria.Validate()
-}
-
 func (d *defaultHandler) GetXealthOrder(ctx context.Context, deployment, orderId string) (*xealth_client.ReadOrderResponse, error) {
 	response, err := d.client.GetPartnerReadOrderDeploymentOrderIdWithResponse(ctx, deployment, orderId, nil)
 	if err != nil {
@@ -395,137 +425,7 @@ func (d *defaultHandler) GetXealthOrder(ctx context.Context, deployment, orderId
 	return response.JSON200, nil
 }
 
-func (d *defaultHandler) FindMatchingClinic(ctx context.Context, deployment string) (*clinics.Clinic, error) {
-	enabled := true
-	filter := &clinics.Filter{
-		EHRProvider: &clinics.EHRProviderXealth,
-		EHRSourceId: &deployment,
-		EHREnabled:  &enabled,
-	}
-	page := store.Pagination{
-		Offset: 0,
-		Limit:  2,
-	}
-
-	result, err := d.clinics.List(ctx, filter, page)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(result) > 1 {
-		return nil, fmt.Errorf("%w: found multiple clinics matching the deployment", errs.Duplicate)
-	} else if len(result) == 0 {
-		return nil, fmt.Errorf("%w: couldn't find matching clinic", errs.NotFound)
-	}
-
-	return result[0], nil
-}
-
-func (d *defaultHandler) FindMatchingPatients(ctx context.Context, criteria *PatientMatchingCriteria, clinic *clinics.Clinic) ([]*patients.Patient, error) {
-	clinicId := clinic.Id.Hex()
-	page := store.Pagination{
-		Offset: 0,
-		Limit:  100,
-	}
-
-	filter := patients.Filter{
-		ClinicId:  &clinicId,
-		Mrn:       &criteria.Mrn,
-		BirthDate: &criteria.DateOfBirth,
-	}
-	result, err := d.patients.List(ctx, &filter, page, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result.Patients, nil
-}
-
 var _ Xealth = &defaultHandler{}
-
-type PatientMatchingCriteria struct {
-	FirstName   string
-	LastName    string
-	FullName    string
-	Mrn         string
-	DateOfBirth string
-	Email       string
-}
-
-func (p *PatientMatchingCriteria) IsPatientUnder13() bool {
-	dob, err := time.Parse(types.DateFormat, p.DateOfBirth)
-	if err != nil {
-		return false
-	}
-	return dob.AddDate(13, 0, 0).After(time.Now())
-}
-
-func (p *PatientMatchingCriteria) Validate() error {
-	if p.Mrn == "" {
-		return fmt.Errorf("%w: mrn is missing", errs.BadRequest)
-	}
-	if p.DateOfBirth == "" {
-		return fmt.Errorf("%w: date of birth is missing", errs.BadRequest)
-	}
-	if p.FullName == "" {
-		return fmt.Errorf("%w: full name is missing", errs.BadRequest)
-	}
-	return nil
-}
-
-func GetPatientMatchingCriteria(datasets *xealth_client.GeneralDatasets, clinic *clinics.Clinic) (*PatientMatchingCriteria, error) {
-	if clinic.EHRSettings == nil {
-		return nil, fmt.Errorf("%w: clinic has no EHR settings", errs.BadRequest)
-	}
-	if datasets == nil {
-		return nil, fmt.Errorf("%w: datasets is required", errs.BadRequest)
-	}
-	if datasets.DemographicsV1 == nil {
-		return nil, fmt.Errorf("%w: demographics is required", errs.BadRequest)
-	}
-	if datasets.DemographicsV1.Ids == nil || len(*datasets.DemographicsV1.Ids) == 0 {
-		return nil, fmt.Errorf("%w: demographics ids are required", errs.BadRequest)
-	}
-
-	criteria := &PatientMatchingCriteria{}
-
-	mrnIdType := strings.ToLower(clinic.EHRSettings.GetMrnIDType())
-	for _, identifier := range *datasets.DemographicsV1.Ids {
-		if identifier.Type != nil && strings.ToLower(*identifier.Type) == mrnIdType && identifier.Id != nil {
-			criteria.Mrn = *identifier.Id
-			break
-		}
-	}
-
-	if datasets.DemographicsV1.Name != nil {
-		names := make([]string, 0, 2)
-		if datasets.DemographicsV1.Name.Given != nil && len(*datasets.DemographicsV1.Name.Given) > 0 {
-			criteria.FirstName = strings.Join(*datasets.DemographicsV1.Name.Given, " ")
-			names = append(names, criteria.FirstName)
-		}
-		if datasets.DemographicsV1.Name.Family != nil && len(*datasets.DemographicsV1.Name.Family) > 0 {
-			criteria.LastName = strings.Join(*datasets.DemographicsV1.Name.Family, " ")
-			names = append(names, criteria.LastName)
-		}
-		if len(names) > 0 {
-			criteria.FullName = strings.TrimSpace(strings.Join(names, " "))
-		}
-	}
-
-	if datasets.DemographicsV1.BirthDate != nil {
-		criteria.DateOfBirth = datasets.DemographicsV1.BirthDate.String()
-	}
-
-	if datasets.DemographicsV1.Telecom != nil {
-		for _, v := range *datasets.DemographicsV1.Telecom {
-			if v.System != nil && *v.System == xealth_client.GeneralDatasetsDemographicsV1TelecomSystemEmail && v.Value != nil {
-				criteria.Email = *v.Value
-			}
-		}
-	}
-
-	return criteria, criteria.Validate()
-}
 
 type disabledHandler struct{}
 
@@ -542,6 +442,10 @@ func (d *disabledHandler) ProcessInitialPreorderRequest(ctx context.Context, req
 }
 
 func (d *disabledHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest1) (*xealth_client.PreorderFormResponse, error) {
+	return nil, fmt.Errorf("the integration is not enabled")
+}
+
+func (d *disabledHandler) GetPrograms(ctx context.Context, event xealth_client.GetProgramsRequest) (*xealth_client.GetProgramsResponse, error) {
 	return nil, fmt.Errorf("the integration is not enabled")
 }
 

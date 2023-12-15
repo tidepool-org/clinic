@@ -38,7 +38,7 @@ func RandomPatient() patients.Patient {
 
 func RandomSubscriptions() patients.EHRSubscriptions {
 	subs := make(patients.EHRSubscriptions)
-	subs[patients.SummaryAndReportsSubscription] = patients.EHRSubscription{
+	subs[patients.SubscriptionRedoxSummaryAndReports] = patients.EHRSubscription{
 		Active: true,
 		MatchedMessages: []patients.MatchedMessage{{
 			DocumentId: primitive.NewObjectID(),

@@ -54,6 +54,14 @@ type PatientBGMStats struct {
 	TotalHours    *int                  `bson:"totalHours,omitempty" json:"totalHours,omitempty"`
 }
 
+func (s *PatientBGMStats) GetLastUploadDate() time.Time {
+	last := time.Time{}
+	if s.Dates != nil && s.Dates.LastUploadDate != nil {
+		last = *s.Dates.LastUploadDate
+	}
+	return last
+}
+
 type PatientCGMPeriod struct {
 	AverageDailyRecords             *float64 `bson:"averageDailyRecords,omitempty" json:"averageDailyRecords,omitempty"`
 	AverageDailyRecordsDelta        *float64 `bson:"averageDailyRecordsDelta,omitempty" json:"averageDailyRecordsDelta,omitempty"`
@@ -131,6 +139,14 @@ type PatientCGMStats struct {
 	OffsetPeriods *PatientCGMPeriods    `bson:"offsetPeriods,omitempty" json:"offsetPeriods,omitempty"`
 	Periods       *PatientCGMPeriods    `bson:"periods,omitempty" json:"periods,omitempty"`
 	TotalHours    *int                  `bson:"totalHours,omitempty" json:"totalHours,omitempty"`
+}
+
+func (s *PatientCGMStats) GetLastUploadDate() time.Time {
+	last := time.Time{}
+	if s.Dates != nil && s.Dates.LastUploadDate != nil {
+		last = *s.Dates.LastUploadDate
+	}
+	return last
 }
 
 type PatientSummaryConfig struct {

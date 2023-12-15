@@ -260,7 +260,7 @@ func (h *Handler) RescheduleSubscriptionOrders(ctx context.Context, clinicId str
 	return h.patients.RescheduleLastSubscriptionOrderForAllPatients(
 		ctx,
 		clinicId,
-		patients.SummaryAndReportsSubscription,
+		patients.SubscriptionRedoxSummaryAndReports,
 		messagesCollectionName,
 		summaryAndReportsRescheduledOrdersCollectionName,
 	)
@@ -487,11 +487,11 @@ func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID,
 	}
 
 	if clinic.EHRSettings.ProcedureCodes.EnableSummaryReports != nil && *clinic.EHRSettings.ProcedureCodes.EnableSummaryReports == code {
-		update.Name = patients.SummaryAndReportsSubscription
+		update.Name = patients.SubscriptionRedoxSummaryAndReports
 		update.Active = true
 		return &update
 	} else if clinic.EHRSettings.ProcedureCodes.DisableSummaryReports != nil && *clinic.EHRSettings.ProcedureCodes.DisableSummaryReports == code {
-		update.Name = patients.SummaryAndReportsSubscription
+		update.Name = patients.SubscriptionRedoxSummaryAndReports
 		update.Active = false
 		return &update
 	}

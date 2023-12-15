@@ -402,6 +402,38 @@ const (
 	GeneralDatasetsMaternityPregnancyEpicV1PregnantYes     GeneralDatasetsMaternityPregnancyEpicV1Pregnant = "yes"
 )
 
+// Defines values for GetProgramUrlRequestEhrView.
+const (
+	GetProgramUrlRequestEhrViewEncounter GetProgramUrlRequestEhrView = "encounter"
+	GetProgramUrlRequestEhrViewOther     GetProgramUrlRequestEhrView = "other"
+)
+
+// Defines values for GetProgramUrlRequestEventContext.
+const (
+	GetProgramUrlRequestEventContextInitial GetProgramUrlRequestEventContext = "initial"
+)
+
+// Defines values for GetProgramUrlRequestEventType.
+const (
+	GetProgramUrl GetProgramUrlRequestEventType = "getProgramUrl"
+)
+
+// Defines values for GetProgramsRequestEhrView.
+const (
+	GetProgramsRequestEhrViewEncounter GetProgramsRequestEhrView = "encounter"
+	GetProgramsRequestEhrViewOther     GetProgramsRequestEhrView = "other"
+)
+
+// Defines values for GetProgramsRequestEventContext.
+const (
+	GetProgramsRequestEventContextInitial GetProgramsRequestEventContext = "initial"
+)
+
+// Defines values for GetProgramsRequestEventType.
+const (
+	GetPrograms GetProgramsRequestEventType = "getPrograms"
+)
+
 // Defines values for HsCreateOrderRequestOrderType.
 const (
 	Order HsCreateOrderRequestOrderType = "order"
@@ -4629,6 +4661,116 @@ type GeneralDatasetsMaternityPregnancyEpicV1ChildrenType string
 
 // GeneralDatasetsMaternityPregnancyEpicV1Pregnant Indicates whether patient is currently pregnant
 type GeneralDatasetsMaternityPregnancyEpicV1Pregnant string
+
+// GetProgramUrlRequest Detail information related to notification event
+type GetProgramUrlRequest struct {
+	// Datasets Health system data configured for the subscriber sourced via webservice or FHIR requests.
+	Datasets *GeneralDatasets `json:"datasets,omitempty"`
+
+	// Deployment The Xealth-defined ID of the Health System
+	Deployment string `json:"deployment"`
+
+	// EhrView Indicates how the workflow is accessed by the EHR
+	EhrView GetProgramUrlRequestEhrView `json:"ehrView"`
+
+	// EventContext Indicates the reason for the event notification
+	EventContext GetProgramUrlRequestEventContext `json:"eventContext"`
+
+	// EventType Indicates the type of event related to the notification
+	EventType GetProgramUrlRequestEventType `json:"eventType"`
+
+	// PatientIdentity Object identifying the patient
+	PatientIdentity PatientIdentity `json:"patientIdentity"`
+
+	// ProgramId Subscriber-defined identifier for the program
+	ProgramId string `json:"programId"`
+}
+
+// GetProgramUrlRequestEhrView Indicates how the workflow is accessed by the EHR
+type GetProgramUrlRequestEhrView string
+
+// GetProgramUrlRequestEventContext Indicates the reason for the event notification
+type GetProgramUrlRequestEventContext string
+
+// GetProgramUrlRequestEventType Indicates the type of event related to the notification
+type GetProgramUrlRequestEventType string
+
+// GetProgramUrlResponse defines model for GetProgramUrlResponse.
+type GetProgramUrlResponse struct {
+	// Url The URL that will be displayed in the EHR to render the patient's dashboard and/or digital content
+	Url string `json:"url"`
+}
+
+// GetProgramsRequest Detail information related to notification event
+type GetProgramsRequest struct {
+	// Datasets Health system data configured for the subscriber sourced via webservice or FHIR requests.
+	Datasets *GeneralDatasets `json:"datasets,omitempty"`
+
+	// Deployment The Xealth-defined ID of the Health System
+	Deployment string `json:"deployment"`
+
+	// EhrView Indicates how the workflow is accessed by the EHR
+	EhrView GetProgramsRequestEhrView `json:"ehrView"`
+
+	// EventContext Indicates the reason for the event notification
+	EventContext GetProgramsRequestEventContext `json:"eventContext"`
+
+	// EventType Indicates the type of event related to the notification
+	EventType GetProgramsRequestEventType `json:"eventType"`
+
+	// PatientIdentity Object identifying the patient
+	PatientIdentity PatientIdentity `json:"patientIdentity"`
+}
+
+// GetProgramsRequestEhrView Indicates how the workflow is accessed by the EHR
+type GetProgramsRequestEhrView string
+
+// GetProgramsRequestEventContext Indicates the reason for the event notification
+type GetProgramsRequestEventContext string
+
+// GetProgramsRequestEventType Indicates the type of event related to the notification
+type GetProgramsRequestEventType string
+
+// GetProgramsResponse defines model for GetProgramsResponse.
+type GetProgramsResponse struct {
+	union json.RawMessage
+}
+
+// GetProgramsResponse0 defines model for .
+type GetProgramsResponse0 struct {
+	// Present Indicates if any programs are present for the patient
+	Present bool `json:"present"`
+
+	// Programs Array of objects defining programs the patient is enrolled in
+	Programs []struct {
+		// Description Description of the enrolled program
+		Description *string `json:"description,omitempty"`
+
+		// EnrolledDate Date when the patient was enrolled into this program. (Format is YYYY-MM-DD)
+		EnrolledDate *string `json:"enrolledDate,omitempty"`
+
+		// HasStatusView Indicates whether or not a subscriber dashboard exists for this patient. Setting this field to false will disable the ability for getProgramUrl request to be made for this program
+		HasStatusView *bool `json:"hasStatusView,omitempty"`
+
+		// HasAlert Indicates if new information is available for this patient. If true, Xealth will highlight the program in Monitor view to alert the user
+		HasAlert *bool `json:"has_alert,omitempty"`
+
+		// ProgramId Subscriber-defined identifier for the program
+		ProgramId *string `json:"programId,omitempty"`
+
+		// Status Patient's current enrollment status in the program
+		Status *string `json:"status,omitempty"`
+
+		// Title Title of the enrolled program
+		Title *string `json:"title,omitempty"`
+	} `json:"programs"`
+}
+
+// GetProgramsResponse1 defines model for .
+type GetProgramsResponse1 struct {
+	// Present Indicates if any programs are present for the patient
+	Present bool `json:"present"`
+}
 
 // HL7Datasets Object used to better organize HL7 datasets
 type HL7Datasets struct {
@@ -10677,6 +10819,68 @@ type PostPartnerWriteOrderDeploymentJSONRequestBody PostPartnerWriteOrderDeploym
 
 // PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody defines body for PutPartnerWriteOrderDeploymentOrderId for application/json ContentType.
 type PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody PutPartnerWriteOrderDeploymentOrderIdJSONBody
+
+// AsGetProgramsResponse0 returns the union data inside the GetProgramsResponse as a GetProgramsResponse0
+func (t GetProgramsResponse) AsGetProgramsResponse0() (GetProgramsResponse0, error) {
+	var body GetProgramsResponse0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGetProgramsResponse0 overwrites any union data inside the GetProgramsResponse as the provided GetProgramsResponse0
+func (t *GetProgramsResponse) FromGetProgramsResponse0(v GetProgramsResponse0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGetProgramsResponse0 performs a merge with any union data inside the GetProgramsResponse, using the provided GetProgramsResponse0
+func (t *GetProgramsResponse) MergeGetProgramsResponse0(v GetProgramsResponse0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGetProgramsResponse1 returns the union data inside the GetProgramsResponse as a GetProgramsResponse1
+func (t GetProgramsResponse) AsGetProgramsResponse1() (GetProgramsResponse1, error) {
+	var body GetProgramsResponse1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGetProgramsResponse1 overwrites any union data inside the GetProgramsResponse as the provided GetProgramsResponse1
+func (t *GetProgramsResponse) FromGetProgramsResponse1(v GetProgramsResponse1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGetProgramsResponse1 performs a merge with any union data inside the GetProgramsResponse, using the provided GetProgramsResponse1
+func (t *GetProgramsResponse) MergeGetProgramsResponse1(v GetProgramsResponse1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t GetProgramsResponse) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *GetProgramsResponse) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // AsPreorderFormRequest0 returns the union data inside the PreorderFormRequest as a PreorderFormRequest0
 func (t PreorderFormRequest) AsPreorderFormRequest0() (PreorderFormRequest0, error) {
