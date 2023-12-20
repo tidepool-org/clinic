@@ -91,8 +91,24 @@ func (h *Handler) XealthNotification(ec echo.Context) error {
 }
 
 func (h *Handler) XealthGetProgramUrl(ec echo.Context) error {
-	//TODO implement me
-	panic("implement me")
+	ctx := ec.Request().Context()
+
+	// Make sure the request is initiated by xealth
+	if err := h.xealth.AuthorizeRequest(ec.Request()); err != nil {
+		return err
+	}
+
+	request := xealth_client.GetProgramUrlRequest{}
+	if err := ec.Bind(&request); err != nil {
+		return err
+	}
+
+	response, err := h.xealth.GetProgramUrl(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, response)
 }
 
 func (h *Handler) XealthGetPrograms(ec echo.Context) error {

@@ -22,7 +22,7 @@ type authenticator struct {
 	logger *zap.SugaredLogger
 }
 
-func newAuthenticator(config *ClientConfig, logger *zap.SugaredLogger) (*authenticator, error) {
+func newAuthenticator(config *Config, logger *zap.SugaredLogger) (*authenticator, error) {
 	return &authenticator{
 		config: &clientcredentials.Config{
 			ClientID:     config.ClientId,
@@ -60,7 +60,7 @@ func (a *authenticator) tokenIsValid() bool {
 	return true
 }
 
-func NewClient(config *ClientConfig, logger *zap.SugaredLogger) (xealth_client.ClientWithResponsesInterface, error) {
+func NewClient(config *Config, logger *zap.SugaredLogger) (xealth_client.ClientWithResponsesInterface, error) {
 	auth, err := newAuthenticator(config, logger)
 	if err != nil {
 		return nil, err

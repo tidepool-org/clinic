@@ -1694,6 +1694,26 @@ func (mr *MockClientInterfaceMockRecorder) VerifyEndpoint(ctx interface{}, reqEd
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyEndpoint", reflect.TypeOf((*MockClientInterface)(nil).VerifyEndpoint), varargs...)
 }
 
+// XealthGetProgramUrl mocks base method.
+func (m *MockClientInterface) XealthGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "XealthGetProgramUrl", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// XealthGetProgramUrl indicates an expected call of XealthGetProgramUrl.
+func (mr *MockClientInterfaceMockRecorder) XealthGetProgramUrl(ctx interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XealthGetProgramUrl", reflect.TypeOf((*MockClientInterface)(nil).XealthGetProgramUrl), varargs...)
+}
+
 // XealthGetPrograms mocks base method.
 func (m *MockClientInterface) XealthGetPrograms(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1752,26 +1772,6 @@ func (mr *MockClientInterfaceMockRecorder) XealthPreorder(ctx interface{}, reqEd
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XealthPreorder", reflect.TypeOf((*MockClientInterface)(nil).XealthPreorder), varargs...)
-}
-
-// XelathGetProgramUrl mocks base method.
-func (m *MockClientInterface) XelathGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range reqEditors {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "XelathGetProgramUrl", varargs...)
-	ret0, _ := ret[0].(*http.Response)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// XelathGetProgramUrl indicates an expected call of XelathGetProgramUrl.
-func (mr *MockClientInterfaceMockRecorder) XelathGetProgramUrl(ctx interface{}, reqEditors ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XelathGetProgramUrl", reflect.TypeOf((*MockClientInterface)(nil).XelathGetProgramUrl), varargs...)
 }
 
 // MockClientWithResponsesInterface is a mock of ClientWithResponsesInterface interface.
@@ -3417,6 +3417,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) VerifyEndpointWithRespon
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyEndpointWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).VerifyEndpointWithResponse), varargs...)
 }
 
+// XealthGetProgramUrlWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) XealthGetProgramUrlWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthGetProgramUrlResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "XealthGetProgramUrlWithResponse", varargs...)
+	ret0, _ := ret[0].(*XealthGetProgramUrlResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// XealthGetProgramUrlWithResponse indicates an expected call of XealthGetProgramUrlWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) XealthGetProgramUrlWithResponse(ctx interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XealthGetProgramUrlWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).XealthGetProgramUrlWithResponse), varargs...)
+}
+
 // XealthGetProgramsWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) XealthGetProgramsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthGetProgramsResponse, error) {
 	m.ctrl.T.Helper()
@@ -3475,24 +3495,4 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) XealthPreorderWithRespon
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XealthPreorderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).XealthPreorderWithResponse), varargs...)
-}
-
-// XelathGetProgramUrlWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) XelathGetProgramUrlWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XelathGetProgramUrlResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range reqEditors {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "XelathGetProgramUrlWithResponse", varargs...)
-	ret0, _ := ret[0].(*XelathGetProgramUrlResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// XelathGetProgramUrlWithResponse indicates an expected call of XelathGetProgramUrlWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) XelathGetProgramUrlWithResponse(ctx interface{}, reqEditors ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XelathGetProgramUrlWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).XelathGetProgramUrlWithResponse), varargs...)
 }

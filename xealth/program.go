@@ -55,12 +55,15 @@ func GetProgramTitle() *string {
 	return &title
 }
 
-func IsSubscriptionActive(subscription *patients.EHRSubscription) *bool {
+func HasStatusView(patient *patients.Patient, subscription *patients.EHRSubscription) *bool {
 	if subscription == nil {
 		return nil
 	}
 
-	return &subscription.Active
+	date := GetLastUploadDate(patient)
+	result := subscription.Active && !date.IsZero()
+
+	return &result
 }
 
 func IsProgramAlertActive(lastUpload time.Time, lastViewed time.Time) *bool {

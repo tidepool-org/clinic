@@ -313,8 +313,8 @@ type ClientInterface interface {
 	// XealthPreorder request
 	XealthPreorder(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// XelathGetProgramUrl request
-	XelathGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// XealthGetProgramUrl request
+	XealthGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// XealthGetPrograms request
 	XealthGetPrograms(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1316,8 +1316,8 @@ func (c *Client) XealthPreorder(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) XelathGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewXelathGetProgramUrlRequest(c.Server)
+func (c *Client) XealthGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewXealthGetProgramUrlRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -4725,8 +4725,8 @@ func NewXealthPreorderRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewXelathGetProgramUrlRequest generates requests for XelathGetProgramUrl
-func NewXelathGetProgramUrlRequest(server string) (*http.Request, error) {
+// NewXealthGetProgramUrlRequest generates requests for XealthGetProgramUrl
+func NewXealthGetProgramUrlRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -5045,8 +5045,8 @@ type ClientWithResponsesInterface interface {
 	// XealthPreorderWithResponse request
 	XealthPreorderWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthPreorderResponse, error)
 
-	// XelathGetProgramUrlWithResponse request
-	XelathGetProgramUrlWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XelathGetProgramUrlResponse, error)
+	// XealthGetProgramUrlWithResponse request
+	XealthGetProgramUrlWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthGetProgramUrlResponse, error)
 
 	// XealthGetProgramsWithResponse request
 	XealthGetProgramsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthGetProgramsResponse, error)
@@ -6284,13 +6284,13 @@ func (r XealthPreorderResponse) StatusCode() int {
 	return 0
 }
 
-type XelathGetProgramUrlResponse struct {
+type XealthGetProgramUrlResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r XelathGetProgramUrlResponse) Status() string {
+func (r XealthGetProgramUrlResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -6298,7 +6298,7 @@ func (r XelathGetProgramUrlResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r XelathGetProgramUrlResponse) StatusCode() int {
+func (r XealthGetProgramUrlResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -7047,13 +7047,13 @@ func (c *ClientWithResponses) XealthPreorderWithResponse(ctx context.Context, re
 	return ParseXealthPreorderResponse(rsp)
 }
 
-// XelathGetProgramUrlWithResponse request returning *XelathGetProgramUrlResponse
-func (c *ClientWithResponses) XelathGetProgramUrlWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XelathGetProgramUrlResponse, error) {
-	rsp, err := c.XelathGetProgramUrl(ctx, reqEditors...)
+// XealthGetProgramUrlWithResponse request returning *XealthGetProgramUrlResponse
+func (c *ClientWithResponses) XealthGetProgramUrlWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthGetProgramUrlResponse, error) {
+	rsp, err := c.XealthGetProgramUrl(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseXelathGetProgramUrlResponse(rsp)
+	return ParseXealthGetProgramUrlResponse(rsp)
 }
 
 // XealthGetProgramsWithResponse request returning *XealthGetProgramsResponse
@@ -8315,15 +8315,15 @@ func ParseXealthPreorderResponse(rsp *http.Response) (*XealthPreorderResponse, e
 	return response, nil
 }
 
-// ParseXelathGetProgramUrlResponse parses an HTTP response from a XelathGetProgramUrlWithResponse call
-func ParseXelathGetProgramUrlResponse(rsp *http.Response) (*XelathGetProgramUrlResponse, error) {
+// ParseXealthGetProgramUrlResponse parses an HTTP response from a XealthGetProgramUrlWithResponse call
+func ParseXealthGetProgramUrlResponse(rsp *http.Response) (*XealthGetProgramUrlResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &XelathGetProgramUrlResponse{
+	response := &XealthGetProgramUrlResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

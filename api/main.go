@@ -3,9 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/redox"
-	"github.com/tidepool-org/clinic/xealth"
-
 	oapiMiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
@@ -18,7 +15,12 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/redox"
 	"github.com/tidepool-org/clinic/store"
+	"github.com/tidepool-org/clinic/xealth"
+	authClient "github.com/tidepool-org/platform/auth/client"
+	"github.com/tidepool-org/platform/client"
+	"github.com/tidepool-org/platform/platform"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 )
@@ -108,6 +110,7 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 
 func MainLoop() {
 	fx.New(
+		auth.PlatformClientModule,
 		fx.Provide(
 			logger.NewProductionLogger,
 			logger.Suggar,
@@ -129,6 +132,9 @@ func MainLoop() {
 			manager.NewManager,
 			migration.NewMigrator,
 			migration.NewRepository,
+			authClient.NewExternalEnvconfigLoader,
+			platform.NewEnvconfigLoader,
+			client.NewEnvconfigLoader,
 			auth.NewAuthenticator,
 			auth.NewRequestAuthorizer,
 			NewHealthCheck,

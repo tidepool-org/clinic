@@ -2,6 +2,7 @@ package xealth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
@@ -9,6 +10,9 @@ import (
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/xealth_client"
+	"github.com/tidepool-org/platform/auth"
+	"github.com/tidepool-org/platform/log"
+	"github.com/tidepool-org/platform/log/null"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -18,6 +22,7 @@ import (
 const (
 	authorizationHeader = "Authorization"
 	bearerPrefix        = "Bearer "
+	restrictedTokenKey  = "restricted_token"
 
 	eventNewOrder    = "order:new"
 	eventCancelOrder = "order:cancel"
@@ -27,12 +32,13 @@ type ModuleConfig struct {
 	Enabled bool `envconfig:"TIDEPOOL_XEALTH_ENABLED"`
 }
 
-type ClientConfig struct {
-	BearerToken   string `envconfig:"TIDEPOOL_XEALTH_BEARER_TOKEN" required:"true"`
-	ClientId      string `envconfig:"TIDEPOOL_XEALTH_CLIENT_ID" required:"true"`
-	ClientSecret  string `envconfig:"TIDEPOOL_XEALTH_CLIENT_SECRET" required:"true"`
-	TokenUrl      string `envconfig:"TIDEPOOL_XEALTH_TOKEN_URL" default:"https://auth-sandbox.xealth.io/oauth2/token"`
-	ServerBaseUrl string `envconfig:"TIDEPOOL_XEALTH_SERVER_BASE_URL" default:"https://api-sandbox.xealth.io/v2"`
+type Config struct {
+	BearerToken            string `envconfig:"TIDEPOOL_XEALTH_BEARER_TOKEN" required:"true"`
+	ClientId               string `envconfig:"TIDEPOOL_XEALTH_CLIENT_ID" required:"true"`
+	ClientSecret           string `envconfig:"TIDEPOOL_XEALTH_CLIENT_SECRET" required:"true"`
+	TokenUrl               string `envconfig:"TIDEPOOL_XEALTH_TOKEN_URL" default:"https://auth-sandbox.xealth.io/oauth2/token"`
+	ServerBaseUrl          string `envconfig:"TIDEPOOL_XEALTH_SERVER_BASE_URL" default:"https://api-sandbox.xealth.io/v2"`
+	TidepoolApplicationUrl string `envconfig:"TIDEPOOL_APPLICATION_URL" required:"true"`
 }
 
 type Xealth interface {
@@ -40,21 +46,25 @@ type Xealth interface {
 	ProcessInitialPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest0) (*xealth_client.PreorderFormResponse, error)
 	ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest1) (*xealth_client.PreorderFormResponse, error)
 	HandleEventNotification(ctx context.Context, event xealth_client.EventNotification) error
-	GetPrograms(ctx context.Context, requestrequest xealth_client.GetProgramsRequest) (*xealth_client.GetProgramsResponse, error)
+	GetPrograms(ctx context.Context, request xealth_client.GetProgramsRequest) (*xealth_client.GetProgramsResponse, error)
+	GetProgramUrl(ctx context.Context, request xealth_client.GetProgramUrlRequest) (*xealth_client.GetProgramUrlResponse, error)
 }
 
 type defaultHandler struct {
-	config *ClientConfig
+	config *Config
 
-	client   xealth_client.ClientWithResponsesInterface
-	clinics  clinics.Service
-	logger   *zap.SugaredLogger
-	patients patients.Service
-	store    Store
-	users    patients.UserService
+	authClient auth.Client
+	client     xealth_client.ClientWithResponsesInterface
+	clinics    clinics.Service
+	logger     *zap.SugaredLogger
+	patients   patients.Service
+	store      Store
+	users      patients.UserService
 }
 
-func NewHandler(clinics clinics.Service, patients patients.Service, users patients.UserService, store Store, logger *zap.SugaredLogger) (Xealth, error) {
+var _ Xealth = &defaultHandler{}
+
+func NewHandler(authClient auth.Client, clinics clinics.Service, patients patients.Service, users patients.UserService, store Store, logger *zap.SugaredLogger) (Xealth, error) {
 	cfg := ModuleConfig{}
 	if err := envconfig.Process("", &cfg); err != nil {
 		return nil, err
@@ -64,7 +74,7 @@ func NewHandler(clinics clinics.Service, patients patients.Service, users patien
 		return &disabledHandler{}, nil
 	}
 
-	clientConfig := &ClientConfig{}
+	clientConfig := &Config{}
 	if err := envconfig.Process("", clientConfig); err != nil {
 		return nil, err
 	}
@@ -75,29 +85,38 @@ func NewHandler(clinics clinics.Service, patients patients.Service, users patien
 	}
 
 	return &defaultHandler{
-		config:   clientConfig,
-		client:   client,
-		clinics:  clinics,
-		patients: patients,
-		users:    users,
-		store:    store,
-		logger:   logger,
+		authClient: authClient,
+		config:     clientConfig,
+		client:     client,
+		clinics:    clinics,
+		patients:   patients,
+		users:      users,
+		store:      store,
+		logger:     logger,
 	}, nil
+}
+
+func (d *defaultHandler) AuthorizeRequest(req *http.Request) error {
+	authz := req.Header.Get(authorizationHeader)
+	if authz == "" || !strings.HasPrefix(authz, bearerPrefix) {
+		return fmt.Errorf("%w: bearer token is required", errs.Unauthorized)
+	}
+	bearer := strings.TrimPrefix(authz, bearerPrefix)
+	if bearer == "" || bearer != d.config.BearerToken {
+		return fmt.Errorf("%w: bearer token is invalid", errs.Unauthorized)
+	}
+	return nil
 }
 
 func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest0) (*xealth_client.PreorderFormResponse, error) {
 	match, err := NewMatcher[*xealth_client.PreorderFormResponse](d.clinics, d.patients).
 		FromInitialPreorderForRequest(request).
-		OnNoMatchingClinicsRespondWith(nil, NoClinicsErr).
-		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
-		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
-	if err != nil {
-		return nil, err
+	if err != nil || match.Response != nil {
+		return match.Response, err
 	}
-	if match.Error != nil || match.Response != nil {
-		return match.Response, match.Error
-	}
+
 	if match.Patient != nil {
 		return NewFinalResponse()
 	}
@@ -123,15 +142,10 @@ func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest1) (*xealth_client.PreorderFormResponse, error) {
 	match, err := NewMatcher[*xealth_client.PreorderFormResponse](d.clinics, d.patients).
 		FromSubsequentPreorderForRequest(request).
-		OnNoMatchingClinicsRespondWith(nil, NoClinicsErr).
-		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
-		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if match.Error != nil || match.Response != nil {
-		return match.Response, match.Error
+	if err != nil || match.Response != nil {
+		return match.Response, err
 	}
 	if match.Patient != nil {
 		return nil, fmt.Errorf("a matching patient already exists")
@@ -156,18 +170,6 @@ func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 	}
 }
 
-func (d *defaultHandler) AuthorizeRequest(req *http.Request) error {
-	authz := req.Header.Get(authorizationHeader)
-	if authz == "" || !strings.HasPrefix(authz, bearerPrefix) {
-		return fmt.Errorf("%w: bearer token is required", errs.Unauthorized)
-	}
-	bearer := strings.TrimPrefix(authz, bearerPrefix)
-	if bearer == "" || bearer != d.config.BearerToken {
-		return fmt.Errorf("%w: bearer token is invalid", errs.Unauthorized)
-	}
-	return nil
-}
-
 func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xealth_client.EventNotification) error {
 	eventKey := fmt.Sprintf("%s:%s", event.EventType, event.EventContext)
 	if eventKey != eventNewOrder && eventKey != eventCancelOrder {
@@ -177,16 +179,11 @@ func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xeal
 
 	match, err := NewMatcher[any](d.clinics, d.patients).
 		FromEventNotification(event).
-		OnNoMatchingClinicsRespondWith(nil, nil).
-		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
-		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		DisableErrorOnNoMatchingClinics().
+		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
 	if err != nil {
 		return err
-	}
-
-	if match.Error != nil {
-		return match.Error
 	}
 
 	if match.Clinic == nil {
@@ -217,10 +214,6 @@ func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xeal
 	return d.handleNewOrder(ctx, order.Id.Hex())
 }
 
-func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.GetProgramUrlRequest) (*xealth_client.GetProgramUrlResponse, error) {
-	return nil, nil
-}
-
 func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.GetProgramsRequest) (*xealth_client.GetProgramsResponse, error) {
 	response := &xealth_client.GetProgramsResponse{}
 	if err := response.FromGetProgramsResponse1(xealth_client.GetProgramsResponse1{Present: false}); err != nil {
@@ -229,28 +222,21 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 
 	match, err := NewMatcher[*xealth_client.GetProgramsResponse](d.clinics, d.patients).
 		FromProgramsRequest(event).
-		OnNoMatchingClinicsRespondWith(response, nil).
-		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
-		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		OnNoMatchingPatientsRespondWith(response).
+		OnNoMatchingClinicsRespondWith(response).
 		Match(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if match.Error != nil || match.Response != nil {
-		return match.Response, match.Error
+	if err != nil || match.Response != nil {
+		return match.Response, err
 	}
 
 	patient := match.Patient
-	var subscription *patients.EHRSubscription
 
-	if patient != nil {
-		if subs, ok := patient.EHRSubscriptions[patients.SubscriptionXealthReports]; ok {
-			subscription = &subs
-		}
+	var subscription *patients.EHRSubscription
+	if subs, ok := patient.EHRSubscriptions[patients.SubscriptionXealthReports]; ok {
+		subscription = &subs
 	}
 
-	if patient == nil || subscription == nil || subscription.Provider != clinics.EHRProviderXealth {
+	if subscription == nil || subscription.Provider != clinics.EHRProviderXealth {
 		return response, nil
 	}
 
@@ -287,7 +273,12 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 	}
 
 	lastUpload := GetLastUploadDate(patient)
-	lastViewed, err := d.GetLastViewedDate(ctx)
+	programId := GetProgramIdFromOrder(order)
+	if programId == nil {
+		return nil, fmt.Errorf("programId is required")
+	}
+
+	lastViewed, err := d.getLastViewedDate(ctx, event, *programId, *match.Clinic, *match.Patient)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +286,7 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 	programs.Programs[0].Description = GetProgramDescription(lastUpload, lastViewed)
 	programs.Programs[0].EnrolledDate = GetProgramEnrollmentDateFromOrder(order)
 	programs.Programs[0].HasAlert = IsProgramAlertActive(lastUpload, lastViewed)
-	programs.Programs[0].HasStatusView = IsSubscriptionActive(subscription)
+	programs.Programs[0].HasStatusView = HasStatusView(patient, subscription)
 	programs.Programs[0].ProgramId = GetProgramIdFromOrder(order)
 	programs.Programs[0].Title = GetProgramTitle()
 
@@ -306,8 +297,95 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 	return response, nil
 }
 
-func (d *defaultHandler) GetLastViewedDate(ctx context.Context) (time.Time, error) {
-	return time.Time{}, nil
+func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.GetProgramUrlRequest) (*xealth_client.GetProgramUrlResponse, error) {
+	match, err := NewMatcher[*xealth_client.GetProgramUrlResponse](d.clinics, d.patients).
+		FromProgramUrlRequest(event).
+		Match(ctx)
+	if err != nil || match.Response != nil {
+		return match.Response, err
+	}
+
+	url, err := GenerateReportUrl(d.config.TidepoolApplicationUrl, *match.Patient, *match.Clinic)
+	if err != nil {
+		d.logger.Errorw("unable to generate report url", "clinicId", match.Clinic.Id.Hex(), "error", err)
+		return nil, err
+	}
+
+	sessionToken, err := d.authClient.ServerSessionToken()
+	if err != nil {
+		return nil, err
+	}
+	authCtx := log.NewContextWithLogger(ctx, null.NewLogger())
+	authCtx = auth.NewContextWithServerSessionToken(authCtx, sessionToken)
+	create := &auth.RestrictedTokenCreate{}
+
+	token, err := d.authClient.CreateUserRestrictedToken(authCtx, *match.Patient.UserId, create)
+	if err != nil {
+		return nil, err
+	}
+
+	query := url.Query()
+	query.Add(restrictedTokenKey, token.ID)
+	url.RawQuery = query.Encode()
+
+	response := &xealth_client.GetProgramUrlResponse{
+		Url: url.String(),
+	}
+
+	_ = d.updateLastViewedDate(ctx, event, *match.Clinic, *match.Patient)
+
+	return response, nil
+}
+
+func (d *defaultHandler) getLastViewedDate(ctx context.Context, event xealth_client.GetProgramsRequest, programId string, clinic clinics.Clinic, patient patients.Patient) (lastViewed time.Time, err error) {
+	if event.Datasets == nil || event.Datasets.EhrUserV1 == nil || event.Datasets.EhrUserV1.UserId == nil {
+		return
+	}
+
+	report, err := d.store.GetMostRecentReportView(ctx, ReportViewFilter{
+		ClinicId:      *clinic.Id,
+		DeploymentId:  event.Deployment,
+		PatientUserId: *patient.UserId,
+		ProgramId:     programId,
+		UserId:        *event.Datasets.EhrUserV1.UserId,
+	})
+	if errors.Is(err, errs.NotFound) {
+		err = nil
+		return
+	} else if err != nil {
+		return
+	}
+
+	lastViewed = report.CreatedTime
+	return
+}
+
+func (d *defaultHandler) updateLastViewedDate(ctx context.Context, event xealth_client.GetProgramUrlRequest, clinic clinics.Clinic, patient patients.Patient) error {
+	if event.Datasets == nil || event.Datasets.EhrUserV1 == nil || event.Datasets.EhrUserV1.UserId == nil {
+		return nil
+	}
+
+	view := ReportView{
+		Id:            nil,
+		UserId:        *event.Datasets.EhrUserV1.UserId,
+		DeploymentId:  event.Deployment,
+		SystemLogin:   event.Datasets.EhrUserV1.SystemLogin,
+		PatientUserId: *patient.UserId,
+		ProgramId:     event.ProgramId,
+		ClinicId:      *clinic.Id,
+		CreatedTime:   time.Now(),
+	}
+	_, err := d.store.CreateReportView(ctx, view)
+	if err != nil {
+		d.logger.Errorw(
+			"unable to update last viewed date",
+			"deploymentId", event.Deployment,
+			"view", view,
+			"error", err,
+		)
+	}
+
+	return err
 }
 
 func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) error {
@@ -326,14 +404,11 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 
 	match, err := NewMatcher[any](d.clinics, d.patients).
 		FromOrder(*order).
-		OnMultipleMatchingClinicsRespondWith(nil, MultipleClinicsErr).
-		OnMultipleMatchingPatientsRespondWith(nil, MultiplePatientsErr).
+		DisableErrorOnNoMatchingClinics().
+		DisableErrorOnMultipleMatchingPatients().
 		Match(ctx)
 	if err != nil {
 		return err
-	}
-	if match.Error != nil {
-		return match.Error
 	}
 
 	if match.Clinic == nil {
@@ -424,29 +499,3 @@ func (d *defaultHandler) GetXealthOrder(ctx context.Context, deployment, orderId
 
 	return response.JSON200, nil
 }
-
-var _ Xealth = &defaultHandler{}
-
-type disabledHandler struct{}
-
-func (d *disabledHandler) HandleEventNotification(ctx context.Context, event xealth_client.EventNotification) error {
-	return fmt.Errorf("the integration is not enabled")
-}
-
-func (d *disabledHandler) AuthorizeRequest(req *http.Request) error {
-	return fmt.Errorf("the integration is not enabled")
-}
-
-func (d *disabledHandler) ProcessInitialPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest0) (*xealth_client.PreorderFormResponse, error) {
-	return nil, fmt.Errorf("the integration is not enabled")
-}
-
-func (d *disabledHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest1) (*xealth_client.PreorderFormResponse, error) {
-	return nil, fmt.Errorf("the integration is not enabled")
-}
-
-func (d *disabledHandler) GetPrograms(ctx context.Context, event xealth_client.GetProgramsRequest) (*xealth_client.GetProgramsResponse, error) {
-	return nil, fmt.Errorf("the integration is not enabled")
-}
-
-var _ Xealth = &disabledHandler{}

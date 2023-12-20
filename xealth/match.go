@@ -14,6 +14,7 @@ import (
 )
 
 var (
+	NoMatchingPatients  = fmt.Errorf("%w: couldn't find matching patient", errs.NotFound)
 	NoClinicsErr        = fmt.Errorf("%w: couldn't find matching clinic", errs.NotFound)
 	MultipleClinicsErr  = fmt.Errorf("%w: found multiple matching clinics", errs.Duplicate)
 	MultiplePatientsErr = fmt.Errorf("%w: multiple matching patients found", errs.ConstraintViolation)
@@ -44,17 +45,27 @@ type MatchingResult[R any] struct {
 	Criteria *PatientMatchingCriteria
 
 	Response R
-	Error    error
 }
 
 func NewMatcher[R any](clinics clinics.Service, patients patients.Service) *Matcher[R] {
 	return &Matcher[R]{
 		clinics:  clinics,
 		patients: patients,
+
+		noClinicsErr:        NoClinicsErr,
+		noPatientsErr:       NoMatchingPatients,
+		multipleClinicsErr:  MultipleClinicsErr,
+		multiplePatientsErr: MultiplePatientsErr,
 	}
 }
 
 func (m *Matcher[R]) FromProgramsRequest(event xealth_client.GetProgramsRequest) *Matcher[R] {
+	m.deploymentId = event.Deployment
+	m.datasets = event.Datasets
+	return m
+}
+
+func (m *Matcher[R]) FromProgramUrlRequest(event xealth_client.GetProgramUrlRequest) *Matcher[R] {
 	m.deploymentId = event.Deployment
 	m.datasets = event.Datasets
 	return m
@@ -83,27 +94,47 @@ func (m *Matcher[R]) FromOrder(event OrderEvent) *Matcher[R] {
 	return m
 }
 
-func (m *Matcher[R]) OnNoMatchingClinicsRespondWith(response R, err error) *Matcher[R] {
+func (m *Matcher[R]) OnNoMatchingClinicsRespondWith(response R) *Matcher[R] {
 	m.noClinicsResp = response
-	m.noClinicsErr = err
+	m.noClinicsErr = nil
 	return m
 }
 
-func (m *Matcher[R]) OnMultipleMatchingClinicsRespondWith(response R, err error) *Matcher[R] {
+func (m *Matcher[R]) OnMultipleMatchingClinicsRespondWith(response R) *Matcher[R] {
 	m.multipleClinicsResp = response
-	m.multipleClinicsErr = err
+	m.multipleClinicsErr = nil
 	return m
 }
 
-func (m *Matcher[R]) OnMultipleMatchingPatientsRespondWith(response R, err error) *Matcher[R] {
+func (m *Matcher[R]) OnMultipleMatchingPatientsRespondWith(response R) *Matcher[R] {
 	m.multiplePatientsResp = response
-	m.multiplePatientsErr = err
+	m.multiplePatientsErr = nil
 	return m
 }
 
-func (m *Matcher[R]) OnNoMatchingPatientsRespondWith(response R, err error) *Matcher[R] {
+func (m *Matcher[R]) OnNoMatchingPatientsRespondWith(response R) *Matcher[R] {
 	m.noPatientsResp = response
-	m.noPatientsErr = err
+	m.noPatientsErr = nil
+	return m
+}
+
+func (m *Matcher[R]) DisableErrorOnNoMatchingClinics() *Matcher[R] {
+	m.noClinicsErr = nil
+	return m
+}
+
+func (m *Matcher[R]) DisableErrorOnMultipleMatchingClinics() *Matcher[R] {
+	m.multipleClinicsErr = nil
+	return m
+}
+
+func (m *Matcher[R]) DisableErrorOnMultipleMatchingPatients() *Matcher[R] {
+	m.multiplePatientsErr = nil
+	return m
+}
+
+func (m *Matcher[R]) DisableErrorOnNoMatchingPatients() *Matcher[R] {
+	m.noPatientsErr = nil
 	return m
 }
 
@@ -116,11 +147,11 @@ func (m *Matcher[R]) Match(ctx context.Context) (result MatchingResult[R], err e
 	clinicsCount := len(matchingClinics)
 	if clinicsCount == 0 {
 		result.Response = m.noClinicsResp
-		result.Error = m.noClinicsErr
+		err = m.noClinicsErr
 		return
 	} else if clinicsCount > 1 {
 		result.Response = m.multipleClinicsResp
-		result.Error = m.multipleClinicsErr
+		err = m.multipleClinicsErr
 		return
 	} else {
 		result.Clinic = matchingClinics[0]
@@ -148,11 +179,11 @@ func (m *Matcher[R]) Match(ctx context.Context) (result MatchingResult[R], err e
 	patientsCount := len(matchingPatients)
 	if patientsCount == 0 {
 		result.Response = m.noPatientsResp
-		result.Error = m.noPatientsErr
+		err = m.noPatientsErr
 		return
 	} else if patientsCount > 1 {
 		result.Response = m.multiplePatientsResp
-		result.Error = m.multiplePatientsErr
+		err = m.multiplePatientsErr
 		return
 	} else {
 		result.Patient = matchingPatients[0]
