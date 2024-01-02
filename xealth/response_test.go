@@ -9,6 +9,7 @@ import (
 	"github.com/tidepool-org/clinic/test"
 	"github.com/tidepool-org/clinic/xealth"
 	"github.com/tidepool-org/clinic/xealth_client"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 var _ = Describe("Response Builder", func() {
@@ -93,6 +94,33 @@ var _ = Describe("Response Builder", func() {
 				BuildSubsequentResponse()
 			Expect(err).ToNot(HaveOccurred())
 			ExpectResponseToMatchFixture(response, "test/expected_subsequent_response_guardian_flow_validation_fail.json")
+		})
+
+		It("Returns the expected subsequent response when validation fails with duplicate email", func() {
+			email := "james.jellyfish@tidepool.org"
+			users.EXPECT().GetUser(email).Return(&shoreline.UserData{
+				UserID:        "12345678",
+				Username:      email,
+				Emails:        []string{email},
+				EmailVerified: true,
+			}, nil)
+
+			userInput := map[string]interface{}{
+				"guardian": map[string]interface{}{
+					"firstName": "James",
+					"lastName":  "Jellyfish",
+					"email":     email,
+				},
+			}
+
+			response, err := xealth.NewGuardianFlowResponseBuilder().
+				WithDataTrackingId("1234567890").
+				WithUserInput(&userInput).
+				WithDataValidator(xealth.NewGuardianDataValidator(users)).
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
+				BuildSubsequentResponse()
+			Expect(err).ToNot(HaveOccurred())
+			ExpectResponseToMatchFixture(response, "test/expected_subsequent_response_guardian_flow_duplicate_email.json")
 		})
 
 		It("Returns the expected final response when validation succeeds", func() {

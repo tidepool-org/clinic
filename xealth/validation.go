@@ -7,6 +7,13 @@ import (
 	"strings"
 )
 
+var (
+	ParagraphSeparator             = "\n"
+	DuplicateEmailAddressErrorText = "The email address you chose is already in use with another account in Tidepool. You could click “Cancel” and try to create the patient with a different email address.\nIf you think the patient already exists in Tidepool and would like to enroll that account for monitoring in Xealth, you could go to Tidepool and look for the account with the email you are trying to create. If it is the same patient, make sure the MRN and date of birth associated with the account in Tidepool match those values in this patient’s record in Xealth. If you change them in Tidepool to match and return to the patient’s record in Xealth, you can enter another order and it will enroll their existing Tidepool account for monitoring.\nIf you continue experiencing difficulties, please contact support@tidepool.org."
+	SomethingWentWrongErrorText    = "Something went wrong when we tried to create a new patient account in Tidepool. Please click “Cancel” and try again. If you continue experiencing difficulties, please contact support@tidepool.org."
+	ErrorTitle                     = "There Was a Problem Adding Patient To Tidepool"
+)
+
 type DuplicateEmailValidator struct {
 	users patients.UserService
 }
@@ -31,27 +38,22 @@ func NewGuardianDataValidator(users patients.UserService) *GuardianDataValidator
 	}
 }
 
-func (g *GuardianDataValidator) Validate(d GuardianFormData) (GuardianFormValidationErrors, error) {
-	formValidationErrors := GuardianFormValidationErrors{}
-	if strings.TrimSpace(d.Guardian.FirstName) == "" {
-		formValidationErrors.FormHasErrors = true
-		formValidationErrors.Guardian.FirstName = NewValidationError("First name is required")
+func (g *GuardianDataValidator) Validate(d GuardianFormData) (FormErrors, error) {
+	formErrors := &PreorderFormErrors{
+		Title: ErrorTitle,
 	}
-	if strings.TrimSpace(d.Guardian.LastName) == "" {
-		formValidationErrors.FormHasErrors = true
-		formValidationErrors.Guardian.LastName = NewValidationError("Last name is required")
-	}
-	if !isValidEmail(d.Guardian.Email) {
-		formValidationErrors.FormHasErrors = true
-		formValidationErrors.Guardian.Email = NewValidationError("The email address is not valid")
+	if strings.TrimSpace(d.Guardian.FirstName) == "" || strings.TrimSpace(d.Guardian.LastName) == "" || !isValidEmail(d.Guardian.Email) {
+		formErrors.AddErrorParagraph(SomethingWentWrongErrorText)
 	} else if duplicate, err := g.duplicateEmailValidator.IsDuplicate(d.Guardian.Email); err != nil {
-		return formValidationErrors, err
+		return nil, err
 	} else if duplicate {
-		formValidationErrors.FormHasErrors = true
-		formValidationErrors.Guardian.Email = NewValidationError("A user with this email address already exists")
+		paragraphs := strings.Split(DuplicateEmailAddressErrorText, ParagraphSeparator)
+		for _, p := range paragraphs {
+			formErrors.AddErrorParagraph(p)
+		}
 	}
 
-	return formValidationErrors, nil
+	return formErrors, nil
 }
 
 type PatientDataValidator struct {
@@ -64,17 +66,20 @@ func NewPatientDataValidator(users patients.UserService) *PatientDataValidator {
 	}
 }
 
-func (g *PatientDataValidator) Validate(d PatientFormData) (PatientFormValidationErrors, error) {
-	formValidationErrors := PatientFormValidationErrors{}
+func (g *PatientDataValidator) Validate(d PatientFormData) (FormErrors, error) {
+	formErrors := &PreorderFormErrors{
+		Title: ErrorTitle,
+	}
 	if !isValidEmail(d.Patient.Email) {
-		formValidationErrors.FormHasErrors = true
-		formValidationErrors.Patient.Email = NewValidationError("The email address is not valid")
+		formErrors.AddErrorParagraph(SomethingWentWrongErrorText)
 	} else if duplicate, err := g.duplicateEmailValidator.IsDuplicate(d.Patient.Email); err != nil {
-		return formValidationErrors, err
+		return nil, err
 	} else if duplicate {
-		formValidationErrors.FormHasErrors = true
-		formValidationErrors.Patient.Email = NewValidationError("A user with this email address already exists")
+		paragraphs := strings.Split(DuplicateEmailAddressErrorText, ParagraphSeparator)
+		for _, p := range paragraphs {
+			formErrors.AddErrorParagraph(p)
+		}
 	}
 
-	return formValidationErrors, nil
+	return formErrors, nil
 }

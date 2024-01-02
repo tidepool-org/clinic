@@ -1,5 +1,6 @@
 {
   "dataTrackingId": "1234567890",
+  "notOrderable": false,
   "preorderFormInfo": {
     "formData": {
       "dexcom": {

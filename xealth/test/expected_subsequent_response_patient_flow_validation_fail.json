@@ -1,5 +1,6 @@
 {
   "dataTrackingId": "1234567890",
+  "notOrderable": true,
   "preorderFormInfo": {
     "formData": {
       "dexcom": {
@@ -9,55 +10,22 @@
         "email": "james"
       }
     },
-    "formId": "patient_enrollment_form",
+    "formId": "error_form",
     "formSchema": {
-      "title": "Add James Jellyfish to Tidepool",
-      "description": "Please confirm a few details to complete set up.",
-      "type": "object",
       "properties": {
-        "patient": {
-          "type": "object",
-          "title": "",
-          "required": [
-            "email"
-          ],
-          "properties": {
-            "email": {
-              "title": "Patient's Email",
-              "description": "Email allows your patient to claim their account and upload their data from home.",
-              "type": "string",
-              "format": "email"
-            }
-          }
-        },
-        "dexcom": {
-          "type": "object",
-          "title": "",
-          "properties": {
-            "connect": {
-              "title": "Connect with Dexcom",
-              "description": "",
-              "type": "boolean"
-            }
-          }
-        }
-      }
-    },
-    "uiSchema": {
-      "ui:order": ["patient", "dexcom"],
-      "dexcom": {
-        "connect": {
-          "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+        "error_0": {
+          "description": "Something went wrong when we tried to create a new patient account in Tidepool. Please click “Cancel” and try again. If you continue experiencing difficulties, please contact support@tidepool.org.",
+          "title": " ",
+          "type": "null"
         }
       },
-      "patient": {
-        "email": {
-          "ui:autofocus": false,
-          "ui:options": {
-            "errorMessage": "The email address is not valid"
-          }
-        }
-      }
+      "title": "There Was a Problem Adding Patient To Tidepool",
+      "type": "object"
+    },
+    "uiSchema": {
+      "ui:order": [
+        "error_0"
+      ]
     }
   }
 }

@@ -1,5 +1,6 @@
 {
   "dataTrackingId": "1234567890",
+  "notOrderable": true,
   "preorderFormInfo": {
     "formData": {
       "dexcom": {
@@ -11,84 +12,21 @@
         "lastName": ""
       }
     },
-    "formId": "guardian_enrollment_form",
+    "formId": "error_form",
     "formSchema": {
-      "title": "Add James Jellyfish to Tidepool",
-      "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
-      "type": "object",
       "properties": {
-        "guardian": {
-          "type": "object",
-          "title": "",
-          "required": [
-            "firstName",
-            "lastName",
-            "email"
-          ],
-          "properties": {
-            "firstName": {
-              "title": "Parent/Guardian First Name",
-              "type": "string"
-            },
-            "lastName": {
-              "title": "Parent/Guardian Last Name",
-              "type": "string"
-            },
-            "email": {
-              "title": "Parent/Guardian Email",
-              "description": "Email allows your patient’s parent/guardian to claim their account and upload their data from home.",
-              "type": "string",
-              "format": "email"
-            }
-          }
-        },
-        "dexcom": {
-          "type": "object",
-          "title": "",
-          "properties": {
-            "connect": {
-              "title": "Connect with Dexcom",
-              "description": "",
-              "type": "boolean"
-            }
-          }
+        "error_0": {
+          "description": "Something went wrong when we tried to create a new patient account in Tidepool. Please click “Cancel” and try again. If you continue experiencing difficulties, please contact support@tidepool.org.",
+          "title": " ",
+          "type": "null"
         }
-      }
+      },
+      "title": "There Was a Problem Adding Patient To Tidepool",
+      "type": "object"
     },
     "uiSchema": {
-      "dexcom": {
-        "connect": {
-          "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
-        }
-      },
-      "guardian": {
-        "email": {
-          "ui:autofocus": false,
-          "ui:options": {
-            "errorMessage": "The email address is not valid"
-          }
-        },
-        "firstName": {
-          "ui:autofocus": false,
-          "ui:options": {
-            "errorMessage": "First name is required"
-          }
-        },
-        "lastName": {
-          "ui:autofocus": false,
-          "ui:options": {
-            "errorMessage": "Last name is required"
-          }
-        },
-        "ui:order": [
-          "firstName",
-          "lastName",
-          "email"
-        ]
-      },
       "ui:order": [
-        "guardian",
-        "dexcom"
+        "error_0"
       ]
     }
   }

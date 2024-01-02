@@ -1,0 +1,45 @@
+{
+  "dataTrackingId": "1234567890",
+  "notOrderable": true,
+  "preorderFormInfo": {
+    "formData": {
+      "dexcom": {
+        "connect": false
+      },
+      "guardian": {
+        "email": "james.jellyfish@tidepool.org",
+        "firstName": "James",
+        "lastName": "Jellyfish"
+      }
+    },
+    "formId": "error_form",
+    "formSchema": {
+      "properties": {
+        "error_0": {
+          "description": "The email address you chose is already in use with another account in Tidepool. You could click “Cancel” and try to create the patient with a different email address.",
+          "title": " ",
+          "type": "null"
+        },
+        "error_1": {
+          "description": "If you think the patient already exists in Tidepool and would like to enroll that account for monitoring in Xealth, you could go to Tidepool and look for the account with the email you are trying to create. If it is the same patient, make sure the MRN and date of birth associated with the account in Tidepool match those values in this patient’s record in Xealth. If you change them in Tidepool to match and return to the patient’s record in Xealth, you can enter another order and it will enroll their existing Tidepool account for monitoring.",
+          "title": " ",
+          "type": "null"
+        },
+        "error_2": {
+          "description": "If you continue experiencing difficulties, please contact support@tidepool.org.",
+          "title": " ",
+          "type": "null"
+        }
+      },
+      "title": "There Was a Problem Adding Patient To Tidepool",
+      "type": "object"
+    },
+    "uiSchema": {
+      "ui:order": [
+        "error_0",
+        "error_1",
+        "error_2"
+      ]
+    }
+  }
+}

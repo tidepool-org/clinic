@@ -9,38 +9,38 @@ import (
 	"github.com/tidepool-org/clinic/xealth_client"
 )
 
-type ResponseBuilder[T FormData, E FormErrors] interface {
-	WithDataTrackingId(id string) ResponseBuilder[T, E]
-	WithDataValidator(validator DataValidator[T, E]) ResponseBuilder[T, E]
-	WithData(T) ResponseBuilder[T, E]
-	WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T, E]
-	WithTitle(string) ResponseBuilder[T, E]
-	WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T, E]
-	PersistPreorderDataOnSuccess(ctx context.Context, store Store) ResponseBuilder[T, E]
-	WithMatchingPatients(criteria PatientMatchingCriteria, patients []*patients.Patient) ResponseBuilder[T, E]
+type ResponseBuilder[T FormData] interface {
+	WithDataTrackingId(id string) ResponseBuilder[T]
+	WithDataValidator(validator DataValidator[T]) ResponseBuilder[T]
+	WithData(T) ResponseBuilder[T]
+	WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T]
+	WithTitle(string) ResponseBuilder[T]
+	WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T]
+	PersistPreorderDataOnSuccess(ctx context.Context, store Store) ResponseBuilder[T]
+	WithMatchingPatients(criteria PatientMatchingCriteria, patients []*patients.Patient) ResponseBuilder[T]
 	BuildInitialResponse() (*xealth_client.PreorderFormResponse, error)
 	BuildSubsequentResponse() (*xealth_client.PreorderFormResponse, error)
 }
 
-func NewGuardianFlowResponseBuilder() ResponseBuilder[GuardianFormData, GuardianFormValidationErrors] {
-	builder := &responseBuilder[GuardianFormData, GuardianFormValidationErrors]{
+func NewGuardianFlowResponseBuilder() ResponseBuilder[GuardianFormData] {
+	builder := &responseBuilder[GuardianFormData]{
 		jsonForm: guardianEnrollmentForm,
 	}
 	return builder
 }
 
-func NewPatientFlowResponseBuilder() ResponseBuilder[PatientFormData, PatientFormValidationErrors] {
-	builder := &responseBuilder[PatientFormData, PatientFormValidationErrors]{
+func NewPatientFlowResponseBuilder() ResponseBuilder[PatientFormData] {
+	builder := &responseBuilder[PatientFormData]{
 		jsonForm: patientEnrollmentForm,
 	}
 	return builder
 }
 
-type responseBuilder[T FormData, E FormErrors] struct {
+type responseBuilder[T FormData] struct {
 	data             T
 	dataTrackingId   string
 	userInput        *map[string]interface{}
-	validator        DataValidator[T, E]
+	validator        DataValidator[T]
 	dataStore        Store
 	dataStoreContext context.Context
 
@@ -56,48 +56,48 @@ type responseBuilder[T FormData, E FormErrors] struct {
 	response              xealth_client.PreorderFormResponse
 }
 
-func (g *responseBuilder[T, E]) WithDataTrackingId(id string) ResponseBuilder[T, E] {
+func (g *responseBuilder[T]) WithDataTrackingId(id string) ResponseBuilder[T] {
 	g.dataTrackingId = id
 	return g
 }
 
-func (g *responseBuilder[T, E]) WithDataValidator(validator DataValidator[T, E]) ResponseBuilder[T, E] {
+func (g *responseBuilder[T]) WithDataValidator(validator DataValidator[T]) ResponseBuilder[T] {
 	g.validator = validator
 	return g
 }
 
-func (g *responseBuilder[T, E]) WithData(data T) ResponseBuilder[T, E] {
+func (g *responseBuilder[T]) WithData(data T) ResponseBuilder[T] {
 	g.data = data
 	return g
 }
 
-func (g *responseBuilder[T, E]) WithTitle(title string) ResponseBuilder[T, E] {
+func (g *responseBuilder[T]) WithTitle(title string) ResponseBuilder[T] {
 	g.formOverrides.FormSchema.Title = title
 	return g
 }
 
-func (g *responseBuilder[T, E]) WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T, E] {
+func (g *responseBuilder[T]) WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T] {
 	return g.WithTitle(fmt.Sprintf(template, vars...))
 }
 
-func (g *responseBuilder[T, E]) WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T, E] {
+func (g *responseBuilder[T]) WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T] {
 	g.userInput = userInput
 	return g
 }
 
-func (g *responseBuilder[T, E]) PersistPreorderDataOnSuccess(ctx context.Context, store Store) ResponseBuilder[T, E] {
+func (g *responseBuilder[T]) PersistPreorderDataOnSuccess(ctx context.Context, store Store) ResponseBuilder[T] {
 	g.dataStore = store
 	g.dataStoreContext = ctx
 	return g
 }
 
-func (g *responseBuilder[T, E]) WithMatchingPatients(criteria PatientMatchingCriteria, patients []*patients.Patient) ResponseBuilder[T, E] {
+func (g *responseBuilder[T]) WithMatchingPatients(criteria PatientMatchingCriteria, patients []*patients.Patient) ResponseBuilder[T] {
 	g.criteria = &criteria
 	g.matchingPatients = patients
 	return g
 }
 
-func (g *responseBuilder[T, E]) BuildInitialResponse() (*xealth_client.PreorderFormResponse, error) {
+func (g *responseBuilder[T]) BuildInitialResponse() (*xealth_client.PreorderFormResponse, error) {
 	type buildStageFn func() error
 	pipeline := []buildStageFn{
 		g.assertFormTemplateIsSet,
@@ -113,7 +113,7 @@ func (g *responseBuilder[T, E]) BuildInitialResponse() (*xealth_client.PreorderF
 	return g.buildInitialPreorderFormResponse()
 }
 
-func (g *responseBuilder[T, E]) BuildSubsequentResponse() (*xealth_client.PreorderFormResponse, error) {
+func (g *responseBuilder[T]) BuildSubsequentResponse() (*xealth_client.PreorderFormResponse, error) {
 	type buildStageFn func() error
 	pipeline := []buildStageFn{
 		g.assertNoMatchingPatients,
@@ -141,14 +141,14 @@ func (g *responseBuilder[T, E]) BuildSubsequentResponse() (*xealth_client.Preord
 	return NewFinalResponse()
 }
 
-func (g *responseBuilder[T, E]) assertFormTemplateIsSet() error {
+func (g *responseBuilder[T]) assertFormTemplateIsSet() error {
 	if len(g.jsonForm) == 0 {
 		return fmt.Errorf("the form template is required")
 	}
 	return nil
 }
 
-func (g *responseBuilder[T, E]) assertNoMatchingPatients() error {
+func (g *responseBuilder[T]) assertNoMatchingPatients() error {
 	count := len(g.matchingPatients)
 	if count != 0 {
 		return fmt.Errorf("expected no patients to match the criteria, but found %v", count)
@@ -156,27 +156,34 @@ func (g *responseBuilder[T, E]) assertNoMatchingPatients() error {
 	return nil
 }
 
-func (g *responseBuilder[T, E]) maybeDecodeUserInput() (err error) {
+func (g *responseBuilder[T]) maybeDecodeUserInput() (err error) {
 	if g.userInput != nil {
 		g.data, err = DecodeFormData[T](g.userInput)
 	}
 	return
 }
 
-func (g *responseBuilder[T, E]) maybeValidateData() (err error) {
+func (g *responseBuilder[T]) maybeValidateData() (err error) {
 	if g.validator != nil {
 		if errors, e := g.validator.Validate(g.data); e != nil {
 			err = e
 			return
 		} else {
 			g.formDataHasErrors = errors.HasErrors()
-			g.formOverrides.UiSchema = errors
+			if g.formDataHasErrors {
+				g.jsonForm = errorForm
+				g.formOverrides.FormSchema.Properties = errors.GetErrorProperties()
+				if title := errors.GetTitle(); title != "" {
+					g.formOverrides.FormSchema.Title = errors.GetTitle()
+				}
+				g.formOverrides.UiSchema = UiSchema{UiOrder: errors.GetUiOrder()}
+			}
 		}
 	}
 	return
 }
 
-func (g *responseBuilder[T, E]) maybePersistData() (err error) {
+func (g *responseBuilder[T]) maybePersistData() (err error) {
 	if g.dataTrackingId == "" {
 		err = fmt.Errorf("data tracking is required")
 		return
@@ -190,17 +197,20 @@ func (g *responseBuilder[T, E]) maybePersistData() (err error) {
 	return
 }
 
-func (g *responseBuilder[T, E]) processOverrides() (err error) {
+func (g *responseBuilder[T]) processOverrides() (err error) {
 	jsonOverrides, err := json.Marshal(g.formOverrides)
 	g.jsonFormWithOverrides, err = deepmerge.JSON(g.jsonForm, jsonOverrides, deepmerge.Config{PreventMultipleDefinitionsOfKeysWithPrimitiveValue: false})
 	return
 }
 
-func (g *responseBuilder[T, E]) buildInitialPreorderFormResponse() (*xealth_client.PreorderFormResponse, error) {
+func (g *responseBuilder[T]) buildInitialPreorderFormResponse() (*xealth_client.PreorderFormResponse, error) {
 	response := &xealth_client.PreorderFormResponse{}
+	notOrderable := g.isErrorResponse()
 	initialResponse := xealth_client.PreorderFormResponse0{
 		DataTrackingId: g.dataTrackingId,
+		NotOrderable:   &notOrderable,
 	}
+
 	if err := g.populatePreorderFormInfo(&initialResponse); err != nil {
 		return nil, err
 	}
@@ -209,7 +219,7 @@ func (g *responseBuilder[T, E]) buildInitialPreorderFormResponse() (*xealth_clie
 	return response, err
 }
 
-func (g *responseBuilder[T, E]) populatePreorderFormInfo(response *xealth_client.PreorderFormResponse0) (err error) {
+func (g *responseBuilder[T]) populatePreorderFormInfo(response *xealth_client.PreorderFormResponse0) (err error) {
 	if err = json.Unmarshal(g.jsonFormWithOverrides, &response.PreorderFormInfo); err != nil {
 		return
 	}
@@ -218,7 +228,7 @@ func (g *responseBuilder[T, E]) populatePreorderFormInfo(response *xealth_client
 	return
 }
 
-func (g *responseBuilder[T, E]) isErrorResponse() bool {
+func (g *responseBuilder[T]) isErrorResponse() bool {
 	return g.formDataHasErrors
 }
 

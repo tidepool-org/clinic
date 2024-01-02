@@ -3,13 +3,13 @@ package xealth
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/mail"
 )
 
 const (
-	DefaultFormTitle             = "Add patient to Tidepool"
 	FormTitlePatientNameTemplate = "Add %s to Tidepool"
 )
 
@@ -19,8 +19,11 @@ var patientEnrollmentForm []byte
 //go:embed forms/guardian_enrollment_form.json
 var guardianEnrollmentForm []byte
 
-type DataValidator[D FormData, E FormErrors] interface {
-	Validate(D) (E, error)
+//go:embed forms/error_form.json
+var errorForm []byte
+
+type DataValidator[D FormData] interface {
+	Validate(D) (FormErrors, error)
 }
 
 type FormData interface {
@@ -28,7 +31,10 @@ type FormData interface {
 }
 
 type FormErrors interface {
+	GetTitle() string
 	HasErrors() bool
+	GetErrorProperties() map[string]PreorderFormErrorParagraph
+	GetUiOrder() []string
 }
 
 type Guardian struct {
@@ -48,17 +54,58 @@ func (g GuardianFormData) Normalize() PreorderFormData {
 	}
 }
 
-type GuardianFormValidationErrors struct {
-	FormHasErrors bool `json:"-"`
-	Guardian      struct {
-		FirstName *ValidationError `json:"firstName,omitempty"`
-		LastName  *ValidationError `json:"lastName,omitempty"`
-		Email     *ValidationError `json:"email,omitempty"`
-	} `json:"guardian"`
+type PreorderFormErrors struct {
+	Title      string
+	uiOrder    []string
+	paragraphs map[string]PreorderFormErrorParagraph
 }
 
-func (p GuardianFormValidationErrors) HasErrors() bool {
-	return p.FormHasErrors
+func (p *PreorderFormErrors) AddErrorParagraph(errorParagraph string) {
+	if p.paragraphs == nil {
+		p.paragraphs = make(map[string]PreorderFormErrorParagraph)
+	}
+
+	key := fmt.Sprintf("error_%d", len(p.uiOrder))
+	p.uiOrder = append(p.uiOrder, key)
+	p.paragraphs[key] = PreorderFormErrorParagraph(errorParagraph)
+}
+
+func (g *PreorderFormErrors) GetTitle() string {
+	return g.Title
+}
+
+func (p *PreorderFormErrors) GetUiOrder() []string {
+	if !p.HasErrors() {
+		return make([]string, 0)
+	}
+
+	return p.uiOrder
+}
+
+func (p *PreorderFormErrors) GetErrorProperties() map[string]PreorderFormErrorParagraph {
+	if !p.HasErrors() {
+		return make(map[string]PreorderFormErrorParagraph)
+	}
+
+	return p.paragraphs
+}
+
+func (p *PreorderFormErrors) HasErrors() bool {
+	return len(p.uiOrder) > 0
+}
+
+type PreorderFormErrorParagraph string
+
+func (p PreorderFormErrorParagraph) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Type        string `json:"type"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+	}{
+		Type:        "null",    // Use the 'null' widget
+		Title:       " ",       // Do not render a title
+		Description: string(p), // Render the error text as description
+	})
 }
 
 type Patient struct {
@@ -75,17 +122,6 @@ func (p PatientFormData) Normalize() PreorderFormData {
 		Patient: &p.Patient,
 		Dexcom:  p.Dexcom,
 	}
-}
-
-type PatientFormValidationErrors struct {
-	FormHasErrors bool `json:"-"`
-	Patient       struct {
-		Email *ValidationError `json:"email,omitempty"`
-	} `json:"patient"`
-}
-
-func (p PatientFormValidationErrors) HasErrors() bool {
-	return p.FormHasErrors
 }
 
 type Dexcom struct {
@@ -118,14 +154,12 @@ type FormOverrides struct {
 }
 
 type FormSchemaOverride struct {
-	Title string `json:"title"`
+	Title      string `json:"title,omitempty"`
+	Properties any    `json:"properties,omitempty"`
 }
 
-type ValidationError struct {
-	UiAutofocus bool `json:"ui:autofocus"`
-	UiOptions   struct {
-		ErrorMessage string `json:"errorMessage"`
-	} `json:"ui:options"`
+type UiSchema struct {
+	UiOrder []string `json:"ui:order,omitempty"`
 }
 
 type PreorderFormData struct {
@@ -134,12 +168,6 @@ type PreorderFormData struct {
 	Patient        *Patient            `bson:"patient,omitempty"`
 	Guardian       *Guardian           `bson:"guardian,omitempty"`
 	Dexcom         Dexcom              `bson:"dexcom"`
-}
-
-func NewValidationError(message string) *ValidationError {
-	err := &ValidationError{}
-	err.UiOptions.ErrorMessage = message
-	return err
 }
 
 func isValidEmail(email string) bool {
