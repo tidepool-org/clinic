@@ -12,7 +12,7 @@
     "formId": "patient_enrollment_form",
     "formSchema": {
       "title": "Add James Jellyfish to Tidepool",
-      "description": "Please confirm a few details to complete set up. Email allows your patient to claim their account and upload their data from home.",
+      "description": "Please confirm a few details to complete set up.",
       "type": "object",
       "properties": {
         "patient": {
