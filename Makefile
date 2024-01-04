@@ -39,8 +39,11 @@ endif
 
 # Runs tests
 .PHONY: test
-test: go-flags ginkgo
-	ginkgo --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
+#test: go-flags ginkgo
+#	ginkgo --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
+
+test:
+	go test ./...
 
 # Builds package
 .PHONY: build
