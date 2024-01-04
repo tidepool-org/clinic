@@ -92,6 +92,19 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("allows backend services to fetch clinics by share code /v1/clinics/share_code/acmeclinic", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "share_code", "acmeclinic"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "orca",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("allows shoreline to list clinics for a given user id", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "patients", "12345", "clinics"},
