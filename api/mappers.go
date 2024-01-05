@@ -120,7 +120,7 @@ func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
 
 func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
 	dto := Clinician{
-		Id:          strpuseridp(clinician.UserId),
+		Id:          clinician.UserId,
 		InviteId:    clinician.InviteId,
 		Name:        clinician.Name,
 		Email:       pstr(clinician.Email),
@@ -144,7 +144,7 @@ func NewCliniciansDto(clinicians []*clinicians.Clinician) []Clinician {
 func NewClinician(clinician Clinician) *clinicians.Clinician {
 	return &clinicians.Clinician{
 		Name:     clinician.Name,
-		UserId:   useridpstrp(clinician.Id),
+		UserId:   clinician.Id,
 		InviteId: clinician.InviteId,
 		Roles:    clinician.Roles,
 		Email:    strp(strings.ToLower(clinician.Email)),
@@ -162,7 +162,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	dto := Patient{
 		Email:         patient.Email,
 		FullName:      pstr(patient.FullName),
-		Id:            strpuseridp(patient.UserId),
+		Id:            patient.UserId,
 		Mrn:           patient.Mrn,
 		Permissions:   NewPermissionsDto(patient.Permissions),
 		Tags:          NewPatientTagsDto(patient.Tags),
@@ -239,56 +239,46 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 
 	if dto.CgmStats != nil {
 		patientSummary.CGM = &patients.PatientCGMStats{
-			Periods:       &patients.PatientCGMPeriods{},
-			OffsetPeriods: &patients.PatientCGMPeriods{},
+			Periods:       patients.PatientCGMPeriods{},
+			OffsetPeriods: patients.PatientCGMPeriods{},
 			TotalHours:    dto.CgmStats.TotalHours,
 		}
 
-		if dto.CgmStats.Config != nil {
-			config := patients.PatientSummaryConfig(*dto.CgmStats.Config)
-			patientSummary.CGM.Config = &config
-		}
-		if dto.CgmStats.Dates != nil {
-			dates := patients.PatientSummaryDates(*dto.CgmStats.Dates)
-			patientSummary.CGM.Dates = &dates
-		}
+		patientSummary.CGM.Config = patients.PatientSummaryConfig(dto.CgmStats.Config)
+		patientSummary.CGM.Dates = patients.PatientSummaryDates(dto.CgmStats.Dates)
 
 		if dto.CgmStats.Periods != nil {
-			for k, source := range *dto.CgmStats.Periods {
-				(*patientSummary.CGM.Periods)[k] = patients.PatientCGMPeriod(source)
+			for k, source := range dto.CgmStats.Periods {
+				patientSummary.CGM.Periods[k] = patients.PatientCGMPeriod(source)
 			}
 		}
 
 		if dto.CgmStats.OffsetPeriods != nil {
-			for k, source := range *dto.CgmStats.OffsetPeriods {
-				(*patientSummary.CGM.OffsetPeriods)[k] = patients.PatientCGMPeriod(source)
+			for k, source := range dto.CgmStats.OffsetPeriods {
+				patientSummary.CGM.OffsetPeriods[k] = patients.PatientCGMPeriod(source)
 			}
 		}
 	}
 
 	if dto.BgmStats != nil {
 		patientSummary.BGM = &patients.PatientBGMStats{
-			Periods:       &patients.PatientBGMPeriods{},
-			OffsetPeriods: &patients.PatientBGMPeriods{},
+			Periods:       patients.PatientBGMPeriods{},
+			OffsetPeriods: patients.PatientBGMPeriods{},
 			TotalHours:    dto.BgmStats.TotalHours,
 		}
 
-		if dto.BgmStats.Config != nil {
-			patientSummary.BGM.Config = (*patients.PatientSummaryConfig)(dto.BgmStats.Config)
-		}
-		if dto.BgmStats.Dates != nil {
-			patientSummary.BGM.Dates = (*patients.PatientSummaryDates)(dto.BgmStats.Dates)
-		}
+		patientSummary.BGM.Config = patients.PatientSummaryConfig(dto.BgmStats.Config)
+		patientSummary.BGM.Dates = patients.PatientSummaryDates(dto.BgmStats.Dates)
 
 		if dto.BgmStats.Periods != nil {
-			for k, source := range *dto.BgmStats.Periods {
-				(*patientSummary.BGM.Periods)[k] = patients.PatientBGMPeriod(source)
+			for k, source := range dto.BgmStats.Periods {
+				patientSummary.BGM.Periods[k] = patients.PatientBGMPeriod(source)
 			}
 		}
 
 		if dto.BgmStats.OffsetPeriods != nil {
-			for k, source := range *dto.BgmStats.OffsetPeriods {
-				(*patientSummary.BGM.OffsetPeriods)[k] = patients.PatientBGMPeriod(source)
+			for k, source := range dto.BgmStats.OffsetPeriods {
+				patientSummary.BGM.OffsetPeriods[k] = patients.PatientBGMPeriod(source)
 			}
 		}
 	}
@@ -305,56 +295,46 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 	if summary.CGM != nil {
 		patientSummary.CgmStats = &PatientCGMStats{
-			Periods:       &PatientCGMPeriods{},
-			OffsetPeriods: &PatientCGMPeriods{},
+			Periods:       PatientCGMPeriods{},
+			OffsetPeriods: PatientCGMPeriods{},
 			TotalHours:    summary.CGM.TotalHours,
 		}
 
-		if summary.CGM.Config != nil {
-			patientSummary.CgmStats.Config = (*PatientSummaryConfig)(summary.CGM.Config)
-		}
-
-		if summary.CGM.Dates != nil {
-			patientSummary.CgmStats.Dates = (*PatientSummaryDates)(summary.CGM.Dates)
-		}
+		patientSummary.CgmStats.Config = PatientSummaryConfig(summary.CGM.Config)
+		patientSummary.CgmStats.Dates = PatientSummaryDates(summary.CGM.Dates)
 
 		if summary.CGM.Periods != nil {
-			for k, source := range *summary.CGM.Periods {
-				(*patientSummary.CgmStats.Periods)[k] = PatientCGMPeriod(source)
+			for k, source := range summary.CGM.Periods {
+				patientSummary.CgmStats.Periods[k] = PatientCGMPeriod(source)
 			}
 		}
 
 		if summary.CGM.OffsetPeriods != nil {
-			for k, source := range *summary.CGM.OffsetPeriods {
-				(*patientSummary.CgmStats.OffsetPeriods)[k] = PatientCGMPeriod(source)
+			for k, source := range summary.CGM.OffsetPeriods {
+				patientSummary.CgmStats.OffsetPeriods[k] = PatientCGMPeriod(source)
 			}
 		}
 	}
 
 	if summary.BGM != nil {
 		patientSummary.BgmStats = &PatientBGMStats{
-			Periods:       &PatientBGMPeriods{},
-			OffsetPeriods: &PatientBGMPeriods{},
+			Periods:       PatientBGMPeriods{},
+			OffsetPeriods: PatientBGMPeriods{},
 			TotalHours:    summary.BGM.TotalHours,
 		}
 
-		if summary.BGM.Config != nil {
-			patientSummary.BgmStats.Config = (*PatientSummaryConfig)(summary.BGM.Config)
-		}
-
-		if summary.BGM.Dates != nil {
-			patientSummary.BgmStats.Dates = (*PatientSummaryDates)(summary.BGM.Dates)
-		}
+		patientSummary.BgmStats.Config = PatientSummaryConfig(summary.BGM.Config)
+		patientSummary.BgmStats.Dates = PatientSummaryDates(summary.BGM.Dates)
 
 		if summary.BGM.Periods != nil {
-			for k, source := range *summary.BGM.Periods {
-				(*patientSummary.BgmStats.Periods)[k] = PatientBGMPeriod(source)
+			for k, source := range summary.BGM.Periods {
+				patientSummary.BgmStats.Periods[k] = PatientBGMPeriod(source)
 			}
 		}
 
 		if summary.BGM.OffsetPeriods != nil {
-			for k, source := range *summary.BGM.OffsetPeriods {
-				(*patientSummary.BgmStats.OffsetPeriods)[k] = PatientBGMPeriod(source)
+			for k, source := range summary.BGM.OffsetPeriods {
+				patientSummary.BgmStats.OffsetPeriods[k] = PatientBGMPeriod(source)
 			}
 		}
 	}
@@ -368,29 +348,29 @@ func NewTideDto(tide *patients.Tide) *Tide {
 	}
 
 	tideResult := &Tide{
-		Config: &TideConfig{
-			ClinicId:                 tide.Config.ClinicId,
-			Filters:                  (*TideFilters)(tide.Config.Filters),
+		Config: TideConfig{
+			ClinicId:                 &tide.Config.ClinicId,
+			Filters:                  TideFilters(tide.Config.Filters),
 			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
 			LastUploadDateFrom:       tide.Config.LastUploadDateFrom,
 			LastUploadDateTo:         tide.Config.LastUploadDateTo,
 			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
 			Period:                   tide.Config.Period,
 			SchemaVersion:            tide.Config.SchemaVersion,
-			Tags:                     tide.Config.Tags,
+			Tags:                     &tide.Config.Tags,
 			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
 		},
-		Results: &TideResults{},
+		Results: TideResults{},
 	}
 
-	for category, tidePatients := range *tide.Results {
+	for category, tidePatients := range tide.Results {
 		c := make([]TideResultPatient, 0, 50)
 		for _, patient := range *tidePatients {
 			c = append(c, TideResultPatient{
 				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
-				Patient:                    (*TidePatient)(patient.Patient),
+				Patient:                    TidePatient(patient.Patient),
 				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
 				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
 				TimeInHighPercent:          patient.TimeInHighPercent,
@@ -401,7 +381,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
 			})
 		}
-		(*tideResult.Results)[category] = &c
+		tideResult.Results[category] = c
 	}
 
 	return tideResult
@@ -778,6 +758,18 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"timeInVeryLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowMinutes",
 		"timeInVeryLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowMinutesDelta",
 
+		"hasTimeInAnyLowPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowPercent",
+		"timeInAnyLowPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowPercent",
+		"timeInAnyLowPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowPercentDelta",
+
+		"hasTimeInAnyLowRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowRecords",
+		"timeInAnyLowRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowRecords",
+		"timeInAnyLowRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowRecordsDelta",
+
+		"hasTimeInAnyLowMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowMinutes",
+		"timeInAnyLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowMinutes",
+		"timeInAnyLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowMinutesDelta",
+
 		"hasTimeInHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInHighPercent",
 		"timeInHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighPercent",
 		"timeInHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighPercentDelta",
@@ -801,6 +793,18 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"hasTimeInVeryHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryHighMinutes",
 		"timeInVeryHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutes",
 		"timeInVeryHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutesDelta",
+
+		"hasTimeInAnyHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighPercent",
+		"timeInAnyHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighPercent",
+		"timeInAnyHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighPercentDelta",
+
+		"hasTimeInAnyHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighRecords",
+		"timeInAnyHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighRecords",
+		"timeInAnyHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighRecordsDelta",
+
+		"hasTimeInAnyHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighMinutes",
+		"timeInAnyHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighMinutes",
+		"timeInAnyHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighMinutesDelta",
 
 		"hasAverageDailyRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasAverageDailyRecords",
 		"averageDailyRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageDailyRecords",
@@ -857,6 +861,13 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		expandedSorts["timeInVeryLowMinutes"]:      expandedSorts["hasTimeInVeryLowMinutes"],
 		expandedSorts["timeInVeryLowMinutesDelta"]: expandedSorts["hasTimeInVeryLowMinutes"],
 
+		expandedSorts["timeInAnyLowPercent"]:      expandedSorts["hasTimeInAnyLowPercent"],
+		expandedSorts["timeInAnyLowPercentDelta"]: expandedSorts["hasTimeInAnyLowPercent"],
+		expandedSorts["timeInAnyLowRecords"]:      expandedSorts["hasTimeInAnyLowRecords"],
+		expandedSorts["timeInAnyLowRecordsDelta"]: expandedSorts["hasTimeInAnyLowRecords"],
+		expandedSorts["timeInAnyLowMinutes"]:      expandedSorts["hasTimeInAnyLowMinutes"],
+		expandedSorts["timeInAnyLowMinutesDelta"]: expandedSorts["hasTimeInAnyLowMinutes"],
+
 		expandedSorts["timeInHighPercent"]:      expandedSorts["hasTimeInHighPercent"],
 		expandedSorts["timeInHighPercentDelta"]: expandedSorts["hasTimeInHighPercent"],
 		expandedSorts["timeInHighRecords"]:      expandedSorts["hasTimeInHighRecords"],
@@ -870,6 +881,13 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		expandedSorts["timeInVeryHighRecordsDelta"]: expandedSorts["hasTimeInVeryHighRecords"],
 		expandedSorts["timeInVeryHighMinutes"]:      expandedSorts["hasTimeInVeryHighMinutes"],
 		expandedSorts["timeInVeryHighMinutesDelta"]: expandedSorts["hasTimeInVeryHighMinutes"],
+
+		expandedSorts["timeInAnyHighPercent"]:      expandedSorts["hasTimeInAnyHighPercent"],
+		expandedSorts["timeInAnyHighPercentDelta"]: expandedSorts["hasTimeInAnyHighPercent"],
+		expandedSorts["timeInAnyHighRecords"]:      expandedSorts["hasTimeInAnyHighRecords"],
+		expandedSorts["timeInAnyHighRecordsDelta"]: expandedSorts["hasTimeInAnyHighRecords"],
+		expandedSorts["timeInAnyHighMinutes"]:      expandedSorts["hasTimeInAnyHighMinutes"],
+		expandedSorts["timeInAnyHighMinutesDelta"]: expandedSorts["hasTimeInAnyHighMinutes"],
 	}
 
 	// expand the original param now that we are done using it as a map key
@@ -918,6 +936,13 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryLowMinutes":      {},
 		"timeInVeryLowMinutesDelta": {},
 
+		"timeInAnyLowPercent":      {},
+		"timeInAnyLowPercentDelta": {},
+		"timeInAnyLowRecords":      {},
+		"timeInAnyLowRecordsDelta": {},
+		"timeInAnyLowMinutes":      {},
+		"timeInAnyLowMinutesDelta": {},
+
 		"timeInHighPercent":      {},
 		"timeInHighPercentDelta": {},
 		"timeInHighMinutes":      {},
@@ -931,6 +956,13 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryHighRecordsDelta": {},
 		"timeInVeryHighMinutes":      {},
 		"timeInVeryHighMinutesDelta": {},
+
+		"timeInAnyHighPercent":      {},
+		"timeInAnyHighPercentDelta": {},
+		"timeInAnyHighRecords":      {},
+		"timeInAnyHighRecordsDelta": {},
+		"timeInAnyHighMinutes":      {},
+		"timeInAnyHighMinutesDelta": {},
 
 		"timeInTargetPercent":      {},
 		"timeInTargetPercentDelta": {},
@@ -966,6 +998,11 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryLowRecords":      {},
 		"timeInVeryLowRecordsDelta": {},
 
+		"timeInAnyLowPercent":      {},
+		"timeInAnyLowPercentDelta": {},
+		"timeInAnyLowRecords":      {},
+		"timeInAnyLowRecordsDelta": {},
+
 		"timeInHighPercent":      {},
 		"timeInHighPercentDelta": {},
 		"timeInHighRecords":      {},
@@ -975,6 +1012,11 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryHighPercentDelta": {},
 		"timeInVeryHighRecords":      {},
 		"timeInVeryHighRecordsDelta": {},
+
+		"timeInAnyHighPercent":      {},
+		"timeInAnyHighPercentDelta": {},
+		"timeInAnyHighRecords":      {},
+		"timeInAnyHighRecordsDelta": {},
 
 		"timeInTargetPercent":      {},
 		"timeInTargetPercentDelta": {},
@@ -1169,17 +1211,21 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	fieldsMap := map[string]*string{
 		"timeCGMUsePercent":     params.CgmTimeCGMUsePercent,
 		"timeInVeryLowPercent":  params.CgmTimeInVeryLowPercent,
+		"timeInAnyLowPercent":   params.CgmTimeInAnyLowPercent,
 		"timeInLowPercent":      params.CgmTimeInLowPercent,
 		"timeInTargetPercent":   params.CgmTimeInTargetPercent,
 		"timeInHighPercent":     params.CgmTimeInHighPercent,
 		"timeInVeryHighPercent": params.CgmTimeInVeryHighPercent,
+		"timeInAnyHighPercent":  params.CgmTimeInAnyHighPercent,
 
 		"timeCGMUseRecords":     params.CgmTimeCGMUseRecords,
 		"timeInVeryLowRecords":  params.CgmTimeInVeryLowRecords,
+		"timeInAnyLowRecords":   params.CgmTimeInAnyLowRecords,
 		"timeInLowRecords":      params.CgmTimeInLowRecords,
 		"timeInTargetRecords":   params.CgmTimeInTargetRecords,
 		"timeInHighRecords":     params.CgmTimeInHighRecords,
 		"timeInVeryHighRecords": params.CgmTimeInVeryHighRecords,
+		"timeInAnyHighRecords":  params.CgmTimeInAnyHighRecords,
 		"averageDailyRecords":   params.CgmAverageDailyRecords,
 		"totalRecords":          params.CgmTotalRecords,
 	}
@@ -1199,16 +1245,20 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 
 	fieldsMap := map[string]*string{
 		"timeInVeryLowPercent":  params.BgmTimeInVeryLowPercent,
+		"timeInAnyLowPercent":   params.BgmTimeInAnyLowPercent,
 		"timeInLowPercent":      params.BgmTimeInLowPercent,
 		"timeInTargetPercent":   params.BgmTimeInTargetPercent,
 		"timeInHighPercent":     params.BgmTimeInHighPercent,
 		"timeInVeryHighPercent": params.BgmTimeInVeryHighPercent,
+		"timeInAnyHighPercent":  params.BgmTimeInAnyHighPercent,
 
 		"timeInVeryLowRecords":  params.BgmTimeInVeryLowRecords,
+		"timeInAnyLowRecords":   params.BgmTimeInAnyLowRecords,
 		"timeInLowRecords":      params.BgmTimeInLowRecords,
 		"timeInTargetRecords":   params.BgmTimeInTargetRecords,
 		"timeInHighRecords":     params.BgmTimeInHighRecords,
 		"timeInVeryHighRecords": params.BgmTimeInVeryHighRecords,
+		"timeInAnyHighRecords":  params.BgmTimeInAnyHighRecords,
 		"averageDailyRecords":   params.BgmAverageDailyRecords,
 		"totalRecords":          params.BgmTotalRecords,
 	}

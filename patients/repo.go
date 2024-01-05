@@ -998,8 +998,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			Value:      0.01,
 		},
 		{
-			Heading:    "timeInLowPercent",
-			Field:      "timeInLowPercent",
+			Heading:    "timeInAnyLowPercent",
+			Field:      "timeInAnyLowPercent",
 			Comparison: "$gt",
 			Value:      0.04,
 		},
@@ -1024,28 +1024,28 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	}
 
 	limit := 50
-	exclusions := make([]*primitive.ObjectID, 0, 50)
+	exclusions := make([]primitive.ObjectID, 0, 50)
 	tide := Tide{
-		Config: &TideConfig{
-			ClinicId: &clinicId,
-			Filters: &TideFilters{
-				TimeInVeryLowPercent:      ptr(">0.01"),
-				TimeInLowPercent:          ptr(">0.04"),
-				DropInTimeInTargetPercent: ptr("<-0.15"),
-				TimeInTargetPercent:       ptr("<0.7"),
-				TimeCGMUsePercent:         ptr("<0.7"),
+		Config: TideConfig{
+			ClinicId: clinicId,
+			Filters: TideFilters{
+				TimeInVeryLowPercent:      ">0.01",
+				TimeInAnyLowPercent:       ">0.04",
+				DropInTimeInTargetPercent: "<-0.15",
+				TimeInTargetPercent:       "<0.7",
+				TimeCGMUsePercent:         "<0.7",
 			},
-			HighGlucoseThreshold:     ptr(10.0),
-			LastUploadDateFrom:       params.CgmLastUploadDateFrom,
-			LastUploadDateTo:         params.CgmLastUploadDateTo,
-			LowGlucoseThreshold:      ptr(3.9),
-			Period:                   params.Period,
-			SchemaVersion:            ptr(1),
-			Tags:                     params.Tags,
-			VeryHighGlucoseThreshold: ptr(13.9),
-			VeryLowGlucoseThreshold:  ptr(3.0),
+			HighGlucoseThreshold:     10.0,
+			LastUploadDateFrom:       *params.CgmLastUploadDateFrom,
+			LastUploadDateTo:         *params.CgmLastUploadDateTo,
+			LowGlucoseThreshold:      3.9,
+			Period:                   *params.Period,
+			SchemaVersion:            1,
+			Tags:                     *params.Tags,
+			VeryHighGlucoseThreshold: 13.9,
+			VeryLowGlucoseThreshold:  3.0,
 		},
-		Results: &TideResults{},
+		Results: TideResults{},
 	}
 
 	for _, category := range categories {
@@ -1085,7 +1085,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 		categoryResult := make([]TideResultPatient, 0, len(patientsList))
 		for _, patient := range patientsList {
-			exclusions = append(exclusions, patient.Id)
+			exclusions = append(exclusions, *patient.Id)
 
 			var patientTags []string
 			for _, tag := range *patient.Tags {
@@ -1093,26 +1093,28 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			}
 
 			categoryResult = append(categoryResult, TideResultPatient{
-				Patient: &TidePatient{
-					Email:    patient.Email,
-					FullName: patient.FullName,
+				Patient: TidePatient{
+					Email:    *patient.Email,
+					FullName: *patient.FullName,
 					Id:       patient.UserId,
 					Tags:     &patientTags,
 				},
-				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
-				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
-				TimeCGMUseMinutes:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUseMinutes,
-				TimeCGMUsePercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUsePercent,
-				TimeInHighPercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeInHighPercent,
-				TimeInLowPercent:           (*patient.Summary.CGM.Periods)[*params.Period].TimeInLowPercent,
-				TimeInTargetPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercent,
-				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
-				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
-				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
+				AverageGlucoseMmol:         patient.Summary.CGM.Periods[*params.Period].AverageGlucoseMmol,
+				GlucoseManagementIndicator: patient.Summary.CGM.Periods[*params.Period].GlucoseManagementIndicator,
+				TimeCGMUseMinutes:          patient.Summary.CGM.Periods[*params.Period].TimeCGMUseMinutes,
+				TimeCGMUsePercent:          patient.Summary.CGM.Periods[*params.Period].TimeCGMUsePercent,
+				TimeInHighPercent:          patient.Summary.CGM.Periods[*params.Period].TimeInHighPercent,
+				TimeInLowPercent:           patient.Summary.CGM.Periods[*params.Period].TimeInLowPercent,
+				TimeInTargetPercent:        patient.Summary.CGM.Periods[*params.Period].TimeInTargetPercent,
+				TimeInTargetPercentDelta:   patient.Summary.CGM.Periods[*params.Period].TimeInTargetPercentDelta,
+				TimeInVeryHighPercent:      patient.Summary.CGM.Periods[*params.Period].TimeInVeryHighPercent,
+				TimeInVeryLowPercent:       patient.Summary.CGM.Periods[*params.Period].TimeInVeryLowPercent,
+				TimeInAnyLowPercent:        patient.Summary.CGM.Periods[*params.Period].TimeInAnyLowPercent,
+				TimeInAnyHighPercent:       patient.Summary.CGM.Periods[*params.Period].TimeInAnyHighPercent,
 			})
 		}
 
-		(*tide.Results)[category.Heading] = &categoryResult
+		tide.Results[category.Heading] = &categoryResult
 
 		limit -= len(patientsList)
 		if limit < 1 {
@@ -1156,26 +1158,28 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			}
 
 			categoryResult = append(categoryResult, TideResultPatient{
-				Patient: &TidePatient{
-					Email:    patient.Email,
-					FullName: patient.FullName,
+				Patient: TidePatient{
+					Email:    *patient.Email,
+					FullName: *patient.FullName,
 					Id:       patient.UserId,
 					Tags:     &patientTags,
 				},
-				AverageGlucoseMmol:         (*patient.Summary.CGM.Periods)[*params.Period].AverageGlucoseMmol,
-				GlucoseManagementIndicator: (*patient.Summary.CGM.Periods)[*params.Period].GlucoseManagementIndicator,
-				TimeCGMUseMinutes:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUseMinutes,
-				TimeCGMUsePercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeCGMUsePercent,
-				TimeInHighPercent:          (*patient.Summary.CGM.Periods)[*params.Period].TimeInHighPercent,
-				TimeInLowPercent:           (*patient.Summary.CGM.Periods)[*params.Period].TimeInLowPercent,
-				TimeInTargetPercent:        (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercent,
-				TimeInTargetPercentDelta:   (*patient.Summary.CGM.Periods)[*params.Period].TimeInTargetPercentDelta,
-				TimeInVeryHighPercent:      (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryHighPercent,
-				TimeInVeryLowPercent:       (*patient.Summary.CGM.Periods)[*params.Period].TimeInVeryLowPercent,
+				AverageGlucoseMmol:         patient.Summary.CGM.Periods[*params.Period].AverageGlucoseMmol,
+				GlucoseManagementIndicator: patient.Summary.CGM.Periods[*params.Period].GlucoseManagementIndicator,
+				TimeCGMUseMinutes:          patient.Summary.CGM.Periods[*params.Period].TimeCGMUseMinutes,
+				TimeCGMUsePercent:          patient.Summary.CGM.Periods[*params.Period].TimeCGMUsePercent,
+				TimeInHighPercent:          patient.Summary.CGM.Periods[*params.Period].TimeInHighPercent,
+				TimeInLowPercent:           patient.Summary.CGM.Periods[*params.Period].TimeInLowPercent,
+				TimeInTargetPercent:        patient.Summary.CGM.Periods[*params.Period].TimeInTargetPercent,
+				TimeInTargetPercentDelta:   patient.Summary.CGM.Periods[*params.Period].TimeInTargetPercentDelta,
+				TimeInVeryHighPercent:      patient.Summary.CGM.Periods[*params.Period].TimeInVeryHighPercent,
+				TimeInVeryLowPercent:       patient.Summary.CGM.Periods[*params.Period].TimeInVeryLowPercent,
+				TimeInAnyLowPercent:        patient.Summary.CGM.Periods[*params.Period].TimeInAnyLowPercent,
+				TimeInAnyHighPercent:       patient.Summary.CGM.Periods[*params.Period].TimeInAnyHighPercent,
 			})
 		}
 
-		(*tide.Results)["meetingTargets"] = &categoryResult
+		tide.Results["meetingTargets"] = &categoryResult
 
 	}
 
