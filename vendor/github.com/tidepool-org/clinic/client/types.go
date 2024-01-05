@@ -669,6 +669,12 @@ const (
 	Tier0400 Tier = "tier0400"
 )
 
+// Defines values for FindPatientsParamsWorkspaceIdType.
+const (
+	FindPatientsParamsWorkspaceIdTypeClinicId    FindPatientsParamsWorkspaceIdType = "clinicId"
+	FindPatientsParamsWorkspaceIdTypeEhrSourceId FindPatientsParamsWorkspaceIdType = "ehrSourceId"
+)
+
 // AssociateClinicianToUser defines model for AssociateClinicianToUser.
 type AssociateClinicianToUser struct {
 	UserId string `json:"userId"`
@@ -1792,6 +1798,23 @@ type TideReportParams struct {
 	// CgmLastUploadDateTo Exclusive
 	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
 }
+
+// FindPatientsParams defines parameters for FindPatients.
+type FindPatientsParams struct {
+	Mrn       *string `form:"mrn,omitempty" json:"mrn,omitempty"`
+	BirthDate *string `form:"birthDate,omitempty" json:"birthDate,omitempty"`
+
+	// WorkspaceId The identifier of the workspace
+	WorkspaceId *string `form:"workspaceId,omitempty" json:"workspaceId,omitempty"`
+
+	// WorkspaceIdType The type of the workspace identifier
+	WorkspaceIdType *FindPatientsParamsWorkspaceIdType `form:"workspaceIdType,omitempty" json:"workspaceIdType,omitempty"`
+	Offset          *Offset                            `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit           *Limit                             `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// FindPatientsParamsWorkspaceIdType defines parameters for FindPatients.
+type FindPatientsParamsWorkspaceIdType string
 
 // ListClinicsForPatientParams defines parameters for ListClinicsForPatient.
 type ListClinicsForPatientParams struct {
