@@ -10,10 +10,14 @@
         "email": "james.jellyfish@tidepool.org",
         "firstName": "James",
         "lastName": "Jellyfish"
-      }
+      },
+      "tags": {}
     },
     "formId": "error_form",
     "formSchema": {
+      "definitions": {
+        "tags": {}
+      },
       "properties": {
         "error_0": {
           "description": "The email address you chose is already in use with another account in Tidepool. You could click “Cancel” and try to create the patient with a different email address.",
@@ -35,6 +39,9 @@
       "type": "object"
     },
     "uiSchema": {
+      "tags": {
+        "ui:widget": "hidden"
+      },
       "ui:order": [
         "error_0",
         "error_1",

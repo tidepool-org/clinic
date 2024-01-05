@@ -2,6 +2,9 @@
   "formId": "guardian_enrollment_form",
   "formData": {},
   "formSchema": {
+    "definitions": {
+      "tags": {}
+    },
     "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
     "title": "Add patient to Tidepool",
     "type": "object",
@@ -41,17 +44,37 @@
             "type": "boolean"
           }
         }
+      },
+      "tags": {
+        "type": "object",
+        "title": "",
+        "properties": {
+          "ids": {
+            "title": "Patient Tags",
+            "description": "",
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/definitions/tags"
+            }
+          }
+        }
       }
     }
   },
   "uiSchema": {
-    "ui:order": ["guardian", "dexcom"],
+    "ui:order": ["guardian", "dexcom", "tags"],
     "guardian": {
       "ui:order": ["firstName", "lastName", "email"]
     },
     "dexcom": {
       "connect": {
         "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+      }
+    },
+    "tags": {
+      "ids": {
+        "ui:widget": "CheckboxesWidget"
       }
     }
   }

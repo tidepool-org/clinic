@@ -8,10 +8,14 @@
       },
       "patient": {
         "email": "james"
-      }
+      },
+      "tags": {}
     },
     "formId": "error_form",
     "formSchema": {
+      "definitions": {
+        "tags": {}
+      },
       "properties": {
         "error_0": {
           "description": "Something went wrong when we tried to create a new patient account in Tidepool. Please click “Cancel” and try again. If you continue experiencing difficulties, please contact support@tidepool.org.",
@@ -23,6 +27,9 @@
       "type": "object"
     },
     "uiSchema": {
+      "tags": {
+        "ui:widget": "hidden"
+      },
       "ui:order": [
         "error_0"
       ]

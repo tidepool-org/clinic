@@ -45,13 +45,46 @@ type Guardian struct {
 type GuardianFormData struct {
 	Guardian Guardian `json:"guardian"`
 	Dexcom   Dexcom   `json:"dexcom"`
+	Tags     Tags     `json:"tags"`
 }
 
 func (g GuardianFormData) Normalize() PreorderFormData {
 	return PreorderFormData{
 		Guardian: &g.Guardian,
 		Dexcom:   g.Dexcom,
+		Tags:     g.Tags,
 	}
+}
+
+type Patient struct {
+	Email string `json:"email"`
+}
+
+type PatientFormData struct {
+	Patient Patient `json:"patient"`
+	Dexcom  Dexcom  `json:"dexcom"`
+	Tags    Tags    `json:"tags"`
+}
+
+func (p PatientFormData) Normalize() PreorderFormData {
+	return PreorderFormData{
+		Patient: &p.Patient,
+		Dexcom:  p.Dexcom,
+		Tags:    p.Tags,
+	}
+}
+
+type Dexcom struct {
+	Connect bool `json:"connect"`
+}
+
+type Tags struct {
+	Ids []string `json:"ids,omitempty"`
+}
+
+type TagDefinitions struct {
+	Enums     []string `json:"enums"`
+	EnumNames []string `json:"enumNames"`
 }
 
 type PreorderFormErrors struct {
@@ -70,8 +103,8 @@ func (p *PreorderFormErrors) AddErrorParagraph(errorParagraph string) {
 	p.paragraphs[key] = PreorderFormErrorParagraph(errorParagraph)
 }
 
-func (g *PreorderFormErrors) GetTitle() string {
-	return g.Title
+func (p *PreorderFormErrors) GetTitle() string {
+	return p.Title
 }
 
 func (p *PreorderFormErrors) GetUiOrder() []string {
@@ -108,26 +141,6 @@ func (p PreorderFormErrorParagraph) MarshalJSON() ([]byte, error) {
 	})
 }
 
-type Patient struct {
-	Email string `json:"email"`
-}
-
-type PatientFormData struct {
-	Patient Patient `json:"patient"`
-	Dexcom  Dexcom  `json:"dexcom"`
-}
-
-func (p PatientFormData) Normalize() PreorderFormData {
-	return PreorderFormData{
-		Patient: &p.Patient,
-		Dexcom:  p.Dexcom,
-	}
-}
-
-type Dexcom struct {
-	Connect bool `json:"connect"`
-}
-
 func DecodeFormData[T any](formData *map[string]interface{}) (data T, err error) {
 	if formData == nil || len(*formData) == 0 {
 		return
@@ -150,16 +163,31 @@ func EncodeFormData[A any](data A) (*map[string]interface{}, error) {
 
 type FormOverrides struct {
 	FormSchema FormSchemaOverride `json:"formSchema"`
-	UiSchema   any                `json:"uiSchema,omitempty"`
+	UiSchema   UiSchema           `json:"uiSchema,omitempty"`
 }
 
 type FormSchemaOverride struct {
-	Title      string `json:"title,omitempty"`
-	Properties any    `json:"properties,omitempty"`
+	Title       string      `json:"title,omitempty"`
+	Definitions Definitions `json:"definitions"`
+	Properties  any         `json:"properties,omitempty"`
+}
+
+type Definitions struct {
+	Tags TagsDefinitions `json:"tags"`
+}
+
+type TagsDefinitions struct {
+	Enum      []string `json:"enum,omitempty"`
+	EnumNames []string `json:"enumNames,omitempty"`
 }
 
 type UiSchema struct {
-	UiOrder []string `json:"ui:order,omitempty"`
+	Tags    TagsUiSchema `json:"tags"`
+	UiOrder []string     `json:"ui:order,omitempty"`
+}
+
+type TagsUiSchema struct {
+	UiWidget string `json:"ui:widget,omitempty"`
 }
 
 type PreorderFormData struct {
@@ -168,6 +196,7 @@ type PreorderFormData struct {
 	Patient        *Patient            `bson:"patient,omitempty"`
 	Guardian       *Guardian           `bson:"guardian,omitempty"`
 	Dexcom         Dexcom              `bson:"dexcom"`
+	Tags           Tags                `bson:"tags"`
 }
 
 func isValidEmail(email string) bool {

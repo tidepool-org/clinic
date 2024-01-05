@@ -13,6 +13,7 @@ import (
 	"github.com/tidepool-org/platform/auth"
 	"github.com/tidepool-org/platform/log"
 	"github.com/tidepool-org/platform/log/null"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -126,6 +127,7 @@ func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 		return NewGuardianFlowResponseBuilder().
 			WithDataTrackingId(dataTrackingId).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
+			WithTags(match.Clinic.PatientTags).
 			BuildInitialResponse()
 	} else {
 		formData := PatientFormData{}
@@ -135,6 +137,7 @@ func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 			WithDataTrackingId(dataTrackingId).
 			WithData(formData).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
+			WithTags(match.Clinic.PatientTags).
 			BuildInitialResponse()
 	}
 }
@@ -157,6 +160,7 @@ func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 			WithUserInput(request.FormData.UserInput).
 			WithDataValidator(NewGuardianDataValidator(d.users)).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
+			WithTags(match.Clinic.PatientTags).
 			PersistPreorderDataOnSuccess(ctx, d.store).
 			BuildSubsequentResponse()
 	} else {
@@ -165,6 +169,7 @@ func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 			WithUserInput(request.FormData.UserInput).
 			WithDataValidator(NewPatientDataValidator(d.users)).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
+			WithTags(match.Clinic.PatientTags).
 			PersistPreorderDataOnSuccess(ctx, d.store).
 			BuildSubsequentResponse()
 	}
@@ -426,6 +431,11 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			return fmt.Errorf("%w: preorder data is required to create a new patient", errs.BadRequest)
 		}
 
+		validTagIds := make(map[string]struct{})
+		for _, tag := range match.Clinic.PatientTags {
+			validTagIds[tag.Id.Hex()] = struct{}{}
+		}
+
 		create := patients.Patient{
 			ClinicId:    match.Clinic.Id,
 			BirthDate:   &match.Criteria.DateOfBirth,
@@ -447,6 +457,18 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		}
 		if preorderData.Dexcom.Connect {
 			create.LastRequestedDexcomConnectTime = time.Now()
+		}
+
+		tags := make([]primitive.ObjectID, 0, len(preorderData.Tags.Ids))
+		for _, tagId := range preorderData.Tags.Ids {
+			if _, ok := validTagIds[tagId]; ok {
+				if objId, err := primitive.ObjectIDFromHex(tagId); err == nil {
+					tags = append(tags, objId)
+				}
+			}
+		}
+		if len(tags) > 0 {
+			create.Tags = &tags
 		}
 
 		match.Patient, err = d.patients.Create(ctx, create)

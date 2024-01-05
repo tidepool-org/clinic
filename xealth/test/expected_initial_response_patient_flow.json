@@ -8,10 +8,17 @@
       },
       "patient": {
         "email": "james.jellyfish@tidepool.org"
-      }
+      },
+      "tags": {}
     },
     "formId": "patient_enrollment_form",
     "formSchema": {
+      "definitions": {
+        "tags": {
+          "enum": ["000000000000000000000001", "000000000000000000000000"],
+          "enumNames": ["DIY Loop", "Tidepool Loop"]
+        }
+      },
       "title": "Add James Jellyfish to Tidepool",
       "description": "Please confirm a few details to complete set up.",
       "type": "object",
@@ -41,16 +48,36 @@
               "type": "boolean"
             }
           }
+        },
+        "tags": {
+          "type": "object",
+          "title": "",
+          "properties": {
+            "ids": {
+              "title": "Patient Tags",
+              "description": "",
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/definitions/tags"
+              }
+            }
+          }
         }
       }
     },
     "uiSchema": {
-      "ui:order": ["patient", "dexcom"],
       "dexcom": {
         "connect": {
           "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
         }
-      }
+      },
+      "tags": {
+        "ids": {
+          "ui:widget": "CheckboxesWidget"
+        }
+      },
+      "ui:order": ["patient", "dexcom", "tags"]
     }
   }
 }

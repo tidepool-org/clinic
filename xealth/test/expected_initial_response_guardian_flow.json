@@ -10,10 +10,17 @@
         "email": "",
         "firstName": "",
         "lastName": ""
-      }
+      },
+      "tags": {}
     },
     "formId": "guardian_enrollment_form",
     "formSchema": {
+      "definitions": {
+        "tags": {
+          "enum": ["000000000000000000000001", "000000000000000000000000"],
+          "enumNames": ["DIY Loop", "Tidepool Loop"]
+        }
+      },
       "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
       "properties": {
         "dexcom": {
@@ -51,6 +58,21 @@
           ],
           "title": "",
           "type": "object"
+        },
+        "tags": {
+          "type": "object",
+          "title": "",
+          "properties": {
+            "ids": {
+              "title": "Patient Tags",
+              "description": "",
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/definitions/tags"
+              }
+            }
+          }
         }
       },
       "title": "Add James Jellyfish to Tidepool",
@@ -69,9 +91,15 @@
           "email"
         ]
       },
+      "tags": {
+        "ids": {
+          "ui:widget": "CheckboxesWidget"
+        }
+      },
       "ui:order": [
         "guardian",
-        "dexcom"
+        "dexcom",
+        "tags"
       ]
     }
   }

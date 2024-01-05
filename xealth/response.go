@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/TwiN/deepmerge"
+	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/xealth_client"
+	"sort"
+	"strings"
 )
 
 type ResponseBuilder[T FormData] interface {
@@ -14,6 +17,7 @@ type ResponseBuilder[T FormData] interface {
 	WithDataValidator(validator DataValidator[T]) ResponseBuilder[T]
 	WithData(T) ResponseBuilder[T]
 	WithRenderedTitleTemplate(template string, vars ...any) ResponseBuilder[T]
+	WithTags([]clinics.PatientTag) ResponseBuilder[T]
 	WithTitle(string) ResponseBuilder[T]
 	WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T]
 	PersistPreorderDataOnSuccess(ctx context.Context, store Store) ResponseBuilder[T]
@@ -82,6 +86,25 @@ func (g *responseBuilder[T]) WithRenderedTitleTemplate(template string, vars ...
 
 func (g *responseBuilder[T]) WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T] {
 	g.userInput = userInput
+	return g
+}
+
+func (g *responseBuilder[T]) WithTags(tags []clinics.PatientTag) ResponseBuilder[T] {
+	if len(tags) > 0 {
+		sort.Slice(tags, func(i, j int) bool { return strings.Compare(tags[i].Name, tags[j].Name) < 0 })
+
+		enum := make([]string, 0, len(tags))
+		enumNames := make([]string, 0, len(tags))
+		for _, t := range tags {
+			if t.Id != nil {
+				enum = append(enum, t.Id.Hex())
+				enumNames = append(enumNames, t.Name)
+			}
+		}
+		g.formOverrides.FormSchema.Definitions.Tags.Enum = enum
+		g.formOverrides.FormSchema.Definitions.Tags.EnumNames = enumNames
+	}
+
 	return g
 }
 
@@ -172,11 +195,11 @@ func (g *responseBuilder[T]) maybeValidateData() (err error) {
 			g.formDataHasErrors = errors.HasErrors()
 			if g.formDataHasErrors {
 				g.jsonForm = errorForm
-				g.formOverrides.FormSchema.Properties = errors.GetErrorProperties()
 				if title := errors.GetTitle(); title != "" {
 					g.formOverrides.FormSchema.Title = errors.GetTitle()
 				}
-				g.formOverrides.UiSchema = UiSchema{UiOrder: errors.GetUiOrder()}
+				g.formOverrides.FormSchema.Properties = errors.GetErrorProperties()
+				g.formOverrides.UiSchema.UiOrder = errors.GetUiOrder()
 			}
 		}
 	}
@@ -198,6 +221,9 @@ func (g *responseBuilder[T]) maybePersistData() (err error) {
 }
 
 func (g *responseBuilder[T]) processOverrides() (err error) {
+	if len(g.formOverrides.FormSchema.Definitions.Tags.Enum) == 0 || len(g.formOverrides.FormSchema.Definitions.Tags.EnumNames) == 0 {
+		g.formOverrides.UiSchema.Tags.UiWidget = "hidden"
+	}
 	jsonOverrides, err := json.Marshal(g.formOverrides)
 	g.jsonFormWithOverrides, err = deepmerge.JSON(g.jsonForm, jsonOverrides, deepmerge.Config{PreventMultipleDefinitionsOfKeysWithPrimitiveValue: false})
 	return

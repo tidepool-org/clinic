@@ -2,6 +2,9 @@
   "formId": "patient_enrollment_form",
   "formData": {},
   "formSchema": {
+    "definitions": {
+      "tags": {}
+    },
     "description": "Please confirm a few details to complete set up.",
     "title": "Add patient to Tidepool",
     "type": "object",
@@ -31,14 +34,34 @@
             "type": "boolean"
           }
         }
+      },
+      "tags": {
+        "type": "object",
+        "title": "",
+        "properties": {
+          "ids": {
+            "title": "Patient Tags",
+            "description": "",
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/definitions/tags"
+            }
+          }
+        }
       }
     }
   },
   "uiSchema": {
-    "ui:order": ["patient", "dexcom"],
+    "ui:order": ["patient", "dexcom", "tags"],
     "dexcom": {
       "connect": {
         "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+      }
+    },
+    "tags": {
+      "ids": {
+        "ui:widget": "CheckboxesWidget"
       }
     }
   }

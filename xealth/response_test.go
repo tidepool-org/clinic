@@ -8,6 +8,7 @@ import (
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/test"
 	"github.com/tidepool-org/clinic/xealth"
+	xealthTest "github.com/tidepool-org/clinic/xealth/test"
 	"github.com/tidepool-org/clinic/xealth_client"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 )
@@ -30,6 +31,7 @@ var _ = Describe("Response Builder", func() {
 				WithDataTrackingId("1234567890").
 				WithData(data).
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
+				WithTags(xealthTest.Tags()).
 				BuildInitialResponse()
 			Expect(err).ToNot(HaveOccurred())
 			ExpectResponseToMatchFixture(response, "test/expected_initial_response_patient_flow.json")
@@ -77,6 +79,7 @@ var _ = Describe("Response Builder", func() {
 		It("Returns the expected initial response", func() {
 			response, err := xealth.NewGuardianFlowResponseBuilder().
 				WithDataTrackingId("1234567890").
+				WithTags(xealthTest.Tags()).
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildInitialResponse()
 			Expect(err).ToNot(HaveOccurred())
