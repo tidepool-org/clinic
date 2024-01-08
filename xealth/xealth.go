@@ -411,7 +411,6 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		FromOrder(*order).
 		DisableErrorOnNoMatchingClinics().
 		DisableErrorOnNoMatchingPatients().
-		DisableErrorOnMultipleMatchingPatients().
 		Match(ctx)
 	if err != nil {
 		return err
