@@ -36,7 +36,7 @@
         }
       },
       "tags": {
-        "type": "object",
+        "type": "null",
         "title": "",
         "properties": {
           "ids": {
@@ -62,7 +62,8 @@
     "tags": {
       "ids": {
         "ui:widget": "CheckboxesWidget"
-      }
+      },
+      "ui:widget": "hidden"
     }
   }
 }

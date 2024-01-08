@@ -167,9 +167,9 @@ type FormOverrides struct {
 }
 
 type FormSchemaOverride struct {
-	Title       string      `json:"title,omitempty"`
-	Definitions Definitions `json:"definitions"`
-	Properties  any         `json:"properties,omitempty"`
+	Title       string                 `json:"title,omitempty"`
+	Definitions Definitions            `json:"definitions"`
+	Properties  map[string]interface{} `json:"properties"`
 }
 
 type Definitions struct {

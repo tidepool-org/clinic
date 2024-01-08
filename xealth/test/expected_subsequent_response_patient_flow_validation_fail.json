@@ -27,9 +27,7 @@
       "type": "object"
     },
     "uiSchema": {
-      "tags": {
-        "ui:widget": "hidden"
-      },
+      "tags": {},
       "ui:order": [
         "error_0"
       ]

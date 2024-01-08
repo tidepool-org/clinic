@@ -94,7 +94,8 @@
       "tags": {
         "ids": {
           "ui:widget": "CheckboxesWidget"
-        }
+        },
+        "ui:widget": "object"
       },
       "ui:order": [
         "guardian",

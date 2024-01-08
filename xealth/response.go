@@ -124,6 +124,7 @@ func (g *responseBuilder[T]) BuildInitialResponse() (*xealth_client.PreorderForm
 	type buildStageFn func() error
 	pipeline := []buildStageFn{
 		g.assertFormTemplateIsSet,
+		g.maybeShowTags,
 		g.processOverrides,
 	}
 
@@ -143,6 +144,7 @@ func (g *responseBuilder[T]) BuildSubsequentResponse() (*xealth_client.PreorderF
 		g.assertFormTemplateIsSet,
 		g.maybeDecodeUserInput,
 		g.maybeValidateData,
+		g.maybeShowTags,
 		g.processOverrides,
 		g.maybePersistData,
 	}
@@ -198,7 +200,15 @@ func (g *responseBuilder[T]) maybeValidateData() (err error) {
 				if title := errors.GetTitle(); title != "" {
 					g.formOverrides.FormSchema.Title = errors.GetTitle()
 				}
-				g.formOverrides.FormSchema.Properties = errors.GetErrorProperties()
+				errorProperties := errors.GetErrorProperties()
+				if len(errorProperties) > 0 {
+					if len(g.formOverrides.FormSchema.Properties) == 0 {
+						g.formOverrides.FormSchema.Properties = make(map[string]interface{})
+					}
+					for k, v := range errorProperties {
+						g.formOverrides.FormSchema.Properties[k] = v
+					}
+				}
 				g.formOverrides.UiSchema.UiOrder = errors.GetUiOrder()
 			}
 		}
@@ -220,10 +230,26 @@ func (g *responseBuilder[T]) maybePersistData() (err error) {
 	return
 }
 
-func (g *responseBuilder[T]) processOverrides() (err error) {
-	if len(g.formOverrides.FormSchema.Definitions.Tags.Enum) == 0 || len(g.formOverrides.FormSchema.Definitions.Tags.EnumNames) == 0 {
-		g.formOverrides.UiSchema.Tags.UiWidget = "hidden"
+func (g *responseBuilder[T]) maybeShowTags() (err error) {
+	if !g.isErrorResponse() {
+		if len(g.formOverrides.FormSchema.Definitions.Tags.Enum) > 0 && len(g.formOverrides.FormSchema.Definitions.Tags.EnumNames) > 0 {
+			if g.formOverrides.FormSchema.Properties == nil {
+				g.formOverrides.FormSchema.Properties = make(map[string]interface{})
+			}
+			// Set uiSchema/tags["ui:widget"]: "hidden" to "object"
+			g.formOverrides.UiSchema.Tags.UiWidget = "object"
+			// Set formSchema/properties["tags"]/type=object
+			g.formOverrides.FormSchema.Properties["tags"] = struct {
+				Type string `json:"type"`
+			}{
+				Type: "object",
+			}
+		}
 	}
+	return
+}
+
+func (g *responseBuilder[T]) processOverrides() (err error) {
 	jsonOverrides, err := json.Marshal(g.formOverrides)
 	g.jsonFormWithOverrides, err = deepmerge.JSON(g.jsonForm, jsonOverrides, deepmerge.Config{PreventMultipleDefinitionsOfKeysWithPrimitiveValue: false})
 	return
