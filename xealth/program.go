@@ -47,7 +47,7 @@ func GetProgramIdFromOrder(order *OrderEvent) *string {
 	if order == nil {
 		return nil
 	}
-	return &order.EventNotification.OrderId
+	return &order.EventNotification.ProgramId
 }
 
 func GetProgramTitle() *string {
