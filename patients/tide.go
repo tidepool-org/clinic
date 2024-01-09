@@ -30,9 +30,9 @@ type TideFilters struct {
 }
 
 type TidePatient struct {
-	Email    string    `json:"email"`
-	FullName string    `json:"fullName"`
-	Id       *string   `json:"id,omitempty"`
+	Email    *string   `json:"email"`
+	FullName *string   `json:"fullName"`
+	Id       string    `json:"id,omitempty"`
 	Tags     *[]string `json:"tags"`
 }
 

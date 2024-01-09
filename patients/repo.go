@@ -1092,11 +1092,15 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 				patientTags = append(patientTags, tag.Hex())
 			}
 
+			if patient.UserId == nil {
+				return nil, fmt.Errorf("patient (%s) with nil userId in report, unsupported", *patient.Id)
+			}
+
 			categoryResult = append(categoryResult, TideResultPatient{
 				Patient: TidePatient{
-					Email:    *patient.Email,
-					FullName: *patient.FullName,
-					Id:       patient.UserId,
+					Email:    patient.Email,
+					FullName: patient.FullName,
+					Id:       *patient.UserId,
 					Tags:     &patientTags,
 				},
 				AverageGlucoseMmol:         patient.Summary.CGM.Periods[*params.Period].AverageGlucoseMmol,
@@ -1157,11 +1161,15 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 				patientTags = append(patientTags, tag.Hex())
 			}
 
+			if patient.UserId == nil {
+				return nil, fmt.Errorf("patient (%s) with nil userId in report, unsupported", *patient.Id)
+			}
+
 			categoryResult = append(categoryResult, TideResultPatient{
 				Patient: TidePatient{
-					Email:    *patient.Email,
-					FullName: *patient.FullName,
-					Id:       patient.UserId,
+					Email:    patient.Email,
+					FullName: patient.FullName,
+					Id:       *patient.UserId,
 					Tags:     &patientTags,
 				},
 				AverageGlucoseMmol:         patient.Summary.CGM.Periods[*params.Period].AverageGlucoseMmol,
