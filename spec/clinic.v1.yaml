@@ -2920,8 +2920,6 @@ components:
           $ref: '#/components/schemas/PatientTagIds'
       required:
         - id
-        - email
-        - fullName
         - tags
     TideResultPatient:
       type: object
