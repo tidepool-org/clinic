@@ -2,11 +2,12 @@ package api
 
 import (
 	"fmt"
-	"github.com/oapi-codegen/runtime/types"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/oapi-codegen/runtime/types"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -643,6 +644,66 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 		dto.Facility = &EHRFacility{
 			Name: settings.Facility.Name,
 		}
+	}
+
+	return dto
+}
+
+func NewPatientCountSettings(dto PatientCountSettings) *clinics.PatientCountSettings {
+	return &clinics.PatientCountSettings{
+		HardLimit: NewPatientCountLimit(dto.HardLimit),
+		SoftLimit: NewPatientCountLimit(dto.SoftLimit),
+	}
+}
+
+func NewPatientCountSettingsDto(settings *clinics.PatientCountSettings) *PatientCountSettings {
+	if settings == nil {
+		return nil
+	}
+
+	return &PatientCountSettings{
+		HardLimit: NewPatientCountLimitDto(settings.HardLimit),
+		SoftLimit: NewPatientCountLimitDto(settings.SoftLimit),
+	}
+}
+
+func NewPatientCountLimit(dto *PatientCountLimit) *clinics.PatientCountLimit {
+	if dto == nil {
+		return nil
+	}
+
+	patientCountLimit := &clinics.PatientCountLimit{
+		PatientCount: dto.PatientCount,
+	}
+
+	if dto.StartDate != nil {
+		startDate, _ := time.Parse(time.RFC3339Nano, string(*dto.StartDate))
+		patientCountLimit.StartDate = &startDate
+	}
+	if dto.EndDate != nil {
+		endDate, _ := time.Parse(time.RFC3339Nano, string(*dto.EndDate))
+		patientCountLimit.EndDate = &endDate
+	}
+
+	return patientCountLimit
+}
+
+func NewPatientCountLimitDto(limit *clinics.PatientCountLimit) *PatientCountLimit {
+	if limit == nil {
+		return nil
+	}
+
+	dto := &PatientCountLimit{
+		PatientCount: limit.PatientCount,
+	}
+
+	if limit.StartDate != nil {
+		startDate := limit.StartDate.Format(time.RFC3339Nano)
+		dto.StartDate = &startDate
+	}
+	if limit.EndDate != nil {
+		endDate := limit.EndDate.Format(time.RFC3339Nano)
+		dto.EndDate = &endDate
 	}
 
 	return dto

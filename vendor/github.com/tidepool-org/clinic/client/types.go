@@ -669,6 +669,12 @@ const (
 	Tier0400 Tier = "tier0400"
 )
 
+// Defines values for FindPatientsParamsWorkspaceIdType.
+const (
+	FindPatientsParamsWorkspaceIdTypeClinicId    FindPatientsParamsWorkspaceIdType = "clinicId"
+	FindPatientsParamsWorkspaceIdTypeEhrSourceId FindPatientsParamsWorkspaceIdType = "ehrSourceId"
+)
+
 // AssociateClinicianToUser defines model for AssociateClinicianToUser.
 type AssociateClinicianToUser struct {
 	UserId string `json:"userId"`
@@ -1326,6 +1332,30 @@ type PatientClinicRelationship struct {
 // PatientClinicRelationships defines model for PatientClinicRelationships.
 type PatientClinicRelationships = []PatientClinicRelationship
 
+// PatientCount defines model for PatientCount.
+type PatientCount struct {
+	// PatientCount The patient count for a clinic
+	PatientCount int `json:"patientCount"`
+}
+
+// PatientCountLimit defines model for PatientCountLimit.
+type PatientCountLimit struct {
+	// EndDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	EndDate *DateTime `json:"endDate,omitempty"`
+
+	// PatientCount The patient count limit
+	PatientCount int `json:"patientCount"`
+
+	// StartDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	StartDate *DateTime `json:"startDate,omitempty"`
+}
+
+// PatientCountSettings defines model for PatientCountSettings.
+type PatientCountSettings struct {
+	HardLimit *PatientCountLimit `json:"hardLimit,omitempty"`
+	SoftLimit *PatientCountLimit `json:"softLimit,omitempty"`
+}
+
 // PatientPermissions defines model for PatientPermissions.
 type PatientPermissions struct {
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
@@ -1467,10 +1497,10 @@ type TideFilters struct {
 
 // TidePatient defines model for TidePatient.
 type TidePatient struct {
-	Email string `json:"email"`
+	Email *string `json:"email,omitempty"`
 
 	// FullName The full name of the patient
-	FullName string `json:"fullName"`
+	FullName *string `json:"fullName,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id   *TidepoolUserId `json:"id,omitempty"`
@@ -1793,6 +1823,23 @@ type TideReportParams struct {
 	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
 }
 
+// FindPatientsParams defines parameters for FindPatients.
+type FindPatientsParams struct {
+	Mrn       *string `form:"mrn,omitempty" json:"mrn,omitempty"`
+	BirthDate *string `form:"birthDate,omitempty" json:"birthDate,omitempty"`
+
+	// WorkspaceId The identifier of the workspace
+	WorkspaceId *string `form:"workspaceId,omitempty" json:"workspaceId,omitempty"`
+
+	// WorkspaceIdType The type of the workspace identifier
+	WorkspaceIdType *FindPatientsParamsWorkspaceIdType `form:"workspaceIdType,omitempty" json:"workspaceIdType,omitempty"`
+	Offset          *Offset                            `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit           *Limit                             `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// FindPatientsParamsWorkspaceIdType defines parameters for FindPatients.
+type FindPatientsParamsWorkspaceIdType string
+
 // ListClinicsForPatientParams defines parameters for ListClinicsForPatient.
 type ListClinicsForPatientParams struct {
 	Offset *Offset `form:"offset,omitempty" json:"offset,omitempty"`
@@ -1829,6 +1876,9 @@ type MigrateLegacyClinicianPatientsJSONRequestBody = Migration
 // UpdateMigrationJSONRequestBody defines body for UpdateMigration for application/json ContentType.
 type UpdateMigrationJSONRequestBody = MigrationUpdate
 
+// UpdatePatientCountJSONRequestBody defines body for UpdatePatientCount for application/json ContentType.
+type UpdatePatientCountJSONRequestBody = PatientCount
+
 // CreatePatientTagJSONRequestBody defines body for CreatePatientTag for application/json ContentType.
 type CreatePatientTagJSONRequestBody = PatientTag
 
@@ -1858,6 +1908,9 @@ type UpdateEHRSettingsJSONRequestBody = EHRSettings
 
 // UpdateMRNSettingsJSONRequestBody defines body for UpdateMRNSettings for application/json ContentType.
 type UpdateMRNSettingsJSONRequestBody = MRNSettings
+
+// UpdatePatientCountSettingsJSONRequestBody defines body for UpdatePatientCountSettings for application/json ContentType.
+type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettings
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications

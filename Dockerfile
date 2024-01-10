@@ -24,4 +24,3 @@ USER tidepool
 COPY --chown=tidepool . .
 RUN ./build.sh
 CMD ["./dist/clinic"]
-

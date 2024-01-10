@@ -11,6 +11,8 @@ var (
 	ConstraintViolation = HttpError{http.StatusUnprocessableEntity, errors.New("constraint violation")}
 	BadRequest          = HttpError{http.StatusBadRequest, errors.New("bad request")}
 	Unauthorized        = HttpError{http.StatusUnauthorized, errors.New("unauthorized")}
+	PaymentRequired     = HttpError{http.StatusPaymentRequired, errors.New("payment required")}
+	InternalServerError = HttpError{http.StatusInternalServerError, errors.New("internal server error")}
 )
 
 type HttpError struct {

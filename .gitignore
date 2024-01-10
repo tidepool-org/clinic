@@ -1,14 +1,23 @@
 # Compilation artifacts
 dist/
+__debug_bin*
 
 # Test coverage report
 *.coverprofile
+*.test
 
-# ide
+# idea
 .idea/
+
+# VSCode
+.vscode/
 
 # Linkerd Service Profile
 service-profile/
 
 # testing or other tools
+/node_modules/
 /tools/
+
+*.envrc
+*.env

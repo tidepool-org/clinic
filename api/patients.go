@@ -2,10 +2,11 @@ package api
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/clinicians"
-	"github.com/tidepool-org/clinic/errors"
 	"net/http"
 	"time"
+
+	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/errors"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
@@ -89,7 +90,7 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 		patient.InvitedBy = &authData.SubjectId
 	}
 
-	result, err := h.patients.Create(ctx, patient)
+	result, _, err := h.patients.Create(ctx, patient)
 	if err != nil {
 		return err
 	}
@@ -136,7 +137,7 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	}
 	patient.Email = pstrToLower(patient.Email)
 
-	result, err := h.patients.Create(ctx, patient)
+	result, _, err := h.patients.Create(ctx, patient)
 	if err != nil {
 		return err
 	}

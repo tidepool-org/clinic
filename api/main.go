@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
+
+	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/redox"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -120,7 +122,7 @@ func MainLoop() {
 			clinicians.NewService,
 			clinics.NewRepository,
 			clinics.NewShareCodeGenerator,
-			manager.NewConfig,
+			config.NewConfig,
 			manager.NewManager,
 			migration.NewMigrator,
 			migration.NewRepository,

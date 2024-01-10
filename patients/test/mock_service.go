@@ -50,13 +50,29 @@ func (mr *MockServiceMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockService)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
 }
 
+// Count mocks base method.
+func (m *MockService) Count(ctx context.Context, filter *patients.Filter) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Count", ctx, filter)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count.
+func (mr *MockServiceMockRecorder) Count(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockService)(nil).Count), ctx, filter)
+}
+
 // Create mocks base method.
-func (m *MockService) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
+func (m *MockService) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, patient)
 	ret0, _ := ret[0].(*patients.Patient)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Create indicates an expected call of Create.
@@ -66,11 +82,12 @@ func (mr *MockServiceMockRecorder) Create(ctx, patient interface{}) *gomock.Call
 }
 
 // DeleteFromAllClinics mocks base method.
-func (m *MockService) DeleteFromAllClinics(ctx context.Context, userId string) error {
+func (m *MockService) DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteFromAllClinics", ctx, userId)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteFromAllClinics indicates an expected call of DeleteFromAllClinics.
@@ -80,11 +97,12 @@ func (mr *MockServiceMockRecorder) DeleteFromAllClinics(ctx, userId interface{})
 }
 
 // DeleteNonCustodialPatientsOfClinic mocks base method.
-func (m *MockService) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error {
+func (m *MockService) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteNonCustodialPatientsOfClinic", ctx, clinicId)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteNonCustodialPatientsOfClinic indicates an expected call of DeleteNonCustodialPatientsOfClinic.

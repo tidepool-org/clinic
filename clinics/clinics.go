@@ -46,6 +46,10 @@ type Service interface {
 	UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error
 	GetMRNSettings(ctx context.Context, clinicId string) (*MRNSettings, error)
 	UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error
+	GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error)
+	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
+	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
+	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 }
 
 type Filter struct {
@@ -85,6 +89,8 @@ type Clinic struct {
 	MembershipRestrictions  []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
 	EHRSettings             *EHRSettings             `bson:"ehrSettings,omitempty"`
 	MRNSettings             *MRNSettings             `bson:"mrnSettings,omitempty"`
+	PatientCountSettings    *PatientCountSettings    `bson:"patientCountSettings,omitempty"`
+	PatientCount            *PatientCount            `bson:"patientCount,omitempty"`
 }
 
 type EHRSettings struct {
@@ -122,6 +128,45 @@ type EHRProcedureCodes struct {
 type MRNSettings struct {
 	Required bool `bson:"required"`
 	Unique   bool `bson:"unique"`
+}
+
+type PatientCount struct {
+	PatientCount int `bson:"patientCount"`
+}
+
+func (p PatientCount) IsValid() bool {
+	return p.PatientCount >= 0
+}
+
+type PatientCountSettings struct {
+	HardLimit *PatientCountLimit `bson:"hardLimit,omitempty"`
+	SoftLimit *PatientCountLimit `bson:"softLimit,omitempty"`
+}
+
+func (p PatientCountSettings) IsValid() bool {
+	if p.HardLimit != nil && !p.HardLimit.IsValid() {
+		return false
+	}
+	if p.SoftLimit != nil && !p.SoftLimit.IsValid() {
+		return false
+	}
+	return true
+}
+
+type PatientCountLimit struct {
+	PatientCount int        `bson:"patientCount"`
+	StartDate    *time.Time `bson:"startDate,omitempty"`
+	EndDate      *time.Time `bson:"endDate,omitempty"`
+}
+
+func (p PatientCountLimit) IsValid() bool {
+	if p.PatientCount < 0 {
+		return false
+	}
+	if p.StartDate != nil && p.EndDate != nil && p.StartDate.After(*p.EndDate) {
+		return false
+	}
+	return true
 }
 
 func NewClinic() Clinic {

@@ -1,18 +1,26 @@
 # Clinic Makefile
 
 TOOLS_BIN = tools/bin
+NODE_BIN = node_modules/.bin
+
+OAPI_CODEGEN = $(TOOLS_BIN)/oapi-codegen
+SWAGGER_CLI = $(NODE_BIN)/swagger-cli
+
+NODE_PKG_SPECS = \
+	@apidevtools/swagger-cli@^4.0.4
+
 
 # Generates server files
 .PHONY: generate
-generate:
-	swagger-cli bundle ../TidepoolApi/reference/clinic.v1.yaml -o ./spec/clinic.v1.yaml -t yaml
-	oapi-codegen -exclude-tags=Confirmations -package=api -generate=server spec/clinic.v1.yaml > api/gen_server.go
-	oapi-codegen -exclude-tags=Confirmations -package=api -generate=spec spec/clinic.v1.yaml > api/gen_spec.go
-	oapi-codegen -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > api/gen_types.go
-	oapi-codegen -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > client/types.go
-	oapi-codegen -exclude-tags=Confirmations -package=api -generate=client spec/clinic.v1.yaml > client/client.go
-	swagger-cli bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml -t yaml
-	oapi-codegen -package=redox_models -generate=types spec/redox.v1.yaml > redox_models/gen_types.go
+generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
+	$(SWAGGER_CLI) bundle ../TidepoolApi/reference/clinic.v1.yaml -o ./spec/clinic.v1.yaml -t yaml
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=server spec/clinic.v1.yaml > api/gen_server.go
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=spec spec/clinic.v1.yaml > api/gen_spec.go
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > api/gen_types.go
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > client/types.go
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=client spec/clinic.v1.yaml > client/client.go
+	$(SWAGGER_CLI) bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml -t yaml
+	$(OAPI_CODEGEN) -package=redox_models -generate=types spec/redox.v1.yaml > redox_models/gen_types.go
 	go generate ./...
 	cd client && go generate ./...
 
@@ -43,3 +51,15 @@ test: go-flags $(TOOLS_BIN)/ginkgo
 .PHONY: build
 build: go-flags
 	./build.sh
+
+$(OAPI_CODEGEN):
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.0.0
+
+$(SWAGGER_CLI): npm-tools
+
+.PHONY: npm-tools
+npm-tools:
+# When using --no-save, any dependencies not included will be deleted, so one
+# has to install all the packages all at the same time. But it saves us from
+# having to muck with packages.json.
+	npm install --no-save --local $(NODE_PKG_SPECS)

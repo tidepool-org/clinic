@@ -462,6 +462,62 @@ func (c *repository) UpdateMRNSettings(ctx context.Context, id string, settings 
 	return err
 }
 
+func (c *repository) GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error) {
+	clinic, err := c.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	return clinic.PatientCountSettings, nil
+}
+
+func (c *repository) UpdatePatientCountSettings(ctx context.Context, id string, settings *PatientCountSettings) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"updatedTime":          time.Now(),
+			"patientCountSettings": settings,
+		},
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return ErrNotFound
+	}
+
+	return err
+}
+
+func (c *repository) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
+	clinic, err := c.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	return clinic.PatientCount, nil
+}
+
+func (c *repository) UpdatePatientCount(ctx context.Context, id string, patientCount *PatientCount) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$set": bson.M{
+			"updatedTime":  time.Now(),
+			"patientCount": patientCount,
+		},
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return ErrNotFound
+	}
+
+	return err
+}
+
 func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
 	if len(clinic.PatientTags) >= MaximumPatientTags {
 		return ErrMaximumPatientTagsExceeded

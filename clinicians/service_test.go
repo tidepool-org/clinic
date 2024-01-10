@@ -2,6 +2,8 @@ package clinicians_test
 
 import (
 	"context"
+	"sync"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -10,6 +12,7 @@ import (
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
@@ -19,7 +22,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
-	"sync"
 )
 
 var _ = Describe("Clinicians Service", func() {
@@ -49,6 +51,7 @@ var _ = Describe("Clinicians Service", func() {
 						return patientsTest.NewMockUserService(ctrl)
 					},
 					patientsTest.NewMockUserService,
+					config.NewConfig,
 					clinics.NewRepository,
 					clinicians.NewRepository,
 					clinicians.NewService,
@@ -243,7 +246,7 @@ var _ = Describe("Clinicians Service", func() {
 			patient.Permissions = &patients.Permissions{
 				View: &patients.Permission{},
 			}
-			_, err := patientsService.Create(nil, patient)
+			_, _, err := patientsService.Create(context.Background(), patient)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete all clinician records
@@ -258,7 +261,7 @@ var _ = Describe("Clinicians Service", func() {
 			}
 
 			// Check non-custodial patient was deleted
-			_, err = patientsService.Get(nil, patient.ClinicId.Hex(), *patient.UserId)
+			_, err = patientsService.Get(context.Background(), patient.ClinicId.Hex(), *patient.UserId)
 			Expect(err).To(Equal(patients.ErrNotFound))
 		})
 
@@ -267,7 +270,7 @@ var _ = Describe("Clinicians Service", func() {
 			patient := patientsTest.RandomPatient()
 			patient.ClinicId = clinician.ClinicId
 			patient.Permissions = &patients.CustodialAccountPermissions
-			_, err := patientsService.Create(nil, patient)
+			_, _, err := patientsService.Create(context.Background(), patient)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete all clinician records
@@ -282,7 +285,7 @@ var _ = Describe("Clinicians Service", func() {
 			}
 
 			// Check custodial patient was not deleted
-			_, err = patientsService.Get(nil, patient.ClinicId.Hex(), *patient.UserId)
+			_, err = patientsService.Get(context.Background(), patient.ClinicId.Hex(), *patient.UserId)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -398,6 +401,7 @@ var _ = Describe("Clinicians Service", func() {
 
 			newClinician, err := cliniciansService.Create(context.Background(), newClinician)
 			Expect(err).ToNot(HaveOccurred())
+			Expect(newClinician).ToNot(BeNil())
 
 			clinicianUpdate := &clinicians.ClinicianUpdate{
 				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),

@@ -1332,6 +1332,30 @@ type PatientClinicRelationship struct {
 // PatientClinicRelationships defines model for PatientClinicRelationships.
 type PatientClinicRelationships = []PatientClinicRelationship
 
+// PatientCount defines model for PatientCount.
+type PatientCount struct {
+	// PatientCount The patient count for a clinic
+	PatientCount int `json:"patientCount"`
+}
+
+// PatientCountLimit defines model for PatientCountLimit.
+type PatientCountLimit struct {
+	// EndDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	EndDate *DateTime `json:"endDate,omitempty"`
+
+	// PatientCount The patient count limit
+	PatientCount int `json:"patientCount"`
+
+	// StartDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	StartDate *DateTime `json:"startDate,omitempty"`
+}
+
+// PatientCountSettings defines model for PatientCountSettings.
+type PatientCountSettings struct {
+	HardLimit *PatientCountLimit `json:"hardLimit,omitempty"`
+	SoftLimit *PatientCountLimit `json:"softLimit,omitempty"`
+}
+
 // PatientPermissions defines model for PatientPermissions.
 type PatientPermissions struct {
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
@@ -1852,6 +1876,9 @@ type MigrateLegacyClinicianPatientsJSONRequestBody = Migration
 // UpdateMigrationJSONRequestBody defines body for UpdateMigration for application/json ContentType.
 type UpdateMigrationJSONRequestBody = MigrationUpdate
 
+// UpdatePatientCountJSONRequestBody defines body for UpdatePatientCount for application/json ContentType.
+type UpdatePatientCountJSONRequestBody = PatientCount
+
 // CreatePatientTagJSONRequestBody defines body for CreatePatientTag for application/json ContentType.
 type CreatePatientTagJSONRequestBody = PatientTag
 
@@ -1881,6 +1908,9 @@ type UpdateEHRSettingsJSONRequestBody = EHRSettings
 
 // UpdateMRNSettingsJSONRequestBody defines body for UpdateMRNSettings for application/json ContentType.
 type UpdateMRNSettingsJSONRequestBody = MRNSettings
+
+// UpdatePatientCountSettingsJSONRequestBody defines body for UpdatePatientCountSettings for application/json ContentType.
+type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettings
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications
