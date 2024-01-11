@@ -182,7 +182,7 @@ func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xeal
 		return nil
 	}
 
-	match, err := NewMatcher[any](d.clinics, d.patients).
+	match, err := NewMatcher[*xealth_client.EventNotificationResponse](d.clinics, d.patients).
 		FromEventNotification(event).
 		DisableErrorOnNoMatchingClinics().
 		DisableErrorOnNoMatchingPatients().
@@ -407,7 +407,7 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		}
 	}
 
-	match, err := NewMatcher[any](d.clinics, d.patients).
+	match, err := NewMatcher[*xealth_client.EventNotificationResponse](d.clinics, d.patients).
 		FromOrder(*order).
 		DisableErrorOnNoMatchingClinics().
 		DisableErrorOnNoMatchingPatients().

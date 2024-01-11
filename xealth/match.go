@@ -20,7 +20,14 @@ var (
 	MultiplePatientsErr = fmt.Errorf("%w: multiple matching patients found", errs.ConstraintViolation)
 )
 
-type Matcher[R any] struct {
+type Response interface {
+	*xealth_client.PreorderFormResponse |
+		*xealth_client.GetProgramsResponse |
+		*xealth_client.GetProgramUrlResponse |
+		*xealth_client.EventNotificationResponse
+}
+
+type Matcher[R Response] struct {
 	deploymentId string
 	datasets     *xealth_client.GeneralDatasets
 	order        *xealth_client.ReadOrderResponse
@@ -39,7 +46,7 @@ type Matcher[R any] struct {
 	multiplePatientsErr  error
 }
 
-type MatchingResult[R any] struct {
+type MatchingResult[R Response] struct {
 	Clinic   *clinics.Clinic
 	Patient  *patients.Patient
 	Criteria *PatientMatchingCriteria
@@ -47,7 +54,7 @@ type MatchingResult[R any] struct {
 	Response R
 }
 
-func NewMatcher[R any](clinics clinics.Service, patients patients.Service) *Matcher[R] {
+func NewMatcher[R Response](clinics clinics.Service, patients patients.Service) *Matcher[R] {
 	return &Matcher[R]{
 		clinics:  clinics,
 		patients: patients,
@@ -306,6 +313,7 @@ func GetPatientMatchingCriteriaFromOrder(order *xealth_client.ReadOrderResponse,
 		for _, v := range *datasets.DemographicsV1.Telecom {
 			if v.System != nil && *v.System == xealth_client.ReadOrderResponseDatasetsDemographicsV1TelecomSystemEmail && v.Value != nil {
 				criteria.Email = *v.Value
+				break
 			}
 		}
 	}
@@ -360,6 +368,7 @@ func GetPatientMatchingCriteriaFromGeneralDatasets(datasets *xealth_client.Gener
 		for _, v := range *datasets.DemographicsV1.Telecom {
 			if v.System != nil && *v.System == xealth_client.GeneralDatasetsDemographicsV1TelecomSystemEmail && v.Value != nil {
 				criteria.Email = *v.Value
+				break
 			}
 		}
 	}

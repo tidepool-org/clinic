@@ -46,6 +46,14 @@ func RandomSubscriptions() patients.EHRSubscriptions {
 			EventType:  "New",
 		}},
 	}
+	subs[patients.SubscriptionXealthReports] = patients.EHRSubscription{
+		Active: true,
+		MatchedMessages: []patients.MatchedMessage{{
+			DocumentId: primitive.NewObjectID(),
+			DataModel:  "Order",
+			EventType:  "New",
+		}},
+	}
 	return subs
 }
 

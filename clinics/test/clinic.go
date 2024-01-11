@@ -43,7 +43,8 @@ func RandomClinic() *clinics.Clinic {
 		UpdatedTime:        Faker.Time().Time(time.Now()),
 		IsMigrated:         false,
 		EHRSettings: &clinics.EHRSettings{
-			Enabled: true,
+			Enabled:  true,
+			Provider: "xealth",
 			Facility: &clinics.EHRFacility{
 				Name: Faker.Company().Name(),
 			},
@@ -85,4 +86,22 @@ func RandomClinicCreate() *manager.CreateClinic {
 		CreatorUserId:     userId,
 		CreateDemoPatient: false,
 	}
+}
+
+func EnableXealth(clinic *clinics.Clinic, deployment string) *clinics.Clinic {
+	clinic.EHRSettings = &clinics.EHRSettings{
+		Enabled:  true,
+		Provider: "xealth",
+		Facility: &clinics.EHRFacility{
+			Name: Faker.Company().Name(),
+		},
+		ProcedureCodes: clinics.EHRProcedureCodes{
+			EnableSummaryReports:          strp("12345"),
+			DisableSummaryReports:         strp("23456"),
+			CreateAccount:                 strp("34567"),
+			CreateAccountAndEnableReports: strp("45678"),
+		},
+		SourceId: deployment,
+	}
+	return clinic
 }

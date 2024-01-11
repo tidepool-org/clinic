@@ -1,0 +1,563 @@
+{
+  "eventType": "getPrograms",
+  "eventContext": "initial",
+  "deployment": "healthsystem_001",
+  "patientIdentity": {
+    "ids": [
+      {
+        "id": "E111111",
+        "type": "enterprise",
+        "origin": "epic"
+      }
+    ],
+    "historicalIds": [
+      {
+        "id": "E111111",
+        "type": "enterprise",
+        "origin": "epic"
+      }
+    ]
+  },
+  "ehrView": "encounter",
+  "datasets": {
+    "activeMedicationRequestsV1": {
+      "activeMedicationRequests": [
+        {
+          "identifier": [
+            {
+              "id": "1130066",
+              "type": "urn:oid:1.2.840.114350.1.13.0.1.7.2.798268"
+            }
+          ],
+          "status": "active",
+          "intent": "order",
+          "authoredOn": "2021-12-16",
+          "substitutionAllowedBoolean": true,
+          "category": [
+            {
+              "code": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/medicationrequest-category",
+                  "code": "community",
+                  "display": "Community"
+                }
+              ],
+              "text": "Community"
+            }
+          ],
+          "doNotPerformBoolean": true,
+          "priorPrescriptionBoolean": true,
+          "medication": {
+            "code": [
+              {
+                "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+                "code": "435",
+                "display": "Albuterol"
+              }
+            ],
+            "text": "albuterol"
+          },
+          "dosageInstruction": [
+            {
+              "asNeededBoolean": true,
+              "text": "Take 200 mg by mouth 1 (one) time each day., Starting Thu 12/16/2021, Normal",
+              "patientInstruction": "Take 200 mg by mouth 1 (one) time each day.",
+              "timing": {
+                "repeat": {
+                  "boundsPeriod": {},
+                  "timeOfDay": [
+                    "09:00:00"
+                  ]
+                },
+                "code": {
+                  "text": 900
+                }
+              },
+              "doseAndRate": [
+                {
+                  "type": {
+                    "code": []
+                  },
+                  "doseQuantity": {},
+                  "doseRange": {
+                    "low": {},
+                    "high": {}
+                  },
+                  "rateQuantity": {}
+                }
+              ],
+              "route": {
+                "code": [
+                  {}
+                ],
+                "text": "IM"
+              }
+            }
+          ],
+          "courseOfTherapyType": {
+            "code": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "78421000",
+                "display": "Intramuscular route (qualifier value)"
+              }
+            ],
+            "text": "IM"
+          },
+          "requester": {
+            "dataAbsentReason": "unknown",
+            "name": [
+              {
+                "use": "usual",
+                "text": "Sir FirstName LastName MD",
+                "prefix": [
+                  "Sir"
+                ],
+                "given": [
+                  "FirstName"
+                ],
+                "family": "LastName",
+                "suffix": [
+                  "MD"
+                ]
+              }
+            ],
+            "identifier": [
+              {
+                "type": {
+                  "text": "NPI"
+                },
+                "value": "4768294628"
+              }
+            ]
+          },
+          "reasonCode": [
+            {
+              "code": [
+                {
+                  "system": "http://hl7.org/fhir/sid/icd-10-cm",
+                  "code": "I10",
+                  "display": "Essential (primary) hypertension"
+                }
+              ],
+              "text": "Benign hypertension"
+            }
+          ],
+          "reported": {
+            "reportedBoolean": true,
+            "reporter": {
+              "name": [
+                {
+                  "use": "usual",
+                  "text": "Sir FirstName LastName MD",
+                  "prefix": [
+                    "Sir"
+                  ],
+                  "given": [
+                    "FirstName"
+                  ],
+                  "family": "LastName",
+                  "suffix": [
+                    "MD"
+                  ]
+                }
+              ],
+              "identifier": [
+                {
+                  "type": {},
+                  "value": "4768294628"
+                }
+              ]
+            }
+          },
+          "visitId": [
+            {
+              "id": "3568",
+              "type": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8"
+            }
+          ],
+          "dispenseRequest": {
+            "validityPeriod": {
+              "start": "2022-10-27T00:00:00Z",
+              "end": "2022-10-30T00:00:00Z"
+            },
+            "quantity": {
+              "value": 1,
+              "unit": "EA",
+              "system": "http://unitsofmeasure.org",
+              "code": "{Each}"
+            },
+            "numberOfRepeatsAllowed": 0,
+            "expectedSupplyDuration": {
+              "value": 4,
+              "unit": "Day",
+              "system": "http://unitsofmeasure.org",
+              "code": "d"
+            }
+          },
+          "notes": [
+            {
+              "text": "This is a sample note",
+              "author": {
+                "name": [
+                  {
+                    "prefix": [],
+                    "given": [],
+                    "suffix": []
+                  }
+                ],
+                "identifier": [
+                  {
+                    "type": {}
+                  }
+                ]
+              },
+              "time": "2023-07-06T15:37:10.000-05:00"
+            }
+          ]
+        }
+      ]
+    },
+    "demographicsV1": {
+      "ids": [
+        {
+          "id": "10052608740",
+          "type": "mrn"
+        },
+        {
+          "id": "e987654",
+          "type": "enterprise"
+        }
+      ],
+      "historicalIds": [
+        {
+          "id": "10052608740",
+          "type": "mrn"
+        },
+        {
+          "id": "e654789",
+          "type": "enterprise"
+        }
+      ],
+      "name": {
+        "use": "usual",
+        "text": "Sir FirstName LastName MD",
+        "prefix": [
+          "Sir"
+        ],
+        "given": [
+          "FirstName",
+          "First"
+        ],
+        "family": [
+          "LastName",
+          "Last"
+        ],
+        "suffix": [
+          "MD"
+        ]
+      },
+      "nameList": [
+        {
+          "use": "usual",
+          "text": "Sir FirstName LastName MD",
+          "prefix": [
+            "Sir"
+          ],
+          "given": [
+            "FirstName"
+          ],
+          "family": [
+            "LastName"
+          ],
+          "suffix": [
+            "MD"
+          ]
+        }
+      ],
+      "gender": "male",
+      "birthDate": "1985-01-11",
+      "deceasedBoolean": false,
+      "telecom": [
+        {
+          "system": "phone",
+          "value": "888-555-2222",
+          "use": "mobile",
+          "rank": 1
+        },
+        {
+          "system": "phone",
+          "value": "888-555-1212",
+          "use": "home"
+        },
+        {
+          "system": "email",
+          "value": "home@example.com",
+          "use": "home",
+          "rank": 1
+        },
+        {
+          "system": "email",
+          "value": "work@example.com",
+          "use": "work"
+        }
+      ],
+      "address": [
+        {
+          "text": "999 Fake Rd\\nOLYMPIA WA 98501",
+          "line": [
+            "999 Fake Rd",
+            "PO BOX 91818"
+          ],
+          "city": "OLYMPIA",
+          "district": "THURSTON",
+          "state": "Washington",
+          "postalCode": "98501",
+          "country": "United States of America"
+        }
+      ],
+      "preferredLanguage": "spa",
+      "preferredLanguageTitle": "Spanish"
+    },
+    "ehrUserV1": {
+      "userId": "User_98768",
+      "firstName": "Test",
+      "lastName": "Provider",
+      "systemLogin": "t_provider",
+      "providerNPI": "1234567890",
+      "providerId": "255",
+      "providerType": "Physician"
+    },
+    "encounterLocationV1": {
+      "fhirId": "4581438329",
+      "display": "BUMT Whole Health Clinic - Family Medicine, AZT WHC FM, AZT WHC FM"
+    },
+    "encounterV1": {
+      "encounterLocation": {
+        "fhirId": "4581438329",
+        "display": "BUMT Whole Health Clinic - Family Medicine, AZT WHC FM, AZT WHC FM"
+      },
+      "encounterPointOfCare": {
+        "identifier": [
+          {
+            "type": {
+              "text": "Internal"
+            },
+            "value": "HSN453673"
+          }
+        ],
+        "name": "Children's Specialty Clinic",
+        "alias": [
+          "CSC"
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "888-555-1212",
+            "use": "work"
+          },
+          {
+            "system": "email",
+            "value": "xxx@xxx.com",
+            "use": "work"
+          }
+        ],
+        "address": {
+          "text": "999 Fake Rd\\nOLYMPIA WA 98501",
+          "line": [
+            "999 Fake Rd",
+            "PO BOX 91818"
+          ],
+          "city": "OLYMPIA",
+          "district": "THURSTON",
+          "state": "Washington",
+          "postalCode": "98501",
+          "country": "United States of America"
+        }
+      },
+      "attendingProvider": {
+        "name": [
+          {
+            "use": "usual",
+            "text": "Sir FirstName LastName MD",
+            "prefix": [
+              "Sir"
+            ],
+            "given": [
+              "FirstName"
+            ],
+            "family": [
+              "LastName"
+            ],
+            "suffix": [
+              "MD"
+            ]
+          }
+        ],
+        "identifier": [
+          {
+            "type": {
+              "text": "NPI"
+            },
+            "value": "4768294628"
+          }
+        ]
+      },
+      "visitId": {
+        "id": "20003412",
+        "type": "urn:oid:3.3.3.3.3.3"
+      }
+    },
+    "maternityPregnancyCernerV1": {
+      "estimatedDeliveryDates": [
+        {
+          "category": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/observation-category",
+                "code": "vital-signs",
+                "extensions": [
+                  {
+                    "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                    "valueCode": "unknown"
+                  }
+                ]
+              }
+            ]
+          },
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "11778-8",
+                "extensions": [
+                  {
+                    "url": "http://hl7.org/fhir/StructureDefinition/data-absent-reason",
+                    "valueCode": "unknown"
+                  }
+                ]
+              }
+            ],
+            "text": "Final EDD"
+          },
+          "effectiveDateTime": "2020-08-19T12:33:18Z",
+          "valueDateTime": "2021-03-08T00:05:00Z"
+        }
+      ]
+    },
+    "maternityPregnancyEpicV1": {
+      "children": [
+        {
+          "ids": [
+            {
+              "id": "60000020000",
+              "type": "mrn"
+            }
+          ],
+          "name": {
+            "use": "usual",
+            "text": "Sir FirstName LastName MD",
+            "prefix": [
+              "Sir"
+            ],
+            "given": [
+              "FirstName"
+            ],
+            "family": [
+              "LastName"
+            ],
+            "suffix": [
+              "MD"
+            ]
+          },
+          "type": "proxy",
+          "proxyRelationship": "Adult accessing minor",
+          "proxyExpiration": "2021-12-29"
+        }
+      ],
+      "pregnant": "no"
+    },
+    "maternityPregnancyV2": {
+      "estimatedDeliveryDates": [
+        {
+          "category": {
+            "coding": [
+              {
+                "system": "http://hl7.org/CodeSystem/observation-category",
+                "code": "social-history"
+              }
+            ],
+            "text": "Social History"
+          },
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "11778-8"
+              }
+            ],
+            "text": "Delivery date estimated"
+          },
+          "effectiveDateTime": "2020-08-19T12:33:18Z",
+          "valueDateTime": "2021-03-08T00:00:00Z"
+        }
+      ]
+    },
+    "problemListV1": {
+      "problems": [
+        {
+          "code": {
+            "code": "Z13.1",
+            "text": "Screening for diabetes mellitus",
+            "system": "http://hl7.org/fhir/sid/icd-10"
+          },
+          "recordedDateTime": "2018-03-05T00:00:00Z",
+          "recordedDate": "2018-03-05"
+        },
+        {
+          "code": {
+            "code": "C79.51",
+            "text": "Bone metastasis (HCC)",
+            "system": "http://hl7.org/fhir/sid/icd-10"
+          },
+          "recordedDateTime": "2017-10-14T00:00:00Z",
+          "recordedDate": "2017-10-14",
+          "onsetPeriod": {
+            "start": "2017-10-11T00:00:00Z",
+            "end": "2018-10-28T00:00:00Z"
+          }
+        }
+      ]
+    },
+    "socialHistoryV1": {
+      "smokingStatus": {
+        "category": {
+          "code": "social-history",
+          "text": "Social History",
+          "system": "https://www.hl7.org/fhir/codesystem-observation-category.html"
+        },
+        "value": {
+          "code": "123456789",
+          "text": "Current Every Day Smoker",
+          "system": "http://snomed.info/sct"
+        }
+      }
+    }
+  },
+  "ordersInfo": [
+    {
+      "deployment": "healthsystem_001",
+      "orderId": "7e316617-ef33-4859-b0c9-36bddbfe9229",
+      "orderSource": "appointment",
+      "partnerId": "awesome_partner",
+      "programId": "awesome_program_001",
+      "orderCreationDateTime": "2021-01-14T00:23:48.690Z",
+      "orderUpdateDateTime": "2021-01-25T12:00:00.000Z",
+      "contentTag": [
+        "diet",
+        "cardiology"
+      ],
+      "orderState": "ordered"
+    }
+  ]
+}

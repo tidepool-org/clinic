@@ -56,12 +56,11 @@ func GetProgramTitle() *string {
 }
 
 func HasStatusView(patient *patients.Patient, subscription *patients.EHRSubscription) *bool {
-	if subscription == nil {
-		return nil
+	result := false
+	if subscription != nil {
+		date := GetLastUploadDate(patient)
+		result = subscription.Active && !date.IsZero()
 	}
-
-	date := GetLastUploadDate(patient)
-	result := subscription.Active && !date.IsZero()
 
 	return &result
 }

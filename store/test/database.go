@@ -33,7 +33,7 @@ func SetupDatabase() {
 	err = client.Ping(ctx, nil)
 	Expect(err).ToNot(HaveOccurred())
 
-	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.Letter(), ginkgo.GinkgoParallelProcess())
+	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.RandomStringWithLength(8), ginkgo.GinkgoParallelProcess())
 	database = client.Database(databaseName)
 }
 
