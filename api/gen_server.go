@@ -91,9 +91,6 @@ type ServerInterface interface {
 	// Get Patient Count
 	// (GET /v1/clinics/{clinicId}/patient_count)
 	GetPatientCount(ctx echo.Context, clinicId ClinicId) error
-	// Update Patient Count
-	// (PUT /v1/clinics/{clinicId}/patient_count)
-	UpdatePatientCount(ctx echo.Context, clinicId ClinicId) error
 	// Create Patient Tag
 	// (POST /v1/clinics/{clinicId}/patient_tags)
 	CreatePatientTag(ctx echo.Context, clinicId ClinicId) error
@@ -835,24 +832,6 @@ func (w *ServerInterfaceWrapper) GetPatientCount(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetPatientCount(ctx, clinicId)
-	return err
-}
-
-// UpdatePatientCount converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdatePatientCount(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "clinicId" -------------
-	var clinicId ClinicId
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
-	}
-
-	ctx.Set(SessionTokenScopes, []string{})
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.UpdatePatientCount(ctx, clinicId)
 	return err
 }
 
@@ -1994,7 +1973,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.GetMigration)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.UpdateMigration)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patient_count", wrapper.GetPatientCount)
-	router.PUT(baseURL+"/v1/clinics/:clinicId/patient_count", wrapper.UpdatePatientCount)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patient_tags", wrapper.CreatePatientTag)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.DeletePatientTag)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.UpdatePatientTag)

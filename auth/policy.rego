@@ -609,14 +609,6 @@ allow {
   is_backend_service
 }
 
-# Allow services to update patient count
-# PUT /v1/clinics/:clinicId/patient_count
-allow {
-  input.method == "PUT"
-  input.path = ["v1", "clinics", _, "patient_count"]
-  is_backend_service
-}
-
 # Allow services to match EHR patients
 # GET /v1/redox/match
 allow {

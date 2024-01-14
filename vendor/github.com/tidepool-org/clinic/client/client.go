@@ -186,11 +186,6 @@ type ClientInterface interface {
 	// GetPatientCount request
 	GetPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UpdatePatientCountWithBody request with any body
-	UpdatePatientCountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	UpdatePatientCount(ctx context.Context, clinicId ClinicId, body UpdatePatientCountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// CreatePatientTagWithBody request with any body
 	CreatePatientTagWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -737,30 +732,6 @@ func (c *Client) UpdateMigration(ctx context.Context, clinicId Id, userId UserId
 
 func (c *Client) GetPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPatientCountRequest(c.Server, clinicId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdatePatientCountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePatientCountRequestWithBody(c.Server, clinicId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) UpdatePatientCount(ctx context.Context, clinicId ClinicId, body UpdatePatientCountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePatientCountRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2711,53 +2682,6 @@ func NewGetPatientCountRequest(server string, clinicId ClinicId) (*http.Request,
 	if err != nil {
 		return nil, err
 	}
-
-	return req, nil
-}
-
-// NewUpdatePatientCountRequest calls the generic UpdatePatientCount builder with application/json body
-func NewUpdatePatientCountRequest(server string, clinicId ClinicId, body UpdatePatientCountJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUpdatePatientCountRequestWithBody(server, clinicId, "application/json", bodyReader)
-}
-
-// NewUpdatePatientCountRequestWithBody generates requests for UpdatePatientCount with any type of body
-func NewUpdatePatientCountRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/v1/clinics/%s/patient_count", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -5272,11 +5196,6 @@ type ClientWithResponsesInterface interface {
 	// GetPatientCountWithResponse request
 	GetPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetPatientCountResponse, error)
 
-	// UpdatePatientCountWithBodyWithResponse request with any body
-	UpdatePatientCountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientCountResponse, error)
-
-	UpdatePatientCountWithResponse(ctx context.Context, clinicId ClinicId, body UpdatePatientCountJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientCountResponse, error)
-
 	// CreatePatientTagWithBodyWithResponse request with any body
 	CreatePatientTagWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePatientTagResponse, error)
 
@@ -5977,27 +5896,6 @@ func (r GetPatientCountResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetPatientCountResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type UpdatePatientCountResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r UpdatePatientCountResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UpdatePatientCountResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -7015,23 +6913,6 @@ func (c *ClientWithResponses) GetPatientCountWithResponse(ctx context.Context, c
 		return nil, err
 	}
 	return ParseGetPatientCountResponse(rsp)
-}
-
-// UpdatePatientCountWithBodyWithResponse request with arbitrary body returning *UpdatePatientCountResponse
-func (c *ClientWithResponses) UpdatePatientCountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientCountResponse, error) {
-	rsp, err := c.UpdatePatientCountWithBody(ctx, clinicId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdatePatientCountResponse(rsp)
-}
-
-func (c *ClientWithResponses) UpdatePatientCountWithResponse(ctx context.Context, clinicId ClinicId, body UpdatePatientCountJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientCountResponse, error) {
-	rsp, err := c.UpdatePatientCount(ctx, clinicId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUpdatePatientCountResponse(rsp)
 }
 
 // CreatePatientTagWithBodyWithResponse request with arbitrary body returning *CreatePatientTagResponse
@@ -8114,22 +7995,6 @@ func ParseGetPatientCountResponse(rsp *http.Response) (*GetPatientCountResponse,
 		}
 		response.JSON200 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseUpdatePatientCountResponse parses an HTTP response from a UpdatePatientCountWithResponse call
-func ParseUpdatePatientCountResponse(rsp *http.Response) (*UpdatePatientCountResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UpdatePatientCountResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
 	}
 
 	return response, nil

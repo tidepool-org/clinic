@@ -1876,9 +1876,6 @@ type MigrateLegacyClinicianPatientsJSONRequestBody = Migration
 // UpdateMigrationJSONRequestBody defines body for UpdateMigration for application/json ContentType.
 type UpdateMigrationJSONRequestBody = MigrationUpdate
 
-// UpdatePatientCountJSONRequestBody defines body for UpdatePatientCount for application/json ContentType.
-type UpdatePatientCountJSONRequestBody = PatientCount
-
 // CreatePatientTagJSONRequestBody defines body for CreatePatientTag for application/json ContentType.
 type CreatePatientTagJSONRequestBody = PatientTag
 

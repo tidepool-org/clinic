@@ -65,6 +65,10 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 	// Set new clinic migration status to true.
 	// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
 	clinic.IsMigrated = true
+
+	// Set new clinic patient count to zero
+	clinic.PatientCount = &clinics.PatientCount{PatientCount: 0}
+
 	create := manager.CreateClinic{
 		Clinic:            clinic,
 		CreatorUserId:     authData.SubjectId,
@@ -443,24 +447,4 @@ func (h *Handler) GetPatientCount(ec echo.Context, clinicId ClinicId) error {
 	return ec.JSON(http.StatusOK, PatientCount{
 		PatientCount: patientCount.PatientCount,
 	})
-}
-
-func (h *Handler) UpdatePatientCount(ec echo.Context, clinicId ClinicId) error {
-	ctx := ec.Request().Context()
-	dto := PatientCount{}
-	if err := ec.Bind(&dto); err != nil {
-		return err
-	}
-
-	patientCount := &clinics.PatientCount{PatientCount: dto.PatientCount}
-	if !patientCount.IsValid() {
-		return errors.BadRequest
-	}
-
-	err := h.clinics.UpdatePatientCount(ctx, clinicId, patientCount)
-	if err != nil {
-		return err
-	}
-
-	return h.GetPatientCount(ec, clinicId)
 }

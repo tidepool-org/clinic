@@ -1054,33 +1054,6 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("it allows ORCA to update patient count", func() {
-		input := map[string]interface{}{
-			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patient_count"},
-			"method": "PUT",
-			"auth": map[string]interface{}{
-				"subjectId":    "orca",
-				"serverAccess": true,
-			},
-		}
-		err := authorizer.EvaluatePolicy(context.Background(), input)
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	It("it prevents clinic members to update patient count", func() {
-		input := map[string]interface{}{
-			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patient_count"},
-			"method": "PUT",
-			"auth": map[string]interface{}{
-				"subjectId":    "1234567890",
-				"serverAccess": false,
-			},
-			"clinician": clinicMember,
-		}
-		err := authorizer.EvaluatePolicy(context.Background(), input)
-		Expect(err).To(Equal(auth.ErrUnauthorized))
-	})
-
 	It("it allows clinic worker to match patients", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "redox", "match"},
