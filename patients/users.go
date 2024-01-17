@@ -106,10 +106,17 @@ func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *P
 		return err
 	}
 
-	patient.BirthDate = profile.Patient.Birthday
-	patient.Mrn = profile.Patient.Mrn
+	if patient.BirthDate == nil || *patient.BirthDate == "" {
+		patient.BirthDate = profile.Patient.Birthday
+	}
+	if patient.Mrn == nil || *patient.Mrn == "" {
+		patient.Mrn = profile.Patient.Mrn
+	}
+	if patient.FullName == nil || *patient.FullName == "" {
+		patient.FullName = profile.Patient.FullName
+	}
+
 	patient.TargetDevices = profile.Patient.TargetDevices
-	patient.FullName = profile.Patient.FullName
 	patient.Email = &user.Username
 
 	if patient.FullName == nil || *patient.FullName == "" {
