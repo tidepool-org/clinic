@@ -620,17 +620,21 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 	settings := &clinics.EHRSettings{
 		Enabled:  dto.Enabled,
 		SourceId: dto.SourceId,
-		DestinationIds: &clinics.EHRDestinationIds{
-			Flowsheet: dto.DestinationIds.Flowsheet,
-			Notes:     dto.DestinationIds.Notes,
-			Results:   dto.DestinationIds.Results,
-		},
 		ProcedureCodes: clinics.EHRProcedureCodes{
 			EnableSummaryReports:          dto.ProcedureCodes.EnableSummaryReports,
 			DisableSummaryReports:         dto.ProcedureCodes.DisableSummaryReports,
 			CreateAccount:                 dto.ProcedureCodes.CreateAccount,
 			CreateAccountAndEnableReports: dto.ProcedureCodes.CreateAccountAndEnableReports,
 		},
+		MrnIdType: dto.MrnIdType,
+		Provider:  string(dto.Provider),
+	}
+	if dto.DestinationIds != nil {
+		settings.DestinationIds = &clinics.EHRDestinationIds{
+			Flowsheet: dto.DestinationIds.Flowsheet,
+			Notes:     dto.DestinationIds.Notes,
+			Results:   dto.DestinationIds.Results,
+		}
 	}
 	if dto.Facility != nil {
 		settings.Facility = &clinics.EHRFacility{
@@ -649,17 +653,21 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 	dto := &EHRSettings{
 		Enabled:  settings.Enabled,
 		SourceId: settings.SourceId,
-		DestinationIds: &EHRDestinationIds{
-			Flowsheet: settings.DestinationIds.Flowsheet,
-			Notes:     settings.DestinationIds.Notes,
-			Results:   settings.DestinationIds.Results,
-		},
 		ProcedureCodes: EHRProcedureCodes{
 			EnableSummaryReports:          settings.ProcedureCodes.EnableSummaryReports,
 			DisableSummaryReports:         settings.ProcedureCodes.DisableSummaryReports,
 			CreateAccount:                 settings.ProcedureCodes.CreateAccount,
 			CreateAccountAndEnableReports: settings.ProcedureCodes.CreateAccountAndEnableReports,
 		},
+		MrnIdType: settings.GetMrnIDType(),
+		Provider:  EHRSettingsProvider(settings.Provider),
+	}
+	if settings.DestinationIds != nil {
+		dto.DestinationIds = &EHRDestinationIds{
+			Flowsheet: settings.DestinationIds.Flowsheet,
+			Notes:     settings.DestinationIds.Notes,
+			Results:   settings.DestinationIds.Results,
+		}
 	}
 	if settings.Facility != nil {
 		dto.Facility = &EHRFacility{

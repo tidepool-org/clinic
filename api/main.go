@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/brpaz/echozap"
 	oapiMiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
@@ -23,6 +24,8 @@ import (
 	"github.com/tidepool-org/platform/platform"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
+	"go.uber.org/zap"
 )
 
 var (
@@ -63,9 +66,9 @@ func SetReady(healthCheck *HealthCheck, db *mongo.Database, lifecycle fx.Lifecyc
 	})
 }
 
-func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator) (*echo.Echo, error) {
+func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator, logger *zap.Logger) (*echo.Echo, error) {
 	e := echo.New()
-	e.Logger.Print("Starting Main Loop")
+	logger.Info("Starting Main Loop")
 	swagger, err := GetSwagger()
 	if err != nil {
 		return nil, err
@@ -91,12 +94,19 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 		},
 		Skipper: RouteSkipper(externalRoutes),
 	})
-	loggerConfig := middleware.DefaultLoggerConfig
-	loggerConfig.Skipper = RouteSkipper(healthcheckRoutes)
-	loggerMiddleware := middleware.LoggerWithConfig(loggerConfig)
-
+	healthCheckSkipper := RouteSkipper(healthcheckRoutes)
 	e.Use(middleware.Recover())
-	e.Use(loggerMiddleware)
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// Do not log health check requests
+			if healthCheckSkipper(c) {
+				return next(c)
+			}
+			// Log all other requests with the zap middleware
+			return echozap.ZapLogger(logger)(next)(c)
+		}
+	})
+	//e.Use(loggerMiddleware)
 	e.Use(authMiddleware)
 	e.Use(requestValidator)
 
@@ -108,13 +118,13 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 	return e, nil
 }
 
-func MainLoop() {
-	fx.New(
+func Dependencies() []fx.Option {
+	return []fx.Option{
 		auth.PlatformClientModule,
 		fx.Provide(
 			logger.NewProductionLogger,
 			logger.Suggar,
-			store.GetConnectionString,
+			store.NewConfig,
 			store.NewClient,
 			store.NewDatabase,
 			patients.NewRepository,
@@ -141,8 +151,14 @@ func MainLoop() {
 			NewHandler,
 			NewServer,
 		),
+		fx.WithLogger(func(log *zap.Logger) fxevent.Logger {
+			return &fxevent.ZapLogger{Logger: log}
+		}),
 		patients.UserServiceModule,
-		fx.Invoke(SetReady),
-		fx.Invoke(Start),
-	).Run()
+	}
+}
+
+func MainLoop() {
+	app := append(Dependencies(), fx.Invoke(SetReady), fx.Invoke(Start))
+	fx.New(app...).Run()
 }

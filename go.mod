@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/TwiN/deepmerge v0.2.0
+	github.com/brpaz/echozap v1.1.3
 	github.com/deepmap/oapi-codegen v1.16.2
 	github.com/fatih/structs v1.1.0
 	github.com/getkin/kin-openapi v0.118.0

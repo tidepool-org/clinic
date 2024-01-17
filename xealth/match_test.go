@@ -65,7 +65,7 @@ var _ = Describe("Matcher", func() {
 			var initialPreorderFormRequest xealth_client.PreorderFormRequest0
 
 			BeforeEach(func() {
-				body, err := test.LoadFixture("test/preorder_initial_request.json")
+				body, err := test.LoadFixture("test/fixtures/preorder_initial_request.json")
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(json.Unmarshal(body, &initialPreorderFormRequest)).To(Succeed())
@@ -89,7 +89,7 @@ var _ = Describe("Matcher", func() {
 			var subsequentPreorderFormRequest xealth_client.PreorderFormRequest1
 
 			BeforeEach(func() {
-				body, err := test.LoadFixture("test/preorder_subsequent_request.json")
+				body, err := test.LoadFixture("test/fixtures/preorder_subsequent_request.json")
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(json.Unmarshal(body, &subsequentPreorderFormRequest)).To(Succeed())
@@ -113,7 +113,7 @@ var _ = Describe("Matcher", func() {
 			var orderEvent xealth.OrderEvent
 
 			BeforeEach(func() {
-				orderBody, err := test.LoadFixture("test/order.json")
+				orderBody, err := test.LoadFixture("test/fixtures/order.json")
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(json.Unmarshal(orderBody, &orderEvent.OrderData)).To(Succeed())
@@ -137,7 +137,7 @@ var _ = Describe("Matcher", func() {
 			var request xealth_client.GetProgramsRequest
 
 			BeforeEach(func() {
-				body, err := test.LoadFixture("test/get_programs_request.json")
+				body, err := test.LoadFixture("test/fixtures/get_programs_request.json")
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(json.Unmarshal(body, &request)).To(Succeed())
@@ -161,7 +161,7 @@ var _ = Describe("Matcher", func() {
 			var request xealth_client.GetProgramUrlRequest
 
 			BeforeEach(func() {
-				body, err := test.LoadFixture("test/get_program_url_request.json")
+				body, err := test.LoadFixture("test/fixtures/get_program_url_request.json")
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(json.Unmarshal(body, &request)).To(Succeed())

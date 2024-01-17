@@ -241,7 +241,7 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		subscription = &subs
 	}
 
-	if subscription == nil || subscription.Provider != clinics.EHRProviderXealth {
+	if subscription == nil || subscription.Provider != clinics.EHRProviderXealth || !subscription.Active {
 		return response, nil
 	}
 

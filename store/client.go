@@ -6,11 +6,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func NewClient(host string) (*mongo.Client, error) {
+func NewClient(config *Config) (*mongo.Client, error) {
+	connectionString, err := config.GetConnectionString()
+	if err != nil {
+		return nil, err
+	}
 	bsonOpts := &options.BSONOptions{
 		UseJSONStructTags: true,
 	}
-	opts := options.Client().ApplyURI(host).SetBSONOptions(bsonOpts)
+	opts := options.Client().ApplyURI(connectionString).SetBSONOptions(bsonOpts)
 
 	ctx := NewDbContext()
 	client, err := mongo.Connect(ctx, opts)

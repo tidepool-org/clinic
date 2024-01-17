@@ -9,13 +9,13 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
 	"math/rand"
+	"os"
 
 	"time"
 )
 
 const (
-	mongoTestHost = "mongodb://127.0.0.1:27017"
-	mongoTimeout  = time.Second * 5
+	mongoTimeout = time.Second * 5
 )
 
 var (
@@ -27,14 +27,19 @@ func SetupDatabase() {
 	ctx, cancel := context.WithTimeout(context.Background(), mongoTimeout)
 	defer cancel()
 
-	client, err := store.NewClient(mongoTestHost)
+	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.Letter(), ginkgo.GinkgoParallelProcess())
+	Expect(os.Setenv("TIDEPOOL_CLINIC_DATABASE_NAME", databaseName)).To(Succeed())
+
+	config, err := store.NewConfig()
+	Expect(err).ToNot(HaveOccurred())
+
+	client, err := store.NewClient(config)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = client.Ping(ctx, nil)
 	Expect(err).ToNot(HaveOccurred())
 
-	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.RandomStringWithLength(8), ginkgo.GinkgoParallelProcess())
-	database = client.Database(databaseName)
+	database = client.Database(config.DatabaseName)
 }
 
 func TeardownDatabase() {

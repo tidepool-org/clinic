@@ -27,11 +27,11 @@ var _ = Describe("Program", func() {
 			objId := primitive.NewObjectID()
 			orderEvent.Id = &objId
 
-			body, err := test.LoadFixture("test/order.json")
+			body, err := test.LoadFixture("test/fixtures/order.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(body, &orderEvent.OrderData)).To(Succeed())
 
-			body, err = test.LoadFixture("test/order_event_notification.json")
+			body, err = test.LoadFixture("test/fixtures/order_event_notification.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(body, &orderEvent.EventNotification)).To(Succeed())
 		})
@@ -48,11 +48,11 @@ var _ = Describe("Program", func() {
 			objId := primitive.NewObjectID()
 			orderEvent.Id = &objId
 
-			body, err := test.LoadFixture("test/order.json")
+			body, err := test.LoadFixture("test/fixtures/order.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(body, &orderEvent.OrderData)).To(Succeed())
 
-			body, err = test.LoadFixture("test/order_event_notification.json")
+			body, err = test.LoadFixture("test/fixtures/order_event_notification.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(json.Unmarshal(body, &orderEvent.EventNotification)).To(Succeed())
 		})

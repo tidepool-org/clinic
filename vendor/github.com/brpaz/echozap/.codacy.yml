@@ -1,0 +1,9 @@
+
+engines:
+ golint:
+ govet:
+ coverage:
+exclude_paths:
+  - 'vendor/**'
+  - 'testdata/**/*'
+  - 'README.md'

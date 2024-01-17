@@ -34,7 +34,7 @@ var _ = Describe("Response Builder", func() {
 				WithTags(xealthTest.Tags()).
 				BuildInitialResponse()
 			Expect(err).ToNot(HaveOccurred())
-			ExpectResponseToMatchFixture(response, "test/expected_initial_response_patient_flow.json")
+			ExpectResponseToMatchFixture(response, "test/fixtures/expected_initial_response_patient_flow.json")
 		})
 
 		It("Returns the expected subsequent response when validation fails", func() {
@@ -50,7 +50,7 @@ var _ = Describe("Response Builder", func() {
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 			Expect(err).ToNot(HaveOccurred())
-			ExpectResponseToMatchFixture(response, "test/expected_subsequent_response_patient_flow_validation_fail.json")
+			ExpectResponseToMatchFixture(response, "test/fixtures/expected_subsequent_response_patient_flow_validation_fail.json")
 		})
 
 		It("Returns the expected final response when validation succeeds", func() {
@@ -83,7 +83,7 @@ var _ = Describe("Response Builder", func() {
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildInitialResponse()
 			Expect(err).ToNot(HaveOccurred())
-			ExpectResponseToMatchFixture(response, "test/expected_initial_response_guardian_flow.json")
+			ExpectResponseToMatchFixture(response, "test/fixtures/expected_initial_response_guardian_flow.json")
 		})
 
 		It("Returns the expected subsequent response when validation fails for all fields", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Response Builder", func() {
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 			Expect(err).ToNot(HaveOccurred())
-			ExpectResponseToMatchFixture(response, "test/expected_subsequent_response_guardian_flow_validation_fail.json")
+			ExpectResponseToMatchFixture(response, "test/fixtures/expected_subsequent_response_guardian_flow_validation_fail.json")
 		})
 
 		It("Returns the expected subsequent response when validation fails with duplicate email", func() {
@@ -123,7 +123,7 @@ var _ = Describe("Response Builder", func() {
 				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
 				BuildSubsequentResponse()
 			Expect(err).ToNot(HaveOccurred())
-			ExpectResponseToMatchFixture(response, "test/expected_subsequent_response_guardian_flow_duplicate_email.json")
+			ExpectResponseToMatchFixture(response, "test/fixtures/expected_subsequent_response_guardian_flow_duplicate_email.json")
 		})
 
 		It("Returns the expected final response when validation succeeds", func() {

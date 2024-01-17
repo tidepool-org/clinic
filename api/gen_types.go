@@ -654,6 +654,12 @@ const (
 	New EHRMatchMessageRefEventType = "New"
 )
 
+// Defines values for EHRSettingsProvider.
+const (
+	Redox  EHRSettingsProvider = "redox"
+	Xealth EHRSettingsProvider = "xealth"
+)
+
 // Defines values for MigrationStatus.
 const (
 	COMPLETED MigrationStatus = "COMPLETED"
@@ -859,12 +865,16 @@ type EHRSettings struct {
 	DestinationIds *EHRDestinationIds `json:"destinationIds,omitempty"`
 
 	// Enabled Enable or disable the EHR integration
-	Enabled        bool              `json:"enabled"`
-	Facility       *EHRFacility      `json:"facility,omitempty"`
-	MrnIdType      string            `json:"mrnIdType"`
-	ProcedureCodes EHRProcedureCodes `json:"procedureCodes"`
-	SourceId       string            `json:"sourceId"`
+	Enabled        bool                `json:"enabled"`
+	Facility       *EHRFacility        `json:"facility,omitempty"`
+	MrnIdType      string              `json:"mrnIdType"`
+	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
+	Provider       EHRSettingsProvider `json:"provider"`
+	SourceId       string              `json:"sourceId"`
 }
+
+// EHRSettingsProvider defines model for EHRSettings.Provider.
+type EHRSettingsProvider string
 
 // Error defines model for Error.
 type Error struct {

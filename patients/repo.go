@@ -424,7 +424,15 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		}
 	}
 
-	res, err := r.collection.UpdateMany(ctx, selector, bson.M{"$set": set, "$unset": unset})
+	update := bson.M{}
+	if len(set) > 0 {
+		update["$set"] = set
+	}
+	if len(unset) > 0 {
+		update["$unset"] = unset
+	}
+
+	res, err := r.collection.UpdateMany(ctx, selector, update)
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
