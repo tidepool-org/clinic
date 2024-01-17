@@ -42,14 +42,14 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 	return s.repo.List(ctx, filter, pagination, sorts)
 }
 
-func (s *service) Create(ctx context.Context, patient Patient) (*Patient, bool, error) {
+func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
 	clinicId := patient.ClinicId.Hex()
 
 	if err := s.enforceMrnSettings(ctx, clinicId, patient.UserId, &patient); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	if err := s.enforcePatientCountSettings(ctx, clinicId, &patient); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	// Only create new accounts if the custodial user doesn't exist already (i.e. we are not migrating it)
@@ -57,22 +57,22 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, bool, 
 		s.logger.Infow("creating custodial account", "clinicId", clinicId)
 		userId, err := s.custodialService.CreateAccount(ctx, patient)
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 		patient.UserId = &userId
 	}
 
 	if patient.UserId == nil {
-		return nil, false, errors.New("user id is missing")
+		return nil, errors.New("user id is missing")
 	}
 
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
 
-	result, created, err := s.repo.Create(ctx, patient)
-	if created {
-		s.updateClinicPatientCount(ctx, clinicId)
-	}
-	return result, created, err
+	result, err := s.repo.Create(ctx, patient)
+
+	s.updateClinicPatientCount(ctx, clinicId)
+
+	return result, err
 }
 
 func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, error) {

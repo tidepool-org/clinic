@@ -39,7 +39,7 @@ type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
 	Count(ctx context.Context, filter *Filter) (int, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination, sort []*store.Sort) (*ListResult, error)
-	Create(ctx context.Context, patient Patient) (*Patient, bool, error)
+	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, update PatientUpdate) (*Patient, error)
 	UpdateEmail(ctx context.Context, userId string, email *string) error
 	Remove(ctx context.Context, clinicId string, userId string) error

@@ -246,7 +246,7 @@ var _ = Describe("Clinicians Service", func() {
 			patient.Permissions = &patients.Permissions{
 				View: &patients.Permission{},
 			}
-			_, _, err := patientsService.Create(context.Background(), patient)
+			_, err := patientsService.Create(context.Background(), patient)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete all clinician records
@@ -270,7 +270,7 @@ var _ = Describe("Clinicians Service", func() {
 			patient := patientsTest.RandomPatient()
 			patient.ClinicId = clinician.ClinicId
 			patient.Permissions = &patients.CustodialAccountPermissions
-			_, _, err := patientsService.Create(context.Background(), patient)
+			_, err := patientsService.Create(context.Background(), patient)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete all clinician records

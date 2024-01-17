@@ -244,12 +244,12 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	return &result, nil
 }
 
-func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, bool, error) {
+func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
 	if patient.ClinicId == nil {
-		return nil, false, fmt.Errorf("patient clinic id is missing")
+		return nil, fmt.Errorf("patient clinic id is missing")
 	}
 	if patient.UserId == nil {
-		return nil, false, fmt.Errorf("patient user id is missing")
+		return nil, fmt.Errorf("patient user id is missing")
 	}
 
 	clinicId := patient.ClinicId.Hex()
@@ -259,29 +259,27 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, boo
 	}
 	patients, err := r.List(ctx, filter, store.Pagination{Limit: 1}, nil)
 	if err != nil {
-		return nil, false, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
+		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 
-	created := false
 	if patients.TotalCount > 0 {
 		if len(patient.LegacyClinicianIds) == 0 {
-			return nil, false, ErrDuplicatePatient
+			return nil, ErrDuplicatePatient
 		}
 		// The user is being migrated multiple times from different legacy clinician accounts
 		if err = r.updateLegacyClinicianIds(ctx, patient); err != nil {
-			return nil, false, err
+			return nil, err
 		}
 	} else {
 		patient.CreatedTime = time.Now()
 		patient.UpdatedTime = time.Now()
 		if _, err = r.collection.InsertOne(ctx, patient); err != nil {
-			return nil, false, fmt.Errorf("error creating patient: %w", err)
+			return nil, fmt.Errorf("error creating patient: %w", err)
 		}
-		created = true
 	}
 
 	result, err := r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
-	return result, created, err
+	return result, err
 }
 
 func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*Patient, error) {

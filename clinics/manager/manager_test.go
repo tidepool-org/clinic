@@ -266,10 +266,9 @@ var _ = Describe("Clinics Manager", func() {
 				randomPatient.ClinicId = clinic.Id
 				randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
 
-				createdPatient, created, err := patientsService.Create(context.Background(), randomPatient)
+				createdPatient, err := patientsService.Create(context.Background(), randomPatient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(createdPatient).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 			})
 
 			It("returns the correct patient count", func() {
@@ -286,10 +285,9 @@ var _ = Describe("Clinics Manager", func() {
 					randomPatient.ClinicId = clinic.Id
 					randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
 
-					createdPatient, created, err := patientsService.Create(context.Background(), randomPatient)
+					createdPatient, err := patientsService.Create(context.Background(), randomPatient)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(createdPatient).ToNot(BeNil())
-					Expect(created).To(BeTrue())
 				})
 
 				It("returns the correct patient count", func() {
@@ -305,10 +303,9 @@ var _ = Describe("Clinics Manager", func() {
 						randomPatient.ClinicId = clinic.Id
 						randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
 
-						createdPatient, created, err := patientsService.Create(context.Background(), randomPatient)
+						createdPatient, err := patientsService.Create(context.Background(), randomPatient)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(createdPatient).ToNot(BeNil())
-						Expect(created).To(BeTrue())
 					})
 
 					It("returns the correct patient count", func() {

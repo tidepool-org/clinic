@@ -115,7 +115,7 @@ func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 		// Add the demo patient account
 		if demoPatient != nil {
 			demoPatient.ClinicId = clinic.Id
-			if _, _, err = c.patientsService.Create(sessionCtx, *demoPatient); err != nil {
+			if _, err = c.patientsService.Create(sessionCtx, *demoPatient); err != nil {
 				return nil, err
 			}
 		}

@@ -66,13 +66,12 @@ func (mr *MockServiceMockRecorder) Count(ctx, filter interface{}) *gomock.Call {
 }
 
 // Create mocks base method.
-func (m *MockService) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, bool, error) {
+func (m *MockService) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, patient)
 	ret0, _ := ret[0].(*patients.Patient)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.

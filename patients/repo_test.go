@@ -96,21 +96,19 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("returns the created patient", func() {
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 				patient.Id = result.Id
 
 				Expect(*result).To(matchPatientFields)
 			})
 
 			It("inserts the patient in the collection", func() {
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 				patient.Id = result.Id
 
 				var inserted patients.Patient
@@ -121,11 +119,10 @@ var _ = Describe("Patients Repository", func() {
 
 			It("successfully inserts a patient with duplicate mrn if uniqueness is not enabled", func() {
 				patient.RequireUniqueMrn = false
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 				patient.Id = result.Id
 
 				secondPatient := patientsTest.RandomPatient()
@@ -133,11 +130,10 @@ var _ = Describe("Patients Repository", func() {
 				secondPatient.Mrn = patient.Mrn
 				secondPatient.RequireUniqueMrn = false
 
-				result, created, err = repo.Create(context.Background(), secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 
 				_, err = collection.DeleteOne(context.Background(), primitive.M{"_id": result.Id})
 				Expect(err).ToNot(HaveOccurred())
@@ -146,11 +142,10 @@ var _ = Describe("Patients Repository", func() {
 			It("successfully inserts multiple patients without mrns when uniqueness is enabled", func() {
 				patient.Mrn = nil
 				patient.RequireUniqueMrn = true
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 				patient.Id = result.Id
 
 				secondPatient := patientsTest.RandomPatient()
@@ -158,11 +153,10 @@ var _ = Describe("Patients Repository", func() {
 				secondPatient.Mrn = nil
 				secondPatient.RequireUniqueMrn = true
 
-				result, created, err = repo.Create(context.Background(), secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 
 				_, err = collection.DeleteOne(context.Background(), primitive.M{"_id": result.Id})
 				Expect(err).ToNot(HaveOccurred())
@@ -170,11 +164,10 @@ var _ = Describe("Patients Repository", func() {
 
 			It("returns an error when a user with duplicate mrn is created", func() {
 				patient.RequireUniqueMrn = true
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 				patient.Id = result.Id
 
 				secondPatient := patientsTest.RandomPatient()
@@ -182,30 +175,27 @@ var _ = Describe("Patients Repository", func() {
 				secondPatient.Mrn = patient.Mrn
 				secondPatient.RequireUniqueMrn = true
 
-				result, created, err = repo.Create(context.Background(), secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 
 				Expect(err).To(HaveOccurred())
 				Expect(result).To(BeNil())
-				Expect(created).To(BeFalse())
 			})
 
 			It("returns an error when a patient is updated with a duplicated mrn", func() {
 				patient.RequireUniqueMrn = true
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 				patient.Id = result.Id
 
 				secondPatient := patientsTest.RandomPatient()
 				secondPatient.ClinicId = patient.ClinicId
 				secondPatient.RequireUniqueMrn = true
 
-				result, created, err = repo.Create(context.Background(), secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 
 				result.Mrn = patient.Mrn
 				updated, err := repo.Update(context.Background(), patients.PatientUpdate{
@@ -223,21 +213,19 @@ var _ = Describe("Patients Repository", func() {
 
 			It("successfully updates the mrn if it is not a duplicate", func() {
 				patient.RequireUniqueMrn = true
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 				patient.Id = result.Id
 
 				secondPatient := patientsTest.RandomPatient()
 				secondPatient.ClinicId = patient.ClinicId
 				secondPatient.RequireUniqueMrn = true
 
-				result, created, err = repo.Create(context.Background(), secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 
 				result.Mrn = patientsTest.RandomPatient().Mrn
 				result, err = repo.Update(context.Background(), patients.PatientUpdate{
@@ -254,19 +242,17 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("updates legacy clinician ids if the patient exists already", func() {
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 
 				patient.Id = result.Id
 				patient.LegacyClinicianIds = []string{test.Faker.UUID().V4()}
 				matchPatientFields = patientFieldsMatcher(patient)
 
-				result, created, err = repo.Create(context.Background(), patient)
+				result, err = repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeFalse())
 
 				var inserted patients.Patient
 				err = collection.FindOne(context.Background(), primitive.M{"_id": result.Id}).Decode(&inserted)
@@ -275,17 +261,15 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("to fail if patient exists already and legacy clinician ids is not set", func() {
-				result, created, err := repo.Create(context.Background(), patient)
+				result, err := repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 
 				patient.Id = result.Id
 
-				result, created, err = repo.Create(context.Background(), patient)
+				result, err = repo.Create(context.Background(), patient)
 				Expect(err).To(Equal(patients.ErrDuplicatePatient))
 				Expect(result).To(BeNil())
-				Expect(created).To(BeFalse())
 			})
 		})
 

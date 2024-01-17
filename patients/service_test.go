@@ -79,7 +79,7 @@ var _ = Describe("Patients Service", func() {
 
 				repo.EXPECT().
 					Create(gomock.Any(), gomock.Eq(randomPatient)).
-					Return(&randomPatient, true, nil)
+					Return(&randomPatient, nil)
 				repo.EXPECT().
 					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
 					Return(patientCount.PatientCount, nil)
@@ -87,20 +87,18 @@ var _ = Describe("Patients Service", func() {
 					UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
 					Return(nil)
 
-				createdPatient, created, err := service.Create(context.Background(), randomPatient)
+				createdPatient, err := service.Create(context.Background(), randomPatient)
 				Expect(err).To(BeNil())
 				Expect(createdPatient).ToNot(BeNil())
 				Expect(*createdPatient).To(matchPatientFields)
-				Expect(created).To(BeTrue())
 			})
 
 			It("returns an error when the MRN is not set", func() {
 				randomPatient.Mrn = nil
 
-				createdPatient, created, err := service.Create(context.Background(), randomPatient)
+				createdPatient, err := service.Create(context.Background(), randomPatient)
 				Expect(err).To(MatchError(errors.BadRequest))
 				Expect(createdPatient).To(BeNil())
-				Expect(created).To(BeFalse())
 			})
 		})
 
@@ -123,7 +121,7 @@ var _ = Describe("Patients Service", func() {
 
 				repo.EXPECT().
 					Create(gomock.Any(), gomock.Eq(expected)).
-					Return(&expected, true, nil)
+					Return(&expected, nil)
 				repo.EXPECT().
 					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdStr, ExcludeDemo: true})).
 					Return(patientCount.PatientCount, nil)
@@ -138,10 +136,9 @@ var _ = Describe("Patients Service", func() {
 						TotalCount: 0,
 					}, nil)
 
-				createdPatient, created, err := service.Create(context.Background(), create)
+				createdPatient, err := service.Create(context.Background(), create)
 				Expect(err).To(BeNil())
 				Expect(createdPatient).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 			})
 
 			It("returns an error if a patient with the same mrn exists in the repository", func() {
@@ -162,10 +159,9 @@ var _ = Describe("Patients Service", func() {
 						TotalCount: 1,
 					}, nil)
 
-				createdPatient, created, err := service.Create(context.Background(), create)
+				createdPatient, err := service.Create(context.Background(), create)
 				Expect(err).To(MatchError("bad request: mrn must be unique"))
 				Expect(createdPatient).To(BeNil())
-				Expect(created).To(BeFalse())
 			})
 		})
 
@@ -200,7 +196,7 @@ var _ = Describe("Patients Service", func() {
 			It("creates the patient in the repository when the patient is not custodial", func() {
 				repo.EXPECT().
 					Create(gomock.Any(), gomock.Eq(randomPatient)).
-					Return(&randomPatient, true, nil)
+					Return(&randomPatient, nil)
 				repo.EXPECT().
 					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
 					Return(patientCount.PatientCount, nil)
@@ -208,10 +204,9 @@ var _ = Describe("Patients Service", func() {
 					UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
 					Return(nil)
 
-				createdPatient, created, err := service.Create(context.Background(), randomPatient)
+				createdPatient, err := service.Create(context.Background(), randomPatient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(createdPatient).ToNot(BeNil())
-				Expect(created).To(BeTrue())
 			})
 
 			When("the patient is custodial", func() {
@@ -226,10 +221,9 @@ var _ = Describe("Patients Service", func() {
 						GetPatientCountSettings(gomock.Any(), gomock.Eq(clinicId.Hex())).
 						Return(nil, testErr)
 
-					createdPatient, created, err := service.Create(context.Background(), randomPatient)
+					createdPatient, err := service.Create(context.Background(), randomPatient)
 					Expect(err).To(Equal(testErr))
 					Expect(createdPatient).To(BeNil())
-					Expect(created).To(BeFalse())
 				})
 
 				It("creates the patient in the repository when there are no patient count settings", func() {
@@ -238,7 +232,7 @@ var _ = Describe("Patients Service", func() {
 						Return(nil, nil)
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
-						Return(&randomPatient, true, nil)
+						Return(&randomPatient, nil)
 					repo.EXPECT().
 						Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
 						Return(patientCount.PatientCount, nil)
@@ -246,10 +240,9 @@ var _ = Describe("Patients Service", func() {
 						UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
 						Return(nil)
 
-					createdPatient, created, err := service.Create(context.Background(), randomPatient)
+					createdPatient, err := service.Create(context.Background(), randomPatient)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(createdPatient).ToNot(BeNil())
-					Expect(created).To(BeTrue())
 				})
 
 				It("creates the patient in the repository when there is no hard limit in the patient count settings", func() {
@@ -260,7 +253,7 @@ var _ = Describe("Patients Service", func() {
 						Return(patientCountSettings, nil)
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
-						Return(&randomPatient, true, nil)
+						Return(&randomPatient, nil)
 					repo.EXPECT().
 						Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
 						Return(patientCount.PatientCount, nil)
@@ -268,10 +261,9 @@ var _ = Describe("Patients Service", func() {
 						UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
 						Return(nil)
 
-					createdPatient, created, err := service.Create(context.Background(), randomPatient)
+					createdPatient, err := service.Create(context.Background(), randomPatient)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(createdPatient).ToNot(BeNil())
-					Expect(created).To(BeTrue())
 				})
 
 				It("creates the patient in the repository when the start date is after now in the hard limit in the patient count settings", func() {
@@ -282,7 +274,7 @@ var _ = Describe("Patients Service", func() {
 						Return(patientCountSettings, nil)
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
-						Return(&randomPatient, true, nil)
+						Return(&randomPatient, nil)
 					repo.EXPECT().
 						Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
 						Return(patientCount.PatientCount, nil)
@@ -290,10 +282,9 @@ var _ = Describe("Patients Service", func() {
 						UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
 						Return(nil)
 
-					createdPatient, created, err := service.Create(context.Background(), randomPatient)
+					createdPatient, err := service.Create(context.Background(), randomPatient)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(createdPatient).ToNot(BeNil())
-					Expect(created).To(BeTrue())
 				})
 
 				It("creates the patient in the repository when the end date is before now in the hard limit in the patient count settings", func() {
@@ -304,7 +295,7 @@ var _ = Describe("Patients Service", func() {
 						Return(patientCountSettings, nil)
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
-						Return(&randomPatient, true, nil)
+						Return(&randomPatient, nil)
 					repo.EXPECT().
 						Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
 						Return(patientCount.PatientCount, nil)
@@ -312,10 +303,9 @@ var _ = Describe("Patients Service", func() {
 						UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
 						Return(nil)
 
-					createdPatient, created, err := service.Create(context.Background(), randomPatient)
+					createdPatient, err := service.Create(context.Background(), randomPatient)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(createdPatient).ToNot(BeNil())
-					Expect(created).To(BeTrue())
 				})
 
 				When("the patient count settings are returned", func() {
@@ -332,10 +322,9 @@ var _ = Describe("Patients Service", func() {
 							GetPatientCount(gomock.Any(), gomock.Eq(clinicId.Hex())).
 							Return(nil, testErr)
 
-						createdPatient, created, err := service.Create(context.Background(), randomPatient)
+						createdPatient, err := service.Create(context.Background(), randomPatient)
 						Expect(err).To(Equal(testErr))
 						Expect(createdPatient).To(BeNil())
-						Expect(created).To(BeFalse())
 					})
 
 					It("returns an error when there is no patient count", func() {
@@ -343,10 +332,9 @@ var _ = Describe("Patients Service", func() {
 							GetPatientCount(gomock.Any(), gomock.Eq(clinicId.Hex())).
 							Return(nil, nil)
 
-						createdPatient, created, err := service.Create(context.Background(), randomPatient)
+						createdPatient, err := service.Create(context.Background(), randomPatient)
 						Expect(err).To(MatchError(errors.InternalServerError))
 						Expect(createdPatient).To(BeNil())
-						Expect(created).To(BeFalse())
 					})
 
 					It("returns an error when patient count is greater than or equal to the hard limit", func() {
@@ -356,10 +344,9 @@ var _ = Describe("Patients Service", func() {
 							GetPatientCount(gomock.Any(), gomock.Eq(clinicId.Hex())).
 							Return(patientCount, nil)
 
-						createdPatient, created, err := service.Create(context.Background(), randomPatient)
+						createdPatient, err := service.Create(context.Background(), randomPatient)
 						Expect(err).To(MatchError(errors.PaymentRequired))
 						Expect(createdPatient).To(BeNil())
-						Expect(created).To(BeFalse())
 					})
 
 					When("the patient count is returned and the patient count is less than the hard limit", func() {
@@ -372,18 +359,7 @@ var _ = Describe("Patients Service", func() {
 						It("does not create the patient in the repository", func() {
 							repo.EXPECT().
 								Create(gomock.Any(), gomock.Eq(randomPatient)).
-								Return(&randomPatient, false, nil)
-
-							createdPatient, created, err := service.Create(context.Background(), randomPatient)
-							Expect(err).ToNot(HaveOccurred())
-							Expect(createdPatient).ToNot(BeNil())
-							Expect(created).To(BeFalse())
-						})
-
-						It("creates the patient in the repository", func() {
-							repo.EXPECT().
-								Create(gomock.Any(), gomock.Eq(randomPatient)).
-								Return(&randomPatient, true, nil)
+								Return(&randomPatient, nil)
 							repo.EXPECT().
 								Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
 								Return(patientCount.PatientCount, nil)
@@ -391,10 +367,25 @@ var _ = Describe("Patients Service", func() {
 								UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
 								Return(nil)
 
-							createdPatient, created, err := service.Create(context.Background(), randomPatient)
+							createdPatient, err := service.Create(context.Background(), randomPatient)
 							Expect(err).ToNot(HaveOccurred())
 							Expect(createdPatient).ToNot(BeNil())
-							Expect(created).To(BeTrue())
+						})
+
+						It("creates the patient in the repository", func() {
+							repo.EXPECT().
+								Create(gomock.Any(), gomock.Eq(randomPatient)).
+								Return(&randomPatient, nil)
+							repo.EXPECT().
+								Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
+								Return(patientCount.PatientCount, nil)
+							clinicsService.EXPECT().
+								UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+								Return(nil)
+
+							createdPatient, err := service.Create(context.Background(), randomPatient)
+							Expect(err).ToNot(HaveOccurred())
+							Expect(createdPatient).ToNot(BeNil())
 						})
 					})
 				})

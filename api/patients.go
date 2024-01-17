@@ -90,7 +90,7 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 		patient.InvitedBy = &authData.SubjectId
 	}
 
-	result, _, err := h.patients.Create(ctx, patient)
+	result, err := h.patients.Create(ctx, patient)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	}
 	patient.Email = pstrToLower(patient.Email)
 
-	result, _, err := h.patients.Create(ctx, patient)
+	result, err := h.patients.Create(ctx, patient)
 	if err != nil {
 		return err
 	}
