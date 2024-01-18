@@ -145,13 +145,13 @@ type (
 	// within a namespace (defined by the package) and optional
 	// dependencies on external documents (defined by imports).
 	Module struct {
-		Package          *Package       `json:"package"`
-		Imports          []*Import      `json:"imports,omitempty"`
-		Annotations      []*Annotations `json:"annotations,omitempty"`
-		Rules            []*Rule        `json:"rules,omitempty"`
-		Comments         []*Comment     `json:"comments,omitempty"`
-		stmts            []Statement
-		regoV1Compatible bool
+		Package     *Package       `json:"package"`
+		Imports     []*Import      `json:"imports,omitempty"`
+		Annotations []*Annotations `json:"annotations,omitempty"`
+		Rules       []*Rule        `json:"rules,omitempty"`
+		Comments    []*Comment     `json:"comments,omitempty"`
+		stmts       []Statement
+		regoVersion RegoVersion
 	}
 
 	// Comment contains the raw text from the comment in the definition.
@@ -397,6 +397,14 @@ func (mod *Module) UnmarshalJSON(bs []byte) error {
 	})
 
 	return nil
+}
+
+func (mod *Module) regoV1Compatible() bool {
+	return mod.regoVersion == RegoV1 || mod.regoVersion == RegoV0CompatV1
+}
+
+func (mod *Module) RegoVersion() RegoVersion {
+	return mod.regoVersion
 }
 
 // NewComment returns a new Comment object.
@@ -716,6 +724,10 @@ func (rule *Rule) String() string {
 		buf = append(buf, rule.Else.elseString())
 	}
 	return strings.Join(buf, " ")
+}
+
+func (rule *Rule) isFunction() bool {
+	return len(rule.Head.Args) > 0
 }
 
 func (rule *Rule) setJSONOptions(opts astJSON.Options) {

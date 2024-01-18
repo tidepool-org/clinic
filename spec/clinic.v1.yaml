@@ -334,6 +334,13 @@ paths:
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.7'
           in: query
+          name: cgm.timeInAnyLowPercent
+          description: Percentage of time below 70 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
           name: cgm.timeInLowPercent
           description: Percentage of time in range 54-70 mg/dL
         - schema:
@@ -359,6 +366,13 @@ paths:
           description: Percentage of time above 250 mg/dL
         - schema:
             type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: cgm.timeInAnyHighPercent
+          description: Percentage of time above 180 mg/dL
+        - schema:
+            type: string
             pattern: ^(>=|>|<=|<)\d+$
             example: '>=42'
           in: query
@@ -371,6 +385,13 @@ paths:
           in: query
           name: cgm.timeInVeryLowRecords
           description: Records below 54 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d+$
+            example: '>=42'
+          in: query
+          name: cgm.timeInAnyLowRecords
+          description: Records below 70 mg/dL
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d+$
@@ -399,6 +420,13 @@ paths:
           in: query
           name: cgm.timeInVeryHighRecords
           description: Records above 250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d+$
+            example: '>=42'
+          in: query
+          name: cgm.timeInAnyHighRecords
+          description: Records above 180 mg/dL
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d+$
@@ -437,6 +465,13 @@ paths:
             pattern: ^(>=|>|<=|<)\d\.\d\d?$
             example: '>=0.7'
           in: query
+          name: bgm.timeInAnyLowPercent
+          description: Percentage of time below 70 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
           name: bgm.timeInLowPercent
           description: Percentage of time in range 54-70 mg/dL
         - schema:
@@ -462,11 +497,25 @@ paths:
           description: Percentage of time above 250 mg/dL
         - schema:
             type: string
+            pattern: ^(>=|>|<=|<)\d\.\d\d?$
+            example: '>=0.7'
+          in: query
+          name: bgm.timeInAnyHighPercent
+          description: Percentage of time above 180 mg/dL
+        - schema:
+            type: string
             pattern: ^(>=|>|<=|<)\d+$
             example: '>=42'
           in: query
           name: bgm.timeInVeryLowRecords
           description: Records below 54 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d+$
+            example: '>=42'
+          in: query
+          name: bgm.timeInAnyLowRecords
+          description: Records below 70 mg/dL
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d+$
@@ -495,6 +544,13 @@ paths:
           in: query
           name: bgm.timeInVeryHighRecords
           description: Records above 250 mg/dL
+        - schema:
+            type: string
+            pattern: ^(>=|>|<=|<)\d+$
+            example: '>=42'
+          in: query
+          name: bgm.timeInAnyHighRecords
+          description: Records above 180 mg/dL
         - schema:
             type: string
             pattern: ^(>=|>|<=|<)\d+$
@@ -2729,6 +2785,9 @@ components:
           $ref: '#/components/schemas/TideConfig'
         results:
           $ref: '#/components/schemas/TideResults'
+      required:
+        - config
+        - results
     TideResponse:
       $ref: '#/components/schemas/Tide'
     UpdateUserDetails:
@@ -2748,8 +2807,8 @@ components:
     PatientTagIds:
       type: array
       title: Patient Tag ID List
-      nullable: true
       uniqueItems: true
+      nullable: true
       items:
         title: Patient Tag ID
         description: Patient Tag identifier.
@@ -2799,6 +2858,18 @@ components:
           $ref: '#/components/schemas/PatientTagIds'
         filters:
           $ref: '#/components/schemas/TideFilters'
+      required:
+        - schemaVersion
+        - clinicId
+        - period
+        - lastUploadDateFrom
+        - lastUploadDateTo
+        - highGlucoseThreshold
+        - veryHighGlucoseThreshold
+        - lowGlucoseThreshold
+        - veryLowGlucoseThreshold
+        - tags
+        - filters
     TideFilters:
       type: object
       title: tidefilters.v1
@@ -2808,7 +2879,7 @@ components:
           type: string
           pattern: ^(>=|>|<=|<)\d\.\d\d?$
           example: '>0.5'
-        timeInLowPercent:
+        timeInAnyLowPercent:
           type: string
           pattern: ^(>=|>|<=|<)\d\.\d\d?$
           example: '>0.5'
@@ -2824,6 +2895,12 @@ components:
           type: string
           pattern: ^(>=|>|<=|<)\d\.\d\d?$
           example: '>0.5'
+      required:
+        - timeInVeryLowPercent
+        - timeInAnyLowPercent
+        - dropInTimeInTargetPercent
+        - timeInTargetPercent
+        - timeCGMUsePercent
     TidePatient:
       type: object
       title: tidepatient.v1
@@ -2841,6 +2918,9 @@ components:
           minLength: 1
         tags:
           $ref: '#/components/schemas/PatientTagIds'
+      required:
+        - id
+        - tags
     TideResultPatient:
       type: object
       title: tideresultpatient.v1
@@ -2858,6 +2938,11 @@ components:
           example: 7.5
         timeInVeryLowPercent:
           description: Percentage of time spent in very low glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInAnyLowPercent:
+          description: Percentage of time spent in any low glucose range
           type: number
           example: 0.35
           x-go-type: float64
@@ -2881,6 +2966,11 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        timeInAnyHighPercent:
+          description: Percentage of time spent in any high glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
         timeInTargetPercent:
           description: Percentage of time spent in target glucose range
           type: number
@@ -2898,6 +2988,8 @@ components:
           x-go-type: int
         patient:
           $ref: '#/components/schemas/TidePatient'
+      required:
+        - patient
     TideResults:
       type: object
       title: tideresults.v1
@@ -2911,7 +3003,6 @@ components:
         - meetingTargets
       additionalProperties:
         type: array
-        nullable: true
         items:
           $ref: '#/components/schemas/TideResultPatient'
     PatientBGMPeriod:
@@ -3003,6 +3094,30 @@ components:
           type: number
           example: 5
           x-go-type: int
+        hasTimeInAnyHighPercent:
+          type: boolean
+        timeInAnyHighPercent:
+          description: Percentage of time spent in Any high glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInAnyHighPercentDelta:
+          description: Difference between the timeInAnyHighPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInAnyHighRecords:
+          type: boolean
+        timeInAnyHighRecords:
+          description: Counter of records in Any high glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInAnyHighRecordsDelta:
+          description: Difference between the timeInAnyHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInLowPercent:
           type: boolean
         timeInLowPercent:
@@ -3051,6 +3166,30 @@ components:
           type: number
           example: 5
           x-go-type: int
+        hasTimeInAnyLowPercent:
+          type: boolean
+        timeInAnyLowPercent:
+          description: Percentage of time spent in Any low glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInAnyLowPercentDelta:
+          description: Difference between the timeInAnyLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInAnyLowRecords:
+          type: boolean
+        timeInAnyLowRecords:
+          description: Counter of records in Any low glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInAnyLowRecordsDelta:
+          description: Difference between the timeInAnyLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTotalRecords:
           type: boolean
         totalRecords:
@@ -3075,10 +3214,29 @@ components:
           type: number
           example: 2.5
           x-go-type: float64
+      required:
+        - hasAverageGlucoseMmol
+        - hasTimeInTargetPercent
+        - hasTimeInTargetRecords
+        - hasTimeInHighPercent
+        - hasTimeInHighRecords
+        - hasTimeInVeryHighPercent
+        - hasTimeInVeryHighRecords
+        - hasTimeInLowPercent
+        - hasTimeInLowRecords
+        - hasTimeInVeryLowPercent
+        - hasTimeInVeryLowRecords
+        - hasTimeInAnyLowPercent
+        - hasTimeInAnyLowRecords
+        - hasTimeInAnyHighPercent
+        - hasTimeInAnyHighRecords
+        - hasTotalRecords
+        - hasAverageDailyRecords
     PatientBGMPeriods:
       type: object
       title: bgmperiods.v1
       description: A map to each supported BGM summary period
+      x-go-type-skip-optional-pointer: true
       additionalProperties:
         $ref: '#/components/schemas/PatientBGMPeriod'
     PatientBGMStats:
@@ -3098,6 +3256,8 @@ components:
           $ref: '#/components/schemas/PatientBGMPeriods'
         offsetPeriods:
           $ref: '#/components/schemas/PatientBGMPeriods'
+      required:
+        - totalHours
     PatientCGMPeriod:
       type: object
       title: cgmperiod.v1
@@ -3235,6 +3395,42 @@ components:
           type: number
           example: 5
           x-go-type: int
+        hasTimeInAnyHighPercent:
+          type: boolean
+        timeInAnyHighPercent:
+          description: Percentage of time spent in Any high glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInAnyHighPercentDelta:
+          description: Difference between the timeInAnyHighPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInAnyHighMinutes:
+          type: boolean
+        timeInAnyHighMinutes:
+          description: Counter of minutes spent in Any high glucose range
+          type: number
+          example: 200
+          x-go-type: int
+        timeInAnyHighMinutesDelta:
+          description: Difference between the timeInAnyHighMinutes in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTimeInAnyHighRecords:
+          type: boolean
+        timeInAnyHighRecords:
+          description: Counter of records in Any high glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInAnyHighRecordsDelta:
+          description: Difference between the timeInAnyHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeInLowPercent:
           type: boolean
         timeInLowPercent:
@@ -3307,6 +3503,42 @@ components:
           type: number
           example: 5
           x-go-type: int
+        hasTimeInAnyLowPercent:
+          type: boolean
+        timeInAnyLowPercent:
+          description: Percentage of time spent in Any low glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInAnyLowPercentDelta:
+          description: Difference between the timeInAnyLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInAnyLowMinutes:
+          type: boolean
+        timeInAnyLowMinutes:
+          description: Counter of minutes spent in Any low glucose range
+          type: number
+          example: 200
+          x-go-type: int
+        timeInAnyLowMinutesDelta:
+          description: Difference between the timeInAnyLowMinutes in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTimeInAnyLowRecords:
+          type: boolean
+        timeInAnyLowRecords:
+          description: Counter of records in Any low glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInAnyLowRecordsDelta:
+          description: Difference between the timeInAnyLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
         hasTimeCGMUsePercent:
           type: boolean
         timeCGMUsePercent:
@@ -3367,9 +3599,39 @@ components:
           type: number
           example: 2.5
           x-go-type: float64
+      required:
+        - hasAverageGlucoseMmol
+        - hasGlucoseManagementIndicator
+        - hasTimeInTargetPercent
+        - hasTimeInTargetMinutes
+        - hasTimeInTargetRecords
+        - hasTimeInHighPercent
+        - hasTimeInHighMinutes
+        - hasTimeInHighRecords
+        - hasTimeInVeryHighPercent
+        - hasTimeInVeryHighMinutes
+        - hasTimeInVeryHighRecords
+        - hasTimeInLowPercent
+        - hasTimeInLowMinutes
+        - hasTimeInLowRecords
+        - hasTimeInVeryLowPercent
+        - hasTimeInVeryLowMinutes
+        - hasTimeInVeryLowRecords
+        - hasTimeInAnyLowPercent
+        - hasTimeInAnyLowMinutes
+        - hasTimeInAnyLowRecords
+        - hasTimeInAnyHighPercent
+        - hasTimeInAnyHighMinutes
+        - hasTimeInAnyHighRecords
+        - hasTimeCGMUsePercent
+        - hasTimeCGMUseMinutes
+        - hasTimeCGMUseRecords
+        - hasTotalRecords
+        - hasAverageDailyRecords
     PatientCGMPeriods:
       type: object
       title: cgmperiods.v1
+      x-go-type-skip-optional-pointer: true
       description: A map to each supported CGM summary period
       additionalProperties:
         $ref: '#/components/schemas/PatientCGMPeriod'
@@ -3390,9 +3652,12 @@ components:
           $ref: '#/components/schemas/PatientCGMPeriods'
         offsetPeriods:
           $ref: '#/components/schemas/PatientCGMPeriods'
+      required:
+        - totalHours
     PatientSummaryConfig:
       type: object
       title: config.v1
+      x-go-type-skip-optional-pointer: true
       description: Summary schema version and calculation configuration
       properties:
         schemaVersion:
@@ -3415,9 +3680,16 @@ components:
           description: Threshold used for determining if a value is very low
           type: number
           x-go-type: float64
+      required:
+        - schemaVersion
+        - highGlucoseThreshold
+        - veryHighGlucoseThreshold
+        - lowGlucoseThreshold
+        - veryLowGlucoseThreshold
     PatientSummaryDates:
       type: object
       title: dates.v1
+      x-go-type-skip-optional-pointer: true
       description: dates tracked for summary calculation
       properties:
         lastUpdatedDate:
@@ -3462,6 +3734,11 @@ components:
           type: array
           items:
             type: string
+      required:
+        - hasFirstData
+        - hasLastData
+        - hasLastUploadDate
+        - hasOutdatedSince
     PatientSummary:
       type: object
       title: patientsummary.v1
