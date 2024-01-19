@@ -13,7 +13,7 @@ require (
 	github.com/oapi-codegen/echo-middleware v1.0.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.15.0
-	github.com/onsi/gomega v1.31.0
+	github.com/onsi/gomega v1.31.1
 	github.com/open-policy-agent/opa v0.60.0
 	github.com/tidepool-org/clinic/client v0.0.0
 	github.com/tidepool-org/clinic/redox_models v0.0.0
