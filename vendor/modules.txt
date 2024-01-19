@@ -410,7 +410,7 @@ github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/clinic/redox_models v0.0.0 => ./redox_models
 ## explicit; go 1.21
 github.com/tidepool-org/clinic/redox_models
-# github.com/tidepool-org/go-common v0.11.1-0.20240118173354-94b2e200da21
+# github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5
 ## explicit; go 1.21
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc

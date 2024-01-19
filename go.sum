@@ -216,8 +216,8 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/tchap/go-patricia/v2 v2.3.1 h1:6rQp39lgIYZ+MHmdEq4xzuk1t7OdC35z/xm0BGhTkes=
 github.com/tchap/go-patricia/v2 v2.3.1/go.mod h1:VZRHKAb53DLaG+nA9EaYYiaEx6YztwDlLElMsnSHD4k=
-github.com/tidepool-org/go-common v0.11.1-0.20240118173354-94b2e200da21 h1:RVmCjase4gviUn90/spgDUb67ZX5O9L8sOXFUwbEoZA=
-github.com/tidepool-org/go-common v0.11.1-0.20240118173354-94b2e200da21/go.mod h1:uYQw6/gddzG+HBfkx+vLj+RKwNPLlE9YraHnIJLda+g=
+github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5 h1:CQDYmRCWFjjhnnOxw1/qyowdg5RoE20PPHDfs9UOKpo=
+github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5/go.mod h1:FhoTeaFrPPBxE5aGGeF/W965Q4ulGQsGrc5pvDhosrY=
 github.com/ugorji/go/codec v1.2.11 h1:BMaWp1Bb6fHwEtbplGBGJ498wD+LKlNSl25MjdZY4dU=
 github.com/ugorji/go/codec v1.2.11/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
