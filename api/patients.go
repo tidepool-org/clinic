@@ -123,7 +123,7 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	patient.UserId = strp(patientId)
 	patient.ClinicId = &clinicObjId
 
-	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
+	if err = h.users.PopulatePatientDetailsFromExistingUser(ctx, &patient); err != nil {
 		return err
 	}
 	patient.Email = pstrToLower(patient.Email)

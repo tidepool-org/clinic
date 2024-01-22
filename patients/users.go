@@ -27,7 +27,7 @@ type UserService interface {
 	GetUser(userId string) (*shoreline.UserData, error)
 	GetUserProfile(ctx context.Context, userId string) (*Profile, error)
 	UpdateCustodialAccount(ctx context.Context, patient Patient) error
-	GetPatientFromExistingUser(ctx context.Context, patient *Patient) error
+	PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *Patient) error
 }
 
 type userService struct {
@@ -95,7 +95,7 @@ func (s *userService) GetUser(userId string) (*shoreline.UserData, error) {
 	return user, nil
 }
 
-func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *Patient) error {
+func (s *userService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *Patient) error {
 	user, err := s.GetUser(*patient.UserId)
 	if err != nil {
 		return err
@@ -106,6 +106,22 @@ func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *P
 		return err
 	}
 
+	PopulatePatientFromUserAndProfile(patient, *user, *profile)
+	
+	return nil
+}
+
+func (s *userService) GetUserProfile(ctx context.Context, userId string) (*Profile, error) {
+	profile := Profile{}
+	token := s.shorelineClient.TokenProvide()
+	err := s.seagull.GetCollection(userId, "profile", token, &profile)
+	if err != nil {
+		return nil, err
+	}
+	return &profile, nil
+}
+
+func PopulatePatientFromUserAndProfile(patient *Patient, user shoreline.UserData, profile Profile) {
 	if patient.BirthDate == nil || *patient.BirthDate == "" {
 		patient.BirthDate = profile.Patient.Birthday
 	}
@@ -133,16 +149,4 @@ func (s *userService) GetPatientFromExistingUser(ctx context.Context, patient *P
 		birthDate := ""
 		patient.BirthDate = &birthDate
 	}
-
-	return nil
-}
-
-func (s *userService) GetUserProfile(ctx context.Context, userId string) (*Profile, error) {
-	profile := Profile{}
-	token := s.shorelineClient.TokenProvide()
-	err := s.seagull.GetCollection(userId, "profile", token, &profile)
-	if err != nil {
-		return nil, err
-	}
-	return &profile, nil
 }
