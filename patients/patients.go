@@ -124,6 +124,7 @@ type SummaryFilters map[string]FilterPair
 type SummaryDateFilters map[string]FilterDatePair
 
 type Filter struct {
+	ClinicIds []string
 	ClinicId  *string
 	UserId    *string
 	Search    *string

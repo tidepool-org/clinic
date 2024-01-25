@@ -11,41 +11,22 @@ import (
 	"github.com/go-openapi/jsonpointer"
 )
 
-type ParametersMap map[string]*ParameterRef
-
-var _ jsonpointer.JSONPointable = (*ParametersMap)(nil)
-
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
-func (p ParametersMap) JSONLookup(token string) (interface{}, error) {
-	ref, ok := p[token]
-	if ref == nil || ok == false {
-		return nil, fmt.Errorf("object has no field %q", token)
-	}
-
-	if ref.Ref != "" {
-		return &Ref{Ref: ref.Ref}, nil
-	}
-	return ref.Value, nil
-}
-
 // Parameters is specified by OpenAPI/Swagger 3.0 standard.
 type Parameters []*ParameterRef
 
 var _ jsonpointer.JSONPointable = (*Parameters)(nil)
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (p Parameters) JSONLookup(token string) (interface{}, error) {
 	index, err := strconv.Atoi(token)
 	if err != nil {
 		return nil, err
 	}
-
 	if index < 0 || index >= len(p) {
 		return nil, fmt.Errorf("index %d out of bounds of array of length %d", index, len(p))
 	}
 
 	ref := p[index]
-
 	if ref != nil && ref.Ref != "" {
 		return &Ref{Ref: ref.Ref}, nil
 	}
@@ -222,7 +203,7 @@ func (parameter *Parameter) UnmarshalJSON(data []byte) error {
 	type ParameterBis Parameter
 	var x ParameterBis
 	if err := json.Unmarshal(data, &x); err != nil {
-		return err
+		return unmarshalError(err)
 	}
 	_ = json.Unmarshal(data, &x.Extensions)
 
@@ -239,12 +220,15 @@ func (parameter *Parameter) UnmarshalJSON(data []byte) error {
 	delete(x.Extensions, "example")
 	delete(x.Extensions, "examples")
 	delete(x.Extensions, "content")
+	if len(x.Extensions) == 0 {
+		x.Extensions = nil
+	}
 
 	*parameter = Parameter(x)
 	return nil
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (parameter Parameter) JSONLookup(token string) (interface{}, error) {
 	switch token {
 	case "schema":
@@ -370,12 +354,17 @@ func (parameter *Parameter) Validate(ctx context.Context, opts ...ValidationOpti
 		return fmt.Errorf("parameter %q schema is invalid: %w", parameter.Name, e)
 	}
 
-	if (parameter.Schema == nil) == (parameter.Content == nil) {
+	if (parameter.Schema == nil) == (len(parameter.Content) == 0) {
 		e := errors.New("parameter must contain exactly one of content and schema")
 		return fmt.Errorf("parameter %q schema is invalid: %w", parameter.Name, e)
 	}
 
 	if content := parameter.Content; content != nil {
+		e := errors.New("parameter content must only contain one entry")
+		if len(content) > 1 {
+			return fmt.Errorf("parameter %q content is invalid: %w", parameter.Name, e)
+		}
+
 		if err := content.Validate(ctx); err != nil {
 			return fmt.Errorf("parameter %q content is invalid: %w", parameter.Name, err)
 		}

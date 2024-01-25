@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -812,7 +811,7 @@ func propsFromString(src, propDelim, valueDelim string) (map[string]string, erro
 	pairs := strings.Split(src, propDelim)
 
 	// When propDelim and valueDelim is equal the source string follow the next rule:
-	// every even item of pairs is a properies's name, and the subsequent odd item is a property's value.
+	// every even item of pairs is a properties's name, and the subsequent odd item is a property's value.
 	if propDelim == valueDelim {
 		// Taking into account the rule above, a valid source string must be splitted by propDelim
 		// to an array with an even number of items.
@@ -1019,7 +1018,7 @@ func init() {
 }
 
 func plainBodyDecoder(body io.Reader, header http.Header, schema *openapi3.SchemaRef, encFn EncodingFn) (interface{}, error) {
-	data, err := ioutil.ReadAll(body)
+	data, err := io.ReadAll(body)
 	if err != nil {
 		return nil, &ParseError{Kind: KindInvalidFormat, Cause: err}
 	}
@@ -1064,7 +1063,7 @@ func urlencodedBodyDecoder(body io.Reader, header http.Header, schema *openapi3.
 	}
 
 	// Parse form.
-	b, err := ioutil.ReadAll(body)
+	b, err := io.ReadAll(body)
 	if err != nil {
 		return nil, err
 	}
@@ -1216,7 +1215,7 @@ func multipartBodyDecoder(body io.Reader, header http.Header, schema *openapi3.S
 
 // FileBodyDecoder is a body decoder that decodes a file body to a string.
 func FileBodyDecoder(body io.Reader, header http.Header, schema *openapi3.SchemaRef, encFn EncodingFn) (interface{}, error) {
-	data, err := ioutil.ReadAll(body)
+	data, err := io.ReadAll(body)
 	if err != nil {
 		return nil, err
 	}

@@ -64,10 +64,10 @@ func GenerateReportUrl(baseUrl string, patient patients.Patient, clinic clinics.
 
 func getReportEndDate(patient patients.Patient) (endDate time.Time) {
 	if patient.Summary != nil {
-		if patient.Summary.CGM != nil && patient.Summary.CGM.Dates != nil && patient.Summary.CGM.Dates.LastData != nil {
+		if patient.Summary.CGM != nil && patient.Summary.CGM.Dates.LastData != nil {
 			endDate = *patient.Summary.CGM.Dates.LastData
 		}
-		if patient.Summary.BGM != nil && patient.Summary.BGM.Dates != nil && patient.Summary.BGM.Dates.LastData != nil {
+		if patient.Summary.BGM != nil && patient.Summary.BGM.Dates.LastData != nil {
 			if patient.Summary.BGM.Dates.LastData.After(endDate) {
 				endDate = *patient.Summary.BGM.Dates.LastData
 			}

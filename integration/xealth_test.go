@@ -204,6 +204,8 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
+			res, _ := io.ReadAll(rec.Result().Body)
+			fmt.Println(string(res))
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 		})
 	})

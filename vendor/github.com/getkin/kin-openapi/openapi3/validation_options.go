@@ -20,10 +20,10 @@ type validationOptionsKey struct{}
 // AllowExtraSiblingFields called as AllowExtraSiblingFields("description") makes Validate not return an error when said field appears next to a $ref.
 func AllowExtraSiblingFields(fields ...string) ValidationOption {
 	return func(options *ValidationOptions) {
+		if options.extraSiblingFieldsAllowed == nil && len(fields) != 0 {
+			options.extraSiblingFieldsAllowed = make(map[string]struct{}, len(fields))
+		}
 		for _, field := range fields {
-			if options.extraSiblingFieldsAllowed == nil {
-				options.extraSiblingFieldsAllowed = make(map[string]struct{}, len(fields))
-			}
 			options.extraSiblingFieldsAllowed[field] = struct{}{}
 		}
 	}
@@ -92,7 +92,7 @@ func DisableExamplesValidation() ValidationOption {
 	}
 }
 
-// WithValidationOptions allows adding validation options to a context object that can be used when validationg any OpenAPI type.
+// WithValidationOptions allows adding validation options to a context object that can be used when validating any OpenAPI type.
 func WithValidationOptions(ctx context.Context, opts ...ValidationOption) context.Context {
 	if len(opts) == 0 {
 		return ctx

@@ -20,6 +20,8 @@ type CallbackRef struct {
 
 var _ jsonpointer.JSONPointable = (*CallbackRef)(nil)
 
+func (x *CallbackRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
+
 // MarshalYAML returns the YAML encoding of CallbackRef.
 func (x CallbackRef) MarshalYAML() (interface{}, error) {
 	if ref := x.Ref; ref != "" {
@@ -59,13 +61,13 @@ func (x *CallbackRef) Validate(ctx context.Context, opts ...ValidationOption) er
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -77,7 +79,7 @@ func (x *CallbackRef) Validate(ctx context.Context, opts ...ValidationOption) er
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *CallbackRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil
@@ -95,6 +97,8 @@ type ExampleRef struct {
 }
 
 var _ jsonpointer.JSONPointable = (*ExampleRef)(nil)
+
+func (x *ExampleRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
 
 // MarshalYAML returns the YAML encoding of ExampleRef.
 func (x ExampleRef) MarshalYAML() (interface{}, error) {
@@ -135,13 +139,13 @@ func (x *ExampleRef) Validate(ctx context.Context, opts ...ValidationOption) err
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -153,7 +157,7 @@ func (x *ExampleRef) Validate(ctx context.Context, opts ...ValidationOption) err
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *ExampleRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil
@@ -171,6 +175,8 @@ type HeaderRef struct {
 }
 
 var _ jsonpointer.JSONPointable = (*HeaderRef)(nil)
+
+func (x *HeaderRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
 
 // MarshalYAML returns the YAML encoding of HeaderRef.
 func (x HeaderRef) MarshalYAML() (interface{}, error) {
@@ -211,13 +217,13 @@ func (x *HeaderRef) Validate(ctx context.Context, opts ...ValidationOption) erro
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -229,7 +235,7 @@ func (x *HeaderRef) Validate(ctx context.Context, opts ...ValidationOption) erro
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *HeaderRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil
@@ -247,6 +253,8 @@ type LinkRef struct {
 }
 
 var _ jsonpointer.JSONPointable = (*LinkRef)(nil)
+
+func (x *LinkRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
 
 // MarshalYAML returns the YAML encoding of LinkRef.
 func (x LinkRef) MarshalYAML() (interface{}, error) {
@@ -287,13 +295,13 @@ func (x *LinkRef) Validate(ctx context.Context, opts ...ValidationOption) error 
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -305,7 +313,7 @@ func (x *LinkRef) Validate(ctx context.Context, opts ...ValidationOption) error 
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *LinkRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil
@@ -323,6 +331,8 @@ type ParameterRef struct {
 }
 
 var _ jsonpointer.JSONPointable = (*ParameterRef)(nil)
+
+func (x *ParameterRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
 
 // MarshalYAML returns the YAML encoding of ParameterRef.
 func (x ParameterRef) MarshalYAML() (interface{}, error) {
@@ -363,13 +373,13 @@ func (x *ParameterRef) Validate(ctx context.Context, opts ...ValidationOption) e
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -381,7 +391,7 @@ func (x *ParameterRef) Validate(ctx context.Context, opts ...ValidationOption) e
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *ParameterRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil
@@ -399,6 +409,8 @@ type RequestBodyRef struct {
 }
 
 var _ jsonpointer.JSONPointable = (*RequestBodyRef)(nil)
+
+func (x *RequestBodyRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
 
 // MarshalYAML returns the YAML encoding of RequestBodyRef.
 func (x RequestBodyRef) MarshalYAML() (interface{}, error) {
@@ -439,13 +451,13 @@ func (x *RequestBodyRef) Validate(ctx context.Context, opts ...ValidationOption)
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -457,7 +469,7 @@ func (x *RequestBodyRef) Validate(ctx context.Context, opts ...ValidationOption)
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *RequestBodyRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil
@@ -475,6 +487,8 @@ type ResponseRef struct {
 }
 
 var _ jsonpointer.JSONPointable = (*ResponseRef)(nil)
+
+func (x *ResponseRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
 
 // MarshalYAML returns the YAML encoding of ResponseRef.
 func (x ResponseRef) MarshalYAML() (interface{}, error) {
@@ -515,13 +529,13 @@ func (x *ResponseRef) Validate(ctx context.Context, opts ...ValidationOption) er
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -533,7 +547,7 @@ func (x *ResponseRef) Validate(ctx context.Context, opts ...ValidationOption) er
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *ResponseRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil
@@ -551,6 +565,8 @@ type SchemaRef struct {
 }
 
 var _ jsonpointer.JSONPointable = (*SchemaRef)(nil)
+
+func (x *SchemaRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
 
 // MarshalYAML returns the YAML encoding of SchemaRef.
 func (x SchemaRef) MarshalYAML() (interface{}, error) {
@@ -591,13 +607,13 @@ func (x *SchemaRef) Validate(ctx context.Context, opts ...ValidationOption) erro
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -609,7 +625,7 @@ func (x *SchemaRef) Validate(ctx context.Context, opts ...ValidationOption) erro
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *SchemaRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil
@@ -627,6 +643,8 @@ type SecuritySchemeRef struct {
 }
 
 var _ jsonpointer.JSONPointable = (*SecuritySchemeRef)(nil)
+
+func (x *SecuritySchemeRef) isEmpty() bool { return x == nil || x.Ref == "" && x.Value == nil }
 
 // MarshalYAML returns the YAML encoding of SecuritySchemeRef.
 func (x SecuritySchemeRef) MarshalYAML() (interface{}, error) {
@@ -667,13 +685,13 @@ func (x *SecuritySchemeRef) Validate(ctx context.Context, opts ...ValidationOpti
 	if extra := x.extra; len(extra) != 0 {
 		extras := make([]string, 0, len(extra))
 		allowed := getValidationOptions(ctx).extraSiblingFieldsAllowed
-		if allowed == nil {
-			allowed = make(map[string]struct{}, 0)
-		}
 		for _, ex := range extra {
-			if _, ok := allowed[ex]; !ok {
-				extras = append(extras, ex)
+			if allowed != nil {
+				if _, ok := allowed[ex]; ok {
+					continue
+				}
 			}
+			extras = append(extras, ex)
 		}
 		if len(extras) != 0 {
 			return fmt.Errorf("extra sibling fields: %+v", extras)
@@ -685,7 +703,7 @@ func (x *SecuritySchemeRef) Validate(ctx context.Context, opts ...ValidationOpti
 	return foundUnresolvedRef(x.Ref)
 }
 
-// JSONLookup implements github.com/go-openapi/jsonpointer#JSONPointable
+// JSONLookup implements https://pkg.go.dev/github.com/go-openapi/jsonpointer#JSONPointable
 func (x *SecuritySchemeRef) JSONLookup(token string) (interface{}, error) {
 	if token == "$ref" {
 		return x.Ref, nil

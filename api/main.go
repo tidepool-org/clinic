@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/brpaz/echozap"
-	oapiMiddleware "github.com/deepmap/oapi-codegen/pkg/middleware"
+
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	oapiMiddleware "github.com/oapi-codegen/echo-middleware"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"

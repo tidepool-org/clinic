@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/invopop/yaml"
 )
 
 var CircularReferenceError = "kin-openapi bug found: circular schema reference not handled"
@@ -93,23 +93,17 @@ func (loader *Loader) allowsExternalRefs(ref string) (err error) {
 	return
 }
 
-// loadSingleElementFromURI reads the data from ref and unmarshals to the passed element.
 func (loader *Loader) loadSingleElementFromURI(ref string, rootPath *url.URL, element interface{}) (*url.URL, error) {
 	if err := loader.allowsExternalRefs(ref); err != nil {
 		return nil, err
 	}
 
-	parsedURL, err := url.Parse(ref)
+	resolvedPath, err := resolvePathWithRef(ref, rootPath)
 	if err != nil {
 		return nil, err
 	}
-	if fragment := parsedURL.Fragment; fragment != "" {
-		return nil, fmt.Errorf("unexpected ref fragment %q", fragment)
-	}
-
-	resolvedPath, err := resolvePath(rootPath, parsedURL)
-	if err != nil {
-		return nil, fmt.Errorf("could not resolve path: %w", err)
+	if frag := resolvedPath.Fragment; frag != "" {
+		return nil, fmt.Errorf("unexpected ref fragment %q", frag)
 	}
 
 	data, err := loader.readURL(resolvedPath)
@@ -128,6 +122,15 @@ func (loader *Loader) readURL(location *url.URL) ([]byte, error) {
 		return f(loader, location)
 	}
 	return DefaultReadFromURI(loader, location)
+}
+
+// LoadFromStdin loads a spec from stdin
+func (loader *Loader) LoadFromStdin() (*T, error) {
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return nil, fmt.Errorf("read from stdin: %w", err)
+	}
+	return loader.LoadFromData(data)
 }
 
 // LoadFromData loads a spec from a byte array
@@ -173,16 +176,7 @@ func (loader *Loader) loadFromDataWithPathInternal(data []byte, location *url.UR
 	return doc, nil
 }
 
-func unmarshal(data []byte, v interface{}) error {
-	// See https://github.com/getkin/kin-openapi/issues/680
-	if err := json.Unmarshal(data, v); err != nil {
-		// UnmarshalStrict(data, v) TODO: investigate how ymlv3 handles duplicate map keys
-		return yaml.Unmarshal(data, v)
-	}
-	return nil
-}
-
-// ResolveRefsIn expands references if for instance spec was just unmarshalled
+// ResolveRefsIn expands references if for instance spec was just unmarshaled
 func (loader *Loader) ResolveRefsIn(doc *T, location *url.URL) (err error) {
 	if loader.Context == nil {
 		loader.Context = context.Background()
@@ -244,7 +238,7 @@ func (loader *Loader) ResolveRefsIn(doc *T, location *url.URL) (err error) {
 	}
 
 	// Visit all operations
-	for _, pathItem := range doc.Paths {
+	for _, pathItem := range doc.Paths.Map() {
 		if pathItem == nil {
 			continue
 		}
@@ -256,27 +250,35 @@ func (loader *Loader) ResolveRefsIn(doc *T, location *url.URL) (err error) {
 	return
 }
 
-func join(basePath *url.URL, relativePath *url.URL) (*url.URL, error) {
+func join(basePath *url.URL, relativePath *url.URL) *url.URL {
 	if basePath == nil {
-		return relativePath, nil
+		return relativePath
 	}
-	newPath, err := url.Parse(basePath.String())
-	if err != nil {
-		return nil, fmt.Errorf("cannot copy path: %q", basePath.String())
-	}
+	newPath := *basePath
 	newPath.Path = path.Join(path.Dir(newPath.Path), relativePath.Path)
-	return newPath, nil
+	return &newPath
 }
 
-func resolvePath(basePath *url.URL, componentPath *url.URL) (*url.URL, error) {
-	if componentPath.Scheme == "" && componentPath.Host == "" {
+func resolvePath(basePath *url.URL, componentPath *url.URL) *url.URL {
+	if is_file(componentPath) {
 		// support absolute paths
 		if componentPath.Path[0] == '/' {
-			return componentPath, nil
+			return componentPath
 		}
 		return join(basePath, componentPath)
 	}
-	return componentPath, nil
+	return componentPath
+}
+
+func resolvePathWithRef(ref string, rootPath *url.URL) (*url.URL, error) {
+	parsedURL, err := url.Parse(ref)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse reference: %q: %w", ref, err)
+	}
+
+	resolvedPath := resolvePath(rootPath, parsedURL)
+	resolvedPath.Fragment = parsedURL.Fragment
+	return resolvedPath, nil
 }
 
 func isSingleRefElement(ref string) bool {
@@ -297,18 +299,53 @@ func (loader *Loader) resolveComponent(doc *T, ref string, path *url.URL, resolv
 		return nil, nil, fmt.Errorf("cannot parse reference: %q: %v", ref, parsedURL)
 	}
 	fragment := parsedURL.Fragment
-	if !strings.HasPrefix(fragment, "/") {
+	if fragment == "" {
+		fragment = "/"
+	}
+	if fragment[0] != '/' {
 		return nil, nil, fmt.Errorf("expected fragment prefix '#/' in URI %q", ref)
 	}
 
 	drill := func(cursor interface{}) (interface{}, error) {
 		for _, pathPart := range strings.Split(fragment[1:], "/") {
 			pathPart = unescapeRefString(pathPart)
+			attempted := false
 
-			if cursor, err = drillIntoField(cursor, pathPart); err != nil {
-				e := failedToResolveRefFragmentPart(ref, pathPart)
-				return nil, fmt.Errorf("%s: %w", e, err)
+			switch c := cursor.(type) {
+			// Special case of T
+			// See issue856: a ref to doc => we assume that doc is a T => things live in T.Extensions
+			case *T:
+				if pathPart == "" {
+					cursor = c.Extensions
+					attempted = true
+				}
+
+			// Special case due to multijson
+			case *SchemaRef:
+				if pathPart == "additionalProperties" {
+					if ap := c.Value.AdditionalProperties.Has; ap != nil {
+						cursor = *ap
+					} else {
+						cursor = c.Value.AdditionalProperties.Schema
+					}
+					attempted = true
+				}
+
+			case *Responses:
+				cursor = c.m // m map[string]*ResponseRef
+			case *Callback:
+				cursor = c.m // m map[string]*PathItem
+			case *Paths:
+				cursor = c.m // m map[string]*PathItem
 			}
+
+			if !attempted {
+				if cursor, err = drillIntoField(cursor, pathPart); err != nil {
+					e := failedToResolveRefFragmentPart(ref, pathPart)
+					return nil, fmt.Errorf("%s: %w", e, err)
+				}
+			}
+
 			if cursor == nil {
 				return nil, failedToResolveRefFragmentPart(ref, pathPart)
 			}
@@ -390,15 +427,8 @@ func readableType(x interface{}) string {
 }
 
 func drillIntoField(cursor interface{}, fieldName string) (interface{}, error) {
-	// Special case due to multijson
-	if s, ok := cursor.(*SchemaRef); ok && fieldName == "additionalProperties" {
-		if ap := s.Value.AdditionalProperties.Has; ap != nil {
-			return *ap, nil
-		}
-		return s.Value.AdditionalProperties.Schema, nil
-	}
-
 	switch val := reflect.Indirect(reflect.ValueOf(cursor)); val.Kind() {
+
 	case reflect.Map:
 		elementValue := val.MapIndex(reflect.ValueOf(fieldName))
 		if !elementValue.IsValid() {
@@ -421,10 +451,15 @@ func drillIntoField(cursor interface{}, fieldName string) (interface{}, error) {
 		hasFields := false
 		for i := 0; i < val.NumField(); i++ {
 			hasFields = true
-			if fieldName == strings.Split(val.Type().Field(i).Tag.Get("yaml"), ",")[0] {
-				return val.Field(i).Interface(), nil
+			if yamlTag := val.Type().Field(i).Tag.Get("yaml"); yamlTag != "-" {
+				if tagName := strings.Split(yamlTag, ",")[0]; tagName != "" {
+					if fieldName == tagName {
+						return val.Field(i).Interface(), nil
+					}
+				}
 			}
 		}
+
 		// if cursor is a "ref wrapper" struct (e.g. RequestBodyRef),
 		if _, ok := val.Type().FieldByName("Value"); ok {
 			// try digging into its Value field
@@ -454,27 +489,39 @@ func (loader *Loader) resolveRef(doc *T, ref string, path *url.URL) (*T, string,
 		return nil, "", nil, err
 	}
 
-	parsedURL, err := url.Parse(ref)
+	resolvedPath, err := resolvePathWithRef(ref, path)
 	if err != nil {
-		return nil, "", nil, fmt.Errorf("cannot parse reference: %q: %v", ref, parsedURL)
+		return nil, "", nil, err
 	}
-	fragment := parsedURL.Fragment
-	parsedURL.Fragment = ""
-
-	var resolvedPath *url.URL
-	if resolvedPath, err = resolvePath(path, parsedURL); err != nil {
-		return nil, "", nil, fmt.Errorf("error resolving path: %w", err)
-	}
+	fragment := "#" + resolvedPath.Fragment
+	resolvedPath.Fragment = ""
 
 	if doc, err = loader.loadFromURIInternal(resolvedPath); err != nil {
 		return nil, "", nil, fmt.Errorf("error resolving reference %q: %w", ref, err)
 	}
 
-	return doc, "#" + fragment, resolvedPath, nil
+	return doc, fragment, resolvedPath, nil
 }
 
+var (
+	errMUSTCallback       = errors.New("invalid callback: value MUST be an object")
+	errMUSTExample        = errors.New("invalid example: value MUST be an object")
+	errMUSTHeader         = errors.New("invalid header: value MUST be an object")
+	errMUSTLink           = errors.New("invalid link: value MUST be an object")
+	errMUSTParameter      = errors.New("invalid parameter: value MUST be an object")
+	errMUSTPathItem       = errors.New("invalid path item: value MUST be an object")
+	errMUSTRequestBody    = errors.New("invalid requestBody: value MUST be an object")
+	errMUSTResponse       = errors.New("invalid response: value MUST be an object")
+	errMUSTSchema         = errors.New("invalid schema: value MUST be an object")
+	errMUSTSecurityScheme = errors.New("invalid securityScheme: value MUST be an object")
+)
+
 func (loader *Loader) resolveHeaderRef(doc *T, component *HeaderRef, documentPath *url.URL) (err error) {
-	if component != nil && component.Value != nil {
+	if component.isEmpty() {
+		return errMUSTHeader
+	}
+
+	if component.Value != nil {
 		if loader.visitedHeader == nil {
 			loader.visitedHeader = make(map[*Header]struct{})
 		}
@@ -484,9 +531,6 @@ func (loader *Loader) resolveHeaderRef(doc *T, component *HeaderRef, documentPat
 		loader.visitedHeader[component.Value] = struct{}{}
 	}
 
-	if component == nil {
-		return errors.New("invalid header: value MUST be an object")
-	}
 	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var header Header
@@ -501,6 +545,9 @@ func (loader *Loader) resolveHeaderRef(doc *T, component *HeaderRef, documentPat
 				return err
 			}
 			if err := loader.resolveHeaderRef(doc, &resolved, componentPath); err != nil {
+				if err == errMUSTHeader {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -520,7 +567,11 @@ func (loader *Loader) resolveHeaderRef(doc *T, component *HeaderRef, documentPat
 }
 
 func (loader *Loader) resolveParameterRef(doc *T, component *ParameterRef, documentPath *url.URL) (err error) {
-	if component != nil && component.Value != nil {
+	if component.isEmpty() {
+		return errMUSTParameter
+	}
+
+	if component.Value != nil {
 		if loader.visitedParameter == nil {
 			loader.visitedParameter = make(map[*Parameter]struct{})
 		}
@@ -530,11 +581,7 @@ func (loader *Loader) resolveParameterRef(doc *T, component *ParameterRef, docum
 		loader.visitedParameter[component.Value] = struct{}{}
 	}
 
-	if component == nil {
-		return errors.New("invalid parameter: value MUST be an object")
-	}
-	ref := component.Ref
-	if ref != "" {
+	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var param Parameter
 			if documentPath, err = loader.loadSingleElementFromURI(ref, documentPath, &param); err != nil {
@@ -548,6 +595,9 @@ func (loader *Loader) resolveParameterRef(doc *T, component *ParameterRef, docum
 				return err
 			}
 			if err := loader.resolveParameterRef(doc, &resolved, componentPath); err != nil {
+				if err == errMUSTParameter {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -577,7 +627,11 @@ func (loader *Loader) resolveParameterRef(doc *T, component *ParameterRef, docum
 }
 
 func (loader *Loader) resolveRequestBodyRef(doc *T, component *RequestBodyRef, documentPath *url.URL) (err error) {
-	if component != nil && component.Value != nil {
+	if component.isEmpty() {
+		return errMUSTRequestBody
+	}
+
+	if component.Value != nil {
 		if loader.visitedRequestBody == nil {
 			loader.visitedRequestBody = make(map[*RequestBody]struct{})
 		}
@@ -587,9 +641,6 @@ func (loader *Loader) resolveRequestBodyRef(doc *T, component *RequestBodyRef, d
 		loader.visitedRequestBody[component.Value] = struct{}{}
 	}
 
-	if component == nil {
-		return errors.New("invalid requestBody: value MUST be an object")
-	}
 	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var requestBody RequestBody
@@ -604,6 +655,9 @@ func (loader *Loader) resolveRequestBodyRef(doc *T, component *RequestBodyRef, d
 				return err
 			}
 			if err = loader.resolveRequestBodyRef(doc, &resolved, componentPath); err != nil {
+				if err == errMUSTRequestBody {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -640,7 +694,11 @@ func (loader *Loader) resolveRequestBodyRef(doc *T, component *RequestBodyRef, d
 }
 
 func (loader *Loader) resolveResponseRef(doc *T, component *ResponseRef, documentPath *url.URL) (err error) {
-	if component != nil && component.Value != nil {
+	if component.isEmpty() {
+		return errMUSTResponse
+	}
+
+	if component.Value != nil {
 		if loader.visitedResponse == nil {
 			loader.visitedResponse = make(map[*Response]struct{})
 		}
@@ -650,11 +708,7 @@ func (loader *Loader) resolveResponseRef(doc *T, component *ResponseRef, documen
 		loader.visitedResponse[component.Value] = struct{}{}
 	}
 
-	if component == nil {
-		return errors.New("invalid response: value MUST be an object")
-	}
-	ref := component.Ref
-	if ref != "" {
+	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var resp Response
 			if documentPath, err = loader.loadSingleElementFromURI(ref, documentPath, &resp); err != nil {
@@ -668,6 +722,9 @@ func (loader *Loader) resolveResponseRef(doc *T, component *ResponseRef, documen
 				return err
 			}
 			if err := loader.resolveResponseRef(doc, &resolved, componentPath); err != nil {
+				if err == errMUSTResponse {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -715,8 +772,8 @@ func (loader *Loader) resolveResponseRef(doc *T, component *ResponseRef, documen
 }
 
 func (loader *Loader) resolveSchemaRef(doc *T, component *SchemaRef, documentPath *url.URL, visited []string) (err error) {
-	if component == nil {
-		return errors.New("invalid schema: value MUST be an object")
+	if component.isEmpty() {
+		return errMUSTSchema
 	}
 
 	if component.Value != nil {
@@ -729,8 +786,7 @@ func (loader *Loader) resolveSchemaRef(doc *T, component *SchemaRef, documentPat
 		loader.visitedSchema[component.Value] = struct{}{}
 	}
 
-	ref := component.Ref
-	if ref != "" {
+	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var schema Schema
 			if documentPath, err = loader.loadSingleElementFromURI(ref, documentPath, &schema); err != nil {
@@ -740,7 +796,7 @@ func (loader *Loader) resolveSchemaRef(doc *T, component *SchemaRef, documentPat
 		} else {
 			if visitedLimit(visited, ref) {
 				visited = append(visited, ref)
-				return fmt.Errorf("%s - %s", CircularReferenceError, strings.Join(visited, " -> "))
+				return fmt.Errorf("%s with length %d - %s", CircularReferenceError, len(visited), strings.Join(visited, " -> "))
 			}
 			visited = append(visited, ref)
 
@@ -750,6 +806,9 @@ func (loader *Loader) resolveSchemaRef(doc *T, component *SchemaRef, documentPat
 				return err
 			}
 			if err := loader.resolveSchemaRef(doc, &resolved, componentPath, visited); err != nil {
+				if err == errMUSTSchema {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -804,7 +863,11 @@ func (loader *Loader) resolveSchemaRef(doc *T, component *SchemaRef, documentPat
 }
 
 func (loader *Loader) resolveSecuritySchemeRef(doc *T, component *SecuritySchemeRef, documentPath *url.URL) (err error) {
-	if component != nil && component.Value != nil {
+	if component.isEmpty() {
+		return errMUSTSecurityScheme
+	}
+
+	if component.Value != nil {
 		if loader.visitedSecurityScheme == nil {
 			loader.visitedSecurityScheme = make(map[*SecurityScheme]struct{})
 		}
@@ -814,9 +877,6 @@ func (loader *Loader) resolveSecuritySchemeRef(doc *T, component *SecurityScheme
 		loader.visitedSecurityScheme[component.Value] = struct{}{}
 	}
 
-	if component == nil {
-		return errors.New("invalid securityScheme: value MUST be an object")
-	}
 	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var scheme SecurityScheme
@@ -831,6 +891,9 @@ func (loader *Loader) resolveSecuritySchemeRef(doc *T, component *SecurityScheme
 				return err
 			}
 			if err := loader.resolveSecuritySchemeRef(doc, &resolved, componentPath); err != nil {
+				if err == errMUSTSecurityScheme {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -840,7 +903,11 @@ func (loader *Loader) resolveSecuritySchemeRef(doc *T, component *SecurityScheme
 }
 
 func (loader *Loader) resolveExampleRef(doc *T, component *ExampleRef, documentPath *url.URL) (err error) {
-	if component != nil && component.Value != nil {
+	if component.isEmpty() {
+		return errMUSTExample
+	}
+
+	if component.Value != nil {
 		if loader.visitedExample == nil {
 			loader.visitedExample = make(map[*Example]struct{})
 		}
@@ -850,9 +917,6 @@ func (loader *Loader) resolveExampleRef(doc *T, component *ExampleRef, documentP
 		loader.visitedExample[component.Value] = struct{}{}
 	}
 
-	if component == nil {
-		return errors.New("invalid example: value MUST be an object")
-	}
 	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var example Example
@@ -867,6 +931,9 @@ func (loader *Loader) resolveExampleRef(doc *T, component *ExampleRef, documentP
 				return err
 			}
 			if err := loader.resolveExampleRef(doc, &resolved, componentPath); err != nil {
+				if err == errMUSTExample {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -876,7 +943,11 @@ func (loader *Loader) resolveExampleRef(doc *T, component *ExampleRef, documentP
 }
 
 func (loader *Loader) resolveCallbackRef(doc *T, component *CallbackRef, documentPath *url.URL) (err error) {
-	if component != nil && component.Value != nil {
+	if component.isEmpty() {
+		return errMUSTCallback
+	}
+
+	if component.Value != nil {
 		if loader.visitedCallback == nil {
 			loader.visitedCallback = make(map[*Callback]struct{})
 		}
@@ -886,9 +957,6 @@ func (loader *Loader) resolveCallbackRef(doc *T, component *CallbackRef, documen
 		loader.visitedCallback[component.Value] = struct{}{}
 	}
 
-	if component == nil {
-		return errors.New("invalid callback: value MUST be an object")
-	}
 	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var resolved Callback
@@ -903,6 +971,9 @@ func (loader *Loader) resolveCallbackRef(doc *T, component *CallbackRef, documen
 				return err
 			}
 			if err = loader.resolveCallbackRef(doc, &resolved, componentPath); err != nil {
+				if err == errMUSTCallback {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -913,7 +984,7 @@ func (loader *Loader) resolveCallbackRef(doc *T, component *CallbackRef, documen
 		return nil
 	}
 
-	for _, pathItem := range *value {
+	for _, pathItem := range value.Map() {
 		if err = loader.resolvePathItemRef(doc, pathItem, documentPath); err != nil {
 			return err
 		}
@@ -922,7 +993,11 @@ func (loader *Loader) resolveCallbackRef(doc *T, component *CallbackRef, documen
 }
 
 func (loader *Loader) resolveLinkRef(doc *T, component *LinkRef, documentPath *url.URL) (err error) {
-	if component != nil && component.Value != nil {
+	if component.isEmpty() {
+		return errMUSTLink
+	}
+
+	if component.Value != nil {
 		if loader.visitedLink == nil {
 			loader.visitedLink = make(map[*Link]struct{})
 		}
@@ -932,9 +1007,6 @@ func (loader *Loader) resolveLinkRef(doc *T, component *LinkRef, documentPath *u
 		loader.visitedLink[component.Value] = struct{}{}
 	}
 
-	if component == nil {
-		return errors.New("invalid link: value MUST be an object")
-	}
 	if ref := component.Ref; ref != "" {
 		if isSingleRefElement(ref) {
 			var link Link
@@ -949,6 +1021,9 @@ func (loader *Loader) resolveLinkRef(doc *T, component *LinkRef, documentPath *u
 				return err
 			}
 			if err := loader.resolveLinkRef(doc, &resolved, componentPath); err != nil {
+				if err == errMUSTLink {
+					return nil
+				}
 				return err
 			}
 			component.Value = resolved.Value
@@ -959,35 +1034,27 @@ func (loader *Loader) resolveLinkRef(doc *T, component *LinkRef, documentPath *u
 
 func (loader *Loader) resolvePathItemRef(doc *T, pathItem *PathItem, documentPath *url.URL) (err error) {
 	if pathItem == nil {
-		return errors.New("invalid path item: value MUST be an object")
+		err = errMUSTPathItem
+		return
 	}
-	ref := pathItem.Ref
-	if ref != "" {
-		if pathItem.Summary != "" ||
-			pathItem.Description != "" ||
-			pathItem.Connect != nil ||
-			pathItem.Delete != nil ||
-			pathItem.Get != nil ||
-			pathItem.Head != nil ||
-			pathItem.Options != nil ||
-			pathItem.Patch != nil ||
-			pathItem.Post != nil ||
-			pathItem.Put != nil ||
-			pathItem.Trace != nil ||
-			len(pathItem.Servers) != 0 ||
-			len(pathItem.Parameters) != 0 {
-			return nil
+
+	if ref := pathItem.Ref; ref != "" {
+		if !pathItem.isEmpty() {
+			return
 		}
 		if isSingleRefElement(ref) {
 			var p PathItem
 			if documentPath, err = loader.loadSingleElementFromURI(ref, documentPath, &p); err != nil {
-				return err
+				return
 			}
 			*pathItem = p
 		} else {
 			var resolved PathItem
 			if doc, documentPath, err = loader.resolveComponent(doc, ref, documentPath, &resolved); err != nil {
-				return err
+				if err == errMUSTPathItem {
+					return nil
+				}
+				return
 			}
 			*pathItem = resolved
 		}
@@ -1010,7 +1077,7 @@ func (loader *Loader) resolvePathItemRef(doc *T, pathItem *PathItem, documentPat
 				return
 			}
 		}
-		for _, response := range operation.Responses {
+		for _, response := range operation.Responses.Map() {
 			if err = loader.resolveResponseRef(doc, response, documentPath); err != nil {
 				return
 			}

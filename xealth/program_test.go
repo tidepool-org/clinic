@@ -84,12 +84,12 @@ var _ = Describe("Program", func() {
 
 			patient.Summary = &patients.Summary{
 				CGM: &patients.PatientCGMStats{
-					Dates: &patients.PatientSummaryDates{
+					Dates: patients.PatientSummaryDates{
 						LastUploadDate: &newer,
 					},
 				},
 				BGM: &patients.PatientBGMStats{
-					Dates: &patients.PatientSummaryDates{
+					Dates: patients.PatientSummaryDates{
 						LastUploadDate: &older,
 					},
 				},
@@ -104,12 +104,12 @@ var _ = Describe("Program", func() {
 
 			patient.Summary = &patients.Summary{
 				CGM: &patients.PatientCGMStats{
-					Dates: &patients.PatientSummaryDates{
+					Dates: patients.PatientSummaryDates{
 						LastUploadDate: &older,
 					},
 				},
 				BGM: &patients.PatientBGMStats{
-					Dates: &patients.PatientSummaryDates{
+					Dates: patients.PatientSummaryDates{
 						LastUploadDate: &newer,
 					},
 				},
@@ -136,7 +136,7 @@ var _ = Describe("Program", func() {
 
 			patient.Summary = &patients.Summary{
 				CGM: &patients.PatientCGMStats{
-					Dates: &patients.PatientSummaryDates{
+					Dates: patients.PatientSummaryDates{
 						LastUploadDate: &lastUpload,
 					},
 				},
@@ -150,7 +150,7 @@ var _ = Describe("Program", func() {
 
 			patient.Summary = &patients.Summary{
 				CGM: &patients.PatientCGMStats{
-					Dates: &patients.PatientSummaryDates{
+					Dates: patients.PatientSummaryDates{
 						LastUploadDate: &lastUpload,
 					},
 				},
@@ -168,7 +168,7 @@ var _ = Describe("Program", func() {
 
 			patient.Summary = &patients.Summary{
 				CGM: &patients.PatientCGMStats{
-					Dates: &patients.PatientSummaryDates{
+					Dates: patients.PatientSummaryDates{
 						LastUploadDate: &lastUpload,
 					},
 				},
