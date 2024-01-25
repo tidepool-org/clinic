@@ -52,9 +52,9 @@ func (mr *MockUserServiceMockRecorder) CreateCustodialAccount(ctx, patient inter
 }
 
 // GetPatientFromExistingUser mocks base method.
-func (m *MockUserService) GetPatientFromExistingUser(ctx context.Context, patient *patients.Patient) error {
+func (m *MockUserService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *patients.Patient) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPatientFromExistingUser", ctx, patient)
+	ret := m.ctrl.Call(m, "PopulatePatientDetailsFromExistingUser", ctx, patient)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -62,7 +62,7 @@ func (m *MockUserService) GetPatientFromExistingUser(ctx context.Context, patien
 // GetPatientFromExistingUser indicates an expected call of GetPatientFromExistingUser.
 func (mr *MockUserServiceMockRecorder) GetPatientFromExistingUser(ctx, patient interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPatientFromExistingUser", reflect.TypeOf((*MockUserService)(nil).GetPatientFromExistingUser), ctx, patient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopulatePatientDetailsFromExistingUser", reflect.TypeOf((*MockUserService)(nil).PopulatePatientDetailsFromExistingUser), ctx, patient)
 }
 
 // GetUser mocks base method.
