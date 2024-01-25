@@ -1714,6 +1714,26 @@ func (mr *MockClientInterfaceMockRecorder) VerifyEndpoint(ctx interface{}, reqEd
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyEndpoint", reflect.TypeOf((*MockClientInterface)(nil).VerifyEndpoint), varargs...)
 }
 
+// ViewPDFReport mocks base method.
+func (m *MockClientInterface) ViewPDFReport(ctx context.Context, params *ViewPDFReportParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ViewPDFReport", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ViewPDFReport indicates an expected call of ViewPDFReport.
+func (mr *MockClientInterfaceMockRecorder) ViewPDFReport(ctx, params interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ViewPDFReport", reflect.TypeOf((*MockClientInterface)(nil).ViewPDFReport), varargs...)
+}
+
 // XealthGetProgramUrl mocks base method.
 func (m *MockClientInterface) XealthGetProgramUrl(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3455,6 +3475,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) VerifyEndpointWithRespon
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyEndpointWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).VerifyEndpointWithResponse), varargs...)
+}
+
+// ViewPDFReportWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) ViewPDFReportWithResponse(ctx context.Context, params *ViewPDFReportParams, reqEditors ...RequestEditorFn) (*ViewPDFReportResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ViewPDFReportWithResponse", varargs...)
+	ret0, _ := ret[0].(*ViewPDFReportResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ViewPDFReportWithResponse indicates an expected call of ViewPDFReportWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) ViewPDFReportWithResponse(ctx, params interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ViewPDFReportWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ViewPDFReportWithResponse), varargs...)
 }
 
 // XealthGetProgramUrlWithResponse mocks base method.

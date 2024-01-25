@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	TestUserId       = "1234567890"
-	TestXealthUserId = "1234567891"
-	TestUserToken    = "user"
-	TestServerId     = "server"
-	TestServerToken  = "server"
+	TestUserId          = "1234567890"
+	TestXealthUserId    = "1234567891"
+	TestUserToken       = "user"
+	TestServerId        = "server"
+	TestServerToken     = "server"
+	TestRestrictedToken = "1234567890abcdef1234567890abcdef"
 )
 
 var (
@@ -101,16 +102,21 @@ func SeagullStub() *httptest.Server {
 }
 
 func AuthStub() *httptest.Server {
+	tokens := make(map[string]auth.RestrictedToken)
+
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var resp []byte
 		if r.Method == http.MethodPost && createRestrictedTokenUrlRegexp.MatchString(r.RequestURI) {
 			matches := createRestrictedTokenUrlRegexp.FindStringSubmatch(r.RequestURI)
-			resp, _ = json.Marshal(auth.RestrictedToken{
-				ID:             "1234567890abcdef1234567890abcdef",
+			tokens[TestRestrictedToken] = auth.RestrictedToken{
+				ID:             TestRestrictedToken,
 				UserID:         matches[1],
 				ExpirationTime: time.Now().Add(time.Hour),
 				CreatedTime:    time.Now(),
-			})
+			}
+			resp, _ = json.Marshal(tokens[TestRestrictedToken])
+		} else if r.Method == http.MethodGet && r.RequestURI == "/v1/restricted_tokens/1234567890abcdef1234567890abcdef" {
+			resp, _ = json.Marshal(tokens[TestRestrictedToken])
 		} else {
 			w.WriteHeader(http.StatusNotImplemented)
 		}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/brpaz/echozap"
-
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -27,6 +26,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
+	"html/template"
+	"net/http"
+	"os"
 )
 
 var (
@@ -85,7 +87,10 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 
 	// Skip common auth logic for healthcheck routes, redox and xealth
 	authMiddleware := auth.NewAuthMiddleware(authenticator, auth.AuthMiddlewareOpts{
-		Skipper: RouteSkipper(externalRoutes),
+		Skipper: AnySkipper(
+			RouteSkipper(externalRoutes),
+			PathPrefixSkipper("/v1/xealth/report/"),
+		),
 	})
 	requestValidator := oapiMiddleware.OapiRequestValidatorWithOptions(swagger, &oapiMiddleware.Options{
 		Options: openapi3filter.Options{
@@ -93,10 +98,14 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 			ExcludeReadOnlyValidations:  true,
 			ExcludeWriteOnlyValidations: true,
 		},
-		Skipper: RouteSkipper(externalRoutes),
+		Skipper: AnySkipper(
+			RouteSkipper(externalRoutes),
+			PathPrefixSkipper("/v1/xealth/report/"),
+		),
 	})
-	healthCheckSkipper := RouteSkipper(healthcheckRoutes)
 	e.Use(middleware.Recover())
+
+	healthCheckSkipper := RouteSkipper(healthcheckRoutes)
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// Do not log health check requests
@@ -107,12 +116,22 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 			return echozap.ZapLogger(logger)(next)(c)
 		}
 	})
-	//e.Use(loggerMiddleware)
 	e.Use(authMiddleware)
 	e.Use(requestValidator)
 
-	e.HTTPErrorHandler = errors.CustomHTTPErrorHandler
+	pdf := os.DirFS("../pdf")
+	report := e.Group("/v1/xealth/report")
+	report.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Skipper:    PathSuffixSkipper(".tmpl"),
+		Root:       "/",
+		IgnoreBase: true,
+		Filesystem: http.FS(pdf),
+	}))
+	e.Renderer = &Templates{
+		templates: template.Must(template.ParseFS(pdf, "web/viewer.html.tmpl")),
+	}
 
+	e.HTTPErrorHandler = errors.CustomHTTPErrorHandler
 	e.GET("/ready", healthCheck.Ready)
 	RegisterHandlers(e, handler)
 

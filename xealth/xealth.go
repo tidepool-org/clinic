@@ -49,6 +49,7 @@ type Xealth interface {
 	HandleEventNotification(ctx context.Context, event xealth_client.EventNotification) error
 	GetPrograms(ctx context.Context, request xealth_client.GetProgramsRequest) (*xealth_client.GetProgramsResponse, error)
 	GetProgramUrl(ctx context.Context, request xealth_client.GetProgramUrlRequest) (*xealth_client.GetProgramUrlResponse, error)
+	GetPDFReport(ctx context.Context, request PDFReportRequest) (*PDFReport, error)
 }
 
 type defaultHandler struct {
@@ -310,12 +311,6 @@ func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.
 		return match.Response, err
 	}
 
-	url, err := GenerateReportUrl(d.config.TidepoolApplicationUrl, *match.Patient, *match.Clinic)
-	if err != nil {
-		d.logger.Errorw("unable to generate report url", "clinicId", match.Clinic.Id.Hex(), "error", err)
-		return nil, err
-	}
-
 	sessionToken, err := d.authClient.ServerSessionToken()
 	if err != nil {
 		return nil, err
@@ -329,15 +324,23 @@ func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.
 		return nil, err
 	}
 
-	query := url.Query()
-	query.Add(restrictedTokenKey, token.ID)
-	url.RawQuery = query.Encode()
+	url, err := GeneratePDFViewerUrl(d.config.TidepoolApplicationUrl, token.ID, *match.Patient, *match.Clinic)
+	if err != nil {
+		d.logger.Errorw("unable to generate report url", "clinicId", match.Clinic.Id.Hex(), "error", err)
+		return nil, err
+	}
 
 	response := &xealth_client.GetProgramUrlResponse{
 		Url: url.String(),
 	}
 
-	_ = d.updateLastViewedDate(ctx, event, *match.Clinic, *match.Patient)
+	if err := d.updateLastViewedDate(ctx, event, *match.Clinic, *match.Patient); err != nil {
+		d.logger.Errorw(
+			"unable to update report last viewed date", "error", err,
+			"clinicId", match.Clinic.Id.Hex(),
+			"patientId", *match.Patient.UserId,
+		)
+	}
 
 	return response, nil
 }
@@ -524,4 +527,64 @@ func (d *defaultHandler) GetXealthOrder(ctx context.Context, deployment, orderId
 	}
 
 	return response.JSON200, nil
+}
+
+type PDFReportRequest struct {
+	ClinicId        string
+	PatientId       string
+	RestrictedToken string
+}
+
+type PDFReport struct {
+	PdfUrl string
+}
+
+func (d *defaultHandler) GetPDFReport(ctx context.Context, request PDFReportRequest) (*PDFReport, error) {
+	sessionToken, err := d.authClient.ServerSessionToken()
+	if err != nil {
+		return nil, err
+	}
+	authCtx := log.NewContextWithLogger(ctx, null.NewLogger())
+	authCtx = auth.NewContextWithServerSessionToken(authCtx, sessionToken)
+	token, err := d.authClient.GetRestrictedToken(authCtx, request.RestrictedToken)
+	if err != nil {
+		return nil, err
+	}
+	if token == nil || token.ExpirationTime.Before(time.Now()) || token.UserID != request.PatientId {
+		return nil, fmt.Errorf("%w: invalid or expired token", errs.Unauthorized)
+	}
+
+	clinic, err := d.clinics.Get(ctx, request.ClinicId)
+	if err != nil {
+		return nil, err
+	}
+	patient, err := d.patients.Get(ctx, request.ClinicId, request.PatientId)
+	if err != nil {
+		return nil, err
+	}
+
+	if !clinic.EHRSettings.Enabled || getActiveSubscription(*patient) == nil {
+		return nil, fmt.Errorf("%w: patient doesn't have active subscriptions", errs.Unauthorized)
+	}
+
+	url, err := GenerateReportUrl(d.config.TidepoolApplicationUrl, token.ID, *patient, *clinic)
+	if err != nil {
+		d.logger.Errorw("unable to generate report url", "clinicId", clinic.Id.Hex(), "error", err)
+		return nil, err
+	}
+
+	return &PDFReport{PdfUrl: url.String()}, nil
+}
+
+func getActiveSubscription(patient patients.Patient) *patients.EHRSubscription {
+	if patient.EHRSubscriptions == nil {
+		return nil
+	}
+
+	subsc, ok := patient.EHRSubscriptions[patients.SubscriptionXealthReports]
+	if !ok || !subsc.Active {
+		return nil
+	}
+	return &subsc
+
 }

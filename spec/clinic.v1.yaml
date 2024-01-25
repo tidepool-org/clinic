@@ -1707,6 +1707,30 @@ paths:
         '200':
           description: OK
       description: ''
+  /v1/xealth/report/web/viewer.html:
+    get:
+      summary: View PDF Report
+      tags: []
+      responses: {}
+      operationId: ViewPDFReport
+      description: View PDF report for a given patient of a clinic
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: clinicId
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: patientId
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: restricted_token
+          required: true
+    parameters: []
 components:
   schemas:
     Error:

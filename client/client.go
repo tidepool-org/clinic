@@ -321,6 +321,9 @@ type ClientInterface interface {
 
 	// XealthGetPrograms request
 	XealthGetPrograms(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ViewPDFReport request
+	ViewPDFReport(ctx context.Context, params *ViewPDFReportParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ListAllClinicians(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -1345,6 +1348,18 @@ func (c *Client) XealthGetProgramUrl(ctx context.Context, reqEditors ...RequestE
 
 func (c *Client) XealthGetPrograms(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewXealthGetProgramsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ViewPDFReport(ctx context.Context, params *ViewPDFReportParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewViewPDFReportRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5051,6 +5066,75 @@ func NewXealthGetProgramsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewViewPDFReportRequest generates requests for ViewPDFReport
+func NewViewPDFReportRequest(server string, params *ViewPDFReportParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/xealth/report/web/viewer.html")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "clinicId", runtime.ParamLocationQuery, params.ClinicId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patientId", runtime.ParamLocationQuery, params.PatientId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "restricted_token", runtime.ParamLocationQuery, params.RestrictedToken); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -5325,6 +5409,9 @@ type ClientWithResponsesInterface interface {
 
 	// XealthGetProgramsWithResponse request
 	XealthGetProgramsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*XealthGetProgramsResponse, error)
+
+	// ViewPDFReportWithResponse request
+	ViewPDFReportWithResponse(ctx context.Context, params *ViewPDFReportParams, reqEditors ...RequestEditorFn) (*ViewPDFReportResponse, error)
 }
 
 type ListAllCliniciansResponse struct {
@@ -6623,6 +6710,27 @@ func (r XealthGetProgramsResponse) StatusCode() int {
 	return 0
 }
 
+type ViewPDFReportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ViewPDFReportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ViewPDFReportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ListAllCliniciansWithResponse request returning *ListAllCliniciansResponse
 func (c *ClientWithResponses) ListAllCliniciansWithResponse(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*ListAllCliniciansResponse, error) {
 	rsp, err := c.ListAllClinicians(ctx, params, reqEditors...)
@@ -7369,6 +7477,15 @@ func (c *ClientWithResponses) XealthGetProgramsWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseXealthGetProgramsResponse(rsp)
+}
+
+// ViewPDFReportWithResponse request returning *ViewPDFReportResponse
+func (c *ClientWithResponses) ViewPDFReportWithResponse(ctx context.Context, params *ViewPDFReportParams, reqEditors ...RequestEditorFn) (*ViewPDFReportResponse, error) {
+	rsp, err := c.ViewPDFReport(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseViewPDFReportResponse(rsp)
 }
 
 // ParseListAllCliniciansResponse parses an HTTP response from a ListAllCliniciansWithResponse call
@@ -8672,6 +8789,22 @@ func ParseXealthGetProgramsResponse(rsp *http.Response) (*XealthGetProgramsRespo
 	}
 
 	response := &XealthGetProgramsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseViewPDFReportResponse parses an HTTP response from a ViewPDFReportWithResponse call
+func ParseViewPDFReportResponse(rsp *http.Response) (*ViewPDFReportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ViewPDFReportResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

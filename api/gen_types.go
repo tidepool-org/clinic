@@ -1837,6 +1837,13 @@ type ListClinicsForPatientParams struct {
 // ProcessEHRMessageJSONBody defines parameters for ProcessEHRMessage.
 type ProcessEHRMessageJSONBody = map[string]interface{}
 
+// ViewPDFReportParams defines parameters for ViewPDFReport.
+type ViewPDFReportParams struct {
+	ClinicId        string `form:"clinicId" json:"clinicId"`
+	PatientId       string `form:"patientId" json:"patientId"`
+	RestrictedToken string `form:"restricted_token" json:"restricted_token"`
+}
+
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
 type CreateClinicJSONRequestBody = Clinic
 
