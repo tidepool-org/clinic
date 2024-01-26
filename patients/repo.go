@@ -419,9 +419,22 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 	} else {
 		if summary.CGM != nil {
 			set["summary.cgmStats"] = summary.CGM
+
+			// match $not $gt instead of $lt to catch null/unset
+			selector["summary.cgmStats.dates.lastUpdatedDate"] = bson.M{
+				"$not": bson.M{
+					"$gt": summary.CGM.Dates.LastUpdatedDate,
+				},
+			}
 		}
 		if summary.BGM != nil {
 			set["summary.bgmStats"] = summary.BGM
+			// match $not $gt instead of $lt to catch null/unset
+			selector["summary.bgmStats.dates.lastUpdatedDate"] = bson.M{
+				"$not": bson.M{
+					"$gt": summary.BGM.Dates.LastUpdatedDate,
+				},
+			}
 		}
 	}
 
