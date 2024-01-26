@@ -459,14 +459,18 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			create.LastRequestedDexcomConnectTime = time.Now()
 		}
 
-		tags := make([]primitive.ObjectID, 0, len(preorderData.Tags.Ids))
-		for _, tagId := range preorderData.Tags.Ids {
-			if _, ok := validTagIds[tagId]; ok {
-				if objId, err := primitive.ObjectIDFromHex(tagId); err == nil {
-					tags = append(tags, objId)
+		var tags []primitive.ObjectID
+		if preorderData.Tags != nil {
+			tags = make([]primitive.ObjectID, 0, len(preorderData.Tags.Ids))
+			for _, tagId := range preorderData.Tags.Ids {
+				if _, ok := validTagIds[tagId]; ok {
+					if objId, err := primitive.ObjectIDFromHex(tagId); err == nil {
+						tags = append(tags, objId)
+					}
 				}
 			}
 		}
+
 		if len(tags) > 0 {
 			create.Tags = &tags
 		}

@@ -45,7 +45,7 @@ type Guardian struct {
 type GuardianFormData struct {
 	Guardian Guardian `json:"guardian"`
 	Dexcom   Dexcom   `json:"dexcom"`
-	Tags     Tags     `json:"tags"`
+	Tags     *Tags    `json:"tags"`
 }
 
 func (g GuardianFormData) Normalize() PreorderFormData {
@@ -63,7 +63,7 @@ type Patient struct {
 type PatientFormData struct {
 	Patient Patient `json:"patient"`
 	Dexcom  Dexcom  `json:"dexcom"`
-	Tags    Tags    `json:"tags"`
+	Tags    *Tags   `json:"tags"`
 }
 
 func (p PatientFormData) Normalize() PreorderFormData {
@@ -196,7 +196,7 @@ type PreorderFormData struct {
 	Patient        *Patient            `bson:"patient,omitempty"`
 	Guardian       *Guardian           `bson:"guardian,omitempty"`
 	Dexcom         Dexcom              `bson:"dexcom"`
-	Tags           Tags                `bson:"tags"`
+	Tags           *Tags               `bson:"tags"`
 }
 
 func isValidEmail(email string) bool {

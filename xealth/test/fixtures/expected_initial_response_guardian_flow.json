@@ -11,7 +11,7 @@
         "firstName": "",
         "lastName": ""
       },
-      "tags": {}
+      "tags": null
     },
     "formId": "guardian_enrollment_form",
     "formSchema": {

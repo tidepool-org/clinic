@@ -9,7 +9,7 @@
       "patient": {
         "email": "james.jellyfish@tidepool.org"
       },
-      "tags": {}
+      "tags": null
     },
     "formId": "patient_enrollment_form",
     "formSchema": {

@@ -9,7 +9,7 @@
       "patient": {
         "email": "james"
       },
-      "tags": {}
+      "tags": null
     },
     "formId": "error_form",
     "formSchema": {

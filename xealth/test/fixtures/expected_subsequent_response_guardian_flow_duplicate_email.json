@@ -11,7 +11,7 @@
         "firstName": "James",
         "lastName": "Jellyfish"
       },
-      "tags": {}
+      "tags": null
     },
     "formId": "error_form",
     "formSchema": {
