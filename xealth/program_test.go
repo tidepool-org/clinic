@@ -192,26 +192,26 @@ var _ = Describe("Program", func() {
 		})
 
 		It("is correct when last upload and last viewed are not set", func() {
-			expected := "Last Upload Date: N/A | Last Viewed by You: N/A"
+			expected := "Last Upload: N/A | Last Viewed by You: N/A"
 			Expect(xealth.GetProgramDescription(lastUpload, lastViewed)).To(PointTo(Equal(expected)))
 		})
 
 		It("is correct when last upload is set", func() {
 			lastUpload = time.Date(2020, 02, 28, 0, 0, 0, 0, time.Local)
-			expected := "Last Upload Date: 2020-02-28 | Last Viewed by You: N/A"
+			expected := "Last Upload: 2020-02-28 | Last Viewed by You: N/A"
 			Expect(xealth.GetProgramDescription(lastUpload, lastViewed)).To(PointTo(Equal(expected)))
 		})
 
 		It("is correct when last viewed is set", func() {
 			lastViewed = time.Date(2019, 01, 15, 0, 0, 0, 0, time.Local)
-			expected := "Last Upload Date: N/A | Last Viewed by You: 2019-01-15"
+			expected := "Last Upload: N/A | Last Viewed by You: 2019-01-15"
 			Expect(xealth.GetProgramDescription(lastUpload, lastViewed)).To(PointTo(Equal(expected)))
 		})
 
 		It("is correct when last viewed and last upload are set", func() {
 			lastUpload = time.Date(2020, 02, 28, 0, 0, 0, 0, time.Local)
 			lastViewed = time.Date(2019, 01, 15, 0, 0, 0, 0, time.Local)
-			expected := "Last Upload Date: 2020-02-28 | Last Viewed by You: 2019-01-15"
+			expected := "Last Upload: 2020-02-28 | Last Viewed by You: 2019-01-15"
 			Expect(xealth.GetProgramDescription(lastUpload, lastViewed)).To(PointTo(Equal(expected)))
 		})
 	})
