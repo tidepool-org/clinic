@@ -10,8 +10,7 @@
         "email": "james.jellyfish@tidepool.org",
         "firstName": "James",
         "lastName": "Jellyfish"
-      },
-      "tags": null
+      }
     },
     "formId": "error_form",
     "formSchema": {

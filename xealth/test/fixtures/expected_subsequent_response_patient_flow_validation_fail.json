@@ -8,8 +8,7 @@
       },
       "patient": {
         "email": "james"
-      },
-      "tags": null
+      }
     },
     "formId": "error_form",
     "formSchema": {

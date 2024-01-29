@@ -10,8 +10,7 @@
         "email": "",
         "firstName": "",
         "lastName": ""
-      },
-      "tags": null
+      }
     },
     "formId": "guardian_enrollment_form",
     "formSchema": {

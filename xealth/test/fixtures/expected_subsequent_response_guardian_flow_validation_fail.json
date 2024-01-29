@@ -10,8 +10,7 @@
         "email": "",
         "firstName": "",
         "lastName": ""
-      },
-      "tags": null
+      }
     },
     "formId": "error_form",
     "formSchema": {
