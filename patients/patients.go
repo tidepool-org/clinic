@@ -133,7 +133,8 @@ type Filter struct {
 	BirthDate *string
 	FullName  *string
 
-	ActiveEHRSubscription *string
+	HasSubscription *bool
+	HasMRN          *bool
 
 	Period *string
 

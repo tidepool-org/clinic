@@ -298,6 +298,7 @@ var _ = Describe("Patients Repository", func() {
 					IsMigrated:                     randomPatient.IsMigrated,
 					LastRequestedDexcomConnectTime: update.Patient.LastRequestedDexcomConnectTime,
 					DataSources:                    update.Patient.DataSources,
+					EHRSubscriptions:               update.Patient.EHRSubscriptions,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -331,18 +332,19 @@ var _ = Describe("Patients Repository", func() {
 			BeforeEach(func() {
 				update = patientsTest.RandomPatientUpdate()
 				expected := patients.Patient{
-					Id:            randomPatient.Id,
-					ClinicId:      randomPatient.ClinicId,
-					UserId:        randomPatient.UserId,
-					BirthDate:     randomPatient.BirthDate,
-					Email:         update.Patient.Email,
-					FullName:      randomPatient.FullName,
-					Mrn:           randomPatient.Mrn,
-					Tags:          randomPatient.Tags,
-					TargetDevices: randomPatient.TargetDevices,
-					Permissions:   randomPatient.Permissions,
-					IsMigrated:    randomPatient.IsMigrated,
-					DataSources:   randomPatient.DataSources,
+					Id:               randomPatient.Id,
+					ClinicId:         randomPatient.ClinicId,
+					UserId:           randomPatient.UserId,
+					BirthDate:        randomPatient.BirthDate,
+					Email:            update.Patient.Email,
+					FullName:         randomPatient.FullName,
+					Mrn:              randomPatient.Mrn,
+					Tags:             randomPatient.Tags,
+					TargetDevices:    randomPatient.TargetDevices,
+					Permissions:      randomPatient.Permissions,
+					IsMigrated:       randomPatient.IsMigrated,
+					DataSources:      randomPatient.DataSources,
+					EHRSubscriptions: randomPatient.EHRSubscriptions,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -682,6 +684,323 @@ var _ = Describe("Patients Repository", func() {
 
 				for _, patient := range result.Patients {
 					Expect(patient.UserId).To(Equal(randomPatient.UserId))
+				}
+			})
+
+			It("filters by mrn correctly", func() {
+				filter := patients.Filter{
+					Mrn: randomPatient.Mrn,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.Mrn).To(PointTo(Equal(*randomPatient.Mrn)))
+				}
+			})
+
+			It("filters users without MRN correctly when hasMRN=false", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$unset": bson.M{"mrn": 1}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasMRN := false
+				filter := patients.Filter{
+					HasMRN: &hasMRN,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).To(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users with empty MRN correctly when hasMRN=false", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$set": bson.M{"mrn": ""}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasMRN := false
+				filter := patients.Filter{
+					HasMRN: &hasMRN,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).To(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users with null MRN correctly when hasMRN=false", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$set": bson.M{"mrn": nil}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasMRN := false
+				filter := patients.Filter{
+					HasMRN: &hasMRN,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).To(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users without MRN correctly when hasMRN=true", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$unset": bson.M{"mrn": 1}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasMRN := true
+				filter := patients.Filter{
+					HasMRN: &hasMRN,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).ToNot(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users with empty MRN correctly when hasMRN=true", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$set": bson.M{"mrn": ""}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasMRN := true
+				filter := patients.Filter{
+					HasMRN: &hasMRN,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).ToNot(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users with null MRN correctly when hasMRN=true", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$set": bson.M{"mrn": nil}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasMRN := true
+				filter := patients.Filter{
+					HasMRN: &hasMRN,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).ToNot(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users without EHR subscriptions correctly when HasSubscription=false", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$unset": bson.M{"ehrSubscriptions": 1}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasSubscriptions := false
+				filter := patients.Filter{
+					HasSubscription: &hasSubscriptions,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).To(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users with empty EHR subscriptions correctly when HasSubscription=false", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$set": bson.M{"ehrSubscriptions": bson.M{}}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasSubscriptions := false
+				filter := patients.Filter{
+					HasSubscription: &hasSubscriptions,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).To(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users with null EHR subscriptions correctly when HasSubscription=false", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$set": bson.M{"ehrSubscriptions": nil}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasSubscriptions := false
+				filter := patients.Filter{
+					HasSubscription: &hasSubscriptions,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).To(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users without EHR subscriptions correctly when HasSubscription=true", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$unset": bson.M{"ehrSubscriptions": 1}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasSubscriptions := true
+				filter := patients.Filter{
+					HasSubscription: &hasSubscriptions,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).ToNot(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users with empty EHR subscriptions correctly when HasSubscription=true", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$set": bson.M{"ehrSubscriptions": bson.M{}}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasSubscriptions := true
+				filter := patients.Filter{
+					HasSubscription: &hasSubscriptions,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).ToNot(PointTo(Equal(*randomPatient.UserId)))
+				}
+			})
+
+			It("filters users with null EHR subscriptions correctly when HasSubscription=true", func() {
+				_, err := collection.UpdateOne(
+					nil,
+					bson.M{"userId": randomPatient.UserId},
+					bson.M{"$set": bson.M{"ehrSubscriptions": nil}},
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				hasSubscriptions := true
+				filter := patients.Filter{
+					HasSubscription: &hasSubscriptions,
+				}
+				pagination := store.Pagination{
+					Offset: 0,
+					Limit:  count,
+				}
+				result, err := repo.List(nil, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					Expect(patient.UserId).ToNot(PointTo(Equal(*randomPatient.UserId)))
 				}
 			})
 
