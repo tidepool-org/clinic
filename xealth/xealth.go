@@ -446,11 +446,7 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			Permissions: &patients.CustodialAccountPermissions,
 		}
 		if preorderData.Guardian != nil {
-			fullName := strings.Join([]string{preorderData.Guardian.FirstName, preorderData.Guardian.LastName}, "")
-			if strings.TrimSpace(fullName) == "" {
-				return fmt.Errorf("%w: unable to create patient because guardian name is missing", errs.BadRequest)
-			}
-			create.FullName = &fullName
+			create.FullName = &match.Criteria.FullName
 			create.Email = &preorderData.Guardian.Email
 		} else if preorderData.Patient != nil {
 			create.FullName = &match.Criteria.FullName

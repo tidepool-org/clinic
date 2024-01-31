@@ -27,7 +27,11 @@ import (
 )
 
 const (
-	XealthBearerToken = "xealth-token"
+	XealthBearerToken           = "xealth-token"
+	XealthAdultOrderId          = "7e316617-ef33-4859-b0c9-36bddbfe9229"
+	XealthPediatricOrderId      = "4f5d4267-654e-451f-acde-d56560940989"
+	XealtAdultOrderFixture      = "./test/xealth_fixtures/05_read_order_response.json"
+	XealthPediatricOrderFixture = "./test/xealth_fixtures/13_read_order_response_pediatric.json"
 )
 
 var _ = Describe("Xealth Integration Test", Ordered, func() {
@@ -124,13 +128,13 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 	Describe("Send initial pre-order request", func() {
 		It("Succeeds", func() {
-			dataTrackingId = sendInitialPreorder(server)
+			dataTrackingId = sendAdultInitialPreorder(server)
 		})
 	})
 
 	Describe("Send subsequent pre-order request", func() {
 		It("Succeeds", func() {
-			bodyReader := sendSubsequentPreorder(dataTrackingId, server)
+			bodyReader := sendAdultSubsequentPreorder(dataTrackingId, server)
 			body, err := io.ReadAll(bodyReader)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(body)).To(Equal("{}\n"))
@@ -139,7 +143,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 	Describe("Send order notification event", func() {
 		BeforeEach(func() {
-			prepareOrder(dataTrackingId, xealthStub)
+			prepareOrder(dataTrackingId, XealthAdultOrderId, XealtAdultOrderFixture, xealthStub)
 		})
 
 		It("Succeeds", func() {
@@ -150,23 +154,6 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-		})
-	})
-
-	Describe("Send get programs request", func() {
-		It("Succeeds", func() {
-			response := getPrograms(server)
-			Expect(response.Present).To(BeTrue())
-			Expect(response.Programs).To(HaveLen(1))
-
-			program := response.Programs[0]
-			Expect(program.Description).To(PointTo(Equal("Last Upload: N/A | Last Viewed by You: N/A")))
-			Expect(program.EnrolledDate).To(PointTo(Equal("2021-01-14")))
-			Expect(program.HasStatusView).To(PointTo(BeFalse()))
-			Expect(program.HasAlert).To(PointTo(BeFalse()))
-			Expect(program.ProgramId).To(PointTo(Equal("100")))
-			Expect(program.Status).To(BeNil())
-			Expect(program.Title).To(PointTo(Equal("Tidepool")))
 		})
 	})
 
@@ -193,6 +180,34 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 			patient = (*response.Data)[0]
 			Expect(patient.Id).ToNot(BeNil())
+			Expect(patient.Mrn).To(PointTo(Equal("e987655")))
+		})
+	})
+
+	Describe("Patient", func() {
+		It("name is correct", func() {
+			Expect(patient.FullName).To(Equal("FirstName First LastName Last"))
+		})
+
+		It("email is correct", func() {
+			Expect(patient.Email).To(PointTo(Equal("xealth@tidepool.org")))
+		})
+	})
+
+	Describe("Send get programs request", func() {
+		It("Succeeds", func() {
+			response := getPrograms(server)
+			Expect(response.Present).To(BeTrue())
+			Expect(response.Programs).To(HaveLen(1))
+
+			program := response.Programs[0]
+			Expect(program.Description).To(PointTo(Equal("Last Upload: N/A | Last Viewed by You: N/A")))
+			Expect(program.EnrolledDate).To(PointTo(Equal("2021-01-14")))
+			Expect(program.HasStatusView).To(PointTo(BeFalse()))
+			Expect(program.HasAlert).To(PointTo(BeFalse()))
+			Expect(program.ProgramId).To(PointTo(Equal("100")))
+			Expect(program.Status).To(BeNil())
+			Expect(program.Title).To(PointTo(Equal("Tidepool")))
 		})
 	})
 
@@ -348,7 +363,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 	Describe("Send order notification event after subscription removal", func() {
 		BeforeEach(func() {
-			prepareOrder(dataTrackingId, xealthStub)
+			prepareOrder(dataTrackingId, XealthAdultOrderId, XealtAdultOrderFixture, xealthStub)
 		})
 
 		It("Succeeds", func() {
@@ -370,7 +385,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 	Describe("Delete patient", func() {
 		BeforeEach(func() {
-			prepareOrder(dataTrackingId, xealthStub)
+			prepareOrder(dataTrackingId, XealthAdultOrderId, XealtAdultOrderFixture, xealthStub)
 		})
 
 		It("Succeeds", func() {
@@ -387,21 +402,91 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 	Describe("Send initial pre-order after patient deletion", func() {
 		It("Succeeds", func() {
-			dataTrackingId = sendInitialPreorder(server)
+			dataTrackingId = sendAdultInitialPreorder(server)
 		})
 	})
 
 	Describe("Send subsequent pre-order after patient deletion", func() {
 		It("Fails due to duplicate email", func() {
-			bodyReader := sendSubsequentPreorder(dataTrackingId, server)
+			bodyReader := sendAdultSubsequentPreorder(dataTrackingId, server)
 			body, err := io.ReadAll(bodyReader)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(body)).To(ContainSubstring("The email address you chose is already in use with another account in Tidepool"))
 		})
 	})
+
+	Context("Guardian Flow", func() {
+		Describe("Send pediatric initial pre-order request", func() {
+			It("Succeeds", func() {
+				dataTrackingId = sendPediatricInitialPreorder(server)
+			})
+		})
+
+		Describe("Send pediatric subsequent pre-order request", func() {
+			It("Succeeds", func() {
+				bodyReader := sendPediatricSubsequentPreorder(dataTrackingId, server)
+				body, err := io.ReadAll(bodyReader)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(body)).To(Equal("{}\n"))
+			})
+		})
+
+		Describe("Send pediatric order notification event", func() {
+			BeforeEach(func() {
+				prepareOrder(dataTrackingId, XealthPediatricOrderId, XealthPediatricOrderFixture, xealthStub)
+			})
+
+			It("Succeeds", func() {
+				rec := httptest.NewRecorder()
+				req := prepareRequest(http.MethodPost, "/v1/xealth/notification", "./test/xealth_fixtures/12_order_notification_event_pediatric.json")
+				asXealth(req)
+
+				server.ServeHTTP(rec, req)
+				Expect(rec.Result()).ToNot(BeNil())
+				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+			})
+		})
+
+		Describe("Get Patient by MRN", func() {
+			It("Returns the patient", func() {
+				endpoint := fmt.Sprintf("/v1/clinics/%v/patients?search=%s", *clinic.Id, "e987656")
+				rec := httptest.NewRecorder()
+				req := prepareRequest(http.MethodGet, endpoint, "")
+				asClinician(req)
+
+				server.ServeHTTP(rec, req)
+				Expect(rec.Result()).ToNot(BeNil())
+				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+				body, err := io.ReadAll(rec.Result().Body)
+				Expect(err).ToNot(HaveOccurred())
+
+				response := client.PatientsResponse{}
+				Expect(json.Unmarshal(body, &response)).To(Succeed())
+				Expect(response.Data).ToNot(BeNil())
+				Expect(response.Meta).ToNot(BeNil())
+				Expect(response.Meta.Count).To(PointTo(Equal(1)))
+				Expect(response.Data).To(PointTo(HaveLen(1)))
+
+				patient = (*response.Data)[0]
+				Expect(patient.Id).ToNot(BeNil())
+				Expect(patient.Mrn).To(PointTo(Equal("e987656")))
+			})
+		})
+
+		Describe("Patient", func() {
+			It("name is correct", func() {
+				Expect(patient.FullName).To(Equal("FirstName First LastName Last"))
+			})
+
+			It("email is correct", func() {
+				Expect(patient.Email).To(PointTo(Equal("xealth+guardian@tidepool.org")))
+			})
+		})
+	})
 })
 
-func sendInitialPreorder(server *echo.Echo) string {
+func sendAdultInitialPreorder(server *echo.Echo) string {
 	rec := httptest.NewRecorder()
 	req := prepareRequest(http.MethodPost, "/v1/xealth/preorder", "./test/xealth_fixtures/03_initial_pre_order.json")
 	asXealth(req)
@@ -423,7 +508,29 @@ func sendInitialPreorder(server *echo.Echo) string {
 	return response.DataTrackingId
 }
 
-func sendSubsequentPreorder(dataTrackingId string, server *echo.Echo) io.ReadCloser {
+func sendPediatricInitialPreorder(server *echo.Echo) string {
+	rec := httptest.NewRecorder()
+	req := prepareRequest(http.MethodPost, "/v1/xealth/preorder", "./test/xealth_fixtures/10_initial_pre_order_pediatric.json")
+	asXealth(req)
+
+	server.ServeHTTP(rec, req)
+	Expect(rec.Result()).ToNot(BeNil())
+	Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+	body, err := io.ReadAll(rec.Result().Body)
+	Expect(err).ToNot(HaveOccurred())
+
+	response := xealth_client.PreorderFormResponse0{}
+	Expect(json.Unmarshal(body, &response)).To(Succeed())
+
+	Expect(response.DataTrackingId).ToNot(BeEmpty())
+	Expect(response.NotOrderable).To(PointTo(BeFalse()))
+	Expect(response.PreorderFormInfo.FormId).To(PointTo(Equal("guardian_enrollment_form")))
+
+	return response.DataTrackingId
+}
+
+func sendAdultSubsequentPreorder(dataTrackingId string, server *echo.Echo) io.ReadCloser {
 	// Set the data tracking id from the previous step when sending the subsequent preorer requrest
 	overrides, err := json.Marshal(map[string]interface{}{
 		"formData": map[string]interface{}{
@@ -450,7 +557,34 @@ func sendSubsequentPreorder(dataTrackingId string, server *echo.Echo) io.ReadClo
 	return rec.Result().Body
 }
 
-func prepareOrder(dataTrackingId string, xealthStub *xealthTest.XealthServer) {
+func sendPediatricSubsequentPreorder(dataTrackingId string, server *echo.Echo) io.ReadCloser {
+	// Set the data tracking id from the previous step when sending the subsequent preorer requrest
+	overrides, err := json.Marshal(map[string]interface{}{
+		"formData": map[string]interface{}{
+			"dataTrackingId": dataTrackingId,
+		},
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	body, err := test.LoadFixture("./test/xealth_fixtures/11_subsequent_pre_order_pediatric.json")
+	Expect(err).ToNot(HaveOccurred())
+
+	body, err = deepmerge.JSON(body, overrides, deepmerge.Config{
+		PreventMultipleDefinitionsOfKeysWithPrimitiveValue: false},
+	)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/v1/xealth/preorder", bytes.NewReader(body))
+	asXealth(req)
+
+	server.ServeHTTP(rec, req)
+	Expect(rec.Result()).ToNot(BeNil())
+	Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+	return rec.Result().Body
+}
+
+func prepareOrder(dataTrackingId, orderId, fixturePath string, xealthStub *xealthTest.XealthServer) {
 	// Set the data tracking id from the previous step when sending the subsequent preorer requrest
 	overrides, err := json.Marshal(map[string]interface{}{
 		"preorder": map[string]interface{}{
@@ -459,14 +593,14 @@ func prepareOrder(dataTrackingId string, xealthStub *xealthTest.XealthServer) {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	body, err := test.LoadFixture("./test/xealth_fixtures/05_read_order_response.json")
+	body, err := test.LoadFixture(fixturePath)
 	Expect(err).ToNot(HaveOccurred())
 
 	body, err = deepmerge.JSON(body, overrides, deepmerge.Config{
 		PreventMultipleDefinitionsOfKeysWithPrimitiveValue: false},
 	)
 
-	xealthStub.AddOrder("artificialhealthcare", "7e316617-ef33-4859-b0c9-36bddbfe9229", body)
+	xealthStub.AddOrder("artificialhealthcare", orderId, body)
 }
 
 func getPrograms(server *echo.Echo) xealth_client.GetProgramsResponse0 {
