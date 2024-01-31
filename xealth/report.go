@@ -12,7 +12,23 @@ const (
 	defaultReportingPeriod = time.Hour * 24 * 14
 )
 
-func GenerateReportUrl(baseUrl string, patient patients.Patient, clinic clinics.Clinic) (*url.URL, error) {
+func GeneratePDFViewerUrl(baseUrl string, token string, patient patients.Patient, clinic clinics.Clinic) (*url.URL, error) {
+	u, err := url.Parse(baseUrl)
+	if err != nil {
+		return nil, err
+	}
+	u = u.JoinPath("v1", "xealth", "report", "web", "viewer.html")
+
+	query := u.Query()
+	query.Add(restrictedTokenKey, token)
+	query.Add("patientId", *patient.UserId)
+	query.Add("clinicId", clinic.Id.Hex())
+	u.RawQuery = query.Encode()
+
+	return u, nil
+}
+
+func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, clinic clinics.Clinic) (*url.URL, error) {
 	u, err := url.Parse(baseUrl)
 	if err != nil {
 		return nil, err
@@ -58,6 +74,7 @@ func GenerateReportUrl(baseUrl string, patient patients.Patient, clinic clinics.
 		query.Add("endDate", endDate.Format(time.RFC3339))
 	}
 
+	query.Add(restrictedTokenKey, token)
 	u.RawQuery = query.Encode()
 	return u, nil
 }

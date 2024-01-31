@@ -13,7 +13,7 @@ const (
 
 func GetProgramDescription(lastUpload time.Time, lastViewed time.Time) *string {
 	items := []string{
-		fmt.Sprintf("Last Upload Date: %s", formatDateForDescription(lastUpload)),
+		fmt.Sprintf("Last Upload: %s", formatDateForDescription(lastUpload)),
 		fmt.Sprintf("Last Viewed by You: %s", formatDateForDescription(lastViewed)),
 	}
 	description := strings.Join(items, " | ")

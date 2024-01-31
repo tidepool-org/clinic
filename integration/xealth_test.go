@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -159,7 +160,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(response.Programs).To(HaveLen(1))
 
 			program := response.Programs[0]
-			Expect(program.Description).To(PointTo(Equal("Last Upload Date: N/A | Last Viewed by You: N/A")))
+			Expect(program.Description).To(PointTo(Equal("Last Upload: N/A | Last Viewed by You: N/A")))
 			Expect(program.EnrolledDate).To(PointTo(Equal("2021-01-14")))
 			Expect(program.HasStatusView).To(PointTo(BeFalse()))
 			Expect(program.HasAlert).To(PointTo(BeFalse()))
@@ -217,7 +218,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(response.Programs).To(HaveLen(1))
 
 			program := response.Programs[0]
-			Expect(program.Description).To(PointTo(Equal("Last Upload Date: 2024-01-17 | Last Viewed by You: N/A")))
+			Expect(program.Description).To(PointTo(Equal("Last Upload: 2024-01-17 | Last Viewed by You: N/A")))
 			Expect(program.EnrolledDate).To(PointTo(Equal("2021-01-14")))
 			Expect(program.HasStatusView).To(PointTo(BeTrue()))
 			Expect(program.HasAlert).To(PointTo(BeTrue()))
@@ -242,7 +243,34 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 			response := xealth_client.GetProgramUrlResponse{}
 			Expect(json.Unmarshal(body, &response)).To(Succeed())
-			Expect(response.Url).To(Equal("https://integration.test.app.url.com/export/report/1234567891?bgUnits=mg%2FdL&dob=1985-01-11&endDate=2024-01-17T06%3A38%3A22Z&fullName=FirstName+First+LastName+Last&inline=true&mrn=e987655&reports=all&restricted_token=1234567890abcdef1234567890abcdef&startDate=2024-01-03T06%3A38%3A22Z&tzName=US%2FPacific&userId=1234567891"))
+			Expect(response.Url).ToNot(BeEmpty())
+
+			reportUrl, err := url.Parse(response.Url)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(reportUrl.Scheme).To(Equal("https"))
+			Expect(reportUrl.Host).To(Equal("integration.test.app.url.com"))
+			Expect(reportUrl.Path).To(Equal("/v1/xealth/report/web/viewer.html"))
+			Expect(reportUrl.Query().Get("clinicId")).To(Equal(*clinic.Id))
+			Expect(reportUrl.Query().Get("patientId")).To(Equal(*patient.Id))
+			Expect(reportUrl.Query().Get("restricted_token")).To(Equal(integrationTest.TestRestrictedToken))
+		})
+	})
+
+	Describe("View PDF report", func() {
+		It("Succeeds", func() {
+			reportUrl := fmt.Sprintf("/v1/xealth/report/web/viewer.html?clinicId=%s&patientId=%s&restricted_token=%s", *clinic.Id, *patient.Id, integrationTest.TestRestrictedToken)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet, reportUrl, "")
+			asXealth(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			body, err := io.ReadAll(rec.Result().Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(string(body)).To(ContainSubstring("https:\\/\\/integration.test.app.url.com\\/export\\/report\\/1234567891?bgUnits=mg%2FdL\\u0026dob=1985-01-11\\u0026endDate=2024-01-17T06%3A38%3A22Z\\u0026fullName=FirstName\\u002bFirst\\u002bLastName\\u002bLast\\u0026inline=true\\u0026mrn=e987655\\u0026reports=all\\u0026restricted_token=1234567890abcdef1234567890abcdef\\u0026startDate=2024-01-03T06%3A38%3A22Z\\u0026tzName=US%2FPacific\\u0026userId=1234567891"))
 		})
 	})
 
@@ -254,7 +282,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 			program := response.Programs[0]
 			today := time.Now().Format(time.DateOnly)
-			Expect(program.Description).To(PointTo(Equal(fmt.Sprintf("Last Upload Date: 2024-01-17 | Last Viewed by You: %s", today))))
+			Expect(program.Description).To(PointTo(Equal(fmt.Sprintf("Last Upload: 2024-01-17 | Last Viewed by You: %s", today))))
 			Expect(program.EnrolledDate).To(PointTo(Equal("2021-01-14")))
 			Expect(program.HasStatusView).To(PointTo(BeTrue()))
 			Expect(program.HasAlert).To(PointTo(BeFalse()))

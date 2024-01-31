@@ -193,6 +193,9 @@ type ServerInterface interface {
 	// Get Programs
 	// (PUT /v1/xealth/programs)
 	XealthGetPrograms(ctx echo.Context) error
+	// View PDF Report
+	// (GET /v1/xealth/report/web/viewer.html)
+	ViewPDFReport(ctx echo.Context, params ViewPDFReportParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1912,6 +1915,40 @@ func (w *ServerInterfaceWrapper) XealthGetPrograms(ctx echo.Context) error {
 	return err
 }
 
+// ViewPDFReport converts echo context to params.
+func (w *ServerInterfaceWrapper) ViewPDFReport(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ViewPDFReportParams
+	// ------------- Required query parameter "clinicId" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "clinicId", ctx.QueryParams(), &params.ClinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Required query parameter "patientId" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "patientId", ctx.QueryParams(), &params.PatientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	// ------------- Required query parameter "restricted_token" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "restricted_token", ctx.QueryParams(), &params.RestrictedToken)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter restricted_token: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ViewPDFReport(ctx, params)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -2000,5 +2037,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/xealth/preorder", wrapper.XealthPreorder)
 	router.PUT(baseURL+"/v1/xealth/program", wrapper.XealthGetProgramUrl)
 	router.PUT(baseURL+"/v1/xealth/programs", wrapper.XealthGetPrograms)
+	router.GET(baseURL+"/v1/xealth/report/web/viewer.html", wrapper.ViewPDFReport)
 
 }

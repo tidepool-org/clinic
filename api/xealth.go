@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/xealth"
 	"github.com/tidepool-org/clinic/xealth_client"
 	"io"
 	"net/http"
@@ -130,4 +131,19 @@ func (h *Handler) XealthGetPrograms(ec echo.Context) error {
 	}
 
 	return ec.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) ViewPDFReport(ec echo.Context, params ViewPDFReportParams) error {
+	ctx := ec.Request().Context()
+
+	report, err := h.xealth.GetPDFReport(ctx, xealth.PDFReportRequest{
+		ClinicId:        params.ClinicId,
+		PatientId:       params.PatientId,
+		RestrictedToken: params.RestrictedToken,
+	})
+	if err != nil {
+		return err
+	}
+
+	return ec.Render(http.StatusOK, "viewer.html.tmpl", report)
 }
