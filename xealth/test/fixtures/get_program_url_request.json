@@ -5,9 +5,12 @@
   "patientIdentity": {
     "ids": [
       {
-        "id": "E111111",
-        "type": "enterprise",
-        "origin": "epic"
+        "id": "10052608740",
+        "type": "mrn"
+      },
+      {
+        "id": "e987654",
+        "type": "enterprise"
       }
     ],
     "historicalIds": [

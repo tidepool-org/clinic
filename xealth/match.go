@@ -29,8 +29,10 @@ type Response interface {
 
 type Matcher[R Response] struct {
 	deploymentId string
-	datasets     *xealth_client.GeneralDatasets
-	order        *xealth_client.ReadOrderResponse
+
+	datasets        *xealth_client.GeneralDatasets
+	order           *xealth_client.ReadOrderResponse
+	patientIdentity xealth_client.PatientIdentity
 
 	clinics  clinics.Service
 	patients patients.Service
@@ -68,29 +70,42 @@ func NewMatcher[R Response](clinics clinics.Service, patients patients.Service) 
 
 func (m *Matcher[R]) FromProgramsRequest(event xealth_client.GetProgramsRequest) *Matcher[R] {
 	m.deploymentId = event.Deployment
+	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
 	return m
 }
 
 func (m *Matcher[R]) FromProgramUrlRequest(event xealth_client.GetProgramUrlRequest) *Matcher[R] {
 	m.deploymentId = event.Deployment
+	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
 	return m
 }
 
 func (m *Matcher[R]) FromEventNotification(event xealth_client.EventNotification) *Matcher[R] {
 	m.deploymentId = event.Deployment
+	m.patientIdentity = xealth_client.PatientIdentity{}
+	for _, identity := range event.PatientIdentity.Ids {
+		AppendPatientId(&m.patientIdentity, identity.Id, string(identity.Origin), identity.Type)
+	}
+	if event.PatientIdentity.HistoricalIds != nil {
+		for _, identity := range *event.PatientIdentity.HistoricalIds {
+			AppendPatientHistoricalId(&m.patientIdentity, identity.Id, string(identity.Origin), identity.Type)
+		}
+	}
 	return m
 }
 
 func (m *Matcher[R]) FromInitialPreorderForRequest(event xealth_client.PreorderFormRequest0) *Matcher[R] {
 	m.deploymentId = event.Deployment
+	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
 	return m
 }
 
 func (m *Matcher[R]) FromSubsequentPreorderForRequest(event xealth_client.PreorderFormRequest1) *Matcher[R] {
 	m.deploymentId = event.Deployment
+	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
 	return m
 }
@@ -98,6 +113,15 @@ func (m *Matcher[R]) FromSubsequentPreorderForRequest(event xealth_client.Preord
 func (m *Matcher[R]) FromOrder(event OrderEvent) *Matcher[R] {
 	m.deploymentId = event.OrderData.OrderInfo.Deployment
 	m.order = &event.OrderData
+	m.patientIdentity = xealth_client.PatientIdentity{}
+	for _, identity := range event.OrderData.PatientIdentity.Ids {
+		AppendPatientId(&m.patientIdentity, identity.Id, string(identity.Origin), identity.Type)
+	}
+	if event.OrderData.PatientIdentity.HistoricalIds != nil {
+		for _, identity := range *event.OrderData.PatientIdentity.HistoricalIds {
+			AppendPatientHistoricalId(&m.patientIdentity, identity.Id, string(identity.Origin), identity.Type)
+		}
+	}
 	return m
 }
 
@@ -165,17 +189,29 @@ func (m *Matcher[R]) Match(ctx context.Context) (result MatchingResult[R], err e
 	}
 
 	if m.datasets != nil {
-		result.Criteria, err = GetPatientMatchingCriteriaFromGeneralDatasets(m.datasets, result.Clinic)
+		result.Criteria, err = NewPatientMatchingCriteriaFromGeneralDatasets(m.datasets)
 		if err != nil {
 			return
 		}
 	} else if m.order != nil {
-		result.Criteria, err = GetPatientMatchingCriteriaFromOrder(m.order, result.Clinic)
+		result.Criteria, err = NewPatientMatchingCriteriaFromOrder(m.order)
 		if err != nil {
 			return
 		}
 	} else {
 		return
+	}
+
+	if result.Criteria != nil {
+		err = PopulateMRN(result.Criteria, m.patientIdentity, result.Clinic)
+		if err != nil {
+			return
+		}
+
+		err = result.Criteria.Validate()
+		if err != nil {
+			return
+		}
 	}
 
 	matchingPatients, err := m.FindMatchingPatients(ctx, result.Criteria, result.Clinic)
@@ -264,11 +300,21 @@ func (p *PatientMatchingCriteria) Validate() error {
 	return nil
 }
 
-func GetPatientMatchingCriteriaFromOrder(order *xealth_client.ReadOrderResponse, clinic *clinics.Clinic) (*PatientMatchingCriteria, error) {
+func PopulateMRN(criteria *PatientMatchingCriteria, identity xealth_client.PatientIdentity, clinic *clinics.Clinic) error {
 	if clinic == nil || clinic.EHRSettings == nil {
-		return nil, fmt.Errorf("%w: clinic has no EHR settings", errs.BadRequest)
+		return fmt.Errorf("%w: clinic has no EHR settings", errs.BadRequest)
 	}
+	mrnIdType := strings.ToLower(clinic.EHRSettings.GetMrnIDType())
+	for _, identifier := range identity.Ids {
+		if strings.ToLower(identifier.Type) == mrnIdType {
+			criteria.Mrn = identifier.Id
+			break
+		}
+	}
+	return nil
+}
 
+func NewPatientMatchingCriteriaFromOrder(order *xealth_client.ReadOrderResponse) (*PatientMatchingCriteria, error) {
 	if order.Datasets == nil {
 		return nil, fmt.Errorf("%w: datasets is required", errs.BadRequest)
 	}
@@ -276,19 +322,8 @@ func GetPatientMatchingCriteriaFromOrder(order *xealth_client.ReadOrderResponse,
 	if datasets.DemographicsV1 == nil {
 		return nil, fmt.Errorf("%w: demographics is required", errs.BadRequest)
 	}
-	if datasets.DemographicsV1.Ids == nil || len(*datasets.DemographicsV1.Ids) == 0 {
-		return nil, fmt.Errorf("%w: demographics ids are required", errs.BadRequest)
-	}
 
 	criteria := &PatientMatchingCriteria{}
-
-	mrnIdType := strings.ToLower(clinic.EHRSettings.GetMrnIDType())
-	for _, identifier := range *datasets.DemographicsV1.Ids {
-		if identifier.Type != nil && strings.ToLower(*identifier.Type) == mrnIdType && identifier.Id != nil {
-			criteria.Mrn = *identifier.Id
-			break
-		}
-	}
 
 	if datasets.DemographicsV1.Name != nil {
 		names := make([]string, 0, 2)
@@ -318,32 +353,18 @@ func GetPatientMatchingCriteriaFromOrder(order *xealth_client.ReadOrderResponse,
 		}
 	}
 
-	return criteria, criteria.Validate()
+	return criteria, nil
 }
 
-func GetPatientMatchingCriteriaFromGeneralDatasets(datasets *xealth_client.GeneralDatasets, clinic *clinics.Clinic) (*PatientMatchingCriteria, error) {
-	if clinic == nil || clinic.EHRSettings == nil {
-		return nil, fmt.Errorf("%w: clinic has no EHR settings", errs.BadRequest)
-	}
+func NewPatientMatchingCriteriaFromGeneralDatasets(datasets *xealth_client.GeneralDatasets) (*PatientMatchingCriteria, error) {
 	if datasets == nil {
 		return nil, fmt.Errorf("%w: datasets is required", errs.BadRequest)
 	}
 	if datasets.DemographicsV1 == nil {
 		return nil, fmt.Errorf("%w: demographics is required", errs.BadRequest)
 	}
-	if datasets.DemographicsV1.Ids == nil || len(*datasets.DemographicsV1.Ids) == 0 {
-		return nil, fmt.Errorf("%w: demographics ids are required", errs.BadRequest)
-	}
 
 	criteria := &PatientMatchingCriteria{}
-
-	mrnIdType := strings.ToLower(clinic.EHRSettings.GetMrnIDType())
-	for _, identifier := range *datasets.DemographicsV1.Ids {
-		if identifier.Type != nil && strings.ToLower(*identifier.Type) == mrnIdType && identifier.Id != nil {
-			criteria.Mrn = *identifier.Id
-			break
-		}
-	}
 
 	if datasets.DemographicsV1.Name != nil {
 		names := make([]string, 0, 2)
@@ -373,5 +394,36 @@ func GetPatientMatchingCriteriaFromGeneralDatasets(datasets *xealth_client.Gener
 		}
 	}
 
-	return criteria, criteria.Validate()
+	return criteria, nil
+}
+
+func AppendPatientId(patientIdentity *xealth_client.PatientIdentity, id, origin, typ string) {
+	patientIdentity.Ids = append(patientIdentity.Ids, struct {
+		Id     string                                 `json:"id"`
+		Origin xealth_client.PatientIdentityIdsOrigin `json:"origin"`
+		Type   string                                 `json:"type"`
+	}{
+		Id:     id,
+		Origin: xealth_client.PatientIdentityIdsOrigin(origin),
+		Type:   typ,
+	})
+}
+
+func AppendPatientHistoricalId(patientIdentity *xealth_client.PatientIdentity, id, origin, typ string) {
+	ids := []struct {
+		Id     string                                           `json:"id"`
+		Origin xealth_client.PatientIdentityHistoricalIdsOrigin `json:"origin"`
+		Type   string                                           `json:"type"`
+	}{{
+		Id:     id,
+		Origin: xealth_client.PatientIdentityHistoricalIdsOrigin(origin),
+		Type:   typ,
+	}}
+	if patientIdentity.HistoricalIds != nil {
+		historicalIds := *patientIdentity.HistoricalIds
+		historicalIds = append(historicalIds, ids[0])
+		patientIdentity.HistoricalIds = &historicalIds
+	} else {
+		patientIdentity.HistoricalIds = &ids
+	}
 }
