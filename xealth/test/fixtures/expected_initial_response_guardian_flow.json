@@ -7,7 +7,6 @@
         "connect": false
       },
       "guardian": {
-        "email": "",
         "firstName": "",
         "lastName": ""
       }
@@ -52,8 +51,7 @@
           },
           "required": [
             "firstName",
-            "lastName",
-            "email"
+            "lastName"
           ],
           "title": "",
           "type": "object"

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/mail"
 )
 
 const (
@@ -40,7 +39,7 @@ type FormErrors interface {
 type Guardian struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
+	Email     string `json:"email,omitempty"`
 }
 type GuardianFormData struct {
 	Guardian Guardian `json:"guardian"`
@@ -57,7 +56,7 @@ func (g GuardianFormData) Normalize() PreorderFormData {
 }
 
 type Patient struct {
-	Email string `json:"email"`
+	Email string `json:"email,omitempty"`
 }
 
 type PatientFormData struct {
@@ -197,9 +196,4 @@ type PreorderFormData struct {
 	Guardian       *Guardian           `bson:"guardian,omitempty"`
 	Dexcom         Dexcom              `bson:"dexcom"`
 	Tags           *Tags               `bson:"tags,omitempty"`
-}
-
-func isValidEmail(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
 }

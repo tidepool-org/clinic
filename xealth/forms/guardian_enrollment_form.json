@@ -14,8 +14,7 @@
         "title": "",
         "required": [
           "firstName",
-          "lastName",
-          "email"
+          "lastName"
         ],
         "properties": {
           "firstName": {

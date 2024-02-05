@@ -447,10 +447,14 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		}
 		if preorderData.Guardian != nil {
 			create.FullName = &match.Criteria.FullName
-			create.Email = &preorderData.Guardian.Email
+			if strings.TrimSpace(preorderData.Guardian.Email) != "" {
+				create.Email = &preorderData.Guardian.Email
+			}
 		} else if preorderData.Patient != nil {
 			create.FullName = &match.Criteria.FullName
-			create.Email = &preorderData.Patient.Email
+			if strings.TrimSpace(preorderData.Patient.Email) != "" {
+				create.Email = &preorderData.Patient.Email
+			}
 		} else {
 			return fmt.Errorf("%w: unable to create patient preorder data is missing", errs.BadRequest)
 		}

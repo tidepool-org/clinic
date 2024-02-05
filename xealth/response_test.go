@@ -73,6 +73,44 @@ var _ = Describe("Response Builder", func() {
 			Expect(err).ToNot(HaveOccurred())
 			ExpectResponseToMatchString(response, []byte(`{}`))
 		})
+
+		It("Returns the expected final response with an empty patient email", func() {
+			userInput := map[string]interface{}{
+				"patient": map[string]interface{}{
+					"email": "",
+				},
+			}
+
+			response, err := xealth.NewPatientFlowResponseBuilder().
+				WithDataTrackingId("1234567890").
+				WithUserInput(&userInput).
+				WithDataValidator(xealth.NewPatientDataValidator(users)).
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
+				BuildSubsequentResponse()
+
+			Expect(err).ToNot(HaveOccurred())
+			ExpectResponseToMatchString(response, []byte(`{}`))
+		})
+
+		It("Returns the expected final response with an empty guardian email", func() {
+			userInput := map[string]interface{}{
+				"guardian": map[string]interface{}{
+					"email":     "",
+					"firstName": "James",
+					"lastName":  "Jellyfish",
+				},
+			}
+
+			response, err := xealth.NewGuardianFlowResponseBuilder().
+				WithDataTrackingId("1234567890").
+				WithUserInput(&userInput).
+				WithDataValidator(xealth.NewGuardianDataValidator(users)).
+				WithRenderedTitleTemplate(xealth.FormTitlePatientNameTemplate, "James Jellyfish").
+				BuildSubsequentResponse()
+
+			Expect(err).ToNot(HaveOccurred())
+			ExpectResponseToMatchString(response, []byte(`{}`))
+		})
 	})
 
 	Describe("Guardian Flow", func() {

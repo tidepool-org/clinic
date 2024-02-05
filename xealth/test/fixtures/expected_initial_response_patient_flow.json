@@ -25,9 +25,6 @@
         "patient": {
           "type": "object",
           "title": "",
-          "required": [
-            "email"
-          ],
           "properties": {
             "email": {
               "title": "Patient's Email",

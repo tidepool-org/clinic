@@ -7,7 +7,6 @@
         "connect": false
       },
       "guardian": {
-        "email": "",
         "firstName": "",
         "lastName": ""
       }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"net/mail"
 	"strings"
 )
 
@@ -42,14 +43,22 @@ func (g *GuardianDataValidator) Validate(d GuardianFormData) (FormErrors, error)
 	formErrors := &PreorderFormErrors{
 		Title: ErrorTitle,
 	}
-	if strings.TrimSpace(d.Guardian.FirstName) == "" || strings.TrimSpace(d.Guardian.LastName) == "" || !isValidEmail(d.Guardian.Email) {
+	if strings.TrimSpace(d.Guardian.FirstName) == "" || strings.TrimSpace(d.Guardian.LastName) == "" {
 		formErrors.AddErrorParagraph(SomethingWentWrongErrorText)
-	} else if duplicate, err := g.duplicateEmailValidator.IsDuplicate(d.Guardian.Email); err != nil {
-		return nil, err
-	} else if duplicate {
-		paragraphs := strings.Split(DuplicateEmailAddressErrorText, ParagraphSeparator)
-		for _, p := range paragraphs {
-			formErrors.AddErrorParagraph(p)
+		return formErrors, nil
+	}
+
+	if d.Guardian.Email != "" {
+		if !isValidEmail(d.Guardian.Email) {
+			formErrors.AddErrorParagraph(SomethingWentWrongErrorText)
+			return formErrors, nil
+		} else if duplicate, err := g.duplicateEmailValidator.IsDuplicate(d.Guardian.Email); err != nil {
+			return nil, err
+		} else if duplicate {
+			paragraphs := strings.Split(DuplicateEmailAddressErrorText, ParagraphSeparator)
+			for _, p := range paragraphs {
+				formErrors.AddErrorParagraph(p)
+			}
 		}
 	}
 
@@ -70,16 +79,23 @@ func (g *PatientDataValidator) Validate(d PatientFormData) (FormErrors, error) {
 	formErrors := &PreorderFormErrors{
 		Title: ErrorTitle,
 	}
-	if !isValidEmail(d.Patient.Email) {
-		formErrors.AddErrorParagraph(SomethingWentWrongErrorText)
-	} else if duplicate, err := g.duplicateEmailValidator.IsDuplicate(d.Patient.Email); err != nil {
-		return nil, err
-	} else if duplicate {
-		paragraphs := strings.Split(DuplicateEmailAddressErrorText, ParagraphSeparator)
-		for _, p := range paragraphs {
-			formErrors.AddErrorParagraph(p)
+	if d.Patient.Email != "" {
+		if !isValidEmail(d.Patient.Email) {
+			formErrors.AddErrorParagraph(SomethingWentWrongErrorText)
+		} else if duplicate, err := g.duplicateEmailValidator.IsDuplicate(d.Patient.Email); err != nil {
+			return nil, err
+		} else if duplicate {
+			paragraphs := strings.Split(DuplicateEmailAddressErrorText, ParagraphSeparator)
+			for _, p := range paragraphs {
+				formErrors.AddErrorParagraph(p)
+			}
 		}
 	}
 
 	return formErrors, nil
+}
+
+func isValidEmail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
 }
