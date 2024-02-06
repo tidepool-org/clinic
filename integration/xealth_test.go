@@ -361,6 +361,22 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 		})
 	})
 
+	Describe("Send initial pre-order request with a birthday mismatch", func() {
+		It("Succeeds with a final response", func() {
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodPost, "/v1/xealth/preorder", "./test/xealth_fixtures/03_initial_pre_order_birthday_mismatch.json")
+			asXealth(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			body, err := io.ReadAll(rec.Result().Body)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(body)).To(ContainSubstring("there's a mismatch with the patient's date of birth between Tidepool and the Electronic Health Record (EHR)"))
+		})
+	})
+
 	Describe("Send order notification event after subscription removal", func() {
 		BeforeEach(func() {
 			prepareOrder(dataTrackingId, XealthAdultOrderId, XealtAdultOrderFixture, xealthStub)

@@ -115,17 +115,14 @@ func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 		FromInitialPreorderForRequest(request).
 		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
-	if err != nil || match.Response != nil {
-		return match.Response, err
-	}
-
-	if match.Patient != nil {
-		return NewFinalResponse()
+	if err != nil {
+		return nil, err
 	}
 
 	dataTrackingId := uuid.NewString()
 	if match.Criteria.IsPatientUnder13() {
 		return NewGuardianFlowResponseBuilder().
+			WithMatchingResult(match).
 			WithDataTrackingId(dataTrackingId).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
 			WithTags(match.Clinic.PatientTags).
@@ -135,6 +132,7 @@ func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 		formData.Patient.Email = match.Criteria.Email
 
 		return NewPatientFlowResponseBuilder().
+			WithMatchingResult(match).
 			WithDataTrackingId(dataTrackingId).
 			WithData(formData).
 			WithRenderedTitleTemplate(FormTitlePatientNameTemplate, match.Criteria.FullName).
@@ -148,15 +146,13 @@ func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 		FromSubsequentPreorderForRequest(request).
 		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
-	if err != nil || match.Response != nil {
-		return match.Response, err
-	}
-	if match.Patient != nil {
-		return nil, fmt.Errorf("a matching patient already exists")
+	if err != nil {
+		return nil, err
 	}
 
 	if match.Criteria.IsPatientUnder13() {
 		return NewGuardianFlowResponseBuilder().
+			WithMatchingResult(match).
 			WithDataTrackingId(request.FormData.DataTrackingId).
 			WithUserInput(request.FormData.UserInput).
 			WithDataValidator(NewGuardianDataValidator(d.users)).
@@ -166,6 +162,7 @@ func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, r
 			BuildSubsequentResponse()
 	} else {
 		return NewPatientFlowResponseBuilder().
+			WithMatchingResult(match).
 			WithDataTrackingId(request.FormData.DataTrackingId).
 			WithUserInput(request.FormData.UserInput).
 			WithDataValidator(NewPatientDataValidator(d.users)).

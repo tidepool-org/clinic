@@ -258,9 +258,8 @@ func (m *Matcher[R]) FindMatchingPatients(ctx context.Context, criteria *Patient
 	}
 
 	filter := patients.Filter{
-		ClinicId:  &clinicId,
-		Mrn:       &criteria.Mrn,
-		BirthDate: &criteria.DateOfBirth,
+		ClinicId: &clinicId,
+		Mrn:      &criteria.Mrn,
 	}
 	result, err := m.patients.List(ctx, &filter, page, nil)
 	if err != nil {
