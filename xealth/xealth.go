@@ -442,21 +442,18 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			Mrn:         &match.Criteria.Mrn,
 			Permissions: &patients.CustodialAccountPermissions,
 		}
+		connectDexcom := false
 		if preorderData.Guardian != nil {
 			create.FullName = &match.Criteria.FullName
 			if strings.TrimSpace(preorderData.Guardian.Email) != "" {
 				create.Email = &preorderData.Guardian.Email
-				if preorderData.Guardian.ConnectDexcom {
-					create.LastRequestedDexcomConnectTime = time.Now()
-				}
+				connectDexcom = preorderData.Guardian.ConnectDexcom
 			}
 		} else if preorderData.Patient != nil {
 			create.FullName = &match.Criteria.FullName
 			if strings.TrimSpace(preorderData.Patient.Email) != "" {
 				create.Email = &preorderData.Patient.Email
-				if preorderData.Patient.ConnectDexcom {
-					create.LastRequestedDexcomConnectTime = time.Now()
-				}
+				connectDexcom = preorderData.Patient.ConnectDexcom
 			}
 		} else {
 			return fmt.Errorf("%w: unable to create patient preorder data is missing", errs.BadRequest)
@@ -478,9 +475,27 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			create.Tags = &tags
 		}
 
+		if connectDexcom {
+			dataSources := []patients.DataSource{{
+				ProviderName: patients.DexcomDataSourceProviderName,
+				State:        patients.DataSourceStatePending,
+			}}
+			create.DataSources = &dataSources
+		}
+
 		match.Patient, err = d.patients.Create(ctx, create)
 		if err != nil {
 			return err
+		}
+
+		if connectDexcom {
+			if match.Patient, err = d.patients.UpdateLastRequestedDexcomConnectTime(ctx, &patients.LastRequestedDexcomConnectUpdate{
+				ClinicId: create.ClinicId.Hex(),
+				UserId:   *match.Patient.UserId,
+				Time:     time.Now(),
+			}); err != nil {
+				return err
+			}
 		}
 	}
 

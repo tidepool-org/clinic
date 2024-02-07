@@ -180,10 +180,9 @@ type UploadReminderUpdate struct {
 }
 
 type LastRequestedDexcomConnectUpdate struct {
-	ClinicId  string
-	UserId    string
-	UpdatedBy string
-	Time      time.Time
+	ClinicId string
+	UserId   string
+	Time     time.Time
 }
 
 type Summary struct {

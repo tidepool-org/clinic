@@ -192,6 +192,10 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 		It("email is correct", func() {
 			Expect(patient.Email).To(PointTo(Equal("xealth@tidepool.org")))
 		})
+
+		It("last request dexcom connect time is set", func() {
+			Expect(patient.LastRequestedDexcomConnectTime).To(PointTo(BeTemporally("~", time.Now().UTC(), time.Second*5)))
+		})
 	})
 
 	Describe("Send get programs request", func() {
