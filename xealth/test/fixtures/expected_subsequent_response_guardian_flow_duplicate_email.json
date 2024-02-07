@@ -3,9 +3,6 @@
   "notOrderable": true,
   "preorderFormInfo": {
     "formData": {
-      "dexcom": {
-        "connect": false
-      },
       "guardian": {
         "email": "james.jellyfish@tidepool.org",
         "firstName": "James",

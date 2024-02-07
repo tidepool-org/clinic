@@ -446,17 +446,20 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			create.FullName = &match.Criteria.FullName
 			if strings.TrimSpace(preorderData.Guardian.Email) != "" {
 				create.Email = &preorderData.Guardian.Email
+				if preorderData.Guardian.ConnectDexcom {
+					create.LastRequestedDexcomConnectTime = time.Now()
+				}
 			}
 		} else if preorderData.Patient != nil {
 			create.FullName = &match.Criteria.FullName
 			if strings.TrimSpace(preorderData.Patient.Email) != "" {
 				create.Email = &preorderData.Patient.Email
+				if preorderData.Patient.ConnectDexcom {
+					create.LastRequestedDexcomConnectTime = time.Now()
+				}
 			}
 		} else {
 			return fmt.Errorf("%w: unable to create patient preorder data is missing", errs.BadRequest)
-		}
-		if preorderData.Dexcom.Connect {
-			create.LastRequestedDexcomConnectTime = time.Now()
 		}
 
 		var tags []primitive.ObjectID

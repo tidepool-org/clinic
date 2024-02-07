@@ -31,16 +31,16 @@
             "type": "string",
             "format": "email"
           }
-        }
-      },
-      "dexcom": {
-        "type": "object",
-        "title": "",
-        "properties": {
-          "connect": {
-            "title": "Connect with Dexcom",
-            "description": "",
-            "type": "boolean"
+        },
+        "dependencies": {
+          "email": {
+            "properties": {
+              "connectDexcom": {
+                "title": "Connect with Dexcom",
+                "description": "",
+                "type": "boolean"
+              }
+            }
           }
         }
       },
@@ -62,12 +62,10 @@
     }
   },
   "uiSchema": {
-    "ui:order": ["guardian", "dexcom", "tags"],
+    "ui:order": ["guardian", "tags"],
     "guardian": {
-      "ui:order": ["firstName", "lastName", "email"]
-    },
-    "dexcom": {
-      "connect": {
+      "ui:order": ["firstName", "lastName", "email", "connectDexcom"],
+      "connectDexcom": {
         "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
       }
     },
