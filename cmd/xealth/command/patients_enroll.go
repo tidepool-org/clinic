@@ -46,7 +46,7 @@ func enrollPatients(clinicsService clinics.Service, patientsService patients.Ser
 		Ascending: true,
 	}}
 
-	hasMRN := false
+	hasMRN := true
 	HasSubscription := false
 	filter := patients.Filter{
 		ClinicId:        &patientsEnrollParams.ClinicId,
