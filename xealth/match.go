@@ -34,6 +34,8 @@ type Matcher[R Response] struct {
 	order           *xealth_client.ReadOrderResponse
 	patientIdentity xealth_client.PatientIdentity
 
+	matchDateOfBirth bool
+
 	clinics  clinics.Service
 	patients patients.Service
 
@@ -61,6 +63,8 @@ func NewMatcher[R Response](clinics clinics.Service, patients patients.Service) 
 		clinics:  clinics,
 		patients: patients,
 
+		matchDateOfBirth: true,
+
 		noClinicsErr:        NoClinicsErr,
 		noPatientsErr:       NoMatchingPatients,
 		multipleClinicsErr:  MultipleClinicsErr,
@@ -72,6 +76,7 @@ func (m *Matcher[R]) FromProgramsRequest(event xealth_client.GetProgramsRequest)
 	m.deploymentId = event.Deployment
 	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
+
 	return m
 }
 
@@ -100,6 +105,9 @@ func (m *Matcher[R]) FromInitialPreorderForRequest(event xealth_client.PreorderF
 	m.deploymentId = event.Deployment
 	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
+	// Allow DOB mismatch so we can display a custom error form
+	m.matchDateOfBirth = false
+
 	return m
 }
 
@@ -107,6 +115,8 @@ func (m *Matcher[R]) FromSubsequentPreorderForRequest(event xealth_client.Preord
 	m.deploymentId = event.Deployment
 	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
+	// Allow DOB mismatch so we can display a custom error form
+	m.matchDateOfBirth = false
 	return m
 }
 
@@ -214,7 +224,7 @@ func (m *Matcher[R]) Match(ctx context.Context) (result MatchingResult[R], err e
 		}
 	}
 
-	matchingPatients, err := m.FindMatchingPatients(ctx, result.Criteria, result.Clinic)
+	matchingPatients, err := m.findMatchingPatients(ctx, result.Criteria, result.Clinic)
 	if err != nil {
 		return
 	}
@@ -250,7 +260,7 @@ func (m *Matcher[R]) matchClinics(ctx context.Context, deployment string) ([]*cl
 	return m.clinics.List(ctx, filter, page)
 }
 
-func (m *Matcher[R]) FindMatchingPatients(ctx context.Context, criteria *PatientMatchingCriteria, clinic *clinics.Clinic) ([]*patients.Patient, error) {
+func (m *Matcher[R]) findMatchingPatients(ctx context.Context, criteria *PatientMatchingCriteria, clinic *clinics.Clinic) ([]*patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
 	page := store.Pagination{
 		Offset: 0,
@@ -260,6 +270,9 @@ func (m *Matcher[R]) FindMatchingPatients(ctx context.Context, criteria *Patient
 	filter := patients.Filter{
 		ClinicId: &clinicId,
 		Mrn:      &criteria.Mrn,
+	}
+	if m.matchDateOfBirth {
+		filter.BirthDate = &criteria.DateOfBirth
 	}
 	result, err := m.patients.List(ctx, &filter, page, nil)
 	if err != nil {
