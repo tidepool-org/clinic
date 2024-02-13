@@ -9,6 +9,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/xealth_client"
+	"go.uber.org/zap"
 	"strings"
 	"time"
 )
@@ -28,7 +29,7 @@ type Response interface {
 }
 
 type Matcher[R Response] struct {
-	deploymentId string
+	deployment string
 
 	datasets        *xealth_client.GeneralDatasets
 	order           *xealth_client.ReadOrderResponse
@@ -38,6 +39,7 @@ type Matcher[R Response] struct {
 
 	clinics  clinics.Service
 	patients patients.Service
+	logger   *zap.SugaredLogger
 
 	noClinicsResp  R
 	noClinicsErr   error
@@ -58,10 +60,11 @@ type MatchingResult[R Response] struct {
 	Response R
 }
 
-func NewMatcher[R Response](clinics clinics.Service, patients patients.Service) *Matcher[R] {
+func NewMatcher[R Response](clinics clinics.Service, patients patients.Service, logger *zap.SugaredLogger) *Matcher[R] {
 	return &Matcher[R]{
 		clinics:  clinics,
 		patients: patients,
+		logger:   logger,
 
 		matchDateOfBirth: true,
 
@@ -73,7 +76,7 @@ func NewMatcher[R Response](clinics clinics.Service, patients patients.Service) 
 }
 
 func (m *Matcher[R]) FromProgramsRequest(event xealth_client.GetProgramsRequest) *Matcher[R] {
-	m.deploymentId = event.Deployment
+	m.deployment = event.Deployment
 	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
 
@@ -81,14 +84,14 @@ func (m *Matcher[R]) FromProgramsRequest(event xealth_client.GetProgramsRequest)
 }
 
 func (m *Matcher[R]) FromProgramUrlRequest(event xealth_client.GetProgramUrlRequest) *Matcher[R] {
-	m.deploymentId = event.Deployment
+	m.deployment = event.Deployment
 	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
 	return m
 }
 
 func (m *Matcher[R]) FromEventNotification(event xealth_client.EventNotification) *Matcher[R] {
-	m.deploymentId = event.Deployment
+	m.deployment = event.Deployment
 	m.patientIdentity = xealth_client.PatientIdentity{}
 	for _, identity := range event.PatientIdentity.Ids {
 		AppendPatientId(&m.patientIdentity, identity.Id, string(identity.Origin), identity.Type)
@@ -102,7 +105,7 @@ func (m *Matcher[R]) FromEventNotification(event xealth_client.EventNotification
 }
 
 func (m *Matcher[R]) FromInitialPreorderForRequest(event xealth_client.PreorderFormRequest0) *Matcher[R] {
-	m.deploymentId = event.Deployment
+	m.deployment = event.Deployment
 	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
 	// Allow DOB mismatch so we can display a custom error form
@@ -112,7 +115,7 @@ func (m *Matcher[R]) FromInitialPreorderForRequest(event xealth_client.PreorderF
 }
 
 func (m *Matcher[R]) FromSubsequentPreorderForRequest(event xealth_client.PreorderFormRequest1) *Matcher[R] {
-	m.deploymentId = event.Deployment
+	m.deployment = event.Deployment
 	m.patientIdentity = event.PatientIdentity
 	m.datasets = event.Datasets
 	// Allow DOB mismatch so we can display a custom error form
@@ -121,7 +124,7 @@ func (m *Matcher[R]) FromSubsequentPreorderForRequest(event xealth_client.Preord
 }
 
 func (m *Matcher[R]) FromOrder(event OrderEvent) *Matcher[R] {
-	m.deploymentId = event.OrderData.OrderInfo.Deployment
+	m.deployment = event.OrderData.OrderInfo.Deployment
 	m.order = &event.OrderData
 	m.patientIdentity = xealth_client.PatientIdentity{}
 	for _, identity := range event.OrderData.PatientIdentity.Ids {
@@ -180,22 +183,26 @@ func (m *Matcher[R]) DisableErrorOnNoMatchingPatients() *Matcher[R] {
 }
 
 func (m *Matcher[R]) Match(ctx context.Context) (result MatchingResult[R], err error) {
-	matchingClinics, err := m.matchClinics(ctx, m.deploymentId)
+	m.logger.Infow("finding xealth enabled clinic", "deployment", m.deployment)
+	matchingClinics, err := m.findClinic(ctx, m.deployment)
 	if err != nil {
 		return
 	}
 
 	clinicsCount := len(matchingClinics)
 	if clinicsCount == 0 {
+		m.logger.Warnw("no xealth enabled clinics found", "deployment", m.deployment)
 		result.Response = m.noClinicsResp
 		err = m.noClinicsErr
 		return
 	} else if clinicsCount > 1 {
+		m.logger.Warnw("multiple xealth enabled clinics found", "deployment", m.deployment)
 		result.Response = m.multipleClinicsResp
 		err = m.multipleClinicsErr
 		return
 	} else {
 		result.Clinic = matchingClinics[0]
+		m.logger.Infow("found xealth enabled clinic", "deployment", m.deployment, "clinicId", result.Clinic.Id.Hex())
 	}
 
 	if m.datasets != nil {
@@ -231,21 +238,24 @@ func (m *Matcher[R]) Match(ctx context.Context) (result MatchingResult[R], err e
 
 	patientsCount := len(matchingPatients)
 	if patientsCount == 0 {
+		m.logger.Infow("no matching patients found", "criteria", result.Criteria, "clinicId", result.Clinic.Id.Hex())
 		result.Response = m.noPatientsResp
 		err = m.noPatientsErr
 		return
 	} else if patientsCount > 1 {
+		m.logger.Errorw("multiple matching patients found", "criteria", result.Criteria, "clinicId", result.Clinic.Id.Hex())
 		result.Response = m.multiplePatientsResp
 		err = m.multiplePatientsErr
 		return
 	} else {
 		result.Patient = matchingPatients[0]
+		m.logger.Infow("found matching patient", "criteria", result.Criteria, "clinicId", result.Clinic.Id.Hex(), "patientId", *result.Patient.UserId)
 	}
 
 	return
 }
 
-func (m *Matcher[R]) matchClinics(ctx context.Context, deployment string) ([]*clinics.Clinic, error) {
+func (m *Matcher[R]) findClinic(ctx context.Context, deployment string) ([]*clinics.Clinic, error) {
 	enabled := true
 	filter := &clinics.Filter{
 		EHRProvider: &clinics.EHRProviderXealth,

@@ -111,12 +111,12 @@ func (d *defaultHandler) AuthorizeRequest(req *http.Request) error {
 }
 
 func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest0) (*xealth_client.PreorderFormResponse, error) {
-	match, err := NewMatcher[*xealth_client.PreorderFormResponse](d.clinics, d.patients).
+	match, err := NewMatcher[*xealth_client.PreorderFormResponse](d.clinics, d.patients, d.logger).
 		FromInitialPreorderForRequest(request).
 		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("matching initial preorder request: %w", err)
 	}
 
 	dataTrackingId := uuid.NewString()
@@ -142,12 +142,12 @@ func (d *defaultHandler) ProcessInitialPreorderRequest(ctx context.Context, requ
 }
 
 func (d *defaultHandler) ProcessSubsequentPreorderRequest(ctx context.Context, request xealth_client.PreorderFormRequest1) (*xealth_client.PreorderFormResponse, error) {
-	match, err := NewMatcher[*xealth_client.PreorderFormResponse](d.clinics, d.patients).
+	match, err := NewMatcher[*xealth_client.PreorderFormResponse](d.clinics, d.patients, d.logger).
 		FromSubsequentPreorderForRequest(request).
 		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("matching subsequent preorder request: %w", err)
 	}
 
 	if match.Criteria.IsPatientUnder13() {
@@ -180,13 +180,13 @@ func (d *defaultHandler) HandleEventNotification(ctx context.Context, event xeal
 		return nil
 	}
 
-	match, err := NewMatcher[*xealth_client.EventNotificationResponse](d.clinics, d.patients).
+	match, err := NewMatcher[*xealth_client.EventNotificationResponse](d.clinics, d.patients, d.logger).
 		FromEventNotification(event).
 		DisableErrorOnNoMatchingClinics().
 		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("matching event notification request: %w", err)
 	}
 
 	if match.Clinic == nil {
@@ -223,13 +223,15 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		return nil, err
 	}
 
-	match, err := NewMatcher[*xealth_client.GetProgramsResponse](d.clinics, d.patients).
+	match, err := NewMatcher[*xealth_client.GetProgramsResponse](d.clinics, d.patients, d.logger).
 		FromProgramsRequest(event).
 		OnNoMatchingPatientsRespondWith(response).
 		OnNoMatchingClinicsRespondWith(response).
 		Match(ctx)
-	if err != nil || match.Response != nil {
-		return match.Response, err
+	if err != nil {
+		return nil, fmt.Errorf("matching get programs request: %w", err)
+	} else if match.Response != nil {
+		return match.Response, nil
 	}
 
 	patient := match.Patient
@@ -240,6 +242,7 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 	}
 
 	if subscription == nil || subscription.Provider != clinics.EHRProviderXealth || !subscription.Active {
+		d.logger.Infow("patient doesn't have an active xealth subscription", "clinicId", patient.ClinicId.Hex(), "patientId", *patient.UserId)
 		return response, nil
 	}
 
@@ -272,6 +275,7 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 
 	order, err := d.store.GetOrder(ctx, subscription.MatchedMessages[0].DocumentId.Hex())
 	if err != nil {
+		d.logger.Errorw("unable to retrieve last matched order", "error", err, "clinicId", patient.ClinicId.Hex(), "patientId", *patient.UserId)
 		return nil, err
 	}
 
@@ -283,7 +287,7 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 
 	lastViewed, err := d.getLastViewedDate(ctx, event, *programId, *match.Clinic, *match.Patient)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to obtain last viewed date: %w", err)
 	}
 
 	programs.Programs[0].Description = GetProgramDescription(lastUpload, lastViewed)
@@ -301,11 +305,13 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 }
 
 func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.GetProgramUrlRequest) (*xealth_client.GetProgramUrlResponse, error) {
-	match, err := NewMatcher[*xealth_client.GetProgramUrlResponse](d.clinics, d.patients).
+	match, err := NewMatcher[*xealth_client.GetProgramUrlResponse](d.clinics, d.patients, d.logger).
 		FromProgramUrlRequest(event).
 		Match(ctx)
-	if err != nil || match.Response != nil {
-		return match.Response, err
+	if err != nil {
+		return nil, fmt.Errorf("matching get program url request: %w", err)
+	} else if match.Response != nil {
+		return match.Response, nil
 	}
 
 	sessionToken, err := d.authClient.ServerSessionToken()
@@ -323,7 +329,7 @@ func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.
 
 	url, err := GeneratePDFViewerUrl(d.config.TidepoolApplicationUrl, token.ID, *match.Patient, *match.Clinic)
 	if err != nil {
-		d.logger.Errorw("unable to generate report url", "clinicId", match.Clinic.Id.Hex(), "error", err)
+		d.logger.Errorw("unable to generate report url", "clinicId", match.Clinic.Id.Hex(), "patientId", *match.Patient.UserId, "error", err)
 		return nil, err
 	}
 
@@ -384,7 +390,7 @@ func (d *defaultHandler) updateLastViewedDate(ctx context.Context, event xealth_
 	if err != nil {
 		d.logger.Errorw(
 			"unable to update last viewed date",
-			"deploymentId", event.Deployment,
+			"deployment", event.Deployment,
 			"view", view,
 			"error", err,
 		)
@@ -407,23 +413,23 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		}
 	}
 
-	match, err := NewMatcher[*xealth_client.EventNotificationResponse](d.clinics, d.patients).
+	match, err := NewMatcher[*xealth_client.EventNotificationResponse](d.clinics, d.patients, d.logger).
 		FromOrder(*order).
 		DisableErrorOnNoMatchingClinics().
 		DisableErrorOnNoMatchingPatients().
 		Match(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("handling new order: %w", err)
 	}
 
 	if match.Clinic == nil {
-		d.logger.Errorw("unable to find matching clinic for xealth deployment", "deploymentId", order.OrderData.OrderInfo.Deployment)
+		d.logger.Errorw("unable to find matching clinic for xealth deployment", "deployment", order.OrderData.OrderInfo.Deployment)
 		return nil
 	}
 
 	update, err := GetSubscriptionUpdateFromOrderEvent(*order, match.Clinic)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create subscription update: %w", err)
 	}
 
 	if match.Patient == nil {
@@ -485,7 +491,7 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 
 		match.Patient, err = d.patients.Create(ctx, create)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to create new patient from order: %w", err)
 		}
 
 		if connectDexcom {
@@ -494,12 +500,17 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 				UserId:   *match.Patient.UserId,
 				Time:     time.Now(),
 			}); err != nil {
-				return err
+				return fmt.Errorf("unable to update dexcom connection: %w", err)
 			}
 		}
 	}
 
-	return d.patients.UpdateEHRSubscription(ctx, match.Clinic.Id.Hex(), *match.Patient.UserId, *update)
+	err = d.patients.UpdateEHRSubscription(ctx, match.Clinic.Id.Hex(), *match.Patient.UserId, *update)
+	if err != nil {
+		return fmt.Errorf("unable to update ehr subscription: %w", err)
+	}
+
+	return nil
 }
 
 func GetSubscriptionUpdateFromOrderEvent(orderEvent OrderEvent, clinic *clinics.Clinic) (*patients.SubscriptionUpdate, error) {
