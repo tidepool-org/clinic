@@ -34,6 +34,13 @@ func GetLastUploadDate(patient *patients.Patient) (result time.Time) {
 	return
 }
 
+func GetSummaryLastUpdatedDate(patient *patients.Patient) (result time.Time) {
+	if patient != nil && patient.Summary != nil {
+		result = patient.Summary.GetLastUpdatedDate()
+	}
+	return
+}
+
 func GetProgramEnrollmentDateFromOrder(order *OrderEvent) *string {
 	if order == nil {
 		return nil

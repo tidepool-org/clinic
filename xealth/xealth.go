@@ -280,7 +280,11 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		return nil, err
 	}
 
-	lastUpload := GetLastUploadDate(patient)
+	// We use the summary last updated date instead of the last upload date,
+	// to make sure the alert status is set to true even if the report was accessed
+	// after the last upload date, but before the summary was recalculated
+	summaryLastUpdated := GetSummaryLastUpdatedDate(patient)
+
 	programId := GetProgramIdFromOrder(order)
 	if programId == nil {
 		return nil, fmt.Errorf("programId is required")
@@ -291,9 +295,9 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		return nil, fmt.Errorf("unable to obtain last viewed date: %w", err)
 	}
 
-	programs.Programs[0].Description = GetProgramDescription(lastUpload, lastViewed)
+	programs.Programs[0].Description = GetProgramDescription(summaryLastUpdated, lastViewed)
 	programs.Programs[0].EnrolledDate = GetProgramEnrollmentDateFromOrder(order)
-	programs.Programs[0].HasAlert = IsProgramAlertActive(lastUpload, lastViewed)
+	programs.Programs[0].HasAlert = IsProgramAlertActive(summaryLastUpdated, lastViewed)
 	programs.Programs[0].HasStatusView = HasStatusView(patient, subscription)
 	programs.Programs[0].ProgramId = GetProgramIdFromOrder(order)
 	programs.Programs[0].Title = GetProgramTitle()

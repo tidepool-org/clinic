@@ -74,6 +74,14 @@ func (s *PatientBGMStats) GetLastUploadDate() time.Time {
 	return last
 }
 
+func (s *PatientBGMStats) GetLastUpdatedDate() time.Time {
+	last := time.Time{}
+	if s.Dates.LastUpdatedDate != nil {
+		last = *s.Dates.LastUpdatedDate
+	}
+	return last
+}
+
 type PatientCGMPeriod struct {
 	AverageDailyRecords             *float64 `bson:"averageDailyRecords,omitempty" json:"averageDailyRecords,omitempty"`
 	AverageDailyRecordsDelta        *float64 `bson:"averageDailyRecordsDelta,omitempty" json:"averageDailyRecordsDelta,omitempty"`
@@ -175,6 +183,14 @@ func (s *PatientCGMStats) GetLastUploadDate() time.Time {
 	last := time.Time{}
 	if s.Dates.LastUploadDate != nil {
 		last = *s.Dates.LastUploadDate
+	}
+	return last
+}
+
+func (s *PatientCGMStats) GetLastUpdatedDate() time.Time {
+	last := time.Time{}
+	if s.Dates.LastUpdatedDate != nil {
+		last = *s.Dates.LastUpdatedDate
 	}
 	return last
 }

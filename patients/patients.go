@@ -201,6 +201,17 @@ func (s *Summary) GetLastUploadDate() time.Time {
 	return last
 }
 
+func (s *Summary) GetLastUpdatedDate() time.Time {
+	last := time.Time{}
+	if s.CGM != nil && s.CGM.GetLastUpdatedDate().After(last) {
+		last = s.CGM.GetLastUpdatedDate()
+	}
+	if s.BGM != nil && s.BGM.GetLastUpdatedDate().After(last) {
+		last = s.BGM.GetLastUpdatedDate()
+	}
+	return last
+}
+
 type DataSources []DataSource
 type DataSource struct {
 	DataSourceId   *primitive.ObjectID `bson:"dataSourceId,omitempty"`
