@@ -241,7 +241,7 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		subscription = &subs
 	}
 
-	if subscription == nil || subscription.Provider != clinics.EHRProviderXealth || !subscription.Active {
+	if subscription == nil || subscription.Provider != clinics.EHRProviderXealth || !subscription.Active || len(subscription.MatchedMessages) == 0 {
 		d.logger.Infow("patient doesn't have an active xealth subscription", "clinicId", patient.ClinicId.Hex(), "patientId", *patient.UserId)
 		return response, nil
 	}
@@ -273,7 +273,8 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		}{{}},
 	}
 
-	order, err := d.store.GetOrder(ctx, subscription.MatchedMessages[0].DocumentId.Hex())
+	lastMatchedMessage := subscription.MatchedMessages[len(subscription.MatchedMessages)-1]
+	order, err := d.store.GetOrder(ctx, lastMatchedMessage.DocumentId.Hex())
 	if err != nil {
 		d.logger.Errorw("unable to retrieve last matched order", "error", err, "clinicId", patient.ClinicId.Hex(), "patientId", *patient.UserId)
 		return nil, err
