@@ -26,6 +26,11 @@
           "type": "null"
         },
         "error_2": {
+          "description": "If you can’t find the patient in your Tidepool clinic account, you can invite the patient to share their data using your clinic share code. Once they do so and you accept the invite, then you can enroll the patient for monitoring in Xealth.",
+          "title": " ",
+          "type": "null"
+        },
+        "error_3": {
           "description": "If you continue experiencing difficulties, please contact support@tidepool.org.",
           "title": " ",
           "type": "null"
@@ -39,7 +44,8 @@
       "ui:order": [
         "error_0",
         "error_1",
-        "error_2"
+        "error_2",
+        "error_3"
       ]
     }
   }
