@@ -160,7 +160,8 @@
     "formId": "patient_enrollment_form",
     "userInput": {
       "patient": {
-        "email": "xealth@tidepool.org"
+        "email": "xealth@tidepool.org",
+        "connectDexcom": true
       }
     }
   }

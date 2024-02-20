@@ -12,9 +12,6 @@
       "patient": {
         "type": "object",
         "title": "",
-        "required": [
-          "email"
-        ],
         "properties": {
           "email": {
             "title": "Patient's Email",
@@ -22,16 +19,16 @@
             "type": "string",
             "format": "email"
           }
-        }
-      },
-      "dexcom": {
-        "type": "object",
-        "title": "",
-        "properties": {
-          "connect": {
-            "title": "Connect with Dexcom",
-            "description": "",
-            "type": "boolean"
+        },
+        "dependencies": {
+          "email": {
+            "properties": {
+              "connectDexcom": {
+                "title": "Connect with Dexcom",
+                "description": "",
+                "type": "boolean"
+              }
+            }
           }
         }
       },
@@ -53,9 +50,9 @@
     }
   },
   "uiSchema": {
-    "ui:order": ["patient", "dexcom", "tags"],
-    "dexcom": {
-      "connect": {
+    "ui:order": ["patient", "tags"],
+    "patient": {
+      "connectDexcom": {
         "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
       }
     },

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/TwiN/deepmerge"
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/xealth_client"
 	"sort"
 	"strings"
@@ -21,7 +20,7 @@ type ResponseBuilder[T FormData] interface {
 	WithTitle(string) ResponseBuilder[T]
 	WithUserInput(userInput *map[string]interface{}) ResponseBuilder[T]
 	PersistPreorderDataOnSuccess(ctx context.Context, store Store) ResponseBuilder[T]
-	WithMatchingPatients(criteria PatientMatchingCriteria, patients []*patients.Patient) ResponseBuilder[T]
+	WithMatchingResult(result MatchingResult[*xealth_client.PreorderFormResponse]) ResponseBuilder[T]
 	BuildInitialResponse() (*xealth_client.PreorderFormResponse, error)
 	BuildSubsequentResponse() (*xealth_client.PreorderFormResponse, error)
 }
@@ -48,8 +47,7 @@ type responseBuilder[T FormData] struct {
 	dataStore        Store
 	dataStoreContext context.Context
 
-	criteria         *PatientMatchingCriteria
-	matchingPatients []*patients.Patient
+	match MatchingResult[*xealth_client.PreorderFormResponse]
 
 	jsonForm      []byte
 	formOverrides FormOverrides
@@ -114,15 +112,19 @@ func (g *responseBuilder[T]) PersistPreorderDataOnSuccess(ctx context.Context, s
 	return g
 }
 
-func (g *responseBuilder[T]) WithMatchingPatients(criteria PatientMatchingCriteria, patients []*patients.Patient) ResponseBuilder[T] {
-	g.criteria = &criteria
-	g.matchingPatients = patients
+func (g *responseBuilder[T]) WithMatchingResult(result MatchingResult[*xealth_client.PreorderFormResponse]) ResponseBuilder[T] {
+	g.match = result
 	return g
 }
 
 func (g *responseBuilder[T]) BuildInitialResponse() (*xealth_client.PreorderFormResponse, error) {
+	if g.match.Response != nil {
+		return g.match.Response, nil
+	}
+
 	type buildStageFn func() error
 	pipeline := []buildStageFn{
+		g.maybeValidateMatchedPatient,
 		g.assertFormTemplateIsSet,
 		g.maybeShowTags,
 		g.processOverrides,
@@ -138,6 +140,10 @@ func (g *responseBuilder[T]) BuildInitialResponse() (*xealth_client.PreorderForm
 }
 
 func (g *responseBuilder[T]) BuildSubsequentResponse() (*xealth_client.PreorderFormResponse, error) {
+	if g.match.Response != nil {
+		return g.match.Response, nil
+	}
+
 	type buildStageFn func() error
 	pipeline := []buildStageFn{
 		g.assertNoMatchingPatients,
@@ -174,9 +180,8 @@ func (g *responseBuilder[T]) assertFormTemplateIsSet() error {
 }
 
 func (g *responseBuilder[T]) assertNoMatchingPatients() error {
-	count := len(g.matchingPatients)
-	if count != 0 {
-		return fmt.Errorf("expected no patients to match the criteria, but found %v", count)
+	if g.match.Patient != nil {
+		return fmt.Errorf("expected no patients to match the criteria")
 	}
 	return nil
 }
@@ -188,32 +193,49 @@ func (g *responseBuilder[T]) maybeDecodeUserInput() (err error) {
 	return
 }
 
+func (g *responseBuilder[T]) maybeValidateMatchedPatient() (err error) {
+	if g.match.Patient != nil && g.match.Criteria != nil {
+		validator := NewPatientBirthdayValidator(g.match.Criteria.DateOfBirth)
+		if errors, e := validator.Validate(*g.match.Patient); e != nil {
+			err = e
+			return
+		} else {
+			g.withFormErrors(errors)
+		}
+	}
+	return nil
+}
+
 func (g *responseBuilder[T]) maybeValidateData() (err error) {
 	if g.validator != nil {
 		if errors, e := g.validator.Validate(g.data); e != nil {
 			err = e
 			return
 		} else {
-			g.formDataHasErrors = errors.HasErrors()
-			if g.formDataHasErrors {
-				g.jsonForm = errorForm
-				if title := errors.GetTitle(); title != "" {
-					g.formOverrides.FormSchema.Title = errors.GetTitle()
-				}
-				errorProperties := errors.GetErrorProperties()
-				if len(errorProperties) > 0 {
-					if len(g.formOverrides.FormSchema.Properties) == 0 {
-						g.formOverrides.FormSchema.Properties = make(map[string]interface{})
-					}
-					for k, v := range errorProperties {
-						g.formOverrides.FormSchema.Properties[k] = v
-					}
-				}
-				g.formOverrides.UiSchema.UiOrder = errors.GetUiOrder()
-			}
+			g.withFormErrors(errors)
 		}
 	}
 	return
+}
+
+func (g *responseBuilder[T]) withFormErrors(errors FormErrors) {
+	g.formDataHasErrors = errors.HasErrors()
+	if g.formDataHasErrors {
+		g.jsonForm = errorForm
+		if title := errors.GetTitle(); title != "" {
+			g.formOverrides.FormSchema.Title = errors.GetTitle()
+		}
+		errorProperties := errors.GetErrorProperties()
+		if len(errorProperties) > 0 {
+			if len(g.formOverrides.FormSchema.Properties) == 0 {
+				g.formOverrides.FormSchema.Properties = make(map[string]interface{})
+			}
+			for k, v := range errorProperties {
+				g.formOverrides.FormSchema.Properties[k] = v
+			}
+		}
+		g.formOverrides.UiSchema.UiOrder = errors.GetUiOrder()
+	}
 }
 
 func (g *responseBuilder[T]) maybePersistData() (err error) {
@@ -256,6 +278,10 @@ func (g *responseBuilder[T]) processOverrides() (err error) {
 }
 
 func (g *responseBuilder[T]) buildInitialPreorderFormResponse() (*xealth_client.PreorderFormResponse, error) {
+	if g.match.Patient != nil && !g.isErrorResponse() {
+		return NewFinalResponse()
+	}
+
 	response := &xealth_client.PreorderFormResponse{}
 	notOrderable := g.isErrorResponse()
 	initialResponse := xealth_client.PreorderFormResponse0{

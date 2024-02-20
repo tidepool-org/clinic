@@ -38,7 +38,7 @@ type OrderEvent struct {
 type ReportView struct {
 	Id            *primitive.ObjectID `bson:"_id,omitempty"`
 	UserId        string              `bson:"userId"`
-	DeploymentId  string              `bson:"deploymentId"`
+	DeploymentId  string              `bson:"deployment"`
 	SystemLogin   *string             `bson:"systemLogin,omitempty"`
 	PatientUserId string              `bson:"patientUserId"`
 	ProgramId     string              `bson:"programId"`
@@ -48,7 +48,7 @@ type ReportView struct {
 
 type ReportViewFilter struct {
 	ClinicId      primitive.ObjectID `bson:"clinicId"`
-	DeploymentId  string             `bson:"deploymentId"`
+	DeploymentId  string             `bson:"deployment"`
 	PatientUserId string             `bson:"patientUserId"`
 	ProgramId     string             `bson:"programId"`
 	UserId        string             `bson:"userId"`
@@ -97,7 +97,7 @@ func (d *defaultStore) Initialize(ctx context.Context) error {
 		{
 			Keys: bson.D{
 				{Key: "userId", Value: 1},
-				{Key: "deploymentId", Value: 1},
+				{Key: "deployment", Value: 1},
 				{Key: "programId", Value: 1},
 				{Key: "clinicId", Value: 1},
 				{Key: "patientId", Value: 1},
@@ -150,7 +150,7 @@ func (d *defaultStore) CreatePreorderData(ctx context.Context, data PreorderForm
 
 func (d *defaultStore) CreateOrder(ctx context.Context, order OrderEvent) (*OrderEvent, error) {
 	logger := d.logger.With(
-		"deploymentId", order.OrderData.OrderInfo.Deployment,
+		"deployment", order.OrderData.OrderInfo.Deployment,
 		"orderId", order.OrderData.OrderInfo.OrderId,
 	)
 
@@ -223,7 +223,7 @@ func (d *defaultStore) CreateReportView(ctx context.Context, view ReportView) (*
 		return nil, fmt.Errorf("userId is required")
 	}
 	if view.DeploymentId == "" {
-		return nil, fmt.Errorf("deploymentId is required")
+		return nil, fmt.Errorf("deployment is required")
 	}
 	if view.ProgramId == "" {
 		return nil, fmt.Errorf("programId is required")
@@ -235,7 +235,7 @@ func (d *defaultStore) CreateReportView(ctx context.Context, view ReportView) (*
 		return nil, fmt.Errorf("clinicId is required")
 	}
 
-	logger := d.logger.With("deploymentId", view.DeploymentId)
+	logger := d.logger.With("deployment", view.DeploymentId)
 	logger.Debug("inserting report view")
 
 	res, err := d.reportViews.InsertOne(ctx, view)

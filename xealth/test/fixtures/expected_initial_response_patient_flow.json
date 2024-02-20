@@ -3,9 +3,6 @@
   "notOrderable": false,
   "preorderFormInfo": {
     "formData": {
-      "dexcom": {
-        "connect": false
-      },
       "patient": {
         "email": "james.jellyfish@tidepool.org"
       }
@@ -25,9 +22,6 @@
         "patient": {
           "type": "object",
           "title": "",
-          "required": [
-            "email"
-          ],
           "properties": {
             "email": {
               "title": "Patient's Email",
@@ -35,16 +29,16 @@
               "type": "string",
               "format": "email"
             }
-          }
-        },
-        "dexcom": {
-          "type": "object",
-          "title": "",
-          "properties": {
-            "connect": {
-              "title": "Connect with Dexcom",
-              "description": "",
-              "type": "boolean"
+          },
+          "dependencies": {
+            "email": {
+              "properties": {
+                "connectDexcom": {
+                  "title": "Connect with Dexcom",
+                  "description": "",
+                  "type": "boolean"
+                }
+              }
             }
           }
         },
@@ -66,8 +60,8 @@
       }
     },
     "uiSchema": {
-      "dexcom": {
-        "connect": {
+      "patient": {
+        "connectDexcom": {
           "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
         }
       },
@@ -77,7 +71,7 @@
         },
         "ui:widget": "object"
       },
-      "ui:order": ["patient", "dexcom", "tags"]
+      "ui:order": ["patient", "tags"]
     }
   }
 }

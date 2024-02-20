@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/mail"
+	"strings"
 )
 
 const (
@@ -38,44 +38,46 @@ type FormErrors interface {
 }
 
 type Guardian struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
+	FirstName     string `json:"firstName,omitempty"`
+	LastName      string `json:"lastName,omitempty"`
+	Email         string `json:"email,omitempty"`
+	ConnectDexcom bool   `json:"connectDexcom,omitempty"`
 }
 type GuardianFormData struct {
 	Guardian Guardian `json:"guardian"`
-	Dexcom   Dexcom   `json:"dexcom"`
 	Tags     *Tags    `json:"tags,omitempty"`
 }
 
 func (g GuardianFormData) Normalize() PreorderFormData {
+	if strings.TrimSpace(g.Guardian.Email) == "" {
+		g.Guardian.ConnectDexcom = false
+	}
+
 	return PreorderFormData{
 		Guardian: &g.Guardian,
-		Dexcom:   g.Dexcom,
 		Tags:     g.Tags,
 	}
 }
 
 type Patient struct {
-	Email string `json:"email"`
+	Email         string `json:"email,omitempty"`
+	ConnectDexcom bool   `json:"connectDexcom,omitempty"`
 }
 
 type PatientFormData struct {
 	Patient Patient `json:"patient"`
-	Dexcom  Dexcom  `json:"dexcom"`
 	Tags    *Tags   `json:"tags,omitempty"`
 }
 
 func (p PatientFormData) Normalize() PreorderFormData {
+	if strings.TrimSpace(p.Patient.Email) == "" {
+		p.Patient.ConnectDexcom = false
+	}
+
 	return PreorderFormData{
 		Patient: &p.Patient,
-		Dexcom:  p.Dexcom,
 		Tags:    p.Tags,
 	}
-}
-
-type Dexcom struct {
-	Connect bool `json:"connect"`
 }
 
 type Tags struct {
@@ -195,11 +197,5 @@ type PreorderFormData struct {
 	DataTrackingId string              `bson:"dataTrackingId,omitempty"`
 	Patient        *Patient            `bson:"patient,omitempty"`
 	Guardian       *Guardian           `bson:"guardian,omitempty"`
-	Dexcom         Dexcom              `bson:"dexcom"`
 	Tags           *Tags               `bson:"tags,omitempty"`
-}
-
-func isValidEmail(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
 }

@@ -3,14 +3,7 @@
   "notOrderable": false,
   "preorderFormInfo": {
     "formData": {
-      "dexcom": {
-        "connect": false
-      },
-      "guardian": {
-        "email": "",
-        "firstName": "",
-        "lastName": ""
-      }
+      "guardian": {}
     },
     "formId": "guardian_enrollment_form",
     "formSchema": {
@@ -22,17 +15,6 @@
       },
       "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
       "properties": {
-        "dexcom": {
-          "properties": {
-            "connect": {
-              "description": "",
-              "title": "Connect with Dexcom",
-              "type": "boolean"
-            }
-          },
-          "title": "",
-          "type": "object"
-        },
         "guardian": {
           "properties": {
             "email": {
@@ -52,11 +34,21 @@
           },
           "required": [
             "firstName",
-            "lastName",
-            "email"
+            "lastName"
           ],
           "title": "",
-          "type": "object"
+          "type": "object",
+          "dependencies": {
+            "email": {
+              "properties": {
+                "connectDexcom": {
+                  "title": "Connect with Dexcom",
+                  "description": "",
+                  "type": "boolean"
+                }
+              }
+            }
+          }
         },
         "tags": {
           "type": "object",
@@ -78,16 +70,15 @@
       "type": "object"
     },
     "uiSchema": {
-      "dexcom": {
-        "connect": {
-          "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
-        }
-      },
       "guardian": {
+        "connectDexcom": {
+          "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+        },
         "ui:order": [
           "firstName",
           "lastName",
-          "email"
+          "email",
+          "connectDexcom"
         ]
       },
       "tags": {
@@ -98,7 +89,6 @@
       },
       "ui:order": [
         "guardian",
-        "dexcom",
         "tags"
       ]
     }

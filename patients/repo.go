@@ -776,6 +776,29 @@ func generateListFilterQuery(filter *Filter) bson.M {
 	}
 	if filter.Mrn != nil {
 		selector["mrn"] = filter.Mrn
+	} else if filter.HasMRN != nil {
+		empty := bson.M{
+			"$in": bson.A{nil, ""},
+		}
+		if *filter.HasMRN {
+			selector["mrn"] = bson.M{
+				"$not": empty,
+			}
+		} else {
+			selector["mrn"] = empty
+		}
+	}
+	if filter.HasSubscription != nil {
+		empty := bson.M{
+			"$in": bson.A{nil, bson.M{}},
+		}
+		if *filter.HasSubscription {
+			selector["ehrSubscriptions"] = bson.M{
+				"$not": empty,
+			}
+		} else {
+			selector["ehrSubscriptions"] = empty
+		}
 	}
 	if filter.BirthDate != nil {
 		selector["birthDate"] = filter.BirthDate

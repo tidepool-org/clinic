@@ -133,7 +133,8 @@ type Filter struct {
 	BirthDate *string
 	FullName  *string
 
-	ActiveEHRSubscription *string
+	HasSubscription *bool
+	HasMRN          *bool
 
 	Period *string
 
@@ -179,10 +180,9 @@ type UploadReminderUpdate struct {
 }
 
 type LastRequestedDexcomConnectUpdate struct {
-	ClinicId  string
-	UserId    string
-	UpdatedBy string
-	Time      time.Time
+	ClinicId string
+	UserId   string
+	Time     time.Time
 }
 
 type Summary struct {
@@ -197,6 +197,17 @@ func (s *Summary) GetLastUploadDate() time.Time {
 	}
 	if s.BGM != nil && s.BGM.GetLastUploadDate().After(last) {
 		last = s.BGM.GetLastUploadDate()
+	}
+	return last
+}
+
+func (s *Summary) GetLastUpdatedDate() time.Time {
+	last := time.Time{}
+	if s.CGM != nil && s.CGM.GetLastUpdatedDate().After(last) {
+		last = s.CGM.GetLastUpdatedDate()
+	}
+	if s.BGM != nil && s.BGM.GetLastUpdatedDate().After(last) {
+		last = s.BGM.GetLastUpdatedDate()
 	}
 	return last
 }

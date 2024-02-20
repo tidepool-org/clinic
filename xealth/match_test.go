@@ -14,6 +14,7 @@ import (
 	"github.com/tidepool-org/clinic/test"
 	"github.com/tidepool-org/clinic/xealth"
 	"github.com/tidepool-org/clinic/xealth_client"
+	"go.uber.org/zap"
 )
 
 const DeploymentInFixtures = "artificialhealthcare"
@@ -72,7 +73,7 @@ var _ = Describe("Matcher", func() {
 			})
 
 			It("is correct", func() {
-				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService).
+				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService, zap.NewNop().Sugar()).
 					FromInitialPreorderForRequest(initialPreorderFormRequest).
 					DisableErrorOnNoMatchingPatients()
 
@@ -96,7 +97,7 @@ var _ = Describe("Matcher", func() {
 			})
 
 			It("is correct", func() {
-				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService).
+				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService, zap.NewNop().Sugar()).
 					FromSubsequentPreorderForRequest(subsequentPreorderFormRequest).
 					DisableErrorOnNoMatchingPatients()
 
@@ -120,7 +121,7 @@ var _ = Describe("Matcher", func() {
 			})
 
 			It("is correct", func() {
-				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService).
+				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService, zap.NewNop().Sugar()).
 					FromOrder(orderEvent).
 					DisableErrorOnNoMatchingPatients()
 
@@ -144,7 +145,7 @@ var _ = Describe("Matcher", func() {
 			})
 
 			It("is correct", func() {
-				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService).
+				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService, zap.NewNop().Sugar()).
 					FromProgramsRequest(request).
 					DisableErrorOnNoMatchingPatients()
 
@@ -168,7 +169,7 @@ var _ = Describe("Matcher", func() {
 			})
 
 			It("is correct", func() {
-				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService).
+				matcher := xealth.NewMatcher[*xealth_client.PreorderFormResponse](clinicsService, patientsService, zap.NewNop().Sugar()).
 					FromProgramUrlRequest(request).
 					DisableErrorOnNoMatchingPatients()
 
