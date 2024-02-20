@@ -230,6 +230,33 @@ func NewPatient(dto Patient) patients.Patient {
 	return patient
 }
 
+func NewPatientFromCreate(dto CreatePatient) patients.Patient {
+	patient := patients.Patient{
+		Permissions: NewPermissions(dto.Permissions),
+	}
+	if dto.BirthDate != nil {
+		birthDate := dto.BirthDate.String()
+		patient.BirthDate = &birthDate
+	}
+	if dto.FullName != nil {
+		patient.FullName = dto.FullName
+	}
+	if dto.IsMigrated != nil {
+		patient.IsMigrated = *dto.IsMigrated
+	}
+	if dto.LegacyClinicianId != nil {
+		patient.LegacyClinicianIds = []string{*dto.LegacyClinicianId}
+	}
+	if dto.Mrn != nil && len(*dto.Mrn) > 0 {
+		patient.Mrn = dto.Mrn
+	}
+	if dto.Tags != nil {
+		tags := store.ObjectIDSFromStringArray(*dto.Tags)
+		patient.Tags = &tags
+	}
+	return patient
+}
+
 func NewSummary(dto *PatientSummary) *patients.Summary {
 	if dto == nil {
 		return nil

@@ -1,6 +1,8 @@
 package test
 
 import (
+	"fmt"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 	"math/rand"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 )
 
 var permissions = []string{"view", "upload", "note", "custodian"}
+var devices = []string{"dexcom_g6", "dexcom_g7", "t:slim_X2", "medtronic_630G"}
 
 func strp(s string) *string {
 	return &s
@@ -94,6 +97,32 @@ func RandomPermissions() patients.Permissions {
 func RandomDataSources() patients.DataSources {
 	return []patients.DataSource{
 		{State: test.Faker.RandomStringElement([]string{"pending", "connected"}), ProviderName: test.Faker.Company().Name()},
+	}
+}
+
+func RandomProfile() patients.Profile {
+	return patients.Profile{
+		FullName: strp(test.Faker.Person().Name()),
+		Patient: patients.PatientProfile{
+			Mrn:           strp(test.Faker.UUID().V4()),
+			Birthday:      strp(test.Faker.Time().ISO8601(time.Now())[:10]),
+			TargetDevices: &[]string{test.Faker.RandomStringElement(devices)},
+			Email:         strp(test.Faker.Internet().Email()),
+			FullName:      strp(test.Faker.Person().Name()),
+		},
+	}
+}
+
+func RandomUser() shoreline.UserData {
+	email := test.Faker.Internet().Email()
+	return shoreline.UserData{
+		UserID:         test.Faker.UUID().V4(),
+		Username:       email,
+		Emails:         []string{email},
+		PasswordExists: true,
+		Roles:          []string{"patient"},
+		EmailVerified:  true,
+		TermsAccepted:  fmt.Sprintf("%v", test.Faker.Time().Unix(time.Now())),
 	}
 }
 
