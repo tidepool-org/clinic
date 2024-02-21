@@ -25,23 +25,32 @@ func RandomPatient() patients.Patient {
 	permissions := RandomPermissions()
 	dataSources := RandomDataSources()
 	return patients.Patient{
-		ClinicId:      &clinicId,
-		UserId:        strp(test.Faker.UUID().V4()),
-		BirthDate:     strp(test.Faker.Time().ISO8601(time.Now())[:10]),
-		Email:         strp(test.Faker.Internet().Email()),
-		FullName:      strp(test.Faker.Person().Name()),
-		Mrn:           strp(test.Faker.UUID().V4()),
-		Tags:          &tags,
-		TargetDevices: &devices,
-		Permissions:   &permissions,
-		IsMigrated:    test.Faker.Bool(),
-		DataSources:   (*[]patients.DataSource)(&dataSources),
+		ClinicId:         &clinicId,
+		UserId:           strp(test.Faker.UUID().V4()),
+		BirthDate:        strp(test.Faker.Time().ISO8601(time.Now())[:10]),
+		Email:            strp(test.Faker.Internet().Email()),
+		FullName:         strp(test.Faker.Person().Name()),
+		Mrn:              strp(test.Faker.UUID().V4()),
+		Tags:             &tags,
+		TargetDevices:    &devices,
+		Permissions:      &permissions,
+		IsMigrated:       test.Faker.Bool(),
+		DataSources:      (*[]patients.DataSource)(&dataSources),
+		EHRSubscriptions: RandomSubscriptions(),
 	}
 }
 
 func RandomSubscriptions() patients.EHRSubscriptions {
 	subs := make(patients.EHRSubscriptions)
-	subs[patients.SummaryAndReportsSubscription] = patients.EHRSubscription{
+	subs[patients.SubscriptionRedoxSummaryAndReports] = patients.EHRSubscription{
+		Active: true,
+		MatchedMessages: []patients.MatchedMessage{{
+			DocumentId: primitive.NewObjectID(),
+			DataModel:  "Order",
+			EventType:  "New",
+		}},
+	}
+	subs[patients.SubscriptionXealthReports] = patients.EHRSubscription{
 		Active: true,
 		MatchedMessages: []patients.MatchedMessage{{
 			DocumentId: primitive.NewObjectID(),
@@ -56,14 +65,15 @@ func RandomPatientUpdate() patients.PatientUpdate {
 	patient := RandomPatient()
 	return patients.PatientUpdate{
 		Patient: patients.Patient{
-			BirthDate:     patient.BirthDate,
-			Email:         patient.Email,
-			FullName:      patient.FullName,
-			Mrn:           patient.Mrn,
-			Tags:          patient.Tags,
-			TargetDevices: patient.TargetDevices,
-			Permissions:   patient.Permissions,
-			DataSources:   patient.DataSources,
+			BirthDate:        patient.BirthDate,
+			Email:            patient.Email,
+			FullName:         patient.FullName,
+			Mrn:              patient.Mrn,
+			Tags:             patient.Tags,
+			TargetDevices:    patient.TargetDevices,
+			Permissions:      patient.Permissions,
+			DataSources:      patient.DataSources,
+			EHRSubscriptions: RandomSubscriptions(),
 		},
 	}
 }

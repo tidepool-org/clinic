@@ -1,0 +1,77 @@
+{
+  "dataTrackingId": "1234567890",
+  "notOrderable": false,
+  "preorderFormInfo": {
+    "formData": {
+      "patient": {
+        "email": "james.jellyfish@tidepool.org"
+      }
+    },
+    "formId": "patient_enrollment_form",
+    "formSchema": {
+      "definitions": {
+        "tags": {
+          "enum": ["000000000000000000000001", "000000000000000000000000"],
+          "enumNames": ["DIY Loop", "Tidepool Loop"]
+        }
+      },
+      "title": "Add James Jellyfish to Tidepool",
+      "description": "Please confirm a few details to complete set up.",
+      "type": "object",
+      "properties": {
+        "patient": {
+          "type": "object",
+          "title": "",
+          "properties": {
+            "email": {
+              "title": "Patient's Email",
+              "description": "Email allows your patient to claim their account and upload their data from home.",
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "dependencies": {
+            "email": {
+              "properties": {
+                "connectDexcom": {
+                  "title": "Connect with Dexcom",
+                  "description": "",
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "tags": {
+          "type": "object",
+          "title": "",
+          "properties": {
+            "ids": {
+              "title": "Patient Tags",
+              "description": "",
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/definitions/tags"
+              }
+            }
+          }
+        }
+      }
+    },
+    "uiSchema": {
+      "patient": {
+        "connectDexcom": {
+          "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+        }
+      },
+      "tags": {
+        "ids": {
+          "ui:widget": "CheckboxesWidget"
+        },
+        "ui:widget": "object"
+      },
+      "ui:order": ["patient", "tags"]
+    }
+  }
+}

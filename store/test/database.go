@@ -9,13 +9,13 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
 	"math/rand"
+	"os"
 
 	"time"
 )
 
 const (
-	mongoTestHost = "mongodb://127.0.0.1:27017"
-	mongoTimeout  = time.Second * 5
+	mongoTimeout = time.Second * 5
 )
 
 var (
@@ -24,23 +24,32 @@ var (
 )
 
 func SetupDatabase() {
-	client, err := store.NewClient(mongoTestHost)
+	ctx, cancel := context.WithTimeout(context.Background(), mongoTimeout)
+	defer cancel()
+
+	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.Letter(), ginkgo.GinkgoParallelProcess())
+	Expect(os.Setenv("TIDEPOOL_CLINIC_DATABASE_NAME", databaseName)).To(Succeed())
+
+	config, err := store.NewConfig()
 	Expect(err).ToNot(HaveOccurred())
 
-	ctx, _ := context.WithTimeout(context.Background(), mongoTimeout)
+	client, err := store.NewClient(config)
+	Expect(err).ToNot(HaveOccurred())
+
 	err = client.Ping(ctx, nil)
 	Expect(err).ToNot(HaveOccurred())
 
-	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.Letter(), ginkgo.GinkgoParallelProcess())
-	database = client.Database(databaseName)
+	database = client.Database(config.DatabaseName)
 }
 
 func TeardownDatabase() {
+	ctx, cancel := context.WithTimeout(context.Background(), mongoTimeout)
+	defer cancel()
+
 	Expect(database).ToNot(BeNil())
-	err := database.Drop(context.Background())
+	err := database.Drop(ctx)
 	Expect(err).ToNot(HaveOccurred())
 
-	ctx, _ := context.WithTimeout(context.Background(), mongoTimeout)
 	Expect(database.Client().Disconnect(ctx)).ToNot(HaveOccurred())
 	database = nil
 }

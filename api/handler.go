@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/redox"
 	"github.com/tidepool-org/clinic/store"
+	"github.com/tidepool-org/clinic/xealth"
 	"go.uber.org/fx"
 )
 
@@ -19,6 +20,7 @@ type Handler struct {
 	cliniciansUpdater clinicians.Service
 	patients          patients.Service
 	redox             redox.Redox
+	xealth            xealth.Xealth
 	users             patients.UserService
 }
 
@@ -35,6 +37,7 @@ type Params struct {
 	Patients          patients.Service
 	Users             patients.UserService
 	Redox             redox.Redox
+	Xealth            xealth.Xealth
 }
 
 func NewHandler(p Params) *Handler {
@@ -47,6 +50,7 @@ func NewHandler(p Params) *Handler {
 		patients:          p.Patients,
 		users:             p.Users,
 		redox:             p.Redox,
+		xealth:            p.Xealth,
 	}
 }
 

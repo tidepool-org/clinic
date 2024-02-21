@@ -1,0 +1,8 @@
+{
+  "formId": "error_form",
+  "formSchema": {
+    "type": "object",
+    "properties": {}
+  },
+  "uiSchema": {}
+}

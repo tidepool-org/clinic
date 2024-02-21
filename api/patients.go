@@ -219,10 +219,9 @@ func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, p
 	}
 
 	update := patients.LastRequestedDexcomConnectUpdate{
-		ClinicId:  string(clinicId),
-		Time:      time.Now(),
-		UserId:    string(patientId),
-		UpdatedBy: authData.SubjectId,
+		ClinicId: clinicId,
+		Time:     time.Now(),
+		UserId:   patientId,
 	}
 	patient, err := h.patients.UpdateLastRequestedDexcomConnectTime(ctx, &update)
 	if err != nil {

@@ -51,20 +51,6 @@ func (mr *MockUserServiceMockRecorder) CreateCustodialAccount(ctx, patient inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCustodialAccount", reflect.TypeOf((*MockUserService)(nil).CreateCustodialAccount), ctx, patient)
 }
 
-// GetPatientFromExistingUser mocks base method.
-func (m *MockUserService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *patients.Patient) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PopulatePatientDetailsFromExistingUser", ctx, patient)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// GetPatientFromExistingUser indicates an expected call of GetPatientFromExistingUser.
-func (mr *MockUserServiceMockRecorder) GetPatientFromExistingUser(ctx, patient interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopulatePatientDetailsFromExistingUser", reflect.TypeOf((*MockUserService)(nil).PopulatePatientDetailsFromExistingUser), ctx, patient)
-}
-
 // GetUser mocks base method.
 func (m *MockUserService) GetUser(userId string) (*shoreline.UserData, error) {
 	m.ctrl.T.Helper()
@@ -93,6 +79,20 @@ func (m *MockUserService) GetUserProfile(ctx context.Context, userId string) (*p
 func (mr *MockUserServiceMockRecorder) GetUserProfile(ctx, userId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockUserService)(nil).GetUserProfile), ctx, userId)
+}
+
+// PopulatePatientDetailsFromExistingUser mocks base method.
+func (m *MockUserService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *patients.Patient) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PopulatePatientDetailsFromExistingUser", ctx, patient)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PopulatePatientDetailsFromExistingUser indicates an expected call of PopulatePatientDetailsFromExistingUser.
+func (mr *MockUserServiceMockRecorder) PopulatePatientDetailsFromExistingUser(ctx, patient interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PopulatePatientDetailsFromExistingUser", reflect.TypeOf((*MockUserService)(nil).PopulatePatientDetailsFromExistingUser), ctx, patient)
 }
 
 // UpdateCustodialAccount mocks base method.
