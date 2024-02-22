@@ -142,12 +142,12 @@ allow {
   input.path = ["v1", "clinics", "share_code", _]
 }
 
-# Allow backend services to fetch a clinic by id
-# GET /v1/clinics/:clinicId
+# Allow backend services to fetch clinics by share code
+# GET /v1/clinics/share_code/:shareCode
 allow {
   is_backend_service
   input.method == "GET"
-  input.path = ["v1", "clinics", _]
+  input.path = ["v1", "clinics", "share_code", _]
 }
 
 # Allow currently authenticated clinician to update clinic
