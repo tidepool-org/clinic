@@ -40,6 +40,7 @@ type Redox interface {
 	MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error)
 	FindMatchingClinic(ctx context.Context, criteria ClinicMatchingCriteria) (*clinics.Clinic, error)
 	RescheduleSubscriptionOrders(ctx context.Context, clinicId string) error
+	RescheduleSubscriptionOrdersForPatient(ctx context.Context, userId string) error
 }
 
 func NewConfig() (Config, error) {
@@ -260,6 +261,16 @@ func (h *Handler) RescheduleSubscriptionOrders(ctx context.Context, clinicId str
 	return h.patients.RescheduleLastSubscriptionOrderForAllPatients(
 		ctx,
 		clinicId,
+		patients.SubscriptionRedoxSummaryAndReports,
+		messagesCollectionName,
+		summaryAndReportsRescheduledOrdersCollectionName,
+	)
+}
+
+func (h *Handler) RescheduleSubscriptionOrdersForPatient(ctx context.Context, userId string) error {
+	return h.patients.RescheduleLastSubscriptionOrderForPatient(
+		ctx,
+		userId,
 		patients.SubscriptionRedoxSummaryAndReports,
 		messagesCollectionName,
 		summaryAndReportsRescheduledOrdersCollectionName,

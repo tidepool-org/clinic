@@ -303,8 +303,11 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 		}
 	}
 
-	err := h.patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto))
-	if err != nil {
+	if err := h.patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto)); err != nil {
+		return err
+	}
+
+	if err := h.redox.RescheduleSubscriptionOrdersForPatient(ctx, patientId); err != nil {
 		return err
 	}
 

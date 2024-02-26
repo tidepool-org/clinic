@@ -180,6 +180,20 @@ func (mr *MockRepositoryMockRecorder) RescheduleLastSubscriptionOrderForAllPatie
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RescheduleLastSubscriptionOrderForAllPatients", reflect.TypeOf((*MockRepository)(nil).RescheduleLastSubscriptionOrderForAllPatients), ctx, clinicId, subscription, ordersCollection, targetCollection)
 }
 
+// RescheduleLastSubscriptionOrderForPatient mocks base method.
+func (m *MockRepository) RescheduleLastSubscriptionOrderForPatient(ctx context.Context, userId, subscription, ordersCollection, targetCollection string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RescheduleLastSubscriptionOrderForPatient", ctx, userId, subscription, ordersCollection, targetCollection)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RescheduleLastSubscriptionOrderForPatient indicates an expected call of RescheduleLastSubscriptionOrderForPatient.
+func (mr *MockRepositoryMockRecorder) RescheduleLastSubscriptionOrderForPatient(ctx, userId, subscription, ordersCollection, targetCollection interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RescheduleLastSubscriptionOrderForPatient", reflect.TypeOf((*MockRepository)(nil).RescheduleLastSubscriptionOrderForPatient), ctx, userId, subscription, ordersCollection, targetCollection)
+}
+
 // TideReport mocks base method.
 func (m *MockRepository) TideReport(ctx context.Context, clinicId string, params patients.TideReportParams) (*patients.Tide, error) {
 	m.ctrl.T.Helper()

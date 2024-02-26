@@ -205,8 +205,13 @@ func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId st
 }
 
 func (s *service) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
-	s.logger.Infow("rescheduling patient subscriptions", "subscription", subscription, "clinicId", clinicId)
+	s.logger.Infow("rescheduling all patient subscriptions", "subscription", subscription, "clinicId", clinicId)
 	return s.repo.RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection)
+}
+
+func (s *service) RescheduleLastSubscriptionOrderForPatient(ctx context.Context, userId, subscription, ordersCollection, targetCollection string) error {
+	s.logger.Infow("rescheduling patient subscriptions", "subscription", subscription, "userId", userId)
+	return s.repo.RescheduleLastSubscriptionOrderForPatient(ctx, userId, subscription, ordersCollection, targetCollection)
 }
 
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, existingUserId *string, patient *Patient) error {

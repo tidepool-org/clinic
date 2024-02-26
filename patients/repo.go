@@ -529,15 +529,39 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 
 func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+	}
+	err := r.rescheduleOrders(ctx, selector, subscription, ordersCollection, targetCollection)
+	if err != nil {
+		err = fmt.Errorf("error rescheduling subscription %s for clinic %s: %w", subscription, clinicId, err)
+	}
+
+	return err
+}
+
+func (r *repository) RescheduleLastSubscriptionOrderForPatient(ctx context.Context, userId, subscription, ordersCollection, targetCollection string) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	err := r.rescheduleOrders(ctx, selector, subscription, ordersCollection, targetCollection)
+	if err != nil {
+		err = fmt.Errorf("error rescheduling subscription %s for patient %s: %w", subscription, userId, err)
+	}
+
+	return err
+}
+
+func (r *repository) rescheduleOrders(ctx context.Context, selector bson.M, subscription, ordersCollection, targetCollection string) error {
 	activeSubscriptionKey := fmt.Sprintf("ehrSubscriptions.%s.active", subscription)
 	matchedMessagesSubscriptionKey := fmt.Sprintf("$ehrSubscriptions.%s.matchedMessages", subscription)
 
+	selector[activeSubscriptionKey] = true
+
 	pipeline := []bson.M{
 		{
-			"$match": bson.M{
-				"clinicId":            clinicObjId,
-				activeSubscriptionKey: true,
-			},
+			"$match": selector,
 		},
 		{
 			"$addFields": bson.M{
@@ -574,11 +598,7 @@ func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.C
 	}
 
 	_, err := r.collection.Aggregate(ctx, pipeline)
-	if err != nil {
-		return fmt.Errorf("error rescheduling subscription %s for clinic %s: %w", subscription, clinicId, err)
-	}
-
-	return nil
+	return err
 }
 
 func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patient) error {
