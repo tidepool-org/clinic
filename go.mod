@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic
 
-go 1.21
+go 1.22
 
 require (
 	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.50.2
@@ -24,7 +24,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/tidepool-org/clinic/client v0.0.0
 	github.com/tidepool-org/clinic/redox_models v0.0.0
-	github.com/tidepool-org/go-common v0.11.1-0.20240119151220-be854abc1af5
+	github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00
 	github.com/tidepool-org/platform v1.33.1-0.20231207205305-8cb9359439fe
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
@@ -128,3 +128,6 @@ require (
 replace github.com/tidepool-org/clinic/client => ./client
 
 replace github.com/tidepool-org/clinic/redox_models => ./redox_models
+
+// Resolve CVE-2024-24786
+replace google.golang.org/protobuf v1.32.0 => google.golang.org/protobuf v1.33.0

@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic/redox_models
 
-go 1.21
+go 1.22
 
 require go.mongodb.org/mongo-driver v1.13.1
 
