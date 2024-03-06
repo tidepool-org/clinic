@@ -230,6 +230,33 @@ func NewPatient(dto Patient) patients.Patient {
 	return patient
 }
 
+func NewPatientFromCreate(dto CreatePatient) patients.Patient {
+	patient := patients.Patient{
+		Permissions: NewPermissions(dto.Permissions),
+	}
+	if dto.BirthDate != nil {
+		birthDate := dto.BirthDate.String()
+		patient.BirthDate = &birthDate
+	}
+	if dto.FullName != nil {
+		patient.FullName = dto.FullName
+	}
+	if dto.IsMigrated != nil {
+		patient.IsMigrated = *dto.IsMigrated
+	}
+	if dto.LegacyClinicianId != nil {
+		patient.LegacyClinicianIds = []string{*dto.LegacyClinicianId}
+	}
+	if dto.Mrn != nil && len(*dto.Mrn) > 0 {
+		patient.Mrn = dto.Mrn
+	}
+	if dto.Tags != nil {
+		tags := store.ObjectIDSFromStringArray(*dto.Tags)
+		patient.Tags = &tags
+	}
+	return patient
+}
+
 func NewSummary(dto *PatientSummary) *patients.Summary {
 	if dto == nil {
 		return nil
@@ -600,16 +627,21 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 	settings := &clinics.EHRSettings{
 		Enabled:  dto.Enabled,
 		SourceId: dto.SourceId,
-		DestinationIds: clinics.EHRDestinationIds{
+		ProcedureCodes: clinics.EHRProcedureCodes{
+			EnableSummaryReports:          dto.ProcedureCodes.EnableSummaryReports,
+			DisableSummaryReports:         dto.ProcedureCodes.DisableSummaryReports,
+			CreateAccount:                 dto.ProcedureCodes.CreateAccount,
+			CreateAccountAndEnableReports: dto.ProcedureCodes.CreateAccountAndEnableReports,
+		},
+		MrnIdType: dto.MrnIdType,
+		Provider:  string(dto.Provider),
+	}
+	if dto.DestinationIds != nil {
+		settings.DestinationIds = &clinics.EHRDestinationIds{
 			Flowsheet: dto.DestinationIds.Flowsheet,
 			Notes:     dto.DestinationIds.Notes,
 			Results:   dto.DestinationIds.Results,
-		},
-		ProcedureCodes: clinics.EHRProcedureCodes{
-			EnableSummaryReports:  dto.ProcedureCodes.EnableSummaryReports,
-			DisableSummaryReports: dto.ProcedureCodes.DisableSummaryReports,
-			CreateAccount:         dto.ProcedureCodes.CreateAccount,
-		},
+		}
 	}
 	if dto.Facility != nil {
 		settings.Facility = &clinics.EHRFacility{
@@ -628,16 +660,21 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 	dto := &EHRSettings{
 		Enabled:  settings.Enabled,
 		SourceId: settings.SourceId,
-		DestinationIds: EHRDestinationIds{
+		ProcedureCodes: EHRProcedureCodes{
+			EnableSummaryReports:          settings.ProcedureCodes.EnableSummaryReports,
+			DisableSummaryReports:         settings.ProcedureCodes.DisableSummaryReports,
+			CreateAccount:                 settings.ProcedureCodes.CreateAccount,
+			CreateAccountAndEnableReports: settings.ProcedureCodes.CreateAccountAndEnableReports,
+		},
+		MrnIdType: settings.GetMrnIDType(),
+		Provider:  EHRSettingsProvider(settings.Provider),
+	}
+	if settings.DestinationIds != nil {
+		dto.DestinationIds = &EHRDestinationIds{
 			Flowsheet: settings.DestinationIds.Flowsheet,
 			Notes:     settings.DestinationIds.Notes,
 			Results:   settings.DestinationIds.Results,
-		},
-		ProcedureCodes: EHRProcedureCodes{
-			EnableSummaryReports:  settings.ProcedureCodes.EnableSummaryReports,
-			DisableSummaryReports: settings.ProcedureCodes.DisableSummaryReports,
-			CreateAccount:         settings.ProcedureCodes.CreateAccount,
-		},
+		}
 	}
 	if settings.Facility != nil {
 		dto.Facility = &EHRFacility{

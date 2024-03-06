@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	SummaryAndReportsSubscription = "summaryAndReports"
+	SubscriptionRedoxSummaryAndReports = "summaryAndReports"
+	SubscriptionXealthReports          = "xealthReports"
 )
 
 var (
@@ -89,7 +90,10 @@ type EHRSubscriptions map[string]EHRSubscription
 
 type EHRSubscription struct {
 	Active          bool             `bson:"active"`
+	Provider        string           `bson:"provider"`
 	MatchedMessages []MatchedMessage `bson:"matchedMessages,omitempty"`
+	CreatedAt       time.Time        `bson:"createdAt"`
+	UpdatedAt       time.Time        `bson:"updatedAt"`
 }
 
 type MatchedMessage struct {
@@ -100,6 +104,7 @@ type MatchedMessage struct {
 
 type SubscriptionUpdate struct {
 	Name           string
+	Provider       string
 	Active         bool
 	MatchedMessage MatchedMessage
 }
@@ -128,7 +133,8 @@ type Filter struct {
 	BirthDate *string
 	FullName  *string
 
-	ActiveEHRSubscription *string
+	HasSubscription *bool
+	HasMRN          *bool
 
 	Period *string
 
@@ -174,15 +180,36 @@ type UploadReminderUpdate struct {
 }
 
 type LastRequestedDexcomConnectUpdate struct {
-	ClinicId  string
-	UserId    string
-	UpdatedBy string
-	Time      time.Time
+	ClinicId string
+	UserId   string
+	Time     time.Time
 }
 
 type Summary struct {
 	CGM *PatientCGMStats `json:"cgmStats" bson:"cgmStats"`
 	BGM *PatientBGMStats `json:"bgmStats" bson:"bgmStats"`
+}
+
+func (s *Summary) GetLastUploadDate() time.Time {
+	last := time.Time{}
+	if s.CGM != nil && s.CGM.GetLastUploadDate().After(last) {
+		last = s.CGM.GetLastUploadDate()
+	}
+	if s.BGM != nil && s.BGM.GetLastUploadDate().After(last) {
+		last = s.BGM.GetLastUploadDate()
+	}
+	return last
+}
+
+func (s *Summary) GetLastUpdatedDate() time.Time {
+	last := time.Time{}
+	if s.CGM != nil && s.CGM.GetLastUpdatedDate().After(last) {
+		last = s.CGM.GetLastUpdatedDate()
+	}
+	if s.BGM != nil && s.BGM.GetLastUpdatedDate().After(last) {
+		last = s.BGM.GetLastUpdatedDate()
+	}
+	return last
 }
 
 type DataSources []DataSource

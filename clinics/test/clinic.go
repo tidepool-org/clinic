@@ -34,8 +34,7 @@ func RandomClinic() *clinics.Clinic {
 	shareCode := Faker.UUID().V4()
 	shareCodes := []string{shareCode}
 	admins := []string{Faker.UUID().V4()}
-	id := primitive.NewObjectIDFromTimestamp(Faker.Time().TimeBetween(time.Now().Add(-time.Hour*24*365), time.Now()))
-	createAccountCode := "34567"
+	id := RandomObjectId()
 
 	return &clinics.Clinic{
 		Id:                 &id,
@@ -45,6 +44,7 @@ func RandomClinic() *clinics.Clinic {
 		ClinicSize:         strp(Faker.RandomStringElement([]string{"0-100", "100-1000"})),
 		Country:            strp(Faker.Address().Country()),
 		Name:               strp(Faker.Company().Name()),
+		PatientTags:        RandomTags(3),
 		PostalCode:         strp(Faker.Address().PostCode()),
 		State:              strp(Faker.Address().State()),
 		CanonicalShareCode: strp(shareCode),
@@ -55,18 +55,35 @@ func RandomClinic() *clinics.Clinic {
 		UpdatedTime:        Faker.Time().Time(time.Now()),
 		IsMigrated:         false,
 		EHRSettings: &clinics.EHRSettings{
-			Enabled: true,
+			Enabled:  true,
+			Provider: "xealth",
 			Facility: &clinics.EHRFacility{
 				Name: Faker.Company().Name(),
 			},
 			ProcedureCodes: clinics.EHRProcedureCodes{
-				EnableSummaryReports:  "12345",
-				DisableSummaryReports: "23456",
-				CreateAccount:         &createAccountCode,
+				EnableSummaryReports:          strp("12345"),
+				DisableSummaryReports:         strp("23456"),
+				CreateAccount:                 strp("34567"),
+				CreateAccountAndEnableReports: strp("45678"),
 			},
 			SourceId: Faker.UUID().V4(),
 		},
 	}
+}
+
+func RandomTags(count int) []clinics.PatientTag {
+	tags := make([]clinics.PatientTag, count)
+	for i, _ := range tags {
+		id := RandomObjectId()
+		tags[i].Id = &id
+		tags[i].Name = Faker.Company().Name()
+	}
+
+	return tags
+}
+
+func RandomObjectId() primitive.ObjectID {
+	return primitive.NewObjectIDFromTimestamp(Faker.Time().TimeBetween(time.Now().Add(-time.Hour*24*365), time.Now()))
 }
 
 func RandomClinicCreate() *manager.CreateClinic {
@@ -81,4 +98,22 @@ func RandomClinicCreate() *manager.CreateClinic {
 		CreatorUserId:     userId,
 		CreateDemoPatient: false,
 	}
+}
+
+func EnableXealth(clinic *clinics.Clinic, deployment string) *clinics.Clinic {
+	clinic.EHRSettings = &clinics.EHRSettings{
+		Enabled:  true,
+		Provider: "xealth",
+		Facility: &clinics.EHRFacility{
+			Name: Faker.Company().Name(),
+		},
+		ProcedureCodes: clinics.EHRProcedureCodes{
+			EnableSummaryReports:          strp("12345"),
+			DisableSummaryReports:         strp("23456"),
+			CreateAccount:                 strp("34567"),
+			CreateAccountAndEnableReports: strp("45678"),
+		},
+		SourceId: deployment,
+	}
+	return clinic
 }

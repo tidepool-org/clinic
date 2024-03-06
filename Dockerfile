@@ -23,5 +23,6 @@ RUN apk --no-cache update && \
 USER tidepool
 COPY --chown=tidepool . .
 RUN ./build.sh
-CMD ["./dist/clinic"]
+WORKDIR /go/src/github.com/tidepool-org/clinic/dist
+CMD ["./clinic"]
 

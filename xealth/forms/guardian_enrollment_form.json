@@ -1,0 +1,79 @@
+{
+  "formId": "guardian_enrollment_form",
+  "formData": {},
+  "formSchema": {
+    "definitions": {
+      "tags": {}
+    },
+    "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
+    "title": "Add patient to Tidepool",
+    "type": "object",
+    "properties": {
+      "guardian": {
+        "type": "object",
+        "title": "",
+        "required": [
+          "firstName",
+          "lastName"
+        ],
+        "properties": {
+          "firstName": {
+            "title": "Parent/Guardian First Name",
+            "type": "string"
+          },
+          "lastName": {
+            "title": "Parent/Guardian Last Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Parent/Guardian Email",
+            "description": "Email allows your patient’s parent/guardian to claim their account and upload their data from home.",
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "dependencies": {
+          "email": {
+            "properties": {
+              "connectDexcom": {
+                "title": "Connect with Dexcom",
+                "description": "",
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "tags": {
+        "type": "null",
+        "title": "",
+        "properties": {
+          "ids": {
+            "title": "Patient Tags",
+            "description": "",
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/definitions/tags"
+            }
+          }
+        }
+      }
+    }
+  },
+  "uiSchema": {
+    "ui:order": ["guardian", "tags"],
+    "guardian": {
+      "ui:order": ["firstName", "lastName", "email", "connectDexcom"],
+      "connectDexcom": {
+        "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+      }
+    },
+    "tags": {
+      "ids": {
+        "ui:widget": "CheckboxesWidget"
+      },
+      "ui:widget": "hidden"
+    }
+  }
+}

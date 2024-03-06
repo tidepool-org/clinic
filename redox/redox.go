@@ -210,6 +210,7 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 
 	enabled := true
 	filter := clinics.Filter{
+		EHRProvider:     &clinics.EHRProviderRedox,
 		EHRSourceId:     &criteria.SourceId,
 		EHRFacilityName: criteria.FacilityName,
 		EHREnabled:      &enabled,
@@ -236,8 +237,9 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 func (h *Handler) RescheduleSubscriptionOrders(ctx context.Context, clinicId string) error {
 	enabled := true
 	filter := clinics.Filter{
-		Ids:        []string{clinicId},
-		EHREnabled: &enabled,
+		Ids:         []string{clinicId},
+		EHRProvider: &clinics.EHRProviderRedox,
+		EHREnabled:  &enabled,
 	}
 	page := store.Pagination{
 		Offset: 0,
@@ -258,7 +260,7 @@ func (h *Handler) RescheduleSubscriptionOrders(ctx context.Context, clinicId str
 	return h.patients.RescheduleLastSubscriptionOrderForAllPatients(
 		ctx,
 		clinicId,
-		patients.SummaryAndReportsSubscription,
+		patients.SubscriptionRedoxSummaryAndReports,
 		messagesCollectionName,
 		summaryAndReportsRescheduledOrdersCollectionName,
 	)
@@ -271,11 +273,10 @@ func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Cli
 
 	code := GetProcedureCodeFromOrder(order)
 	procedureCodes := clinic.EHRSettings.ProcedureCodes
-	if code == nil {
-		return nil, nil
-	} else if *code == procedureCodes.EnableSummaryReports || *code == procedureCodes.DisableSummaryReports {
+	if (procedureCodes.EnableSummaryReports != nil && code == *procedureCodes.EnableSummaryReports) ||
+		(procedureCodes.DisableSummaryReports != nil && code == *procedureCodes.DisableSummaryReports) {
 		return h.MatchPatientsForSubscriptionOrder(ctx, clinic, order, update)
-	} else if procedureCodes.CreateAccount != nil && *code == *procedureCodes.CreateAccount {
+	} else if procedureCodes.CreateAccount != nil && code == *procedureCodes.CreateAccount {
 		return h.FindMatchingPatientsForAccountCreationOrder(ctx, clinic, order)
 	}
 
@@ -476,25 +477,21 @@ func UnmarshallMessage[S *T, T Model](envelope models.MessageEnvelope) (S, error
 
 func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID, order models.NewOrder) *patients.SubscriptionUpdate {
 	code := GetProcedureCodeFromOrder(order)
-	if clinic.EHRSettings == nil || code == nil {
-		return nil
-	}
-
 	update := patients.SubscriptionUpdate{
 		MatchedMessage: patients.MatchedMessage{
 			DocumentId: documentId,
 			DataModel:  order.Meta.DataModel,
 			EventType:  order.Meta.EventType,
 		},
+		Provider: clinics.EHRProviderRedox,
 	}
 
-	switch *code {
-	case clinic.EHRSettings.ProcedureCodes.EnableSummaryReports:
-		update.Name = patients.SummaryAndReportsSubscription
+	if clinic.EHRSettings.ProcedureCodes.EnableSummaryReports != nil && *clinic.EHRSettings.ProcedureCodes.EnableSummaryReports == code {
+		update.Name = patients.SubscriptionRedoxSummaryAndReports
 		update.Active = true
 		return &update
-	case clinic.EHRSettings.ProcedureCodes.DisableSummaryReports:
-		update.Name = patients.SummaryAndReportsSubscription
+	} else if clinic.EHRSettings.ProcedureCodes.DisableSummaryReports != nil && *clinic.EHRSettings.ProcedureCodes.DisableSummaryReports == code {
+		update.Name = patients.SubscriptionRedoxSummaryAndReports
 		update.Active = false
 		return &update
 	}
@@ -502,10 +499,11 @@ func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID,
 	return nil
 }
 
-func GetProcedureCodeFromOrder(order models.NewOrder) *string {
+func GetProcedureCodeFromOrder(order models.NewOrder) (code string) {
 	if order.Order.Procedure == nil || order.Order.Procedure.Code == nil {
-		return nil
+		return
 	}
 
-	return order.Order.Procedure.Code
+	code = *order.Order.Procedure.Code
+	return
 }

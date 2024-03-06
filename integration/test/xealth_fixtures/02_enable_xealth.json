@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "sourceId": "artificialhealthcare",
+  "procedureCodes": {
+    "createAccountAndEnableReports": "100"
+  },
+  "provider": "xealth",
+  "mrnIdType": "enterprise"
+}

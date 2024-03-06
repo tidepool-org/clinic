@@ -1,0 +1,259 @@
+{
+  "eventType": "preorder",
+  "eventContext": "initial",
+  "deployment": "artificialhealthcare",
+  "programId": "100",
+  "patientIdentity": {
+    "ids": [
+      {
+        "id": "e987655",
+        "type": "enterprise",
+        "origin": "epic"
+      },
+      {
+        "id": "10052608740",
+        "type": "mrn",
+        "origin": "epic"
+      }
+    ],
+    "historicalIds": [
+      {
+        "id": "E99999900",
+        "type": "enterprise",
+        "origin": "epic"
+      }
+    ]
+  },
+  "datasets": {
+    "demographicsV1": {
+      "ids": [
+        {
+          "id": "e987655",
+          "type": "enterprise"
+        },
+        {
+          "id": "10052608740",
+          "type": "mrn"
+        }
+      ],
+      "historicalIds": [
+        {
+          "id": "E99999900",
+          "type": "enterprise"
+        }
+      ],
+      "name": {
+        "use": "usual",
+        "text": "Dame Senora FirstName First LastName Last PhD, MBA",
+        "prefix": [
+          "Dame",
+          "Senora"
+        ],
+        "given": [
+          "FirstName",
+          "First"
+        ],
+        "family": [
+          "LastName",
+          "Last"
+        ],
+        "suffix": [
+          "PhD",
+          "MBA"
+        ]
+      },
+      "nameList": [
+        {
+          "use": "usual",
+          "text": "Dame Senora FirstName First LastName Last PhD, MBA",
+          "prefix": [
+            "Dame",
+            "Senora"
+          ],
+          "given": [
+            "FirstName",
+            "First"
+          ],
+          "family": [
+            "LastName",
+            "Last"
+          ],
+          "suffix": [
+            "PhD",
+            "MBA"
+          ]
+        },
+        {
+          "use": "official",
+          "text": "Dame FirstName LastName PhD, MBA",
+          "prefix": [
+            "Dame"
+          ],
+          "given": [
+            "FirstName"
+          ],
+          "family": [
+            "LastName"
+          ],
+          "suffix": [
+            "PhD",
+            "MBA"
+          ]
+        }
+      ],
+      "gender": "female",
+      "birthDate": "1985-01-11",
+      "deceasedBoolean": false,
+      "telecom": [
+        {
+          "system": "phone",
+          "value": "888-555-2222",
+          "use": "mobile",
+          "rank": 1
+        },
+        {
+          "system": "phone",
+          "value": "888-555-1212",
+          "use": "home"
+        },
+        {
+          "system": "email",
+          "value": "home@example.com",
+          "use": "home",
+          "rank": 1
+        },
+        {
+          "system": "email",
+          "value": "work@example.com",
+          "use": "work"
+        }
+      ],
+      "address": [
+        {
+          "text": "555 Imaginary PL\nEdmonds  WA 98020",
+          "line": [
+            "555 Imaginary PL",
+            "PO BOX 00991"
+          ],
+          "city": "Edmonds",
+          "district": "THURSTON",
+          "state": "Washington",
+          "postalCode": "98020",
+          "country": "United States of America"
+        }
+      ],
+      "preferredLanguage": "eng",
+      "preferredLanguageTitle": "English"
+    },
+    "ehrUserV1": {
+      "userId": "User_98768",
+      "firstName": "Test",
+      "lastName": "Provider",
+      "systemLogin": "t_provider",
+      "providerNPI": "1234567890",
+      "providerId": "255",
+      "providerType": "Physician"
+    },
+    "encounterV1": {
+      "encounterLocation": {
+        "fhirId": "4581438329",
+        "display": "BUMT Whole Health Clinic - Family Medicine, AZT WHC FM, AZT WHC FM"
+      },
+      "encounterPointOfCare": {
+        "identifier": [
+          {
+            "type": {
+              "text": "Internal"
+            },
+            "value": "HSN453673"
+          }
+        ],
+        "name": "BUMT Specialty Clinic",
+        "alias": [
+          "BSC"
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "888-555-0000",
+            "use": "work"
+          },
+          {
+            "system": "email",
+            "value": "zzz@zzz.com",
+            "use": "work"
+          }
+        ],
+        "address": {
+          "text": "123 Creative Way\nSEATTLE WA 98144",
+          "line": [
+            "123 Creative Way"
+          ],
+          "city": "SEATTLE ",
+          "district": "King",
+          "state": "Washington",
+          "postalCode": "98144",
+          "country": "United States of America"
+        }
+      },
+      "attendingProvider": {
+        "name": [
+          {
+            "use": "usual",
+            "text": "Sir FirstName LastName MD",
+            "prefix": [
+              "Sir"
+            ],
+            "given": [
+              "FirstName"
+            ],
+            "family": [
+              "LastName"
+            ],
+            "suffix": [
+              "MD"
+            ]
+          }
+        ],
+        "identifier": [
+          {
+            "type": {
+              "text": "NPI"
+            },
+            "value": "4768294628"
+          }
+        ]
+      },
+      "visitId": {
+        "id": "20003412",
+        "type": "CSN"
+      }
+    },
+    "maternityPregnancyV2": {
+      "estimatedDeliveryDates": [
+        {
+          "category": {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "social-history"
+              }
+            ],
+            "text": "Social History"
+          },
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "11778-8"
+              }
+            ],
+            "text": "Final EDD"
+          },
+          "effectiveDateTime": "2022-05-19T12:33:18Z",
+          "valueDateTime": "2022-06-17T00:00:00Z"
+        }
+      ]
+    }
+  }
+}

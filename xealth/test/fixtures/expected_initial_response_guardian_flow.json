@@ -1,0 +1,96 @@
+{
+  "dataTrackingId": "1234567890",
+  "notOrderable": false,
+  "preorderFormInfo": {
+    "formData": {
+      "guardian": {}
+    },
+    "formId": "guardian_enrollment_form",
+    "formSchema": {
+      "definitions": {
+        "tags": {
+          "enum": ["000000000000000000000001", "000000000000000000000000"],
+          "enumNames": ["DIY Loop", "Tidepool Loop"]
+        }
+      },
+      "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
+      "properties": {
+        "guardian": {
+          "properties": {
+            "email": {
+              "format": "email",
+              "title": "Parent/Guardian Email",
+              "description": "Email allows your patient’s parent/guardian to claim their account and upload their data from home.",
+              "type": "string"
+            },
+            "firstName": {
+              "title": "Parent/Guardian First Name",
+              "type": "string"
+            },
+            "lastName": {
+              "title": "Parent/Guardian Last Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "firstName",
+            "lastName"
+          ],
+          "title": "",
+          "type": "object",
+          "dependencies": {
+            "email": {
+              "properties": {
+                "connectDexcom": {
+                  "title": "Connect with Dexcom",
+                  "description": "",
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "tags": {
+          "type": "object",
+          "title": "",
+          "properties": {
+            "ids": {
+              "title": "Patient Tags",
+              "description": "",
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/definitions/tags"
+              }
+            }
+          }
+        }
+      },
+      "title": "Add James Jellyfish to Tidepool",
+      "type": "object"
+    },
+    "uiSchema": {
+      "guardian": {
+        "connectDexcom": {
+          "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+        },
+        "ui:order": [
+          "firstName",
+          "lastName",
+          "email",
+          "connectDexcom"
+        ]
+      },
+      "tags": {
+        "ids": {
+          "ui:widget": "CheckboxesWidget"
+        },
+        "ui:widget": "object"
+      },
+      "ui:order": [
+        "guardian",
+        "tags"
+      ]
+    }
+  }
+}
