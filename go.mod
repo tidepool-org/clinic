@@ -129,5 +129,5 @@ replace github.com/tidepool-org/clinic/client => ./client
 
 replace github.com/tidepool-org/clinic/redox_models => ./redox_models
 
-// Resolve CVE-2024-24786
+// Resolve GO-2024-2611
 replace google.golang.org/protobuf v1.32.0 => google.golang.org/protobuf v1.33.0
