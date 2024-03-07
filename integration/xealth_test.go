@@ -302,7 +302,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(response.Programs).To(HaveLen(1))
 
 			program := response.Programs[0]
-			today := time.Now().Format(time.DateOnly)
+			today := time.Now().UTC().Format(time.DateOnly)
 
 			// Last upload should be set to the summary last updated date
 			Expect(program.Description).To(PointTo(Equal(fmt.Sprintf("Last Upload: 2024-01-18 | Last Viewed by You: %s", today))))
