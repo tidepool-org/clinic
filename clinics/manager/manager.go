@@ -213,7 +213,7 @@ func (c *manager) getDemoPatient(ctx context.Context) (*patients.Patient, error)
 			View: &perm,
 		},
 	}
-	if err := c.userService.GetPatientFromExistingUser(ctx, patient); err != nil {
+	if err := c.userService.PopulatePatientDetailsFromExistingUser(ctx, patient); err != nil {
 		return nil, err
 	}
 	return patient, nil

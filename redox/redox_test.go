@@ -167,6 +167,7 @@ var _ = Describe("Redox", func() {
 		It("returns the matching clinic when only one clinic matches", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
+				EHRProvider:     &clinics.EHRProviderRedox,
 				EHREnabled:      &ehrEnabled,
 				EHRSourceId:     &criteria.SourceId,
 				EHRFacilityName: criteria.FacilityName,
@@ -180,6 +181,7 @@ var _ = Describe("Redox", func() {
 		It("returns an error when multiple clinics match the criteria", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
+				EHRProvider:     &clinics.EHRProviderRedox,
 				EHREnabled:      &ehrEnabled,
 				EHRSourceId:     &criteria.SourceId,
 				EHRFacilityName: criteria.FacilityName,
@@ -193,6 +195,7 @@ var _ = Describe("Redox", func() {
 		It("returns an error when no clinics match the criteria", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
+				EHRProvider:     &clinics.EHRProviderRedox,
 				EHREnabled:      &ehrEnabled,
 				EHRSourceId:     &criteria.SourceId,
 				EHRFacilityName: criteria.FacilityName,
@@ -223,8 +226,9 @@ var _ = Describe("Redox", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				update = &patients.SubscriptionUpdate{
-					Name:   "test",
-					Active: false,
+					Name:     "test",
+					Provider: clinics.EHRProviderXealth,
+					Active:   false,
 					MatchedMessage: patients.MatchedMessage{
 						DocumentId: primitive.NewObjectID(),
 						DataModel:  "Order",

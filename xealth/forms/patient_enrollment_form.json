@@ -1,0 +1,66 @@
+{
+  "formId": "patient_enrollment_form",
+  "formData": {},
+  "formSchema": {
+    "definitions": {
+      "tags": {}
+    },
+    "description": "Please confirm a few details to complete set up.",
+    "title": "Add patient to Tidepool",
+    "type": "object",
+    "properties": {
+      "patient": {
+        "type": "object",
+        "title": "",
+        "properties": {
+          "email": {
+            "title": "Patient's Email",
+            "description": "Email allows your patient to claim their account and upload their data from home.",
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "dependencies": {
+          "email": {
+            "properties": {
+              "connectDexcom": {
+                "title": "Connect with Dexcom",
+                "description": "",
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "tags": {
+        "type": "null",
+        "title": "",
+        "properties": {
+          "ids": {
+            "title": "Patient Tags",
+            "description": "",
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/definitions/tags"
+            }
+          }
+        }
+      }
+    }
+  },
+  "uiSchema": {
+    "ui:order": ["patient", "tags"],
+    "patient": {
+      "connectDexcom": {
+        "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
+      }
+    },
+    "tags": {
+      "ids": {
+        "ui:widget": "CheckboxesWidget"
+      },
+      "ui:widget": "hidden"
+    }
+  }
+}

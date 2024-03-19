@@ -17,10 +17,12 @@ generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=server spec/clinic.v1.yaml > api/gen_server.go
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=spec spec/clinic.v1.yaml > api/gen_spec.go
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > api/gen_types.go
-	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > client/types.go
-	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=client spec/clinic.v1.yaml > client/client.go
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=types spec/clinic.v1.yaml > client/types.go
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=client spec/clinic.v1.yaml > client/client.go
 	$(SWAGGER_CLI) bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml -t yaml
 	$(OAPI_CODEGEN) -package=redox_models -generate=types spec/redox.v1.yaml > redox_models/gen_types.go
+	$(OAPI_CODEGEN) -include-tags="Orders (Partner)",Webhooks -package=xealth_client -generate=types,skip-prune ../TidepoolApi/reference/xealth.v2.yaml > xealth_client/gen_types.go
+	$(OAPI_CODEGEN) -include-tags="Orders (Partner)" -package=xealth_client -generate=client ../TidepoolApi/reference/xealth.v2.yaml > xealth_client/gen_client.go
 	go generate ./...
 	cd client && go generate ./...
 

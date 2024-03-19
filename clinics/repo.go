@@ -107,6 +107,9 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 	if filter.EHRSourceId != nil {
 		selector["ehrSettings.sourceId"] = filter.EHRSourceId
 	}
+	if filter.EHRProvider != nil {
+		selector["ehrSettings.provider"] = filter.EHRProvider
+	}
 	if filter.EHRFacilityName != nil {
 		selector["ehrSettings.facility.name"] = filter.EHRFacilityName
 	}

@@ -458,7 +458,15 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		}
 	}
 
-	res, err := r.collection.UpdateMany(ctx, selector, bson.M{"$set": set, "$unset": unset})
+	update := bson.M{}
+	if len(set) > 0 {
+		update["$set"] = set
+	}
+	if len(unset) > 0 {
+		update["$unset"] = unset
+	}
+
+	res, err := r.collection.UpdateMany(ctx, selector, update)
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
@@ -750,13 +758,18 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 		subscriptions = make(map[string]EHRSubscription)
 	}
 
+	now := time.Now()
 	subscription, ok := subscriptions[update.Name]
 	if !ok {
-		subscription = EHRSubscription{}
+		subscription = EHRSubscription{
+			CreatedAt: now,
+		}
 	}
 
 	subscription.Active = update.Active
 	subscription.MatchedMessages = append(subscription.MatchedMessages, update.MatchedMessage)
+	subscription.Provider = update.Provider
+	subscription.UpdatedAt = now
 	subscriptions[update.Name] = subscription
 
 	res, err := r.collection.UpdateOne(ctx, selector, bson.M{
@@ -803,6 +816,29 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 	}
 	if filter.Mrn != nil {
 		selector["mrn"] = filter.Mrn
+	} else if filter.HasMRN != nil {
+		empty := bson.M{
+			"$in": bson.A{nil, ""},
+		}
+		if *filter.HasMRN {
+			selector["mrn"] = bson.M{
+				"$not": empty,
+			}
+		} else {
+			selector["mrn"] = empty
+		}
+	}
+	if filter.HasSubscription != nil {
+		empty := bson.M{
+			"$in": bson.A{nil, bson.M{}},
+		}
+		if *filter.HasSubscription {
+			selector["ehrSubscriptions"] = bson.M{
+				"$not": empty,
+			}
+		} else {
+			selector["ehrSubscriptions"] = empty
+		}
 	}
 	if filter.BirthDate != nil {
 		selector["birthDate"] = filter.BirthDate

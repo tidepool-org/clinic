@@ -115,24 +115,16 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 		return err
 	}
 
-	clinicObjId, err := primitive.ObjectIDFromHex(string(clinicId))
+	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
 		return err
 	}
 
-	patient := patients.Patient{
-		UserId:      strp(string(patientId)),
-		ClinicId:    &clinicObjId,
-		Permissions: NewPermissions(dto.Permissions),
-	}
-	if dto.IsMigrated != nil {
-		patient.IsMigrated = *dto.IsMigrated
-	}
-	if dto.LegacyClinicianId != nil {
-		patient.LegacyClinicianIds = []string{string(*dto.LegacyClinicianId)}
-	}
+	patient := NewPatientFromCreate(dto)
+	patient.UserId = strp(patientId)
+	patient.ClinicId = &clinicObjId
 
-	if err = h.users.GetPatientFromExistingUser(ctx, &patient); err != nil {
+	if err = h.users.PopulatePatientDetailsFromExistingUser(ctx, &patient); err != nil {
 		return err
 	}
 	patient.Email = pstrToLower(patient.Email)
@@ -228,10 +220,9 @@ func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, p
 	}
 
 	update := patients.LastRequestedDexcomConnectUpdate{
-		ClinicId:  string(clinicId),
-		Time:      time.Now(),
-		UserId:    string(patientId),
-		UpdatedBy: authData.SubjectId,
+		ClinicId: clinicId,
+		Time:     time.Now(),
+		UserId:   patientId,
 	}
 	patient, err := h.patients.UpdateLastRequestedDexcomConnectTime(ctx, &update)
 	if err != nil {

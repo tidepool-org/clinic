@@ -1,0 +1,31 @@
+{
+  "eventId": "281f40d9-f583-496f-a503-f9e537cb43f6",
+  "eventTimeStamp": "2021-01-14T00:23:47.580Z",
+  "eventType": "order",
+  "eventContext": "new",
+  "orderId": "7e316617-ef33-4859-b0c9-36bddbfe9229",
+  "deployment": "artificialhealthcare",
+  "programId": "100",
+  "partnerId": "tidepool",
+  "patientIdentity": {
+    "ids": [
+      {
+        "id": "e987655",
+        "type": "enterprise",
+        "origin": "epic"
+      },
+      {
+        "id": "10052608740",
+        "type": "mrn",
+        "origin": "epic"
+      }
+    ],
+    "historicalIds": [
+      {
+        "id": "E99999900",
+        "type": "enterprise",
+        "origin": "epic"
+      }
+    ]
+  }
+}
