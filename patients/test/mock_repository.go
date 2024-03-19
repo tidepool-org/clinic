@@ -50,6 +50,21 @@ func (mr *MockRepositoryMockRecorder) AssignPatientTagToClinicPatients(ctx, clin
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockRepository)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
 }
 
+// Count mocks base method.
+func (m *MockRepository) Count(ctx context.Context, filter *patients.Filter) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Count", ctx, filter)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count.
+func (mr *MockRepositoryMockRecorder) Count(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockRepository)(nil).Count), ctx, filter)
+}
+
 // Create mocks base method.
 func (m *MockRepository) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -66,11 +81,12 @@ func (mr *MockRepositoryMockRecorder) Create(ctx, patient interface{}) *gomock.C
 }
 
 // DeleteFromAllClinics mocks base method.
-func (m *MockRepository) DeleteFromAllClinics(ctx context.Context, userId string) error {
+func (m *MockRepository) DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteFromAllClinics", ctx, userId)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteFromAllClinics indicates an expected call of DeleteFromAllClinics.
@@ -80,11 +96,12 @@ func (mr *MockRepositoryMockRecorder) DeleteFromAllClinics(ctx, userId interface
 }
 
 // DeleteNonCustodialPatientsOfClinic mocks base method.
-func (m *MockRepository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error {
+func (m *MockRepository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteNonCustodialPatientsOfClinic", ctx, clinicId)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteNonCustodialPatientsOfClinic indicates an expected call of DeleteNonCustodialPatientsOfClinic.

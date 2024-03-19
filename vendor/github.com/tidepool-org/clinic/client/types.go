@@ -781,12 +781,20 @@ type Clinics = []Clinic
 
 // CreatePatient defines model for CreatePatient.
 type CreatePatient struct {
-	AttestationSubmitted *bool `json:"attestationSubmitted,omitempty"`
-	IsMigrated           *bool `json:"isMigrated,omitempty"`
+	AttestationSubmitted *bool               `json:"attestationSubmitted,omitempty"`
+	BirthDate            *openapi_types.Date `json:"birthDate,omitempty"`
+
+	// FullName The full name of the patient
+	FullName   *string `json:"fullName,omitempty"`
+	IsMigrated *bool   `json:"isMigrated,omitempty"`
 
 	// LegacyClinicianId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	LegacyClinicianId *TidepoolUserId     `json:"legacyClinicianId,omitempty"`
-	Permissions       *PatientPermissions `json:"permissions,omitempty"`
+	LegacyClinicianId *TidepoolUserId `json:"legacyClinicianId,omitempty"`
+
+	// Mrn The medical record number of the patient
+	Mrn         *string             `json:"mrn,omitempty"`
+	Permissions *PatientPermissions `json:"permissions,omitempty"`
+	Tags        *PatientTagIds      `json:"tags"`
 }
 
 // DataSource defines model for DataSource.
@@ -1344,6 +1352,30 @@ type PatientClinicRelationship struct {
 // PatientClinicRelationships defines model for PatientClinicRelationships.
 type PatientClinicRelationships = []PatientClinicRelationship
 
+// PatientCount defines model for PatientCount.
+type PatientCount struct {
+	// PatientCount The patient count for a clinic
+	PatientCount int `json:"patientCount"`
+}
+
+// PatientCountLimit defines model for PatientCountLimit.
+type PatientCountLimit struct {
+	// EndDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	EndDate *DateTime `json:"endDate,omitempty"`
+
+	// PatientCount The patient count limit
+	PatientCount int `json:"patientCount"`
+
+	// StartDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	StartDate *DateTime `json:"startDate,omitempty"`
+}
+
+// PatientCountSettings defines model for PatientCountSettings.
+type PatientCountSettings struct {
+	HardLimit *PatientCountLimit `json:"hardLimit,omitempty"`
+	SoftLimit *PatientCountLimit `json:"softLimit,omitempty"`
+}
+
 // PatientPermissions defines model for PatientPermissions.
 type PatientPermissions struct {
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
@@ -1900,6 +1932,9 @@ type UpdateEHRSettingsJSONRequestBody = EHRSettings
 
 // UpdateMRNSettingsJSONRequestBody defines body for UpdateMRNSettings for application/json ContentType.
 type UpdateMRNSettingsJSONRequestBody = MRNSettings
+
+// UpdatePatientCountSettingsJSONRequestBody defines body for UpdatePatientCountSettings for application/json ContentType.
+type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettings
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications

@@ -569,6 +569,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow clinic members to fetch patient count settings
+# GET /v1/clinics/:clinicId/settings/patient_count
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "settings", "patient_count"]
+  clinician_has_read_access
+}
+
 # Allow services to update clinics settings
 # GET /v1/clinics/:clinicId/settings/:settings
 allow {
@@ -582,6 +590,22 @@ allow {
 allow {
   input.method == "PUT"
   input.path = ["v1", "clinics", _, "settings", _]
+  is_backend_service
+}
+
+# Allow clinic members to fetch patient count
+# GET /v1/clinics/:clinicId/patient_count
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patient_count"]
+  clinician_has_read_access
+}
+
+# Allow services to fetch patient count
+# GET /v1/clinics/:clinicId/patient_count
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patient_count"]
   is_backend_service
 }
 

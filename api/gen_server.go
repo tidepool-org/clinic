@@ -88,6 +88,9 @@ type ServerInterface interface {
 	// Update Migration
 	// (PATCH /v1/clinics/{clinicId}/migrations/{userId})
 	UpdateMigration(ctx echo.Context, clinicId Id, userId UserId) error
+	// Get Patient Count
+	// (GET /v1/clinics/{clinicId}/patient_count)
+	GetPatientCount(ctx echo.Context, clinicId ClinicId) error
 	// Create Patient Tag
 	// (POST /v1/clinics/{clinicId}/patient_tags)
 	CreatePatientTag(ctx echo.Context, clinicId ClinicId) error
@@ -145,6 +148,12 @@ type ServerInterface interface {
 	// Update MRN Settings
 	// (PUT /v1/clinics/{clinicId}/settings/mrn)
 	UpdateMRNSettings(ctx echo.Context, clinicId ClinicId) error
+	// Get Patient Count Settings
+	// (GET /v1/clinics/{clinicId}/settings/patient_count)
+	GetPatientCountSettings(ctx echo.Context, clinicId ClinicId) error
+	// Update Patient Count Settings
+	// (PUT /v1/clinics/{clinicId}/settings/patient_count)
+	UpdatePatientCountSettings(ctx echo.Context, clinicId ClinicId) error
 	// Update Suppressed Notifications
 	// (POST /v1/clinics/{clinicId}/suppressed_notifications)
 	UpdateSuppressedNotifications(ctx echo.Context, clinicId ClinicId) error
@@ -820,6 +829,24 @@ func (w *ServerInterfaceWrapper) UpdateMigration(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.UpdateMigration(ctx, clinicId, userId)
+	return err
+}
+
+// GetPatientCount converts echo context to params.
+func (w *ServerInterfaceWrapper) GetPatientCount(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetPatientCount(ctx, clinicId)
 	return err
 }
 
@@ -1593,6 +1620,42 @@ func (w *ServerInterfaceWrapper) UpdateMRNSettings(ctx echo.Context) error {
 	return err
 }
 
+// GetPatientCountSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) GetPatientCountSettings(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetPatientCountSettings(ctx, clinicId)
+	return err
+}
+
+// UpdatePatientCountSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdatePatientCountSettings(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdatePatientCountSettings(ctx, clinicId)
+	return err
+}
+
 // UpdateSuppressedNotifications converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdateSuppressedNotifications(ctx echo.Context) error {
 	var err error
@@ -2002,6 +2065,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/clinics/:clinicId/migrations", wrapper.MigrateLegacyClinicianPatients)
 	router.GET(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.GetMigration)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.UpdateMigration)
+	router.GET(baseURL+"/v1/clinics/:clinicId/patient_count", wrapper.GetPatientCount)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patient_tags", wrapper.CreatePatientTag)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.DeletePatientTag)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.UpdatePatientTag)
@@ -2021,6 +2085,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/ehr", wrapper.UpdateEHRSettings)
 	router.GET(baseURL+"/v1/clinics/:clinicId/settings/mrn", wrapper.GetMRNSettings)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/mrn", wrapper.UpdateMRNSettings)
+	router.GET(baseURL+"/v1/clinics/:clinicId/settings/patient_count", wrapper.GetPatientCountSettings)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/patient_count", wrapper.UpdatePatientCountSettings)
 	router.POST(baseURL+"/v1/clinics/:clinicId/suppressed_notifications", wrapper.UpdateSuppressedNotifications)
 	router.GET(baseURL+"/v1/clinics/:clinicId/tide_report", wrapper.TideReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)

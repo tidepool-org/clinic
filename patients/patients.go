@@ -38,6 +38,7 @@ var (
 //go:generate mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
+	Count(ctx context.Context, filter *Filter) (int, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination, sort []*store.Sort) (*ListResult, error)
 	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, update PatientUpdate) (*Patient, error)
@@ -45,8 +46,8 @@ type Service interface {
 	Remove(ctx context.Context, clinicId string, userId string) error
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
-	DeleteFromAllClinics(ctx context.Context, userId string) error
-	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error
+	DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error)
+	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error)
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error)
@@ -143,6 +144,8 @@ type Filter struct {
 
 	CGMTime SummaryDateFilters
 	BGMTime SummaryDateFilters
+
+	ExcludeDemo bool
 }
 
 type Permission = map[string]interface{}
