@@ -15,6 +15,9 @@ const (
 	DefaultMrnIdType           = "MRN"
 	WorkspaceIdTypeClinicId    = "clinicId"
 	WorkspaceIdTypeEHRSourceId = "ehrSourceId"
+
+	CountryCodeUS                                    = "US"
+	PatientCountSettingsHardLimitPatientCountDefault = 250
 )
 
 var (
@@ -99,6 +102,10 @@ type Clinic struct {
 	PatientCount            *PatientCount            `bson:"patientCount,omitempty"`
 }
 
+func (c Clinic) IsOUS() bool {
+	return c.Country != nil && *c.Country != CountryCodeUS
+}
+
 type EHRSettings struct {
 	Enabled        bool               `bson:"enabled"`
 	Provider       string             `bson:"provider"`
@@ -146,6 +153,12 @@ func (p PatientCount) IsValid() bool {
 	return p.PatientCount >= 0
 }
 
+func NewPatientCount() *PatientCount {
+	return &PatientCount{
+		PatientCount: 0,
+	}
+}
+
 type PatientCountSettings struct {
 	HardLimit *PatientCountLimit `bson:"hardLimit,omitempty"`
 	SoftLimit *PatientCountLimit `bson:"softLimit,omitempty"`
@@ -159,6 +172,14 @@ func (p PatientCountSettings) IsValid() bool {
 		return false
 	}
 	return true
+}
+
+func DefaultPatientCountSettings() *PatientCountSettings {
+	return &PatientCountSettings{
+		HardLimit: &PatientCountLimit{
+			PatientCount: PatientCountSettingsHardLimitPatientCountDefault,
+		},
+	}
 }
 
 type PatientCountLimit struct {
@@ -177,10 +198,10 @@ func (p PatientCountLimit) IsValid() bool {
 	return true
 }
 
-func NewClinic() Clinic {
-	return Clinic{
-		CreatedTime: time.Now(),
-		UpdatedTime: time.Now(),
+func NewClinic() *Clinic {
+	return &Clinic{
+		PatientCount:         NewPatientCount(),
+		PatientCountSettings: DefaultPatientCountSettings(),
 	}
 }
 

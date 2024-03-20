@@ -66,9 +66,6 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 	// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
 	clinic.IsMigrated = true
 
-	// Set new clinic patient count to zero
-	clinic.PatientCount = &clinics.PatientCount{PatientCount: 0}
-
 	create := manager.CreateClinic{
 		Clinic:            clinic,
 		CreatorUserId:     authData.SubjectId,

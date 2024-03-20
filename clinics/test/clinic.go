@@ -1,13 +1,14 @@
 package test
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/jaswdr/faker"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"math/rand"
-	"time"
 )
 
 var (
@@ -36,39 +37,39 @@ func RandomClinic() *clinics.Clinic {
 	admins := []string{Faker.UUID().V4()}
 	id := RandomObjectId()
 
-	return &clinics.Clinic{
-		Id:                 &id,
-		Address:            strp(Faker.Address().Address()),
-		City:               strp(Faker.Address().City()),
-		ClinicType:         strp(Faker.RandomStringElement([]string{"Diabetes Clinic", "Hospital"})),
-		ClinicSize:         strp(Faker.RandomStringElement([]string{"0-100", "100-1000"})),
-		Country:            strp(Faker.Address().Country()),
-		Name:               strp(Faker.Company().Name()),
-		PatientTags:        RandomTags(3),
-		PostalCode:         strp(Faker.Address().PostCode()),
-		State:              strp(Faker.Address().State()),
-		CanonicalShareCode: strp(shareCode),
-		Website:            strp(Faker.Internet().Domain()),
-		ShareCodes:         &shareCodes,
-		Admins:             &admins,
-		CreatedTime:        Faker.Time().Time(time.Now()),
-		UpdatedTime:        Faker.Time().Time(time.Now()),
-		IsMigrated:         false,
-		EHRSettings: &clinics.EHRSettings{
-			Enabled:  true,
-			Provider: "xealth",
-			Facility: &clinics.EHRFacility{
-				Name: Faker.Company().Name(),
-			},
-			ProcedureCodes: clinics.EHRProcedureCodes{
-				EnableSummaryReports:          strp("12345"),
-				DisableSummaryReports:         strp("23456"),
-				CreateAccount:                 strp("34567"),
-				CreateAccountAndEnableReports: strp("45678"),
-			},
-			SourceId: Faker.UUID().V4(),
+	clinic := clinics.NewClinic()
+	clinic.Id = &id
+	clinic.Address = strp(Faker.Address().Address())
+	clinic.City = strp(Faker.Address().City())
+	clinic.ClinicType = strp(Faker.RandomStringElement([]string{"Diabetes Clinic", "Hospital"}))
+	clinic.ClinicSize = strp(Faker.RandomStringElement([]string{"0-100", "100-1000"}))
+	clinic.Country = strp(Faker.Address().Country())
+	clinic.Name = strp(Faker.Company().Name())
+	clinic.PatientTags = RandomTags(3)
+	clinic.PostalCode = strp(Faker.Address().PostCode())
+	clinic.State = strp(Faker.Address().State())
+	clinic.CanonicalShareCode = strp(shareCode)
+	clinic.Website = strp(Faker.Internet().Domain())
+	clinic.ShareCodes = &shareCodes
+	clinic.Admins = &admins
+	clinic.CreatedTime = Faker.Time().Time(time.Now())
+	clinic.UpdatedTime = Faker.Time().Time(time.Now())
+	clinic.IsMigrated = false
+	clinic.EHRSettings = &clinics.EHRSettings{
+		Enabled:  true,
+		Provider: "xealth",
+		Facility: &clinics.EHRFacility{
+			Name: Faker.Company().Name(),
 		},
+		ProcedureCodes: clinics.EHRProcedureCodes{
+			EnableSummaryReports:          strp("12345"),
+			DisableSummaryReports:         strp("23456"),
+			CreateAccount:                 strp("34567"),
+			CreateAccountAndEnableReports: strp("45678"),
+		},
+		SourceId: Faker.UUID().V4(),
 	}
+	return clinic
 }
 
 func RandomTags(count int) []clinics.PatientTag {
