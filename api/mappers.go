@@ -29,22 +29,26 @@ func NewClinic(c Clinic) *clinics.Clinic {
 		}
 	}
 
-	clinic := &clinics.Clinic{
-		Name:             &c.Name,
-		ClinicType:       clinicTypeToString(c.ClinicType),
-		ClinicSize:       clinicSizeToString(c.ClinicSize),
-		Address:          c.Address,
-		City:             c.City,
-		Country:          c.Country,
-		PostalCode:       c.PostalCode,
-		State:            c.State,
-		PhoneNumbers:     &phoneNumbers,
-		Website:          c.Website,
-		PreferredBgUnits: string(c.PreferredBgUnits),
-	}
+	clinic := clinics.NewClinic()
+	clinic.Name = &c.Name
+	clinic.ClinicType = clinicTypeToString(c.ClinicType)
+	clinic.ClinicSize = clinicSizeToString(c.ClinicSize)
+	clinic.Address = c.Address
+	clinic.City = c.City
+	clinic.Country = c.Country
+	clinic.PostalCode = c.PostalCode
+	clinic.State = c.State
+	clinic.PhoneNumbers = &phoneNumbers
+	clinic.Website = c.Website
+	clinic.PreferredBgUnits = string(c.PreferredBgUnits)
 	if c.Timezone != nil {
 		tz := string(*c.Timezone)
 		clinic.Timezone = &tz
+	}
+
+	// If outside US, then no patient count settings
+	if clinic.IsOUS() {
+		clinic.PatientCountSettings = nil
 	}
 
 	return clinic

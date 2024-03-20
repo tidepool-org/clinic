@@ -33,7 +33,7 @@ var _ = Describe("Clinics", func() {
 	})
 
 	Describe("GetPatientCountSettings", func() {
-		It("returns no patient count settings by default", func() {
+		It("returns patient count settings by default", func() {
 			clinic := clinicsTest.RandomClinic()
 			clinic, err := repo.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
@@ -41,7 +41,7 @@ var _ = Describe("Clinics", func() {
 
 			patientCountSettings, err := repo.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
-			Expect(patientCountSettings).To(BeNil())
+			Expect(patientCountSettings).To(Equal(clinics.DefaultPatientCountSettings()))
 		})
 
 		It("returns patient count settings when set", func() {
@@ -106,7 +106,7 @@ var _ = Describe("Clinics", func() {
 	})
 
 	Describe("GetPatientCount", func() {
-		It("returns no patient count by default", func() {
+		It("returns patient count by default", func() {
 			clinic := clinicsTest.RandomClinic()
 			clinic, err := repo.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
@@ -114,7 +114,7 @@ var _ = Describe("Clinics", func() {
 
 			patientCount, err := repo.GetPatientCount(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
-			Expect(patientCount).To(BeNil())
+			Expect(patientCount).To(Equal(clinics.NewPatientCount()))
 		})
 
 		It("returns patient count when set", func() {
