@@ -248,8 +248,8 @@ github.com/tchap/go-patricia/v2 v2.3.1 h1:6rQp39lgIYZ+MHmdEq4xzuk1t7OdC35z/xm0BG
 github.com/tchap/go-patricia/v2 v2.3.1/go.mod h1:VZRHKAb53DLaG+nA9EaYYiaEx6YztwDlLElMsnSHD4k=
 github.com/tidepool-org/go-common v0.12.0 h1:6H9O52toEoFYrO/hVmORwv2nKw6lJSfCTKdUMkNcCXc=
 github.com/tidepool-org/go-common v0.12.0/go.mod h1:Spc4F1BkMBkYV3F9mAWBXmcJ6VU9dFbdYR1QtDQs0oo=
-github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c h1:Cy/Gp+djfO8MsSb/wSDu2b+em7EYMzEwO/6NzdPQyGg=
-github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c/go.mod h1:ShFoHwaZmkZzvsO0TCq9rcZlxpv412HQx4N8AIcAOQM=
+github.com/tidepool-org/platform v1.33.1-0.20240327162102-a38286545e31 h1:1DE15O85+byhmuFP9JrhZPIyqIHd/LA7271kFHxcxm8=
+github.com/tidepool-org/platform v1.33.1-0.20240327162102-a38286545e31/go.mod h1:H+YIbIiEh5nlsdxv8VX/xzZZTahgCANDo+ZwCoTssHw=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
 github.com/ugorji/go/codec v1.2.12/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=

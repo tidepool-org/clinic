@@ -455,7 +455,7 @@ github.com/tidepool-org/go-common/clients/status
 github.com/tidepool-org/go-common/errors
 github.com/tidepool-org/go-common/events
 github.com/tidepool-org/go-common/jepson
-# github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c
+# github.com/tidepool-org/platform v1.33.1-0.20240327162102-a38286545e31
 ## explicit; go 1.22
 github.com/tidepool-org/platform/auth
 github.com/tidepool-org/platform/auth/client
