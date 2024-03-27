@@ -24,7 +24,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/tidepool-org/clinic/client v0.0.0
 	github.com/tidepool-org/clinic/redox_models v0.0.0
-	github.com/tidepool-org/go-common v0.11.1-0.20240306185825-1ddb2b762e00
+	github.com/tidepool-org/go-common v0.12.0
 	github.com/tidepool-org/platform v1.33.1-0.20240307003344-157a71a95e3c
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
@@ -43,7 +43,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.14.0 // indirect
-	github.com/cloudevents/sdk-go/v2 v2.14.0 // indirect
+	github.com/cloudevents/sdk-go/v2 v2.15.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/eapache/go-resiliency v1.5.0 // indirect
