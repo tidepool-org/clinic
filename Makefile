@@ -74,3 +74,16 @@ npm-tools:
 # has to install all the packages all at the same time. But it saves us from
 # having to muck with packages.json.
 	npm install --no-save --local $(NPM_PKG_SPECS)
+
+.PHONY: clean
+clean:
+	rm -rf dist node_modules tools
+
+.PHONY: ci-generate
+ci-generate: generate
+
+.PHONY: ci-build
+ci-build: build
+
+.PHONY: ci-test
+ci-test: test

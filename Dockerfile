@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.22.1-alpine AS development
+FROM golang:1.22.2-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
@@ -13,7 +13,7 @@ RUN ./build.sh
 CMD ["air"]
 
 # Production
-FROM golang:1.22.1-alpine AS production
+FROM golang:1.22.2-alpine AS production
 WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
