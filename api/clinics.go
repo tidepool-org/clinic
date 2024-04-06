@@ -60,14 +60,14 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		}
 	}
 
-	clinic := *NewClinic(dto)
+	clinic := NewClinicWithDefaults(dto)
 
 	// Set new clinic migration status to true.
 	// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
 	clinic.IsMigrated = true
 
 	create := manager.CreateClinic{
-		Clinic:            clinic,
+		Clinic:            *clinic,
 		CreatorUserId:     authData.SubjectId,
 		CreateDemoPatient: true,
 	}
@@ -99,6 +99,13 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 	result, err := h.clinics.Update(ctx, string(clinicId), NewClinic(dto))
 	if err != nil {
 		return err
+	}
+
+	// Update patient count settings if the country has changed
+	if result.UpdatePatientCountSettingsForCountry() {
+		if err := h.clinics.UpdatePatientCountSettings(ctx, clinicId, result.PatientCountSettings); err != nil {
+			return err
+		}
 	}
 
 	return ec.JSON(http.StatusOK, NewClinicDto(result))

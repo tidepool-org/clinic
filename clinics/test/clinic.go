@@ -37,7 +37,7 @@ func RandomClinic() *clinics.Clinic {
 	admins := []string{Faker.UUID().V4()}
 	id := RandomObjectId()
 
-	clinic := clinics.NewClinic()
+	clinic := clinics.NewClinicWithDefaults()
 	clinic.Id = &id
 	clinic.Address = strp(Faker.Address().Address())
 	clinic.City = strp(Faker.Address().City())

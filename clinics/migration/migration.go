@@ -90,7 +90,7 @@ func (m *migrator) CreateEmptyClinic(ctx context.Context, userId string) (*clini
 	}
 
 	return m.clinicsCreator.CreateClinic(ctx, &manager.CreateClinic{
-		Clinic:        *clinics.NewClinic(),
+		Clinic:        *clinics.NewClinicWithDefaults(),
 		CreatorUserId: userId,
 	})
 }

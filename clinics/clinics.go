@@ -198,11 +198,26 @@ func (p PatientCountLimit) IsValid() bool {
 	return true
 }
 
+func NewClinicWithDefaults() *Clinic {
+	c := NewClinic()
+	c.PatientCount = NewPatientCount()
+	c.PatientCountSettings = DefaultPatientCountSettings()
+	return c
+}
+
 func NewClinic() *Clinic {
-	return &Clinic{
-		PatientCount:         NewPatientCount(),
-		PatientCountSettings: DefaultPatientCountSettings(),
+	return &Clinic{}
+}
+
+func (c *Clinic) UpdatePatientCountSettingsForCountry() bool {
+	if isOUS := c.IsOUS(); isOUS && c.PatientCountSettings != nil {
+		c.PatientCountSettings = nil
+		return true
+	} else if !isOUS && c.PatientCountSettings == nil {
+		c.PatientCountSettings = DefaultPatientCountSettings()
+		return true
 	}
+	return false
 }
 
 func (c *Clinic) HasAllRequiredFields() bool {

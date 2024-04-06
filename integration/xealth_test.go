@@ -5,6 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/TwiN/deepmerge"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,13 +25,6 @@ import (
 	xealthTest "github.com/tidepool-org/clinic/xealth/test"
 	"github.com/tidepool-org/clinic/xealth_client"
 	"go.uber.org/fx"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"os"
-	"sync"
-	"time"
 )
 
 const (
@@ -302,7 +303,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(response.Programs).To(HaveLen(1))
 
 			program := response.Programs[0]
-			today := time.Now().Format(time.DateOnly)
+			today := time.Now().UTC().Format(time.DateOnly)
 
 			// Last upload should be set to the summary last updated date
 			Expect(program.Description).To(PointTo(Equal(fmt.Sprintf("Last Upload: 2024-01-18 | Last Viewed by You: %s", today))))

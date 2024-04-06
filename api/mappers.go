@@ -18,7 +18,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+func NewClinicWithDefaults(c Clinic) *clinics.Clinic {
+	clinic := mapClinic(c, clinics.NewClinicWithDefaults())
+	clinic.UpdatePatientCountSettingsForCountry()
+	return clinic
+}
+
 func NewClinic(c Clinic) *clinics.Clinic {
+	return mapClinic(c, clinics.NewClinic())
+}
+
+func mapClinic(c Clinic, clinic *clinics.Clinic) *clinics.Clinic {
 	var phoneNumbers []clinics.PhoneNumber
 	if c.PhoneNumbers != nil {
 		for _, n := range *c.PhoneNumbers {
@@ -29,7 +39,6 @@ func NewClinic(c Clinic) *clinics.Clinic {
 		}
 	}
 
-	clinic := clinics.NewClinic()
 	clinic.Name = &c.Name
 	clinic.ClinicType = clinicTypeToString(c.ClinicType)
 	clinic.ClinicSize = clinicSizeToString(c.ClinicSize)
@@ -44,11 +53,6 @@ func NewClinic(c Clinic) *clinics.Clinic {
 	if c.Timezone != nil {
 		tz := string(*c.Timezone)
 		clinic.Timezone = &tz
-	}
-
-	// If outside US, then no patient count settings
-	if clinic.IsOUS() {
-		clinic.PatientCountSettings = nil
 	}
 
 	return clinic
