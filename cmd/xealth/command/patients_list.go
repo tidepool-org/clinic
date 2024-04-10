@@ -104,7 +104,7 @@ func init() {
 	patientsListCmd.Flags().IntVarP(&patientsListParams.Offset, "offset", "o", 0, "The number of patients to skip")
 	patientsListCmd.Flags().StringVar(&patientsListParams.PatientId, "user-id", "", "The user id of the patient")
 	patientsListCmd.Flags().BoolVar(&patientsListParams.OnlyWithSubscription, "with-subscription", false, "Return only users with EHR subscriptions")
-	patientsListCmd.Flags().BoolVar(&patientsListParams.OnlyWithSubscription, "without-subscription", false, "Return only users without EHR subscriptions")
+	patientsListCmd.Flags().BoolVar(&patientsListParams.OnlyWithoutSubscription, "without-subscription", false, "Return only users without EHR subscriptions")
 	patientsListCmd.Flags().BoolVar(&patientsListParams.OnlyWithMRN, "with-mrn", false, "Return only users with MRN")
 	patientsListCmd.Flags().BoolVar(&patientsListParams.OnlyWithoutMRN, "without-mrn", false, "Return only users without MRN")
 
