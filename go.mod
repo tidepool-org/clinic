@@ -25,7 +25,7 @@ require (
 	github.com/tidepool-org/clinic/client v0.0.0
 	github.com/tidepool-org/clinic/redox_models v0.0.0
 	github.com/tidepool-org/go-common v0.12.1
-	github.com/tidepool-org/platform v1.33.1-0.20240405013345-9da54abd3089
+	github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/zap v1.26.0
