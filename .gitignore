@@ -11,4 +11,12 @@ dist/
 service-profile/
 
 # testing or other tools
-tools/
+/node_modules/
+/tools/
+
+artifact_docker.sh
+
+.vscode/
+*.envrc
+*.env
+*.test
