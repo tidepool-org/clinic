@@ -264,6 +264,10 @@ type MembershipRestrictions struct {
 	RequiredIdp string `bson:"requiredIdp,omitempty"`
 }
 
+func (m MembershipRestrictions) String() string {
+	return fmt.Sprintf("%s/%s", m.EmailDomain, m.RequiredIdp)
+}
+
 type PhoneNumber struct {
 	Type   *string `bson:"type,omitempty"`
 	Number string  `bson:"number,omitempty"`
