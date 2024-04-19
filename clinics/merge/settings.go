@@ -17,25 +17,30 @@ const (
 
 type ClinicPropertyGetter func(clinics.Clinic) string
 
-type SettingsReportDetails struct {
+type SettingsPlan struct {
 	Name        string `bson:"name"`
 	SourceValue string `bson:"sourceValue"`
 	TargetValue string `bson:"targetValue"`
-	ValuesMatch bool   `bson:"valuesMatch"`
+	CanMerge    bool   `bson:"canMerge"`
 }
 
-type SettingsReporterMergeTask struct {
+func (s SettingsPlan) ValuesMatch() bool {
+	return s.SourceValue == s.TargetValue
+}
+
+func (s SettingsPlan) PreventsMerge() bool {
+	return s.ValuesMatch()
+}
+
+type SettingsReporterPlanner struct {
 	getter ClinicPropertyGetter
 	source clinics.Clinic
 	target clinics.Clinic
 	typ    string
-
-	result TaskResult[SettingsReportDetails]
-	err    error
 }
 
-func NewSettingsReporterMergeTask(source, target clinics.Clinic, getter ClinicPropertyGetter, typ string) Task[SettingsReportDetails] {
-	return &SettingsReporterMergeTask{
+func NewSettingsReporterPlanner(source, target clinics.Clinic, getter ClinicPropertyGetter, typ string) Planner[SettingsPlan] {
+	return &SettingsReporterPlanner{
 		getter: getter,
 		source: source,
 		target: target,
@@ -43,56 +48,34 @@ func NewSettingsReporterMergeTask(source, target clinics.Clinic, getter ClinicPr
 	}
 }
 
-func (d *SettingsReporterMergeTask) CanRun() bool {
-	return d.ValuesMatch()
-}
-
-func (d *SettingsReporterMergeTask) DryRun(ctx context.Context) error {
-	d.result = TaskResult[SettingsReportDetails]{
-		ReportDetails: d.getReportDetails(),
-		PreventsMerge: !d.CanRun(),
-	}
-	return nil
-}
-
-func (d *SettingsReporterMergeTask) Run(ctx context.Context) error {
-	// Noop, it's just for reporting purposes
-	return d.DryRun(ctx)
-}
-
-func (d *SettingsReporterMergeTask) GetResult() (TaskResult[SettingsReportDetails], error) {
-	return d.result, d.err
-}
-
-func (d *SettingsReporterMergeTask) getReportDetails() SettingsReportDetails {
-	return SettingsReportDetails{
+func (d *SettingsReporterPlanner) Plan(ctx context.Context) (SettingsPlan, error) {
+	return SettingsPlan{
 		Name:        d.GetType(),
 		SourceValue: d.GetSourceValue(),
 		TargetValue: d.GetTargetValue(),
-		ValuesMatch: d.ValuesMatch(),
-	}
+	}, nil
 }
 
-func (d *SettingsReporterMergeTask) getClinicName(clinic clinics.Clinic) (val string) {
+func (d *SettingsReporterPlanner) getClinicName(clinic clinics.Clinic) (val string) {
 	if clinic.Name != nil {
 		val = *clinic.Name
 	}
 	return
 }
 
-func (d *SettingsReporterMergeTask) GetSourceValue() string {
+func (d *SettingsReporterPlanner) GetSourceValue() string {
 	return d.getter(d.source)
 }
 
-func (d *SettingsReporterMergeTask) GetTargetValue() string {
+func (d *SettingsReporterPlanner) GetTargetValue() string {
 	return d.getter(d.target)
 }
 
-func (d *SettingsReporterMergeTask) GetType() string {
+func (d *SettingsReporterPlanner) GetType() string {
 	return d.typ
 }
 
-func (d *SettingsReporterMergeTask) ValuesMatch() bool {
+func (d *SettingsReporterPlanner) ValuesMatch() bool {
 	return d.GetSourceValue() == d.GetTargetValue()
 }
 
@@ -125,26 +108,43 @@ func GetTimezoneSettings(clinic clinics.Clinic) (result string) {
 	return
 }
 
-type MembershipRestrictionsMergeTask struct {
-	source clinics.Clinic
-	target clinics.Clinic
-
-	result TaskResult[SettingsReportDetails]
-	err    error
+type MembershipRestrictionsMergePlan struct {
+	SourceValue []clinics.MembershipRestrictions `bson:"sourceValue"`
+	TargetValue []clinics.MembershipRestrictions `bson:"targetValue"`
 }
 
-func NewMembershipRestrictionsMergeTask(source, target clinics.Clinic) Task[SettingsReportDetails] {
-	return &MembershipRestrictionsMergeTask{
-		source: source,
-		target: target,
+func (m MembershipRestrictionsMergePlan) ValuesMatch() bool {
+	return m.GetSourceValue() == m.GetTargetValue()
+}
+
+func (m MembershipRestrictionsMergePlan) GetSourceValue() string {
+	return m.getSerializedValue(m.SourceValue)
+}
+
+func (m MembershipRestrictionsMergePlan) GetTargetValue() string {
+	return m.getSerializedValue(m.TargetValue)
+}
+
+func (m MembershipRestrictionsMergePlan) getSerializedValue(restrictions []clinics.MembershipRestrictions) string {
+	result := "N/A"
+
+	if count := len(restrictions); count > 0 {
+		list := make([]string, 0, count)
+		for _, m := range restrictions {
+			list = append(list, m.String())
+		}
+		sort.Strings(list)
+		result = strings.Join(list, ", ")
 	}
+
+	return result
 }
 
-func (m *MembershipRestrictionsMergeTask) CanRun() bool {
-	sourceMap := m.membershipRestrictionsToMap(m.source)
-	targetMap := m.membershipRestrictionsToMap(m.target)
+func (m MembershipRestrictionsMergePlan) PreventsMerge() bool {
+	sourceMap := m.membershipRestrictionsToMap(m.SourceValue)
+	targetMap := m.membershipRestrictionsToMap(m.TargetValue)
 
-	// Check if the target clinic is a superset of the target map
+	// Check if the source map is a superset of the target map
 	for domain, idp := range sourceMap {
 		if targetIdp, ok := targetMap[domain]; ok && idp != targetIdp {
 			return false
@@ -154,55 +154,29 @@ func (m *MembershipRestrictionsMergeTask) CanRun() bool {
 	return true
 }
 
-func (m *MembershipRestrictionsMergeTask) DryRun(ctx context.Context) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MembershipRestrictionsMergeTask) Run(ctx context.Context) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (m *MembershipRestrictionsMergeTask) GetResult() (TaskResult[SettingsReportDetails], error) {
-	return m.result, m.err
-}
-
-func (m *MembershipRestrictionsMergeTask) GetSourceValue() string {
-	return m.getSerializedValue(m.source)
-}
-
-func (m *MembershipRestrictionsMergeTask) GetTargetValue() string {
-	return m.getSerializedValue(m.target)
-}
-
-func (m *MembershipRestrictionsMergeTask) GetType() string {
-	return TaskTypeClinicSettingsHasPartialSSO
-}
-
-func (m *MembershipRestrictionsMergeTask) ValuesMatch() bool {
-	return m.getSerializedValue(m.source) == m.getSerializedValue(m.target)
-}
-
-func (m *MembershipRestrictionsMergeTask) membershipRestrictionsToMap(clinic clinics.Clinic) map[string]string {
+func (m MembershipRestrictionsMergePlan) membershipRestrictionsToMap(restrictions []clinics.MembershipRestrictions) map[string]string {
 	result := map[string]string{}
-	for _, r := range clinic.MembershipRestrictions {
+	for _, r := range restrictions {
 		result[r.EmailDomain] = r.RequiredIdp
 	}
 	return result
 }
 
-func (m *MembershipRestrictionsMergeTask) getSerializedValue(clinic clinics.Clinic) string {
-	result := "N/A"
+type MembershipRestrictionsMergePlanner struct {
+	source clinics.Clinic
+	target clinics.Clinic
+}
 
-	if count := len(clinic.MembershipRestrictions); count > 0 {
-		list := make([]string, 0, count)
-		for _, m := range clinic.MembershipRestrictions {
-			list = append(list, m.String())
-		}
-		sort.Strings(list)
-		result = strings.Join(list, ", ")
+func NewMembershipRestrictionsMergePlanner(source, target clinics.Clinic) Planner[MembershipRestrictionsMergePlan] {
+	return &MembershipRestrictionsMergePlanner{
+		source: source,
+		target: target,
 	}
+}
 
-	return result
+func (m *MembershipRestrictionsMergePlanner) Plan(ctx context.Context) (MembershipRestrictionsMergePlan, error) {
+	return MembershipRestrictionsMergePlan{
+		SourceValue: m.source.MembershipRestrictions,
+		TargetValue: m.target.MembershipRestrictions,
+	}, nil
 }

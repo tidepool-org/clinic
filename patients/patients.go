@@ -128,14 +128,15 @@ type SummaryFilters map[string]FilterPair
 type SummaryDateFilters map[string]FilterDatePair
 
 type Filter struct {
-	ClinicIds []string
-	ClinicId  *string
-	UserId    *string
-	Search    *string
-	Tags      *[]string
-	Mrn       *string
-	BirthDate *string
-	FullName  *string
+	ClinicIds   []string
+	ClinicId    *string
+	UserId      *string
+	Search      *string
+	Tags        *[]string
+	Mrn         *string
+	BirthDate   *string
+	FullName    *string
+	CreatedTime FilterDatePair
 
 	HasSubscription *bool
 	HasMRN          *bool
