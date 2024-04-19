@@ -4,25 +4,12 @@ import (
 	"context"
 )
 
-const (
-	ReportSheetNameSummary = "Summary"
-)
-
 type Plan interface {
 	PreventsMerge() bool
 }
 
 type Planner[T Plan] interface {
 	Plan(ctx context.Context) (T, error)
-}
-
-func PlansPreventMerge[T Plan](plans []T) bool {
-	for _, s := range plans {
-		if s.PreventsMerge() == true {
-			return true
-		}
-	}
-	return false
 }
 
 func RunPlanners[T Plan](ctx context.Context, planners []Planner[T]) ([]T, error) {
@@ -35,4 +22,13 @@ func RunPlanners[T Plan](ctx context.Context, planners []Planner[T]) ([]T, error
 		result = append(result, res)
 	}
 	return result, nil
+}
+
+func PlansPreventMerge[T Plan](plans []T) bool {
+	for _, s := range plans {
+		if s.PreventsMerge() == true {
+			return true
+		}
+	}
+	return false
 }

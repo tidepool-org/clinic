@@ -10,11 +10,20 @@ import (
 	"time"
 )
 
+const (
+	ReportSheetNameSummary          = "Summary"
+	ReportSheetNameDuplicateClaimed = "Duplicate Claimed Accounts"
+)
+
 type Report struct {
 	plan ClinicMergePlan
 }
 
-func (r Report) GenerateReport() (*xlsx.File, error) {
+func NewReport(plan ClinicMergePlan) Report {
+	return Report{plan: plan}
+}
+
+func (r Report) Generate() (*xlsx.File, error) {
 	report := xlsx.NewFile()
 
 	if err := r.addSummarySheet(report); err != nil {
@@ -46,6 +55,65 @@ func (r Report) addSummarySheet(report *xlsx.File) error {
 	return nil
 }
 
+func (r Report) addDuplicateClaimedSheet(report *xlsx.File) error {
+	sh, err := report.AddSheet(ReportSheetNameDuplicateClaimed)
+	if err != nil {
+		return err
+	}
+
+	sh.AddRow().AddCell().SetValue("DUPLICATE CLAIMED ACCOUNTS")
+	sh.AddRow().AddCell().SetValue("For claimed accounts, all tags are retained but if there are differencees in Name, DOB, or MRN, we defer to Seastar Pediatric Endo. Please review the differences below.")
+	sh.AddRow()
+
+	currentRow := sh.AddRow()
+	currentRow.AddCell()
+	currentRow.AddCell().SetValue("Name ---")
+	currentRow.AddCell().SetValue("DOB ---")
+	currentRow.AddCell().SetValue("MRN ---")
+	currentRow.AddCell().SetValue("Email ---")
+	currentRow.AddCell().SetValue("Tags ---")
+
+	count := 1
+	for _, patientPlan := range r.plan.PatientsPlan {
+		if patientPlan.PatientAction == PatientActionMerge {
+			if conflicts, ok := patientPlan.Conflicts[PatientConflictCategoryDuplicateAccounts]; ok {
+				conflict := conflicts[0]
+
+				sh.AddRow().AddCell().SetValue(fmt.Sprintf("Patient %d", count))
+
+				currentRow = sh.AddRow()
+				currentRow.AddCell().SetValue("Source")
+				currentRow.AddCell().SetValue(patientPlan.SourcePatient.FullName)
+				currentRow.AddCell().SetValue(patientPlan.SourcePatient.BirthDate)
+				currentRow.AddCell().SetValue(patientPlan.SourcePatient.Mrn)
+				currentRow.AddCell().SetValue(patientPlan.SourcePatient.Email)
+				currentRow.AddCell().SetValue(strings.Join(patientPlan.SourceTagNames, ", "))
+
+				currentRow = sh.AddRow()
+				currentRow.AddCell().SetValue("Destination")
+				currentRow.AddCell().SetValue(patientPlan.TargetPatient.FullName)
+				currentRow.AddCell().SetValue(patientPlan.TargetPatient.BirthDate)
+				currentRow.AddCell().SetValue(patientPlan.TargetPatient.Mrn)
+				currentRow.AddCell().SetValue(patientPlan.TargetPatient.Email)
+				currentRow.AddCell().SetValue(strings.Join(patientPlan.TargetTagNames, ", "))
+
+				currentRow = sh.AddRow()
+				currentRow.AddCell().SetValue("Resulting Account")
+				currentRow.AddCell().SetValue(conflict.Patient.FullName)
+				currentRow.AddCell().SetValue(conflict.Patient.BirthDate)
+				currentRow.AddCell().SetValue(conflict.Patient.Mrn)
+				currentRow.AddCell().SetValue(conflict.Patient.Email)
+				currentRow.AddCell().SetValue(strings.Join(patientPlan.PostMigrationTagNames, ", "))
+
+				count += 1
+			}
+
+		}
+	}
+
+	return nil
+}
+
 func (r Report) addSummaryHeader(sh *xlsx.Sheet) error {
 	sh.AddRow().AddCell().SetValue("Summary")
 	sh.AddRow()
@@ -57,9 +125,10 @@ func (r Report) addSummaryHeader(sh *xlsx.Sheet) error {
 	sh.AddRow()
 
 	currentRow = sh.AddRow()
-	currentRow.AddCell().SetValue("Merging from Workspace 1")
+	currentRow.AddCell().SetValue("Merging from Workspace 1 (Source)")
 	currentRow.AddCell().SetValue(*r.plan.Source.Name)
-	currentRow.AddCell().SetValue("Merging to Workspace 2")
+	currentRow = sh.AddRow()
+	currentRow.AddCell().SetValue("Merging to Workspace 2 (Target)")
 	currentRow.AddCell().SetValue(*r.plan.Target.Name)
 	sh.AddRow()
 
@@ -237,7 +306,7 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 		for _, conflicts := range plan.Conflicts {
 			for _, conflict := range conflicts {
 				switch conflict.Category {
-				case PatientConflictCategoryDuplicateClaimed:
+				case PatientConflictCategoryDuplicateAccounts:
 					duplicateClaimedCount++
 				case PatientConflictCategoryLikelyDuplicateAccounts:
 					likelyDuplicateCount++

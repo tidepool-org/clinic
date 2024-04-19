@@ -136,6 +136,9 @@ type ServerInterface interface {
 	// Send Upload Reminder
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
 	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+	// Generate Clinic Merge Report
+	// (POST /v1/clinics/{clinicId}/reports/merge)
+	GenerateMergeReport(ctx echo.Context, clinicId ClinicId) error
 	// Add Service Account
 	// (POST /v1/clinics/{clinicId}/service_accounts)
 	AddServiceAccount(ctx echo.Context, clinicId ClinicId) error
@@ -1554,6 +1557,24 @@ func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
 	return err
 }
 
+// GenerateMergeReport converts echo context to params.
+func (w *ServerInterfaceWrapper) GenerateMergeReport(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, ctx.Param("clinicId"), &clinicId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GenerateMergeReport(ctx, clinicId)
+	return err
+}
+
 // AddServiceAccount converts echo context to params.
 func (w *ServerInterfaceWrapper) AddServiceAccount(ctx echo.Context) error {
 	var err error
@@ -2123,6 +2144,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request", wrapper.SendDexcomConnectRequest)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
+	router.POST(baseURL+"/v1/clinics/:clinicId/reports/merge", wrapper.GenerateMergeReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/service_accounts", wrapper.AddServiceAccount)
 	router.GET(baseURL+"/v1/clinics/:clinicId/settings/ehr", wrapper.GetEHRSettings)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/ehr", wrapper.UpdateEHRSettings)

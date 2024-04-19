@@ -63,7 +63,7 @@ func NewClinicMergePlanner(clinicsService clinics.Service, patientsService patie
 }
 
 func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, err error) {
-	intermediate := intermediatePlanner{}
+	intermediate := &intermediatePlanner{}
 
 	source, err := m.clinics.Get(ctx, m.sourceId)
 	if err != nil {
@@ -77,6 +77,10 @@ func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, er
 	}
 	intermediate.TargetClinic = *target
 
+	intermediate.MembershipRestrictionsMergePlanner, err = m.MembershipRestrictionsMergePlan(*source, *target)
+	if err != nil {
+		return
+	}
 	intermediate.SettingsPlanners, err = m.SettingsMergePlan(*source, *target)
 	if err != nil {
 		return
@@ -95,6 +99,10 @@ func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, er
 	}
 
 	return intermediate.Plan(ctx)
+}
+
+func (m *ClinicMergePlanner) MembershipRestrictionsMergePlan(source, target clinics.Clinic) (Planner[MembershipRestrictionsMergePlan], error) {
+	return NewMembershipRestrictionsMergePlanner(source, target), nil
 }
 
 func (m *ClinicMergePlanner) SettingsMergePlan(source, target clinics.Clinic) ([]Planner[SettingsPlan], error) {

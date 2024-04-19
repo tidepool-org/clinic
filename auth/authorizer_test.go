@@ -1132,4 +1132,44 @@ var _ = Describe("Request Authorizer", func() {
 		err := authorizer.EvaluatePolicy(context.Background(), input)
 		Expect(err).ToNot(HaveOccurred())
 	})
+
+	It("it prevents clinicians from generating merge reports", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "merge"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+			"clinician": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("it prevents users from generating merge reports", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "merge"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("it allows orca to generate merge reports", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "merge"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "orca",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
 })

@@ -9,6 +9,7 @@ import (
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
+	"github.com/tidepool-org/clinic/clinics/merge"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -451,4 +452,28 @@ func (h *Handler) GetPatientCount(ec echo.Context, clinicId ClinicId) error {
 	return ec.JSON(http.StatusOK, PatientCount{
 		PatientCount: patientCount.PatientCount,
 	})
+}
+
+func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := GenerateMergeReport{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	planner := merge.NewClinicMergePlanner(h.clinics, h.patients, h.clinicians, *dto.SourceId, clinicId)
+	plan, err := planner.Plan(ctx)
+	if err != nil {
+		return err
+	}
+
+	report := merge.NewReport(plan)
+	file, err := report.Generate()
+	if err != nil {
+		return err
+	}
+
+	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.ms-excel")
+	ec.Response().WriteHeader(http.StatusOK)
+	return file.Write(ec.Response())
 }

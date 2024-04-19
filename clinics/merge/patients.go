@@ -1,6 +1,7 @@
 package merge
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -9,11 +10,13 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"golang.org/x/sync/errgroup"
+	"math"
+	"slices"
 	"sync"
 )
 
 const (
-	PatientConflictCategoryDuplicateClaimed          = "Duplicate Claimed Accounts"
+	PatientConflictCategoryDuplicateAccounts         = "Duplicate Accounts"
 	PatientConflictCategoryLikelyDuplicateAccounts   = "Likely Duplicate Accounts"
 	PatientConflictCategoryPossibleDuplicateAccounts = "Possible Duplicate Accounts"
 	PatientConflictCategoryDuplicateMRNs             = "Duplicate MRNs Likely Typos"
@@ -33,11 +36,25 @@ const (
 	PatientDuplicateAttributeFullName = "FULL_NAME"
 )
 
+var (
+	ConflictRankMap = map[string]int{
+		PatientConflictCategoryDuplicateAccounts:         0,
+		PatientConflictCategoryLikelyDuplicateAccounts:   1,
+		PatientConflictCategoryPossibleDuplicateAccounts: 2,
+		PatientConflictCategoryDuplicateMRNs:             3,
+	}
+)
+
 type PatientPlan struct {
 	SourcePatient patients.Patient
-	Conflicts     map[string][]Conflict
+	TargetPatient patients.Patient
+
+	Conflicts map[string][]Conflict
 
 	PatientAction string
+
+	SourceTagNames []string
+	TargetTagNames []string
 
 	PostMigrationMRN      *string
 	PostMigrationFullName *string
@@ -120,17 +137,15 @@ func (s *SourcePatientMergePlanner) Plan(ctx context.Context) (PatientPlan, erro
 		return plan, err
 	}
 
+	conflicts := make([]Conflict, 0, len(matching))
 	for _, p := range matching {
-		conflict := s.processMatchingPatient(p)
-		if conflict.Category != "" {
-			if _, ok := plan.Conflicts[conflict.Category]; !ok {
-				plan.Conflicts[conflict.Category] = make([]Conflict, 0)
-			}
-			plan.Conflicts[conflict.Category] = append(plan.Conflicts[conflict.Category], conflict)
+		if conflict := s.processMatchingPatient(p); conflict.Category != "" {
+			conflicts = append(conflicts, conflict)
 		}
 	}
+	slices.SortFunc(conflicts, sortConflicts)
 
-	if conflicts, ok := plan.Conflicts[PatientConflictCategoryDuplicateClaimed]; ok && len(conflicts) > 0 {
+	if conflicts, ok := plan.Conflicts[PatientConflictCategoryDuplicateAccounts]; ok && len(conflicts) > 0 {
 		plan.PatientAction = PatientActionMerge
 
 		uniqueTagNames := map[string]struct{}{}
@@ -138,6 +153,7 @@ func (s *SourcePatientMergePlanner) Plan(ctx context.Context) (PatientPlan, erro
 		sourceClinicTags := map[string]clinics.PatientTag{}
 		for _, tag := range s.source.PatientTags {
 			sourceClinicTags[tag.Id.Hex()] = tag
+			plan.SourceTagNames = append(plan.SourceTagNames, tag.Name)
 		}
 		if s.patient.Tags != nil {
 			for _, tagRef := range *s.patient.Tags {
@@ -151,6 +167,7 @@ func (s *SourcePatientMergePlanner) Plan(ctx context.Context) (PatientPlan, erro
 		targetClinicTags := map[string]clinics.PatientTag{}
 		for _, tag := range s.target.PatientTags {
 			targetClinicTags[tag.Id.Hex()] = tag
+			plan.TargetTagNames = append(plan.TargetTagNames, tag.Name)
 		}
 		if targetPatient.Tags != nil {
 			for _, tagRef := range *targetPatient.Tags {
@@ -206,7 +223,7 @@ func (s *SourcePatientMergePlanner) processMatchingPatient(match patients.Patien
 
 	conflictCategory := ""
 	if _, ok := duplicateAttributes[PatientDuplicateAttributeUserId]; ok {
-		conflictCategory = PatientConflictCategoryDuplicateClaimed
+		conflictCategory = PatientConflictCategoryDuplicateAccounts
 	} else if len(duplicateAttributes) >= 2 {
 		conflictCategory = PatientConflictCategoryLikelyDuplicateAccounts
 	} else if len(duplicateAttributes) == 1 {
@@ -309,4 +326,30 @@ func (s *SourcePatientMergePlanner) getFilters() []patients.Filter {
 		})
 	}
 	return filters
+}
+
+func sortConflicts(a, b Conflict) int {
+	res := cmp.Compare(getCategoryRank(a.Category), getCategoryRank(b.Category))
+	if res == 0 {
+		res = cmp.Compare(len(a.DuplicateAttributes), len(b.DuplicateAttributes))
+	}
+	if res == 0 {
+		aName := ""
+		bName := ""
+		if a.Patient.FullName != nil {
+			aName = *a.Patient.FullName
+		}
+		if b.Patient.FullName != nil {
+			bName = *b.Patient.FullName
+		}
+		res = cmp.Compare(aName, bName)
+	}
+	return res
+}
+func getCategoryRank(category string) int {
+	if v, ok := ConflictRankMap[category]; ok {
+		return v
+	}
+
+	return math.MaxInt
 }
