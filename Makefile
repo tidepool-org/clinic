@@ -1,18 +1,22 @@
-# Clinic Makefile
+SHELL = /bin/sh
 
 TOOLS_BIN = tools/bin
-NODE_BIN = node_modules/.bin
+NPM_BIN = node_modules/.bin
 
 OAPI_CODEGEN = $(TOOLS_BIN)/oapi-codegen
-SWAGGER_CLI = $(NODE_BIN)/swagger-cli
+MOCKGEN = $(TOOLS_BIN)/mockgen
+SWAGGER_CLI = $(NPM_BIN)/swagger-cli
+OPENAPI_FILTER = $(NPM_BIN)/openapi-filter
 
-NODE_PKG_SPECS = \
-	@apidevtools/swagger-cli@^4.0.4
+NPM_PKG_SPECS = \
+	@apidevtools/swagger-cli@^4.0.4 \
+	openapi-filter@^3.2.3
 
+PATH:=$(shell pwd)/$(TOOLS_BIN):$(PATH)
 
 # Generates server files
 .PHONY: generate
-generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
+generate: $(SWAGGER_CLI) $(OAPI_CODEGEN) $(MOCKGEN)
 	$(SWAGGER_CLI) bundle ../TidepoolApi/reference/clinic.v1.yaml -o ./spec/clinic.v1.yaml -t yaml
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=server spec/clinic.v1.yaml > api/gen_server.go
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=spec spec/clinic.v1.yaml > api/gen_spec.go
@@ -30,8 +34,8 @@ generate: $(SWAGGER_CLI) $(OAPI_CODEGEN)
 service-profile/profile.yaml: service-profile/clinic.v1.yaml service-profile
 	linkerd profile --ignore-cluster --open-api service-profile/clinic.v1.yaml clinic > service-profile/profile.yaml
 
-service-profile/clinic.v1.yaml: generate service-profile
-	openapi-filter -f Confirmations --checkTags spec/clinic.v1.yaml service-profile/clinic.v1.yaml
+service-profile/clinic.v1.yaml: $(OPENAPI_FILTER) generate service-profile
+	$(OPENAPI_FILTER) -f Confirmations --checkTags spec/clinic.v1.yaml service-profile/clinic.v1.yaml
 
 service-profile:
 	mkdir -p service-profile
@@ -42,7 +46,7 @@ go-flags:
 	go env -w GOFLAGS=-mod=mod
 
 tools/bin/ginkgo:
-	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.13.2
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.15.0
 
 # Runs tests
 .PHONY: test
@@ -57,11 +61,29 @@ build: go-flags
 $(OAPI_CODEGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.0.0
 
+$(MOCKGEN):
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/golang/mock/mockgen@v1.6.0
+
 $(SWAGGER_CLI): npm-tools
+
+$(OPENAPI_FILTER): npm-tools
 
 .PHONY: npm-tools
 npm-tools:
 # When using --no-save, any dependencies not included will be deleted, so one
 # has to install all the packages all at the same time. But it saves us from
 # having to muck with packages.json.
-	npm install --no-save --local $(NODE_PKG_SPECS)
+	npm install --no-save --local $(NPM_PKG_SPECS)
+
+.PHONY: clean
+clean:
+	rm -rf dist node_modules tools
+
+.PHONY: ci-generate
+ci-generate: generate
+
+.PHONY: ci-build
+ci-build: build
+
+.PHONY: ci-test
+ci-test: test

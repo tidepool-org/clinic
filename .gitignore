@@ -19,5 +19,9 @@ service-profile/
 /node_modules/
 /tools/
 
+artifact_docker.sh
+
+.vscode/
 *.envrc
 *.env
+*.test
