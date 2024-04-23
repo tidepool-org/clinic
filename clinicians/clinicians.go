@@ -14,7 +14,8 @@ var (
 	ErrNotFound  = fmt.Errorf("clinician %w", errors.NotFound)
 	ErrDuplicate = fmt.Errorf("%w: clinician is already a member of the clinic", errors.Duplicate)
 
-	ClinicAdmin = "CLINIC_ADMIN"
+	ClinicAdmin  = "CLINIC_ADMIN"
+	ClinicMember = "CLINIC_MEMBER"
 )
 
 type Service interface {
@@ -52,16 +53,17 @@ type CliniciansUpdate struct {
 }
 
 type Clinician struct {
-	Id           *primitive.ObjectID `bson:"_id,omitempty"`
-	InviteId     *string             `bson:"inviteId,omitempty"`
-	ClinicId     *primitive.ObjectID `bson:"clinicId,omitempty"`
-	UserId       *string             `bson:"userId,omitempty"`
-	Email        *string             `bson:"email,omitempty"`
-	Name         *string             `bson:"name"`
-	Roles        []string            `bson:"roles"`
-	RolesUpdates []RolesUpdate       `bson:"rolesUpdates,omitempty"`
-	CreatedTime  time.Time           `bson:"createdTime"`
-	UpdatedTime  time.Time           `bson:"updatedTime"`
+	Id               *primitive.ObjectID `bson:"_id,omitempty"`
+	InviteId         *string             `bson:"inviteId,omitempty"`
+	ClinicId         *primitive.ObjectID `bson:"clinicId,omitempty"`
+	UserId           *string             `bson:"userId,omitempty"`
+	Email            *string             `bson:"email,omitempty"`
+	Name             *string             `bson:"name"`
+	Roles            []string            `bson:"roles"`
+	RolesUpdates     []RolesUpdate       `bson:"rolesUpdates,omitempty"`
+	IsServiceAccount bool                `bson:"isServiceAccount,omitempty"`
+	CreatedTime      time.Time           `bson:"createdTime"`
+	UpdatedTime      time.Time           `bson:"updatedTime"`
 }
 
 type RolesUpdate struct {

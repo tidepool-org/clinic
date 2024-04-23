@@ -247,6 +247,11 @@ type ClientInterface interface {
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// AddServiceAccountWithBody request with any body
+	AddServiceAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	AddServiceAccount(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetEHRSettings request
 	GetEHRSettings(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1023,6 +1028,30 @@ func (c *Client) SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId
 
 func (c *Client) SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendUploadReminderRequest(c.Server, clinicId, patientId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddServiceAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddServiceAccountRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddServiceAccount(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddServiceAccountRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4208,6 +4237,53 @@ func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId Pa
 	return req, nil
 }
 
+// NewAddServiceAccountRequest calls the generic AddServiceAccount builder with application/json body
+func NewAddServiceAccountRequest(server string, clinicId ClinicId, body AddServiceAccountJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddServiceAccountRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewAddServiceAccountRequestWithBody generates requests for AddServiceAccount with any type of body
+func NewAddServiceAccountRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/service_accounts", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetEHRSettingsRequest generates requests for GetEHRSettings
 func NewGetEHRSettingsRequest(server string, clinicId ClinicId) (*http.Request, error) {
 	var err error
@@ -5509,6 +5585,11 @@ type ClientWithResponsesInterface interface {
 	// SendUploadReminderWithResponse request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
 
+	// AddServiceAccountWithBodyWithResponse request with any body
+	AddServiceAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error)
+
+	AddServiceAccountWithResponse(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error)
+
 	// GetEHRSettingsWithResponse request
 	GetEHRSettingsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetEHRSettingsResponse, error)
 
@@ -6485,6 +6566,27 @@ func (r SendUploadReminderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r SendUploadReminderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AddServiceAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r AddServiceAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddServiceAccountResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -7484,6 +7586,23 @@ func (c *ClientWithResponses) SendUploadReminderWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseSendUploadReminderResponse(rsp)
+}
+
+// AddServiceAccountWithBodyWithResponse request with arbitrary body returning *AddServiceAccountResponse
+func (c *ClientWithResponses) AddServiceAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error) {
+	rsp, err := c.AddServiceAccountWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddServiceAccountResponse(rsp)
+}
+
+func (c *ClientWithResponses) AddServiceAccountWithResponse(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error) {
+	rsp, err := c.AddServiceAccount(ctx, clinicId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddServiceAccountResponse(rsp)
 }
 
 // GetEHRSettingsWithResponse request returning *GetEHRSettingsResponse
@@ -8720,6 +8839,22 @@ func ParseSendUploadReminderResponse(rsp *http.Response) (*SendUploadReminderRes
 	}
 
 	response := &SendUploadReminderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseAddServiceAccountResponse parses an HTTP response from a AddServiceAccountWithResponse call
+func ParseAddServiceAccountResponse(rsp *http.Response) (*AddServiceAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddServiceAccountResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

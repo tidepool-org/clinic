@@ -203,6 +203,42 @@ func (h *Handler) EnableNewClinicExperience(ec echo.Context, userId string) erro
 	return ec.JSON(http.StatusOK, NewClinicDto(clinic))
 }
 
+func (h *Handler) AddServiceAccount(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := AddServiceAccount{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	if err := h.assertClinicMigrated(ctx, clinicId); err != nil {
+		return err
+	}
+
+	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return ec.JSON(http.StatusBadRequest, "invalid clinic id")
+	}
+
+	acc, err := h.serviceAccountAuthenticator.GetServiceAccount(ctx, dto.ClientId, dto.ClientSecret)
+	if err != nil {
+		return fmt.Errorf("unable to get service account for client %s: %w", dto.ClientId, err)
+	}
+
+	clinician := &clinicians.Clinician{
+		ClinicId:         &clinicObjId,
+		UserId:           &acc.UserId,
+		Name:             &dto.Name,
+		Roles:            []string{clinicians.ClinicMember},
+		IsServiceAccount: true,
+	}
+	result, err := h.clinicians.Create(ctx, clinician)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewClinicianDto(result))
+}
+
 func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page store.Pagination) error {
 	ctx := ec.Request().Context()
 	cliniciansList, err := h.clinicians.List(ctx, &filter, page)

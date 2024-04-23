@@ -932,6 +932,33 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	It("it allows ORCA to add a service account to a clinic", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "service_accounts"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "orca",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("it prevents clinic admins to add service accounts", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "service_accounts"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "12345678",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
 	It("it allows clinic members to fetch mrn settings", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "settings", "mrn"},

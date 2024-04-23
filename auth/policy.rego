@@ -182,6 +182,14 @@ allow {
   clinician_has_write_access
 }
 
+# Allow backend services to add service accounts to clinics
+# POST /v1/clinics/:clinicId/service_accounts
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "service_accounts"]
+  is_backend_service
+}
+
 # Allow currently authenticated clinician to list clinicians
 # GET /v1/clinics/:clinicId/clinicians
 allow {

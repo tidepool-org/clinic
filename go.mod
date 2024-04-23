@@ -8,6 +8,7 @@ require (
 	github.com/brpaz/echozap v1.1.3
 	github.com/fatih/structs v1.1.0
 	github.com/getkin/kin-openapi v0.122.0
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru v1.0.2

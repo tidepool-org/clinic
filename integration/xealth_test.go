@@ -2,15 +2,12 @@ package integration_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"sync"
 	"time"
 
 	"github.com/TwiN/deepmerge"
@@ -18,13 +15,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
-	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/client"
 	integrationTest "github.com/tidepool-org/clinic/integration/test"
 	"github.com/tidepool-org/clinic/test"
 	xealthTest "github.com/tidepool-org/clinic/xealth/test"
 	"github.com/tidepool-org/clinic/xealth_client"
-	"go.uber.org/fx"
 )
 
 const (
@@ -36,67 +31,9 @@ const (
 )
 
 var _ = Describe("Xealth Integration Test", Ordered, func() {
-	var app *fx.App
-	var server *echo.Echo
-	var shorelineStub *httptest.Server
-	var seagullStub *httptest.Server
-	var authStub *httptest.Server
-	var xealthStub *xealthTest.XealthServer
-
 	var clinic client.Clinic
 	var patient client.Patient
 	var dataTrackingId string
-
-	BeforeAll(func() {
-		authStub = integrationTest.AuthStub()
-		seagullStub = integrationTest.SeagullStub()
-		shorelineStub = integrationTest.ShorelineStub()
-		xealthStub = xealthTest.ServerStub()
-
-		Expect(os.Setenv("LOG_LEVEL", "error")).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_SERVER_TOKEN", integrationTest.TestServerToken)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_AUTH_CLIENT_EXTERNAL_SERVER_SESSION_TOKEN_SECRET", integrationTest.TestServerToken)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_AUTH_CLIENT_ADDRESS", authStub.URL)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_AUTH_CLIENT_EXTERNAL_ADDRESS", shorelineStub.URL)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_SHORELINE_CLIENT_ADDRESS", shorelineStub.URL)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_SEAGULL_CLIENT_ADDRESS", seagullStub.URL)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_XEALTH_ENABLED", "true")).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_XEALTH_BEARER_TOKEN", xealthTest.XealthBearerToken)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_XEALTH_CLIENT_ID", xealthTest.XealthClientId)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_XEALTH_CLIENT_SECRET", xealthTest.XealthClientSecret)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_XEALTH_SERVER_BASE_URL", xealthStub.URL)).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_XEALTH_TOKEN_URL", fmt.Sprintf("%s%s", xealthStub.URL, xealthTest.TokenEndpoint))).To(Succeed())
-		Expect(os.Setenv("TIDEPOOL_APPLICATION_URL", "https://integration.test.app.url.com")).To(Succeed())
-
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		init := func(s *echo.Echo, lifecycle fx.Lifecycle) {
-			lifecycle.Append(fx.Hook{
-				OnStart: func(ctx context.Context) error {
-					wg.Done()
-					return nil
-				},
-			})
-			server = s
-		}
-		deps := append(api.Dependencies(), fx.Invoke(init))
-		app = fx.New(deps...)
-		go func() {
-			_ = app.Start(context.Background())
-		}()
-
-		wg.Wait()
-	})
-
-	AfterAll(func() {
-		os.Clearenv()
-		shorelineStub.Close()
-		seagullStub.Close()
-
-		if app != nil {
-			Expect(app.Stop(context.Background())).To(Succeed())
-		}
-	})
 
 	Describe("Create a clinic", func() {
 		It("Succeeds", func() {
@@ -665,6 +602,10 @@ func asClinician(req *http.Request) {
 
 func asServer(req *http.Request) {
 	req.Header.Set("x-tidepool-session-token", integrationTest.TestServerToken)
+}
+
+func asServiceAccount(req *http.Request) {
+	req.Header.Set("x-tidepool-session-token", integrationTest.TestServiceAccountToken)
 }
 
 func asXealth(req *http.Request) {
