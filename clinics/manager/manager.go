@@ -4,11 +4,12 @@ import (
 	"context"
 	errs "errors"
 	"fmt"
+
 	"github.com/tidepool-org/clinic/errors"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,16 +20,6 @@ const (
 	duplicateShareCodeRetryAttempts = 100
 )
 
-type Config struct {
-	ClinicDemoPatientUserId string `envconfig:"CLINIC_DEMO_PATIENT_USER_ID"`
-}
-
-func NewConfig() (*Config, error) {
-	c := &Config{}
-	err := envconfig.Process("", c)
-	return c, err
-}
-
 type CreateClinic struct {
 	Clinic            clinics.Clinic
 	CreatorUserId     string
@@ -38,12 +29,13 @@ type CreateClinic struct {
 type Manager interface {
 	CreateClinic(ctx context.Context, create *CreateClinic) (*clinics.Clinic, error)
 	DeleteClinic(ctx context.Context, clinicId string) error
+	GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error)
 }
 
 type manager struct {
 	clinics              clinics.Service
 	cliniciansRepository *clinicians.Repository
-	config               *Config
+	config               *config.Config
 	dbClient             *mongo.Client
 	patientsService      patients.Service
 	shareCodeGenerator   clinics.ShareCodeGenerator
@@ -55,7 +47,7 @@ type Params struct {
 
 	Clinics              clinics.Service
 	CliniciansRepository *clinicians.Repository
-	Config               *Config
+	Config               *config.Config
 	DbClient             *mongo.Client
 	PatientsService      patients.Service
 	ShareCodeGenerator   clinics.ShareCodeGenerator
@@ -143,7 +135,7 @@ func (c *manager) DeleteClinic(ctx context.Context, clinicId string) error {
 	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
 		filter := patients.Filter{ClinicId: &clinicId}
 		pagination := store.Pagination{Limit: 2}
-		res, err := c.patientsService.List(ctx, &filter, pagination, nil)
+		res, err := c.patientsService.List(sessionCtx, &filter, pagination, nil)
 
 		if err != nil {
 			return nil, err
@@ -168,6 +160,27 @@ func (c *manager) DeleteClinic(ctx context.Context, clinicId string) error {
 
 	_, err := store.WithTransaction(ctx, c.dbClient, transaction)
 	return err
+}
+
+func (c *manager) GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error) {
+	patientCount, err := c.clinics.GetPatientCount(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	if patientCount == nil {
+		count, err := c.patientsService.Count(ctx, &patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})
+		if err != nil {
+			return nil, err
+		}
+
+		patientCount = &clinics.PatientCount{PatientCount: count}
+		if err := c.clinics.UpdatePatientCount(ctx, clinicId, patientCount); err != nil {
+			return nil, err
+		}
+	}
+
+	return patientCount, nil
 }
 
 // Creates a clinic document in mongo and retries if there is a violation of the unique share code constraint

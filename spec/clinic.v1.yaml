@@ -1507,7 +1507,9 @@ paths:
         '200':
           description: OK
       tags:
+        - Internal
         - Redox
+        - Clinics
       description: An endpoint for incoming Redox messages
       requestBody:
         content:
@@ -1515,6 +1517,7 @@ paths:
             schema:
               type: object
               properties: {}
+      x-internal: true
   /v1/redox/verify:
     post:
       summary: Redox Verify Endpoint
@@ -1523,8 +1526,9 @@ paths:
         '200':
           description: OK
       tags:
-        - Redox
         - Internal
+        - Redox
+        - Clinics
       x-internal: true
       description: Internal endpoint for Redox challenge verification
   '/v1/clinics/{clinicId}/settings/ehr':
@@ -1590,6 +1594,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EHRMatchRequest'
+      x-internal: true
   '/v1/clinics/{clinicId}/settings/mrn':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1623,6 +1628,54 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MRNSettings'
+  '/v1/clinics/{clinicId}/settings/patient_count':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      operationId: GetPatientCountSettings
+      summary: Get Patient Count Settings
+      description: Get Patient Count settings
+      tags:
+        - Clinics
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientCountSettings'
+      x-internal: true
+    put:
+      operationId: UpdatePatientCountSettings
+      summary: Update Patient Count Settings
+      description: Update Patient Count Settings
+      tags:
+        - Clinics
+        - Internal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientCountSettings'
+      responses:
+        '200':
+          description: OK
+  '/v1/clinics/{clinicId}/patient_count':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      operationId: GetPatientCount
+      summary: Get Patient Count
+      description: Get Patient Count
+      tags:
+        - Clinics
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientCount'
   '/v1/clinics/{clinicId}/ehr/sync':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1702,6 +1755,10 @@ paths:
       responses:
         '200':
           description: OK
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
   /v1/xealth/program:
     put:
       summary: Get Program Url
@@ -1710,6 +1767,10 @@ paths:
         '200':
           description: OK
       description: ''
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
   /v1/xealth/notification:
     post:
       summary: Notification Webhook
@@ -1718,10 +1779,16 @@ paths:
         '200':
           description: OK
       description: ''
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
   /v1/xealth/report/web/viewer.html:
     get:
       summary: View PDF Report
-      tags: []
+      tags:
+        - Clinics
+        - Internal
       responses:
         '200':
           description: OK
@@ -1743,6 +1810,7 @@ paths:
           in: query
           name: restricted_token
           required: true
+      x-internal: true
     parameters: []
 components:
   schemas:
@@ -3978,6 +4046,42 @@ components:
       required:
         - required
         - unique
+    PatientCount:
+      title: Patient Count
+      type: object
+      properties:
+        patientCount:
+          description: The patient count for a clinic
+          type: integer
+          minimum: 0
+      required:
+        - patientCount
+    PatientCountLimit:
+      title: Patient Count Limit
+      type: object
+      properties:
+        patientCount:
+          description: The patient count limit
+          type: integer
+          minimum: 0
+        startDate:
+          description: The start date when the patient count limit should be applied
+          $ref: '#/components/schemas/DateTime'
+        endDate:
+          description: The end date when the patient count limit should no longer be applied
+          $ref: '#/components/schemas/DateTime'
+      required:
+        - patientCount
+    PatientCountSettings:
+      title: Patient Count Settings
+      type: object
+      properties:
+        hardLimit:
+          description: The hard limit for the clinic patient count where new patients cannot be created
+          $ref: '#/components/schemas/PatientCountLimit'
+        softLimit:
+          description: The soft limit for the clinic patient count where new patients may still be created
+          $ref: '#/components/schemas/PatientCountLimit'
     EHRDestinationIds:
       title: Default Redox destination ID and per-model overrides
       x-stoplight:

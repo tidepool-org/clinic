@@ -2,13 +2,13 @@ package api
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/clinics/manager"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -60,13 +60,14 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		}
 	}
 
-	clinic := *NewClinic(dto)
+	clinic := NewClinicWithDefaults(dto)
 
 	// Set new clinic migration status to true.
 	// Only clinics created via `EnableNewClinicExperience` handler should be subject to initial clinician patient migration
 	clinic.IsMigrated = true
+
 	create := manager.CreateClinic{
-		Clinic:            clinic,
+		Clinic:            *clinic,
 		CreatorUserId:     authData.SubjectId,
 		CreateDemoPatient: true,
 	}
@@ -98,6 +99,13 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 	result, err := h.clinics.Update(ctx, string(clinicId), NewClinic(dto))
 	if err != nil {
 		return err
+	}
+
+	// Update patient count settings if the country has changed
+	if result.UpdatePatientCountSettingsForCountry() {
+		if err := h.clinics.UpdatePatientCountSettings(ctx, clinicId, result.PatientCountSettings); err != nil {
+			return err
+		}
 	}
 
 	return ec.JSON(http.StatusOK, NewClinicDto(result))
@@ -200,7 +208,7 @@ func (h *Handler) UpdateMigration(ec echo.Context, clinicId Id, userId UserId) e
 
 func (h *Handler) DeleteUserFromClinics(ec echo.Context, userId UserId) error {
 	ctx := ec.Request().Context()
-	if err := h.patients.DeleteFromAllClinics(ctx, string(userId)); err != nil {
+	if _, err := h.patients.DeleteFromAllClinics(ctx, string(userId)); err != nil {
 		return err
 	}
 	if err := h.clinicians.DeleteFromAllClinics(ctx, string(userId)); err != nil {
@@ -398,4 +406,49 @@ func (h *Handler) UpdateMRNSettings(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return h.GetMRNSettings(ec, clinicId)
+}
+
+func (h *Handler) GetPatientCountSettings(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+
+	patientCountSettings, err := h.clinics.GetPatientCountSettings(ctx, clinicId)
+	if err != nil {
+		return err
+	} else if patientCountSettings == nil {
+		return errors.NotFound
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientCountSettingsDto(patientCountSettings))
+}
+
+func (h *Handler) UpdatePatientCountSettings(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := PatientCountSettings{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	patientCountSettings := NewPatientCountSettings(dto)
+	if patientCountSettings != nil && !patientCountSettings.IsValid() {
+		return errors.BadRequest
+	}
+
+	if err := h.clinics.UpdatePatientCountSettings(ctx, clinicId, patientCountSettings); err != nil {
+		return err
+	}
+
+	return h.GetPatientCountSettings(ec, clinicId)
+}
+
+func (h *Handler) GetPatientCount(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+
+	patientCount, err := h.clinicsManager.GetClinicPatientCount(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, PatientCount{
+		PatientCount: patientCount.PatientCount,
+	})
 }

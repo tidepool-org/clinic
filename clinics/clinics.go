@@ -15,6 +15,9 @@ const (
 	DefaultMrnIdType           = "MRN"
 	WorkspaceIdTypeClinicId    = "clinicId"
 	WorkspaceIdTypeEHRSourceId = "ehrSourceId"
+
+	CountryCodeUS                                    = "US"
+	PatientCountSettingsHardLimitPatientCountDefault = 250
 )
 
 var (
@@ -51,6 +54,10 @@ type Service interface {
 	UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error
 	GetMRNSettings(ctx context.Context, clinicId string) (*MRNSettings, error)
 	UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error
+	GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error)
+	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
+	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
+	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 }
 
 type Filter struct {
@@ -91,6 +98,12 @@ type Clinic struct {
 	MembershipRestrictions  []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
 	EHRSettings             *EHRSettings             `bson:"ehrSettings,omitempty"`
 	MRNSettings             *MRNSettings             `bson:"mrnSettings,omitempty"`
+	PatientCountSettings    *PatientCountSettings    `bson:"patientCountSettings,omitempty"`
+	PatientCount            *PatientCount            `bson:"patientCount,omitempty"`
+}
+
+func (c Clinic) IsOUS() bool {
+	return c.Country != nil && *c.Country != CountryCodeUS
 }
 
 type EHRSettings struct {
@@ -132,11 +145,79 @@ type MRNSettings struct {
 	Unique   bool `bson:"unique"`
 }
 
-func NewClinic() Clinic {
-	return Clinic{
-		CreatedTime: time.Now(),
-		UpdatedTime: time.Now(),
+type PatientCount struct {
+	PatientCount int `bson:"patientCount"`
+}
+
+func (p PatientCount) IsValid() bool {
+	return p.PatientCount >= 0
+}
+
+func NewPatientCount() *PatientCount {
+	return &PatientCount{
+		PatientCount: 0,
 	}
+}
+
+type PatientCountSettings struct {
+	HardLimit *PatientCountLimit `bson:"hardLimit,omitempty"`
+	SoftLimit *PatientCountLimit `bson:"softLimit,omitempty"`
+}
+
+func (p PatientCountSettings) IsValid() bool {
+	if p.HardLimit != nil && !p.HardLimit.IsValid() {
+		return false
+	}
+	if p.SoftLimit != nil && !p.SoftLimit.IsValid() {
+		return false
+	}
+	return true
+}
+
+func DefaultPatientCountSettings() *PatientCountSettings {
+	return &PatientCountSettings{
+		HardLimit: &PatientCountLimit{
+			PatientCount: PatientCountSettingsHardLimitPatientCountDefault,
+		},
+	}
+}
+
+type PatientCountLimit struct {
+	PatientCount int        `bson:"patientCount"`
+	StartDate    *time.Time `bson:"startDate,omitempty"`
+	EndDate      *time.Time `bson:"endDate,omitempty"`
+}
+
+func (p PatientCountLimit) IsValid() bool {
+	if p.PatientCount < 0 {
+		return false
+	}
+	if p.StartDate != nil && p.EndDate != nil && p.StartDate.After(*p.EndDate) {
+		return false
+	}
+	return true
+}
+
+func NewClinicWithDefaults() *Clinic {
+	c := NewClinic()
+	c.PatientCount = NewPatientCount()
+	c.PatientCountSettings = DefaultPatientCountSettings()
+	return c
+}
+
+func NewClinic() *Clinic {
+	return &Clinic{}
+}
+
+func (c *Clinic) UpdatePatientCountSettingsForCountry() bool {
+	if isOUS := c.IsOUS(); isOUS && c.PatientCountSettings != nil {
+		c.PatientCountSettings = nil
+		return true
+	} else if !isOUS && c.PatientCountSettings == nil {
+		c.PatientCountSettings = DefaultPatientCountSettings()
+		return true
+	}
+	return false
 }
 
 func (c *Clinic) HasAllRequiredFields() bool {

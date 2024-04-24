@@ -5,6 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/TwiN/deepmerge"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,13 +25,6 @@ import (
 	xealthTest "github.com/tidepool-org/clinic/xealth/test"
 	"github.com/tidepool-org/clinic/xealth_client"
 	"go.uber.org/fx"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"os"
-	"sync"
-	"time"
 )
 
 const (

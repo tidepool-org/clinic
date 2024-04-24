@@ -3,6 +3,11 @@ package api
 import (
 	"context"
 	"fmt"
+
+	"html/template"
+	"net/http"
+	"os"
+
 	"github.com/brpaz/echozap"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
@@ -13,6 +18,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/migration"
+	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
@@ -26,9 +32,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
-	"html/template"
-	"net/http"
-	"os"
 )
 
 var (
@@ -158,7 +161,7 @@ func Dependencies() []fx.Option {
 			clinicians.NewService,
 			clinics.NewRepository,
 			clinics.NewShareCodeGenerator,
-			manager.NewConfig,
+			config.NewConfig,
 			manager.NewManager,
 			migration.NewMigrator,
 			migration.NewRepository,

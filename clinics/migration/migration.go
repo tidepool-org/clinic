@@ -3,6 +3,8 @@ package migration
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
@@ -10,7 +12,6 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/fx"
-	"time"
 )
 
 const (
@@ -89,7 +90,7 @@ func (m *migrator) CreateEmptyClinic(ctx context.Context, userId string) (*clini
 	}
 
 	return m.clinicsCreator.CreateClinic(ctx, &manager.CreateClinic{
-		Clinic:        clinics.NewClinic(),
+		Clinic:        *clinics.NewClinicWithDefaults(),
 		CreatorUserId: userId,
 	})
 }

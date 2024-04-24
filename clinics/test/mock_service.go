@@ -140,6 +140,36 @@ func (mr *MockServiceMockRecorder) GetMRNSettings(ctx, clinicId interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMRNSettings", reflect.TypeOf((*MockService)(nil).GetMRNSettings), ctx, clinicId)
 }
 
+// GetPatientCount mocks base method.
+func (m *MockService) GetPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPatientCount", ctx, clinicId)
+	ret0, _ := ret[0].(*clinics.PatientCount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPatientCount indicates an expected call of GetPatientCount.
+func (mr *MockServiceMockRecorder) GetPatientCount(ctx, clinicId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPatientCount", reflect.TypeOf((*MockService)(nil).GetPatientCount), ctx, clinicId)
+}
+
+// GetPatientCountSettings mocks base method.
+func (m *MockService) GetPatientCountSettings(ctx context.Context, clinicId string) (*clinics.PatientCountSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPatientCountSettings", ctx, clinicId)
+	ret0, _ := ret[0].(*clinics.PatientCountSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPatientCountSettings indicates an expected call of GetPatientCountSettings.
+func (mr *MockServiceMockRecorder) GetPatientCountSettings(ctx, clinicId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPatientCountSettings", reflect.TypeOf((*MockService)(nil).GetPatientCountSettings), ctx, clinicId)
+}
+
 // List mocks base method.
 func (m *MockService) List(ctx context.Context, filter *clinics.Filter, pagination store.Pagination) ([]*clinics.Clinic, error) {
 	m.ctrl.T.Helper()
@@ -239,6 +269,34 @@ func (m *MockService) UpdateMembershipRestrictions(ctx context.Context, clinicId
 func (mr *MockServiceMockRecorder) UpdateMembershipRestrictions(ctx, clinicId, restrictions interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMembershipRestrictions", reflect.TypeOf((*MockService)(nil).UpdateMembershipRestrictions), ctx, clinicId, restrictions)
+}
+
+// UpdatePatientCount mocks base method.
+func (m *MockService) UpdatePatientCount(ctx context.Context, clinicId string, patientCount *clinics.PatientCount) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePatientCount", ctx, clinicId, patientCount)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePatientCount indicates an expected call of UpdatePatientCount.
+func (mr *MockServiceMockRecorder) UpdatePatientCount(ctx, clinicId, patientCount interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientCount", reflect.TypeOf((*MockService)(nil).UpdatePatientCount), ctx, clinicId, patientCount)
+}
+
+// UpdatePatientCountSettings mocks base method.
+func (m *MockService) UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *clinics.PatientCountSettings) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePatientCountSettings", ctx, clinicId, settings)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePatientCountSettings indicates an expected call of UpdatePatientCountSettings.
+func (mr *MockServiceMockRecorder) UpdatePatientCountSettings(ctx, clinicId, settings interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientCountSettings", reflect.TypeOf((*MockService)(nil).UpdatePatientCountSettings), ctx, clinicId, settings)
 }
 
 // UpdatePatientTag mocks base method.

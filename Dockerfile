@@ -7,7 +7,7 @@ RUN apk --no-cache update && \
     adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic
 USER tidepool
-RUN go install github.com/cosmtrek/air@latest
+RUN go install github.com/cosmtrek/air@v1.49.0
 COPY --chown=tidepool . .
 RUN ./build.sh
 CMD ["air"]

@@ -14,6 +14,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -34,8 +35,9 @@ type Repository interface {
 	Service
 }
 
-func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Repository, error) {
+func NewRepository(config *config.Config, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Repository, error) {
 	repo := &repository{
+		config:     config,
 		collection: db.Collection(patientsCollectionName),
 		logger:     logger,
 	}
@@ -50,6 +52,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 }
 
 type repository struct {
+	config     *config.Config
 	collection *mongo.Collection
 	logger     *zap.SugaredLogger
 }
@@ -188,11 +191,20 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string)
 	return nil
 }
 
+func (r *repository) Count(ctx context.Context, filter *Filter) (int, error) {
+	count, err := r.collection.CountDocuments(ctx, r.generateListFilterQuery(filter))
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
 func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination, sorts []*store.Sort) (*ListResult, error) {
 	// We use an aggregation pipeline with facet in order to get the count
 	// and the patients from a single query
 	pipeline := []bson.M{
-		{"$match": generateListFilterQuery(filter)},
+		{"$match": r.generateListFilterQuery(filter)},
 		{"$sort": generateListSortStage(sorts)},
 	}
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
@@ -249,6 +261,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	if err != nil {
 		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
+
 	if patients.TotalCount > 0 {
 		if len(patient.LegacyClinicianIds) == 0 {
 			return nil, ErrDuplicatePatient
@@ -265,7 +278,8 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		}
 	}
 
-	return r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
+	result, err := r.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
+	return result, err
 }
 
 func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*Patient, error) {
@@ -382,16 +396,35 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	return r.Get(ctx, clinicId, userId)
 }
 
-func (r *repository) DeleteFromAllClinics(ctx context.Context, userId string) error {
+func (r *repository) DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error) {
 	selector := bson.M{
 		"userId": userId,
 	}
 
-	_, err := r.collection.DeleteMany(ctx, selector)
-	return err
+	cursor, err := r.collection.Find(ctx, selector)
+	if err != nil {
+		return nil, fmt.Errorf("error listing patients: %w", err)
+	}
+
+	var patients []*Patient
+	if err = cursor.All(ctx, &patients); err != nil {
+		return nil, fmt.Errorf("error decoding patients list: %w", err)
+	}
+
+	var clinicIds []string
+	for _, patient := range patients {
+		selector["clinicId"] = patient.ClinicId
+		result, err := r.collection.DeleteOne(ctx, selector)
+		if err != nil {
+			return clinicIds, fmt.Errorf("error deleting patient: %w", err)
+		} else if result.DeletedCount >= 0 {
+			clinicIds = append(clinicIds, patient.ClinicId.Hex())
+		}
+	}
+	return clinicIds, nil
 }
 
-func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error {
+func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -401,8 +434,8 @@ func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, cli
 		},
 	}
 
-	_, err := r.collection.DeleteMany(ctx, selector)
-	return err
+	result, err := r.collection.DeleteMany(ctx, selector)
+	return result.DeletedCount > 0, err
 }
 
 func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
@@ -753,7 +786,7 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 	return nil
 }
 
-func generateListFilterQuery(filter *Filter) bson.M {
+func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
 	if filter.ClinicId != nil {
 		clinicId := *filter.ClinicId
@@ -771,8 +804,15 @@ func generateListFilterQuery(filter *Filter) bson.M {
 			"$in": clinicObjIds,
 		}
 	}
+	userIdSelector := bson.M{}
 	if filter.UserId != nil {
-		selector["userId"] = filter.UserId
+		userIdSelector["$eq"] = filter.UserId
+	}
+	if filter.ExcludeDemo {
+		userIdSelector["$ne"] = r.config.ClinicDemoPatientUserId
+	}
+	if len(userIdSelector) > 0 {
+		selector["userId"] = userIdSelector
 	}
 	if filter.Mrn != nil {
 		selector["mrn"] = filter.Mrn

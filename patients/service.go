@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/tidepool-org/clinic/clinics"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
@@ -32,18 +34,27 @@ func (s *service) Get(ctx context.Context, clinicId string, userId string) (*Pat
 	return s.repo.Get(ctx, clinicId, userId)
 }
 
+func (s *service) Count(ctx context.Context, filter *Filter) (int, error) {
+	return s.repo.Count(ctx, filter)
+}
+
 func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pagination, sorts []*store.Sort) (*ListResult, error) {
 	return s.repo.List(ctx, filter, pagination, sorts)
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
-	if err := s.enforceMrnSettings(ctx, patient.ClinicId.Hex(), patient.UserId, &patient); err != nil {
+	clinicId := patient.ClinicId.Hex()
+
+	if err := s.enforceMrnSettings(ctx, clinicId, patient.UserId, &patient); err != nil {
+		return nil, err
+	}
+	if err := s.enforcePatientCountSettings(ctx, clinicId, &patient); err != nil {
 		return nil, err
 	}
 
 	// Only create new accounts if the custodial user doesn't exist already (i.e. we are not migrating it)
 	if patient.IsCustodial() && patient.UserId == nil {
-		s.logger.Infow("creating custodial account", "clinicId", patient.ClinicId.Hex())
+		s.logger.Infow("creating custodial account", "clinicId", clinicId)
 		userId, err := s.custodialService.CreateAccount(ctx, patient)
 		if err != nil {
 			return nil, err
@@ -55,8 +66,13 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 		return nil, errors.New("user id is missing")
 	}
 
-	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", patient.ClinicId.Hex())
-	return s.repo.Create(ctx, patient)
+	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
+
+	result, err := s.repo.Create(ctx, patient)
+
+	s.updateClinicPatientCount(ctx, clinicId)
+
+	return result, err
 }
 
 func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, error) {
@@ -96,7 +112,11 @@ func (s *service) UpdateEmail(ctx context.Context, userId string, email *string)
 
 func (s *service) Remove(ctx context.Context, clinicId string, userId string) error {
 	s.logger.Infow("deleting patient from clinic", "userId", userId, "clinicId", clinicId)
-	return s.repo.Remove(ctx, clinicId, userId)
+	if err := s.repo.Remove(ctx, clinicId, userId); err != nil {
+		return err
+	}
+	s.updateClinicPatientCount(ctx, clinicId)
+	return nil
 }
 
 func (s *service) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
@@ -137,14 +157,23 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 	return patient, err
 }
 
-func (s *service) DeleteFromAllClinics(ctx context.Context, userId string) error {
+func (s *service) DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error) {
 	s.logger.Infow("deleting patients from all clinics", "userId", userId)
-	return s.repo.DeleteFromAllClinics(ctx, userId)
+	clinicIds, err := s.repo.DeleteFromAllClinics(ctx, userId)
+	for _, clinicId := range clinicIds {
+		s.updateClinicPatientCount(ctx, clinicId)
+	}
+	return clinicIds, err
 }
 
-func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) error {
+func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error) {
 	s.logger.Infow("deleting all non-custodial patient of clinic", "clinicId", clinicId)
-	return s.repo.DeleteNonCustodialPatientsOfClinic(ctx, clinicId)
+
+	deleted, err := s.repo.DeleteNonCustodialPatientsOfClinic(ctx, clinicId)
+	if deleted {
+		s.updateClinicPatientCount(ctx, clinicId)
+	}
+	return deleted, err
 }
 
 func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
@@ -238,6 +267,61 @@ func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, exist
 	}
 
 	return nil
+}
+
+func (s *service) enforcePatientCountSettings(ctx context.Context, clinicId string, patient *Patient) error {
+
+	// Allow non-custodial patients no matter what
+	if !patient.IsCustodial() {
+		return nil
+	}
+
+	// Get any clinic patient count settings, if none found, then no limits, so allow
+	patientCountSettings, err := s.clinics.GetPatientCountSettings(ctx, clinicId)
+	if err != nil || patientCountSettings == nil {
+		return err
+	}
+
+	// If no patient count hard limit setting, then allow
+	if patientCountSettings.HardLimit == nil {
+		return nil
+	}
+
+	// If outside start date and end date, if specified, then allow
+	now := time.Now()
+	if patientCountSettings.HardLimit.StartDate != nil && now.Before(*patientCountSettings.HardLimit.StartDate) {
+		return nil
+	} else if patientCountSettings.HardLimit.EndDate != nil && now.After(*patientCountSettings.HardLimit.EndDate) {
+		return nil
+	}
+
+	// Get the current clinic patient count
+	patientCount, err := s.clinics.GetPatientCount(ctx, clinicId)
+	if err != nil {
+		return err
+	} else if patientCount == nil {
+		return fmt.Errorf("%w: patient count missing", errors2.InternalServerError)
+	}
+
+	// If patient count equals or exceeds patient count hard limit setting, then error
+	if patientCount.PatientCount >= patientCountSettings.HardLimit.PatientCount {
+		return fmt.Errorf("%w: patient count exceeds limit", errors2.PaymentRequired)
+	}
+
+	return nil
+}
+
+func (s *service) updateClinicPatientCount(ctx context.Context, clinicId string) {
+	patientCount, err := s.repo.Count(ctx, &Filter{ClinicId: &clinicId, ExcludeDemo: true})
+	if err != nil {
+		s.logger.Errorw("error fetching clinic patient count", "error", err, "clinicId", clinicId)
+		return
+	}
+
+	if err := s.clinics.UpdatePatientCount(ctx, clinicId, &clinics.PatientCount{PatientCount: patientCount}); err != nil {
+		s.logger.Errorw("error updating clinic patient count", "error", err, "clinicId", clinicId)
+		return
+	}
 }
 
 func shouldRemovePatientFromClinic(patient *Patient) bool {

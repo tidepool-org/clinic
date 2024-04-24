@@ -1,38 +1,42 @@
 package patients_test
 
 import (
+	"context"
 	"fmt"
 	"strings"
-
-	"go.mongodb.org/mongo-driver/bson"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
 	"github.com/tidepool-org/clinic/clinics/test"
-	"github.com/tidepool-org/clinic/store"
-	dbTest "github.com/tidepool-org/clinic/store/test"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.uber.org/zap"
-
+	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/store"
+	dbTest "github.com/tidepool-org/clinic/store/test"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
 )
 
+var DemoPatientId = "demo"
+
 var _ = Describe("Patients Repository", func() {
+	var cfg *config.Config
 	var repo patients.Repository
 	var database *mongo.Database
 	var collection *mongo.Collection
 
 	BeforeEach(func() {
 		var err error
+		cfg = &config.Config{ClinicDemoPatientUserId: DemoPatientId}
 		database = dbTest.GetTestDatabase()
 		collection = database.Collection("patients")
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repo, err = patients.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
+		repo, err = patients.NewRepository(cfg, database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repo).ToNot(BeNil())
 		lifecycle.RequireStart()
@@ -54,7 +58,7 @@ var _ = Describe("Patients Repository", func() {
 				documents[i] = patient
 				allPatients[i] = patient
 			}
-			result, err := collection.InsertMany(nil, documents)
+			result, err := collection.InsertMany(context.Background(), documents)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result.InsertedIDs).To(HaveLen(count))
 			allPatientIds = result.InsertedIDs
@@ -69,7 +73,7 @@ var _ = Describe("Patients Repository", func() {
 					"$in": allPatientIds,
 				},
 			}
-			result, err := collection.DeleteMany(nil, selector)
+			result, err := collection.DeleteMany(context.Background(), selector)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(int(result.DeletedCount)).To(Equal(count))
 		})
@@ -86,13 +90,13 @@ var _ = Describe("Patients Repository", func() {
 				selector := primitive.M{
 					"_id": patient.Id,
 				}
-				result, err := collection.DeleteOne(nil, selector)
+				result, err := collection.DeleteOne(context.Background(), selector)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(int(result.DeletedCount)).To(Equal(1))
 			})
 
 			It("returns the created patient", func() {
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -102,20 +106,20 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("inserts the patient in the collection", func() {
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 				patient.Id = result.Id
 
 				var inserted patients.Patient
-				err = collection.FindOne(nil, primitive.M{"_id": result.Id}).Decode(&inserted)
+				err = collection.FindOne(context.Background(), primitive.M{"_id": result.Id}).Decode(&inserted)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(inserted).To(matchPatientFields)
 			})
 
 			It("successfully inserts a patient with duplicate mrn if uniqueness is not enabled", func() {
 				patient.RequireUniqueMrn = false
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -126,19 +130,19 @@ var _ = Describe("Patients Repository", func() {
 				secondPatient.Mrn = patient.Mrn
 				secondPatient.RequireUniqueMrn = false
 
-				result, err = repo.Create(nil, secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
-				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				_, err = collection.DeleteOne(context.Background(), primitive.M{"_id": result.Id})
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("successfully inserts multiple patients without mrns when uniqueness is enabled", func() {
 				patient.Mrn = nil
 				patient.RequireUniqueMrn = true
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -149,18 +153,18 @@ var _ = Describe("Patients Repository", func() {
 				secondPatient.Mrn = nil
 				secondPatient.RequireUniqueMrn = true
 
-				result, err = repo.Create(nil, secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
-				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				_, err = collection.DeleteOne(context.Background(), primitive.M{"_id": result.Id})
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("returns an error when a user with duplicate mrn is created", func() {
 				patient.RequireUniqueMrn = true
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -171,7 +175,7 @@ var _ = Describe("Patients Repository", func() {
 				secondPatient.Mrn = patient.Mrn
 				secondPatient.RequireUniqueMrn = true
 
-				result, err = repo.Create(nil, secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 
 				Expect(err).To(HaveOccurred())
 				Expect(result).To(BeNil())
@@ -179,7 +183,7 @@ var _ = Describe("Patients Repository", func() {
 
 			It("returns an error when a patient is updated with a duplicated mrn", func() {
 				patient.RequireUniqueMrn = true
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -189,12 +193,12 @@ var _ = Describe("Patients Repository", func() {
 				secondPatient.ClinicId = patient.ClinicId
 				secondPatient.RequireUniqueMrn = true
 
-				result, err = repo.Create(nil, secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
 				result.Mrn = patient.Mrn
-				updated, err := repo.Update(nil, patients.PatientUpdate{
+				updated, err := repo.Update(context.Background(), patients.PatientUpdate{
 					ClinicId:  result.ClinicId.Hex(),
 					UserId:    *result.UserId,
 					Patient:   *result,
@@ -203,13 +207,13 @@ var _ = Describe("Patients Repository", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(updated).To(BeNil())
 
-				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				_, err = collection.DeleteOne(context.Background(), primitive.M{"_id": result.Id})
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("successfully updates the mrn if it is not a duplicate", func() {
 				patient.RequireUniqueMrn = true
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -219,12 +223,12 @@ var _ = Describe("Patients Repository", func() {
 				secondPatient.ClinicId = patient.ClinicId
 				secondPatient.RequireUniqueMrn = true
 
-				result, err = repo.Create(nil, secondPatient)
+				result, err = repo.Create(context.Background(), secondPatient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
 				result.Mrn = patientsTest.RandomPatient().Mrn
-				result, err = repo.Update(nil, patients.PatientUpdate{
+				result, err = repo.Update(context.Background(), patients.PatientUpdate{
 					ClinicId:  result.ClinicId.Hex(),
 					UserId:    *result.UserId,
 					Patient:   *result,
@@ -233,12 +237,12 @@ var _ = Describe("Patients Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
-				_, err = collection.DeleteOne(nil, primitive.M{"_id": result.Id})
+				_, err = collection.DeleteOne(context.Background(), primitive.M{"_id": result.Id})
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("updates legacy clinician ids if the patient exists already", func() {
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
@@ -246,24 +250,24 @@ var _ = Describe("Patients Repository", func() {
 				patient.LegacyClinicianIds = []string{test.Faker.UUID().V4()}
 				matchPatientFields = patientFieldsMatcher(patient)
 
-				result, err = repo.Create(nil, patient)
+				result, err = repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
 				var inserted patients.Patient
-				err = collection.FindOne(nil, primitive.M{"_id": result.Id}).Decode(&inserted)
+				err = collection.FindOne(context.Background(), primitive.M{"_id": result.Id}).Decode(&inserted)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(inserted).To(matchPatientFields)
 			})
 
 			It("to fail if patient exists already and legacy clinician ids is not set", func() {
-				result, err := repo.Create(nil, patient)
+				result, err := repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
 				patient.Id = result.Id
 
-				result, err = repo.Create(nil, patient)
+				result, err = repo.Create(context.Background(), patient)
 				Expect(err).To(Equal(patients.ErrDuplicatePatient))
 				Expect(result).To(BeNil())
 			})
@@ -271,7 +275,7 @@ var _ = Describe("Patients Repository", func() {
 
 		Describe("Get", func() {
 			It("returns the correct patient", func() {
-				result, err := repo.Get(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				result, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -306,12 +310,12 @@ var _ = Describe("Patients Repository", func() {
 			It("updates the patient in the collection", func() {
 				update.ClinicId = randomPatient.ClinicId.Hex()
 				update.UserId = *randomPatient.UserId
-				result, err := repo.Update(nil, update)
+				result, err := repo.Update(context.Background(), update)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
 				var updated patients.Patient
-				err = collection.FindOne(nil, primitive.M{"_id": result.Id}).Decode(&updated)
+				err = collection.FindOne(context.Background(), primitive.M{"_id": result.Id}).Decode(&updated)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(updated).To(matchPatientFields)
 			})
@@ -319,7 +323,7 @@ var _ = Describe("Patients Repository", func() {
 			It("returns the updated patient", func() {
 				update.ClinicId = randomPatient.ClinicId.Hex()
 				update.UserId = *randomPatient.UserId
-				result, err := repo.Update(nil, update)
+				result, err := repo.Update(context.Background(), update)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 				Expect(*result).To(matchPatientFields)
@@ -351,11 +355,11 @@ var _ = Describe("Patients Repository", func() {
 
 			It("updates the email", func() {
 				update.UserId = *randomPatient.UserId
-				err := repo.UpdateEmail(nil, *randomPatient.UserId, update.Patient.Email)
+				err := repo.UpdateEmail(context.Background(), *randomPatient.UserId, update.Patient.Email)
 				Expect(err).ToNot(HaveOccurred())
 
 				var updated patients.Patient
-				err = collection.FindOne(nil, primitive.M{
+				err = collection.FindOne(context.Background(), primitive.M{
 					"userId": randomPatient.UserId,
 				}).Decode(&updated)
 				Expect(err).ToNot(HaveOccurred())
@@ -364,11 +368,11 @@ var _ = Describe("Patients Repository", func() {
 
 			It("removes the email", func() {
 				update.UserId = *randomPatient.UserId
-				err := repo.UpdateEmail(nil, *randomPatient.UserId, nil)
+				err := repo.UpdateEmail(context.Background(), *randomPatient.UserId, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				var updated patients.Patient
-				err = collection.FindOne(nil, primitive.M{
+				err = collection.FindOne(context.Background(), primitive.M{
 					"userId": randomPatient.UserId,
 				}).Decode(&updated)
 				Expect(err).ToNot(HaveOccurred())
@@ -378,10 +382,10 @@ var _ = Describe("Patients Repository", func() {
 
 		Describe("Remove", func() {
 			It("removes the correct patient from the collection", func() {
-				err := repo.Remove(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
 				Expect(err).ToNot(HaveOccurred())
 
-				res := collection.FindOne(nil, bson.M{"$and": []bson.M{{"userId": randomPatient.UserId}, {"clinicId": randomPatient.ClinicId}}})
+				res := collection.FindOne(context.Background(), bson.M{"$and": []bson.M{{"userId": randomPatient.UserId}, {"clinicId": randomPatient.ClinicId}}})
 				Expect(res).ToNot(BeNil())
 				Expect(res.Err()).ToNot(BeNil())
 				Expect(res.Err()).To(MatchError(mongo.ErrNoDocuments))
@@ -394,15 +398,16 @@ var _ = Describe("Patients Repository", func() {
 				// Add the same user to  a different clinic
 				patient := patientsTest.RandomPatient()
 				patient.UserId = randomPatient.UserId
-				_, err := collection.InsertOne(nil, patient)
+				_, err := collection.InsertOne(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
 				count += 1
 
-				err = repo.DeleteFromAllClinics(nil, *randomPatient.UserId)
+				clinicIds, err := repo.DeleteFromAllClinics(context.Background(), *randomPatient.UserId)
 				Expect(err).ToNot(HaveOccurred())
+				Expect(clinicIds).To(ConsistOf(randomPatient.ClinicId.Hex(), patient.ClinicId.Hex()))
 				count -= 2
 
-				res, err := collection.CountDocuments(nil, bson.M{})
+				res, err := collection.CountDocuments(context.Background(), bson.M{})
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(count)))
 
@@ -412,9 +417,21 @@ var _ = Describe("Patients Repository", func() {
 						{"$and": []bson.M{{"userId": randomPatient.UserId}, {"clinicId": randomPatient.ClinicId}}},
 					},
 				}
-				res, err = collection.CountDocuments(nil, selector)
+				res, err = collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(0)))
+			})
+
+			It("deletes no patients", func() {
+				unusedUserId := *patientsTest.RandomPatient().UserId
+
+				clinicIds, err := repo.DeleteFromAllClinics(context.Background(), unusedUserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clinicIds).To(BeEmpty())
+
+				res, err := collection.CountDocuments(context.Background(), bson.M{})
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(count)))
 			})
 		})
 
@@ -438,7 +455,7 @@ var _ = Describe("Patients Repository", func() {
 						},
 					}
 
-					_, err := collection.UpdateOne(nil, selector, update)
+					_, err := collection.UpdateOne(context.Background(), selector, update)
 					Expect(err).ToNot(HaveOccurred())
 				}
 
@@ -447,16 +464,16 @@ var _ = Describe("Patients Repository", func() {
 				}
 
 				// All patients should be returned when querying for the new tag
-				res, err := collection.CountDocuments(nil, selector)
+				res, err := collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(count)))
 
 				// Perform the delete operation
-				err = repo.DeletePatientTagFromClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex(), nil)
+				err = repo.DeletePatientTagFromClinicPatients(context.Background(), clinicId.Hex(), newPatientTag.Hex(), nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				// No patients should have matching tag
-				res, err = collection.CountDocuments(nil, selector)
+				res, err = collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(0)))
 			})
@@ -482,7 +499,7 @@ var _ = Describe("Patients Repository", func() {
 						},
 					}
 
-					_, err := collection.UpdateOne(nil, selector, update)
+					_, err := collection.UpdateOne(context.Background(), selector, update)
 					Expect(err).ToNot(HaveOccurred())
 				}
 
@@ -491,7 +508,7 @@ var _ = Describe("Patients Repository", func() {
 				}
 
 				// All patients should be returned when querying for the new tag
-				res, err := collection.CountDocuments(nil, selector)
+				res, err := collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(count)))
 
@@ -501,11 +518,11 @@ var _ = Describe("Patients Repository", func() {
 				}
 
 				// Perform the delete operation
-				err = repo.DeletePatientTagFromClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex(), patientIds)
+				err = repo.DeletePatientTagFromClinicPatients(context.Background(), clinicId.Hex(), newPatientTag.Hex(), patientIds)
 				Expect(err).ToNot(HaveOccurred())
 
 				// All but 2 patients should have matching tag
-				res, err = collection.CountDocuments(nil, selector)
+				res, err = collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(count - 2)))
 			})
@@ -529,7 +546,7 @@ var _ = Describe("Patients Repository", func() {
 						},
 					}
 
-					_, err := collection.UpdateOne(nil, selector, update)
+					_, err := collection.UpdateOne(context.Background(), selector, update)
 					Expect(err).ToNot(HaveOccurred())
 				}
 
@@ -538,7 +555,7 @@ var _ = Describe("Patients Repository", func() {
 				}
 
 				// No patients should be returned when querying for the new tag
-				res, err := collection.CountDocuments(nil, selector)
+				res, err := collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(0)))
 
@@ -548,11 +565,11 @@ var _ = Describe("Patients Repository", func() {
 				}
 
 				// Perform the assign operation
-				err = repo.AssignPatientTagToClinicPatients(nil, clinicId.Hex(), newPatientTag.Hex(), patientIds)
+				err = repo.AssignPatientTagToClinicPatients(context.Background(), clinicId.Hex(), newPatientTag.Hex(), patientIds)
 				Expect(err).ToNot(HaveOccurred())
 
 				// Two patients should have matching tag
-				res, err = collection.CountDocuments(nil, selector)
+				res, err = collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(2)))
 			})
@@ -580,24 +597,25 @@ var _ = Describe("Patients Repository", func() {
 					patient.Permissions = &perms
 					nonCustodial[i] = patient
 				}
-				_, err := collection.InsertMany(nil, custodial)
+				_, err := collection.InsertMany(context.Background(), custodial)
 				Expect(err).ToNot(HaveOccurred())
 				count += len(custodial)
 
-				_, err = collection.InsertMany(nil, nonCustodial)
+				_, err = collection.InsertMany(context.Background(), nonCustodial)
 				Expect(err).ToNot(HaveOccurred())
 				count += len(nonCustodial)
 			})
 
 			AfterEach(func() {
-				res, err := collection.DeleteMany(nil, bson.M{"clinicId": clinicId})
+				res, err := collection.DeleteMany(context.Background(), bson.M{"clinicId": clinicId})
 				Expect(err).ToNot(HaveOccurred())
 				count -= int(res.DeletedCount)
 			})
 
 			It("deletes non-custodial patients", func() {
-				err := repo.DeleteNonCustodialPatientsOfClinic(nil, clinicId.Hex())
+				deleted, err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId.Hex())
 				Expect(err).ToNot(HaveOccurred())
+				Expect(deleted).To(BeTrue())
 				count -= len(nonCustodial)
 
 				ids := make([]interface{}, len(nonCustodial))
@@ -607,14 +625,15 @@ var _ = Describe("Patients Repository", func() {
 				}
 
 				selector := bson.M{"$or": ids}
-				res, err := collection.CountDocuments(nil, selector)
+				res, err := collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(0)))
 			})
 
 			It("does not delete custodial patients", func() {
-				err := repo.DeleteNonCustodialPatientsOfClinic(nil, clinicId.Hex())
+				deleted, err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId.Hex())
 				Expect(err).ToNot(HaveOccurred())
+				Expect(deleted).To(BeTrue())
 				count -= len(nonCustodial)
 
 				ids := make([]interface{}, len(custodial))
@@ -624,9 +643,115 @@ var _ = Describe("Patients Repository", func() {
 				}
 
 				selector := bson.M{"$or": ids}
-				res, err := collection.CountDocuments(nil, selector)
+				res, err := collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(len(ids))))
+			})
+
+			It("does not delete any patients for other clinic id", func() {
+				otherClinicId := primitive.NewObjectID()
+
+				deleted, err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), otherClinicId.Hex())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(deleted).To(BeFalse())
+
+				res, err := collection.CountDocuments(context.Background(), bson.M{"clinicId": clinicId})
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(len(custodial) + len(nonCustodial))))
+			})
+		})
+
+		Describe("Count", func() {
+			It("returns the expected count with no filter", func() {
+				filter := &patients.Filter{}
+				count, err := repo.Count(context.Background(), filter)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(Equal(10))
+			})
+
+			It("returns the expected count with a user id filter", func() {
+				filter := &patients.Filter{
+					UserId: allPatients[0].UserId,
+				}
+				count, err := repo.Count(context.Background(), filter)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(Equal(1))
+			})
+
+			It("returns the expected count with an exclude demo filter", func() {
+				filter := &patients.Filter{
+					ExcludeDemo: true,
+				}
+				count, err := repo.Count(context.Background(), filter)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(Equal(10))
+			})
+
+			When("there is a demo patient", func() {
+				var demoPatient patients.Patient
+
+				BeforeEach(func() {
+					demoPatient = patientsTest.RandomPatient()
+					demoPatient.UserId = &DemoPatientId
+					result, err := collection.InsertOne(context.Background(), demoPatient)
+					Expect(err).ToNot(HaveOccurred())
+					id := result.InsertedID.(primitive.ObjectID)
+					demoPatient.Id = &id
+				})
+
+				AfterEach(func() {
+					selector := primitive.M{
+						"_id": demoPatient.Id,
+					}
+					result, err := collection.DeleteOne(context.Background(), selector)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(int(result.DeletedCount)).To(Equal(1))
+				})
+
+				It("returns the expected count with no filter", func() {
+					filter := &patients.Filter{}
+					count, err := repo.Count(context.Background(), filter)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(count).To(Equal(11))
+				})
+
+				It("returns the expected count with a user id filter", func() {
+					filter := &patients.Filter{
+						UserId: demoPatient.UserId,
+					}
+					count, err := repo.Count(context.Background(), filter)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(count).To(Equal(1))
+				})
+
+				It("returns the expected count with an exclude demo filter", func() {
+					filter := &patients.Filter{
+						ExcludeDemo: true,
+					}
+					count, err := repo.Count(context.Background(), filter)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(count).To(Equal(10))
+				})
+
+				It("returns the expected count with a user id and an exclude demo filter", func() {
+					filter := &patients.Filter{
+						UserId:      allPatients[0].UserId,
+						ExcludeDemo: true,
+					}
+					count, err := repo.Count(context.Background(), filter)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(count).To(Equal(1))
+				})
+
+				It("returns the expected count with the demo user id and an exclude demo filter", func() {
+					filter := &patients.Filter{
+						UserId:      demoPatient.UserId,
+						ExcludeDemo: true,
+					}
+					count, err := repo.Count(context.Background(), filter)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(count).To(Equal(0))
+				})
 			})
 		})
 
@@ -637,7 +762,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).To(HaveLen(count))
 			})
@@ -648,7 +773,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  2,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).To(HaveLen(2))
 			})
@@ -659,12 +784,12 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  2,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).To(HaveLen(2))
 
 				pagination.Offset = 1
-				offsetResults, err := repo.List(nil, &filter, pagination, nil)
+				offsetResults, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(offsetResults.Patients).To(HaveLen(2))
 				Expect(*offsetResults.Patients[0]).To(patientFieldsMatcher(*result.Patients[1]))
@@ -678,7 +803,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1012,7 +1137,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1030,7 +1155,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1056,7 +1181,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  10,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1075,7 +1200,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1095,7 +1220,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1121,7 +1246,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1146,7 +1271,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(nil, &filter, pagination, nil)
+				result, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1165,12 +1290,12 @@ var _ = Describe("Patients Repository", func() {
 		Describe("Update Permissions", func() {
 			It("updates the permissions of patient in the collection", func() {
 				permissions := patientsTest.RandomPermissions()
-				result, err := repo.UpdatePermissions(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, &permissions)
+				result, err := repo.UpdatePermissions(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, &permissions)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
 				var updated patients.Patient
-				err = collection.FindOne(nil, primitive.M{"_id": result.Id}).Decode(&updated)
+				err = collection.FindOne(context.Background(), primitive.M{"_id": result.Id}).Decode(&updated)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(*updated.Permissions).To(Equal(permissions))
 			})
@@ -1180,7 +1305,7 @@ var _ = Describe("Patients Repository", func() {
 				randomPatient.Permissions = &permissions
 				matchPatientFields = patientFieldsMatcher(randomPatient)
 
-				result, err := repo.UpdatePermissions(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, &permissions)
+				result, err := repo.UpdatePermissions(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, &permissions)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 				Expect(*result).To(matchPatientFields)
@@ -1190,32 +1315,33 @@ var _ = Describe("Patients Repository", func() {
 		Describe("Delete Permissions", func() {
 			It("removes the permission from the patient record", func() {
 				// make sure all permissions are set
-				_, err := repo.UpdatePermissions(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, &patients.CustodialAccountPermissions)
+				_, err := repo.UpdatePermissions(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, &patients.CustodialAccountPermissions)
 				Expect(err).ToNot(HaveOccurred())
 
 				permission := patientsTest.RandomPermission()
-				result, err := repo.DeletePermission(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, permission)
+				result, err := repo.DeletePermission(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, permission)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
 				path := fmt.Sprintf("permissions.%s", permission)
-				res := collection.FindOne(nil, primitive.M{"_id": result.Id, path: primitive.M{"$exists": "true"}})
+				res := collection.FindOne(context.Background(), primitive.M{"_id": result.Id, path: primitive.M{"$exists": "true"}})
 				Expect(res).ToNot(BeNil())
 				Expect(res.Err()).To(MatchError(mongo.ErrNoDocuments))
 			})
 
 			It("returns an error if a permissions is not set", func() {
 				// make sure all permissions are set
-				_, err := repo.UpdatePermissions(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, &patients.CustodialAccountPermissions)
+				_, err := repo.UpdatePermissions(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, &patients.CustodialAccountPermissions)
 				Expect(err).ToNot(HaveOccurred())
 
 				permission := patientsTest.RandomPermission()
-				result, err := repo.DeletePermission(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, permission)
+				result, err := repo.DeletePermission(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, permission)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 
-				result, err = repo.DeletePermission(nil, randomPatient.ClinicId.Hex(), *randomPatient.UserId, permission)
+				result, err = repo.DeletePermission(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, permission)
 				Expect(err).To(MatchError(patients.ErrPermissionNotFound))
+				Expect(result).To(BeNil())
 			})
 		})
 	})
