@@ -12,7 +12,6 @@ import (
 	xealthTest "github.com/tidepool-org/clinic/xealth/test"
 	"go.uber.org/fx"
 	"net/http/httptest"
-	"os"
 	"sync"
 	"testing"
 
@@ -42,21 +41,22 @@ func setupEnvironment() {
 	xealthStub = xealthTest.ServerStub()
 	keycloakStub := integrationTest.KeycloakStub()
 
-	Expect(os.Setenv("LOG_LEVEL", "error")).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_SERVER_TOKEN", integrationTest.TestServerToken)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_AUTH_CLIENT_EXTERNAL_SERVER_SESSION_TOKEN_SECRET", integrationTest.TestServerToken)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_AUTH_CLIENT_ADDRESS", authStub.URL)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_AUTH_CLIENT_EXTERNAL_ADDRESS", shorelineStub.URL)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_AUTH_SERVICE_TOKEN_ENDPOINT", keycloakStub.URL+"/realms/integration-test/protocol/openid-connect/token")).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_SHORELINE_CLIENT_ADDRESS", shorelineStub.URL)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_SEAGULL_CLIENT_ADDRESS", seagullStub.URL)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_XEALTH_ENABLED", "true")).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_XEALTH_BEARER_TOKEN", xealthTest.XealthBearerToken)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_XEALTH_CLIENT_ID", xealthTest.XealthClientId)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_XEALTH_CLIENT_SECRET", xealthTest.XealthClientSecret)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_XEALTH_SERVER_BASE_URL", xealthStub.URL)).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_XEALTH_TOKEN_URL", fmt.Sprintf("%s%s", xealthStub.URL, xealthTest.TokenEndpoint))).To(Succeed())
-	Expect(os.Setenv("TIDEPOOL_APPLICATION_URL", "https://integration.test.app.url.com")).To(Succeed())
+	t := GinkgoT()
+	t.Setenv("LOG_LEVEL", "error")
+	t.Setenv("TIDEPOOL_SERVER_TOKEN", integrationTest.TestServerToken)
+	t.Setenv("TIDEPOOL_AUTH_CLIENT_EXTERNAL_SERVER_SESSION_TOKEN_SECRET", integrationTest.TestServerToken)
+	t.Setenv("TIDEPOOL_AUTH_CLIENT_ADDRESS", authStub.URL)
+	t.Setenv("TIDEPOOL_AUTH_CLIENT_EXTERNAL_ADDRESS", shorelineStub.URL)
+	t.Setenv("TIDEPOOL_AUTH_SERVICE_TOKEN_ENDPOINT", keycloakStub.URL+"/realms/integration-test/protocol/openid-connect/token")
+	t.Setenv("TIDEPOOL_SHORELINE_CLIENT_ADDRESS", shorelineStub.URL)
+	t.Setenv("TIDEPOOL_SEAGULL_CLIENT_ADDRESS", seagullStub.URL)
+	t.Setenv("TIDEPOOL_XEALTH_ENABLED", "true")
+	t.Setenv("TIDEPOOL_XEALTH_BEARER_TOKEN", xealthTest.XealthBearerToken)
+	t.Setenv("TIDEPOOL_XEALTH_CLIENT_ID", xealthTest.XealthClientId)
+	t.Setenv("TIDEPOOL_XEALTH_CLIENT_SECRET", xealthTest.XealthClientSecret)
+	t.Setenv("TIDEPOOL_XEALTH_SERVER_BASE_URL", xealthStub.URL)
+	t.Setenv("TIDEPOOL_XEALTH_TOKEN_URL", fmt.Sprintf("%s%s", xealthStub.URL, xealthTest.TokenEndpoint))
+	t.Setenv("TIDEPOOL_APPLICATION_URL", "https://integration.test.app.url.com")
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -80,7 +80,6 @@ func setupEnvironment() {
 
 func teardownEnvironment() {
 	dbTest.TeardownDatabase()
-	os.Clearenv()
 	shorelineStub.Close()
 	seagullStub.Close()
 

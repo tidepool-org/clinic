@@ -13,9 +13,11 @@ import (
 var (
 	ErrNotFound  = fmt.Errorf("clinician %w", errors.NotFound)
 	ErrDuplicate = fmt.Errorf("%w: clinician is already a member of the clinic", errors.Duplicate)
+)
 
-	ClinicAdmin  = "CLINIC_ADMIN"
-	ClinicMember = "CLINIC_MEMBER"
+const (
+	RoleClinicAdmin  = "CLINIC_ADMIN"
+	RoleClinicMember = "CLINIC_MEMBER"
 )
 
 type Service interface {
@@ -74,7 +76,7 @@ type RolesUpdate struct {
 func (c *Clinician) IsAdmin() bool {
 	isAdmin := false
 	for _, role := range c.Roles {
-		if role == ClinicAdmin {
+		if role == RoleClinicAdmin {
 			isAdmin = true
 			break
 		}

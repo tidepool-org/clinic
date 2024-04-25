@@ -228,7 +228,7 @@ func (h *Handler) AddServiceAccount(ec echo.Context, clinicId ClinicId) error {
 		ClinicId:         &clinicObjId,
 		UserId:           &acc.UserId,
 		Name:             &dto.Name,
-		Roles:            []string{clinicians.ClinicMember},
+		Roles:            []string{clinicians.RoleClinicMember},
 		IsServiceAccount: true,
 	}
 	result, err := h.clinicians.Create(ctx, clinician)
