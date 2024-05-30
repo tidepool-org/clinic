@@ -93,7 +93,7 @@ type Clinic struct {
 	IsMigrated              bool                     `bson:"isMigrated,omitempty"`
 	Tier                    string                   `bson:"tier,omitempty"`
 	PreferredBgUnits        string                   `bson:"PreferredBgUnits,omitempty"`
-	SuppressedNotifications SuppressedNotifications  `bson:"suppressedNotifications"`
+	SuppressedNotifications *SuppressedNotifications `bson:"suppressedNotifications,omitempty"`
 	Timezone                *string                  `bson:"timezone"`
 	MembershipRestrictions  []MembershipRestrictions `bson:"membershipRestrictions,omitempty"`
 	EHRSettings             *EHRSettings             `bson:"ehrSettings,omitempty"`
