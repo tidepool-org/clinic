@@ -89,7 +89,7 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		Tier:                    &tier,
 		TierDescription:         strp(clinics.GetTierDescription(tier)),
 		PreferredBgUnits:        units,
-		SuppressedNotifications: (*SuppressedNotifications)(&c.SuppressedNotifications),
+		SuppressedNotifications: (*SuppressedNotifications)(c.SuppressedNotifications),
 	}
 	if c.PhoneNumbers != nil {
 		var phoneNumbers []PhoneNumber
