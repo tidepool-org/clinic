@@ -292,6 +292,9 @@ type ClientInterface interface {
 	// FindPatients request
 	FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SyncEHRDataForPatient request
+	SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdatePatientSummaryWithBody request with any body
 	UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1232,6 +1235,18 @@ func (c *Client) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateT
 
 func (c *Client) FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFindPatientsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSyncEHRDataForPatientRequest(c.Server, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -4854,6 +4869,40 @@ func NewFindPatientsRequest(server string, params *FindPatientsParams) (*http.Re
 	return req, nil
 }
 
+// NewSyncEHRDataForPatientRequest generates requests for SyncEHRDataForPatient
+func NewSyncEHRDataForPatientRequest(server string, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/patients/%s/ehr/sync", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdatePatientSummaryRequest calls the generic UpdatePatientSummary builder with application/json body
 func NewUpdatePatientSummaryRequest(server string, patientId PatientId, body UpdatePatientSummaryJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -5629,6 +5678,9 @@ type ClientWithResponsesInterface interface {
 
 	// FindPatientsWithResponse request
 	FindPatientsWithResponse(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*FindPatientsResponse, error)
+
+	// SyncEHRDataForPatientWithResponse request
+	SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error)
 
 	// UpdatePatientSummaryWithBodyWithResponse request with any body
 	UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error)
@@ -6808,6 +6860,27 @@ func (r FindPatientsResponse) StatusCode() int {
 	return 0
 }
 
+type SyncEHRDataForPatientResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r SyncEHRDataForPatientResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SyncEHRDataForPatientResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdatePatientSummaryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -7733,6 +7806,15 @@ func (c *ClientWithResponses) FindPatientsWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseFindPatientsResponse(rsp)
+}
+
+// SyncEHRDataForPatientWithResponse request returning *SyncEHRDataForPatientResponse
+func (c *ClientWithResponses) SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error) {
+	rsp, err := c.SyncEHRDataForPatient(ctx, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSyncEHRDataForPatientResponse(rsp)
 }
 
 // UpdatePatientSummaryWithBodyWithResponse request with arbitrary body returning *UpdatePatientSummaryResponse
@@ -9067,6 +9149,22 @@ func ParseFindPatientsResponse(rsp *http.Response) (*FindPatientsResponse, error
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseSyncEHRDataForPatientResponse parses an HTTP response from a SyncEHRDataForPatientWithResponse call
+func ParseSyncEHRDataForPatientResponse(rsp *http.Response) (*SyncEHRDataForPatientResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SyncEHRDataForPatientResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

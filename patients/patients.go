@@ -33,6 +33,8 @@ var (
 		Upload:    &permission,
 		Note:      &permission,
 	}
+
+	precedingScheduledOrderPeriod = time.Minute * 5
 )
 
 //go:generate mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
@@ -57,6 +59,7 @@ type Service interface {
 	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
+	RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error
 }
 
 type Patient struct {

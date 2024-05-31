@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,10 +22,6 @@ import (
 const (
 	patientsCollectionName = "patients"
 )
-
-func ptr[T any](v T) *T {
-	return &v
-}
 
 // Collation to use for string fields
 var collation = options.Collation{Locale: "en", Strength: 1}
@@ -561,54 +558,39 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 }
 
 func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
-	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
-	activeSubscriptionKey := fmt.Sprintf("ehrSubscriptions.%s.active", subscription)
-	matchedMessagesSubscriptionKey := fmt.Sprintf("$ehrSubscriptions.%s.matchedMessages", subscription)
-
-	pipeline := []bson.M{
-		{
-			"$match": bson.M{
-				"clinicId":            clinicObjId,
-				activeSubscriptionKey: true,
-			},
-		},
-		{
-			"$addFields": bson.M{
-				"lastMatchedOrderRef": bson.M{
-					"$arrayElemAt": bson.A{matchedMessagesSubscriptionKey, -1},
-				},
-			},
-		},
-		{
-			"$lookup": bson.M{
-				"from":         ordersCollection,
-				"localField":   "lastMatchedOrderRef.id",
-				"foreignField": "_id",
-				"as":           "lastMatchedOrder",
-			},
-		},
-		{
-			"$replaceRoot": bson.M{
-				"newRoot": bson.M{
-					"userId":      "$userId",
-					"clinicId":    "$clinicId",
-					"createdTime": time.Now(),
-					"lastMatchedOrder": bson.M{
-						"$arrayElemAt": bson.A{"$lastMatchedOrder", 0},
-					},
-				},
-			},
-		},
-		{
-			"$merge": bson.M{
-				"into": targetCollection,
-			},
-		},
+	params := RescheduleOrderPipelineParams{
+		clinicIds:        []string{clinicId},
+		subscription:     subscription,
+		ordersCollection: ordersCollection,
+		targetCollection: targetCollection,
 	}
-
+	pipeline := reschedulePipeline(params)
 	_, err := r.collection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return fmt.Errorf("error rescheduling subscription %s for clinic %s: %w", subscription, clinicId, err)
+	}
+
+	return nil
+}
+
+func (r *repository) RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error {
+	if len(clinicIds) == 0 {
+		return nil
+	}
+
+	params := RescheduleOrderPipelineParams{
+		clinicIds:                clinicIds,
+		userId:                   &userId,
+		subscription:             subscription,
+		ordersCollection:         ordersCollection,
+		targetCollection:         targetCollection,
+		includePrecedingDocument: true,
+	}
+
+	pipeline := reschedulePipeline(params)
+	_, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return fmt.Errorf("error rescheduling subscription %s for patient %s (clinics: %s): %w", subscription, userId, strings.Join(clinicIds, ", "), err)
 	}
 
 	return nil
@@ -1268,4 +1250,115 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	}
 
 	return &tide, nil
+}
+
+type RescheduleOrderPipelineParams struct {
+	clinicIds                []string
+	userId                   *string
+	subscription             string
+	ordersCollection         string
+	targetCollection         string
+	includePrecedingDocument bool
+}
+
+func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
+	now := time.Now()
+	activeSubscriptionKey := fmt.Sprintf("ehrSubscriptions.%s.active", params.subscription)
+	matchedMessagesSubscriptionKey := fmt.Sprintf("$ehrSubscriptions.%s.matchedMessages", params.subscription)
+
+	clinicObjIds := make([]primitive.ObjectID, 0, len(params.clinicIds))
+	for _, clinicId := range params.clinicIds {
+		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+		clinicObjIds = append(clinicObjIds, clinicObjId)
+	}
+	match := bson.M{
+		"clinicId": bson.M{
+			"$in": clinicObjIds,
+		},
+		activeSubscriptionKey: true,
+	}
+	if params.userId != nil {
+		match["userId"] = params.userId
+	}
+
+	var precedingDocumentStage bson.M
+	if params.includePrecedingDocument {
+		precedingDocumentStage = bson.M{
+			// Get the preceding scheduled order if it is within the configured period
+			"$lookup": bson.M{
+				"from":         params.targetCollection,
+				"as":           "precedingDocument",
+				"localField":   "lastMatchedOrderRef.id",
+				"foreignField": "lastMatchedOrder._id",
+				"pipeline": []bson.M{
+					{
+						"$match": bson.M{
+							"createdTime": bson.M{
+								"$gt": time.Now().Add(-precedingScheduledOrderPeriod),
+							},
+						},
+					},
+					{
+						"$sort": bson.M{
+							"createdTime": -1,
+						},
+					},
+					{
+						"$limit": 1,
+					},
+					{
+						"$project": bson.M{
+							"_id":         1,
+							"createdTime": 1,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	return []bson.M{
+		{
+			// Match patients with an active subscription
+			"$match": match,
+		},
+		{
+			// Extract the last matched order for the patient
+			"$addFields": bson.M{
+				"lastMatchedOrderRef": bson.M{
+					"$arrayElemAt": bson.A{matchedMessagesSubscriptionKey, -1},
+				},
+			},
+		},
+		{
+			// Get the order from the orders collection
+			"$lookup": bson.M{
+				"from":         params.ordersCollection,
+				"as":           "lastMatchedOrder",
+				"localField":   "lastMatchedOrderRef.id",
+				"foreignField": "_id",
+			},
+		},
+		precedingDocumentStage,
+		{
+			"$replaceRoot": bson.M{
+				"newRoot": bson.M{
+					"userId":      "$userId",
+					"clinicId":    "$clinicId",
+					"createdTime": now,
+					"lastMatchedOrder": bson.M{
+						"$arrayElemAt": bson.A{"$lastMatchedOrder", 0},
+					},
+					"precedingDocument": bson.M{
+						"$arrayElemAt": bson.A{"$precedingDocument", 0},
+					},
+				},
+			},
+		},
+		{
+			"$merge": bson.M{
+				"into": params.targetCollection,
+			},
+		},
+	}
 }

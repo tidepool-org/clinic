@@ -40,6 +40,7 @@ type Redox interface {
 	MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error)
 	FindMatchingClinic(ctx context.Context, criteria ClinicMatchingCriteria) (*clinics.Clinic, error)
 	RescheduleSubscriptionOrders(ctx context.Context, clinicId string) error
+	RescheduleSubscriptionOrdersForPatient(ctx context.Context, patientId string) error
 }
 
 func NewConfig() (Config, error) {
@@ -260,6 +261,44 @@ func (h *Handler) RescheduleSubscriptionOrders(ctx context.Context, clinicId str
 	return h.patients.RescheduleLastSubscriptionOrderForAllPatients(
 		ctx,
 		clinicId,
+		patients.SubscriptionRedoxSummaryAndReports,
+		messagesCollectionName,
+		summaryAndReportsRescheduledOrdersCollectionName,
+	)
+}
+
+func (h *Handler) RescheduleSubscriptionOrdersForPatient(ctx context.Context, patientId string) error {
+	enabled := true
+	limit := 10000
+	filter := clinics.Filter{
+		EHRProvider: &clinics.EHRProviderRedox,
+		EHREnabled:  &enabled,
+	}
+	page := store.Pagination{
+		Offset: 0,
+		Limit:  limit,
+	}
+
+	clinicIds := make([]string, 0, 100)
+	for {
+		result, err := h.clinics.List(ctx, &filter, page)
+		if err != nil {
+			return err
+		}
+		for _, clinic := range result {
+			if clinic != nil && clinic.Id != nil {
+				clinicIds = append(clinicIds, clinic.Id.Hex())
+			}
+		}
+		if len(result) < limit {
+			break
+		}
+	}
+
+	return h.patients.RescheduleLastSubscriptionOrderForPatient(
+		ctx,
+		clinicIds,
+		patientId,
 		patients.SubscriptionRedoxSummaryAndReports,
 		messagesCollectionName,
 		summaryAndReportsRescheduledOrdersCollectionName,

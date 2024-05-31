@@ -112,3 +112,8 @@ func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
 
 	return ec.NoContent(http.StatusAccepted)
 }
+
+func (h *Handler) SyncEHRDataForPatient(ec echo.Context, patientId PatientId) error {
+	//TODO implement me
+	panic("implement me")
+}
