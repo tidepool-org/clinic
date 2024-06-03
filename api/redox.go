@@ -114,6 +114,10 @@ func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
 }
 
 func (h *Handler) SyncEHRDataForPatient(ec echo.Context, patientId PatientId) error {
-	//TODO implement me
-	panic("implement me")
+	ctx := ec.Request().Context()
+	if err := h.redox.RescheduleSubscriptionOrdersForPatient(ctx, patientId); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusAccepted)
 }
