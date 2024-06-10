@@ -61,15 +61,16 @@ type Service interface {
 }
 
 type Filter struct {
-	Ids              []string
-	Email            *string
-	ShareCodes       []string
-	CreatedTimeStart *time.Time
-	CreatedTimeEnd   *time.Time
-	EHRProvider      *string
-	EHRSourceId      *string
-	EHRFacilityName  *string
-	EHREnabled       *bool
+	Ids                      []string
+	Email                    *string
+	ShareCodes               []string
+	CreatedTimeStart         *time.Time
+	CreatedTimeEnd           *time.Time
+	EHRProvider              *string
+	EHRSourceId              *string
+	EHRFacilityName          *string
+	EHREnabled               *bool
+	ScheduledReportsOnUpload *bool
 }
 
 type Clinic struct {
@@ -107,13 +108,14 @@ func (c Clinic) IsOUS() bool {
 }
 
 type EHRSettings struct {
-	Enabled        bool               `bson:"enabled"`
-	Provider       string             `bson:"provider"`
-	DestinationIds *EHRDestinationIds `bson:"destinationIds"`
-	Facility       *EHRFacility       `bson:"facility"`
-	ProcedureCodes EHRProcedureCodes  `bson:"procedureCodes"`
-	SourceId       string             `bson:"sourceId"`
-	MrnIdType      string             `bson:"mrnIdType"`
+	Enabled          bool               `bson:"enabled"`
+	Provider         string             `bson:"provider"`
+	DestinationIds   *EHRDestinationIds `bson:"destinationIds"`
+	Facility         *EHRFacility       `bson:"facility"`
+	ProcedureCodes   EHRProcedureCodes  `bson:"procedureCodes"`
+	SourceId         string             `bson:"sourceId"`
+	MrnIdType        string             `bson:"mrnIdType"`
+	ScheduledReports ScheduledReports   `bson:"scheduledReports"`
 }
 
 func (e *EHRSettings) GetMrnIDType() string {
@@ -138,6 +140,10 @@ type EHRProcedureCodes struct {
 	DisableSummaryReports         *string `bson:"disableSummaryReports,omitempty"`
 	CreateAccount                 *string `bson:"createAccount,omitempty"`
 	CreateAccountAndEnableReports *string `bson:"createAccountAndEnableReports,omitempty"`
+}
+
+type ScheduledReports struct {
+	OnUpload bool `bson:"onUpload"`
 }
 
 type MRNSettings struct {

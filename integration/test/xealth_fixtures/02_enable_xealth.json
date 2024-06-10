@@ -5,5 +5,8 @@
     "createAccountAndEnableReports": "100"
   },
   "provider": "xealth",
-  "mrnIdType": "enterprise"
+  "mrnIdType": "enterprise",
+  "scheduledReports": {
+    "onUpload": false
+  }
 }

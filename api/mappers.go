@@ -644,6 +644,9 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 		},
 		MrnIdType: dto.MrnIdType,
 		Provider:  string(dto.Provider),
+		ScheduledReports: clinics.ScheduledReports{
+			OnUpload: dto.ScheduledReports.OnUpload,
+		},
 	}
 	if dto.DestinationIds != nil {
 		settings.DestinationIds = &clinics.EHRDestinationIds{
@@ -677,6 +680,9 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 		},
 		MrnIdType: settings.GetMrnIDType(),
 		Provider:  EHRSettingsProvider(settings.Provider),
+		ScheduledReports: ScheduledReports{
+			settings.ScheduledReports.OnUpload,
+		},
 	}
 	if settings.DestinationIds != nil {
 		dto.DestinationIds = &EHRDestinationIds{

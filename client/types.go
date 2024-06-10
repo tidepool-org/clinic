@@ -891,7 +891,10 @@ type EHRSettings struct {
 	MrnIdType      string              `json:"mrnIdType"`
 	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
 	Provider       EHRSettingsProvider `json:"provider"`
-	SourceId       string              `json:"sourceId"`
+
+	// ScheduledReports Scheduled Report Settings
+	ScheduledReports ScheduledReports `json:"scheduledReports"`
+	SourceId         string           `json:"sourceId"`
 }
 
 // EHRSettingsProvider defines model for EHRSettings.Provider.
@@ -1474,6 +1477,12 @@ type PatientsResponse struct {
 type PhoneNumber struct {
 	Number string  `json:"number"`
 	Type   *string `json:"type,omitempty"`
+}
+
+// ScheduledReports Scheduled Report Settings
+type ScheduledReports struct {
+	// OnUpload Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
+	OnUpload bool `json:"onUpload"`
 }
 
 // SuppressedNotifications defines model for SuppressedNotifications.
