@@ -1281,9 +1281,32 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 		match["userId"] = params.userId
 	}
 
-	var precedingDocumentStage bson.M
+	pipeline := []bson.M{
+		{
+			// Match patients with an active subscription
+			"$match": match,
+		},
+		{
+			// Extract the last matched order for the patient
+			"$addFields": bson.M{
+				"lastMatchedOrderRef": bson.M{
+					"$arrayElemAt": bson.A{matchedMessagesSubscriptionKey, -1},
+				},
+			},
+		},
+		{
+			// Get the order from the orders collection
+			"$lookup": bson.M{
+				"from":         params.ordersCollection,
+				"as":           "lastMatchedOrder",
+				"localField":   "lastMatchedOrderRef.id",
+				"foreignField": "_id",
+			},
+		},
+	}
+
 	if params.includePrecedingDocument {
-		precedingDocumentStage = bson.M{
+		pipeline = append(pipeline, bson.M{
 			// Get the preceding scheduled order if it is within the configured period
 			"$lookup": bson.M{
 				"from":         params.targetCollection,
@@ -1314,33 +1337,11 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 					},
 				},
 			},
-		}
+		})
 	}
 
-	return []bson.M{
-		{
-			// Match patients with an active subscription
-			"$match": match,
-		},
-		{
-			// Extract the last matched order for the patient
-			"$addFields": bson.M{
-				"lastMatchedOrderRef": bson.M{
-					"$arrayElemAt": bson.A{matchedMessagesSubscriptionKey, -1},
-				},
-			},
-		},
-		{
-			// Get the order from the orders collection
-			"$lookup": bson.M{
-				"from":         params.ordersCollection,
-				"as":           "lastMatchedOrder",
-				"localField":   "lastMatchedOrderRef.id",
-				"foreignField": "_id",
-			},
-		},
-		precedingDocumentStage,
-		{
+	pipeline = append(pipeline,
+		bson.M{
 			"$replaceRoot": bson.M{
 				"newRoot": bson.M{
 					"userId":      "$userId",
@@ -1355,10 +1356,12 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 				},
 			},
 		},
-		{
+		bson.M{
 			"$merge": bson.M{
 				"into": params.targetCollection,
 			},
 		},
-	}
+	)
+
+	return pipeline
 }
