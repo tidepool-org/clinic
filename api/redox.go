@@ -58,7 +58,7 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	}
 
 	// We only support new order messages for now
-	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != New {
+	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != EHRMatchMessageRefEventTypeNew {
 		return fmt.Errorf("%w: only new order messages are supported", errors.BadRequest)
 	}
 	msg, err := h.redox.FindMessage(

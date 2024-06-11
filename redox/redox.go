@@ -271,9 +271,9 @@ func (h *Handler) RescheduleSubscriptionOrdersForPatient(ctx context.Context, pa
 	enabled := true
 	limit := 10000
 	filter := clinics.Filter{
-		EHRProvider:              &clinics.EHRProviderRedox,
-		EHREnabled:               &enabled,
-		ScheduledReportsOnUpload: &enabled,
+		EHRProvider:                     &clinics.EHRProviderRedox,
+		EHREnabled:                      &enabled,
+		ScheduledReportsOnUploadEnabled: &enabled,
 	}
 	page := store.Pagination{
 		Offset: 0,

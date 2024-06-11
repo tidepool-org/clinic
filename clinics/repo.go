@@ -116,12 +116,12 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 	if filter.EHREnabled != nil {
 		selector["ehrSettings.enabled"] = filter.EHREnabled
 	}
-	if filter.ScheduledReportsOnUpload != nil {
+	if filter.ScheduledReportsOnUploadEnabled != nil {
 		comparator := "$eq"
-		if !(*filter.ScheduledReportsOnUpload) {
+		if !(*filter.ScheduledReportsOnUploadEnabled) {
 			comparator = "$neq"
 		}
-		selector["ehrSettings.scheduledReports.onUpload"] = bson.M{
+		selector["ehrSettings.scheduledReports.onUploadEnabled"] = bson.M{
 			comparator: true,
 		}
 	}

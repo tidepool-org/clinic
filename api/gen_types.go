@@ -651,7 +651,7 @@ const (
 
 // Defines values for EHRMatchMessageRefEventType.
 const (
-	New EHRMatchMessageRefEventType = "New"
+	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
 // Defines values for EHRSettingsProvider.
@@ -665,6 +665,12 @@ const (
 	COMPLETED MigrationStatus = "COMPLETED"
 	PENDING   MigrationStatus = "PENDING"
 	RUNNING   MigrationStatus = "RUNNING"
+)
+
+// Defines values for ScheduledReportsOnUploadNoteEventType.
+const (
+	ScheduledReportsOnUploadNoteEventTypeNew     ScheduledReportsOnUploadNoteEventType = "New"
+	ScheduledReportsOnUploadNoteEventTypeReplace ScheduledReportsOnUploadNoteEventType = "Replace"
 )
 
 // Defines values for Tier.
@@ -1481,9 +1487,13 @@ type PhoneNumber struct {
 
 // ScheduledReports Scheduled Report Settings
 type ScheduledReports struct {
-	// OnUpload Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
-	OnUpload bool `json:"onUpload"`
+	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
+	OnUploadEnabled       bool                                   `json:"onUploadEnabled"`
+	OnUploadNoteEventType *ScheduledReportsOnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
 }
+
+// ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
+type ScheduledReportsOnUploadNoteEventType string
 
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {

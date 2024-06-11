@@ -61,16 +61,16 @@ type Service interface {
 }
 
 type Filter struct {
-	Ids                      []string
-	Email                    *string
-	ShareCodes               []string
-	CreatedTimeStart         *time.Time
-	CreatedTimeEnd           *time.Time
-	EHRProvider              *string
-	EHRSourceId              *string
-	EHRFacilityName          *string
-	EHREnabled               *bool
-	ScheduledReportsOnUpload *bool
+	Ids                             []string
+	Email                           *string
+	ShareCodes                      []string
+	CreatedTimeStart                *time.Time
+	CreatedTimeEnd                  *time.Time
+	EHRProvider                     *string
+	EHRSourceId                     *string
+	EHRFacilityName                 *string
+	EHREnabled                      *bool
+	ScheduledReportsOnUploadEnabled *bool
 }
 
 type Clinic struct {
@@ -143,7 +143,8 @@ type EHRProcedureCodes struct {
 }
 
 type ScheduledReports struct {
-	OnUpload bool `bson:"onUpload"`
+	OnUploadEnabled       bool    `bson:"onUploadEnabled"`
+	OnUploadNoteEventType *string `bson:"onUploadNoteEventType"`
 }
 
 type MRNSettings struct {

@@ -7,6 +7,6 @@
   "provider": "xealth",
   "mrnIdType": "enterprise",
   "scheduledReports": {
-    "onUpload": false
+    "onUploadEnabled": false
   }
 }
