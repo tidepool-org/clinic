@@ -15,11 +15,6 @@ type Paths struct {
 	m map[string]*PathItem
 }
 
-// NewPathsWithCapacity builds a paths object of the given capacity.
-func NewPathsWithCapacity(cap int) *Paths {
-	return &Paths{m: make(map[string]*PathItem, cap)}
-}
-
 // NewPaths builds a paths object with path items in insertion order.
 func NewPaths(opts ...NewPathsOption) *Paths {
 	paths := NewPathsWithCapacity(len(opts))
@@ -221,6 +216,21 @@ func (paths *Paths) validateUniqueOperationIDs() error {
 		}
 	}
 	return nil
+}
+
+// Support YAML Marshaler interface for gopkg.in/yaml
+func (paths *Paths) MarshalYAML() (any, error) {
+	res := make(map[string]any, len(paths.Extensions)+len(paths.m))
+
+	for k, v := range paths.Extensions {
+		res[k] = v
+	}
+
+	for k, v := range paths.m {
+		res[k] = v
+	}
+
+	return res, nil
 }
 
 func normalizeTemplatedPath(path string) (string, uint, map[string]struct{}) {

@@ -54,7 +54,7 @@ func (doc *T) JSONLookup(token string) (interface{}, error) {
 }
 
 // MarshalJSON returns the JSON encoding of T.
-func (doc T) MarshalJSON() ([]byte, error) {
+func (doc *T) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{}, 4+len(doc.Extensions))
 	for k, v := range doc.Extensions {
 		m[k] = v
@@ -104,12 +104,12 @@ func (doc *T) UnmarshalJSON(data []byte) error {
 }
 
 func (doc *T) AddOperation(path string, method string, operation *Operation) {
+	if doc.Paths == nil {
+		doc.Paths = NewPaths()
+	}
 	pathItem := doc.Paths.Value(path)
 	if pathItem == nil {
 		pathItem = &PathItem{}
-		if doc.Paths == nil {
-			doc.Paths = NewPaths()
-		}
 		doc.Paths.Set(path, pathItem)
 	}
 	pathItem.SetOperation(method, operation)

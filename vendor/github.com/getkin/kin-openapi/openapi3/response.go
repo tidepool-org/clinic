@@ -16,22 +16,13 @@ type Responses struct {
 	m map[string]*ResponseRef
 }
 
-// NewResponsesWithCapacity builds a responses object of the given capacity.
-func NewResponsesWithCapacity(cap int) *Responses {
-	return &Responses{m: make(map[string]*ResponseRef, cap)}
-}
-
 // NewResponses builds a responses object with response objects in insertion order.
 // Given no arguments, NewResponses returns a valid responses object containing a default match-all reponse.
 func NewResponses(opts ...NewResponsesOption) *Responses {
-	var responses *Responses
-	if n := len(opts); n != 0 {
-		responses = NewResponsesWithCapacity(n)
-	} else {
-		responses = &Responses{m: map[string]*ResponseRef{
-			"default": {Value: NewResponse().WithDescription("")},
-		}}
+	if len(opts) == 0 {
+		return NewResponses(WithName("default", NewResponse().WithDescription("")))
 	}
+	responses := NewResponsesWithCapacity(len(opts))
 	for _, opt := range opts {
 		opt(responses)
 	}
@@ -105,6 +96,21 @@ func (responses *Responses) Validate(ctx context.Context, opts ...ValidationOpti
 	}
 
 	return validateExtensions(ctx, responses.Extensions)
+}
+
+// Support YAML Marshaler interface for gopkg.in/yaml
+func (responses *Responses) MarshalYAML() (any, error) {
+	res := make(map[string]any, len(responses.Extensions)+len(responses.m))
+
+	for k, v := range responses.Extensions {
+		res[k] = v
+	}
+
+	for k, v := range responses.m {
+		res[k] = v
+	}
+
+	return res, nil
 }
 
 // Response is specified by OpenAPI/Swagger 3.0 standard.
