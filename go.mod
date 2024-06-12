@@ -24,7 +24,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/tidepool-org/clinic/client v0.0.0
 	github.com/tidepool-org/clinic/redox_models v0.0.0
-	github.com/tidepool-org/go-common v0.12.2-0.20240612040000-316fc1412f57
+	github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c
 	github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886
 	go.mongodb.org/mongo-driver v1.13.1
 	go.uber.org/fx v1.20.1
@@ -74,7 +74,7 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

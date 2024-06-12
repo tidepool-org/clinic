@@ -157,6 +157,8 @@ github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa
 github.com/klauspost/compress v1.13.6/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
 github.com/klauspost/compress v1.17.8 h1:YcnTYrq7MikUT7k0Yb5eceMmALQPYBW/Xltxn0NAMnU=
 github.com/klauspost/compress v1.17.8/go.mod h1:Di0epgTjJY877eYKx5yC51cX2A2Vl2ibi7bDH9ttBbw=
+github.com/klauspost/compress v1.17.9 h1:6KIumPrER1LHsvBVuDa0r5xaG0Es51mhhB9BQB2qeMA=
+github.com/klauspost/compress v1.17.9/go.mod h1:Di0epgTjJY877eYKx5yC51cX2A2Vl2ibi7bDH9ttBbw=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
@@ -245,6 +247,8 @@ github.com/tchap/go-patricia/v2 v2.3.1 h1:6rQp39lgIYZ+MHmdEq4xzuk1t7OdC35z/xm0BG
 github.com/tchap/go-patricia/v2 v2.3.1/go.mod h1:VZRHKAb53DLaG+nA9EaYYiaEx6YztwDlLElMsnSHD4k=
 github.com/tidepool-org/go-common v0.12.2-0.20240612040000-316fc1412f57 h1:kZozZPc8qE4qNqq20wmZhUa/6T0DchBf9gOayoSjrLo=
 github.com/tidepool-org/go-common v0.12.2-0.20240612040000-316fc1412f57/go.mod h1:ya4IMJgMCpr9mmmkm3MFBd7tf8fZXKKS/BZ/i14dtuI=
+github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c h1:hJZyiHNGeqyLA/5p60/0H9CZtJi4fAuzOuyQF0TpF7E=
+github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c/go.mod h1:mIzYteUyPf//fhee4e2KEZhmcm2iE4IQ/2dyQr5pRKA=
 github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886 h1:QRQAUTRmKUtv7jmP+4dP746ApmC7P0M1ypVRYH8O+QY=
 github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886/go.mod h1:QMsN1a7sB5ujIhjYAI1abn26AajH6dCokCJ0OIq1DWI=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
