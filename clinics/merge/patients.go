@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	PatientConflictCategoryDuplicateAccounts         = "Duplicate Accounts"
-	PatientConflictCategoryLikelyDuplicateAccounts   = "Likely Duplicate Accounts"
-	PatientConflictCategoryPossibleDuplicateAccounts = "Possible Duplicate Accounts"
-	PatientConflictCategoryDuplicateMRNs             = "Duplicate MRNs Likely Typos"
+	PatientConflictCategoryDuplicateAccounts = "Duplicate Accounts"
+	//PatientConflictCategoryPossibleDuplicateAccounts = "Possible Duplicate Accounts"
+	PatientConflictCategoryLikelyDuplicateAccounts = "Likely Duplicate Accounts"
+	PatientConflictCategoryMRNOnlyMatch            = "MRN Only Match"
+	PatientConflictCategoryNameOnlyMatch           = "Name Only Match"
 
 	// PatientActionKeep is used for target patients when there's no corresponding patient in the source clinic
 	PatientActionKeep = "KEEP"
@@ -38,10 +39,10 @@ const (
 
 var (
 	ConflictRankMap = map[string]int{
-		PatientConflictCategoryDuplicateAccounts:         0,
-		PatientConflictCategoryLikelyDuplicateAccounts:   1,
-		PatientConflictCategoryPossibleDuplicateAccounts: 2,
-		PatientConflictCategoryDuplicateMRNs:             3,
+		PatientConflictCategoryDuplicateAccounts:       0,
+		PatientConflictCategoryLikelyDuplicateAccounts: 1,
+		//PatientConflictCategoryPossibleDuplicateAccounts: 2,
+		PatientConflictCategoryMRNOnlyMatch: 3,
 	}
 )
 
@@ -227,10 +228,11 @@ func (s *SourcePatientMergePlanner) processMatchingPatient(match patients.Patien
 	} else if len(duplicateAttributes) >= 2 {
 		conflictCategory = PatientConflictCategoryLikelyDuplicateAccounts
 	} else if len(duplicateAttributes) == 1 {
-		if _, ok := duplicateAttributes[PatientDuplicateAttributeFullName]; ok {
-			conflictCategory = PatientConflictCategoryPossibleDuplicateAccounts
-		} else if _, ok = duplicateAttributes[PatientDuplicateAttributeMRN]; ok {
-			conflictCategory = PatientConflictCategoryDuplicateMRNs
+		//if _, ok := duplicateAttributes[PatientDuplicateAttributeFullName]; ok {
+		//	conflictCategory = PatientConflictCategoryPossibleDuplicateAccounts
+		//} else
+		if _, ok = duplicateAttributes[PatientDuplicateAttributeMRN]; ok {
+			conflictCategory = PatientConflictCategoryMRNOnlyMatch
 		}
 	}
 

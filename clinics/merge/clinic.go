@@ -16,6 +16,8 @@ type ClinicMergePlan struct {
 	Target clinics.Clinic
 
 	MembershipRestrictionsMergePlan MembershipRestrictionsMergePlan
+	SourcePatientClusters           PatientClusters
+	TargetPatientClusters           PatientClusters
 	SettingsPlan                    []SettingsPlan
 	TagsPlan                        []TagsPlan
 	CliniciansPlan                  []ClinicianPlan
@@ -26,6 +28,12 @@ type ClinicMergePlan struct {
 
 func (c ClinicMergePlan) PreventsMerge() bool {
 	if c.MembershipRestrictionsMergePlan.PreventsMerge() == true {
+		return true
+	}
+	if c.SourcePatientClusters.PreventsMerge() == true {
+		return true
+	}
+	if c.TargetPatientClusters.PreventsMerge() == true {
 		return true
 	}
 	if PlansPreventMerge(c.SettingsPlan) {
@@ -40,6 +48,7 @@ func (c ClinicMergePlan) PreventsMerge() bool {
 	if PlansPreventMerge(c.PatientsPlan) {
 		return true
 	}
+
 	return false
 }
 
@@ -93,10 +102,22 @@ func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, er
 	if err != nil {
 		return
 	}
-	intermediate.PatientPlanners, err = m.PatientsMergePlan(ctx, *source, *target)
+
+	sourcePatients, err := m.listAllPatients(ctx, *source)
 	if err != nil {
 		return
 	}
+	targetPatients, err := m.listAllPatients(ctx, *target)
+	if err != nil {
+		return
+	}
+
+	intermediate.PatientPlanners, err = m.PatientsMergePlan(ctx, *source, *target, sourcePatients, targetPatients)
+	if err != nil {
+		return
+	}
+	intermediate.SourcePatientClusters = NewPatientClusterReporter(sourcePatients)
+	intermediate.TargetPatientClusters = NewPatientClusterReporter(targetPatients)
 
 	return intermediate.Plan(ctx)
 }
@@ -125,33 +146,17 @@ func (m *ClinicMergePlanner) TagsMergePlan(source, target clinics.Clinic) ([]Pla
 	return []Planner[TagsPlan]{}, nil
 }
 
-func (m *ClinicMergePlanner) PatientsMergePlan(ctx context.Context, source, target clinics.Clinic) ([]Planner[PatientPlan], error) {
+func (m *ClinicMergePlanner) PatientsMergePlan(ctx context.Context, source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) ([]Planner[PatientPlan], error) {
 	var sourcePlan []Planner[PatientPlan]
 	var targetPlan []Planner[PatientPlan]
 
-	sourcePatients, err := m.listAllPatients(ctx, source)
-	if err != nil {
-		return nil, err
+	sourcePlan = make([]Planner[PatientPlan], 0, len(sourcePatients))
+	for _, patient := range sourcePatients {
+		sourcePlan = append(sourcePlan, NewSourcePatientMergePlanner(patient, source, target, m.patients))
 	}
-	if len(sourcePatients) > 0 {
-		sourcePlan = make([]Planner[PatientPlan], 0, len(sourcePatients))
-		for _, patient := range sourcePatients {
-			if patient != nil {
-				sourcePlan = append(sourcePlan, NewSourcePatientMergePlanner(*patient, source, target, m.patients))
-			}
-		}
-	}
-	targetPatients, err := m.listAllPatients(ctx, target)
-	if err != nil {
-		return nil, err
-	}
-	if len(targetPatients) > 0 {
-		targetPlan = make([]Planner[PatientPlan], 0, len(targetPatients))
-		for _, patient := range targetPatients {
-			if patient != nil {
-				targetPlan = append(targetPlan, NewSourcePatientMergePlanner(*patient, source, target, m.patients))
-			}
-		}
+	targetPlan = make([]Planner[PatientPlan], 0, len(targetPatients))
+	for _, patient := range targetPatients {
+		targetPlan = append(targetPlan, NewSourcePatientMergePlanner(patient, source, target, m.patients))
 	}
 
 	return slices.Concat(sourcePlan, targetPlan), nil
@@ -189,7 +194,7 @@ func (m *ClinicMergePlanner) CliniciansMergePlan(ctx context.Context, source, ta
 	return slices.Concat(sourcePlan, targetPlan), nil
 }
 
-func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics.Clinic) ([]*patients.Patient, error) {
+func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics.Clinic) ([]patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
 	limit := 1000000
 
@@ -205,7 +210,12 @@ func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics
 		return nil, fmt.Errorf("too many patients in clinic")
 	}
 
-	return result.Patients, nil
+	list := make([]patients.Patient, 0, len(result.Patients))
+	for _, p := range result.Patients {
+		list = append(list, *p)
+	}
+
+	return list, nil
 }
 
 func (m *ClinicMergePlanner) listAllClinicians(ctx context.Context, clinic clinics.Clinic) ([]*clinicians.Clinician, error) {
@@ -236,10 +246,21 @@ type intermediatePlanner struct {
 	TagPlanners                        []Planner[TagsPlan]
 	ClinicianPlanners                  []Planner[ClinicianPlan]
 	PatientPlanners                    []Planner[PatientPlan]
+
+	SourcePatientClusters Planner[PatientClusters]
+	TargetPatientClusters Planner[PatientClusters]
 }
 
 func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, err error) {
 	plan.MembershipRestrictionsMergePlan, err = i.MembershipRestrictionsMergePlanner.Plan(ctx)
+	if err != nil {
+		return
+	}
+	plan.SourcePatientClusters, err = i.SourcePatientClusters.Plan(ctx)
+	if err != nil {
+		return
+	}
+	plan.TargetPatientClusters, err = i.SourcePatientClusters.Plan(ctx)
 	if err != nil {
 		return
 	}

@@ -12,6 +12,7 @@ import (
 
 const (
 	ReportSheetNameSummary          = "Summary"
+	ReportSheetDuplicatesInClinic   = "Duplicates in "
 	ReportSheetNameDuplicateClaimed = "Duplicate Claimed Accounts"
 )
 
@@ -26,8 +27,15 @@ func NewReport(plan ClinicMergePlan) Report {
 func (r Report) Generate() (*xlsx.File, error) {
 	report := xlsx.NewFile()
 
-	if err := r.addSummarySheet(report); err != nil {
-		return nil, err
+	components := []func(report *xlsx.File) error{
+		r.addSummarySheet,
+		r.addSourcePatientClusters,
+		r.addTargetPatientClusters,
+	}
+	for _, fn := range components {
+		if err := fn(report); err != nil {
+			return nil, err
+		}
 	}
 
 	return report, nil
@@ -52,6 +60,24 @@ func (r Report) addSummarySheet(report *xlsx.File) error {
 		}
 	}
 
+	return nil
+}
+
+func (r Report) addSourcePatientClusters(report *xlsx.File) error {
+	sh, err := report.AddSheet(ReportSheetDuplicatesInClinic + *r.plan.Source.Name)
+	if err != nil {
+		return err
+	}
+	addDuplicatePatients(sh, r.plan.SourcePatientClusters)
+	return nil
+}
+
+func (r Report) addTargetPatientClusters(report *xlsx.File) error {
+	sh, err := report.AddSheet(ReportSheetDuplicatesInClinic + *r.plan.Target.Name)
+	if err != nil {
+		return err
+	}
+	addDuplicatePatients(sh, r.plan.TargetPatientClusters)
 	return nil
 }
 
@@ -310,9 +336,9 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 					duplicateClaimedCount++
 				case PatientConflictCategoryLikelyDuplicateAccounts:
 					likelyDuplicateCount++
-				case PatientConflictCategoryPossibleDuplicateAccounts:
-					possibleDuplicateCount++
-				case PatientConflictCategoryDuplicateMRNs:
+				//case PatientConflictCategoryPossibleDuplicateAccounts:
+				//	possibleDuplicateCount++
+				case PatientConflictCategoryMRNOnlyMatch:
 					duplicateMRNsCount++
 				}
 			}
@@ -336,4 +362,40 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue(possibleDuplicateCount)
 
 	return nil
+}
+
+func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters) {
+	currentRow := sh.AddRow()
+	currentRow.AddCell()
+	currentRow.AddCell().SetValue("Name ---")
+	currentRow.AddCell().SetValue("Claimed? ---")
+	currentRow.AddCell().SetValue("UUID ---")
+	currentRow.AddCell().SetValue("DOB ---")
+	currentRow.AddCell().SetValue("MRN ---")
+	currentRow.AddCell().SetValue("Tags ---")
+	currentRow.AddCell().SetValue("Latest Upload ---")
+	currentRow.AddCell().SetValue("Likely Duplicates ---")
+	currentRow.AddCell().SetValue("Name Only Matches ---")
+	currentRow.AddCell().SetValue("MRN Only Matches ---")
+
+	for i, cluster := range clusters {
+		if len(cluster.Patients) > 1 {
+			currentRow = sh.AddRow()
+			currentRow.AddCell().SetValue("Review " + strconv.Itoa(i))
+
+			for _, p := range cluster.Patients {
+				currentRow = sh.AddRow()
+				currentRow.AddCell().SetValue(p.Patient.FullName)
+				currentRow.AddCell().SetValue(strconv.FormatBool(p.Patient.IsCustodial()))
+				currentRow.AddCell().SetValue(p.Patient.UserId)
+				currentRow.AddCell().SetValue(p.Patient.BirthDate)
+				currentRow.AddCell().SetValue(p.Patient.Mrn)
+				currentRow.AddCell().SetValue("") // TODO: Tags
+				currentRow.AddCell().SetValue(p.Patient.Summary.GetLastUploadDate().Format(time.RFC3339))
+				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryLikelyDuplicateAccounts], ", "))
+				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryNameOnlyMatch], ", "))
+				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryMRNOnlyMatch], ", "))
+			}
+		}
+	}
 }

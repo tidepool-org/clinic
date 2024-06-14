@@ -57,6 +57,9 @@ github.com/cloudevents/sdk-go/v2/types
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
+# github.com/dominikbraun/graph v0.23.0
+## explicit; go 1.18
+github.com/dominikbraun/graph
 # github.com/dustin/go-humanize v1.0.1
 ## explicit; go 1.16
 # github.com/eapache/go-resiliency v1.5.0

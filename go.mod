@@ -6,6 +6,8 @@ require (
 	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.50.2
 	github.com/TwiN/deepmerge v0.2.0
 	github.com/brpaz/echozap v1.1.3
+	github.com/dominikbraun/graph v0.23.0
+	github.com/eapache/queue v1.1.0
 	github.com/fatih/structs v1.1.0
 	github.com/getkin/kin-openapi v0.122.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
@@ -51,7 +53,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/eapache/go-resiliency v1.5.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
-	github.com/eapache/queue v1.1.0 // indirect
 	github.com/frankban/quicktest v1.14.6 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
