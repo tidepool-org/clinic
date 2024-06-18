@@ -2,6 +2,7 @@ package merge
 
 import (
 	"context"
+	"errors"
 	"github.com/dominikbraun/graph"
 	"github.com/eapache/queue"
 	"github.com/tidepool-org/clinic/patients"
@@ -37,9 +38,10 @@ type PatientCluster struct {
 }
 
 type PatientConflicts struct {
+	// Source patient
 	Patient patients.Patient
 
-	// Conflicts is a map from conflict category to user id
+	// Conflicts is a map from conflict category to target patient user id
 	Conflicts map[string][]string
 }
 
@@ -53,16 +55,7 @@ func NewPatientClusterReporter(pts []patients.Patient) *PatientClusterReporter {
 	reporter := &PatientClusterReporter{
 		graph:             graph.New(getUserId),
 		patients:          pts,
-		targetByAttribute: map[string]map[string][]*patients.Patient{},
-	}
-
-	for attr, getter := range attributeGetters {
-		reporter.targetByAttribute[attr] = make(map[string][]*patients.Patient)
-		for _, patient := range pts {
-			if value := getter(patient); attr != "" {
-				reporter.targetByAttribute[attr][value] = append(reporter.targetByAttribute[attr][value], &patient)
-			}
-		}
+		targetByAttribute: buildAttributeMap(pts),
 	}
 
 	return reporter
@@ -132,31 +125,48 @@ func (p *PatientClusterReporter) GetPatientClusters() (PatientClusters, error) {
 
 func (p *PatientClusterReporter) addDuplicateEdges(patient patients.Patient) error {
 	userId := getUserId(patient)
+	duplicates := getDuplicates(patient, p.targetByAttribute)
 
-	// Duplicate UserId -> Attribute Type
-	duplicates := make(map[string][]string)
-	for attribute, getter := range attributeGetters {
-		value := getter(patient)
-		target := p.targetByAttribute[value]
-		for _, duplicate := range target[value] {
-			if duplicateUserId := getUserId(*duplicate); duplicateUserId != userId {
-				duplicates[userId] = append(duplicates[userId], attribute)
-			}
-		}
-	}
-
-	for duplicateUserId, attrs := range duplicates {
-		if conflict := getConflict(attrs); conflict != nil {
-			if err := p.graph.AddEdge(userId, duplicateUserId, conflict); err != nil {
-				return err
-			}
+	for duplicateUserId, conflictCategory := range duplicates {
+		edgeAttributes := graph.EdgeAttribute(conflictAttributeKey, conflictCategory)
+		if err := p.graph.AddEdge(userId, duplicateUserId, edgeAttributes); err != nil && !errors.Is(err, graph.ErrEdgeAlreadyExists) {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func getConflict(attrs []string) func(*graph.EdgeProperties) {
+func getDuplicates(patient patients.Patient, targetByAttribute attributeMap) map[string]string {
+	clinicUserId := getClinicUserId(patient)
+
+	// Single user can have more than one duplicate attribute
+	// UserId -> List of duplicate attribute types
+	userToDuplicateAttributes := make(map[string][]string)
+	for attribute, getter := range attributeGetters {
+		value := getter(patient)
+		target := targetByAttribute[attribute]
+		for _, duplicate := range target[value] {
+			// Do not add edge between duplicates if the source and target patient are the same
+			if duplicateUserId := getClinicUserId(*duplicate); duplicateUserId != clinicUserId {
+				userId := getUserId(*duplicate)
+				userToDuplicateAttributes[userId] = append(userToDuplicateAttributes[userId], attribute)
+			}
+		}
+	}
+
+	userToConflictCategory := make(map[string]string)
+	for userId, attributes := range userToDuplicateAttributes {
+		if c := getConflictCategory(attributes); c != nil {
+			userToConflictCategory[userId] = *c
+		}
+	}
+
+	return userToConflictCategory
+}
+
+// getConflictCategory returns the best matching conflict category given a list of matching attributes
+func getConflictCategory(attrs []string) *string {
 	var conflictCategory string
 
 	if slices.Contains(attrs, PatientAttributeUserId) {
@@ -176,7 +186,23 @@ func getConflict(attrs []string) func(*graph.EdgeProperties) {
 		return nil
 	}
 
-	return graph.EdgeAttribute(conflictAttributeKey, conflictCategory)
+	return &conflictCategory
+}
+
+// Attribute Type -> Attribute Value -> List of patients sharding the values
+type attributeMap map[string]map[string][]*patients.Patient
+
+func buildAttributeMap(pts []patients.Patient) attributeMap {
+	a := attributeMap{}
+	for attr, getter := range attributeGetters {
+		a[attr] = make(map[string][]*patients.Patient)
+		for _, patient := range pts {
+			if value := getter(patient); value != "" {
+				a[attr][value] = append(a[attr][value], &patient)
+			}
+		}
+	}
+	return a
 }
 
 func getDOB(patient patients.Patient) (attr string) {
@@ -202,4 +228,8 @@ func getMRN(patient patients.Patient) (attr string) {
 
 func getUserId(patient patients.Patient) string {
 	return *patient.UserId
+}
+
+func getClinicUserId(patient patients.Patient) string {
+	return patient.ClinicId.Hex() + "_" + *patient.UserId
 }

@@ -112,7 +112,7 @@ func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, er
 		return
 	}
 
-	intermediate.PatientPlanners, err = m.PatientsMergePlan(ctx, *source, *target, sourcePatients, targetPatients)
+	intermediate.PatientPlanner, err = m.PatientsMergePlan(ctx, *source, *target, sourcePatients, targetPatients)
 	if err != nil {
 		return
 	}
@@ -146,20 +146,8 @@ func (m *ClinicMergePlanner) TagsMergePlan(source, target clinics.Clinic) ([]Pla
 	return []Planner[TagsPlan]{}, nil
 }
 
-func (m *ClinicMergePlanner) PatientsMergePlan(ctx context.Context, source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) ([]Planner[PatientPlan], error) {
-	var sourcePlan []Planner[PatientPlan]
-	var targetPlan []Planner[PatientPlan]
-
-	sourcePlan = make([]Planner[PatientPlan], 0, len(sourcePatients))
-	for _, patient := range sourcePatients {
-		sourcePlan = append(sourcePlan, NewSourcePatientMergePlanner(patient, source, target, m.patients))
-	}
-	targetPlan = make([]Planner[PatientPlan], 0, len(targetPatients))
-	for _, patient := range targetPatients {
-		targetPlan = append(targetPlan, NewSourcePatientMergePlanner(patient, source, target, m.patients))
-	}
-
-	return slices.Concat(sourcePlan, targetPlan), nil
+func (m *ClinicMergePlanner) PatientsMergePlan(ctx context.Context, source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) (Planner[PatientsPlan], error) {
+	return NewPatientMergePlanner(sourcePatients, targetPatients)
 }
 
 func (m *ClinicMergePlanner) CliniciansMergePlan(ctx context.Context, source, target clinics.Clinic) ([]Planner[ClinicianPlan], error) {
@@ -245,10 +233,10 @@ type intermediatePlanner struct {
 	SettingsPlanners                   []Planner[SettingsPlan]
 	TagPlanners                        []Planner[TagsPlan]
 	ClinicianPlanners                  []Planner[ClinicianPlan]
-	PatientPlanners                    []Planner[PatientPlan]
 
 	SourcePatientClusters Planner[PatientClusters]
 	TargetPatientClusters Planner[PatientClusters]
+	PatientPlanner        Planner[PatientsPlan]
 }
 
 func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, err error) {
@@ -260,7 +248,11 @@ func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, e
 	if err != nil {
 		return
 	}
-	plan.TargetPatientClusters, err = i.SourcePatientClusters.Plan(ctx)
+	plan.TargetPatientClusters, err = i.TargetPatientClusters.Plan(ctx)
+	if err != nil {
+		return
+	}
+	plan.PatientsPlan, err = i.PatientPlanner.Plan(ctx)
 	if err != nil {
 		return
 	}
@@ -273,10 +265,6 @@ func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, e
 		return
 	}
 	plan.CliniciansPlan, err = RunPlanners(ctx, i.ClinicianPlanners)
-	if err != nil {
-		return
-	}
-	plan.PatientsPlan, err = RunPlanners(ctx, i.PatientPlanners)
 	if err != nil {
 		return
 	}
