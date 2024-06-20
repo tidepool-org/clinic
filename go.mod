@@ -6,6 +6,7 @@ require (
 	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.50.2
 	github.com/TwiN/deepmerge v0.2.0
 	github.com/brpaz/echozap v1.1.3
+	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/eapache/queue v1.1.0
 	github.com/fatih/structs v1.1.0

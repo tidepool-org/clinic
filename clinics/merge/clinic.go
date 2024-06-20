@@ -147,7 +147,7 @@ func (m *ClinicMergePlanner) TagsMergePlan(source, target clinics.Clinic) ([]Pla
 }
 
 func (m *ClinicMergePlanner) PatientsMergePlan(ctx context.Context, source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) (Planner[PatientsPlan], error) {
-	return NewPatientMergePlanner(sourcePatients, targetPatients)
+	return NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 }
 
 func (m *ClinicMergePlanner) CliniciansMergePlan(ctx context.Context, source, target clinics.Clinic) ([]Planner[ClinicianPlan], error) {

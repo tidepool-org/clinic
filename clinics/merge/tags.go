@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	TagActionCreate = "CREATE"
 	TagActionSkip   = "SKIP"
-	TagActionKeep   = "KEEP"
+	TagActionCreate = "CREATE"
+	TagActionRetain = "RETAIN"
 )
 
 type TagsPlan struct {
@@ -80,7 +80,7 @@ func (t *TargetTagMergePlanner) Plan(ctx context.Context) (TagsPlan, error) {
 	plan := TagsPlan{
 		Name:       t.tag.Name,
 		Workspaces: []string{*t.target.Name},
-		TagAction:  TagActionKeep,
+		TagAction:  TagActionRetain,
 	}
 
 	for _, tt := range t.source.PatientTags {

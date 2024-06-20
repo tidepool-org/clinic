@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/tealeg/xlsx/v3"
 	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/pointer"
 	"slices"
 	"strconv"
 	"strings"
@@ -12,7 +14,8 @@ import (
 
 const (
 	ReportSheetNameSummary                     = "Summary"
-	ReportSheetDuplicatesInClinic              = "Duplicates in "
+	ReportSheetDuplicatesInSourceClinic        = "Duplicates in Source Clinic"
+	ReportSheetDuplicatesInTargetClinic        = "Duplicates in Target Clinic"
 	ReportSheetNameDuplicateClaimed            = "Duplicate Claimed Accounts"
 	ReportSheetNameDuplicatesInMergedWorkspace = "Duplicates in Merged Workspace"
 )
@@ -37,6 +40,13 @@ func (r Report) Generate() (*xlsx.File, error) {
 	for _, fn := range components {
 		if err := fn(report); err != nil {
 			return nil, err
+		}
+	}
+
+	for _, sh := range report.Sheets {
+		sh.SetColWidth(1, 1, 50)
+		for i := 2; i <= sh.MaxCol; i++ {
+			_ = sh.SetColAutoWidth(i, xlsx.DefaultAutoWidth)
 		}
 	}
 
@@ -66,20 +76,20 @@ func (r Report) addSummarySheet(report *xlsx.File) error {
 }
 
 func (r Report) addSourcePatientClusters(report *xlsx.File) error {
-	sh, err := report.AddSheet(ReportSheetDuplicatesInClinic + *r.plan.Source.Name)
+	sh, err := report.AddSheet(ReportSheetDuplicatesInSourceClinic)
 	if err != nil {
 		return err
 	}
-	addDuplicatePatients(sh, r.plan.SourcePatientClusters)
+	addDuplicatePatients(sh, r.plan.SourcePatientClusters, r.plan.Source)
 	return nil
 }
 
 func (r Report) addTargetPatientClusters(report *xlsx.File) error {
-	sh, err := report.AddSheet(ReportSheetDuplicatesInClinic + *r.plan.Target.Name)
+	sh, err := report.AddSheet(ReportSheetDuplicatesInTargetClinic)
 	if err != nil {
 		return err
 	}
-	addDuplicatePatients(sh, r.plan.TargetPatientClusters)
+	addDuplicatePatients(sh, r.plan.TargetPatientClusters, r.plan.Target)
 	return nil
 }
 
@@ -88,6 +98,8 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 	if err != nil {
 		return err
 	}
+
+	targetTags := buildTagsMap(r.plan.Target.PatientTags)
 
 	sh.AddRow().AddCell().SetValue("MERGED WORKSPACE PATIENT REVIEW")
 	sh.AddRow().AddCell().SetValue("- We have identified the following patients from the Source Clinic that appear to be duplicates of one or more patients in the Target Clinic. You can see the original patient in the row next to \"Patient 1,\" and what we are doing with the patient under the \"Status\" column")
@@ -109,23 +121,28 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 
 	count := 1
 	for _, patientPlan := range r.plan.PatientsPlan {
-		if patientPlan.SourcePatient == nil {
+		if patientPlan.SourcePatient == nil || !patientPlan.HasConflicts() {
 			continue
 		}
+
 		status := "(retained)"
 		if patientPlan.PatientAction == PatientActionMerge {
 			status = "(combined)"
 		}
 		currentRow = sh.AddRow()
-		currentRow.AddCell()
+		currentRow.AddCell().SetValue(fmt.Sprintf("Patient %v", count))
 		currentRow.AddCell().SetValue(status)
-		currentRow.AddCell().SetValue(r.plan.Source.Name)
-		currentRow.AddCell().SetValue(strconv.FormatBool(!patientPlan.SourcePatient.IsCustodial()))
-		currentRow.AddCell().SetValue(patientPlan.SourcePatient.UserId)
-		currentRow.AddCell().SetValue(patientPlan.SourcePatient.FullName)
-		currentRow.AddCell().SetValue(patientPlan.SourcePatient.BirthDate)
-		currentRow.AddCell().SetValue(patientPlan.SourcePatient.Mrn)
-		currentRow.AddCell().SetValue("TODO: Tags")
+		currentRow.AddCell().SetValue(pointer.ToString(r.plan.Source.Name))
+		if !patientPlan.SourcePatient.IsCustodial() {
+			currentRow.AddCell().SetValue("Y")
+		} else {
+			currentRow.AddCell().SetValue("-")
+		}
+		currentRow.AddCell().SetValue(pointer.ToString(patientPlan.SourcePatient.UserId))
+		currentRow.AddCell().SetValue(pointer.ToString(patientPlan.SourcePatient.FullName))
+		currentRow.AddCell().SetValue(pointer.ToString(patientPlan.SourcePatient.BirthDate))
+		currentRow.AddCell().SetValue(pointer.ToString(patientPlan.SourcePatient.Mrn))
+		currentRow.AddCell().SetValue(strings.Join(patientPlan.SourceTagNames, ", "))
 		if patientPlan.SourcePatient.Summary != nil {
 			lastUpload := patientPlan.SourcePatient.Summary.GetLastUploadDate()
 			if !lastUpload.IsZero() {
@@ -145,18 +162,32 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 			currentRow = sh.AddRow()
 			currentRow.AddCell()
 			currentRow.AddCell().SetValue("(result)")
-			currentRow.AddCell().SetValue("TODO:")
+			currentRow.AddCell()
+			if !conflict.Patient.IsCustodial() {
+				currentRow.AddCell().SetValue("Y")
+			} else {
+				currentRow.AddCell().SetValue("-")
+			}
+			currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.UserId))
+			currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.FullName))
+			currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.BirthDate))
+			currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.Mrn))
+			currentRow.AddCell().SetValue(strings.Join(patientPlan.PostMigrationTagNames, ", "))
 
 			currentRow = sh.AddRow()
 			currentRow.AddCell()
 			currentRow.AddCell().SetValue("(combined)")
-			currentRow.AddCell().SetValue(r.plan.Target.Name)
-			currentRow.AddCell().SetValue(strconv.FormatBool(!conflict.Patient.IsCustodial()))
-			currentRow.AddCell().SetValue(conflict.Patient.UserId)
-			currentRow.AddCell().SetValue(conflict.Patient.FullName)
-			currentRow.AddCell().SetValue(conflict.Patient.BirthDate)
-			currentRow.AddCell().SetValue(conflict.Patient.Mrn)
-			currentRow.AddCell().SetValue("TODO: Tags")
+			currentRow.AddCell().SetValue(pointer.ToString(r.plan.Target.Name))
+			if !conflict.Patient.IsCustodial() {
+				currentRow.AddCell().SetValue("Y")
+			} else {
+				currentRow.AddCell().SetValue("-")
+			}
+			currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.UserId))
+			currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.FullName))
+			currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.BirthDate))
+			currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.Mrn))
+			currentRow.AddCell().SetValue(strings.Join(patientPlan.TargetTagNames, ", "))
 			if conflict.Patient.Summary != nil {
 				lastUpload := conflict.Patient.Summary.GetLastUploadDate()
 				if !lastUpload.IsZero() {
@@ -166,9 +197,9 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 		}
 
 		conflictCategories := map[string]string{
-			PatientConflictCategoryLikelyDuplicateAccounts: "Review likely duplicate(s)",
-			PatientConflictCategoryNameOnlyMatch:           "Review duplicate name",
-			PatientConflictCategoryMRNOnlyMatch:            "Review duplicate MRN",
+			PatientConflictCategoryLikelyDuplicateAccounts: "Review likely duplicate(s):",
+			PatientConflictCategoryNameOnlyMatch:           "Review duplicate name:",
+			PatientConflictCategoryMRNOnlyMatch:            "Review duplicate MRN:",
 		}
 		for category, description := range conflictCategories {
 			conflicts = patientPlan.Conflicts[category]
@@ -184,13 +215,17 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 				currentRow = sh.AddRow()
 				currentRow.AddCell()
 				currentRow.AddCell().SetValue("(retained)")
-				currentRow.AddCell().SetValue(r.plan.Target.Name)
-				currentRow.AddCell().SetValue(strconv.FormatBool(!conflict.Patient.IsCustodial()))
-				currentRow.AddCell().SetValue(conflict.Patient.UserId)
-				currentRow.AddCell().SetValue(conflict.Patient.FullName)
-				currentRow.AddCell().SetValue(conflict.Patient.BirthDate)
-				currentRow.AddCell().SetValue(conflict.Patient.Mrn)
-				currentRow.AddCell().SetValue("TODO: Tags")
+				currentRow.AddCell().SetValue(pointer.ToString(r.plan.Target.Name))
+				if !conflict.Patient.IsCustodial() {
+					currentRow.AddCell().SetValue("Y")
+				} else {
+					currentRow.AddCell().SetValue("-")
+				}
+				currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.UserId))
+				currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.FullName))
+				currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.BirthDate))
+				currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.Mrn))
+				currentRow.AddCell().SetValue(strings.Join(getPatientTagNames(conflict.Patient, targetTags), ", "))
 				if conflict.Patient.Summary != nil {
 					lastUpload := conflict.Patient.Summary.GetLastUploadDate()
 					if !lastUpload.IsZero() {
@@ -200,6 +235,7 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 			}
 		}
 
+		sh.AddRow()
 		count += 1
 	}
 
@@ -234,26 +270,26 @@ func (r Report) addDuplicateClaimedSheet(report *xlsx.File) error {
 
 				currentRow = sh.AddRow()
 				currentRow.AddCell().SetValue("Source")
-				currentRow.AddCell().SetValue(patientPlan.SourcePatient.FullName)
-				currentRow.AddCell().SetValue(patientPlan.SourcePatient.BirthDate)
-				currentRow.AddCell().SetValue(patientPlan.SourcePatient.Mrn)
-				currentRow.AddCell().SetValue(patientPlan.SourcePatient.Email)
+				currentRow.AddCell().SetValue(pointer.ToString(patientPlan.SourcePatient.FullName))
+				currentRow.AddCell().SetValue(pointer.ToString(patientPlan.SourcePatient.BirthDate))
+				currentRow.AddCell().SetValue(pointer.ToString(patientPlan.SourcePatient.Mrn))
+				currentRow.AddCell().SetValue(pointer.ToString(patientPlan.SourcePatient.Email))
 				currentRow.AddCell().SetValue(strings.Join(patientPlan.SourceTagNames, ", "))
 
 				currentRow = sh.AddRow()
 				currentRow.AddCell().SetValue("Destination")
-				currentRow.AddCell().SetValue(patientPlan.TargetPatient.FullName)
-				currentRow.AddCell().SetValue(patientPlan.TargetPatient.BirthDate)
-				currentRow.AddCell().SetValue(patientPlan.TargetPatient.Mrn)
-				currentRow.AddCell().SetValue(patientPlan.TargetPatient.Email)
+				currentRow.AddCell().SetValue(pointer.ToString(patientPlan.TargetPatient.FullName))
+				currentRow.AddCell().SetValue(pointer.ToString(patientPlan.TargetPatient.BirthDate))
+				currentRow.AddCell().SetValue(pointer.ToString(patientPlan.TargetPatient.Mrn))
+				currentRow.AddCell().SetValue(pointer.ToString(patientPlan.TargetPatient.Email))
 				currentRow.AddCell().SetValue(strings.Join(patientPlan.TargetTagNames, ", "))
 
 				currentRow = sh.AddRow()
 				currentRow.AddCell().SetValue("Resulting Account")
-				currentRow.AddCell().SetValue(conflict.Patient.FullName)
-				currentRow.AddCell().SetValue(conflict.Patient.BirthDate)
-				currentRow.AddCell().SetValue(conflict.Patient.Mrn)
-				currentRow.AddCell().SetValue(conflict.Patient.Email)
+				currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.FullName))
+				currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.BirthDate))
+				currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.Mrn))
+				currentRow.AddCell().SetValue(pointer.ToString(conflict.Patient.Email))
 				currentRow.AddCell().SetValue(strings.Join(patientPlan.PostMigrationTagNames, ", "))
 
 				count += 1
@@ -277,10 +313,10 @@ func (r Report) addSummaryHeader(sh *xlsx.Sheet) error {
 
 	currentRow = sh.AddRow()
 	currentRow.AddCell().SetValue("Merging from Workspace 1 (Source)")
-	currentRow.AddCell().SetValue(*r.plan.Source.Name)
+	currentRow.AddCell().SetValue(pointer.ToString(r.plan.Source.Name))
 	currentRow = sh.AddRow()
 	currentRow.AddCell().SetValue("Merging to Workspace 2 (Target)")
-	currentRow.AddCell().SetValue(*r.plan.Target.Name)
+	currentRow.AddCell().SetValue(pointer.ToString(r.plan.Target.Name))
 	sh.AddRow()
 
 	return nil
@@ -290,20 +326,28 @@ func (r Report) addSettingsSummary(sh *xlsx.Sheet) error {
 	currentRow := sh.AddRow()
 	currentRow.AddCell().SetValue("Settings ---")
 	currentRow.AddCell().SetValue("Do they match? ---")
-	currentRow.AddCell().SetValue(fmt.Sprintf("%s ---", *r.plan.Source.Name))
-	currentRow.AddCell().SetValue(fmt.Sprintf("%s ---", *r.plan.Target.Name))
+	currentRow.AddCell().SetValue(fmt.Sprintf("%s ---", pointer.ToString(r.plan.Source.Name)))
+	currentRow.AddCell().SetValue(fmt.Sprintf("%s ---", pointer.ToString(r.plan.Target.Name)))
 	sh.AddRow()
 
 	currentRow = sh.AddRow()
 	currentRow.AddCell().SetValue(TaskTypeClinicSettingsHasPartialSSO)
-	currentRow.AddCell().SetValue(strconv.FormatBool(r.plan.MembershipRestrictionsMergePlan.ValuesMatch()))
+	if r.plan.MembershipRestrictionsMergePlan.ValuesMatch() {
+		currentRow.AddCell().SetValue("Yes")
+	} else {
+		currentRow.AddCell().SetValue("No")
+	}
 	currentRow.AddCell().SetValue(r.plan.MembershipRestrictionsMergePlan.GetSourceValue())
 	currentRow.AddCell().SetValue(r.plan.MembershipRestrictionsMergePlan.GetTargetValue())
 
 	for _, s := range r.plan.SettingsPlan {
 		currentRow = sh.AddRow()
 		currentRow.AddCell().SetValue(s.Name)
-		currentRow.AddCell().SetValue(strconv.FormatBool(s.ValuesMatch()))
+		if s.ValuesMatch() {
+			currentRow.AddCell().SetValue("Yes")
+		} else {
+			currentRow.AddCell().SetValue("No")
+		}
 		currentRow.AddCell().SetValue(s.SourceValue)
 		currentRow.AddCell().SetValue(s.TargetValue)
 	}
@@ -336,7 +380,7 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	for _, a := range adminTasks {
 		currentRow = sh.AddRow()
 		currentRow.AddCell().SetValue(a.Name)
-		currentRow.AddCell().SetValue(a.Workspaces)
+		currentRow.AddCell().SetValue(strings.Join(a.Workspaces, ", "))
 		currentRow.AddCell().SetValue(a.Email)
 	}
 	sh.AddRow()
@@ -349,7 +393,7 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	for _, plan := range nonAdminTasks {
 		currentRow = sh.AddRow()
 		currentRow.AddCell().SetValue(plan.Name)
-		currentRow.AddCell().SetValue(plan.Workspaces)
+		currentRow.AddCell().SetValue(strings.Join(plan.Workspaces, ", "))
 		currentRow.AddCell().SetValue(plan.Email)
 		if plan.Downgraded {
 			currentRow.AddCell().SetValue("Yes")
@@ -363,7 +407,7 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 func (r Report) addTagsSummary(sh *xlsx.Sheet) error {
 	resultingTagsCount := 0
 	for _, plan := range r.plan.TagsPlan {
-		if plan.TagAction == TagActionCreate || plan.TagAction == TagActionKeep {
+		if plan.TagAction == TagActionCreate || plan.TagAction == TagActionRetain {
 			resultingTagsCount += 1
 		}
 	}
@@ -381,7 +425,6 @@ func (r Report) addTagsSummary(sh *xlsx.Sheet) error {
 		currentRow = sh.AddRow()
 		currentRow.AddCell().SetValue(plan.Name)
 		currentRow.AddCell().SetValue(strings.Join(plan.Workspaces, ", "))
-		currentRow.AddCell().SetValue(plan.Workspaces)
 		if plan.Merge == true {
 			currentRow.AddCell().SetValue("Yes")
 		}
@@ -426,7 +469,7 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	resultingTagsCount := 0
 	duplicateTagsCount := 0
 	for _, plan := range r.plan.TagsPlan {
-		if plan.TagAction == TagActionCreate || plan.TagAction == TagActionKeep {
+		if plan.TagAction == TagActionCreate || plan.TagAction == TagActionRetain {
 			resultingTagsCount++
 		}
 		if plan.TagAction == TagActionSkip {
@@ -489,7 +532,15 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	return nil
 }
 
-func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters) {
+func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clinics.Clinic) {
+	sh.AddRow().AddCell().SetValue(pointer.ToString(clinic.Name))
+	sh.AddRow().AddCell().SetValue("Review Possible Duplicates")
+	sh.AddRow().AddCell().SetValue("- Below we list groups of patients that appear to be duplicate accounts. For each patient in the group, you can see their connection with the other patients in the \"Likely Duplicates\", \"Name Only Matches\" and \"MRN Only Matches\" columns.")
+	sh.AddRow().AddCell().SetValue("- If the patient matches another patient in the group on 2 or more of the following -- MRN, DOB or name -- then we will list that matching patient's ID in the \"Likely Duplicates\" column. If the patient matches another on name only, or MRN only, we list those IDs in the corresponding columns.")
+	sh.AddRow().AddCell().SetValue("- If evaluating a patient account with an associated ID abc1234def, you will see this URL when you view their data: https://app.tidepool.org/patients/abc1234def/data. This URL configuration will help you quickly confirm which patient account you wish to keep, and which you wish to remove.")
+	sh.AddRow().AddCell().SetValue("- Each patient appears only once, so after you resolve each group you don't have to backtrack.")
+	sh.AddRow()
+
 	currentRow := sh.AddRow()
 	currentRow.AddCell()
 	currentRow.AddCell().SetValue("Name ---")
@@ -503,24 +554,38 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters) {
 	currentRow.AddCell().SetValue("Name Only Matches ---")
 	currentRow.AddCell().SetValue("MRN Only Matches ---")
 
-	for i, cluster := range clusters {
+	tags := buildTagsMap(clinic.PatientTags)
+	count := 1
+	for _, cluster := range clusters {
 		if len(cluster.Patients) > 1 {
 			currentRow = sh.AddRow()
-			currentRow.AddCell().SetValue("Review " + strconv.Itoa(i))
+			currentRow.AddCell().SetValue("Review " + strconv.Itoa(count))
 
+			count += 1
 			for _, p := range cluster.Patients {
 				currentRow = sh.AddRow()
-				currentRow.AddCell().SetValue(p.Patient.FullName)
-				currentRow.AddCell().SetValue(strconv.FormatBool(p.Patient.IsCustodial()))
-				currentRow.AddCell().SetValue(p.Patient.UserId)
-				currentRow.AddCell().SetValue(p.Patient.BirthDate)
-				currentRow.AddCell().SetValue(p.Patient.Mrn)
-				currentRow.AddCell().SetValue("TODO: Tags")
-				currentRow.AddCell().SetValue(p.Patient.Summary.GetLastUploadDate().Format(time.RFC3339))
+				currentRow.AddCell()
+				currentRow.AddCell().SetValue(pointer.ToString(p.Patient.FullName))
+				if !p.Patient.IsCustodial() {
+					currentRow.AddCell().SetValue("Y")
+				} else {
+					currentRow.AddCell().SetValue("-")
+				}
+				currentRow.AddCell().SetValue(pointer.ToString(p.Patient.UserId))
+				currentRow.AddCell().SetValue(pointer.ToString(p.Patient.BirthDate))
+				currentRow.AddCell().SetValue(pointer.ToString(p.Patient.Mrn))
+				currentRow.AddCell().SetValue(strings.Join(getPatientTagNames(p.Patient, tags), ", "))
+				if p.Patient.Summary != nil && !p.Patient.Summary.GetLastUploadDate().IsZero() {
+					currentRow.AddCell().SetValue(p.Patient.Summary.GetLastUploadDate().Format(time.RFC3339))
+				} else {
+					currentRow.AddCell()
+				}
 				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryLikelyDuplicateAccounts], ", "))
 				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryNameOnlyMatch], ", "))
 				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryMRNOnlyMatch], ", "))
 			}
+
+			sh.AddRow()
 		}
 	}
 }
