@@ -134,7 +134,8 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientsPlan, error) {
 
 	for _, patient := range p.targetPatients {
 		plan := PatientPlan{
-			TargetPatient: &patient,
+			TargetPatient:  &patient,
+			TargetTagNames: getPatientTagNames(patient, p.targetTags),
 		}
 		if _, ok := mergeTargetPatients[getUserId(patient)]; ok {
 			plan.PatientAction = PatientActionMergeInto
