@@ -1585,7 +1585,7 @@ func (c *Compiler) compile() {
 			}
 		}
 
-		if c.allowUndefinedFuncCalls && s.name == "CheckUndefinedFuncs" {
+		if c.allowUndefinedFuncCalls && (s.name == "CheckUndefinedFuncs" || s.name == "CheckSafetyRuleBodies") {
 			continue
 		}
 
@@ -2196,6 +2196,8 @@ func (c *Compiler) parseMetadataBlocks() {
 				for _, err := range errs {
 					c.err(err)
 				}
+
+				attachRuleAnnotations(mod)
 			}
 		}
 	}
