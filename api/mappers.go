@@ -900,6 +900,18 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"timeInVeryHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutes",
 		"timeInVeryHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutesDelta",
 
+		"hasTimeInExtremeHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInExtremeHighPercent",
+		"timeInExtremeHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighPercent",
+		"timeInExtremeHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighPercentDelta",
+
+		"hasTimeInExtremeHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInExtremeHighRecords",
+		"timeInExtremeHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighRecords",
+		"timeInExtremeHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighRecordsDelta",
+
+		"hasTimeInExtremeHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInExtremeHighMinutes",
+		"timeInExtremeHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighMinutes",
+		"timeInExtremeHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighMinutesDelta",
+
 		"hasTimeInAnyHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighPercent",
 		"timeInAnyHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighPercent",
 		"timeInAnyHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighPercentDelta",
@@ -919,6 +931,22 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"hasTotalRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTotalRecords",
 		"totalRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".totalRecords",
 		"totalRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".totalRecordsDelta",
+
+		"hasHoursWithData":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasHoursWithData",
+		"hoursWithData":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hoursWithData",
+		"hoursWithDataDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hoursWithDataDelta",
+
+		"hasDaysWithData":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasDaysWithData",
+		"daysWithData":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".daysWithData",
+		"daysWithDataDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".daysWithDataDelta",
+
+		"hasStandardDeviation":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasStandardDeviation",
+		"standardDeviation":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".standardDeviation",
+		"standardDeviationDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".standardDeviationDelta",
+
+		"hasCoefficientOfVariation":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasCoefficientOfVariation",
+		"coefficientOfVariation":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".coefficientOfVariation",
+		"coefficientOfVariationDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".coefficientOfVariationDelta",
 	}
 
 	extraSort := map[string]string{
@@ -928,72 +956,91 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		expandedSorts["outdatedSince"]:  expandedSorts["hasOutdatedSince"],
 
 		expandedSorts["glucoseManagementIndicator"]:      expandedSorts["hasGlucoseManagementIndicator"],
-		expandedSorts["glucoseManagementIndicatorDelta"]: expandedSorts["hasGlucoseManagementIndicator"],
+		expandedSorts["glucoseManagementIndicatorDelta"]: expandedSorts["hasGlucoseManagementIndicatorDelta"],
 
 		expandedSorts["averageGlucoseMmol"]:      expandedSorts["hasAverageGlucoseMmol"],
-		expandedSorts["averageGlucoseMmolDelta"]: expandedSorts["hasAverageGlucoseMmol"],
+		expandedSorts["averageGlucoseMmolDelta"]: expandedSorts["hasAverageGlucoseMmolDelta"],
 
 		expandedSorts["totalRecords"]:      expandedSorts["hasTotalRecords"],
-		expandedSorts["totalRecordsDelta"]: expandedSorts["hasTotalRecords"],
+		expandedSorts["totalRecordsDelta"]: expandedSorts["hasTotalRecordsDelta"],
+
+		expandedSorts["hoursWithData"]:      expandedSorts["hasHoursWithData"],
+		expandedSorts["hoursWithDataDelta"]: expandedSorts["hasHoursWithDataDelta"],
+
+		expandedSorts["daysWithData"]:      expandedSorts["hasDaysWithData"],
+		expandedSorts["daysWithDataDelta"]: expandedSorts["hasDaysWithDataDelta"],
+
+		expandedSorts["standardDeviation"]:      expandedSorts["hasStandardDeviation"],
+		expandedSorts["standardDeviationDelta"]: expandedSorts["hasStandardDeviationDelta"],
+
+		expandedSorts["coefficientOfVariation"]:      expandedSorts["hasCoefficientOfVariation"],
+		expandedSorts["coefficientOfVariationDelta"]: expandedSorts["hasCoefficientOfVariationDelta"],
 
 		expandedSorts["averageDailyRecords"]:      expandedSorts["hasAverageDailyRecords"],
-		expandedSorts["averageDailyRecordsDelta"]: expandedSorts["hasAverageDailyRecords"],
+		expandedSorts["averageDailyRecordsDelta"]: expandedSorts["hasAverageDailyRecordsDelta"],
 
 		expandedSorts["timeCGMUsePercent"]:      expandedSorts["hasTimeCGMUsePercent"],
-		expandedSorts["timeCGMUsePercentDelta"]: expandedSorts["hasTimeCGMUsePercent"],
+		expandedSorts["timeCGMUsePercentDelta"]: expandedSorts["hasTimeCGMUsePercentDelta"],
 		expandedSorts["timeCGMUseRecords"]:      expandedSorts["hasTimeCGMUseRecords"],
-		expandedSorts["timeCGMUseRecordsDelta"]: expandedSorts["hasTimeCGMUseRecords"],
+		expandedSorts["timeCGMUseRecordsDelta"]: expandedSorts["hasTimeCGMUseRecordsDelta"],
 		expandedSorts["timeCGMUseMinutes"]:      expandedSorts["hasTimeCGMUseMinutes"],
-		expandedSorts["timeCGMUseMinutesDelta"]: expandedSorts["hasTimeCGMUseMinutes"],
+		expandedSorts["timeCGMUseMinutesDelta"]: expandedSorts["hasTimeCGMUseMinutesDelta"],
 
 		expandedSorts["timeInTargetPercent"]:      expandedSorts["hasTimeInTargetPercent"],
-		expandedSorts["timeInTargetPercentDelta"]: expandedSorts["hasTimeInTargetPercent"],
+		expandedSorts["timeInTargetPercentDelta"]: expandedSorts["hasTimeInTargetPercentDelta"],
 		expandedSorts["timeInTargetRecords"]:      expandedSorts["hasTimeInTargetRecords"],
-		expandedSorts["timeInTargetRecordsDelta"]: expandedSorts["hasTimeInTargetRecords"],
+		expandedSorts["timeInTargetRecordsDelta"]: expandedSorts["hasTimeInTargetRecordsDelta"],
 		expandedSorts["timeInTargetMinutes"]:      expandedSorts["hasTimeInTargetMinutes"],
-		expandedSorts["timeInTargetMinutesDelta"]: expandedSorts["hasTimeInTargetMinutes"],
+		expandedSorts["timeInTargetMinutesDelta"]: expandedSorts["hasTimeInTargetMinutesDelta"],
 
 		expandedSorts["timeInLowPercent"]:      expandedSorts["hasTimeInLowPercent"],
-		expandedSorts["timeInLowPercentDelta"]: expandedSorts["hasTimeInLowPercent"],
+		expandedSorts["timeInLowPercentDelta"]: expandedSorts["hasTimeInLowPercentDelta"],
 		expandedSorts["timeInLowRecords"]:      expandedSorts["hasTimeInLowRecords"],
-		expandedSorts["timeInLowRecordsDelta"]: expandedSorts["hasTimeInLowRecords"],
+		expandedSorts["timeInLowRecordsDelta"]: expandedSorts["hasTimeInLowRecordsDelta"],
 		expandedSorts["timeInLowMinutes"]:      expandedSorts["hasTimeInLowMinutes"],
-		expandedSorts["timeInLowMinutesDelta"]: expandedSorts["hasTimeInLowMinutes"],
+		expandedSorts["timeInLowMinutesDelta"]: expandedSorts["hasTimeInLowMinutesDelta"],
 
 		expandedSorts["timeInVeryLowPercent"]:      expandedSorts["hasTimeInVeryLowPercent"],
-		expandedSorts["timeInVeryLowPercentDelta"]: expandedSorts["hasTimeInVeryLowPercent"],
+		expandedSorts["timeInVeryLowPercentDelta"]: expandedSorts["hasTimeInVeryLowPercentDelta"],
 		expandedSorts["timeInVeryLowRecords"]:      expandedSorts["hasTimeInVeryLowRecords"],
-		expandedSorts["timeInVeryLowRecordsDelta"]: expandedSorts["hasTimeInVeryLowRecords"],
+		expandedSorts["timeInVeryLowRecordsDelta"]: expandedSorts["hasTimeInVeryLowRecordsDelta"],
 		expandedSorts["timeInVeryLowMinutes"]:      expandedSorts["hasTimeInVeryLowMinutes"],
-		expandedSorts["timeInVeryLowMinutesDelta"]: expandedSorts["hasTimeInVeryLowMinutes"],
+		expandedSorts["timeInVeryLowMinutesDelta"]: expandedSorts["hasTimeInVeryLowMinutesDelta"],
 
 		expandedSorts["timeInAnyLowPercent"]:      expandedSorts["hasTimeInAnyLowPercent"],
-		expandedSorts["timeInAnyLowPercentDelta"]: expandedSorts["hasTimeInAnyLowPercent"],
+		expandedSorts["timeInAnyLowPercentDelta"]: expandedSorts["hasTimeInAnyLowPercentDelta"],
 		expandedSorts["timeInAnyLowRecords"]:      expandedSorts["hasTimeInAnyLowRecords"],
-		expandedSorts["timeInAnyLowRecordsDelta"]: expandedSorts["hasTimeInAnyLowRecords"],
+		expandedSorts["timeInAnyLowRecordsDelta"]: expandedSorts["hasTimeInAnyLowRecordsDelta"],
 		expandedSorts["timeInAnyLowMinutes"]:      expandedSorts["hasTimeInAnyLowMinutes"],
-		expandedSorts["timeInAnyLowMinutesDelta"]: expandedSorts["hasTimeInAnyLowMinutes"],
+		expandedSorts["timeInAnyLowMinutesDelta"]: expandedSorts["hasTimeInAnyLowMinutesDelta"],
 
 		expandedSorts["timeInHighPercent"]:      expandedSorts["hasTimeInHighPercent"],
-		expandedSorts["timeInHighPercentDelta"]: expandedSorts["hasTimeInHighPercent"],
+		expandedSorts["timeInHighPercentDelta"]: expandedSorts["hasTimeInHighPercentDelta"],
 		expandedSorts["timeInHighRecords"]:      expandedSorts["hasTimeInHighRecords"],
-		expandedSorts["timeInHighRecordsDelta"]: expandedSorts["hasTimeInHighRecords"],
+		expandedSorts["timeInHighRecordsDelta"]: expandedSorts["hasTimeInHighRecordsDelta"],
 		expandedSorts["timeInHighMinutes"]:      expandedSorts["hasTimeInHighMinutes"],
-		expandedSorts["timeInHighMinutesDelta"]: expandedSorts["hasTimeInHighMinutes"],
+		expandedSorts["timeInHighMinutesDelta"]: expandedSorts["hasTimeInHighMinutesDelta"],
 
 		expandedSorts["timeInVeryHighPercent"]:      expandedSorts["hasTimeInVeryHighPercent"],
-		expandedSorts["timeInVeryHighPercentDelta"]: expandedSorts["hasTimeInVeryHighPercent"],
+		expandedSorts["timeInVeryHighPercentDelta"]: expandedSorts["hasTimeInVeryHighPercentDelta"],
 		expandedSorts["timeInVeryHighRecords"]:      expandedSorts["hasTimeInVeryHighRecords"],
-		expandedSorts["timeInVeryHighRecordsDelta"]: expandedSorts["hasTimeInVeryHighRecords"],
+		expandedSorts["timeInVeryHighRecordsDelta"]: expandedSorts["hasTimeInVeryHighRecordsDelta"],
 		expandedSorts["timeInVeryHighMinutes"]:      expandedSorts["hasTimeInVeryHighMinutes"],
-		expandedSorts["timeInVeryHighMinutesDelta"]: expandedSorts["hasTimeInVeryHighMinutes"],
+		expandedSorts["timeInVeryHighMinutesDelta"]: expandedSorts["hasTimeInVeryHighMinutesDelta"],
+
+		expandedSorts["timeInExtremeHighPercent"]:      expandedSorts["hasTimeInExtremeHighPercent"],
+		expandedSorts["timeInExtremeHighPercentDelta"]: expandedSorts["hasTimeInExtremeHighPercentDelta"],
+		expandedSorts["timeInExtremeHighRecords"]:      expandedSorts["hasTimeInExtremeHighRecords"],
+		expandedSorts["timeInExtremeHighRecordsDelta"]: expandedSorts["hasTimeInExtremeHighRecordsDelta"],
+		expandedSorts["timeInExtremeHighMinutes"]:      expandedSorts["hasTimeInExtremeHighMinutes"],
+		expandedSorts["timeInExtremeHighMinutesDelta"]: expandedSorts["hasTimeInExtremeHighMinutesDelta"],
 
 		expandedSorts["timeInAnyHighPercent"]:      expandedSorts["hasTimeInAnyHighPercent"],
-		expandedSorts["timeInAnyHighPercentDelta"]: expandedSorts["hasTimeInAnyHighPercent"],
+		expandedSorts["timeInAnyHighPercentDelta"]: expandedSorts["hasTimeInAnyHighPercentDelta"],
 		expandedSorts["timeInAnyHighRecords"]:      expandedSorts["hasTimeInAnyHighRecords"],
-		expandedSorts["timeInAnyHighRecordsDelta"]: expandedSorts["hasTimeInAnyHighRecords"],
+		expandedSorts["timeInAnyHighRecordsDelta"]: expandedSorts["hasTimeInAnyHighRecordsDelta"],
 		expandedSorts["timeInAnyHighMinutes"]:      expandedSorts["hasTimeInAnyHighMinutes"],
-		expandedSorts["timeInAnyHighMinutesDelta"]: expandedSorts["hasTimeInAnyHighMinutes"],
+		expandedSorts["timeInAnyHighMinutesDelta"]: expandedSorts["hasTimeInAnyHighMinutesDelta"],
 	}
 
 	// expand the original param now that we are done using it as a map key
@@ -1063,6 +1110,13 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryHighMinutes":      {},
 		"timeInVeryHighMinutesDelta": {},
 
+		"timeInExtremeHighPercent":      {},
+		"timeInExtremeHighPercentDelta": {},
+		"timeInExtremeHighRecords":      {},
+		"timeInExtremeHighRecordsDelta": {},
+		"timeInExtremeHighMinutes":      {},
+		"timeInExtremeHighMinutesDelta": {},
+
 		"timeInAnyHighPercent":      {},
 		"timeInAnyHighPercentDelta": {},
 		"timeInAnyHighRecords":      {},
@@ -1079,6 +1133,18 @@ var validSortAttributes = map[string]map[string]struct{}{
 
 		"totalRecords":      {},
 		"totalRecordsDelta": {},
+
+		"hoursWithData":      {},
+		"hoursWithDataDelta": {},
+
+		"daysWithData":      {},
+		"daysWithDataDelta": {},
+
+		"standardDeviation":      {},
+		"standardDeviationDelta": {},
+
+		"coefficientOfVariation":      {},
+		"coefficientOfVariationDelta": {},
 
 		"averageDailyRecords":      {},
 		"averageDailyRecordsDelta": {},
@@ -1118,6 +1184,11 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"timeInVeryHighPercentDelta": {},
 		"timeInVeryHighRecords":      {},
 		"timeInVeryHighRecordsDelta": {},
+
+		"timeInExtremeHighPercent":      {},
+		"timeInExtremeHighPercentDelta": {},
+		"timeInExtremeHighRecords":      {},
+		"timeInExtremeHighRecordsDelta": {},
 
 		"timeInAnyHighPercent":      {},
 		"timeInAnyHighPercentDelta": {},
@@ -1315,25 +1386,79 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	filters = patients.SummaryFilters{}
 
 	fieldsMap := map[string]*string{
-		"timeCGMUsePercent":     params.CgmTimeCGMUsePercent,
-		"timeInVeryLowPercent":  params.CgmTimeInVeryLowPercent,
-		"timeInAnyLowPercent":   params.CgmTimeInAnyLowPercent,
-		"timeInLowPercent":      params.CgmTimeInLowPercent,
-		"timeInTargetPercent":   params.CgmTimeInTargetPercent,
-		"timeInHighPercent":     params.CgmTimeInHighPercent,
-		"timeInVeryHighPercent": params.CgmTimeInVeryHighPercent,
-		"timeInAnyHighPercent":  params.CgmTimeInAnyHighPercent,
+		"timeCGMUsePercent":        params.CgmTimeCGMUsePercent,
+		"timeInVeryLowPercent":     params.CgmTimeInVeryLowPercent,
+		"timeInAnyLowPercent":      params.CgmTimeInAnyLowPercent,
+		"timeInLowPercent":         params.CgmTimeInLowPercent,
+		"timeInTargetPercent":      params.CgmTimeInTargetPercent,
+		"timeInHighPercent":        params.CgmTimeInHighPercent,
+		"timeInVeryHighPercent":    params.CgmTimeInVeryHighPercent,
+		"timeInExtremeHighPercent": params.CgmTimeInExtremeHighPercent,
+		"timeInAnyHighPercent":     params.CgmTimeInAnyHighPercent,
 
-		"timeCGMUseRecords":     params.CgmTimeCGMUseRecords,
-		"timeInVeryLowRecords":  params.CgmTimeInVeryLowRecords,
-		"timeInAnyLowRecords":   params.CgmTimeInAnyLowRecords,
-		"timeInLowRecords":      params.CgmTimeInLowRecords,
-		"timeInTargetRecords":   params.CgmTimeInTargetRecords,
-		"timeInHighRecords":     params.CgmTimeInHighRecords,
-		"timeInVeryHighRecords": params.CgmTimeInVeryHighRecords,
-		"timeInAnyHighRecords":  params.CgmTimeInAnyHighRecords,
-		"averageDailyRecords":   params.CgmAverageDailyRecords,
-		"totalRecords":          params.CgmTotalRecords,
+		"timeCGMUseRecords":        params.CgmTimeCGMUseRecords,
+		"timeInVeryLowRecords":     params.CgmTimeInVeryLowRecords,
+		"timeInAnyLowRecords":      params.CgmTimeInAnyLowRecords,
+		"timeInLowRecords":         params.CgmTimeInLowRecords,
+		"timeInTargetRecords":      params.CgmTimeInTargetRecords,
+		"timeInHighRecords":        params.CgmTimeInHighRecords,
+		"timeInVeryHighRecords":    params.CgmTimeInVeryHighRecords,
+		"timeInExtremeHighRecords": params.CgmTimeInVeryHighRecords,
+		"timeInAnyHighRecords":     params.CgmTimeInAnyHighRecords,
+
+		"timeCGMUseMinutes":        params.CgmTimeCGMUseMinutes,
+		"timeInVeryLowMinutes":     params.CgmTimeInVeryLowMinutes,
+		"timeInAnyLowMinutes":      params.CgmTimeInAnyLowMinutes,
+		"timeInLowMinutes":         params.CgmTimeInLowMinutes,
+		"timeInTargetMinutes":      params.CgmTimeInTargetMinutes,
+		"timeInHighMinutes":        params.CgmTimeInHighMinutes,
+		"timeInVeryHighMinutes":    params.CgmTimeInVeryHighMinutes,
+		"timeInExtremeHighMinutes": params.CgmTimeInVeryHighMinutes,
+		"timeInAnyHighMinutes":     params.CgmTimeInAnyHighMinutes,
+
+		"averageDailyRecords":    params.CgmAverageDailyRecords,
+		"totalRecords":           params.CgmTotalRecords,
+		"hoursWithData":          params.CgmHoursWithData,
+		"daysWithData":           params.CgmDaysWithData,
+		"standardDeviation":      params.CgmStandardDeviation,
+		"coefficientOfVariation": params.CgmCoefficientOfVariation,
+
+		"timeCGMUsePercentDelta":        params.CgmTimeCGMUsePercentDelta,
+		"timeInVeryLowPercentDelta":     params.CgmTimeInVeryLowPercentDelta,
+		"timeInAnyLowPercentDelta":      params.CgmTimeInAnyLowPercentDelta,
+		"timeInLowPercentDelta":         params.CgmTimeInLowPercentDelta,
+		"timeInTargetPercentDelta":      params.CgmTimeInTargetPercentDelta,
+		"timeInHighPercentDelta":        params.CgmTimeInHighPercentDelta,
+		"timeInVeryHighPercentDelta":    params.CgmTimeInVeryHighPercentDelta,
+		"timeInExtremeHighPercentDelta": params.CgmTimeInExtremeHighPercentDelta,
+		"timeInAnyHighPercentDelta":     params.CgmTimeInAnyHighPercentDelta,
+
+		"timeCGMUseRecordsDelta":        params.CgmTimeCGMUseRecordsDelta,
+		"timeInVeryLowRecordsDelta":     params.CgmTimeInVeryLowRecordsDelta,
+		"timeInAnyLowRecordsDelta":      params.CgmTimeInAnyLowRecordsDelta,
+		"timeInLowRecordsDelta":         params.CgmTimeInLowRecordsDelta,
+		"timeInTargetRecordsDelta":      params.CgmTimeInTargetRecordsDelta,
+		"timeInHighRecordsDelta":        params.CgmTimeInHighRecordsDelta,
+		"timeInVeryHighRecordsDelta":    params.CgmTimeInVeryHighRecordsDelta,
+		"timeInExtremeHighRecordsDelta": params.CgmTimeInVeryHighRecordsDelta,
+		"timeInAnyHighRecordsDelta":     params.CgmTimeInAnyHighRecordsDelta,
+
+		"timeCGMUseMinutesDelta":        params.CgmTimeCGMUseMinutesDelta,
+		"timeInVeryLowMinutesDelta":     params.CgmTimeInVeryLowMinutesDelta,
+		"timeInAnyLowMinutesDelta":      params.CgmTimeInAnyLowMinutesDelta,
+		"timeInLowMinutesDelta":         params.CgmTimeInLowMinutesDelta,
+		"timeInTargetMinutesDelta":      params.CgmTimeInTargetMinutesDelta,
+		"timeInHighMinutesDelta":        params.CgmTimeInHighMinutesDelta,
+		"timeInVeryHighMinutesDelta":    params.CgmTimeInVeryHighMinutesDelta,
+		"timeInExtremeHighMinutesDelta": params.CgmTimeInVeryHighMinutesDelta,
+		"timeInAnyHighMinutesDelta":     params.CgmTimeInAnyHighMinutesDelta,
+
+		"averageDailyRecordsDelta":    params.CgmAverageDailyRecordsDelta,
+		"totalRecordsDelta":           params.CgmTotalRecordsDelta,
+		"hoursWithDataDelta":          params.CgmHoursWithDataDelta,
+		"daysWithDataDelta":           params.CgmDaysWithDataDelta,
+		"standardDeviationDelta":      params.CgmStandardDeviationDelta,
+		"coefficientOfVariationDelta": params.CgmCoefficientOfVariationDelta,
 	}
 
 	for field, value := range fieldsMap {
@@ -1350,23 +1475,47 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	filters = patients.SummaryFilters{}
 
 	fieldsMap := map[string]*string{
-		"timeInVeryLowPercent":  params.BgmTimeInVeryLowPercent,
-		"timeInAnyLowPercent":   params.BgmTimeInAnyLowPercent,
-		"timeInLowPercent":      params.BgmTimeInLowPercent,
-		"timeInTargetPercent":   params.BgmTimeInTargetPercent,
-		"timeInHighPercent":     params.BgmTimeInHighPercent,
-		"timeInVeryHighPercent": params.BgmTimeInVeryHighPercent,
-		"timeInAnyHighPercent":  params.BgmTimeInAnyHighPercent,
+		"timeInVeryLowPercent":   params.BgmTimeInVeryLowPercent,
+		"timeInAnyLowPercent":    params.BgmTimeInAnyLowPercent,
+		"timeInLowPercent":       params.BgmTimeInLowPercent,
+		"timeInTargetPercent":    params.BgmTimeInTargetPercent,
+		"timeInHighPercent":      params.BgmTimeInHighPercent,
+		"timeInVeryHighPercent":  params.BgmTimeInVeryHighPercent,
+		"timeExtremeHighPercent": params.BgmTimeInVeryHighPercent,
+		"timeInAnyHighPercent":   params.BgmTimeInAnyHighPercent,
 
-		"timeInVeryLowRecords":  params.BgmTimeInVeryLowRecords,
-		"timeInAnyLowRecords":   params.BgmTimeInAnyLowRecords,
-		"timeInLowRecords":      params.BgmTimeInLowRecords,
-		"timeInTargetRecords":   params.BgmTimeInTargetRecords,
-		"timeInHighRecords":     params.BgmTimeInHighRecords,
-		"timeInVeryHighRecords": params.BgmTimeInVeryHighRecords,
-		"timeInAnyHighRecords":  params.BgmTimeInAnyHighRecords,
-		"averageDailyRecords":   params.BgmAverageDailyRecords,
-		"totalRecords":          params.BgmTotalRecords,
+		"timeInVeryLowRecords":     params.BgmTimeInVeryLowRecords,
+		"timeInAnyLowRecords":      params.BgmTimeInAnyLowRecords,
+		"timeInLowRecords":         params.BgmTimeInLowRecords,
+		"timeInTargetRecords":      params.BgmTimeInTargetRecords,
+		"timeInHighRecords":        params.BgmTimeInHighRecords,
+		"timeInVeryHighRecords":    params.BgmTimeInVeryHighRecords,
+		"timeInExtremeHighRecords": params.BgmTimeInVeryHighRecords,
+		"timeInAnyHighRecords":     params.BgmTimeInAnyHighRecords,
+
+		"averageDailyRecords": params.BgmAverageDailyRecords,
+		"totalRecords":        params.BgmTotalRecords,
+
+		"timeInVeryLowPercentDelta":   params.BgmTimeInVeryLowPercentDelta,
+		"timeInAnyLowPercentDelta":    params.BgmTimeInAnyLowPercentDelta,
+		"timeInLowPercentDelta":       params.BgmTimeInLowPercentDelta,
+		"timeInTargetPercentDelta":    params.BgmTimeInTargetPercentDelta,
+		"timeInHighPercentDelta":      params.BgmTimeInHighPercentDelta,
+		"timeInVeryHighPercentDelta":  params.BgmTimeInVeryHighPercentDelta,
+		"timeExtremeHighPercentDelta": params.BgmTimeInVeryHighPercentDelta,
+		"timeInAnyHighPercentDelta":   params.BgmTimeInAnyHighPercentDelta,
+
+		"timeInVeryLowRecordsDelta":     params.BgmTimeInVeryLowRecordsDelta,
+		"timeInAnyLowRecordsDelta":      params.BgmTimeInAnyLowRecordsDelta,
+		"timeInLowRecordsDelta":         params.BgmTimeInLowRecordsDelta,
+		"timeInTargetRecordsDelta":      params.BgmTimeInTargetRecordsDelta,
+		"timeInHighRecordsDelta":        params.BgmTimeInHighRecordsDelta,
+		"timeInVeryHighRecordsDelta":    params.BgmTimeInVeryHighRecordsDelta,
+		"timeInExtremeHighRecordsDelta": params.BgmTimeInVeryHighRecordsDelta,
+		"timeInAnyHighRecordsDelta":     params.BgmTimeInAnyHighRecordsDelta,
+
+		"averageDailyRecordsDelta": params.BgmAverageDailyRecordsDelta,
+		"totalRecordsDelta":        params.BgmTotalRecordsDelta,
 	}
 
 	for field, value := range fieldsMap {

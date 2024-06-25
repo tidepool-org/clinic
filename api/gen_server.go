@@ -1033,11 +1033,81 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryHighPercent: %s", err))
 	}
 
+	// ------------- Optional query parameter "cgm.timeInExtremeHighPercent" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInExtremeHighPercent", ctx.QueryParams(), &params.CgmTimeInExtremeHighPercent)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInExtremeHighPercent: %s", err))
+	}
+
 	// ------------- Optional query parameter "cgm.timeInAnyHighPercent" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyHighPercent", ctx.QueryParams(), &params.CgmTimeInAnyHighPercent)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyHighPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeCGMUseMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeCGMUseMinutes", ctx.QueryParams(), &params.CgmTimeCGMUseMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeCGMUseMinutes: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryLowMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryLowMinutes", ctx.QueryParams(), &params.CgmTimeInVeryLowMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryLowMinutes: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInAnyLowMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyLowMinutes", ctx.QueryParams(), &params.CgmTimeInAnyLowMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyLowMinutes: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInLowMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInLowMinutes", ctx.QueryParams(), &params.CgmTimeInLowMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInLowMinutes: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInTargetMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInTargetMinutes", ctx.QueryParams(), &params.CgmTimeInTargetMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInTargetMinutes: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInHighMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInHighMinutes", ctx.QueryParams(), &params.CgmTimeInHighMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInHighMinutes: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryHighMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryHighMinutes", ctx.QueryParams(), &params.CgmTimeInVeryHighMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryHighMinutes: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInExtremeHighMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInExtremeHighMinutes", ctx.QueryParams(), &params.CgmTimeInExtremeHighMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInExtremeHighMinutes: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInAnyHighMinutes" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyHighMinutes", ctx.QueryParams(), &params.CgmTimeInAnyHighMinutes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyHighMinutes: %s", err))
 	}
 
 	// ------------- Optional query parameter "cgm.timeCGMUseRecords" -------------
@@ -1110,18 +1180,32 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.totalRecords: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateFrom" -------------
+	// ------------- Optional query parameter "cgm.hoursWithData" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateFrom", ctx.QueryParams(), &params.CgmLastUploadDateFrom)
+	err = runtime.BindQueryParameter("form", true, false, "cgm.hoursWithData", ctx.QueryParams(), &params.CgmHoursWithData)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateFrom: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.hoursWithData: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateTo" -------------
+	// ------------- Optional query parameter "cgm.daysWithData" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
+	err = runtime.BindQueryParameter("form", true, false, "cgm.daysWithData", ctx.QueryParams(), &params.CgmDaysWithData)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.daysWithData: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.standardDeviation" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.standardDeviation", ctx.QueryParams(), &params.CgmStandardDeviation)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.standardDeviation: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.coefficientOfVariation" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.coefficientOfVariation", ctx.QueryParams(), &params.CgmCoefficientOfVariation)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.coefficientOfVariation: %s", err))
 	}
 
 	// ------------- Optional query parameter "bgm.timeInVeryLowPercent" -------------
@@ -1164,6 +1248,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryHighPercent", ctx.QueryParams(), &params.BgmTimeInVeryHighPercent)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInVeryHighPercent: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInExtremeHighPercent" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInExtremeHighPercent", ctx.QueryParams(), &params.BgmTimeInExtremeHighPercent)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInExtremeHighPercent: %s", err))
 	}
 
 	// ------------- Optional query parameter "bgm.timeInAnyHighPercent" -------------
@@ -1234,6 +1325,363 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "bgm.totalRecords", ctx.QueryParams(), &params.BgmTotalRecords)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.totalRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeCGMUsePercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeCGMUsePercentDelta", ctx.QueryParams(), &params.CgmTimeCGMUsePercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeCGMUsePercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryLowPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryLowPercentDelta", ctx.QueryParams(), &params.CgmTimeInVeryLowPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryLowPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInAnyLowPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyLowPercentDelta", ctx.QueryParams(), &params.CgmTimeInAnyLowPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyLowPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInLowPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInLowPercentDelta", ctx.QueryParams(), &params.CgmTimeInLowPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInLowPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInTargetPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInTargetPercentDelta", ctx.QueryParams(), &params.CgmTimeInTargetPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInTargetPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInHighPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInHighPercentDelta", ctx.QueryParams(), &params.CgmTimeInHighPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInHighPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryHighPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryHighPercentDelta", ctx.QueryParams(), &params.CgmTimeInVeryHighPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryHighPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInExtremeHighPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInExtremeHighPercentDelta", ctx.QueryParams(), &params.CgmTimeInExtremeHighPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInExtremeHighPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInAnyHighPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyHighPercentDelta", ctx.QueryParams(), &params.CgmTimeInAnyHighPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyHighPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeCGMUseMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeCGMUseMinutesDelta", ctx.QueryParams(), &params.CgmTimeCGMUseMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeCGMUseMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryLowMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryLowMinutesDelta", ctx.QueryParams(), &params.CgmTimeInVeryLowMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryLowMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInAnyLowMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyLowMinutesDelta", ctx.QueryParams(), &params.CgmTimeInAnyLowMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyLowMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInLowMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInLowMinutesDelta", ctx.QueryParams(), &params.CgmTimeInLowMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInLowMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInTargetMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInTargetMinutesDelta", ctx.QueryParams(), &params.CgmTimeInTargetMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInTargetMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInHighMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInHighMinutesDelta", ctx.QueryParams(), &params.CgmTimeInHighMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInHighMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryHighMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryHighMinutesDelta", ctx.QueryParams(), &params.CgmTimeInVeryHighMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryHighMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInExtremeHighMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInExtremeHighMinutesDelta", ctx.QueryParams(), &params.CgmTimeInExtremeHighMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInExtremeHighMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInAnyHighMinutesDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyHighMinutesDelta", ctx.QueryParams(), &params.CgmTimeInAnyHighMinutesDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyHighMinutesDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeCGMUseRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeCGMUseRecordsDelta", ctx.QueryParams(), &params.CgmTimeCGMUseRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeCGMUseRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryLowRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryLowRecordsDelta", ctx.QueryParams(), &params.CgmTimeInVeryLowRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryLowRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInAnyLowRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyLowRecordsDelta", ctx.QueryParams(), &params.CgmTimeInAnyLowRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyLowRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInLowRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInLowRecordsDelta", ctx.QueryParams(), &params.CgmTimeInLowRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInLowRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInTargetRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInTargetRecordsDelta", ctx.QueryParams(), &params.CgmTimeInTargetRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInTargetRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInHighRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInHighRecordsDelta", ctx.QueryParams(), &params.CgmTimeInHighRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInHighRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInVeryHighRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInVeryHighRecordsDelta", ctx.QueryParams(), &params.CgmTimeInVeryHighRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInVeryHighRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.timeInAnyHighRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.timeInAnyHighRecordsDelta", ctx.QueryParams(), &params.CgmTimeInAnyHighRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.timeInAnyHighRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.averageDailyRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.averageDailyRecordsDelta", ctx.QueryParams(), &params.CgmAverageDailyRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.averageDailyRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.totalRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.totalRecordsDelta", ctx.QueryParams(), &params.CgmTotalRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.totalRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.hoursWithDataDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.hoursWithDataDelta", ctx.QueryParams(), &params.CgmHoursWithDataDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.hoursWithDataDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.daysWithDataDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.daysWithDataDelta", ctx.QueryParams(), &params.CgmDaysWithDataDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.daysWithDataDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.standardDeviationDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.standardDeviationDelta", ctx.QueryParams(), &params.CgmStandardDeviationDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.standardDeviationDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.coefficientOfVariationDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.coefficientOfVariationDelta", ctx.QueryParams(), &params.CgmCoefficientOfVariationDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.coefficientOfVariationDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.lastUploadDateFrom" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateFrom", ctx.QueryParams(), &params.CgmLastUploadDateFrom)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateFrom: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.lastUploadDateTo" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInVeryLowPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryLowPercentDelta", ctx.QueryParams(), &params.BgmTimeInVeryLowPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInVeryLowPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInAnyLowPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInAnyLowPercentDelta", ctx.QueryParams(), &params.BgmTimeInAnyLowPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInAnyLowPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInLowPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInLowPercentDelta", ctx.QueryParams(), &params.BgmTimeInLowPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInLowPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInTargetPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInTargetPercentDelta", ctx.QueryParams(), &params.BgmTimeInTargetPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInTargetPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInHighPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInHighPercentDelta", ctx.QueryParams(), &params.BgmTimeInHighPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInHighPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInVeryHighPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryHighPercentDelta", ctx.QueryParams(), &params.BgmTimeInVeryHighPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInVeryHighPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInExtremeHighPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInExtremeHighPercentDelta", ctx.QueryParams(), &params.BgmTimeInExtremeHighPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInExtremeHighPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInAnyHighPercentDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInAnyHighPercentDelta", ctx.QueryParams(), &params.BgmTimeInAnyHighPercentDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInAnyHighPercentDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInVeryLowRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryLowRecordsDelta", ctx.QueryParams(), &params.BgmTimeInVeryLowRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInVeryLowRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInAnyLowRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInAnyLowRecordsDelta", ctx.QueryParams(), &params.BgmTimeInAnyLowRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInAnyLowRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInLowRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInLowRecordsDelta", ctx.QueryParams(), &params.BgmTimeInLowRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInLowRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInTargetRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInTargetRecordsDelta", ctx.QueryParams(), &params.BgmTimeInTargetRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInTargetRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInHighRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInHighRecordsDelta", ctx.QueryParams(), &params.BgmTimeInHighRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInHighRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInVeryHighRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryHighRecordsDelta", ctx.QueryParams(), &params.BgmTimeInVeryHighRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInVeryHighRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.timeInAnyHighRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInAnyHighRecordsDelta", ctx.QueryParams(), &params.BgmTimeInAnyHighRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.timeInAnyHighRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.averageDailyRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.averageDailyRecordsDelta", ctx.QueryParams(), &params.BgmAverageDailyRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.averageDailyRecordsDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.totalRecordsDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.totalRecordsDelta", ctx.QueryParams(), &params.BgmTotalRecordsDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.totalRecordsDelta: %s", err))
 	}
 
 	// ------------- Optional query parameter "bgm.lastUploadDateFrom" -------------

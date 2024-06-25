@@ -3,63 +3,63 @@ package patients
 import "time"
 
 type PatientBGMPeriod struct {
-	AverageDailyRecords           *float64 `bson:"averageDailyRecords,omitempty" json:"averageDailyRecords,omitempty"`
-	AverageDailyRecordsDelta      *float64 `bson:"averageDailyRecordsDelta,omitempty" json:"averageDailyRecordsDelta,omitempty"`
-	AverageGlucoseMmol            *float64 `bson:"averageGlucoseMmol,omitempty" json:"averageGlucoseMmol,omitempty"`
-	AverageGlucoseMmolDelta       *float64 `bson:"averageGlucoseMmolDelta,omitempty" json:"averageGlucoseMmolDelta,omitempty"`
-	HasAverageDailyRecords        bool     `bson:"hasAverageDailyRecords" json:"hasAverageDailyRecords"`
-	HasAverageGlucoseMmol         bool     `bson:"hasAverageGlucoseMmol" json:"hasAverageGlucoseMmol"`
-	HasTimeInAnyHighPercent       bool     `bson:"hasTimeInAnyHighPercent" json:"hasTimeInAnyHighPercent"`
-	HasTimeInAnyHighRecords       bool     `bson:"hasTimeInAnyHighRecords" json:"hasTimeInAnyHighRecords"`
-	HasTimeInAnyLowPercent        bool     `bson:"hasTimeInAnyLowPercent" json:"hasTimeInAnyLowPercent"`
-	HasTimeInAnyLowRecords        bool     `bson:"hasTimeInAnyLowRecords" json:"hasTimeInAnyLowRecords"`
-	HasTimeInExtremeHighPercent   bool     `bson:"hasTimeInExtremeHighPercent" json:"hasTimeInExtremeHighPercent"`
-	HasTimeInExtremeHighRecords   bool     `bson:"hasTimeInExtremeHighRecords" json:"hasTimeInExtremeHighRecords"`
-	HasTimeInHighPercent          bool     `bson:"hasTimeInHighPercent" json:"hasTimeInHighPercent"`
-	HasTimeInHighRecords          bool     `bson:"hasTimeInHighRecords" json:"hasTimeInHighRecords"`
-	HasTimeInLowPercent           bool     `bson:"hasTimeInLowPercent" json:"hasTimeInLowPercent"`
-	HasTimeInLowRecords           bool     `bson:"hasTimeInLowRecords" json:"hasTimeInLowRecords"`
-	HasTimeInTargetPercent        bool     `bson:"hasTimeInTargetPercent" json:"hasTimeInTargetPercent"`
-	HasTimeInTargetRecords        bool     `bson:"hasTimeInTargetRecords" json:"hasTimeInTargetRecords"`
-	HasTimeInVeryHighPercent      bool     `bson:"hasTimeInVeryHighPercent" json:"hasTimeInVeryHighPercent"`
-	HasTimeInVeryHighRecords      bool     `bson:"hasTimeInVeryHighRecords" json:"hasTimeInVeryHighRecords"`
-	HasTimeInVeryLowPercent       bool     `bson:"hasTimeInVeryLowPercent" json:"hasTimeInVeryLowPercent"`
-	HasTimeInVeryLowRecords       bool     `bson:"hasTimeInVeryLowRecords" json:"hasTimeInVeryLowRecords"`
-	HasTotalRecords               bool     `bson:"hasTotalRecords" json:"hasTotalRecords"`
-	TimeInAnyHighPercent          *float64 `bson:"timeInAnyHighPercent,omitempty" json:"timeInAnyHighPercent,omitempty"`
-	TimeInAnyHighPercentDelta     *float64 `bson:"timeInAnyHighPercentDelta,omitempty" json:"timeInAnyHighPercentDelta,omitempty"`
-	TimeInAnyHighRecords          *int     `bson:"timeInAnyHighRecords,omitempty" json:"timeInAnyHighRecords,omitempty"`
-	TimeInAnyHighRecordsDelta     *int     `bson:"timeInAnyHighRecordsDelta,omitempty" json:"timeInAnyHighRecordsDelta,omitempty"`
-	TimeInAnyLowPercent           *float64 `bson:"timeInAnyLowPercent,omitempty" json:"timeInAnyLowPercent,omitempty"`
-	TimeInAnyLowPercentDelta      *float64 `bson:"timeInAnyLowPercentDelta,omitempty" json:"timeInAnyLowPercentDelta,omitempty"`
-	TimeInAnyLowRecords           *int     `bson:"timeInAnyLowRecords,omitempty" json:"timeInAnyLowRecords,omitempty"`
-	TimeInAnyLowRecordsDelta      *int     `bson:"timeInAnyLowRecordsDelta,omitempty" json:"timeInAnyLowRecordsDelta,omitempty"`
-	TimeInExtremeHighPercent      *float64 `bson:"timeInExtremeHighPercent,omitempty" json:"timeInExtremeHighPercent,omitempty"`
-	TimeInExtremeHighPercentDelta *float64 `bson:"timeInExtremeHighPercentDelta,omitempty" json:"timeInExtremeHighPercentDelta,omitempty"`
-	TimeInExtremeHighRecords      *int     `bson:"timeInExtremeHighRecords,omitempty" json:"timeInExtremeHighRecords,omitempty"`
-	TimeInExtremeHighRecordsDelta *int     `bson:"timeInExtremeHighRecordsDelta,omitempty" json:"timeInExtremeHighRecordsDelta,omitempty"`
-	TimeInHighPercent             *float64 `bson:"timeInHighPercent,omitempty" json:"timeInHighPercent,omitempty"`
-	TimeInHighPercentDelta        *float64 `bson:"timeInHighPercentDelta,omitempty" json:"timeInHighPercentDelta,omitempty"`
-	TimeInHighRecords             *int     `bson:"timeInHighRecords,omitempty" json:"timeInHighRecords,omitempty"`
-	TimeInHighRecordsDelta        *int     `bson:"timeInHighRecordsDelta,omitempty" json:"timeInHighRecordsDelta,omitempty"`
-	TimeInLowPercent              *float64 `bson:"timeInLowPercent,omitempty" json:"timeInLowPercent,omitempty"`
-	TimeInLowPercentDelta         *float64 `bson:"timeInLowPercentDelta,omitempty" json:"timeInLowPercentDelta,omitempty"`
-	TimeInLowRecords              *int     `bson:"timeInLowRecords,omitempty" json:"timeInLowRecords,omitempty"`
-	TimeInLowRecordsDelta         *int     `bson:"timeInLowRecordsDelta,omitempty" json:"timeInLowRecordsDelta,omitempty"`
-	TimeInTargetPercent           *float64 `bson:"timeInTargetPercent,omitempty" json:"timeInTargetPercent,omitempty"`
-	TimeInTargetPercentDelta      *float64 `bson:"timeInTargetPercentDelta,omitempty" json:"timeInTargetPercentDelta,omitempty"`
-	TimeInTargetRecords           *int     `bson:"timeInTargetRecords,omitempty" json:"timeInTargetRecords,omitempty"`
-	TimeInTargetRecordsDelta      *int     `bson:"timeInTargetRecordsDelta,omitempty" json:"timeInTargetRecordsDelta,omitempty"`
-	TimeInVeryHighPercent         *float64 `bson:"timeInVeryHighPercent,omitempty" json:"timeInVeryHighPercent,omitempty"`
-	TimeInVeryHighPercentDelta    *float64 `bson:"timeInVeryHighPercentDelta,omitempty" json:"timeInVeryHighPercentDelta,omitempty"`
-	TimeInVeryHighRecords         *int     `bson:"timeInVeryHighRecords,omitempty" json:"timeInVeryHighRecords,omitempty"`
-	TimeInVeryHighRecordsDelta    *int     `bson:"timeInVeryHighRecordsDelta,omitempty" json:"timeInVeryHighRecordsDelta,omitempty"`
-	TimeInVeryLowPercent          *float64 `bson:"timeInVeryLowPercent,omitempty" json:"timeInVeryLowPercent,omitempty"`
-	TimeInVeryLowPercentDelta     *float64 `bson:"timeInVeryLowPercentDelta,omitempty" json:"timeInVeryLowPercentDelta,omitempty"`
-	TimeInVeryLowRecords          *int     `bson:"timeInVeryLowRecords,omitempty" json:"timeInVeryLowRecords,omitempty"`
-	TimeInVeryLowRecordsDelta     *int     `bson:"timeInVeryLowRecordsDelta,omitempty" json:"timeInVeryLowRecordsDelta,omitempty"`
-	TotalRecords                  *int     `bson:"totalRecords,omitempty" json:"totalRecords,omitempty"`
-	TotalRecordsDelta             *int     `bson:"totalRecordsDelta,omitempty" json:"totalRecordsDelta,omitempty"`
+	AverageDailyRecords           *float64 `bson:"averageDailyRecords,omitempty"`
+	AverageDailyRecordsDelta      *float64 `bson:"averageDailyRecordsDelta,omitempty"`
+	AverageGlucoseMmol            *float64 `bson:"averageGlucoseMmol,omitempty"`
+	AverageGlucoseMmolDelta       *float64 `bson:"averageGlucoseMmolDelta,omitempty"`
+	HasAverageDailyRecords        bool     `bson:"hasAverageDailyRecords"`
+	HasAverageGlucoseMmol         bool     `bson:"hasAverageGlucoseMmol"`
+	HasTimeInAnyHighPercent       bool     `bson:"hasTimeInAnyHighPercent"`
+	HasTimeInAnyHighRecords       bool     `bson:"hasTimeInAnyHighRecords"`
+	HasTimeInAnyLowPercent        bool     `bson:"hasTimeInAnyLowPercent"`
+	HasTimeInAnyLowRecords        bool     `bson:"hasTimeInAnyLowRecords"`
+	HasTimeInExtremeHighPercent   bool     `bson:"hasTimeInExtremeHighPercent"`
+	HasTimeInExtremeHighRecords   bool     `bson:"hasTimeInExtremeHighRecords"`
+	HasTimeInHighPercent          bool     `bson:"hasTimeInHighPercent"`
+	HasTimeInHighRecords          bool     `bson:"hasTimeInHighRecords"`
+	HasTimeInLowPercent           bool     `bson:"hasTimeInLowPercent"`
+	HasTimeInLowRecords           bool     `bson:"hasTimeInLowRecords"`
+	HasTimeInTargetPercent        bool     `bson:"hasTimeInTargetPercent"`
+	HasTimeInTargetRecords        bool     `bson:"hasTimeInTargetRecords"`
+	HasTimeInVeryHighPercent      bool     `bson:"hasTimeInVeryHighPercent"`
+	HasTimeInVeryHighRecords      bool     `bson:"hasTimeInVeryHighRecords"`
+	HasTimeInVeryLowPercent       bool     `bson:"hasTimeInVeryLowPercent"`
+	HasTimeInVeryLowRecords       bool     `bson:"hasTimeInVeryLowRecords"`
+	HasTotalRecords               bool     `bson:"hasTotalRecords"`
+	TimeInAnyHighPercent          *float64 `bson:"timeInAnyHighPercent,omitempty"`
+	TimeInAnyHighPercentDelta     *float64 `bson:"timeInAnyHighPercentDelta,omitempty"`
+	TimeInAnyHighRecords          *int     `bson:"timeInAnyHighRecords,omitempty"`
+	TimeInAnyHighRecordsDelta     *int     `bson:"timeInAnyHighRecordsDelta,omitempty"`
+	TimeInAnyLowPercent           *float64 `bson:"timeInAnyLowPercent,omitempty"`
+	TimeInAnyLowPercentDelta      *float64 `bson:"timeInAnyLowPercentDelta,omitempty"`
+	TimeInAnyLowRecords           *int     `bson:"timeInAnyLowRecords,omitempty"`
+	TimeInAnyLowRecordsDelta      *int     `bson:"timeInAnyLowRecordsDelta,omitempty"`
+	TimeInExtremeHighPercent      *float64 `bson:"timeInExtremeHighPercent,omitempty"`
+	TimeInExtremeHighPercentDelta *float64 `bson:"timeInExtremeHighPercentDelta,omitempty"`
+	TimeInExtremeHighRecords      *int     `bson:"timeInExtremeHighRecords,omitempty"`
+	TimeInExtremeHighRecordsDelta *int     `bson:"timeInExtremeHighRecordsDelta,omitempty"`
+	TimeInHighPercent             *float64 `bson:"timeInHighPercent,omitempty"`
+	TimeInHighPercentDelta        *float64 `bson:"timeInHighPercentDelta,omitempty"`
+	TimeInHighRecords             *int     `bson:"timeInHighRecords,omitempty"`
+	TimeInHighRecordsDelta        *int     `bson:"timeInHighRecordsDelta,omitempty"`
+	TimeInLowPercent              *float64 `bson:"timeInLowPercent,omitempty"`
+	TimeInLowPercentDelta         *float64 `bson:"timeInLowPercentDelta,omitempty"`
+	TimeInLowRecords              *int     `bson:"timeInLowRecords,omitempty"`
+	TimeInLowRecordsDelta         *int     `bson:"timeInLowRecordsDelta,omitempty"`
+	TimeInTargetPercent           *float64 `bson:"timeInTargetPercent,omitempty"`
+	TimeInTargetPercentDelta      *float64 `bson:"timeInTargetPercentDelta,omitempty"`
+	TimeInTargetRecords           *int     `bson:"timeInTargetRecords,omitempty"`
+	TimeInTargetRecordsDelta      *int     `bson:"timeInTargetRecordsDelta,omitempty"`
+	TimeInVeryHighPercent         *float64 `bson:"timeInVeryHighPercent,omitempty"`
+	TimeInVeryHighPercentDelta    *float64 `bson:"timeInVeryHighPercentDelta,omitempty"`
+	TimeInVeryHighRecords         *int     `bson:"timeInVeryHighRecords,omitempty"`
+	TimeInVeryHighRecordsDelta    *int     `bson:"timeInVeryHighRecordsDelta,omitempty"`
+	TimeInVeryLowPercent          *float64 `bson:"timeInVeryLowPercent,omitempty"`
+	TimeInVeryLowPercentDelta     *float64 `bson:"timeInVeryLowPercentDelta,omitempty"`
+	TimeInVeryLowRecords          *int     `bson:"timeInVeryLowRecords,omitempty"`
+	TimeInVeryLowRecordsDelta     *int     `bson:"timeInVeryLowRecordsDelta,omitempty"`
+	TotalRecords                  *int     `bson:"totalRecords,omitempty"`
+	TotalRecordsDelta             *int     `bson:"totalRecordsDelta,omitempty"`
 }
 
 type PatientBGMPeriods map[string]PatientBGMPeriod
@@ -90,107 +90,107 @@ func (s *PatientBGMStats) GetLastUpdatedDate() time.Time {
 
 // PatientCGMPeriod Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)
 type PatientCGMPeriod struct {
-	AverageDailyRecords             *float64 `bson:"averageDailyRecords,omitempty" json:"averageDailyRecords,omitempty"`
-	AverageDailyRecordsDelta        *float64 `bson:"averageDailyRecordsDelta,omitempty" json:"averageDailyRecordsDelta,omitempty"`
-	AverageGlucoseMmol              *float64 `bson:"averageGlucoseMmol,omitempty" json:"averageGlucoseMmol,omitempty"`
-	AverageGlucoseMmolDelta         *float64 `bson:"averageGlucoseMmolDelta,omitempty" json:"averageGlucoseMmolDelta,omitempty"`
-	CoefficientOfVariation          float64  `bson:"coefficientOfVariation" json:"coefficientOfVariation"`
-	CoefficientOfVariationDelta     float64  `bson:"coefficientOfVariationDelta" json:"coefficientOfVariationDelta"`
-	DaysWithData                    int      `bson:"daysWithData" json:"daysWithData"`
-	DaysWithDataDelta               int      `bson:"daysWithDataDelta" json:"daysWithDataDelta"`
-	GlucoseManagementIndicator      *float64 `bson:"glucoseManagementIndicator,omitempty" json:"glucoseManagementIndicator,omitempty"`
-	GlucoseManagementIndicatorDelta *float64 `bson:"glucoseManagementIndicatorDelta,omitempty" json:"glucoseManagementIndicatorDelta,omitempty"`
-	HasAverageDailyRecords          bool     `bson:"hasAverageDailyRecords" json:"hasAverageDailyRecords"`
-	HasAverageGlucoseMmol           bool     `bson:"hasAverageGlucoseMmol" json:"hasAverageGlucoseMmol"`
-	HasGlucoseManagementIndicator   bool     `bson:"hasGlucoseManagementIndicator" json:"hasGlucoseManagementIndicator"`
-	HasTimeCGMUseMinutes            bool     `bson:"hasTimeCGMUseMinutes" json:"hasTimeCGMUseMinutes"`
-	HasTimeCGMUsePercent            bool     `bson:"hasTimeCGMUsePercent" json:"hasTimeCGMUsePercent"`
-	HasTimeCGMUseRecords            bool     `bson:"hasTimeCGMUseRecords" json:"hasTimeCGMUseRecords"`
-	HasTimeInAnyHighMinutes         bool     `bson:"hasTimeInAnyHighMinutes" json:"hasTimeInAnyHighMinutes"`
-	HasTimeInAnyHighPercent         bool     `bson:"hasTimeInAnyHighPercent" json:"hasTimeInAnyHighPercent"`
-	HasTimeInAnyHighRecords         bool     `bson:"hasTimeInAnyHighRecords" json:"hasTimeInAnyHighRecords"`
-	HasTimeInAnyLowMinutes          bool     `bson:"hasTimeInAnyLowMinutes" json:"hasTimeInAnyLowMinutes"`
-	HasTimeInAnyLowPercent          bool     `bson:"hasTimeInAnyLowPercent" json:"hasTimeInAnyLowPercent"`
-	HasTimeInAnyLowRecords          bool     `bson:"hasTimeInAnyLowRecords" json:"hasTimeInAnyLowRecords"`
-	HasTimeInExtremeHighMinutes     bool     `bson:"hasTimeInExtremeHighMinutes" json:"hasTimeInExtremeHighMinutes"`
-	HasTimeInExtremeHighPercent     bool     `bson:"hasTimeInExtremeHighPercent" json:"hasTimeInExtremeHighPercent"`
-	HasTimeInExtremeHighRecords     bool     `bson:"hasTimeInExtremeHighRecords" json:"hasTimeInExtremeHighRecords"`
-	HasTimeInHighMinutes            bool     `bson:"hasTimeInHighMinutes" json:"hasTimeInHighMinutes"`
-	HasTimeInHighPercent            bool     `bson:"hasTimeInHighPercent" json:"hasTimeInHighPercent"`
-	HasTimeInHighRecords            bool     `bson:"hasTimeInHighRecords" json:"hasTimeInHighRecords"`
-	HasTimeInLowMinutes             bool     `bson:"hasTimeInLowMinutes" json:"hasTimeInLowMinutes"`
-	HasTimeInLowPercent             bool     `bson:"hasTimeInLowPercent" json:"hasTimeInLowPercent"`
-	HasTimeInLowRecords             bool     `bson:"hasTimeInLowRecords" json:"hasTimeInLowRecords"`
-	HasTimeInTargetMinutes          bool     `bson:"hasTimeInTargetMinutes" json:"hasTimeInTargetMinutes"`
-	HasTimeInTargetPercent          bool     `bson:"hasTimeInTargetPercent" json:"hasTimeInTargetPercent"`
-	HasTimeInTargetRecords          bool     `bson:"hasTimeInTargetRecords" json:"hasTimeInTargetRecords"`
-	HasTimeInVeryHighMinutes        bool     `bson:"hasTimeInVeryHighMinutes" json:"hasTimeInVeryHighMinutes"`
-	HasTimeInVeryHighPercent        bool     `bson:"hasTimeInVeryHighPercent" json:"hasTimeInVeryHighPercent"`
-	HasTimeInVeryHighRecords        bool     `bson:"hasTimeInVeryHighRecords" json:"hasTimeInVeryHighRecords"`
-	HasTimeInVeryLowMinutes         bool     `bson:"hasTimeInVeryLowMinutes" json:"hasTimeInVeryLowMinutes"`
-	HasTimeInVeryLowPercent         bool     `bson:"hasTimeInVeryLowPercent" json:"hasTimeInVeryLowPercent"`
-	HasTimeInVeryLowRecords         bool     `bson:"hasTimeInVeryLowRecords" json:"hasTimeInVeryLowRecords"`
-	HasTotalRecords                 bool     `bson:"hasTotalRecords" json:"hasTotalRecords"`
-	HoursWithData                   int      `bson:"hoursWithData" json:"hoursWithData"`
-	HoursWithDataDelta              int      `bson:"hoursWithDataDelta" json:"hoursWithDataDelta"`
-	StandardDeviation               float64  `bson:"standardDeviation" json:"standardDeviation"`
-	StandardDeviationDelta          float64  `bson:"standardDeviationDelta" json:"standardDeviationDelta"`
-	TimeCGMUseMinutes               *int     `bson:"timeCGMUseMinutes,omitempty" json:"timeCGMUseMinutes,omitempty"`
-	TimeCGMUseMinutesDelta          *int     `bson:"timeCGMUseMinutesDelta,omitempty" json:"timeCGMUseMinutesDelta,omitempty"`
-	TimeCGMUsePercent               *float64 `bson:"timeCGMUsePercent,omitempty" json:"timeCGMUsePercent,omitempty"`
-	TimeCGMUsePercentDelta          *float64 `bson:"timeCGMUsePercentDelta,omitempty" json:"timeCGMUsePercentDelta,omitempty"`
-	TimeCGMUseRecords               *int     `bson:"timeCGMUseRecords,omitempty" json:"timeCGMUseRecords,omitempty"`
-	TimeCGMUseRecordsDelta          *int     `bson:"timeCGMUseRecordsDelta,omitempty" json:"timeCGMUseRecordsDelta,omitempty"`
-	TimeInAnyHighMinutes            *int     `bson:"timeInAnyHighMinutes,omitempty" json:"timeInAnyHighMinutes,omitempty"`
-	TimeInAnyHighMinutesDelta       *int     `bson:"timeInAnyHighMinutesDelta,omitempty" json:"timeInAnyHighMinutesDelta,omitempty"`
-	TimeInAnyHighPercent            *float64 `bson:"timeInAnyHighPercent,omitempty" json:"timeInAnyHighPercent,omitempty"`
-	TimeInAnyHighPercentDelta       *float64 `bson:"timeInAnyHighPercentDelta,omitempty" json:"timeInAnyHighPercentDelta,omitempty"`
-	TimeInAnyHighRecords            *int     `bson:"timeInAnyHighRecords,omitempty" json:"timeInAnyHighRecords,omitempty"`
-	TimeInAnyHighRecordsDelta       *int     `bson:"timeInAnyHighRecordsDelta,omitempty" json:"timeInAnyHighRecordsDelta,omitempty"`
-	TimeInAnyLowMinutes             *int     `bson:"timeInAnyLowMinutes,omitempty" json:"timeInAnyLowMinutes,omitempty"`
-	TimeInAnyLowMinutesDelta        *int     `bson:"timeInAnyLowMinutesDelta,omitempty" json:"timeInAnyLowMinutesDelta,omitempty"`
-	TimeInAnyLowPercent             *float64 `bson:"timeInAnyLowPercent,omitempty" json:"timeInAnyLowPercent,omitempty"`
-	TimeInAnyLowPercentDelta        *float64 `bson:"timeInAnyLowPercentDelta,omitempty" json:"timeInAnyLowPercentDelta,omitempty"`
-	TimeInAnyLowRecords             *int     `bson:"timeInAnyLowRecords,omitempty" json:"timeInAnyLowRecords,omitempty"`
-	TimeInAnyLowRecordsDelta        *int     `bson:"timeInAnyLowRecordsDelta,omitempty" json:"timeInAnyLowRecordsDelta,omitempty"`
-	TimeInExtremeHighMinutes        *int     `bson:"timeInExtremeHighMinutes,omitempty" json:"timeInExtremeHighMinutes,omitempty"`
-	TimeInExtremeHighMinutesDelta   *int     `bson:"timeInExtremeHighMinutesDelta,omitempty" json:"timeInExtremeHighMinutesDelta,omitempty"`
-	TimeInExtremeHighPercent        *float64 `bson:"timeInExtremeHighPercent,omitempty" json:"timeInExtremeHighPercent,omitempty"`
-	TimeInExtremeHighPercentDelta   *float64 `bson:"timeInExtremeHighPercentDelta,omitempty" json:"timeInExtremeHighPercentDelta,omitempty"`
-	TimeInExtremeHighRecords        *int     `bson:"timeInExtremeHighRecords,omitempty" json:"timeInExtremeHighRecords,omitempty"`
-	TimeInExtremeHighRecordsDelta   *int     `bson:"timeInExtremeHighRecordsDelta,omitempty" json:"timeInExtremeHighRecordsDelta,omitempty"`
-	TimeInHighMinutes               *int     `bson:"timeInHighMinutes,omitempty" json:"timeInHighMinutes,omitempty"`
-	TimeInHighMinutesDelta          *int     `bson:"timeInHighMinutesDelta,omitempty" json:"timeInHighMinutesDelta,omitempty"`
-	TimeInHighPercent               *float64 `bson:"timeInHighPercent,omitempty" json:"timeInHighPercent,omitempty"`
-	TimeInHighPercentDelta          *float64 `bson:"timeInHighPercentDelta,omitempty" json:"timeInHighPercentDelta,omitempty"`
-	TimeInHighRecords               *int     `bson:"timeInHighRecords,omitempty" json:"timeInHighRecords,omitempty"`
-	TimeInHighRecordsDelta          *int     `bson:"timeInHighRecordsDelta,omitempty" json:"timeInHighRecordsDelta,omitempty"`
-	TimeInLowMinutes                *int     `bson:"timeInLowMinutes,omitempty" json:"timeInLowMinutes,omitempty"`
-	TimeInLowMinutesDelta           *int     `bson:"timeInLowMinutesDelta,omitempty" json:"timeInLowMinutesDelta,omitempty"`
-	TimeInLowPercent                *float64 `bson:"timeInLowPercent,omitempty" json:"timeInLowPercent,omitempty"`
-	TimeInLowPercentDelta           *float64 `bson:"timeInLowPercentDelta,omitempty" json:"timeInLowPercentDelta,omitempty"`
-	TimeInLowRecords                *int     `bson:"timeInLowRecords,omitempty" json:"timeInLowRecords,omitempty"`
-	TimeInLowRecordsDelta           *int     `bson:"timeInLowRecordsDelta,omitempty" json:"timeInLowRecordsDelta,omitempty"`
-	TimeInTargetMinutes             *int     `bson:"timeInTargetMinutes,omitempty" json:"timeInTargetMinutes,omitempty"`
-	TimeInTargetMinutesDelta        *int     `bson:"timeInTargetMinutesDelta,omitempty" json:"timeInTargetMinutesDelta,omitempty"`
-	TimeInTargetPercent             *float64 `bson:"timeInTargetPercent,omitempty" json:"timeInTargetPercent,omitempty"`
-	TimeInTargetPercentDelta        *float64 `bson:"timeInTargetPercentDelta,omitempty" json:"timeInTargetPercentDelta,omitempty"`
-	TimeInTargetRecords             *int     `bson:"timeInTargetRecords,omitempty" json:"timeInTargetRecords,omitempty"`
-	TimeInTargetRecordsDelta        *int     `bson:"timeInTargetRecordsDelta,omitempty" json:"timeInTargetRecordsDelta,omitempty"`
-	TimeInVeryHighMinutes           *int     `bson:"timeInVeryHighMinutes,omitempty" json:"timeInVeryHighMinutes,omitempty"`
-	TimeInVeryHighMinutesDelta      *int     `bson:"timeInVeryHighMinutesDelta,omitempty" json:"timeInVeryHighMinutesDelta,omitempty"`
-	TimeInVeryHighPercent           *float64 `bson:"timeInVeryHighPercent,omitempty" json:"timeInVeryHighPercent,omitempty"`
-	TimeInVeryHighPercentDelta      *float64 `bson:"timeInVeryHighPercentDelta,omitempty" json:"timeInVeryHighPercentDelta,omitempty"`
-	TimeInVeryHighRecords           *int     `bson:"timeInVeryHighRecords,omitempty" json:"timeInVeryHighRecords,omitempty"`
-	TimeInVeryHighRecordsDelta      *int     `bson:"timeInVeryHighRecordsDelta,omitempty" json:"timeInVeryHighRecordsDelta,omitempty"`
-	TimeInVeryLowMinutes            *int     `bson:"timeInVeryLowMinutes,omitempty" json:"timeInVeryLowMinutes,omitempty"`
-	TimeInVeryLowMinutesDelta       *int     `bson:"timeInVeryLowMinutesDelta,omitempty" json:"timeInVeryLowMinutesDelta,omitempty"`
-	TimeInVeryLowPercent            *float64 `bson:"timeInVeryLowPercent,omitempty" json:"timeInVeryLowPercent,omitempty"`
-	TimeInVeryLowPercentDelta       *float64 `bson:"timeInVeryLowPercentDelta,omitempty" json:"timeInVeryLowPercentDelta,omitempty"`
-	TimeInVeryLowRecords            *int     `bson:"timeInVeryLowRecords,omitempty" json:"timeInVeryLowRecords,omitempty"`
-	TimeInVeryLowRecordsDelta       *int     `bson:"timeInVeryLowRecordsDelta,omitempty" json:"timeInVeryLowRecordsDelta,omitempty"`
-	TotalRecords                    *int     `bson:"totalRecords,omitempty" json:"totalRecords,omitempty"`
-	TotalRecordsDelta               *int     `bson:"totalRecordsDelta,omitempty" json:"totalRecordsDelta,omitempty"`
+	AverageDailyRecords             *float64 `bson:"averageDailyRecords,omitempty"`
+	AverageDailyRecordsDelta        *float64 `bson:"averageDailyRecordsDelta,omitempty"`
+	AverageGlucoseMmol              *float64 `bson:"averageGlucoseMmol,omitempty"`
+	AverageGlucoseMmolDelta         *float64 `bson:"averageGlucoseMmolDelta,omitempty"`
+	CoefficientOfVariation          float64  `bson:"coefficientOfVariation"`
+	CoefficientOfVariationDelta     float64  `bson:"coefficientOfVariationDelta"`
+	DaysWithData                    int      `bson:"daysWithData"`
+	DaysWithDataDelta               int      `bson:"daysWithDataDelta"`
+	GlucoseManagementIndicator      *float64 `bson:"glucoseManagementIndicator,omitempty"`
+	GlucoseManagementIndicatorDelta *float64 `bson:"glucoseManagementIndicatorDelta,omitempty"`
+	HasAverageDailyRecords          bool     `bson:"hasAverageDailyRecords"`
+	HasAverageGlucoseMmol           bool     `bson:"hasAverageGlucoseMmol"`
+	HasGlucoseManagementIndicator   bool     `bson:"hasGlucoseManagementIndicator"`
+	HasTimeCGMUseMinutes            bool     `bson:"hasTimeCGMUseMinutes"`
+	HasTimeCGMUsePercent            bool     `bson:"hasTimeCGMUsePercent"`
+	HasTimeCGMUseRecords            bool     `bson:"hasTimeCGMUseRecords"`
+	HasTimeInAnyHighMinutes         bool     `bson:"hasTimeInAnyHighMinutes"`
+	HasTimeInAnyHighPercent         bool     `bson:"hasTimeInAnyHighPercent"`
+	HasTimeInAnyHighRecords         bool     `bson:"hasTimeInAnyHighRecords"`
+	HasTimeInAnyLowMinutes          bool     `bson:"hasTimeInAnyLowMinutes"`
+	HasTimeInAnyLowPercent          bool     `bson:"hasTimeInAnyLowPercent"`
+	HasTimeInAnyLowRecords          bool     `bson:"hasTimeInAnyLowRecords"`
+	HasTimeInExtremeHighMinutes     bool     `bson:"hasTimeInExtremeHighMinutes"`
+	HasTimeInExtremeHighPercent     bool     `bson:"hasTimeInExtremeHighPercent"`
+	HasTimeInExtremeHighRecords     bool     `bson:"hasTimeInExtremeHighRecords"`
+	HasTimeInHighMinutes            bool     `bson:"hasTimeInHighMinutes"`
+	HasTimeInHighPercent            bool     `bson:"hasTimeInHighPercent"`
+	HasTimeInHighRecords            bool     `bson:"hasTimeInHighRecords"`
+	HasTimeInLowMinutes             bool     `bson:"hasTimeInLowMinutes"`
+	HasTimeInLowPercent             bool     `bson:"hasTimeInLowPercent"`
+	HasTimeInLowRecords             bool     `bson:"hasTimeInLowRecords"`
+	HasTimeInTargetMinutes          bool     `bson:"hasTimeInTargetMinutes"`
+	HasTimeInTargetPercent          bool     `bson:"hasTimeInTargetPercent"`
+	HasTimeInTargetRecords          bool     `bson:"hasTimeInTargetRecords"`
+	HasTimeInVeryHighMinutes        bool     `bson:"hasTimeInVeryHighMinutes"`
+	HasTimeInVeryHighPercent        bool     `bson:"hasTimeInVeryHighPercent"`
+	HasTimeInVeryHighRecords        bool     `bson:"hasTimeInVeryHighRecords"`
+	HasTimeInVeryLowMinutes         bool     `bson:"hasTimeInVeryLowMinutes"`
+	HasTimeInVeryLowPercent         bool     `bson:"hasTimeInVeryLowPercent"`
+	HasTimeInVeryLowRecords         bool     `bson:"hasTimeInVeryLowRecords"`
+	HasTotalRecords                 bool     `bson:"hasTotalRecords"`
+	HoursWithData                   int      `bson:"hoursWithData"`
+	HoursWithDataDelta              int      `bson:"hoursWithDataDelta"`
+	StandardDeviation               float64  `bson:"standardDeviation"`
+	StandardDeviationDelta          float64  `bson:"standardDeviationDelta"`
+	TimeCGMUseMinutes               *int     `bson:"timeCGMUseMinutes,omitempty"`
+	TimeCGMUseMinutesDelta          *int     `bson:"timeCGMUseMinutesDelta,omitempty"`
+	TimeCGMUsePercent               *float64 `bson:"timeCGMUsePercent,omitempty"`
+	TimeCGMUsePercentDelta          *float64 `bson:"timeCGMUsePercentDelta,omitempty"`
+	TimeCGMUseRecords               *int     `bson:"timeCGMUseRecords,omitempty"`
+	TimeCGMUseRecordsDelta          *int     `bson:"timeCGMUseRecordsDelta,omitempty"`
+	TimeInAnyHighMinutes            *int     `bson:"timeInAnyHighMinutes,omitempty"`
+	TimeInAnyHighMinutesDelta       *int     `bson:"timeInAnyHighMinutesDelta,omitempty"`
+	TimeInAnyHighPercent            *float64 `bson:"timeInAnyHighPercent,omitempty"`
+	TimeInAnyHighPercentDelta       *float64 `bson:"timeInAnyHighPercentDelta,omitempty"`
+	TimeInAnyHighRecords            *int     `bson:"timeInAnyHighRecords,omitempty"`
+	TimeInAnyHighRecordsDelta       *int     `bson:"timeInAnyHighRecordsDelta,omitempty"`
+	TimeInAnyLowMinutes             *int     `bson:"timeInAnyLowMinutes,omitempty"`
+	TimeInAnyLowMinutesDelta        *int     `bson:"timeInAnyLowMinutesDelta,omitempty"`
+	TimeInAnyLowPercent             *float64 `bson:"timeInAnyLowPercent,omitempty"`
+	TimeInAnyLowPercentDelta        *float64 `bson:"timeInAnyLowPercentDelta,omitempty"`
+	TimeInAnyLowRecords             *int     `bson:"timeInAnyLowRecords,omitempty"`
+	TimeInAnyLowRecordsDelta        *int     `bson:"timeInAnyLowRecordsDelta,omitempty"`
+	TimeInExtremeHighMinutes        *int     `bson:"timeInExtremeHighMinutes,omitempty"`
+	TimeInExtremeHighMinutesDelta   *int     `bson:"timeInExtremeHighMinutesDelta,omitempty"`
+	TimeInExtremeHighPercent        *float64 `bson:"timeInExtremeHighPercent,omitempty"`
+	TimeInExtremeHighPercentDelta   *float64 `bson:"timeInExtremeHighPercentDelta,omitempty"`
+	TimeInExtremeHighRecords        *int     `bson:"timeInExtremeHighRecords,omitempty"`
+	TimeInExtremeHighRecordsDelta   *int     `bson:"timeInExtremeHighRecordsDelta,omitempty"`
+	TimeInHighMinutes               *int     `bson:"timeInHighMinutes,omitempty"`
+	TimeInHighMinutesDelta          *int     `bson:"timeInHighMinutesDelta,omitempty"`
+	TimeInHighPercent               *float64 `bson:"timeInHighPercent,omitempty"`
+	TimeInHighPercentDelta          *float64 `bson:"timeInHighPercentDelta,omitempty"`
+	TimeInHighRecords               *int     `bson:"timeInHighRecords,omitempty"`
+	TimeInHighRecordsDelta          *int     `bson:"timeInHighRecordsDelta,omitempty"`
+	TimeInLowMinutes                *int     `bson:"timeInLowMinutes,omitempty"`
+	TimeInLowMinutesDelta           *int     `bson:"timeInLowMinutesDelta,omitempty"`
+	TimeInLowPercent                *float64 `bson:"timeInLowPercent,omitempty"`
+	TimeInLowPercentDelta           *float64 `bson:"timeInLowPercentDelta,omitempty"`
+	TimeInLowRecords                *int     `bson:"timeInLowRecords,omitempty"`
+	TimeInLowRecordsDelta           *int     `bson:"timeInLowRecordsDelta,omitempty"`
+	TimeInTargetMinutes             *int     `bson:"timeInTargetMinutes,omitempty"`
+	TimeInTargetMinutesDelta        *int     `bson:"timeInTargetMinutesDelta,omitempty"`
+	TimeInTargetPercent             *float64 `bson:"timeInTargetPercent,omitempty"`
+	TimeInTargetPercentDelta        *float64 `bson:"timeInTargetPercentDelta,omitempty"`
+	TimeInTargetRecords             *int     `bson:"timeInTargetRecords,omitempty"`
+	TimeInTargetRecordsDelta        *int     `bson:"timeInTargetRecordsDelta,omitempty"`
+	TimeInVeryHighMinutes           *int     `bson:"timeInVeryHighMinutes,omitempty"`
+	TimeInVeryHighMinutesDelta      *int     `bson:"timeInVeryHighMinutesDelta,omitempty"`
+	TimeInVeryHighPercent           *float64 `bson:"timeInVeryHighPercent,omitempty"`
+	TimeInVeryHighPercentDelta      *float64 `bson:"timeInVeryHighPercentDelta,omitempty"`
+	TimeInVeryHighRecords           *int     `bson:"timeInVeryHighRecords,omitempty"`
+	TimeInVeryHighRecordsDelta      *int     `bson:"timeInVeryHighRecordsDelta,omitempty"`
+	TimeInVeryLowMinutes            *int     `bson:"timeInVeryLowMinutes,omitempty"`
+	TimeInVeryLowMinutesDelta       *int     `bson:"timeInVeryLowMinutesDelta,omitempty"`
+	TimeInVeryLowPercent            *float64 `bson:"timeInVeryLowPercent,omitempty"`
+	TimeInVeryLowPercentDelta       *float64 `bson:"timeInVeryLowPercentDelta,omitempty"`
+	TimeInVeryLowRecords            *int     `bson:"timeInVeryLowRecords,omitempty"`
+	TimeInVeryLowRecordsDelta       *int     `bson:"timeInVeryLowRecordsDelta,omitempty"`
+	TotalRecords                    *int     `bson:"totalRecords,omitempty"`
+	TotalRecordsDelta               *int     `bson:"totalRecordsDelta,omitempty"`
 }
 
 type PatientCGMPeriods map[string]PatientCGMPeriod
