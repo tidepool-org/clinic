@@ -1386,6 +1386,9 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	filters = patients.SummaryFilters{}
 
 	fieldsMap := map[string]*string{
+		"averageGlucoseMmol":         params.CgmAverageGlucoseMmol,
+		"glucoseManagementIndicator": params.CgmGlucoseManagementIndicator,
+
 		"timeCGMUsePercent":        params.CgmTimeCGMUsePercent,
 		"timeInVeryLowPercent":     params.CgmTimeInVeryLowPercent,
 		"timeInAnyLowPercent":      params.CgmTimeInAnyLowPercent,
@@ -1422,6 +1425,9 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 		"daysWithData":           params.CgmDaysWithData,
 		"standardDeviation":      params.CgmStandardDeviation,
 		"coefficientOfVariation": params.CgmCoefficientOfVariation,
+
+		"averageGlucoseMmolDelta":         params.CgmAverageGlucoseMmolDelta,
+		"glucoseManagementIndicatorDelta": params.CgmGlucoseManagementIndicatorDelta,
 
 		"timeCGMUsePercentDelta":        params.CgmTimeCGMUsePercentDelta,
 		"timeInVeryLowPercentDelta":     params.CgmTimeInVeryLowPercentDelta,
@@ -1475,6 +1481,8 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	filters = patients.SummaryFilters{}
 
 	fieldsMap := map[string]*string{
+		"averageGlucoseMmol": params.BgmAverageGlucoseMmol,
+
 		"timeInVeryLowPercent":   params.BgmTimeInVeryLowPercent,
 		"timeInAnyLowPercent":    params.BgmTimeInAnyLowPercent,
 		"timeInLowPercent":       params.BgmTimeInLowPercent,
@@ -1495,6 +1503,8 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 
 		"averageDailyRecords": params.BgmAverageDailyRecords,
 		"totalRecords":        params.BgmTotalRecords,
+
+		"averageGlucoseMmolDelta": params.BgmAverageGlucoseMmolDelta,
 
 		"timeInVeryLowPercentDelta":   params.BgmTimeInVeryLowPercentDelta,
 		"timeInAnyLowPercentDelta":    params.BgmTimeInAnyLowPercentDelta,

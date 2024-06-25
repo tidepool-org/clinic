@@ -1753,6 +1753,12 @@ type ListPatientsParams struct {
 	// OffsetPeriods If we should display, filter, and sort based on the offset periods or default periods
 	OffsetPeriods *bool `form:"offsetPeriods,omitempty" json:"offsetPeriods,omitempty"`
 
+	// CgmAverageGlucoseMmol Average glucose value of records
+	CgmAverageGlucoseMmol *string `form:"cgm.averageGlucoseMmol,omitempty" json:"cgm.averageGlucoseMmol,omitempty"`
+
+	// CgmGlucoseManagementIndicator Glucose management Indicator of records
+	CgmGlucoseManagementIndicator *string `form:"cgm.glucoseManagementIndicator,omitempty" json:"cgm.glucoseManagementIndicator,omitempty"`
+
 	// CgmTimeCGMUsePercent Percentage of time of CGM use
 	CgmTimeCGMUsePercent *string `form:"cgm.timeCGMUsePercent,omitempty" json:"cgm.timeCGMUsePercent,omitempty"`
 
@@ -1849,6 +1855,9 @@ type ListPatientsParams struct {
 	// CgmCoefficientOfVariation Coefficient Of Variation of records in period
 	CgmCoefficientOfVariation *string `form:"cgm.coefficientOfVariation,omitempty" json:"cgm.coefficientOfVariation,omitempty"`
 
+	// BgmAverageGlucoseMmol Average glucose value of records
+	BgmAverageGlucoseMmol *string `form:"bgm.averageGlucoseMmol,omitempty" json:"bgm.averageGlucoseMmol,omitempty"`
+
 	// BgmTimeInVeryLowPercent Percentage of time below 54 mg/dL
 	BgmTimeInVeryLowPercent *string `form:"bgm.timeInVeryLowPercent,omitempty" json:"bgm.timeInVeryLowPercent,omitempty"`
 
@@ -1899,6 +1908,12 @@ type ListPatientsParams struct {
 
 	// BgmTotalRecords Total records in period
 	BgmTotalRecords *string `form:"bgm.totalRecords,omitempty" json:"bgm.totalRecords,omitempty"`
+
+	// CgmAverageGlucoseMmolDelta Average glucose value of records
+	CgmAverageGlucoseMmolDelta *string `form:"cgm.averageGlucoseMmolDelta,omitempty" json:"cgm.averageGlucoseMmolDelta,omitempty"`
+
+	// CgmGlucoseManagementIndicatorDelta Glucose management Indicator of records
+	CgmGlucoseManagementIndicatorDelta *string `form:"cgm.glucoseManagementIndicatorDelta,omitempty" json:"cgm.glucoseManagementIndicatorDelta,omitempty"`
 
 	// CgmTimeCGMUsePercentDelta PercentDeltaage of time of CGM use
 	CgmTimeCGMUsePercentDelta *string `form:"cgm.timeCGMUsePercentDelta,omitempty" json:"cgm.timeCGMUsePercentDelta,omitempty"`
@@ -2001,6 +2016,9 @@ type ListPatientsParams struct {
 
 	// CgmLastUploadDateTo Exclusive
 	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
+
+	// BgmAverageGlucoseMmolDelta Average glucose value of records
+	BgmAverageGlucoseMmolDelta *string `form:"bgm.averageGlucoseMmolDelta,omitempty" json:"bgm.averageGlucoseMmolDelta,omitempty"`
 
 	// BgmTimeInVeryLowPercentDelta PercentDeltaage of time below 54 mg/dL
 	BgmTimeInVeryLowPercentDelta *string `form:"bgm.timeInVeryLowPercentDelta,omitempty" json:"bgm.timeInVeryLowPercentDelta,omitempty"`

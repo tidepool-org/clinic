@@ -3044,6 +3044,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
+		if params.CgmAverageGlucoseMmol != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.averageGlucoseMmol", runtime.ParamLocationQuery, *params.CgmAverageGlucoseMmol); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmGlucoseManagementIndicator != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.glucoseManagementIndicator", runtime.ParamLocationQuery, *params.CgmGlucoseManagementIndicator); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.CgmTimeCGMUsePercent != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeCGMUsePercent", runtime.ParamLocationQuery, *params.CgmTimeCGMUsePercent); err != nil {
@@ -3556,6 +3588,22 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
+		if params.BgmAverageGlucoseMmol != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.averageGlucoseMmol", runtime.ParamLocationQuery, *params.BgmAverageGlucoseMmol); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.BgmTimeInVeryLowPercent != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInVeryLowPercent", runtime.ParamLocationQuery, *params.BgmTimeInVeryLowPercent); err != nil {
@@ -3815,6 +3863,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.BgmTotalRecords != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.totalRecords", runtime.ParamLocationQuery, *params.BgmTotalRecords); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmAverageGlucoseMmolDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.averageGlucoseMmolDelta", runtime.ParamLocationQuery, *params.CgmAverageGlucoseMmolDelta); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmGlucoseManagementIndicatorDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.glucoseManagementIndicatorDelta", runtime.ParamLocationQuery, *params.CgmGlucoseManagementIndicatorDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -4359,6 +4439,22 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.CgmLastUploadDateTo != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastUploadDateTo", runtime.ParamLocationQuery, *params.CgmLastUploadDateTo); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BgmAverageGlucoseMmolDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.averageGlucoseMmolDelta", runtime.ParamLocationQuery, *params.BgmAverageGlucoseMmolDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

@@ -984,6 +984,20 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offsetPeriods: %s", err))
 	}
 
+	// ------------- Optional query parameter "cgm.averageGlucoseMmol" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.averageGlucoseMmol", ctx.QueryParams(), &params.CgmAverageGlucoseMmol)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.averageGlucoseMmol: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.glucoseManagementIndicator" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.glucoseManagementIndicator", ctx.QueryParams(), &params.CgmGlucoseManagementIndicator)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.glucoseManagementIndicator: %s", err))
+	}
+
 	// ------------- Optional query parameter "cgm.timeCGMUsePercent" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "cgm.timeCGMUsePercent", ctx.QueryParams(), &params.CgmTimeCGMUsePercent)
@@ -1208,6 +1222,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.coefficientOfVariation: %s", err))
 	}
 
+	// ------------- Optional query parameter "bgm.averageGlucoseMmol" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.averageGlucoseMmol", ctx.QueryParams(), &params.BgmAverageGlucoseMmol)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.averageGlucoseMmol: %s", err))
+	}
+
 	// ------------- Optional query parameter "bgm.timeInVeryLowPercent" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "bgm.timeInVeryLowPercent", ctx.QueryParams(), &params.BgmTimeInVeryLowPercent)
@@ -1325,6 +1346,20 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "bgm.totalRecords", ctx.QueryParams(), &params.BgmTotalRecords)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.totalRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.averageGlucoseMmolDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.averageGlucoseMmolDelta", ctx.QueryParams(), &params.CgmAverageGlucoseMmolDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.averageGlucoseMmolDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.glucoseManagementIndicatorDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.glucoseManagementIndicatorDelta", ctx.QueryParams(), &params.CgmGlucoseManagementIndicatorDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.glucoseManagementIndicatorDelta: %s", err))
 	}
 
 	// ------------- Optional query parameter "cgm.timeCGMUsePercentDelta" -------------
@@ -1563,6 +1598,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.averageGlucoseMmolDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.averageGlucoseMmolDelta", ctx.QueryParams(), &params.BgmAverageGlucoseMmolDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.averageGlucoseMmolDelta: %s", err))
 	}
 
 	// ------------- Optional query parameter "bgm.timeInVeryLowPercentDelta" -------------
