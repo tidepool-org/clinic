@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
@@ -11,11 +12,18 @@ import (
 	"github.com/tidepool-org/clinic/test"
 	xealthTest "github.com/tidepool-org/clinic/xealth/test"
 	"go.uber.org/fx"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
+)
+
+const (
+	XealthBearerToken      = "xealth-token"
+	RedoxVerificationToken = "redox-token"
 )
 
 var app *fx.App
@@ -57,6 +65,7 @@ func setupEnvironment() {
 	t.Setenv("TIDEPOOL_XEALTH_SERVER_BASE_URL", xealthStub.URL)
 	t.Setenv("TIDEPOOL_XEALTH_TOKEN_URL", fmt.Sprintf("%s%s", xealthStub.URL, xealthTest.TokenEndpoint))
 	t.Setenv("TIDEPOOL_APPLICATION_URL", "https://integration.test.app.url.com")
+	t.Setenv("TIDEPOOL_REDOX_VERIFICATION_TOKEN", RedoxVerificationToken)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -86,4 +95,41 @@ func teardownEnvironment() {
 	if app != nil {
 		Expect(app.Stop(context.Background())).To(Succeed())
 	}
+}
+
+func asClinician(req *http.Request) {
+	req.Header.Set("x-tidepool-session-token", integrationTest.TestUserToken)
+}
+
+func asServer(req *http.Request) {
+	req.Header.Set("x-tidepool-session-token", integrationTest.TestServerToken)
+}
+
+func asServiceAccount(req *http.Request) {
+	req.Header.Set("x-tidepool-session-token", integrationTest.TestServiceAccountToken)
+}
+
+func asXealth(req *http.Request) {
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", XealthBearerToken))
+}
+
+func asRedox(req *http.Request) {
+	req.Header.Set("verification-token", RedoxVerificationToken)
+}
+
+func prepareRequest(method, endpoint string, fixturePath string) *http.Request {
+	var body io.Reader
+	if fixturePath != "" {
+		b, err := test.LoadFixture(fixturePath)
+		Expect(err).ToNot(HaveOccurred())
+		body = bytes.NewReader(b)
+	}
+
+	return prepareRequestWithBody(method, endpoint, body)
+}
+
+func prepareRequestWithBody(method, endpoint string, body io.Reader) *http.Request {
+	req := httptest.NewRequest(method, endpoint, body)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	return req
 }

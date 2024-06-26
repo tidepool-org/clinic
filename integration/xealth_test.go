@@ -23,7 +23,6 @@ import (
 )
 
 const (
-	XealthBearerToken           = "xealth-token"
 	XealthAdultOrderId          = "7e316617-ef33-4859-b0c9-36bddbfe9229"
 	XealthPediatricOrderId      = "4f5d4267-654e-451f-acde-d56560940989"
 	XealtAdultOrderFixture      = "./test/xealth_fixtures/05_read_order_response.json"
@@ -162,8 +161,6 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
-			res, _ := io.ReadAll(rec.Result().Body)
-			fmt.Println(string(res))
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 		})
 	})
@@ -581,33 +578,4 @@ func getPrograms(server *echo.Echo) xealth_client.GetProgramsResponse0 {
 	Expect(json.Unmarshal(body, &response)).To(Succeed())
 
 	return response
-}
-
-func prepareRequest(method, endpoint string, fixturePath string) *http.Request {
-	var body io.Reader
-	if fixturePath != "" {
-		b, err := test.LoadFixture(fixturePath)
-		Expect(err).ToNot(HaveOccurred())
-		body = bytes.NewReader(b)
-	}
-
-	req := httptest.NewRequest(method, endpoint, body)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	return req
-}
-
-func asClinician(req *http.Request) {
-	req.Header.Set("x-tidepool-session-token", integrationTest.TestUserToken)
-}
-
-func asServer(req *http.Request) {
-	req.Header.Set("x-tidepool-session-token", integrationTest.TestServerToken)
-}
-
-func asServiceAccount(req *http.Request) {
-	req.Header.Set("x-tidepool-session-token", integrationTest.TestServiceAccountToken)
-}
-
-func asXealth(req *http.Request) {
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", XealthBearerToken))
 }

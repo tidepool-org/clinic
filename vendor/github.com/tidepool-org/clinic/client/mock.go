@@ -1154,6 +1154,26 @@ func (mr *MockClientInterfaceMockRecorder) SyncEHRData(ctx, clinicId interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncEHRData", reflect.TypeOf((*MockClientInterface)(nil).SyncEHRData), varargs...)
 }
 
+// SyncEHRDataForPatient mocks base method.
+func (m *MockClientInterface) SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SyncEHRDataForPatient", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SyncEHRDataForPatient indicates an expected call of SyncEHRDataForPatient.
+func (mr *MockClientInterfaceMockRecorder) SyncEHRDataForPatient(ctx, patientId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncEHRDataForPatient", reflect.TypeOf((*MockClientInterface)(nil).SyncEHRDataForPatient), varargs...)
+}
+
 // TideReport mocks base method.
 func (m *MockClientInterface) TideReport(ctx context.Context, clinicId ClinicId, params *TideReportParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3015,6 +3035,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) SendUploadReminderWithRe
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId, patientId}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendUploadReminderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SendUploadReminderWithResponse), varargs...)
+}
+
+// SyncEHRDataForPatientWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SyncEHRDataForPatientWithResponse", varargs...)
+	ret0, _ := ret[0].(*SyncEHRDataForPatientResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SyncEHRDataForPatientWithResponse indicates an expected call of SyncEHRDataForPatientWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) SyncEHRDataForPatientWithResponse(ctx, patientId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncEHRDataForPatientWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SyncEHRDataForPatientWithResponse), varargs...)
 }
 
 // SyncEHRDataWithResponse mocks base method.

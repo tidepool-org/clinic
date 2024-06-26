@@ -1107,6 +1107,19 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	It("it allows task service to sync patients", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "patients", "012345678890", "ehr", "sync"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "task",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
 	It("it allows users to fetch list of patients they have access to", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "patients"},

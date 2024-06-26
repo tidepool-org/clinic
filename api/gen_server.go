@@ -169,6 +169,9 @@ type ServerInterface interface {
 	// Find Patients
 	// (GET /v1/patients)
 	FindPatients(ctx echo.Context, params FindPatientsParams) error
+	// Sync EHR Data for Patient
+	// (POST /v1/patients/{patientId}/ehr/sync)
+	SyncEHRDataForPatient(ctx echo.Context, patientId PatientId) error
 	// UpdatePatientSummary
 	// (POST /v1/patients/{patientId}/summary)
 	UpdatePatientSummary(ctx echo.Context, patientId PatientId) error
@@ -1816,6 +1819,24 @@ func (w *ServerInterfaceWrapper) FindPatients(ctx echo.Context) error {
 	return err
 }
 
+// SyncEHRDataForPatient converts echo context to params.
+func (w *ServerInterfaceWrapper) SyncEHRDataForPatient(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "patientId", runtime.ParamLocationPath, ctx.Param("patientId"), &patientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.SyncEHRDataForPatient(ctx, patientId)
+	return err
+}
+
 // UpdatePatientSummary converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdatePatientSummary(ctx echo.Context) error {
 	var err error
@@ -2113,6 +2134,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/tide_report", wrapper.TideReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.GET(baseURL+"/v1/patients", wrapper.FindPatients)
+	router.POST(baseURL+"/v1/patients/:patientId/ehr/sync", wrapper.SyncEHRDataForPatient)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)

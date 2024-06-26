@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/platform/auth"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -20,6 +21,8 @@ const (
 	TestServiceAccountUserId = "9999999999"
 	TestServiceAccountToken  = "service-account"
 	TestXealthUserId         = "1234567891"
+	TestXealthGuardianUserId = "1234567893"
+	TestRedoxUserId          = "1234567892"
 	TestUserToken            = "user"
 	TestServerId             = "server"
 	TestServerToken          = "server"
@@ -32,6 +35,28 @@ var (
 		Username: "xealth@tidepool.org",
 		Emails: []string{
 			"xealth@tidepool.org",
+		},
+		PasswordExists: true,
+		Roles:          []string{"patient"},
+		EmailVerified:  true,
+	}
+
+	xealthGuardianUser = shoreline.UserData{
+		UserID:   TestXealthGuardianUserId,
+		Username: "xealth+guardian@tidepool.org",
+		Emails: []string{
+			"xealth+guardian@tidepool.org",
+		},
+		PasswordExists: true,
+		Roles:          []string{"patient"},
+		EmailVerified:  true,
+	}
+
+	redoxUser = shoreline.UserData{
+		UserID:   TestRedoxUserId,
+		Username: "redox@tidepool.org",
+		Emails: []string{
+			"redox@tidepool.org",
 		},
 		PasswordExists: true,
 		Roles:          []string{"patient"},
@@ -55,6 +80,7 @@ var (
 
 func ShorelineStub() *httptest.Server {
 	xealthPatientCreated := false
+	redoxPatientCreated := false
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var resp []byte
 		if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/token/%s", TestUserToken) {
@@ -80,10 +106,33 @@ func ShorelineStub() *httptest.Server {
 			} else {
 				resp, _ = json.Marshal(xealthUser)
 			}
+		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", "redox@tidepool.org") {
+			if !redoxPatientCreated {
+				w.WriteHeader(http.StatusNotFound)
+			} else {
+				resp, _ = json.Marshal(redoxUser)
+			}
 		} else if r.Method == http.MethodPost && createClinicUserUrlRegexp.MatchString(r.RequestURI) {
-			xealthPatientCreated = true
-			resp, _ = json.Marshal(xealthUser)
-			w.WriteHeader(http.StatusCreated)
+			user := struct {
+				Username string `json:"username"`
+			}{}
+			body, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(body, &user)
+
+			if user.Username == "xealth@tidepool.org" {
+				xealthPatientCreated = true
+				resp, _ = json.Marshal(xealthUser)
+				w.WriteHeader(http.StatusCreated)
+			} else if user.Username == "redox@tidepool.org" {
+				redoxPatientCreated = true
+				resp, _ = json.Marshal(redoxUser)
+				w.WriteHeader(http.StatusCreated)
+			} else if user.Username == "xealth+guardian@tidepool.org" {
+				resp, _ = json.Marshal(xealthGuardianUser)
+				w.WriteHeader(http.StatusCreated)
+			} else {
+				w.WriteHeader(http.StatusBadRequest)
+			}
 		} else if r.Method == http.MethodPost && strings.HasSuffix(r.RequestURI, "/serverlogin") {
 			w.Header().Set("x-tidepool-session-token", "server")
 		} else {

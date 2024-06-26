@@ -651,7 +651,7 @@ const (
 
 // Defines values for EHRMatchMessageRefEventType.
 const (
-	New EHRMatchMessageRefEventType = "New"
+	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
 // Defines values for EHRSettingsProvider.
@@ -665,6 +665,12 @@ const (
 	COMPLETED MigrationStatus = "COMPLETED"
 	PENDING   MigrationStatus = "PENDING"
 	RUNNING   MigrationStatus = "RUNNING"
+)
+
+// Defines values for ScheduledReportsOnUploadNoteEventType.
+const (
+	ScheduledReportsOnUploadNoteEventTypeNew     ScheduledReportsOnUploadNoteEventType = "New"
+	ScheduledReportsOnUploadNoteEventTypeReplace ScheduledReportsOnUploadNoteEventType = "Replace"
 )
 
 // Defines values for Tier.
@@ -891,7 +897,10 @@ type EHRSettings struct {
 	MrnIdType      string              `json:"mrnIdType"`
 	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
 	Provider       EHRSettingsProvider `json:"provider"`
-	SourceId       string              `json:"sourceId"`
+
+	// ScheduledReports Scheduled Report Settings
+	ScheduledReports ScheduledReports `json:"scheduledReports"`
+	SourceId         string           `json:"sourceId"`
 }
 
 // EHRSettingsProvider defines model for EHRSettings.Provider.
@@ -1475,6 +1484,16 @@ type PhoneNumber struct {
 	Number string  `json:"number"`
 	Type   *string `json:"type,omitempty"`
 }
+
+// ScheduledReports Scheduled Report Settings
+type ScheduledReports struct {
+	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
+	OnUploadEnabled       bool                                   `json:"onUploadEnabled"`
+	OnUploadNoteEventType *ScheduledReportsOnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
+}
+
+// ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
+type ScheduledReportsOnUploadNoteEventType string
 
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {

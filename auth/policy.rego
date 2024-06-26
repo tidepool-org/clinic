@@ -625,11 +625,19 @@ allow {
   is_backend_service
 }
 
-# Allow services to trigger EHR data sync
+# Allow services to trigger EHR data sync for an entire clinic
 # GET /v1/clinics/:clinicId/ehr/sync
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "ehr", "sync"]
+  is_backend_service
+}
+
+# Allow services to trigger EHR data sync for a patient
+# GET /v1/patients/:patientId/ehr/sync
+allow {
+  input.method == "POST"
+  input.path = ["v1", "patients", _, "ehr", "sync"]
   is_backend_service
 }
 

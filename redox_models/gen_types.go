@@ -1184,6 +1184,254 @@ type NewResults struct {
 	} `json:"Visit,omitempty"`
 }
 
+// ReplaceNotes defines model for ReplaceNotes.
+type ReplaceNotes struct {
+	Meta struct {
+		DataModel    string `json:"DataModel"`
+		Destinations *[]struct {
+			ID   *string `json:"ID"`
+			Name *string `json:"Name"`
+		} `json:"Destinations,omitempty"`
+		EventDateTime *string `json:"EventDateTime"`
+		EventType     string  `json:"EventType"`
+		FacilityCode  *string `json:"FacilityCode"`
+		Logs          *[]struct {
+			AttemptID *string `json:"AttemptID"`
+			ID        *string `json:"ID"`
+		} `json:"Logs,omitempty"`
+		Message *struct {
+			ID *float32 `json:"ID"`
+		} `json:"Message,omitempty"`
+		Source *struct {
+			ID   *string `json:"ID"`
+			Name *string `json:"Name"`
+		} `json:"Source,omitempty"`
+		Test         *bool `json:"Test"`
+		Transmission *struct {
+			ID *float32 `json:"ID"`
+		} `json:"Transmission,omitempty"`
+	} `json:"Meta"`
+	Note struct {
+		Authenticator *struct {
+			Address *struct {
+				City          *string `json:"City"`
+				Country       *string `json:"Country"`
+				County        *string `json:"County"`
+				State         *string `json:"State"`
+				StreetAddress *string `json:"StreetAddress"`
+				ZIP           *string `json:"ZIP"`
+			} `json:"Address,omitempty"`
+			Credentials    *[]interface{} `json:"Credentials,omitempty"`
+			EmailAddresses *[]interface{} `json:"EmailAddresses,omitempty"`
+			FirstName      *string        `json:"FirstName"`
+			ID             *string        `json:"ID"`
+			IDType         *string        `json:"IDType"`
+			LastName       *string        `json:"LastName"`
+			Location       *struct {
+				Department            *string `json:"Department"`
+				DepartmentIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"DepartmentIdentifiers,omitempty"`
+				Facility            *string `json:"Facility"`
+				FacilityIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"FacilityIdentifiers,omitempty"`
+				Room *string `json:"Room"`
+				Type *string `json:"Type"`
+			} `json:"Location,omitempty"`
+			PhoneNumber *struct {
+				Office *string `json:"Office"`
+			} `json:"PhoneNumber,omitempty"`
+		} `json:"Authenticator,omitempty"`
+		Availability *string `json:"Availability"`
+		Components   *[]struct {
+			Comments *string `json:"Comments"`
+			ID       *string `json:"ID"`
+			Name     *string `json:"Name"`
+			Value    *string `json:"Value"`
+		} `json:"Components,omitempty"`
+		ContentType           string  `json:"ContentType"`
+		DocumentDescription   *string `json:"DocumentDescription"`
+		DocumentID            string  `json:"DocumentID"`
+		DocumentType          string  `json:"DocumentType"`
+		DocumentationDateTime *string `json:"DocumentationDateTime"`
+		FileContents          *string `json:"FileContents"`
+		FileName              *string `json:"FileName"`
+		FileType              *string `json:"FileType"`
+		Notifications         *[]struct {
+			Address *struct {
+				City          *string `json:"City"`
+				Country       *string `json:"Country"`
+				County        *string `json:"County"`
+				State         *string `json:"State"`
+				StreetAddress *string `json:"StreetAddress"`
+				ZIP           *string `json:"ZIP"`
+			} `json:"Address,omitempty"`
+			Credentials    *[]interface{} `json:"Credentials,omitempty"`
+			EmailAddresses *[]interface{} `json:"EmailAddresses,omitempty"`
+			FirstName      *string        `json:"FirstName"`
+			ID             *string        `json:"ID"`
+			IDType         *string        `json:"IDType"`
+			LastName       *string        `json:"LastName"`
+			Location       *struct {
+				Department            *string `json:"Department"`
+				DepartmentIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"DepartmentIdentifiers,omitempty"`
+				Facility            *string `json:"Facility"`
+				FacilityIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"FacilityIdentifiers,omitempty"`
+				Room *string `json:"Room"`
+				Type *string `json:"Type"`
+			} `json:"Location,omitempty"`
+			PhoneNumber *struct {
+				Office *string `json:"Office"`
+			} `json:"PhoneNumber,omitempty"`
+		} `json:"Notifications,omitempty"`
+		OriginalDocumentID string `json:"OriginalDocumentID"`
+		Provider           struct {
+			Address *struct {
+				City          *string `json:"City"`
+				Country       *string `json:"Country"`
+				County        *string `json:"County"`
+				State         *string `json:"State"`
+				StreetAddress *string `json:"StreetAddress"`
+				ZIP           *string `json:"ZIP"`
+			} `json:"Address,omitempty"`
+			Credentials    *[]interface{} `json:"Credentials,omitempty"`
+			EmailAddresses *[]interface{} `json:"EmailAddresses,omitempty"`
+			FirstName      *string        `json:"FirstName"`
+			ID             string         `json:"ID"`
+			IDType         *string        `json:"IDType"`
+			LastName       *string        `json:"LastName"`
+			Location       *struct {
+				Department            *string `json:"Department"`
+				DepartmentIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"DepartmentIdentifiers,omitempty"`
+				Facility            *string `json:"Facility"`
+				FacilityIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"FacilityIdentifiers,omitempty"`
+				Room *string `json:"Room"`
+				Type *string `json:"Type"`
+			} `json:"Location,omitempty"`
+			PhoneNumber *struct {
+				Office *string `json:"Office"`
+			} `json:"PhoneNumber,omitempty"`
+		} `json:"Provider"`
+		ServiceDateTime *string `json:"ServiceDateTime"`
+		Status          *string `json:"Status"`
+	} `json:"Note"`
+	Orders *[]struct {
+		ID   *string `json:"ID"`
+		Name *string `json:"Name"`
+	} `json:"Orders,omitempty"`
+	Patient struct {
+		Demographics *struct {
+			Address *struct {
+				City          *string `json:"City"`
+				Country       *string `json:"Country"`
+				County        *string `json:"County"`
+				State         *string `json:"State"`
+				StreetAddress *string `json:"StreetAddress"`
+				ZIP           *string `json:"ZIP"`
+			} `json:"Address,omitempty"`
+			Citizenship    *[]interface{} `json:"Citizenship,omitempty"`
+			DOB            *string        `json:"DOB"`
+			DeathDateTime  *string        `json:"DeathDateTime"`
+			EmailAddresses *[]interface{} `json:"EmailAddresses,omitempty"`
+			FirstName      *string        `json:"FirstName"`
+			IsDeceased     *bool          `json:"IsDeceased"`
+			IsHispanic     *bool          `json:"IsHispanic"`
+			Language       *string        `json:"Language"`
+			LastName       *string        `json:"LastName"`
+			MaritalStatus  *string        `json:"MaritalStatus"`
+			MiddleName     *string        `json:"MiddleName"`
+			PhoneNumber    *struct {
+				Home   *string `json:"Home"`
+				Mobile *string `json:"Mobile"`
+				Office *string `json:"Office"`
+			} `json:"PhoneNumber,omitempty"`
+			Race     *string `json:"Race"`
+			Religion *string `json:"Religion"`
+			SSN      *string `json:"SSN"`
+			Sex      *string `json:"Sex"`
+		} `json:"Demographics,omitempty"`
+		Identifiers []struct {
+			ID     string `json:"ID"`
+			IDType string `json:"IDType"`
+		} `json:"Identifiers"`
+		Notes *[]interface{} `json:"Notes,omitempty"`
+	} `json:"Patient"`
+	Visit *struct {
+		AccountNumber   *string `json:"AccountNumber"`
+		AdditionalStaff *[]struct {
+			Address *struct {
+				City          *string `json:"City"`
+				Country       *string `json:"Country"`
+				County        *string `json:"County"`
+				State         *string `json:"State"`
+				StreetAddress *string `json:"StreetAddress"`
+				ZIP           *string `json:"ZIP"`
+			} `json:"Address,omitempty"`
+			Credentials    *[]interface{} `json:"Credentials,omitempty"`
+			EmailAddresses *[]interface{} `json:"EmailAddresses,omitempty"`
+			FirstName      *string        `json:"FirstName"`
+			ID             *string        `json:"ID"`
+			IDType         *string        `json:"IDType"`
+			LastName       *string        `json:"LastName"`
+			Location       *struct {
+				Department            *string `json:"Department"`
+				DepartmentIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"DepartmentIdentifiers,omitempty"`
+				Facility            *string `json:"Facility"`
+				FacilityIdentifiers *[]struct {
+					ID     *string `json:"ID"`
+					IDType *string `json:"IDType"`
+				} `json:"FacilityIdentifiers,omitempty"`
+				Room *string `json:"Room"`
+				Type *string `json:"Type"`
+			} `json:"Location,omitempty"`
+			PhoneNumber *struct {
+				Office *string `json:"Office"`
+			} `json:"PhoneNumber,omitempty"`
+			Role *struct {
+				Code        *string `json:"Code"`
+				Codeset     *string `json:"Codeset"`
+				Description *string `json:"Description"`
+			} `json:"Role,omitempty"`
+		} `json:"AdditionalStaff,omitempty"`
+		Location *struct {
+			Bed                   *string `json:"Bed"`
+			Department            *string `json:"Department"`
+			DepartmentIdentifiers *[]struct {
+				ID     *string `json:"ID"`
+				IDType *string `json:"IDType"`
+			} `json:"DepartmentIdentifiers,omitempty"`
+			Facility            *string `json:"Facility"`
+			FacilityIdentifiers *[]struct {
+				ID     *string `json:"ID"`
+				IDType *string `json:"IDType"`
+			} `json:"FacilityIdentifiers,omitempty"`
+			Room *string `json:"Room"`
+			Type *string `json:"Type"`
+		} `json:"Location,omitempty"`
+		PatientClass  *string `json:"PatientClass"`
+		VisitDateTime *string `json:"VisitDateTime"`
+		VisitNumber   *string `json:"VisitNumber"`
+	} `json:"Visit,omitempty"`
+}
+
 // SendDataJSONBody defines parameters for SendData.
 type SendDataJSONBody struct {
 	union json.RawMessage
