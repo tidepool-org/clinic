@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
@@ -13,15 +14,16 @@ import (
 )
 
 type Handler struct {
-	clinics           clinics.Service
-	clinicsManager    manager.Manager
-	clinicsMigrator   migration.Migrator
-	clinicians        clinicians.Service
-	cliniciansUpdater clinicians.Service
-	patients          patients.Service
-	redox             redox.Redox
-	xealth            xealth.Xealth
-	users             patients.UserService
+	clinics                     clinics.Service
+	clinicsManager              manager.Manager
+	clinicsMigrator             migration.Migrator
+	clinicians                  clinicians.Service
+	cliniciansUpdater           clinicians.Service
+	patients                    patients.Service
+	redox                       redox.Redox
+	xealth                      xealth.Xealth
+	serviceAccountAuthenticator *auth.ServiceAccountAuthenticator
+	users                       patients.UserService
 }
 
 var _ ServerInterface = &Handler{}
@@ -29,28 +31,30 @@ var _ ServerInterface = &Handler{}
 type Params struct {
 	fx.In
 
-	Clinics           clinics.Service
-	ClinicsCreator    manager.Manager
-	ClinicsMigrator   migration.Migrator
-	Clinicians        clinicians.Service
-	CliniciansUpdater clinicians.Service
-	Patients          patients.Service
-	Users             patients.UserService
-	Redox             redox.Redox
-	Xealth            xealth.Xealth
+	Clinics                     clinics.Service
+	ClinicsCreator              manager.Manager
+	ClinicsMigrator             migration.Migrator
+	Clinicians                  clinicians.Service
+	CliniciansUpdater           clinicians.Service
+	Patients                    patients.Service
+	Redox                       redox.Redox
+	Users                       patients.UserService
+	ServiceAccountAuthenticator *auth.ServiceAccountAuthenticator
+	Xealth                      xealth.Xealth
 }
 
 func NewHandler(p Params) *Handler {
 	return &Handler{
-		clinics:           p.Clinics,
-		clinicsManager:    p.ClinicsCreator,
-		clinicsMigrator:   p.ClinicsMigrator,
-		clinicians:        p.Clinicians,
-		cliniciansUpdater: p.CliniciansUpdater,
-		patients:          p.Patients,
-		users:             p.Users,
-		redox:             p.Redox,
-		xealth:            p.Xealth,
+		clinics:                     p.Clinics,
+		clinicsManager:              p.ClinicsCreator,
+		clinicsMigrator:             p.ClinicsMigrator,
+		clinicians:                  p.Clinicians,
+		cliniciansUpdater:           p.CliniciansUpdater,
+		patients:                    p.Patients,
+		redox:                       p.Redox,
+		users:                       p.Users,
+		serviceAccountAuthenticator: p.ServiceAccountAuthenticator,
+		xealth:                      p.Xealth,
 	}
 }
 

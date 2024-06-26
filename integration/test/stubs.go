@@ -3,6 +3,8 @@ package test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/platform/auth"
@@ -14,12 +16,14 @@ import (
 )
 
 const (
-	TestUserId          = "1234567890"
-	TestXealthUserId    = "1234567891"
-	TestUserToken       = "user"
-	TestServerId        = "server"
-	TestServerToken     = "server"
-	TestRestrictedToken = "1234567890abcdef1234567890abcdef"
+	TestUserId               = "1234567890"
+	TestServiceAccountUserId = "9999999999"
+	TestServiceAccountToken  = "service-account"
+	TestXealthUserId         = "1234567891"
+	TestUserToken            = "user"
+	TestServerId             = "server"
+	TestServerToken          = "server"
+	TestRestrictedToken      = "1234567890abcdef1234567890abcdef"
 )
 
 var (
@@ -62,6 +66,11 @@ func ShorelineStub() *httptest.Server {
 			resp, _ = json.Marshal(shoreline.TokenData{
 				UserID:   TestServerId,
 				IsServer: true,
+			})
+		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/token/%s", TestServiceAccountToken) {
+			resp, _ = json.Marshal(shoreline.TokenData{
+				UserID:   TestServiceAccountUserId,
+				IsServer: false,
 			})
 		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", TestUserId) {
 			resp, _ = json.Marshal(clinicianUser)
@@ -117,6 +126,55 @@ func AuthStub() *httptest.Server {
 			resp, _ = json.Marshal(tokens[TestRestrictedToken])
 		} else if r.Method == http.MethodGet && r.RequestURI == "/v1/restricted_tokens/1234567890abcdef1234567890abcdef" {
 			resp, _ = json.Marshal(tokens[TestRestrictedToken])
+		} else {
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+
+		w.Write(resp)
+	}))
+}
+
+func KeycloakStub() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var resp []byte
+		if r.Method == http.MethodPost && r.RequestURI == "/realms/integration-test/protocol/openid-connect/token" {
+			if err := r.ParseForm(); err != nil {
+				w.WriteHeader(http.StatusNotImplemented)
+			} else {
+				if r.Form.Get("grant_type") == "client_credentials" {
+					iat := &jwt.NumericDate{Time: time.Now()}
+					exp := &jwt.NumericDate{Time: time.Now().Add(120 * time.Second)}
+					claims := jwt.RegisteredClaims{
+						Issuer:    "https://integeation-test.com",
+						Subject:   TestServiceAccountUserId,
+						Audience:  []string{"integration-test"},
+						ExpiresAt: exp,
+						NotBefore: iat,
+						IssuedAt:  iat,
+						ID:        uuid.New().String(),
+					}
+					j := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+					token, _ := j.SignedString([]byte("test"))
+
+					response := struct {
+						IdToken          string `json:"id_token"`
+						AccessToken      string `json:"access_token"`
+						RefreshToken     string `json:"refresh_token"`
+						ExpiresIn        int    `json:"expires_in"`
+						RefreshExpiresIn int    `json:"refresh_expires_in"`
+						Scope            string `json:"scope"`
+					}{
+						IdToken:          token,
+						AccessToken:      token,
+						RefreshToken:     token,
+						ExpiresIn:        120,
+						RefreshExpiresIn: 120,
+						Scope:            "openid",
+					}
+					resp, _ = json.Marshal(response)
+					w.Header().Set("content-type", "application/json")
+				}
+			}
 		} else {
 			w.WriteHeader(http.StatusNotImplemented)
 		}

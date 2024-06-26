@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	mongoTimeout = time.Second * 5
+	mongoTimeout = time.Second * 15
 )
 
 var (

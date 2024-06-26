@@ -102,7 +102,7 @@ func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 		clinician := &clinicians.Clinician{
 			ClinicId: clinic.Id,
 			UserId:   &create.CreatorUserId,
-			Roles:    []string{clinicians.ClinicAdmin},
+			Roles:    []string{clinicians.RoleClinicAdmin},
 			Email:    &user.Emails[0],
 		}
 		if profile != nil {

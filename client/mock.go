@@ -74,6 +74,46 @@ func (m *MockClientInterface) EXPECT() *MockClientInterfaceMockRecorder {
 	return m.recorder
 }
 
+// AddServiceAccount mocks base method.
+func (m *MockClientInterface) AddServiceAccount(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddServiceAccount", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddServiceAccount indicates an expected call of AddServiceAccount.
+func (mr *MockClientInterfaceMockRecorder) AddServiceAccount(ctx, clinicId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceAccount", reflect.TypeOf((*MockClientInterface)(nil).AddServiceAccount), varargs...)
+}
+
+// AddServiceAccountWithBody mocks base method.
+func (m *MockClientInterface) AddServiceAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddServiceAccountWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddServiceAccountWithBody indicates an expected call of AddServiceAccountWithBody.
+func (mr *MockClientInterfaceMockRecorder) AddServiceAccountWithBody(ctx, clinicId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceAccountWithBody", reflect.TypeOf((*MockClientInterface)(nil).AddServiceAccountWithBody), varargs...)
+}
+
 // AssignPatientTagToClinicPatients mocks base method.
 func (m *MockClientInterface) AssignPatientTagToClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1915,6 +1955,46 @@ func NewMockClientWithResponsesInterface(ctrl *gomock.Controller) *MockClientWit
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClientWithResponsesInterface) EXPECT() *MockClientWithResponsesInterfaceMockRecorder {
 	return m.recorder
+}
+
+// AddServiceAccountWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) AddServiceAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddServiceAccountWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*AddServiceAccountResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddServiceAccountWithBodyWithResponse indicates an expected call of AddServiceAccountWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) AddServiceAccountWithBodyWithResponse(ctx, clinicId, contentType, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceAccountWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).AddServiceAccountWithBodyWithResponse), varargs...)
+}
+
+// AddServiceAccountWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) AddServiceAccountWithResponse(ctx context.Context, clinicId ClinicId, body AddServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddServiceAccountWithResponse", varargs...)
+	ret0, _ := ret[0].(*AddServiceAccountResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddServiceAccountWithResponse indicates an expected call of AddServiceAccountWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) AddServiceAccountWithResponse(ctx, clinicId, body interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceAccountWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).AddServiceAccountWithResponse), varargs...)
 }
 
 // AssignPatientTagToClinicPatientsWithBodyWithResponse mocks base method.
