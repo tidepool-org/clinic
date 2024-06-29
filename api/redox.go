@@ -58,7 +58,7 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	}
 
 	// We only support new order messages for now
-	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != New {
+	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != EHRMatchMessageRefEventTypeNew {
 		return fmt.Errorf("%w: only new order messages are supported", errors.BadRequest)
 	}
 	msg, err := h.redox.FindMessage(
@@ -107,6 +107,15 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 	if err := h.redox.RescheduleSubscriptionOrders(ctx, clinicId); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusAccepted)
+}
+
+func (h *Handler) SyncEHRDataForPatient(ec echo.Context, patientId PatientId) error {
+	ctx := ec.Request().Context()
+	if err := h.redox.RescheduleSubscriptionOrdersForPatient(ctx, patientId); err != nil {
 		return err
 	}
 

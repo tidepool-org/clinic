@@ -169,6 +169,7 @@ func Dependencies() []fx.Option {
 			platform.NewEnvconfigLoader,
 			client.NewEnvconfigLoader,
 			auth.NewAuthenticator,
+			auth.NewServiceAccountAuthenticator,
 			auth.NewRequestAuthorizer,
 			NewHealthCheck,
 			NewHandler,

@@ -651,7 +651,7 @@ const (
 
 // Defines values for EHRMatchMessageRefEventType.
 const (
-	New EHRMatchMessageRefEventType = "New"
+	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
 // Defines values for EHRSettingsProvider.
@@ -667,6 +667,12 @@ const (
 	RUNNING   MigrationStatus = "RUNNING"
 )
 
+// Defines values for ScheduledReportsOnUploadNoteEventType.
+const (
+	ScheduledReportsOnUploadNoteEventTypeNew     ScheduledReportsOnUploadNoteEventType = "New"
+	ScheduledReportsOnUploadNoteEventTypeReplace ScheduledReportsOnUploadNoteEventType = "Replace"
+)
+
 // Defines values for Tier.
 const (
 	Tier0100 Tier = "tier0100"
@@ -680,6 +686,13 @@ const (
 	FindPatientsParamsWorkspaceIdTypeClinicId    FindPatientsParamsWorkspaceIdType = "clinicId"
 	FindPatientsParamsWorkspaceIdTypeEhrSourceId FindPatientsParamsWorkspaceIdType = "ehrSourceId"
 )
+
+// AddServiceAccount defines model for AddServiceAccount.
+type AddServiceAccount struct {
+	ClientId     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	Name         string `json:"name"`
+}
 
 // AssociateClinicianToUser defines model for AssociateClinicianToUser.
 type AssociateClinicianToUser struct {
@@ -884,7 +897,10 @@ type EHRSettings struct {
 	MrnIdType      string              `json:"mrnIdType"`
 	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
 	Provider       EHRSettingsProvider `json:"provider"`
-	SourceId       string              `json:"sourceId"`
+
+	// ScheduledReports Scheduled Report Settings
+	ScheduledReports ScheduledReports `json:"scheduledReports"`
+	SourceId         string           `json:"sourceId"`
 }
 
 // EHRSettingsProvider defines model for EHRSettings.Provider.
@@ -1511,6 +1527,16 @@ type PhoneNumber struct {
 	Number string  `json:"number"`
 	Type   *string `json:"type,omitempty"`
 }
+
+// ScheduledReports Scheduled Report Settings
+type ScheduledReports struct {
+	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
+	OnUploadEnabled       bool                                   `json:"onUploadEnabled"`
+	OnUploadNoteEventType *ScheduledReportsOnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
+}
+
+// ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
+type ScheduledReportsOnUploadNoteEventType string
 
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {
@@ -2179,6 +2205,9 @@ type UpdatePatientJSONRequestBody = Patient
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody = PatientPermissions
+
+// AddServiceAccountJSONRequestBody defines body for AddServiceAccount for application/json ContentType.
+type AddServiceAccountJSONRequestBody = AddServiceAccount
 
 // UpdateEHRSettingsJSONRequestBody defines body for UpdateEHRSettings for application/json ContentType.
 type UpdateEHRSettingsJSONRequestBody = EHRSettings
