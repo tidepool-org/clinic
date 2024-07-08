@@ -24,15 +24,60 @@ const (
 	PatientActionMove = "MOVE"
 )
 
-type PatientsPlan []PatientPlan
+type PatientPlans []PatientPlan
 
-func (p PatientsPlan) PreventsMerge() bool {
+func (p PatientPlans) PreventsMerge() bool {
+	return PlansPreventMerge(p)
+}
+
+func (p PatientPlans) GetSourcePatientPlans() PatientPlans {
+	var plans PatientPlans
 	for _, plan := range p {
-		if plan.PreventsMerge() {
-			return true
+		if plan.SourcePatient != nil {
+			plans = append(plans, plan)
 		}
 	}
-	return false
+	return plans
+}
+
+func (p PatientPlans) GetTargetPatientPlans() PatientPlans {
+	var plans PatientPlans
+	for _, plan := range p {
+		if plan.SourcePatient == nil && plan.TargetPatient != nil {
+			plans = append(plans, plan)
+		}
+	}
+	return plans
+}
+
+func (p PatientPlans) GetResultingPatientsCount() int {
+	count := 0
+	for _, plan := range p {
+		if plan.PatientAction != PatientActionMergeInto {
+			count++
+		}
+	}
+	return count
+}
+
+func (p PatientPlans) GetConflictCounts() map[string]int {
+	result := make(map[string]int)
+
+	for _, plan := range p {
+		if plan.PatientAction == PatientActionMergeInto {
+			continue
+		}
+
+		for _, conflicts := range plan.Conflicts {
+			for _, conflict := range conflicts {
+				count := result[conflict.Category]
+				count++
+				result[conflict.Category] = count
+			}
+		}
+	}
+
+	return result
 }
 
 type PatientPlan struct {
@@ -46,8 +91,6 @@ type PatientPlan struct {
 	SourceTagNames []string
 	TargetTagNames []string
 
-	PostMigrationMRN      *string
-	PostMigrationFullName *string
 	PostMigrationTagNames []string
 }
 
@@ -95,7 +138,7 @@ func NewPatientMergePlanner(source, target clinics.Clinic, sourcePatients, targe
 	return planner, nil
 }
 
-func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientsPlan, error) {
+func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	targetByAttribute := buildAttributeMap(p.targetPatients)
 	mergeTargetPatients := map[string]struct{}{}
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))

@@ -12,15 +12,41 @@ const (
 	TagActionRetain = "RETAIN"
 )
 
-type TagsPlan struct {
+type TagPlan struct {
 	Name       string
 	TagAction  string
 	Workspaces []string
 	Merge      bool
 }
 
-func (t TagsPlan) PreventsMerge() bool {
+func (t TagPlan) PreventsMerge() bool {
 	return false
+}
+
+type TagPlans []TagPlan
+
+func (t TagPlans) PreventsMerge() bool {
+	return PlansPreventMerge(t)
+}
+
+func (t TagPlans) GetResultingTagsCount() int {
+	count := 0
+	for _, p := range t {
+		if p.TagAction == TagActionCreate || p.TagAction == TagActionRetain {
+			count++
+		}
+	}
+	return count
+}
+
+func (t TagPlans) GetDuplicateTagsCount() int {
+	count := 0
+	for _, p := range t {
+		if p.TagAction == TagActionSkip {
+			count++
+		}
+	}
+	return count
 }
 
 type SourceTagMergePlanner struct {
@@ -30,7 +56,7 @@ type SourceTagMergePlanner struct {
 	target clinics.Clinic
 }
 
-func NewSourceTagMergePlanner(tag clinics.PatientTag, source, target clinics.Clinic) Planner[TagsPlan] {
+func NewSourceTagMergePlanner(tag clinics.PatientTag, source, target clinics.Clinic) Planner[TagPlan] {
 	return &SourceTagMergePlanner{
 		tag:    tag,
 		source: source,
@@ -42,8 +68,8 @@ func (t *SourceTagMergePlanner) CanRun() bool {
 	return true
 }
 
-func (t *SourceTagMergePlanner) Plan(ctx context.Context) (TagsPlan, error) {
-	plan := TagsPlan{
+func (t *SourceTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
+	plan := TagPlan{
 		Name:       t.tag.Name,
 		Workspaces: []string{*t.source.Name},
 		TagAction:  TagActionCreate,
@@ -68,7 +94,7 @@ type TargetTagMergePlanner struct {
 	target clinics.Clinic
 }
 
-func NewTargetTagMergePlanner(tag clinics.PatientTag, source, target clinics.Clinic) Planner[TagsPlan] {
+func NewTargetTagMergePlanner(tag clinics.PatientTag, source, target clinics.Clinic) Planner[TagPlan] {
 	return &TargetTagMergePlanner{
 		tag:    tag,
 		source: source,
@@ -76,8 +102,8 @@ func NewTargetTagMergePlanner(tag clinics.PatientTag, source, target clinics.Cli
 	}
 }
 
-func (t *TargetTagMergePlanner) Plan(ctx context.Context) (TagsPlan, error) {
-	plan := TagsPlan{
+func (t *TargetTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
+	plan := TagPlan{
 		Name:       t.tag.Name,
 		Workspaces: []string{*t.target.Name},
 		TagAction:  TagActionRetain,

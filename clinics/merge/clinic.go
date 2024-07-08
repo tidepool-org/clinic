@@ -18,35 +18,29 @@ type ClinicMergePlan struct {
 	MembershipRestrictionsMergePlan MembershipRestrictionsMergePlan
 	SourcePatientClusters           PatientClusters
 	TargetPatientClusters           PatientClusters
-	SettingsPlan                    []SettingsPlan
-	TagsPlan                        []TagsPlan
-	CliniciansPlan                  []ClinicianPlan
-	PatientsPlan                    []PatientPlan
+	SettingsPlan                    SettingsPlans
+	TagsPlan                        TagPlans
+	CliniciansPlan                  ClinicianPlans
+	PatientsPlan                    PatientPlans
 
 	CreatedTime time.Time
 }
 
 func (c ClinicMergePlan) PreventsMerge() bool {
-	if c.MembershipRestrictionsMergePlan.PreventsMerge() == true {
-		return true
+	fs := []func() bool{
+		c.MembershipRestrictionsMergePlan.PreventsMerge,
+		c.SourcePatientClusters.PreventsMerge,
+		c.TargetPatientClusters.PreventsMerge,
+		c.SettingsPlan.PreventsMerge,
+		c.TagsPlan.PreventsMerge,
+		c.CliniciansPlan.PreventsMerge,
+		c.PatientsPlan.PreventsMerge,
 	}
-	if c.SourcePatientClusters.PreventsMerge() == true {
-		return true
-	}
-	if c.TargetPatientClusters.PreventsMerge() == true {
-		return true
-	}
-	if PlansPreventMerge(c.SettingsPlan) {
-		return true
-	}
-	if PlansPreventMerge(c.TagsPlan) {
-		return true
-	}
-	if PlansPreventMerge(c.CliniciansPlan) {
-		return true
-	}
-	if PlansPreventMerge(c.PatientsPlan) {
-		return true
+
+	for _, preventsMerge := range fs {
+		if preventsMerge() {
+			return true
+		}
 	}
 
 	return false
@@ -135,18 +129,18 @@ func (m *ClinicMergePlanner) SettingsMergePlan(source, target clinics.Clinic) ([
 	}, nil
 }
 
-func (m *ClinicMergePlanner) TagsMergePlan(source, target clinics.Clinic) ([]Planner[TagsPlan], error) {
-	tasks := make([]Planner[TagsPlan], 0, len(source.PatientTags)+len(target.PatientTags))
+func (m *ClinicMergePlanner) TagsMergePlan(source, target clinics.Clinic) ([]Planner[TagPlan], error) {
+	plans := make([]Planner[TagPlan], 0, len(source.PatientTags)+len(target.PatientTags))
 	for _, tag := range source.PatientTags {
-		tasks = append(tasks, NewSourceTagMergePlanner(tag, source, target))
+		plans = append(plans, NewSourceTagMergePlanner(tag, source, target))
 	}
 	for _, tag := range target.PatientTags {
-		tasks = append(tasks, NewTargetTagMergePlanner(tag, source, target))
+		plans = append(plans, NewTargetTagMergePlanner(tag, source, target))
 	}
-	return []Planner[TagsPlan]{}, nil
+	return plans, nil
 }
 
-func (m *ClinicMergePlanner) PatientsMergePlan(ctx context.Context, source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) (Planner[PatientsPlan], error) {
+func (m *ClinicMergePlanner) PatientsMergePlan(ctx context.Context, source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) (Planner[PatientPlans], error) {
 	return NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 }
 
@@ -231,12 +225,12 @@ type intermediatePlanner struct {
 
 	MembershipRestrictionsMergePlanner Planner[MembershipRestrictionsMergePlan]
 	SettingsPlanners                   []Planner[SettingsPlan]
-	TagPlanners                        []Planner[TagsPlan]
+	TagPlanners                        []Planner[TagPlan]
 	ClinicianPlanners                  []Planner[ClinicianPlan]
 
 	SourcePatientClusters Planner[PatientClusters]
 	TargetPatientClusters Planner[PatientClusters]
-	PatientPlanner        Planner[PatientsPlan]
+	PatientPlanner        Planner[PatientPlans]
 }
 
 func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, err error) {

@@ -115,7 +115,7 @@ func (p *PatientClusterReporter) GetPatientClusters() (PatientClusters, error) {
 			visited[id] = struct{}{}
 		}
 
-		if len(cluster.Patients) > 0 {
+		if len(cluster.Patients) > 1 {
 			clusters = append(clusters, cluster)
 		}
 	}

@@ -32,6 +32,12 @@ func (s SettingsPlan) PreventsMerge() bool {
 	return s.ValuesMatch()
 }
 
+type SettingsPlans []SettingsPlan
+
+func (s SettingsPlans) PreventsMerge() bool {
+	return PlansPreventMerge(s)
+}
+
 type SettingsReporterPlanner struct {
 	getter ClinicPropertyGetter
 	source clinics.Clinic

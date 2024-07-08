@@ -20,6 +20,7 @@ const (
 	RoleClinicMember = "CLINIC_MEMBER"
 )
 
+//go:generate mockgen --build_flags=--mod=mod -source=./clinicians.go -destination=./test/mock_service.go -package test MockService
 type Service interface {
 	Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error)

@@ -97,10 +97,8 @@ func (r Report) addSourcePatients(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("Latest Upload ---")
 	sh.AddRow()
 
-	for _, plan := range r.plan.PatientsPlan {
-		if plan.SourcePatient != nil {
-			addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames)
-		}
+	for _, plan := range r.plan.PatientsPlan.GetSourcePatientPlans() {
+		addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames)
 	}
 	return nil
 }
@@ -121,10 +119,8 @@ func (r Report) addTargetPatients(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("Latest Upload ---")
 	sh.AddRow()
 
-	for _, plan := range r.plan.PatientsPlan {
-		if plan.SourcePatient == nil && plan.TargetPatient != nil {
-			addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames)
-		}
+	for _, plan := range r.plan.PatientsPlan.GetTargetPatientPlans() {
+		addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames)
 	}
 	return nil
 }
@@ -314,7 +310,7 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 			// Results will be reported by the corresponding source merge task
 			continue
 		}
-		if slices.Contains(c.ResultingRoles, clinicians.ClinicAdmin) {
+		if slices.Contains(c.ResultingRoles, clinicians.RoleClinicAdmin) {
 			adminTasks = append(adminTasks, c)
 		} else {
 			nonAdminTasks = append(nonAdminTasks, c)
@@ -353,12 +349,7 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 }
 
 func (r Report) addTagsSummary(sh *xlsx.Sheet) error {
-	resultingTagsCount := 0
-	for _, plan := range r.plan.TagsPlan {
-		if plan.TagAction == TagActionCreate || plan.TagAction == TagActionRetain {
-			resultingTagsCount += 1
-		}
-	}
+	resultingTagsCount := r.plan.TagsPlan.GetResultingTagsCount()
 
 	currentRow := sh.AddRow()
 	currentRow.AddCell().SetValue(fmt.Sprintf("Resulting Tags (%v) ---", resultingTagsCount))
@@ -385,20 +376,17 @@ func (r Report) addTagsSummary(sh *xlsx.Sheet) error {
 func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	adminTasks := make([]ClinicianPlan, 0)
 	nonAdminTasks := make([]ClinicianPlan, 0)
-	membersDowngraded := 0
+	membersDowngraded := r.plan.CliniciansPlan.GetDowngradedMembersCount()
 
 	for _, plan := range r.plan.CliniciansPlan {
 		if plan.ClinicianAction == ClinicianActionMergeInto {
 			// Results will be reported by the corresponding source merge task
 			continue
 		}
-		if slices.Contains(plan.ResultingRoles, clinicians.ClinicAdmin) {
+		if slices.Contains(plan.ResultingRoles, clinicians.RoleClinicAdmin) {
 			adminTasks = append(adminTasks, plan)
 		} else {
 			nonAdminTasks = append(nonAdminTasks, plan)
-			if plan.Downgraded {
-				membersDowngraded++
-			}
 		}
 	}
 
@@ -414,16 +402,8 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("- Members downgraded from Admin")
 	currentRow.AddCell().SetValue(membersDowngraded)
 
-	resultingTagsCount := 0
-	duplicateTagsCount := 0
-	for _, plan := range r.plan.TagsPlan {
-		if plan.TagAction == TagActionCreate || plan.TagAction == TagActionRetain {
-			resultingTagsCount++
-		}
-		if plan.TagAction == TagActionSkip {
-			duplicateTagsCount++
-		}
-	}
+	resultingTagsCount := r.plan.TagsPlan.GetResultingTagsCount()
+	duplicateTagsCount := r.plan.TagsPlan.GetDuplicateTagsCount()
 
 	currentRow = sh.AddRow()
 	currentRow.AddCell().SetValue("Resulting Tags")
@@ -432,34 +412,11 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("- Duplicate tags that will be merged")
 	currentRow.AddCell().SetValue(duplicateTagsCount)
 
-	resultingPatientsCount := 0
-	duplicateAccountsCounts := 0
-	likelyDuplicateCount := 0
-	duplicateMRNsCount := 0
-	duplicateNamesCount := 0
-
-	for _, plan := range r.plan.PatientsPlan {
-		if plan.PatientAction == PatientActionMergeInto {
-			continue
-		}
-
-		resultingPatientsCount++
-
-		for _, conflicts := range plan.Conflicts {
-			for _, conflict := range conflicts {
-				switch conflict.Category {
-				case PatientConflictCategoryDuplicateAccounts:
-					duplicateAccountsCounts++
-				case PatientConflictCategoryLikelyDuplicateAccounts:
-					likelyDuplicateCount++
-				case PatientConflictCategoryMRNOnlyMatch:
-					duplicateMRNsCount++
-				case PatientConflictCategoryNameOnlyMatch:
-					duplicateNamesCount++
-				}
-			}
-		}
-	}
+	resultingPatientsCount := r.plan.PatientsPlan.GetResultingPatientsCount()
+	duplicateAccountsCounts := r.plan.PatientsPlan.GetConflictCounts()[PatientConflictCategoryDuplicateAccounts]
+	likelyDuplicateCount := r.plan.PatientsPlan.GetConflictCounts()[PatientConflictCategoryLikelyDuplicateAccounts]
+	duplicateMRNsCount := r.plan.PatientsPlan.GetConflictCounts()[PatientConflictCategoryMRNOnlyMatch]
+	duplicateNamesCount := r.plan.PatientsPlan.GetConflictCounts()[PatientConflictCategoryNameOnlyMatch]
 
 	currentRow = sh.AddRow()
 	currentRow.AddCell().SetValue("Resulting Patient Accounts")
@@ -506,24 +463,22 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clini
 	tags := buildTagsMap(clinic.PatientTags)
 	count := 1
 	for _, cluster := range clusters {
-		if len(cluster.Patients) > 1 {
+		currentRow = sh.AddRow()
+		currentRow.AddCell().SetValue("Review " + strconv.Itoa(count))
+
+		count += 1
+		for _, p := range cluster.Patients {
 			currentRow = sh.AddRow()
-			currentRow.AddCell().SetValue("Review " + strconv.Itoa(count))
+			currentRow.AddCell()
 
-			count += 1
-			for _, p := range cluster.Patients {
-				currentRow = sh.AddRow()
-				currentRow.AddCell()
+			addPatientDetails(currentRow, p.Patient, getPatientTagNames(p.Patient, tags))
 
-				addPatientDetails(currentRow, p.Patient, getPatientTagNames(p.Patient, tags))
-
-				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryLikelyDuplicateAccounts], ", "))
-				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryNameOnlyMatch], ", "))
-				currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryMRNOnlyMatch], ", "))
-			}
-
-			sh.AddRow()
+			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryLikelyDuplicateAccounts], ", "))
+			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryNameOnlyMatch], ", "))
+			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryMRNOnlyMatch], ", "))
 		}
+
+		sh.AddRow()
 	}
 }
 

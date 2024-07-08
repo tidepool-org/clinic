@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	// ClinicianActionKeep is used for target clinicians when there's no corresponding clinician in the source clinic
-	ClinicianActionKeep = "KEEP"
+	// ClinicianActionRetain is used for target clinicians when there's no corresponding clinician in the source clinic
+	ClinicianActionRetain = "RETAIN"
 	// ClinicianActionMerge is used when the source clinician will be merged to a target clinician record
 	ClinicianActionMerge = "MERGE"
 	// ClinicianActionMergeInto is when the target record will be the recipient of a merge
@@ -30,6 +30,22 @@ type ClinicianPlan struct {
 
 func (c ClinicianPlan) PreventsMerge() bool {
 	return false
+}
+
+type ClinicianPlans []ClinicianPlan
+
+func (c ClinicianPlans) PreventsMerge() bool {
+	return PlansPreventMerge(c)
+}
+
+func (c ClinicianPlans) GetDowngradedMembersCount() int {
+	count := 0
+	for _, p := range c {
+		if p.Downgraded {
+			count++
+		}
+	}
+	return count
 }
 
 type SourceClinicianMergePlanner struct {
@@ -94,16 +110,13 @@ func NewTargetClinicianMergePlanner(clinician clinicians.Clinician, source, targ
 	}
 }
 
-func (s *TargetClinicianMergePlanner) CanRun() bool {
-	return true
-}
-
 func (s *TargetClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, error) {
 	plan := ClinicianPlan{
-		ClinicianAction: ClinicianActionKeep,
+		ClinicianAction: ClinicianActionRetain,
 		Email:           *s.clinician.Email,
 		Name:            *s.clinician.Name,
 		Workspaces:      []string{*s.target.Name},
+		ResultingRoles:  s.clinician.Roles,
 	}
 
 	sourceClinician, err := s.service.Get(ctx, s.target.Id.Hex(), *s.clinician.UserId)
@@ -112,6 +125,8 @@ func (s *TargetClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, 
 	}
 	if sourceClinician != nil {
 		plan.ClinicianAction = ClinicianActionMergeInto
+		plan.Workspaces = append(plan.Workspaces, *s.source.Name)
+		sort.Strings(plan.Workspaces)
 	}
 
 	return plan, nil
