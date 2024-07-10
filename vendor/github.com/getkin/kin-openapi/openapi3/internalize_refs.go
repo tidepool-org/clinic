@@ -351,7 +351,10 @@ func (doc *T) derefPaths(paths map[string]*PathItem, refNameResolver RefNameReso
 		ops.Ref = ""
 
 		for _, param := range ops.Parameters {
-			doc.addParameterToSpec(param, refNameResolver, pathIsExternal)
+			isExternal := doc.addParameterToSpec(param, refNameResolver, pathIsExternal)
+			if param.Value != nil {
+				doc.derefParameter(*param.Value, refNameResolver, pathIsExternal || isExternal)
+			}
 		}
 
 		for _, op := range ops.Operations() {
@@ -428,6 +431,7 @@ func (doc *T) InternalizeRefs(ctx context.Context, refNameResolver func(ref stri
 		}
 		doc.derefExamples(components.Examples, refNameResolver, false)
 		doc.derefLinks(components.Links, refNameResolver, false)
+
 		for _, cb := range components.Callbacks {
 			isExternal := doc.addCallbackToSpec(cb, refNameResolver, false)
 			if cb != nil && cb.Value != nil {

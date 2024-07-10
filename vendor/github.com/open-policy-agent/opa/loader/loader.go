@@ -81,7 +81,7 @@ type Filter = filter.LoaderFilter
 // GlobExcludeName excludes files and directories whose names do not match the
 // shell style pattern at minDepth or greater.
 func GlobExcludeName(pattern string, minDepth int) Filter {
-	return func(abspath string, info fs.FileInfo, depth int) bool {
+	return func(_ string, info fs.FileInfo, depth int) bool {
 		match, _ := filepath.Match(pattern, info.Name())
 		return match && depth >= minDepth
 	}
@@ -102,11 +102,6 @@ type FileLoader interface {
 	WithProcessAnnotation(bool) FileLoader
 	WithCapabilities(*ast.Capabilities) FileLoader
 	WithJSONOptions(*astJSON.Options) FileLoader
-
-	// WithRegoV1Compatible
-	// Deprecated: use WithRegoVersion instead
-	WithRegoV1Compatible(bool) FileLoader
-
 	WithRegoVersion(ast.RegoVersion) FileLoader
 }
 
@@ -187,14 +182,6 @@ func (fl *fileLoader) WithJSONOptions(opts *astJSON.Options) FileLoader {
 	return fl
 }
 
-// WithRegoV1Compatible enforces Rego v0 with Rego v1 compatibility.
-// See ParserOptions.RegoV1Compatible for more details.
-// Deprecated: use WithRegoVersion instead
-func (fl *fileLoader) WithRegoV1Compatible(compatible bool) FileLoader {
-	fl.opts.RegoV1Compatible = compatible
-	return fl
-}
-
 // WithRegoVersion sets the ast.RegoVersion to use when parsing and compiling modules.
 func (fl *fileLoader) WithRegoVersion(version ast.RegoVersion) FileLoader {
 	fl.opts.RegoVersion = version
@@ -270,7 +257,7 @@ func (fl fileLoader) AsBundle(path string) (*bundle.Bundle, error) {
 		WithProcessAnnotations(fl.opts.ProcessAnnotation).
 		WithCapabilities(fl.opts.Capabilities).
 		WithJSONOptions(fl.opts.JSONOptions).
-		WithRegoVersion(fl.opts.EffectiveRegoVersion())
+		WithRegoVersion(fl.opts.RegoVersion)
 
 	// For bundle directories add the full path in front of module file names
 	// to simplify debugging.
@@ -499,7 +486,7 @@ func AsBundle(path string) (*bundle.Bundle, error) {
 // AllRegos returns a Result object loaded (recursively) with all Rego source
 // files from the specified paths.
 func AllRegos(paths []string) (*Result, error) {
-	return NewFileLoader().Filtered(paths, func(_ string, info os.FileInfo, depth int) bool {
+	return NewFileLoader().Filtered(paths, func(_ string, info os.FileInfo, _ int) bool {
 		return !info.IsDir() && !strings.HasSuffix(info.Name(), bundle.RegoExt)
 	})
 }
@@ -535,7 +522,7 @@ func Paths(path string, recurse bool) (paths []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	err = filepath.Walk(path, func(f string, info os.FileInfo, err error) error {
+	err = filepath.Walk(path, func(f string, _ os.FileInfo, _ error) error {
 		if !recurse {
 			if path != f && path != filepath.Dir(f) {
 				return filepath.SkipDir

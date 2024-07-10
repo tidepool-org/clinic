@@ -16,22 +16,13 @@ type Responses struct {
 	m map[string]*ResponseRef
 }
 
-// NewResponsesWithCapacity builds a responses object of the given capacity.
-func NewResponsesWithCapacity(cap int) *Responses {
-	return &Responses{m: make(map[string]*ResponseRef, cap)}
-}
-
 // NewResponses builds a responses object with response objects in insertion order.
 // Given no arguments, NewResponses returns a valid responses object containing a default match-all reponse.
 func NewResponses(opts ...NewResponsesOption) *Responses {
-	var responses *Responses
-	if n := len(opts); n != 0 {
-		responses = NewResponsesWithCapacity(n)
-	} else {
-		responses = &Responses{m: map[string]*ResponseRef{
-			"default": {Value: NewResponse().WithDescription("")},
-		}}
+	if len(opts) == 0 {
+		return NewResponses(WithName("default", NewResponse().WithDescription("")))
 	}
+	responses := NewResponsesWithCapacity(len(opts))
 	for _, opt := range opts {
 		opt(responses)
 	}
@@ -144,6 +135,15 @@ func (response *Response) WithJSONSchemaRef(schema *SchemaRef) *Response {
 
 // MarshalJSON returns the JSON encoding of Response.
 func (response Response) MarshalJSON() ([]byte, error) {
+	x, err := response.MarshalYAML()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(x)
+}
+
+// MarshalYAML returns the YAML encoding of Response.
+func (response Response) MarshalYAML() (interface{}, error) {
 	m := make(map[string]interface{}, 4+len(response.Extensions))
 	for k, v := range response.Extensions {
 		m[k] = v
@@ -160,7 +160,7 @@ func (response Response) MarshalJSON() ([]byte, error) {
 	if x := response.Links; len(x) != 0 {
 		m["links"] = x
 	}
-	return json.Marshal(m)
+	return m, nil
 }
 
 // UnmarshalJSON sets Response to a copy of data.
