@@ -64,10 +64,6 @@ func NewSourceTagMergePlanner(tag clinics.PatientTag, source, target clinics.Cli
 	}
 }
 
-func (t *SourceTagMergePlanner) CanRun() bool {
-	return true
-}
-
 func (t *SourceTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
 	plan := TagPlan{
 		Name:       t.tag.Name,
@@ -81,6 +77,7 @@ func (t *SourceTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
 			plan.TagAction = TagActionSkip
 			plan.Workspaces = append(plan.Workspaces, *t.target.Name)
 			sort.Strings(plan.Workspaces)
+			break
 		}
 	}
 
@@ -113,6 +110,7 @@ func (t *TargetTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
 		if tt.Name == t.tag.Name {
 			plan.Workspaces = append(plan.Workspaces, *t.source.Name)
 			sort.Strings(plan.Workspaces)
+			break
 		}
 	}
 	if len(plan.Workspaces) > 1 {

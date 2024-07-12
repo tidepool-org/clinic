@@ -79,13 +79,13 @@ func (p *PatientClusterReporter) GetPatientClusters() (PatientClusters, error) {
 
 	visited := map[string]struct{}{}
 	clusters := make([]PatientCluster, 0)
-	adjecencyMap, err := p.graph.AdjacencyMap()
+	adjacencyMap, err := p.graph.AdjacencyMap()
 	if err != nil {
 		return nil, err
 	}
 
 	// BFS traversal to get each patient cluster
-	for userId := range adjecencyMap {
+	for userId := range adjacencyMap {
 		cluster := PatientCluster{}
 		q := queue.New()
 		q.Add(userId)
@@ -101,7 +101,7 @@ func (p *PatientClusterReporter) GetPatientClusters() (PatientClusters, error) {
 			}
 
 			conflicts := map[string][]string{}
-			for duplicate, edge := range adjecencyMap[id] {
+			for duplicate, edge := range adjacencyMap[id] {
 				q.Add(duplicate)
 				conflict := edge.Properties.Attributes[conflictAttributeKey]
 				conflicts[conflict] = append(conflicts[conflict], duplicate)
