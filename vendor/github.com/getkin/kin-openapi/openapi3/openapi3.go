@@ -54,7 +54,16 @@ func (doc *T) JSONLookup(token string) (interface{}, error) {
 }
 
 // MarshalJSON returns the JSON encoding of T.
-func (doc T) MarshalJSON() ([]byte, error) {
+func (doc *T) MarshalJSON() ([]byte, error) {
+	x, err := doc.MarshalYAML()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(x)
+}
+
+// MarshalYAML returns the YAML encoding of T.
+func (doc *T) MarshalYAML() (interface{}, error) {
 	m := make(map[string]interface{}, 4+len(doc.Extensions))
 	for k, v := range doc.Extensions {
 		m[k] = v
@@ -77,7 +86,7 @@ func (doc T) MarshalJSON() ([]byte, error) {
 	if x := doc.ExternalDocs; x != nil {
 		m["externalDocs"] = x
 	}
-	return json.Marshal(m)
+	return m, nil
 }
 
 // UnmarshalJSON sets T to a copy of data.
@@ -104,12 +113,12 @@ func (doc *T) UnmarshalJSON(data []byte) error {
 }
 
 func (doc *T) AddOperation(path string, method string, operation *Operation) {
+	if doc.Paths == nil {
+		doc.Paths = NewPaths()
+	}
 	pathItem := doc.Paths.Value(path)
 	if pathItem == nil {
 		pathItem = &PathItem{}
-		if doc.Paths == nil {
-			doc.Paths = NewPaths()
-		}
 		doc.Paths.Set(path, pathItem)
 	}
 	pathItem.SetOperation(method, operation)

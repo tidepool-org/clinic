@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.22.2-alpine AS development
+FROM golang:1.22.4-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
@@ -7,13 +7,13 @@ RUN apk --no-cache update && \
     adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic
 USER tidepool
-RUN go install github.com/cosmtrek/air@v1.49.0
+RUN go install github.com/air-verse/air@v1.52.2
 COPY --chown=tidepool . .
 RUN ./build.sh
 CMD ["air"]
 
 # Production
-FROM golang:1.22.2-alpine AS production
+FROM golang:1.22.4-alpine AS production
 WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
