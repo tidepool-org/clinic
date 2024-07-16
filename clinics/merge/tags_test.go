@@ -2,12 +2,15 @@ package merge_test
 
 import (
 	"context"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
+	"time"
 )
 
 const (
@@ -86,6 +89,61 @@ var _ = Describe("Tags", func() {
 				Expect(plan.Workspaces).To(ConsistOf(expectedWorkspaces))
 
 			}
+		})
+	})
+
+	Describe("Tag Plan Executor", func() {
+		var plans []merge.TagPlan
+		var executor *merge.TagPlanExecutor
+		var clinicsService *clinicsTest.MockService
+		var clinicsCtrl *gomock.Controller
+
+		BeforeEach(func() {
+			for _, tag := range source.PatientTags {
+				planner := merge.NewSourceTagMergePlanner(tag, source, target)
+				plan, err := planner.Plan(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				plans = append(plans, plan)
+			}
+			for _, tag := range target.PatientTags {
+				planner := merge.NewTargetTagMergePlanner(tag, source, target)
+				plan, err := planner.Plan(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				plans = append(plans, plan)
+			}
+
+			clinicsCtrl = gomock.NewController(GinkgoT())
+			clinicsService = clinicsTest.NewMockService(clinicsCtrl)
+			executor = merge.NewTagPlanExecutor(zap.NewNop().Sugar(), clinicsService)
+		})
+
+		AfterEach(func() {
+			clinicsCtrl.Finish()
+		})
+
+		It("creates a tag in the target clinic for all non-overlapping tags", func() {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
+			defer cancel()
+
+			created := 0
+			for _, tag := range source.PatientTags {
+				if _, ok := duplicateTags[tag.Name]; ok {
+					continue
+				}
+				clinicsService.EXPECT().CreatePatientTag(gomock.Any(), target.Id.Hex(), tag.Name)
+				created++
+			}
+
+			var errs []error
+			for _, plan := range plans {
+				if err := executor.Execute(ctx, plan); err != nil {
+					errs = append(errs, err)
+				}
+			}
+			Expect(errs).To(BeEmpty())
+
+
+			Expect(created).To(BeNumerically(">", 0))
 		})
 	})
 })

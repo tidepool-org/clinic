@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	patientsCollectionName = "patients"
+	CollectionName = "patients"
 )
 
 // Collation to use for string fields
@@ -35,7 +35,7 @@ type Repository interface {
 func NewRepository(config *config.Config, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Repository, error) {
 	repo := &repository{
 		config:     config,
-		collection: db.Collection(patientsCollectionName),
+		collection: db.Collection(CollectionName),
 		logger:     logger,
 	}
 
