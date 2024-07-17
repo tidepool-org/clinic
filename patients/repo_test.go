@@ -3,8 +3,6 @@ package patients_test
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -20,6 +18,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
+	"strings"
+	"time"
 )
 
 var DemoPatientId = "demo"
@@ -1344,6 +1344,71 @@ var _ = Describe("Patients Repository", func() {
 				Expect(result).To(BeNil())
 			})
 		})
+
+		Describe("Update LastReviewed", func() {
+			It("correctly adds reviews", func() {
+				clinicianId := test.Faker.UUID().V4()
+				ts := time.Now().UTC().Truncate(time.Millisecond)
+
+				patientUpdate := patients.PatientUpdate{
+					ClinicId: randomPatient.ClinicId.Hex(),
+					UserId:   *randomPatient.UserId,
+					Patient: patients.Patient{
+						LastReviewed: &patients.LastReviewed{
+							ClinicianId: clinicianId,
+							Time:        ts,
+						},
+						PreviousLastReviewed: &patients.LastReviewed{
+							ClinicianId: clinicianId,
+							Time:        ts,
+						},
+					},
+				}
+				patient, err := repo.UpdateLastReviewed(context.Background(), patientUpdate)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.LastReviewed.ClinicianId).To(Equal(clinicianId))
+				Expect(patient.LastReviewed.Time).To(Equal(ts))
+				Expect(patient.PreviousLastReviewed.ClinicianId).To(Equal(clinicianId))
+				Expect(patient.PreviousLastReviewed.Time).To(Equal(ts))
+			})
+
+			It("correctly reverts review", func() {
+				clinicianId := test.Faker.UUID().V4()
+				ts := time.Now().UTC().Truncate(time.Millisecond)
+
+				patientUpdate := patients.PatientUpdate{
+					ClinicId: randomPatient.ClinicId.Hex(),
+					UserId:   *randomPatient.UserId,
+					Patient: patients.Patient{
+						LastReviewed: &patients.LastReviewed{
+							ClinicianId: clinicianId,
+							Time:        ts,
+						},
+						PreviousLastReviewed: &patients.LastReviewed{
+							ClinicianId: clinicianId,
+							Time:        ts,
+						},
+					},
+				}
+				patient, err := repo.UpdateLastReviewed(context.Background(), patientUpdate)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.LastReviewed.ClinicianId).To(Equal(clinicianId))
+				Expect(patient.LastReviewed.Time).To(Equal(ts))
+				Expect(patient.PreviousLastReviewed.ClinicianId).To(Equal(clinicianId))
+				Expect(patient.PreviousLastReviewed.Time).To(Equal(ts))
+
+				patientUpdate = patients.PatientUpdate{
+					ClinicId: randomPatient.ClinicId.Hex(),
+					UserId:   *randomPatient.UserId,
+					Patient:  patients.Patient{},
+				}
+				patient, err = repo.UpdateLastReviewed(context.Background(), patientUpdate)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.LastReviewed.ClinicianId).To(Equal(clinicianId))
+				Expect(patient.LastReviewed.Time).To(Equal(ts))
+				Expect(patient.PreviousLastReviewed).To(BeNil())
+			})
+		})
 	})
 
 })
@@ -1366,6 +1431,8 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"CreatedTime":                    Ignore(),
 		"InvitedBy":                      Ignore(),
 		"Summary":                        Ignore(),
+		"LastReviewed":                   Ignore(),
+		"PreviousLastReviewed":           Ignore(),
 		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
 		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),

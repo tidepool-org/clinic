@@ -334,6 +334,35 @@ func (r *repository) UpdateEmail(ctx context.Context, userId string, email *stri
 	return err
 }
 
+func (r *repository) UpdateLastReviewed(ctx context.Context, patientUpdate PatientUpdate) (*Patient, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(patientUpdate.ClinicId)
+	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return document AFTER edit
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId":   patientUpdate.UserId,
+	}
+
+	patient := patientUpdate.Patient
+	patient.UpdatedTime = time.Now()
+
+	update := bson.M{
+		"$set": patient,
+	}
+
+	if patient.PreviousLastReviewed == nil {
+		update["$unset"] = bson.M{
+			"previousLastReviewed": "",
+		}
+	}
+
+	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
+	if err != nil {
+		return nil, err
+	}
+
+	return &patient, err
+}
+
 func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{

@@ -233,6 +233,12 @@ type ClientInterface interface {
 
 	UpdatePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// RevertPatientLastReviewed request
+	RevertPatientLastReviewed(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdatePatientLastReviewed request
+	UpdatePatientLastReviewed(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdatePatientPermissionsWithBody request with any body
 	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -971,6 +977,30 @@ func (c *Client) UpdatePatientWithBody(ctx context.Context, clinicId ClinicId, p
 
 func (c *Client) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientRequest(c.Server, clinicId, patientId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RevertPatientLastReviewed(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevertPatientLastReviewedRequest(c.Server, clinicId, patientId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdatePatientLastReviewed(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientLastReviewedRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -5188,6 +5218,88 @@ func NewUpdatePatientRequestWithBody(server string, clinicId ClinicId, patientId
 	return req, nil
 }
 
+// NewRevertPatientLastReviewedRequest generates requests for RevertPatientLastReviewed
+func NewRevertPatientLastReviewedRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/last_reviewed", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdatePatientLastReviewedRequest generates requests for UpdatePatientLastReviewed
+func NewUpdatePatientLastReviewedRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/last_reviewed", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdatePatientPermissionsRequest calls the generic UpdatePatientPermissions builder with application/json body
 func NewUpdatePatientPermissionsRequest(server string, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -6740,6 +6852,12 @@ type ClientWithResponsesInterface interface {
 
 	UpdatePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientResponse, error)
 
+	// RevertPatientLastReviewedWithResponse request
+	RevertPatientLastReviewedWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*RevertPatientLastReviewedResponse, error)
+
+	// UpdatePatientLastReviewedWithResponse request
+	UpdatePatientLastReviewedWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*UpdatePatientLastReviewedResponse, error)
+
 	// UpdatePatientPermissionsWithBodyWithResponse request with any body
 	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientPermissionsResponse, error)
 
@@ -7658,10 +7776,54 @@ func (r UpdatePatientResponse) StatusCode() int {
 	return 0
 }
 
+type RevertPatientLastReviewedResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientLastReviewedDetails
+}
+
+// Status returns HTTPResponse.Status
+func (r RevertPatientLastReviewedResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevertPatientLastReviewedResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdatePatientLastReviewedResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientLastReviewedDetails
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdatePatientLastReviewedResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdatePatientLastReviewedResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdatePatientPermissionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientPermissions
+	JSON200      *PatientLastReviewed
 }
 
 // Status returns HTTPResponse.Status
@@ -8735,6 +8897,24 @@ func (c *ClientWithResponses) UpdatePatientWithResponse(ctx context.Context, cli
 		return nil, err
 	}
 	return ParseUpdatePatientResponse(rsp)
+}
+
+// RevertPatientLastReviewedWithResponse request returning *RevertPatientLastReviewedResponse
+func (c *ClientWithResponses) RevertPatientLastReviewedWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*RevertPatientLastReviewedResponse, error) {
+	rsp, err := c.RevertPatientLastReviewed(ctx, clinicId, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevertPatientLastReviewedResponse(rsp)
+}
+
+// UpdatePatientLastReviewedWithResponse request returning *UpdatePatientLastReviewedResponse
+func (c *ClientWithResponses) UpdatePatientLastReviewedWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*UpdatePatientLastReviewedResponse, error) {
+	rsp, err := c.UpdatePatientLastReviewed(ctx, clinicId, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatePatientLastReviewedResponse(rsp)
 }
 
 // UpdatePatientPermissionsWithBodyWithResponse request with arbitrary body returning *UpdatePatientPermissionsResponse
@@ -9964,6 +10144,58 @@ func ParseUpdatePatientResponse(rsp *http.Response) (*UpdatePatientResponse, err
 	return response, nil
 }
 
+// ParseRevertPatientLastReviewedResponse parses an HTTP response from a RevertPatientLastReviewedWithResponse call
+func ParseRevertPatientLastReviewedResponse(rsp *http.Response) (*RevertPatientLastReviewedResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevertPatientLastReviewedResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientLastReviewedDetails
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdatePatientLastReviewedResponse parses an HTTP response from a UpdatePatientLastReviewedWithResponse call
+func ParseUpdatePatientLastReviewedResponse(rsp *http.Response) (*UpdatePatientLastReviewedResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdatePatientLastReviewedResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientLastReviewedDetails
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseUpdatePatientPermissionsResponse parses an HTTP response from a UpdatePatientPermissionsWithResponse call
 func ParseUpdatePatientPermissionsResponse(rsp *http.Response) (*UpdatePatientPermissionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -9979,7 +10211,7 @@ func ParseUpdatePatientPermissionsResponse(rsp *http.Response) (*UpdatePatientPe
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientPermissions
+		var dest PatientLastReviewed
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

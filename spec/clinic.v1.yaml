@@ -329,47 +329,47 @@ paths:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeCGMUsePercent
-          description: Percentage of time of CGM use
+          description: 'Percentage of time [0.0-1.0]  of CGM use'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInVeryLowPercent
-          description: Percentage of time below 54 mg/dL
+          description: 'Percentage of time [0.0-1.0]  below 54 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInAnyLowPercent
-          description: Percentage of time below 70 mg/dL
+          description: 'Percentage of time [0.0-1.0]  below 70 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInLowPercent
-          description: Percentage of time in range 54-70 mg/dL
+          description: 'Percentage of time [0.0-1.0]  in range 54-70 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInTargetPercent
-          description: Percentage of time in range 70-180 mg/dL
+          description: 'Percentage of time [0.0-1.0]  in range 70-180 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInHighPercent
-          description: Percentage of time in range 180-250 mg/dL
+          description: 'Percentage of time [0.0-1.0]  in range 180-250 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInVeryHighPercent
-          description: Percentage of time above 250 mg/dL
+          description: 'Percentage of time [0.0-1.0]  above 250 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInExtremeHighPercent
-          description: Percentage of time above 350 mg/dL
+          description: 'Percentage of time [0.0-1.0]  above 350 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInAnyHighPercent
-          description: Percentage of time above 180 mg/dL
+          description: 'Percentage of time [0.0-1.0]  above 180 mg/dL'
         - schema:
             $ref: '#/components/schemas/IntFilter'
           in: query
@@ -494,42 +494,42 @@ paths:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInVeryLowPercent
-          description: Percentage of time below 54 mg/dL
+          description: 'Percentage of time [0.0-1.0]  below 54 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInAnyLowPercent
-          description: Percentage of time below 70 mg/dL
+          description: 'Percentage of time [0.0-1.0]  below 70 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInLowPercent
-          description: Percentage of time in range 54-70 mg/dL
+          description: 'Percentage of time [0.0-1.0]  in range 54-70 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInTargetPercent
-          description: Percentage of time in range 70-180 mg/dL
+          description: 'Percentage of time [0.0-1.0]  in range 70-180 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInHighPercent
-          description: Percentage of time in range 180-250 mg/dL
+          description: 'Percentage of time [0.0-1.0]  in range 180-250 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInVeryHighPercent
-          description: Percentage of time above 250 mg/dL
+          description: 'Percentage of time [0.0-1.0]  above 250 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInExtremeHighPercent
-          description: Percentage of time above 350 mg/dL
+          description: 'Percentage of time [0.0-1.0]  above 350 mg/dL'
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInAnyHighPercent
-          description: Percentage of time above 180 mg/dL
+          description: 'Percentage of time [0.0-1.0]  above 180 mg/dL'
         - schema:
             $ref: '#/components/schemas/IntFilter'
           in: query
@@ -1274,6 +1274,40 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AcceptPatientInvitation'
+  '/v1/clinics/{clinicId}/patients/{patientId}/last_reviewed':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    put:
+      summary: Update Patient LastReviewed
+      operationId: UpdatePatientLastReviewed
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientLastReviewedDetails'
+      description: Update the patient's last reviewed date and clinician ID
+      tags:
+        - Clinics
+    delete:
+      summary: Revert Patient LastReviewed
+      operationId: RevertPatientLastReviewed
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientLastReviewedDetails'
+        '409':
+          description: Cannot revert a different clinician's review
+        '424':
+          description: No previous review to revert to
+      description: Revert the patient's last reviewed date to the previous set
+      tags:
+        - Clinics
   '/v1/clinics/{clinicId}/patients/{patientId}/permissions':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1287,7 +1321,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientPermissions'
+                $ref: '#/components/schemas/PatientLastReviewed'
       description: |-
         Update permissions that a clinic has over a patient account. If all permissions are revoked as a result of the update, the patient profile will be removed from the clinic.
 
@@ -2962,6 +2996,10 @@ components:
           readOnly: true
         summary:
           $ref: '#/components/schemas/PatientSummary'
+        lastReviewed:
+          $ref: '#/components/schemas/PatientLastReviewed'
+        previousLastReviewed:
+          $ref: '#/components/schemas/PatientLastReviewed'
       required:
         - id
         - fullName
@@ -4329,6 +4367,27 @@ components:
           $ref: '#/components/schemas/PatientCGMStats'
         bgmStats:
           $ref: '#/components/schemas/PatientBGMStats'
+    PatientLastReviewed:
+      type: object
+      title: lastreviewed.v1
+      description: A summary of a patients recent data
+      properties:
+        clinicianId:
+          type: string
+        time:
+          type: string
+          format: date-time
+      required:
+        - clinicianId
+        - time
+    PatientLastReviewedDetails:
+      title: PatientLastReviewedDetails
+      type: object
+      properties:
+        lastReviewed:
+          $ref: '#/components/schemas/PatientLastReviewed'
+        previousLastReviewed:
+          $ref: '#/components/schemas/PatientLastReviewed'
     FloatFilter:
       type: string
       pattern: '^(>=|>|<=|<)[+-]?((\d+(\.\d*)?)|(\.\d+))$'

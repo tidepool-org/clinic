@@ -443,3 +443,103 @@ func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error
 
 	return ec.JSON(http.StatusOK, dtos)
 }
+
+func (h *Handler) UpdatePatientLastReviewed(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	clinicianId := authData.SubjectId
+
+	patient, err := h.patients.Get(ctx, clinicId, patientId)
+	if err != nil {
+		return err
+	}
+
+	patientUpdate := patients.PatientUpdate{
+		Patient: patients.Patient{
+			LastReviewed: &patients.LastReviewed{
+				ClinicianId: clinicianId,
+				Time:        time.Now().UTC().Truncate(time.Millisecond),
+			},
+		},
+		ClinicId: clinicId,
+		UserId:   patientId,
+	}
+
+	if patient.LastReviewed != nil {
+		patientUpdate.Patient.PreviousLastReviewed = patient.LastReviewed
+	}
+
+	patient, err = h.patients.UpdateLastReviewed(ctx, patientUpdate)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewLastReviewedDetailsDto(patient))
+}
+
+func (h *Handler) RevertPatientLastReviewed(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	clinicianId := authData.SubjectId
+
+	patient, err := h.patients.Get(ctx, clinicId, patientId)
+	if err != nil {
+		return err
+	}
+
+	if patient.PreviousLastReviewed == nil {
+		return &echo.HTTPError{
+			Code:    http.StatusFailedDependency,
+			Message: "no previous review to revert to",
+		}
+	}
+
+	if patient.LastReviewed.ClinicianId != clinicianId {
+		return &echo.HTTPError{
+			Code:    http.StatusConflict,
+			Message: "lastReview not owned by requesting user, cannot revert",
+		}
+	}
+
+	patientUpdate := patients.PatientUpdate{
+		Patient: patients.Patient{
+			LastReviewed:         patient.PreviousLastReviewed,
+			PreviousLastReviewed: nil,
+		},
+		ClinicId: clinicId,
+		UserId:   patientId,
+	}
+
+	patient, err = h.patients.UpdateLastReviewed(ctx, patientUpdate)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewLastReviewedDetailsDto(patient))
+}

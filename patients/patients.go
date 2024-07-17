@@ -44,6 +44,7 @@ type Service interface {
 	List(ctx context.Context, filter *Filter, pagination store.Pagination, sort []*store.Sort) (*ListResult, error)
 	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, update PatientUpdate) (*Patient, error)
+	UpdateLastReviewed(ctx context.Context, update PatientUpdate) (*Patient, error)
 	UpdateEmail(ctx context.Context, userId string, email *string) error
 	Remove(ctx context.Context, clinicId string, userId string) error
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
@@ -80,6 +81,8 @@ type Patient struct {
 	UpdatedTime                    time.Time             `bson:"updatedTime,omitempty"`
 	InvitedBy                      *string               `bson:"invitedBy,omitempty"`
 	Summary                        *Summary              `bson:"summary,omitempty"`
+	LastReviewed                   *LastReviewed         `bson:"lastReviewed,omitempty"`
+	PreviousLastReviewed           *LastReviewed         `bson:"previousLastReviewed,omitempty"`
 	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
 	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
 	RequireUniqueMrn               bool                  `bson:"requireUniqueMrn"`
@@ -104,6 +107,11 @@ type MatchedMessage struct {
 	DocumentId primitive.ObjectID `bson:"id"`
 	DataModel  string             `bson:"dataModel"`
 	EventType  string             `bson:"eventType"`
+}
+
+type LastReviewed struct {
+	ClinicianId string    `json:"clinicianId,omitempty"`
+	Time        time.Time `json:"time,omitempty"`
 }
 
 type SubscriptionUpdate struct {

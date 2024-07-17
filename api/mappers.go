@@ -169,17 +169,19 @@ func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
 
 func NewPatientDto(patient *patients.Patient) Patient {
 	dto := Patient{
-		Email:         patient.Email,
-		FullName:      pstr(patient.FullName),
-		Id:            patient.UserId,
-		Mrn:           patient.Mrn,
-		Permissions:   NewPermissionsDto(patient.Permissions),
-		Tags:          NewPatientTagsDto(patient.Tags),
-		DataSources:   NewPatientDataSourcesDto(patient.DataSources),
-		TargetDevices: patient.TargetDevices,
-		CreatedTime:   &patient.CreatedTime,
-		UpdatedTime:   &patient.UpdatedTime,
-		Summary:       NewSummaryDto(patient.Summary),
+		Email:                patient.Email,
+		FullName:             pstr(patient.FullName),
+		Id:                   patient.UserId,
+		Mrn:                  patient.Mrn,
+		Permissions:          NewPermissionsDto(patient.Permissions),
+		Tags:                 NewPatientTagsDto(patient.Tags),
+		DataSources:          NewPatientDataSourcesDto(patient.DataSources),
+		TargetDevices:        patient.TargetDevices,
+		CreatedTime:          &patient.CreatedTime,
+		UpdatedTime:          &patient.UpdatedTime,
+		Summary:              NewSummaryDto(patient.Summary),
+		LastReviewed:         NewLastReviewedDto(patient.LastReviewed),
+		PreviousLastReviewed: NewLastReviewedDto(patient.PreviousLastReviewed),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -195,11 +197,14 @@ func NewPatientDto(patient *patients.Patient) Patient {
 
 func NewPatient(dto Patient) patients.Patient {
 	patient := patients.Patient{
-		Email:         pstrToLower(dto.Email),
-		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
-		FullName:      &dto.FullName,
-		Mrn:           dto.Mrn,
-		TargetDevices: dto.TargetDevices,
+		Email:                pstrToLower(dto.Email),
+		BirthDate:            strp(dto.BirthDate.Format(dateFormat)),
+		FullName:             &dto.FullName,
+		Mrn:                  dto.Mrn,
+		TargetDevices:        dto.TargetDevices,
+		Summary:              NewSummary(dto.Summary),
+		LastReviewed:         NewLastReviewed(dto.LastReviewed),
+		PreviousLastReviewed: NewLastReviewed(dto.PreviousLastReviewed),
 	}
 
 	if dto.Tags != nil {
@@ -235,7 +240,6 @@ func NewPatient(dto Patient) patients.Patient {
 		}
 		patient.DataSources = &dataSources
 	}
-
 	return patient
 }
 
@@ -376,6 +380,34 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	}
 
 	return patientSummary
+}
+
+func NewLastReviewedDto(lastReviewed *patients.LastReviewed) *PatientLastReviewed {
+	if lastReviewed == nil {
+		return nil
+	}
+	return &PatientLastReviewed{
+		ClinicianId: lastReviewed.ClinicianId,
+		Time:        lastReviewed.Time,
+	}
+}
+
+func NewLastReviewedDetailsDto(patient *patients.Patient) *PatientLastReviewedDetails {
+	return &PatientLastReviewedDetails{
+		LastReviewed:         NewLastReviewedDto(patient.LastReviewed),
+		PreviousLastReviewed: NewLastReviewedDto(patient.PreviousLastReviewed),
+	}
+}
+
+func NewLastReviewed(lastReviewed *PatientLastReviewed) *patients.LastReviewed {
+	if lastReviewed == nil {
+		return nil
+	}
+
+	return &patients.LastReviewed{
+		ClinicianId: lastReviewed.ClinicianId,
+		Time:        lastReviewed.Time,
+	}
 }
 
 func NewTideDto(tide *patients.Tide) *Tide {

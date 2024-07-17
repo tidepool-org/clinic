@@ -648,3 +648,19 @@ allow {
   input.path = ["v1", "patients"]
   is_authenticated_user
 }
+
+# Allow currently authenticated clinician to set reviewed
+# PUT /v1/clinics/:clinicId/patients/:patientId/last_reviewed
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patients", _, "last_reviewed"]
+  clinician_has_write_access
+}
+
+# Allow currently authenticated clinician to revert review
+# DELETE /v1/clinics/:clinicId/patients/:patientId/last_reviewed
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patients", _, "last_reviewed"]
+  clinician_has_write_access
+}
