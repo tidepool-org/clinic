@@ -323,9 +323,9 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("Email ---")
 	for _, a := range adminTasks {
 		currentRow = sh.AddRow()
-		currentRow.AddCell().SetValue(a.Name)
+		currentRow.AddCell().SetValue(a.GetClinicianName())
 		currentRow.AddCell().SetValue(strings.Join(a.Workspaces, ", "))
-		currentRow.AddCell().SetValue(a.Email)
+		currentRow.AddCell().SetValue(a.GetClinicianEmail())
 	}
 	sh.AddRow()
 
@@ -336,9 +336,9 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("Downgrade (Only if the person is an Admin at Workspace 1 but a Member at Workspace 2) ----")
 	for _, plan := range nonAdminTasks {
 		currentRow = sh.AddRow()
-		currentRow.AddCell().SetValue(plan.Name)
+		currentRow.AddCell().SetValue(plan.GetClinicianName())
 		currentRow.AddCell().SetValue(strings.Join(plan.Workspaces, ", "))
-		currentRow.AddCell().SetValue(plan.Email)
+		currentRow.AddCell().SetValue(plan.GetClinicianEmail())
 		if plan.Downgraded {
 			currentRow.AddCell().SetValue("Yes")
 		}
