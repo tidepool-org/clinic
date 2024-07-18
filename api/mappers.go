@@ -169,19 +169,18 @@ func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
 
 func NewPatientDto(patient *patients.Patient) Patient {
 	dto := Patient{
-		Email:                patient.Email,
-		FullName:             pstr(patient.FullName),
-		Id:                   patient.UserId,
-		Mrn:                  patient.Mrn,
-		Permissions:          NewPermissionsDto(patient.Permissions),
-		Tags:                 NewPatientTagsDto(patient.Tags),
-		DataSources:          NewPatientDataSourcesDto(patient.DataSources),
-		TargetDevices:        patient.TargetDevices,
-		CreatedTime:          &patient.CreatedTime,
-		UpdatedTime:          &patient.UpdatedTime,
-		Summary:              NewSummaryDto(patient.Summary),
-		LastReviewed:         NewLastReviewedDto(patient.LastReviewed),
-		PreviousLastReviewed: NewLastReviewedDto(patient.PreviousLastReviewed),
+		Email:         patient.Email,
+		FullName:      pstr(patient.FullName),
+		Id:            patient.UserId,
+		Mrn:           patient.Mrn,
+		Permissions:   NewPermissionsDto(patient.Permissions),
+		Tags:          NewPatientTagsDto(patient.Tags),
+		DataSources:   NewPatientDataSourcesDto(patient.DataSources),
+		TargetDevices: patient.TargetDevices,
+		CreatedTime:   &patient.CreatedTime,
+		UpdatedTime:   &patient.UpdatedTime,
+		Summary:       NewSummaryDto(patient.Summary),
+		Reviews:       NewReviewsDto(patient.Reviews),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -197,14 +196,13 @@ func NewPatientDto(patient *patients.Patient) Patient {
 
 func NewPatient(dto Patient) patients.Patient {
 	patient := patients.Patient{
-		Email:                pstrToLower(dto.Email),
-		BirthDate:            strp(dto.BirthDate.Format(dateFormat)),
-		FullName:             &dto.FullName,
-		Mrn:                  dto.Mrn,
-		TargetDevices:        dto.TargetDevices,
-		Summary:              NewSummary(dto.Summary),
-		LastReviewed:         NewLastReviewed(dto.LastReviewed),
-		PreviousLastReviewed: NewLastReviewed(dto.PreviousLastReviewed),
+		Email:         pstrToLower(dto.Email),
+		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
+		FullName:      &dto.FullName,
+		Mrn:           dto.Mrn,
+		TargetDevices: dto.TargetDevices,
+		Summary:       NewSummary(dto.Summary),
+		Reviews:       NewReviews(dto.Reviews),
 	}
 
 	if dto.Tags != nil {
@@ -382,32 +380,28 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	return patientSummary
 }
 
-func NewLastReviewedDto(lastReviewed *patients.LastReviewed) *PatientLastReviewed {
-	if lastReviewed == nil {
-		return nil
-	}
-	return &PatientLastReviewed{
-		ClinicianId: lastReviewed.ClinicianId,
-		Time:        lastReviewed.Time,
-	}
+func NewReviewDto(review patients.Review) PatientReview {
+	return PatientReview(review)
 }
 
-func NewLastReviewedDetailsDto(patient *patients.Patient) *PatientLastReviewedDetails {
-	return &PatientLastReviewedDetails{
-		LastReviewed:         NewLastReviewedDto(patient.LastReviewed),
-		PreviousLastReviewed: NewLastReviewedDto(patient.PreviousLastReviewed),
-	}
+func NewReview(review PatientReview) patients.Review {
+	return patients.Review(review)
 }
 
-func NewLastReviewed(lastReviewed *PatientLastReviewed) *patients.LastReviewed {
-	if lastReviewed == nil {
-		return nil
+func NewReviewsDto(reviews []patients.Review) PatientReviews {
+	result := make(PatientReviews, len(reviews))
+	for i := 0; i < len(reviews); i++ {
+		result[i] = NewReviewDto(reviews[i])
 	}
+	return result
+}
 
-	return &patients.LastReviewed{
-		ClinicianId: lastReviewed.ClinicianId,
-		Time:        lastReviewed.Time,
+func NewReviews(reviews PatientReviews) []patients.Review {
+	result := make([]patients.Review, len(reviews))
+	for i := 0; i < len(reviews); i++ {
+		result[i] = NewReview(reviews[i])
 	}
+	return result
 }
 
 func NewTideDto(tide *patients.Tide) *Tide {

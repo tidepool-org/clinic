@@ -334,33 +334,70 @@ func (r *repository) UpdateEmail(ctx context.Context, userId string, email *stri
 	return err
 }
 
-func (r *repository) UpdateLastReviewed(ctx context.Context, patientUpdate PatientUpdate) (*Patient, error) {
-	clinicObjId, _ := primitive.ObjectIDFromHex(patientUpdate.ClinicId)
-	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return document AFTER edit
+func (r *repository) AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
-		"userId":   patientUpdate.UserId,
+		"userId":   userId,
 	}
-
-	patient := patientUpdate.Patient
-	patient.UpdatedTime = time.Now()
 
 	update := bson.M{
-		"$set": patient,
+		"$push": bson.M{
+			"reviews": bson.M{
+				"$each":     []Review{review},
+				"$position": 0,
+				"$slice":    2,
+			},
+		},
 	}
 
-	if patient.PreviousLastReviewed == nil {
-		update["$unset"] = bson.M{
-			"previousLastReviewed": "",
-		}
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return document AFTER edit
 
+	patient := Patient{}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
+	return patient.Reviews, nil
+}
 
-	return &patient, err
+func (r *repository) DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]Review, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId":              clinicObjId,
+		"userId":                userId,
+		"reviews.0.clinicianId": clinicianId,
+	}
+
+	update := bson.M{"$pop": bson.M{"reviews": -1}}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return document AFTER edit
+	opts.SetProjection(bson.M{"reviews": 1})
+
+	patient := Patient{}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
+	if err != nil {
+		// This checking is after the fact to avoid get-modify-update race
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			err = r.collection.FindOne(ctx, bson.M{"clinicId": clinicObjId, "userId": userId}).Decode(&patient)
+			if err != nil {
+				if errors.Is(err, mongo.ErrNoDocuments) {
+					return nil, ErrNotFound
+				}
+				return nil, err
+			}
+
+			if patient.Reviews[0].ClinicianId != clinicianId {
+				return nil, ErrReviewNotOwner
+			}
+
+		}
+		return nil, err
+	}
+	return patient.Reviews, nil
 }
 
 func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {

@@ -13,6 +13,7 @@ var (
 	Unauthorized        = HttpError{http.StatusUnauthorized, errors.New("unauthorized")}
 	PaymentRequired     = HttpError{http.StatusPaymentRequired, errors.New("payment required")}
 	InternalServerError = HttpError{http.StatusInternalServerError, errors.New("internal server error")}
+	Conflict            = HttpError{http.StatusConflict, errors.New("conflict")}
 )
 
 type HttpError struct {

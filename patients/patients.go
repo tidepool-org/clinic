@@ -20,6 +20,7 @@ var (
 	ErrPermissionNotFound = fmt.Errorf("permission %w", errors.NotFound)
 	ErrDuplicatePatient   = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
+	ErrReviewNotOwner     = fmt.Errorf("%w: cannot revert review from another clinician", errors.Conflict)
 
 	PendingDexcomDataSourceExpirationDuration = time.Hour * 24 * 30
 	DexcomDataSourceProviderName              = "dexcom"
@@ -44,7 +45,8 @@ type Service interface {
 	List(ctx context.Context, filter *Filter, pagination store.Pagination, sort []*store.Sort) (*ListResult, error)
 	Create(ctx context.Context, patient Patient) (*Patient, error)
 	Update(ctx context.Context, update PatientUpdate) (*Patient, error)
-	UpdateLastReviewed(ctx context.Context, update PatientUpdate) (*Patient, error)
+	AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error)
+	DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]Review, error)
 	UpdateEmail(ctx context.Context, userId string, email *string) error
 	Remove(ctx context.Context, clinicId string, userId string) error
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
@@ -81,8 +83,7 @@ type Patient struct {
 	UpdatedTime                    time.Time             `bson:"updatedTime,omitempty"`
 	InvitedBy                      *string               `bson:"invitedBy,omitempty"`
 	Summary                        *Summary              `bson:"summary,omitempty"`
-	LastReviewed                   *LastReviewed         `bson:"lastReviewed,omitempty"`
-	PreviousLastReviewed           *LastReviewed         `bson:"previousLastReviewed,omitempty"`
+	Reviews                        []Review              `bson:"reviews,omitempty"`
 	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
 	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
 	RequireUniqueMrn               bool                  `bson:"requireUniqueMrn"`
@@ -109,9 +110,9 @@ type MatchedMessage struct {
 	EventType  string             `bson:"eventType"`
 }
 
-type LastReviewed struct {
-	ClinicianId string    `json:"clinicianId,omitempty"`
-	Time        time.Time `json:"time,omitempty"`
+type Review struct {
+	ClinicianId string    `json:"clinicianId"`
+	Time        time.Time `json:"time"`
 }
 
 type SubscriptionUpdate struct {

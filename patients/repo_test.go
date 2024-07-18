@@ -2,6 +2,7 @@ package patients_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -1345,68 +1346,87 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
-		Describe("Update LastReviewed", func() {
-			It("correctly adds reviews", func() {
+		Describe("Add Reviews", func() {
+			It("correctly adds review", func() {
 				clinicianId := test.Faker.UUID().V4()
 				ts := time.Now().UTC().Truncate(time.Millisecond)
 
-				patientUpdate := patients.PatientUpdate{
-					ClinicId: randomPatient.ClinicId.Hex(),
-					UserId:   *randomPatient.UserId,
-					Patient: patients.Patient{
-						LastReviewed: &patients.LastReviewed{
-							ClinicianId: clinicianId,
-							Time:        ts,
-						},
-						PreviousLastReviewed: &patients.LastReviewed{
-							ClinicianId: clinicianId,
-							Time:        ts,
-						},
-					},
+				review := patients.Review{
+					ClinicianId: clinicianId,
+					Time:        ts,
 				}
-				patient, err := repo.UpdateLastReviewed(context.Background(), patientUpdate)
+
+				reviews, err := repo.AddReview(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, review)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(patient.LastReviewed.ClinicianId).To(Equal(clinicianId))
-				Expect(patient.LastReviewed.Time).To(Equal(ts))
-				Expect(patient.PreviousLastReviewed.ClinicianId).To(Equal(clinicianId))
-				Expect(patient.PreviousLastReviewed.Time).To(Equal(ts))
+				Expect(len(reviews)).To(Equal(1))
+				Expect(reviews[0]).To(BeComparableTo(review))
 			})
 
-			It("correctly reverts review", func() {
+			It("correctly adds multiple reviews", func() {
+				limit := 2
 				clinicianId := test.Faker.UUID().V4()
 				ts := time.Now().UTC().Truncate(time.Millisecond)
 
-				patientUpdate := patients.PatientUpdate{
-					ClinicId: randomPatient.ClinicId.Hex(),
-					UserId:   *randomPatient.UserId,
-					Patient: patients.Patient{
-						LastReviewed: &patients.LastReviewed{
-							ClinicianId: clinicianId,
-							Time:        ts,
-						},
-						PreviousLastReviewed: &patients.LastReviewed{
-							ClinicianId: clinicianId,
-							Time:        ts,
-						},
-					},
-				}
-				patient, err := repo.UpdateLastReviewed(context.Background(), patientUpdate)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(patient.LastReviewed.ClinicianId).To(Equal(clinicianId))
-				Expect(patient.LastReviewed.Time).To(Equal(ts))
-				Expect(patient.PreviousLastReviewed.ClinicianId).To(Equal(clinicianId))
-				Expect(patient.PreviousLastReviewed.Time).To(Equal(ts))
+				reviews := make([]patients.Review, limit+1)
+				for i := 0; i < len(reviews); i++ {
+					By(fmt.Sprintf("inserting review %d", i+1))
+					reviews[i] = patients.Review{
+						ClinicianId: clinicianId,
+						Time:        ts.Add(time.Hour * time.Duration(i)),
+					}
 
-				patientUpdate = patients.PatientUpdate{
-					ClinicId: randomPatient.ClinicId.Hex(),
-					UserId:   *randomPatient.UserId,
-					Patient:  patients.Patient{},
+					results, err := repo.AddReview(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, reviews[i])
+					Expect(err).ToNot(HaveOccurred())
+					Expect(results[0]).To(BeComparableTo(reviews[i]))
+
+					if i+1 >= limit {
+						Expect(len(results)).To(Equal(limit))
+					} else {
+						Expect(len(results)).To(Equal(i + 1))
+					}
 				}
-				patient, err = repo.UpdateLastReviewed(context.Background(), patientUpdate)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(patient.LastReviewed.ClinicianId).To(Equal(clinicianId))
-				Expect(patient.LastReviewed.Time).To(Equal(ts))
-				Expect(patient.PreviousLastReviewed).To(BeNil())
+			})
+
+			Describe("Delete Reviews", func() {
+				It("correctly deletes review", func() {
+					clinicianId := test.Faker.UUID().V4()
+					ts := time.Now().UTC().Truncate(time.Millisecond)
+
+					reviews := make([]patients.Review, 2)
+					for i := 0; i < len(reviews); i++ {
+						By(fmt.Sprintf("inserting review %d", i+1))
+						reviews[i] = patients.Review{
+							ClinicianId: clinicianId,
+							Time:        ts.Add(time.Hour * time.Duration(i)),
+						}
+
+						_, err := repo.AddReview(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, reviews[i])
+						Expect(err).ToNot(HaveOccurred())
+					}
+
+					results, err := repo.DeleteReview(context.Background(), randomPatient.ClinicId.Hex(), clinicianId, *randomPatient.UserId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(results)).To(Equal(1))
+					Expect(results[0]).To(Equal(reviews[0]))
+				})
+
+				It("correctly fails to delete non-owner review", func() {
+					clinicianId := test.Faker.UUID().V4()
+					ts := time.Now().UTC().Truncate(time.Millisecond)
+
+					review := patients.Review{
+						ClinicianId: clinicianId,
+						Time:        ts,
+					}
+
+					results, err := repo.AddReview(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, review)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(results)).To(Equal(1))
+
+					results, err = repo.DeleteReview(context.Background(), randomPatient.ClinicId.Hex(), "nobody", *randomPatient.UserId)
+					Expect(err).To(HaveOccurred())
+					Expect(errors.Is(err, patients.ErrReviewNotOwner)).To(BeTrue())
+				})
 			})
 		})
 	})
@@ -1431,8 +1451,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"CreatedTime":                    Ignore(),
 		"InvitedBy":                      Ignore(),
 		"Summary":                        Ignore(),
-		"LastReviewed":                   Ignore(),
-		"PreviousLastReviewed":           Ignore(),
+		"Reviews":                        Ignore(),
 		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
 		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),

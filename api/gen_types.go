@@ -988,17 +988,12 @@ type Patient struct {
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id                             *TidepoolUserId `json:"id,omitempty"`
 	LastRequestedDexcomConnectTime *time.Time      `json:"lastRequestedDexcomConnectTime,omitempty"`
-
-	// LastReviewed A summary of a patients recent data
-	LastReviewed           *PatientLastReviewed `json:"lastReviewed,omitempty"`
-	LastUploadReminderTime *time.Time           `json:"lastUploadReminderTime,omitempty"`
+	LastUploadReminderTime         *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`
 	Permissions *PatientPermissions `json:"permissions,omitempty"`
-
-	// PreviousLastReviewed A summary of a patients recent data
-	PreviousLastReviewed *PatientLastReviewed `json:"previousLastReviewed,omitempty"`
+	Reviews     []PatientReview     `json:"reviews"`
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
@@ -1447,21 +1442,6 @@ type PatientCountSettings struct {
 	SoftLimit *PatientCountLimit `json:"softLimit,omitempty"`
 }
 
-// PatientLastReviewed A summary of a patients recent data
-type PatientLastReviewed struct {
-	ClinicianId string    `json:"clinicianId"`
-	Time        time.Time `json:"time"`
-}
-
-// PatientLastReviewedDetails defines model for PatientLastReviewedDetails.
-type PatientLastReviewedDetails struct {
-	// LastReviewed A summary of a patients recent data
-	LastReviewed *PatientLastReviewed `json:"lastReviewed,omitempty"`
-
-	// PreviousLastReviewed A summary of a patients recent data
-	PreviousLastReviewed *PatientLastReviewed `json:"previousLastReviewed,omitempty"`
-}
-
 // PatientPermissions defines model for PatientPermissions.
 type PatientPermissions struct {
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
@@ -1469,6 +1449,15 @@ type PatientPermissions struct {
 	Upload    *map[string]interface{} `json:"upload,omitempty"`
 	View      *map[string]interface{} `json:"view,omitempty"`
 }
+
+// PatientReview A summary of a patients recent data
+type PatientReview struct {
+	ClinicianId string    `json:"clinicianId"`
+	Time        time.Time `json:"time"`
+}
+
+// PatientReviews defines model for PatientReviews.
+type PatientReviews = []PatientReview
 
 // PatientSummary A summary of a patients recent data
 type PatientSummary struct {
