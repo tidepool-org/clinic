@@ -5,7 +5,6 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
@@ -40,8 +39,10 @@ var _ = Describe("Clinicians", func() {
 
 	Describe("Source Clinician Merge Planner", func() {
 		It("returns a plan to move the clinician if the clinician is not a duplicate", func() {
+			id := primitive.NewObjectID()
 			clinician := cliniciansTest.RandomClinician()
 			clinician.ClinicId = source.Id
+			clinician.Id = &id
 
 			cliniciansService.EXPECT().
 				Get(gomock.Any(), target.Id.Hex(), *clinician.UserId).
@@ -51,20 +52,25 @@ var _ = Describe("Clinicians", func() {
 			plan, err := planner.Plan(context.Background())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(plan.ClinicianAction).To(Equal(merge.ClinicianActionMove))
-			Expect(plan.GetClinicianEmail()).To(PointTo(Equal(*clinician.Email)))
-			Expect(plan.GetClinicianName()).To(PointTo(Equal(*clinician.Name)))
+			Expect(plan.GetClinicianEmail()).To(Equal(*clinician.Email))
+			Expect(plan.GetClinicianName()).To(Equal(*clinician.Name))
 			Expect(plan.Workspaces).To(ConsistOf(*source.Name))
 			Expect(plan.ResultingRoles).To(ConsistOf(clinician.Roles))
 			Expect(plan.PreventsMerge()).To(BeFalse())
 		})
 
 		It("returns a plan to merge the clinician if the clinician is a duplicate", func() {
+			id := primitive.NewObjectID()
 			clinician := cliniciansTest.RandomClinician()
 			clinician.ClinicId = source.Id
+			clinician.Id = &id
 
+			dupId := primitive.NewObjectID()
 			duplicate := cliniciansTest.RandomClinician()
+			duplicate.UserId = clinician.UserId
 			duplicate.ClinicId = target.Id
 			duplicate.Roles = clinician.Roles
+			duplicate.Id = &dupId
 
 			cliniciansService.EXPECT().
 				Get(gomock.Any(), target.Id.Hex(), *clinician.UserId).
@@ -74,8 +80,8 @@ var _ = Describe("Clinicians", func() {
 			plan, err := planner.Plan(context.Background())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(plan.ClinicianAction).To(Equal(merge.ClinicianActionMerge))
-			Expect(plan.GetClinicianEmail()).To(PointTo(Equal(*clinician.Email)))
-			Expect(plan.GetClinicianName()).To(PointTo(Equal(*clinician.Name)))
+			Expect(plan.GetClinicianEmail()).To(Equal(*clinician.Email))
+			Expect(plan.GetClinicianName()).To(Equal(*clinician.Name))
 			Expect(plan.Workspaces).To(ConsistOf(*source.Name, *target.Name))
 			Expect(plan.ResultingRoles).To(ConsistOf(clinician.Roles))
 			Expect(plan.PreventsMerge()).To(BeFalse())
@@ -104,8 +110,10 @@ var _ = Describe("Clinicians", func() {
 
 	Describe("Target Clinician Merge Planner", func() {
 		It("returns a plan to retain the clinician if the clinician is not a duplicate", func() {
+			id := primitive.NewObjectID()
 			clinician := cliniciansTest.RandomClinician()
 			clinician.ClinicId = source.Id
+			clinician.Id = &id
 
 			cliniciansService.EXPECT().
 				Get(gomock.Any(), target.Id.Hex(), *clinician.UserId).
@@ -115,20 +123,24 @@ var _ = Describe("Clinicians", func() {
 			plan, err := planner.Plan(context.Background())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(plan.ClinicianAction).To(Equal(merge.ClinicianActionRetain))
-			Expect(plan.GetClinicianEmail()).To(PointTo(Equal(*clinician.Email)))
-			Expect(plan.GetClinicianName()).To(PointTo(Equal(*clinician.Name)))
+			Expect(plan.GetClinicianEmail()).To(Equal(*clinician.Email))
+			Expect(plan.GetClinicianName()).To(Equal(*clinician.Name))
 			Expect(plan.Workspaces).To(ConsistOf(*target.Name))
 			Expect(plan.ResultingRoles).To(ConsistOf(clinician.Roles))
 			Expect(plan.PreventsMerge()).To(BeFalse())
 		})
 
 		It("returns a plan to merge the clinician if the clinician is a duplicate", func() {
+			id := primitive.NewObjectID()
 			clinician := cliniciansTest.RandomClinician()
 			clinician.ClinicId = source.Id
+			clinician.Id = &id
 
+			dupId := primitive.NewObjectID()
 			duplicate := cliniciansTest.RandomClinician()
 			duplicate.ClinicId = target.Id
 			duplicate.Roles = clinician.Roles
+			duplicate.Id = &dupId
 
 			cliniciansService.EXPECT().
 				Get(gomock.Any(), target.Id.Hex(), *clinician.UserId).
@@ -138,8 +150,8 @@ var _ = Describe("Clinicians", func() {
 			plan, err := planner.Plan(context.Background())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(plan.ClinicianAction).To(Equal(merge.ClinicianActionMergeInto))
-			Expect(plan.GetClinicianEmail()).To(PointTo(Equal(*clinician.Email)))
-			Expect(plan.GetClinicianName()).To(PointTo(Equal(*clinician.Name)))
+			Expect(plan.GetClinicianEmail()).To(Equal(*clinician.Email))
+			Expect(plan.GetClinicianName()).To(Equal(*clinician.Name))
 			Expect(plan.Workspaces).To(ConsistOf(*source.Name, *target.Name))
 			Expect(plan.ResultingRoles).To(ConsistOf(clinician.Roles))
 			Expect(plan.PreventsMerge()).To(BeFalse())
@@ -158,10 +170,16 @@ var _ = Describe("Clinicians", func() {
 			defer cancel()
 
 			executor = merge.NewClinicianPlanExecutor(zap.NewNop().Sugar(), test.GetTestDatabase())
+
+			sourceId := primitive.NewObjectID()
 			sourceClinician = *cliniciansTest.RandomClinician()
-			targetClinician = *cliniciansTest.RandomClinician()
 			sourceClinician.ClinicId = source.Id
+			sourceClinician.Id = &sourceId
+
+			targetId := primitive.NewObjectID()
+			targetClinician = *cliniciansTest.RandomClinician()
 			targetClinician.ClinicId = target.Id
+			targetClinician.Id = &targetId
 
 			res, err := collection.InsertMany(ctx, []interface{}{sourceClinician, targetClinician})
 			Expect(err).ToNot(HaveOccurred())

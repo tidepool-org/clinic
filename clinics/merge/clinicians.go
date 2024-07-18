@@ -36,12 +36,18 @@ func (c ClinicianPlan) PreventsMerge() bool {
 	return false
 }
 
-func (c ClinicianPlan) GetClinicianName() *string {
-	return c.Clinician.Name
+func (c ClinicianPlan) GetClinicianName() string {
+	if c.Clinician.Name == nil {
+		return ""
+	}
+	return *c.Clinician.Name
 }
 
-func (c ClinicianPlan) GetClinicianEmail() *string {
-	return c.Clinician.Email
+func (c ClinicianPlan) GetClinicianEmail() string {
+	if c.Clinician.Email == nil {
+		return ""
+	}
+	return *c.Clinician.Email
 }
 
 type ClinicianPlans []ClinicianPlan
@@ -86,17 +92,19 @@ func (s *SourceClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, 
 		Workspaces:      []string{*s.source.Name},
 	}
 
-	targetClinician, err := s.service.Get(ctx, s.target.Id.Hex(), *s.clinician.UserId)
-	if err != nil && !errors.Is(err, clinicians.ErrNotFound) {
-		return plan, err
-	}
-	if targetClinician != nil {
-		plan.ClinicianAction = ClinicianActionMerge
-		plan.Workspaces = append(plan.Workspaces, *s.target.Name)
-		sort.Strings(plan.Workspaces)
-		if s.clinician.IsAdmin() && !targetClinician.IsAdmin() {
-			plan.Downgraded = true
-			plan.ResultingRoles = targetClinician.Roles
+	if s.clinician.UserId != nil {
+		targetClinician, err := s.service.Get(ctx, s.target.Id.Hex(), *s.clinician.UserId)
+		if err != nil && !errors.Is(err, clinicians.ErrNotFound) {
+			return plan, err
+		}
+		if targetClinician != nil {
+			plan.ClinicianAction = ClinicianActionMerge
+			plan.Workspaces = append(plan.Workspaces, *s.target.Name)
+			sort.Strings(plan.Workspaces)
+			if s.clinician.IsAdmin() && !targetClinician.IsAdmin() {
+				plan.Downgraded = true
+				plan.ResultingRoles = targetClinician.Roles
+			}
 		}
 	}
 
@@ -129,14 +137,16 @@ func (s *TargetClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, 
 		Workspaces:      []string{*s.target.Name},
 	}
 
-	sourceClinician, err := s.service.Get(ctx, s.target.Id.Hex(), *s.clinician.UserId)
-	if err != nil && !errors.Is(err, clinicians.ErrNotFound) {
-		return plan, err
-	}
-	if sourceClinician != nil {
-		plan.ClinicianAction = ClinicianActionMergeInto
-		plan.Workspaces = append(plan.Workspaces, *s.source.Name)
-		sort.Strings(plan.Workspaces)
+	if s.clinician.UserId != nil {
+		sourceClinician, err := s.service.Get(ctx, s.target.Id.Hex(), *s.clinician.UserId)
+		if err != nil && !errors.Is(err, clinicians.ErrNotFound) {
+			return plan, err
+		}
+		if sourceClinician != nil {
+			plan.ClinicianAction = ClinicianActionMergeInto
+			plan.Workspaces = append(plan.Workspaces, *s.source.Name)
+			sort.Strings(plan.Workspaces)
+		}
 	}
 
 	return plan, nil
@@ -155,12 +165,22 @@ func NewClinicianPlanExecutor(logger *zap.SugaredLogger, db *mongo.Database) *Cl
 }
 
 func (c *ClinicianPlanExecutor) Execute(ctx context.Context, plan ClinicianPlan, target clinics.Clinic) error {
+	var id, idType string
+	if plan.Clinician.UserId != nil {
+		id = *plan.Clinician.UserId
+		idType = "userId"
+	} else {
+		id = plan.Clinician.Id.Hex()
+		idType = "id"
+	}
+
 	switch plan.ClinicianAction {
 	case ClinicianActionMove:
+
 		c.logger.Infow(
 			"moving clinician",
 			"clinicId", plan.Clinician.ClinicId.Hex(),
-			"userId", plan.Clinician.UserId,
+			idType, id,
 			"targetClinicId", target.Id.Hex(),
 		)
 		return c.moveClinician(ctx, plan, target)
@@ -169,7 +189,7 @@ func (c *ClinicianPlanExecutor) Execute(ctx context.Context, plan ClinicianPlan,
 		c.logger.Infow(
 			"removing clinician",
 			"clinicId", plan.Clinician.ClinicId.Hex(),
-			"userId", plan.Clinician.UserId,
+			idType, id,
 		)
 		return c.removeClinician(ctx, plan)
 	case ClinicianActionMergeInto, ClinicianActionRetain:
@@ -177,7 +197,7 @@ func (c *ClinicianPlanExecutor) Execute(ctx context.Context, plan ClinicianPlan,
 		c.logger.Infow(
 			"skipping clinician plan - nothing to do",
 			"clinicId", plan.Clinician.ClinicId.Hex(),
-			"userId", plan.Clinician.UserId,
+			idType, id,
 			"action", plan.ClinicianAction,
 		)
 		return nil
@@ -188,8 +208,7 @@ func (c *ClinicianPlanExecutor) Execute(ctx context.Context, plan ClinicianPlan,
 
 func (c *ClinicianPlanExecutor) moveClinician(ctx context.Context, plan ClinicianPlan, target clinics.Clinic) error {
 	selector := bson.M{
-		"clinicId": *plan.Clinician.ClinicId,
-		"userId":   *plan.Clinician.UserId,
+		"_id": *plan.Clinician.Id,
 	}
 
 	update := bson.M{
@@ -211,8 +230,7 @@ func (c *ClinicianPlanExecutor) moveClinician(ctx context.Context, plan Clinicia
 
 func (c *ClinicianPlanExecutor) removeClinician(ctx context.Context, plan ClinicianPlan) error {
 	selector := bson.M{
-		"clinicId": *plan.Clinician.ClinicId,
-		"userId":   *plan.Clinician.UserId,
+		"_id": *plan.Clinician.Id,
 	}
 
 	res, err := c.cliniciansCollection.DeleteOne(ctx, selector)
@@ -220,7 +238,7 @@ func (c *ClinicianPlanExecutor) removeClinician(ctx context.Context, plan Clinic
 		return fmt.Errorf("error removing clinician: %w", err)
 	}
 	if res.DeletedCount != 1 {
-		return fmt.Errorf("error emoving clinician: unexpected modified count %v", res.DeletedCount)
+		return fmt.Errorf("error removing clinician: unexpected modified count %v", res.DeletedCount)
 	}
 	return nil
 }
