@@ -914,6 +914,10 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 		}
 	}
 
+	if filter.LastReviewed != nil {
+		selector["reviews.0.time"] = bson.M{"$lte": filter.LastReviewed}
+	}
+
 	if f, ok := filter.CGMTime["lastUploadDate"]; ok {
 		cgmLastUploadDate := bson.M{}
 

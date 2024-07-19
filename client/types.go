@@ -1796,6 +1796,9 @@ type ListPatientsParams struct {
 	// OffsetPeriods If we should display, filter, and sort based on the offset periods or default periods
 	OffsetPeriods *bool `form:"offsetPeriods,omitempty" json:"offsetPeriods,omitempty"`
 
+	// LastReviewed Inclusive
+	LastReviewed *time.Time `form:"lastReviewed,omitempty" json:"lastReviewed,omitempty"`
+
 	// CgmAverageGlucoseMmol Average glucose value of records in Mmol/L
 	CgmAverageGlucoseMmol *FloatFilter `form:"cgm.averageGlucoseMmol,omitempty" json:"cgm.averageGlucoseMmol,omitempty"`
 

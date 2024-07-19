@@ -22,9 +22,10 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId: strp(string(clinicId)),
-		Search:   searchToString(params.Search),
-		Tags:     params.Tags,
+		ClinicId:     strp(string(clinicId)),
+		Search:       searchToString(params.Search),
+		Tags:         params.Tags,
+		LastReviewed: params.LastReviewed,
 	}
 
 	if params.Period == nil || *params.Period == "" {

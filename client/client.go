@@ -3118,6 +3118,22 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
+		if params.LastReviewed != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "lastReviewed", runtime.ParamLocationQuery, *params.LastReviewed); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.CgmAverageGlucoseMmol != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.averageGlucoseMmol", runtime.ParamLocationQuery, *params.CgmAverageGlucoseMmol); err != nil {

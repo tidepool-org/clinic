@@ -839,6 +839,8 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 	}
 
 	expandedSorts := map[string]string{
+		"lastReviewed": "reviews.0.time",
+
 		"lastUpdatedDate": "summary." + *typ + "Stats.dates.lastUpdatedDate",
 
 		"hasLastUploadDate": "summary." + *typ + "Stats.dates.hasLastUploadDate",
@@ -1107,6 +1109,7 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"fullName":       {},
 		"birthDate":      {},
 		"lastUploadDate": {},
+		"lastReviewed":   {},
 		"lastData":       {},
 		"firstData":      {},
 		"outdatedSince":  {},
@@ -1198,6 +1201,7 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"fullName":       {},
 		"birthDate":      {},
 		"lastUploadDate": {},
+		"lastReviewed":   {},
 		"lastData":       {},
 		"firstData":      {},
 		"outdatedSince":  {},

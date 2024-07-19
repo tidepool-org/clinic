@@ -996,6 +996,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offsetPeriods: %s", err))
 	}
 
+	// ------------- Optional query parameter "lastReviewed" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "lastReviewed", ctx.QueryParams(), &params.LastReviewed)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter lastReviewed: %s", err))
+	}
+
 	// ------------- Optional query parameter "cgm.averageGlucoseMmol" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "cgm.averageGlucoseMmol", ctx.QueryParams(), &params.CgmAverageGlucoseMmol)
