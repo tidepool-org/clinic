@@ -3434,6 +3434,12 @@ components:
           minLength: 1
         tags:
           $ref: '#/components/schemas/PatientTagIds'
+        reviews:
+          type: array
+          nullable: true
+          x-go-type-skip-optional-pointer: true
+          items:
+            $ref: '#/components/schemas/PatientReview'
       required:
         - id
         - tags

@@ -432,7 +432,6 @@ func NewTideDto(tide *patients.Tide) *Tide {
 			c = append(c, TideResultPatient{
 				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
-				Patient:                    TidePatient(patient.Patient),
 				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
 				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
 				TimeInHighPercent:          patient.TimeInHighPercent,
@@ -441,6 +440,13 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
 				TimeInVeryHighPercent:      patient.TimeInVeryHighPercent,
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
+				Patient: TidePatient{
+					Email:    patient.Patient.Email,
+					FullName: patient.Patient.FullName,
+					Id:       patient.Patient.Id,
+					Reviews:  NewReviewsDto(patient.Patient.Reviews),
+					Tags:     patient.Patient.Tags,
+				},
 			})
 		}
 		tideResult.Results[category] = c
