@@ -34,6 +34,7 @@ type TidePatient struct {
 	FullName *string   `json:"fullName"`
 	Id       *string   `json:"id,omitempty"`
 	Tags     *[]string `json:"tags"`
+	Reviews  []Review  `json:"reviews"`
 }
 
 type TideResultPatient struct {
