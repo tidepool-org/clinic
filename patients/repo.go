@@ -351,7 +351,7 @@ func (r *repository) AddReview(ctx context.Context, clinicId, userId string, rev
 		},
 	}
 
-	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return document AFTER edit
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
 	patient := Patient{}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
@@ -374,7 +374,7 @@ func (r *repository) DeleteReview(ctx context.Context, clinicId, clinicianId, us
 
 	update := bson.M{"$pop": bson.M{"reviews": -1}}
 
-	opts := options.FindOneAndUpdate().SetReturnDocument(1) // return document AFTER edit
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	opts.SetProjection(bson.M{"reviews": 1})
 
 	patient := Patient{}
