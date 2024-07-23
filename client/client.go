@@ -4510,9 +4510,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.CgmLastUploadDateFrom != nil {
+		if params.CgmLastDataFrom != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastUploadDateFrom", runtime.ParamLocationQuery, *params.CgmLastUploadDateFrom); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastDataFrom", runtime.ParamLocationQuery, *params.CgmLastDataFrom); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -4526,9 +4526,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.CgmLastUploadDateTo != nil {
+		if params.CgmLastDataTo != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastUploadDateTo", runtime.ParamLocationQuery, *params.CgmLastUploadDateTo); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastDataTo", runtime.ParamLocationQuery, *params.CgmLastDataTo); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -4830,9 +4830,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.BgmLastUploadDateFrom != nil {
+		if params.BgmLastDataFrom != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.lastUploadDateFrom", runtime.ParamLocationQuery, *params.BgmLastUploadDateFrom); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.lastDataFrom", runtime.ParamLocationQuery, *params.BgmLastDataFrom); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -4846,9 +4846,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.BgmLastUploadDateTo != nil {
+		if params.BgmLastDataTo != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.lastUploadDateTo", runtime.ParamLocationQuery, *params.BgmLastUploadDateTo); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.lastDataTo", runtime.ParamLocationQuery, *params.BgmLastDataTo); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -5898,9 +5898,9 @@ func NewTideReportRequest(server string, clinicId ClinicId, params *TideReportPa
 
 		}
 
-		if params.CgmLastUploadDateFrom != nil {
+		if params.CgmLastDataFrom != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastUploadDateFrom", runtime.ParamLocationQuery, *params.CgmLastUploadDateFrom); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastDataFrom", runtime.ParamLocationQuery, *params.CgmLastDataFrom); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -5914,9 +5914,9 @@ func NewTideReportRequest(server string, clinicId ClinicId, params *TideReportPa
 
 		}
 
-		if params.CgmLastUploadDateTo != nil {
+		if params.CgmLastDataTo != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastUploadDateTo", runtime.ParamLocationQuery, *params.CgmLastUploadDateTo); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastDataTo", runtime.ParamLocationQuery, *params.CgmLastDataTo); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

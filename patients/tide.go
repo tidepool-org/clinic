@@ -11,8 +11,8 @@ type TideConfig struct {
 	ClinicId                 string      `json:"clinicId,omitempty"`
 	Filters                  TideFilters `json:"filters"`
 	HighGlucoseThreshold     float64     `json:"highGlucoseThreshold"`
-	LastUploadDateFrom       time.Time   `json:"lastUploadDateFrom"`
-	LastUploadDateTo         time.Time   `json:"lastUploadDateTo"`
+	LastDataFrom             time.Time   `json:"lastDataFrom"`
+	LastDataTo               time.Time   `json:"lastDataTo"`
 	LowGlucoseThreshold      float64     `json:"lowGlucoseThreshold"`
 	Period                   string      `json:"period"`
 	SchemaVersion            int         `json:"schemaVersion"`

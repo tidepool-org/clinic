@@ -1572,9 +1572,9 @@ type TideConfig struct {
 	Filters  TideFilters `json:"filters"`
 
 	// HighGlucoseThreshold Threshold used for determining if a value is high
-	HighGlucoseThreshold float64   `json:"highGlucoseThreshold"`
-	LastUploadDateFrom   time.Time `json:"lastUploadDateFrom"`
-	LastUploadDateTo     time.Time `json:"lastUploadDateTo"`
+	HighGlucoseThreshold float64    `json:"highGlucoseThreshold"`
+	LastDataFrom         *time.Time `json:"lastDataFrom,omitempty"`
+	LastDataTo           *time.Time `json:"lastDataTo,omitempty"`
 
 	// LowGlucoseThreshold Threshold used for determining if a value is low
 	LowGlucoseThreshold float64 `json:"lowGlucoseThreshold"`
@@ -2057,11 +2057,11 @@ type ListPatientsParams struct {
 	// CgmCoefficientOfVariationDelta Delta of the coefficient of glucose values in Mmol/L
 	CgmCoefficientOfVariationDelta *FloatFilter `form:"cgm.coefficientOfVariationDelta,omitempty" json:"cgm.coefficientOfVariationDelta,omitempty"`
 
-	// CgmLastUploadDateFrom Inclusive
-	CgmLastUploadDateFrom *time.Time `form:"cgm.lastUploadDateFrom,omitempty" json:"cgm.lastUploadDateFrom,omitempty"`
+	// CgmLastDataFrom Inclusive
+	CgmLastDataFrom *time.Time `form:"cgm.lastDataFrom,omitempty" json:"cgm.lastDataFrom,omitempty"`
 
-	// CgmLastUploadDateTo Exclusive
-	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
+	// CgmLastDataTo Exclusive
+	CgmLastDataTo *time.Time `form:"cgm.lastDataTo,omitempty" json:"cgm.lastDataTo,omitempty"`
 
 	// BgmAverageGlucoseMmolDelta Delta of the average glucose values in Mmol/L
 	BgmAverageGlucoseMmolDelta *FloatFilter `form:"bgm.averageGlucoseMmolDelta,omitempty" json:"bgm.averageGlucoseMmolDelta,omitempty"`
@@ -2117,11 +2117,11 @@ type ListPatientsParams struct {
 	// BgmTotalRecordsDelta Delta of total record count
 	BgmTotalRecordsDelta *IntFilter `form:"bgm.totalRecordsDelta,omitempty" json:"bgm.totalRecordsDelta,omitempty"`
 
-	// BgmLastUploadDateFrom Inclusive
-	BgmLastUploadDateFrom *time.Time `form:"bgm.lastUploadDateFrom,omitempty" json:"bgm.lastUploadDateFrom,omitempty"`
+	// BgmLastDataFrom Inclusive
+	BgmLastDataFrom *time.Time `form:"bgm.lastDataFrom,omitempty" json:"bgm.lastDataFrom,omitempty"`
 
-	// BgmLastUploadDateTo Exclusive
-	BgmLastUploadDateTo *time.Time `form:"bgm.lastUploadDateTo,omitempty" json:"bgm.lastUploadDateTo,omitempty"`
+	// BgmLastDataTo Exclusive
+	BgmLastDataTo *time.Time `form:"bgm.lastDataTo,omitempty" json:"bgm.lastDataTo,omitempty"`
 
 	// Tags Comma-separated list of patient tag IDs
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
@@ -2135,11 +2135,11 @@ type TideReportParams struct {
 	// Tags Comma-separated list of patient tag IDs
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
 
-	// CgmLastUploadDateFrom Inclusive
-	CgmLastUploadDateFrom *time.Time `form:"cgm.lastUploadDateFrom,omitempty" json:"cgm.lastUploadDateFrom,omitempty"`
+	// CgmLastDataFrom Inclusive
+	CgmLastDataFrom *time.Time `form:"cgm.lastDataFrom,omitempty" json:"cgm.lastDataFrom,omitempty"`
 
-	// CgmLastUploadDateTo Exclusive
-	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
+	// CgmLastDataTo Exclusive
+	CgmLastDataTo *time.Time `form:"cgm.lastDataTo,omitempty" json:"cgm.lastDataTo,omitempty"`
 }
 
 // FindPatientsParams defines parameters for FindPatients.

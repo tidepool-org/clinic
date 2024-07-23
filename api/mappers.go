@@ -414,8 +414,8 @@ func NewTideDto(tide *patients.Tide) *Tide {
 			ClinicId:                 &tide.Config.ClinicId,
 			Filters:                  TideFilters(tide.Config.Filters),
 			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
-			LastUploadDateFrom:       tide.Config.LastUploadDateFrom,
-			LastUploadDateTo:         tide.Config.LastUploadDateTo,
+			LastDataFrom:             &tide.Config.LastDataFrom,
+			LastDataTo:               &tide.Config.LastDataTo,
 			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
 			Period:                   tide.Config.Period,
 			SchemaVersion:            tide.Config.SchemaVersion,
@@ -1590,13 +1590,13 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 func ParseCGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
 	filters = patients.SummaryDateFilters{}
 
-	parseDateRangeFilter(filters, "lastUploadDate", params.CgmLastUploadDateFrom, params.CgmLastUploadDateTo)
+	parseDateRangeFilter(filters, "lastDataDate", params.CgmLastDataFrom, params.CgmLastDataTo)
 	return
 }
 
 func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
 	filters = patients.SummaryDateFilters{}
 
-	parseDateRangeFilter(filters, "lastUploadDate", params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
+	parseDateRangeFilter(filters, "lastDataDate", params.BgmLastDataFrom, params.BgmLastDataTo)
 	return
 }

@@ -267,13 +267,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateFrom
+          name: cgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateTo
+          name: cgm.lastDataTo
           description: Exclusive
   '/v1/clinics/{clinicId}/patients':
     parameters:
@@ -755,13 +755,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateFrom
+          name: cgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateTo
+          name: cgm.lastDataTo
           description: Exclusive
         - schema:
             $ref: '#/components/schemas/FloatFilter'
@@ -857,13 +857,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: bgm.lastUploadDateFrom
+          name: bgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: bgm.lastUploadDateTo
+          name: bgm.lastDataTo
           description: Exclusive
         - schema:
             type: array
@@ -3354,10 +3354,10 @@ components:
           type: string
           pattern: ^(1d|7d|14d|30d)$
           example: 7d
-        lastUploadDateFrom:
+        lastDataFrom:
           type: string
           format: date-time
-        lastUploadDateTo:
+        lastDataTo:
           type: string
           format: date-time
         highGlucoseThreshold:
@@ -3384,8 +3384,8 @@ components:
         - schemaVersion
         - clinicId
         - period
-        - lastUploadDateFrom
-        - lastUploadDateTo
+        - lastDataDateFrom
+        - lastDataDateTo
         - highGlucoseThreshold
         - veryHighGlucoseThreshold
         - lowGlucoseThreshold

@@ -1605,18 +1605,18 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.coefficientOfVariationDelta: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateFrom" -------------
+	// ------------- Optional query parameter "cgm.lastDataFrom" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateFrom", ctx.QueryParams(), &params.CgmLastUploadDateFrom)
+	err = runtime.BindQueryParameter("form", true, false, "cgm.lastDataFrom", ctx.QueryParams(), &params.CgmLastDataFrom)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateFrom: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastDataFrom: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateTo" -------------
+	// ------------- Optional query parameter "cgm.lastDataTo" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
+	err = runtime.BindQueryParameter("form", true, false, "cgm.lastDataTo", ctx.QueryParams(), &params.CgmLastDataTo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastDataTo: %s", err))
 	}
 
 	// ------------- Optional query parameter "bgm.averageGlucoseMmolDelta" -------------
@@ -1745,18 +1745,18 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.totalRecordsDelta: %s", err))
 	}
 
-	// ------------- Optional query parameter "bgm.lastUploadDateFrom" -------------
+	// ------------- Optional query parameter "bgm.lastDataFrom" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "bgm.lastUploadDateFrom", ctx.QueryParams(), &params.BgmLastUploadDateFrom)
+	err = runtime.BindQueryParameter("form", true, false, "bgm.lastDataFrom", ctx.QueryParams(), &params.BgmLastDataFrom)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.lastUploadDateFrom: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.lastDataFrom: %s", err))
 	}
 
-	// ------------- Optional query parameter "bgm.lastUploadDateTo" -------------
+	// ------------- Optional query parameter "bgm.lastDataTo" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "bgm.lastUploadDateTo", ctx.QueryParams(), &params.BgmLastUploadDateTo)
+	err = runtime.BindQueryParameter("form", true, false, "bgm.lastDataTo", ctx.QueryParams(), &params.BgmLastDataTo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.lastUploadDateTo: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.lastDataTo: %s", err))
 	}
 
 	// ------------- Optional query parameter "tags" -------------
@@ -2282,18 +2282,18 @@ func (w *ServerInterfaceWrapper) TideReport(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateFrom" -------------
+	// ------------- Optional query parameter "cgm.lastDataFrom" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateFrom", ctx.QueryParams(), &params.CgmLastUploadDateFrom)
+	err = runtime.BindQueryParameter("form", true, false, "cgm.lastDataFrom", ctx.QueryParams(), &params.CgmLastDataFrom)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateFrom: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastDataFrom: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateTo" -------------
+	// ------------- Optional query parameter "cgm.lastDataTo" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
+	err = runtime.BindQueryParameter("form", true, false, "cgm.lastDataTo", ctx.QueryParams(), &params.CgmLastDataTo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastDataTo: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments

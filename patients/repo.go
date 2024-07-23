@@ -1091,16 +1091,16 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	}
 	tags := store.ObjectIDSFromStringArray(*params.Tags)
 
-	if params.CgmLastUploadDateFrom == nil || params.CgmLastUploadDateFrom.IsZero() {
-		return nil, errors.New("no lastUploadDateFrom provided")
+	if params.CgmLastDataFrom == nil || params.CgmLastDataFrom.IsZero() {
+		return nil, errors.New("no lastDataFrom provided")
 	}
 
-	if params.CgmLastUploadDateTo == nil || params.CgmLastUploadDateTo.IsZero() {
-		return nil, errors.New("no lastUploadDateTo provided")
+	if params.CgmLastDataTo == nil || params.CgmLastDataTo.IsZero() {
+		return nil, errors.New("no lastDataTo provided")
 	}
 
-	if params.CgmLastUploadDateFrom.After(*params.CgmLastUploadDateTo) || params.CgmLastUploadDateFrom.Equal(*params.CgmLastUploadDateTo) {
-		return nil, errors.New("provided lastUploadDateFrom is after or equal to lastUploadDateTo")
+	if params.CgmLastDataFrom.After(*params.CgmLastDataTo) || params.CgmLastDataFrom.Equal(*params.CgmLastDataTo) {
+		return nil, errors.New("provided lastDataFrom is after or equal to lastDataTo")
 	}
 
 	if params.Period == nil {
@@ -1164,8 +1164,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 				TimeCGMUsePercent:         "<0.7",
 			},
 			HighGlucoseThreshold:     10.0,
-			LastUploadDateFrom:       *params.CgmLastUploadDateFrom,
-			LastUploadDateTo:         *params.CgmLastUploadDateTo,
+			LastDataFrom:             *params.CgmLastDataFrom,
+			LastDataTo:               *params.CgmLastDataTo,
 			LowGlucoseThreshold:      3.9,
 			Period:                   *params.Period,
 			SchemaVersion:            1,
@@ -1181,9 +1181,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
-			"summary.cgmStats.dates.lastUploadDate": bson.M{
-				"$gt":  params.CgmLastUploadDateFrom,
-				"$lte": params.CgmLastUploadDateTo,
+			"summary.cgmStats.dates.lastData": bson.M{
+				"$gt":  params.CgmLastDataFrom,
+				"$lte": params.CgmLastDataTo,
 			},
 			"summary.cgmStats.periods." + *params.Period + "." + category.Field: bson.M{category.Comparison: category.Value},
 		}
@@ -1260,9 +1260,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
-			"summary.cgmStats.dates.lastUploadDate": bson.M{
-				"$gt":  params.CgmLastUploadDateFrom,
-				"$lte": params.CgmLastUploadDateTo,
+			"summary.cgmStats.dates.lastData": bson.M{
+				"$gt":  params.CgmLastDataFrom,
+				"$lte": params.CgmLastDataTo,
 			},
 		}
 
