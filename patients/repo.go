@@ -918,7 +918,7 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 		selector["reviews.0.time"] = bson.M{"$lte": filter.LastReviewed}
 	}
 
-	if f, ok := filter.CGMTime["lastUploadDate"]; ok {
+	if f, ok := filter.CGMTime["lastData"]; ok {
 		cgmLastUploadDate := bson.M{}
 
 		if f.Min != nil {
@@ -929,10 +929,10 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 			cgmLastUploadDate["$lt"] = f.Max
 		}
 
-		selector["summary.cgmStats.dates.lastUploadDate"] = cgmLastUploadDate
+		selector["summary.cgmStats.dates.lastData"] = cgmLastUploadDate
 	}
 
-	if f, ok := filter.BGMTime["lastUploadDate"]; ok {
+	if f, ok := filter.BGMTime["lastData"]; ok {
 		bgmLastUploadDate := bson.M{}
 
 		if f.Min != nil {
@@ -943,7 +943,7 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 			bgmLastUploadDate["$lt"] = f.Max
 		}
 
-		selector["summary.bgmStats.dates.lastUploadDate"] = bgmLastUploadDate
+		selector["summary.bgmStats.dates.lastData"] = bgmLastUploadDate
 	}
 
 	for field, pair := range filter.CGM {
