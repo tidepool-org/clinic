@@ -1300,6 +1300,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 					FullName: patient.FullName,
 					Id:       patient.UserId,
 					Tags:     &patientTags,
+					Reviews:  patient.Reviews,
 				},
 				AverageGlucoseMmol:         patient.Summary.CGM.Periods[*params.Period].AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.Summary.CGM.Periods[*params.Period].GlucoseManagementIndicator,
