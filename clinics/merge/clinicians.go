@@ -33,7 +33,7 @@ type ClinicianPlan struct {
 }
 
 func (c ClinicianPlan) PreventsMerge() bool {
-	return false
+	return c.ClinicianAction == ClinicianActionMove && (c.Clinician.UserId == nil || *c.Clinician.UserId == "")
 }
 
 func (c ClinicianPlan) GetClinicianName() string {
