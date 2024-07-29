@@ -100,6 +100,8 @@ type PatientPlan struct {
 	TargetTagNames []string
 
 	PostMigrationTagNames []string
+
+	CanExecuteAction bool
 }
 
 func (p PatientPlan) HasConflicts() bool {
@@ -112,7 +114,7 @@ func (p PatientPlan) HasConflicts() bool {
 }
 
 func (p PatientPlan) PreventsMerge() bool {
-	return false
+	return !p.CanExecuteAction
 }
 
 type Conflict struct {
@@ -152,12 +154,13 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))
 	for _, patient := range p.sourcePatients {
 		plan := PatientPlan{
-			SourceClinicId: p.source.Id,
-			TargetClinicId: p.target.Id,
-			SourcePatient:  &patient,
-			SourceTagNames: getPatientTagNames(patient, p.sourceTags),
-			Conflicts:      make(map[string][]Conflict),
-			PatientAction:  PatientActionMove,
+			SourceClinicId:   p.source.Id,
+			TargetClinicId:   p.target.Id,
+			SourcePatient:    &patient,
+			SourceTagNames:   getPatientTagNames(patient, p.sourceTags),
+			Conflicts:        make(map[string][]Conflict),
+			PatientAction:    PatientActionMove,
+			CanExecuteAction: true,
 		}
 
 		duplicates := getDuplicates(patient, targetByAttribute)
@@ -182,15 +185,22 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				Patient:  *target,
 			})
 		}
+		if plan.PatientAction == PatientActionMove {
+			// Do not allow moving patients without MRNs to clinics where MRNs are required
+			if p.target.MRNSettings != nil && p.target.MRNSettings.Required && (patient.Mrn == nil || *patient.Mrn == "") {
+				plan.CanExecuteAction = false
+			}
+		}
 		list = append(list, plan)
 	}
 
 	for _, patient := range p.targetPatients {
 		plan := PatientPlan{
-			SourceClinicId: p.source.Id,
-			TargetClinicId: p.target.Id,
-			TargetPatient:  &patient,
-			TargetTagNames: getPatientTagNames(patient, p.targetTags),
+			SourceClinicId:   p.source.Id,
+			TargetClinicId:   p.target.Id,
+			TargetPatient:    &patient,
+			TargetTagNames:   getPatientTagNames(patient, p.targetTags),
+			CanExecuteAction: true,
 		}
 		if _, ok := mergeTargetPatients[getUserId(patient)]; ok {
 			plan.PatientAction = PatientActionMergeInto
@@ -282,7 +292,6 @@ func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, sou
 	}
 }
 
-
 func (p *PatientPlanExecutor) movePatient(ctx context.Context, plan PatientPlan, target clinics.Clinic) error {
 	tagNames := map[string]struct{}{}
 	for _, name := range plan.PostMigrationTagNames {
@@ -298,13 +307,13 @@ func (p *PatientPlanExecutor) movePatient(ctx context.Context, plan PatientPlan,
 
 	selector := bson.M{
 		"clinicId": plan.SourcePatient.ClinicId,
-		"userId": plan.SourcePatient.UserId,
+		"userId":   plan.SourcePatient.UserId,
 	}
 
 	update := bson.M{
 		"$set": bson.M{
-			"clinicId": plan.TargetClinicId,
-			"tags": tagIds,
+			"clinicId":    plan.TargetClinicId,
+			"tags":        tagIds,
 			"updatedTime": time.Now(),
 		},
 	}
@@ -347,11 +356,11 @@ func (p *PatientPlanExecutor) mergeTags(ctx context.Context, plan PatientPlan, t
 
 	selector := bson.M{
 		"clinicId": plan.TargetPatient.ClinicId,
-		"userId": plan.TargetPatient.UserId,
+		"userId":   plan.TargetPatient.UserId,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"tags": tagIds,
+			"tags":        tagIds,
 			"updatedTime": time.Now(),
 		},
 	}
@@ -370,7 +379,7 @@ func (p *PatientPlanExecutor) mergeTags(ctx context.Context, plan PatientPlan, t
 func (p *PatientPlanExecutor) deleteSourcePatient(ctx context.Context, plan PatientPlan) error {
 	selector := bson.M{
 		"clinicId": plan.SourcePatient.ClinicId,
-		"userId": plan.SourcePatient.UserId,
+		"userId":   plan.SourcePatient.UserId,
 	}
 	res, err := p.patientsCollection.DeleteOne(ctx, selector)
 	if err != nil {
