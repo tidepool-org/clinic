@@ -130,6 +130,12 @@ type ServerInterface interface {
 	// Delete Patient Permission
 	// (DELETE /v1/clinics/{clinicId}/patients/{patientId}/permissions/{permission})
 	DeletePatientPermission(ctx echo.Context, clinicId ClinicId, patientId PatientId, permission string) error
+	// Delete Patient Reviews
+	// (DELETE /v1/clinics/{clinicId}/patients/{patientId}/reviews)
+	DeletePatientReviews(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+	// Update Patient Reviews
+	// (PUT /v1/clinics/{clinicId}/patients/{patientId}/reviews)
+	UpdatePatientReviews(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Resend Dexcom connect request email
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/send_dexcom_connect_request)
 	SendDexcomConnectRequest(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
@@ -988,6 +994,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "offsetPeriods", ctx.QueryParams(), &params.OffsetPeriods)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offsetPeriods: %s", err))
+	}
+
+	// ------------- Optional query parameter "lastReviewed" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "lastReviewed", ctx.QueryParams(), &params.LastReviewed)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter lastReviewed: %s", err))
 	}
 
 	// ------------- Optional query parameter "cgm.averageGlucoseMmol" -------------
@@ -1992,6 +2005,58 @@ func (w *ServerInterfaceWrapper) DeletePatientPermission(ctx echo.Context) error
 	return err
 }
 
+// DeletePatientReviews converts echo context to params.
+func (w *ServerInterfaceWrapper) DeletePatientReviews(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientId", ctx.Param("patientId"), &patientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeletePatientReviews(ctx, clinicId, patientId)
+	return err
+}
+
+// UpdatePatientReviews converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdatePatientReviews(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientId", ctx.Param("patientId"), &patientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdatePatientReviews(ctx, clinicId, patientId)
+	return err
+}
+
 // SendDexcomConnectRequest converts echo context to params.
 func (w *ServerInterfaceWrapper) SendDexcomConnectRequest(ctx echo.Context) error {
 	var err error
@@ -2611,6 +2676,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
+	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.DeletePatientReviews)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.UpdatePatientReviews)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request", wrapper.SendDexcomConnectRequest)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
 	router.POST(baseURL+"/v1/clinics/:clinicId/service_accounts", wrapper.AddServiceAccount)

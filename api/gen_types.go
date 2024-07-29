@@ -993,6 +993,7 @@ type Patient struct {
 	// Mrn The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`
 	Permissions *PatientPermissions `json:"permissions,omitempty"`
+	Reviews     []PatientReview     `json:"reviews"`
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
@@ -1449,6 +1450,15 @@ type PatientPermissions struct {
 	View      *map[string]interface{} `json:"view,omitempty"`
 }
 
+// PatientReview A summary of a patients recent data
+type PatientReview struct {
+	ClinicianId string    `json:"clinicianId"`
+	Time        time.Time `json:"time"`
+}
+
+// PatientReviews defines model for PatientReviews.
+type PatientReviews = []PatientReview
+
 // PatientSummary A summary of a patients recent data
 type PatientSummary struct {
 	// BgmStats A summary of a users recent BGM glucose values
@@ -1598,8 +1608,9 @@ type TidePatient struct {
 	FullName *string `json:"fullName,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id   *TidepoolUserId `json:"id,omitempty"`
-	Tags *PatientTagIds  `json:"tags"`
+	Id      *TidepoolUserId `json:"id,omitempty"`
+	Reviews []PatientReview `json:"reviews"`
+	Tags    *PatientTagIds  `json:"tags"`
 }
 
 // TideResultPatient defines model for TideResultPatient.
@@ -1785,37 +1796,40 @@ type ListPatientsParams struct {
 	// OffsetPeriods If we should display, filter, and sort based on the offset periods or default periods
 	OffsetPeriods *bool `form:"offsetPeriods,omitempty" json:"offsetPeriods,omitempty"`
 
+	// LastReviewed Inclusive
+	LastReviewed *time.Time `form:"lastReviewed,omitempty" json:"lastReviewed,omitempty"`
+
 	// CgmAverageGlucoseMmol Average glucose value of records in Mmol/L
 	CgmAverageGlucoseMmol *FloatFilter `form:"cgm.averageGlucoseMmol,omitempty" json:"cgm.averageGlucoseMmol,omitempty"`
 
 	// CgmGlucoseManagementIndicator Glucose management Indicator of records
 	CgmGlucoseManagementIndicator *FloatFilter `form:"cgm.glucoseManagementIndicator,omitempty" json:"cgm.glucoseManagementIndicator,omitempty"`
 
-	// CgmTimeCGMUsePercent Percentage of time of CGM use
+	// CgmTimeCGMUsePercent Percentage of time [0.0-1.0]  of CGM use
 	CgmTimeCGMUsePercent *FloatFilter `form:"cgm.timeCGMUsePercent,omitempty" json:"cgm.timeCGMUsePercent,omitempty"`
 
-	// CgmTimeInVeryLowPercent Percentage of time below 54 mg/dL
+	// CgmTimeInVeryLowPercent Percentage of time [0.0-1.0]  below 54 mg/dL
 	CgmTimeInVeryLowPercent *FloatFilter `form:"cgm.timeInVeryLowPercent,omitempty" json:"cgm.timeInVeryLowPercent,omitempty"`
 
-	// CgmTimeInAnyLowPercent Percentage of time below 70 mg/dL
+	// CgmTimeInAnyLowPercent Percentage of time [0.0-1.0]  below 70 mg/dL
 	CgmTimeInAnyLowPercent *FloatFilter `form:"cgm.timeInAnyLowPercent,omitempty" json:"cgm.timeInAnyLowPercent,omitempty"`
 
-	// CgmTimeInLowPercent Percentage of time in range 54-70 mg/dL
+	// CgmTimeInLowPercent Percentage of time [0.0-1.0]  in range 54-70 mg/dL
 	CgmTimeInLowPercent *FloatFilter `form:"cgm.timeInLowPercent,omitempty" json:"cgm.timeInLowPercent,omitempty"`
 
-	// CgmTimeInTargetPercent Percentage of time in range 70-180 mg/dL
+	// CgmTimeInTargetPercent Percentage of time [0.0-1.0]  in range 70-180 mg/dL
 	CgmTimeInTargetPercent *FloatFilter `form:"cgm.timeInTargetPercent,omitempty" json:"cgm.timeInTargetPercent,omitempty"`
 
-	// CgmTimeInHighPercent Percentage of time in range 180-250 mg/dL
+	// CgmTimeInHighPercent Percentage of time [0.0-1.0]  in range 180-250 mg/dL
 	CgmTimeInHighPercent *FloatFilter `form:"cgm.timeInHighPercent,omitempty" json:"cgm.timeInHighPercent,omitempty"`
 
-	// CgmTimeInVeryHighPercent Percentage of time above 250 mg/dL
+	// CgmTimeInVeryHighPercent Percentage of time [0.0-1.0]  above 250 mg/dL
 	CgmTimeInVeryHighPercent *FloatFilter `form:"cgm.timeInVeryHighPercent,omitempty" json:"cgm.timeInVeryHighPercent,omitempty"`
 
-	// CgmTimeInExtremeHighPercent Percentage of time above 350 mg/dL
+	// CgmTimeInExtremeHighPercent Percentage of time [0.0-1.0]  above 350 mg/dL
 	CgmTimeInExtremeHighPercent *FloatFilter `form:"cgm.timeInExtremeHighPercent,omitempty" json:"cgm.timeInExtremeHighPercent,omitempty"`
 
-	// CgmTimeInAnyHighPercent Percentage of time above 180 mg/dL
+	// CgmTimeInAnyHighPercent Percentage of time [0.0-1.0]  above 180 mg/dL
 	CgmTimeInAnyHighPercent *FloatFilter `form:"cgm.timeInAnyHighPercent,omitempty" json:"cgm.timeInAnyHighPercent,omitempty"`
 
 	// CgmTimeCGMUseMinutes Minutes of CGM use
@@ -1890,28 +1904,28 @@ type ListPatientsParams struct {
 	// BgmAverageGlucoseMmol Average glucose value of records in Mmol/L
 	BgmAverageGlucoseMmol *FloatFilter `form:"bgm.averageGlucoseMmol,omitempty" json:"bgm.averageGlucoseMmol,omitempty"`
 
-	// BgmTimeInVeryLowPercent Percentage of time below 54 mg/dL
+	// BgmTimeInVeryLowPercent Percentage of time [0.0-1.0]  below 54 mg/dL
 	BgmTimeInVeryLowPercent *FloatFilter `form:"bgm.timeInVeryLowPercent,omitempty" json:"bgm.timeInVeryLowPercent,omitempty"`
 
-	// BgmTimeInAnyLowPercent Percentage of time below 70 mg/dL
+	// BgmTimeInAnyLowPercent Percentage of time [0.0-1.0]  below 70 mg/dL
 	BgmTimeInAnyLowPercent *FloatFilter `form:"bgm.timeInAnyLowPercent,omitempty" json:"bgm.timeInAnyLowPercent,omitempty"`
 
-	// BgmTimeInLowPercent Percentage of time in range 54-70 mg/dL
+	// BgmTimeInLowPercent Percentage of time [0.0-1.0]  in range 54-70 mg/dL
 	BgmTimeInLowPercent *FloatFilter `form:"bgm.timeInLowPercent,omitempty" json:"bgm.timeInLowPercent,omitempty"`
 
-	// BgmTimeInTargetPercent Percentage of time in range 70-180 mg/dL
+	// BgmTimeInTargetPercent Percentage of time [0.0-1.0]  in range 70-180 mg/dL
 	BgmTimeInTargetPercent *FloatFilter `form:"bgm.timeInTargetPercent,omitempty" json:"bgm.timeInTargetPercent,omitempty"`
 
-	// BgmTimeInHighPercent Percentage of time in range 180-250 mg/dL
+	// BgmTimeInHighPercent Percentage of time [0.0-1.0]  in range 180-250 mg/dL
 	BgmTimeInHighPercent *FloatFilter `form:"bgm.timeInHighPercent,omitempty" json:"bgm.timeInHighPercent,omitempty"`
 
-	// BgmTimeInVeryHighPercent Percentage of time above 250 mg/dL
+	// BgmTimeInVeryHighPercent Percentage of time [0.0-1.0]  above 250 mg/dL
 	BgmTimeInVeryHighPercent *FloatFilter `form:"bgm.timeInVeryHighPercent,omitempty" json:"bgm.timeInVeryHighPercent,omitempty"`
 
-	// BgmTimeInExtremeHighPercent Percentage of time above 350 mg/dL
+	// BgmTimeInExtremeHighPercent Percentage of time [0.0-1.0]  above 350 mg/dL
 	BgmTimeInExtremeHighPercent *FloatFilter `form:"bgm.timeInExtremeHighPercent,omitempty" json:"bgm.timeInExtremeHighPercent,omitempty"`
 
-	// BgmTimeInAnyHighPercent Percentage of time above 180 mg/dL
+	// BgmTimeInAnyHighPercent Percentage of time [0.0-1.0]  above 180 mg/dL
 	BgmTimeInAnyHighPercent *FloatFilter `form:"bgm.timeInAnyHighPercent,omitempty" json:"bgm.timeInAnyHighPercent,omitempty"`
 
 	// BgmTimeInVeryLowRecords Records below 54 mg/dL

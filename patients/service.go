@@ -105,6 +105,13 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
 	return s.repo.Update(ctx, update)
 }
+func (s *service) AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error) {
+	return s.repo.AddReview(ctx, clinicId, userId, review)
+}
+
+func (s *service) DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]Review, error) {
+	return s.repo.DeleteReview(ctx, clinicId, clinicianId, userId)
+}
 
 func (s *service) UpdateEmail(ctx context.Context, userId string, email *string) error {
 	s.logger.Infow("updating patient email", "userId", userId, "email", email)
