@@ -32,8 +32,12 @@ type ClinicianPlan struct {
 	Workspaces      []string
 }
 
+func (c ClinicianPlan) IsPendingInvite() bool {
+	return c.Clinician.UserId == nil || *c.Clinician.UserId == ""
+}
+
 func (c ClinicianPlan) PreventsMerge() bool {
-	return c.ClinicianAction == ClinicianActionMove && (c.Clinician.UserId == nil || *c.Clinician.UserId == "")
+	return c.ClinicianAction == ClinicianActionMove && c.IsPendingInvite()
 }
 
 func (c ClinicianPlan) GetClinicianName() string {
@@ -54,6 +58,16 @@ type ClinicianPlans []ClinicianPlan
 
 func (c ClinicianPlans) PreventsMerge() bool {
 	return PlansPreventMerge(c)
+}
+
+func (c ClinicianPlans) PendingInvitesByWorkspace() map[string]int{
+	result := make(map[string]int)
+	for _, p := range c {
+		if p.IsPendingInvite() {
+			result[p.Workspaces[0]] = result[p.Workspaces[0]] + 1
+		}
+	}
+	return result
 }
 
 func (c ClinicianPlans) GetDowngradedMembersCount() int {

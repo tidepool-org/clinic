@@ -345,6 +345,21 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	}
 	sh.AddRow()
 
+	pendingInvites := 0
+	for _, count := range r.plan.CliniciansPlan.PendingInvitesByWorkspace() {
+		pendingInvites += count
+	}
+
+	currentRow = sh.AddRow()
+	currentRow.AddCell().SetValue(fmt.Sprintf("Pending Invites (%v)", pendingInvites))
+	currentRow.AddCell().SetValue("Workspace ---")
+	for workspace, count := range r.plan.CliniciansPlan.PendingInvitesByWorkspace() {
+		currentRow = sh.AddRow()
+		currentRow.AddCell().SetValue(count)
+		currentRow.AddCell().SetValue(workspace)
+	}
+	sh.AddRow()
+
 	return nil
 }
 
