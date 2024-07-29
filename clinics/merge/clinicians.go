@@ -138,7 +138,7 @@ func (s *TargetClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, 
 	}
 
 	if s.clinician.UserId != nil {
-		sourceClinician, err := s.service.Get(ctx, s.target.Id.Hex(), *s.clinician.UserId)
+		sourceClinician, err := s.service.Get(ctx, s.source.Id.Hex(), *s.clinician.UserId)
 		if err != nil && !errors.Is(err, clinicians.ErrNotFound) {
 			return plan, err
 		}

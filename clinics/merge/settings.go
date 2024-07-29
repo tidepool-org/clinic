@@ -21,7 +21,6 @@ type SettingsPlan struct {
 	Name        string `bson:"name"`
 	SourceValue string `bson:"sourceValue"`
 	TargetValue string `bson:"targetValue"`
-	CanMerge    bool   `bson:"canMerge"`
 }
 
 func (s SettingsPlan) ValuesMatch() bool {
@@ -29,7 +28,7 @@ func (s SettingsPlan) ValuesMatch() bool {
 }
 
 func (s SettingsPlan) PreventsMerge() bool {
-	return s.ValuesMatch()
+	return !s.ValuesMatch()
 }
 
 type SettingsPlans []SettingsPlan

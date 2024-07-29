@@ -428,10 +428,10 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("- Likely Duplicate Accounts")
 	currentRow.AddCell().SetValue(likelyDuplicateCount)
 	currentRow = sh.AddRow()
-	currentRow.AddCell().SetValue("- Duplicate MRNs")
+	currentRow.AddCell().SetValue("- Duplicate MRN Only")
 	currentRow.AddCell().SetValue(duplicateMRNsCount)
 	currentRow = sh.AddRow()
-	currentRow.AddCell().SetValue("- Duplicate Names")
+	currentRow.AddCell().SetValue("- Duplicate Name Only")
 	currentRow.AddCell().SetValue(duplicateNamesCount)
 	sh.AddRow()
 
