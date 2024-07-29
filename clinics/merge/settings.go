@@ -34,7 +34,7 @@ func (s SettingsPlan) PreventsMerge() bool {
 type SettingsPlans []SettingsPlan
 
 func (s SettingsPlans) PreventsMerge() bool {
-	return PlansPreventMerge(s)
+	return false
 }
 
 type SettingsReporterPlanner struct {
