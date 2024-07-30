@@ -215,14 +215,14 @@ func getDOB(patient patients.Patient) (attr string) {
 
 func getFullName(patient patients.Patient) (attr string) {
 	if patient.FullName != nil {
-		attr = strings.ToLower(*patient.FullName)
+		attr = strings.ToLower(strings.TrimSpace(*patient.FullName))
 	}
 	return
 }
 
 func getMRN(patient patients.Patient) (attr string) {
 	if patient.Mrn != nil {
-		attr = strings.ToLower(*patient.Mrn)
+		attr = strings.ToLower(strings.TrimSpace(*patient.Mrn))
 	}
 	return
 }
