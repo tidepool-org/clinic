@@ -427,7 +427,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 
 	for category, tidePatients := range tide.Results {
 		c := make([]TideResultPatient, 0, 50)
-		for _, patient := range *tidePatients {
+		for _, patient := range tidePatients {
 			c = append(c, TideResultPatient{
 				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
@@ -439,10 +439,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
 				TimeInVeryHighPercent:      patient.TimeInVeryHighPercent,
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
-<<<<<<< HEAD
 				LastData:                   patient.LastData,
-=======
->>>>>>> origin/master
 				Patient: TidePatient{
 					Email:    patient.Patient.Email,
 					FullName: patient.Patient.FullName,

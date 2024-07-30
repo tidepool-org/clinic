@@ -749,13 +749,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateFrom
+          name: cgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateTo
+          name: cgm.lastDataTo
           description: Exclusive
         - schema:
             $ref: '#/components/schemas/FloatFilter'
@@ -851,13 +851,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: bgm.lastUploadDateFrom
+          name: bgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: bgm.lastUploadDateTo
+          name: bgm.lastDataTo
           description: Exclusive
         - schema:
             type: array
