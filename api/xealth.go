@@ -15,7 +15,7 @@ func (h *Handler) XealthPreorder(ec echo.Context) error {
 	ctx := ec.Request().Context()
 
 	// Make sure the request is initiated by xealth
-	if err := h.xealth.AuthorizeRequest(ec.Request()); err != nil {
+	if err := h.Xealth.AuthorizeRequest(ec.Request()); err != nil {
 		return err
 	}
 
@@ -50,7 +50,7 @@ func (h *Handler) XealthPreorder(ec echo.Context) error {
 			return err
 		}
 
-		response, err := h.xealth.ProcessInitialPreorderRequest(ctx, initial)
+		response, err := h.Xealth.ProcessInitialPreorderRequest(ctx, initial)
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func (h *Handler) XealthPreorder(ec echo.Context) error {
 			return err
 		}
 
-		response, err := h.xealth.ProcessSubsequentPreorderRequest(ctx, subsequent)
+		response, err := h.Xealth.ProcessSubsequentPreorderRequest(ctx, subsequent)
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ func (h *Handler) XealthNotification(ec echo.Context) error {
 	ctx := ec.Request().Context()
 
 	// Make sure the request is initiated by xealth
-	if err := h.xealth.AuthorizeRequest(ec.Request()); err != nil {
+	if err := h.Xealth.AuthorizeRequest(ec.Request()); err != nil {
 		return err
 	}
 
@@ -84,7 +84,7 @@ func (h *Handler) XealthNotification(ec echo.Context) error {
 		return err
 	}
 
-	if err := h.xealth.HandleEventNotification(ctx, eventNotification); err != nil {
+	if err := h.Xealth.HandleEventNotification(ctx, eventNotification); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func (h *Handler) XealthGetProgramUrl(ec echo.Context) error {
 	ctx := ec.Request().Context()
 
 	// Make sure the request is initiated by xealth
-	if err := h.xealth.AuthorizeRequest(ec.Request()); err != nil {
+	if err := h.Xealth.AuthorizeRequest(ec.Request()); err != nil {
 		return err
 	}
 
@@ -104,7 +104,7 @@ func (h *Handler) XealthGetProgramUrl(ec echo.Context) error {
 		return err
 	}
 
-	response, err := h.xealth.GetProgramUrl(ctx, request)
+	response, err := h.Xealth.GetProgramUrl(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (h *Handler) XealthGetPrograms(ec echo.Context) error {
 	ctx := ec.Request().Context()
 
 	// Make sure the request is initiated by xealth
-	if err := h.xealth.AuthorizeRequest(ec.Request()); err != nil {
+	if err := h.Xealth.AuthorizeRequest(ec.Request()); err != nil {
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (h *Handler) XealthGetPrograms(ec echo.Context) error {
 		return err
 	}
 
-	response, err := h.xealth.GetPrograms(ctx, request)
+	response, err := h.Xealth.GetPrograms(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (h *Handler) XealthGetPrograms(ec echo.Context) error {
 func (h *Handler) ViewPDFReport(ec echo.Context, params ViewPDFReportParams) error {
 	ctx := ec.Request().Context()
 
-	report, err := h.xealth.GetPDFReport(ctx, xealth.PDFReportRequest{
+	report, err := h.Xealth.GetPDFReport(ctx, xealth.PDFReportRequest{
 		ClinicId:        params.ClinicId,
 		PatientId:       params.PatientId,
 		RestrictedToken: params.RestrictedToken,

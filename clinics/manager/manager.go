@@ -30,6 +30,7 @@ type Manager interface {
 	CreateClinic(ctx context.Context, create *CreateClinic) (*clinics.Clinic, error)
 	DeleteClinic(ctx context.Context, clinicId string) error
 	GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error)
+	FinalizeMerge(ctx context.Context, sourceId, targetId string) error
 }
 
 type manager struct {
@@ -133,32 +134,36 @@ func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 
 func (c *manager) DeleteClinic(ctx context.Context, clinicId string) error {
 	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		filter := patients.Filter{ClinicId: &clinicId}
-		pagination := store.Pagination{Limit: 2}
-		res, err := c.patientsService.List(sessionCtx, &filter, pagination, nil)
-
-		if err != nil {
-			return nil, err
-		}
-		if res == nil {
-			return nil, fmt.Errorf("patient list result not defined")
-		}
-		if !c.patientListAllowsClinicDeletion(res.Patients) {
-			return nil, fmt.Errorf("%w: deletion of non-empty clinics is not allowed", errors.BadRequest)
-		}
-
-		if err := c.patientsService.Remove(sessionCtx, clinicId, c.config.ClinicDemoPatientUserId); err != nil && !errs.Is(err, errors.NotFound) {
-			return nil, err
-		}
-
-		if err := c.cliniciansRepository.DeleteAll(sessionCtx, clinicId); err != nil {
-			return nil, err
-		}
-
-		return nil, c.clinics.Delete(sessionCtx, clinicId)
+		return nil, c.deleteClinic(sessionCtx, clinicId)
 	}
 
 	_, err := store.WithTransaction(ctx, c.dbClient, transaction)
+	return err
+}
+
+func (c *manager) FinalizeMerge(ctx context.Context, sourceId, targetId string) error {
+	source, err := c.clinics.Get(ctx, sourceId)
+	if err != nil {
+		return err
+	}
+
+	// Delete clinics if allowed by patient list
+	err = c.deleteClinic(ctx, sourceId)
+	if err != nil {
+		return err
+	}
+
+	// Append share codes of source clinic
+	if source.ShareCodes != nil {
+		err = c.clinics.AppendShareCodes(ctx, targetId, *source.ShareCodes)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Refresh patient count of target clinic
+	_, err = c.GetClinicPatientCount(ctx, targetId)
+
 	return err
 }
 
@@ -193,7 +198,7 @@ retryLoop:
 		create.Clinic.ShareCodes = &shareCodes
 
 		clinic, err = c.clinics.Create(sessionCtx, &create.Clinic)
-		if err == nil || err != clinics.ErrDuplicateShareCode {
+		if err == nil || !errs.Is(err, clinics.ErrDuplicateShareCode) {
 			break retryLoop
 		}
 	}
@@ -205,7 +210,7 @@ func (c *manager) getDemoPatient(ctx context.Context) (*patients.Patient, error)
 		return nil, nil
 	}
 
-	perm := make(patients.Permission, 0)
+	perm := make(patients.Permission)
 	patient := &patients.Patient{
 		UserId:     &c.config.ClinicDemoPatientUserId,
 		IsMigrated: true, // Do not send emails
@@ -217,6 +222,32 @@ func (c *manager) getDemoPatient(ctx context.Context) (*patients.Patient, error)
 		return nil, err
 	}
 	return patient, nil
+}
+
+func (c *manager) deleteClinic(ctx context.Context, clinicId string) error {
+	filter := patients.Filter{ClinicId: &clinicId}
+	pagination := store.Pagination{Limit: 2}
+	res, err := c.patientsService.List(ctx, &filter, pagination, nil)
+
+	if err != nil {
+		return err
+	}
+	if res == nil {
+		return fmt.Errorf("patient list result not defined")
+	}
+	if !c.patientListAllowsClinicDeletion(res.Patients) {
+		return fmt.Errorf("%w: deletion of non-empty clinics is not allowed", errors.BadRequest)
+	}
+
+	if err := c.patientsService.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId); err != nil && !errs.Is(err, errors.NotFound) {
+		return err
+	}
+
+	if err := c.cliniciansRepository.DeleteAll(ctx, clinicId); err != nil {
+		return  err
+	}
+
+	return c.clinics.Delete(ctx, clinicId)
 }
 
 func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool {
