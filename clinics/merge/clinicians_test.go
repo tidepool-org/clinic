@@ -116,7 +116,7 @@ var _ = Describe("Clinicians", func() {
 			clinician.Id = &id
 
 			cliniciansService.EXPECT().
-				Get(gomock.Any(), target.Id.Hex(), *clinician.UserId).
+				Get(gomock.Any(), source.Id.Hex(), *clinician.UserId).
 				Return(nil, clinicians.ErrNotFound)
 
 			planner := merge.NewTargetClinicianMergePlanner(*clinician, source, target, cliniciansService)
@@ -143,7 +143,7 @@ var _ = Describe("Clinicians", func() {
 			duplicate.Id = &dupId
 
 			cliniciansService.EXPECT().
-				Get(gomock.Any(), target.Id.Hex(), *clinician.UserId).
+				Get(gomock.Any(), source.Id.Hex(), *clinician.UserId).
 				Return(duplicate, nil)
 
 			planner := merge.NewTargetClinicianMergePlanner(*clinician, source, target, cliniciansService)
