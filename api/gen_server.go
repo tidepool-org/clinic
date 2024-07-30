@@ -2282,18 +2282,11 @@ func (w *ServerInterfaceWrapper) TideReport(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateFrom" -------------
+	// ------------- Optional query parameter "lastDataCutoff" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateFrom", ctx.QueryParams(), &params.CgmLastUploadDateFrom)
+	err = runtime.BindQueryParameter("form", true, false, "lastDataCutoff", ctx.QueryParams(), &params.LastDataCutoff)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateFrom: %s", err))
-	}
-
-	// ------------- Optional query parameter "cgm.lastUploadDateTo" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter lastDataCutoff: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments

@@ -1573,8 +1573,7 @@ type TideConfig struct {
 
 	// HighGlucoseThreshold Threshold used for determining if a value is high
 	HighGlucoseThreshold float64   `json:"highGlucoseThreshold"`
-	LastUploadDateFrom   time.Time `json:"lastUploadDateFrom"`
-	LastUploadDateTo     time.Time `json:"lastUploadDateTo"`
+	LastDataCutoff       time.Time `json:"lastDataCutoff"`
 
 	// LowGlucoseThreshold Threshold used for determining if a value is low
 	LowGlucoseThreshold float64 `json:"lowGlucoseThreshold"`
@@ -1620,6 +1619,7 @@ type TideResultPatient struct {
 
 	// GlucoseManagementIndicator A derived value which emulates A1C
 	GlucoseManagementIndicator *float64    `json:"glucoseManagementIndicator,omitempty"`
+	LastData                   *time.Time  `json:"lastData,omitempty"`
 	Patient                    TidePatient `json:"patient"`
 
 	// TimeCGMUseMinutes Counter of minutes spent wearing a cgm
@@ -2135,11 +2135,8 @@ type TideReportParams struct {
 	// Tags Comma-separated list of patient tag IDs
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
 
-	// CgmLastUploadDateFrom Inclusive
-	CgmLastUploadDateFrom *time.Time `form:"cgm.lastUploadDateFrom,omitempty" json:"cgm.lastUploadDateFrom,omitempty"`
-
-	// CgmLastUploadDateTo Exclusive
-	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
+	// LastDataCutoff Inclusive
+	LastDataCutoff *time.Time `form:"lastDataCutoff,omitempty" json:"lastDataCutoff,omitempty"`
 }
 
 // FindPatientsParams defines parameters for FindPatients.
