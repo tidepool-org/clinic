@@ -36,6 +36,20 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 	return m.recorder
 }
 
+// AppendShareCodes mocks base method.
+func (m *MockService) AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AppendShareCodes", ctx, clinicId, shareCodes)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AppendShareCodes indicates an expected call of AppendShareCodes.
+func (mr *MockServiceMockRecorder) AppendShareCodes(ctx, clinicId, shareCodes interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppendShareCodes", reflect.TypeOf((*MockService)(nil).AppendShareCodes), ctx, clinicId, shareCodes)
+}
+
 // Create mocks base method.
 func (m *MockService) Create(ctx context.Context, clinic *clinics.Clinic) (*clinics.Clinic, error) {
 	m.ctrl.T.Helper()

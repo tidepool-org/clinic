@@ -45,7 +45,6 @@ func (c *repository) Initialize(ctx context.Context) error {
 				{Key: "shareCodes", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetUnique(true).
 				SetName("UniqueShareCodes"),
 		},
@@ -54,7 +53,6 @@ func (c *repository) Initialize(ctx context.Context) error {
 				{Key: "canonicalShareCode", Value: 1},
 			},
 			Options: options.Index().
-				SetBackground(true).
 				SetUnique(true).
 				SetName("UniqueCanonicalShareCode"),
 		},
@@ -501,6 +499,26 @@ func (c *repository) UpdatePatientCountSettings(ctx context.Context, id string, 
 
 	return err
 }
+
+func (c *repository) AppendShareCodes(ctx context.Context, id string, shareCodes []string) error {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	selector := bson.M{"_id": clinicId}
+
+	update := bson.M{
+		"$addToSet": bson.M{"shareCodes": shareCodes},
+		"$set": bson.M{
+			"updatedTime":          time.Now(),
+		},
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return ErrNotFound
+	}
+
+	return err
+}
+
 
 func (c *repository) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
 	clinic, err := c.Get(ctx, clinicId)

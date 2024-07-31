@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"slices"
 	"time"
 )
@@ -18,10 +22,10 @@ type ClinicMergePlan struct {
 	MembershipRestrictionsMergePlan MembershipRestrictionsMergePlan
 	SourcePatientClusters           PatientClusters
 	TargetPatientClusters           PatientClusters
-	SettingsPlan                    SettingsPlans
-	TagsPlan                        TagPlans
-	CliniciansPlan                  ClinicianPlans
-	PatientsPlan                    PatientPlans
+	SettingsPlans                   SettingsPlans
+	TagsPlans                       TagPlans
+	ClinicianPlans                  ClinicianPlans
+	PatientPlans                    PatientPlans
 
 	CreatedTime time.Time
 }
@@ -31,10 +35,10 @@ func (c ClinicMergePlan) PreventsMerge() bool {
 		c.MembershipRestrictionsMergePlan.PreventsMerge,
 		c.SourcePatientClusters.PreventsMerge,
 		c.TargetPatientClusters.PreventsMerge,
-		c.SettingsPlan.PreventsMerge,
-		c.TagsPlan.PreventsMerge,
-		c.CliniciansPlan.PreventsMerge,
-		c.PatientsPlan.PreventsMerge,
+		c.SettingsPlans.PreventsMerge,
+		c.TagsPlans.PreventsMerge,
+		c.ClinicianPlans.PreventsMerge,
+		c.PatientPlans.PreventsMerge,
 	}
 
 	for _, preventsMerge := range fs {
@@ -246,19 +250,19 @@ func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, e
 	if err != nil {
 		return
 	}
-	plan.PatientsPlan, err = i.PatientPlanner.Plan(ctx)
+	plan.PatientPlans, err = i.PatientPlanner.Plan(ctx)
 	if err != nil {
 		return
 	}
-	plan.SettingsPlan, err = RunPlanners(ctx, i.SettingsPlanners)
+	plan.SettingsPlans, err = RunPlanners(ctx, i.SettingsPlanners)
 	if err != nil {
 		return
 	}
-	plan.TagsPlan, err = RunPlanners(ctx, i.TagPlanners)
+	plan.TagsPlans, err = RunPlanners(ctx, i.TagPlanners)
 	if err != nil {
 		return
 	}
-	plan.CliniciansPlan, err = RunPlanners(ctx, i.ClinicianPlanners)
+	plan.ClinicianPlans, err = RunPlanners(ctx, i.ClinicianPlanners)
 	if err != nil {
 		return
 	}
@@ -267,4 +271,57 @@ func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, e
 	plan.Target = i.TargetClinic
 	plan.CreatedTime = time.Now()
 	return
+}
+
+type ClinicPlanExecutor struct {
+	fx.In
+
+	Logger         *zap.SugaredLogger
+	ClinicsService clinics.Service
+	ClinicManager  manager.Manager
+	DBClient       *mongo.Client
+	DB             *mongo.Database
+}
+
+func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) error {
+	logger := c.Logger.With("clinicId", plan.Source.Id.Hex(), "targetClinicId", plan.Target.Id.Hex())
+	if plan.PreventsMerge() {
+		err := fmt.Errorf("the merge plan does not allow execution")
+		logger.Errorw("cannot merge clinics", "error", err)
+		return err
+	}
+
+	_, err := store.WithTransaction(ctx, c.DBClient, func(sessionContext mongo.SessionContext) (any, error) {
+		tpe := NewTagPlanExecutor(logger, c.ClinicsService)
+		logger.Info("starting tags migration")
+		for _, p := range plan.TagsPlans {
+			if err := tpe.Execute(ctx, p); err != nil {
+				return nil, err
+			}
+		}
+
+		logger.Info("starting patients migration")
+		ppe := NewPatientPlanExecutor(logger, c.DB)
+		for _, p := range plan.PatientPlans {
+			if err := ppe.Execute(ctx, p, plan.Source, plan.Target); err != nil {
+				return nil, err
+			}
+		}
+
+		logger.Info("starting clinicians migration")
+		cpe := NewClinicianPlanExecutor(logger, c.DB)
+		for _, p := range plan.ClinicianPlans {
+			if err := cpe.Execute(ctx, p, plan.Target); err != nil {
+				return nil, err
+			}
+		}
+
+		logger.Info("finalizing clinic merge")
+		if err := c.ClinicManager.FinalizeMerge(ctx, plan.Source.Id.Hex(), plan.Target.Id.Hex()); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+	return err
 }

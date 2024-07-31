@@ -2148,6 +2148,25 @@ paths:
             schema:
               $ref: '#/components/schemas/GenerateMergeReport'
         description: ''
+  '/v1/clinics/{clinicId}/merge':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      summary: Merge Clinic
+      operationId: MergeClinic
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeClinic'
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
+      description: 'Merges tags, patients, clinicians, invites and share codes of the source clinic'
 components:
   schemas:
     Error:
@@ -4677,6 +4696,14 @@ components:
           $ref: '#/components/schemas/Id'
       required:
         - sourceId
+    MergeClinic:
+      title: MergeClinics
+      x-stoplight:
+        id: 6hn01uuhln0wx
+      type: object
+      properties:
+        sourceId:
+          $ref: '#/components/schemas/Id'
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
