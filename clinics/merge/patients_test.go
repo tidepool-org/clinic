@@ -131,6 +131,35 @@ var _ = Describe("New Merge Planner", func() {
 				}
 			}
 		})
+
+		It("can be executed", func() {
+			for _, plan := range plans {
+				Expect(plan.PreventsMerge()).To(BeFalse())
+				switch plan.PatientAction{
+				case merge.PatientActionRetain:
+					// Retain target account - this action is produced for each target patient which doesn't have conflicts
+					Expect(plan.SourcePatient).To(BeNil())
+					Expect(plan.Conflicts).To(BeEmpty())
+				case merge.PatientActionMerge:
+					// Duplicate account - this action is produced for each source patient which has a duplicate in the target clinic
+					Expect(plan.TargetPatient).ToNot(BeNil())
+					Expect(plan.TargetPatient.UserId).To(PointTo(Equal(*plan.SourcePatient.UserId)))
+					Expect(plan.Conflicts).ToNot(BeEmpty())
+					Expect(plan.Conflicts[merge.PatientConflictCategoryDuplicateAccounts]).ToNot(BeEmpty())
+				case merge.PatientActionMergeInto:
+					// Duplicate account - this action is produced for each target patient which has a duplicate in the source clinic
+					Expect(plan.SourcePatient).To(BeNil())
+					Expect(plan.TargetPatient).ToNot(BeNil())
+					Expect(plan.Conflicts).To(BeEmpty())
+				case merge.PatientActionMove:
+					// Move source patient to target. There may be conflicts.
+					Expect(plan.SourcePatient).ToNot(BeNil())
+					Expect(plan.TargetPatient).To(BeNil())
+				default:
+					Fail("unexpected merge plan action")
+				}
+			}
+		})
 	})
 
 	Describe("Executor", func() {
@@ -212,7 +241,7 @@ var _ = Describe("New Merge Planner", func() {
 
 
 				expectedTagNames := mapset.NewSet[string]()
-				
+
 				for _, tagId := range *patient.Tags {
 					expectedTagNames.Append(sourceTagsById[tagId.Hex()].Name)
 				}
