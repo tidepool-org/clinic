@@ -174,6 +174,14 @@ allow {
   input.path = ["v1", "clinics", _, "tier"]
 }
 
+# Allow backend services to generate merge reports
+# POST /v1/clinics/:clinicId/tier
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "reports", "merge"]
+}
+
 # Allow backend services to update clinic tiers
 # POST /v1/clinics/:clinicId/suppressed_notifications
 allow {

@@ -253,6 +253,11 @@ type ClientInterface interface {
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GenerateMergeReportWithBody request with any body
+	GenerateMergeReportWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	GenerateMergeReport(ctx context.Context, clinicId ClinicId, body GenerateMergeReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AddServiceAccountWithBody request with any body
 	AddServiceAccountWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1061,6 +1066,30 @@ func (c *Client) SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId
 
 func (c *Client) SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendUploadReminderRequest(c.Server, clinicId, patientId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GenerateMergeReportWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGenerateMergeReportRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GenerateMergeReport(ctx context.Context, clinicId ClinicId, body GenerateMergeReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGenerateMergeReportRequest(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5500,6 +5529,53 @@ func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId Pa
 	return req, nil
 }
 
+// NewGenerateMergeReportRequest calls the generic GenerateMergeReport builder with application/json body
+func NewGenerateMergeReportRequest(server string, clinicId ClinicId, body GenerateMergeReportJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewGenerateMergeReportRequestWithBody(server, clinicId, "application/json", bodyReader)
+}
+
+// NewGenerateMergeReportRequestWithBody generates requests for GenerateMergeReport with any type of body
+func NewGenerateMergeReportRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/reports/merge", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewAddServiceAccountRequest calls the generic AddServiceAccount builder with application/json body
 func NewAddServiceAccountRequest(server string, clinicId ClinicId, body AddServiceAccountJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -6888,6 +6964,11 @@ type ClientWithResponsesInterface interface {
 	// SendUploadReminderWithResponse request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
 
+	// GenerateMergeReportWithBodyWithResponse request with any body
+	GenerateMergeReportWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GenerateMergeReportResponse, error)
+
+	GenerateMergeReportWithResponse(ctx context.Context, clinicId ClinicId, body GenerateMergeReportJSONRequestBody, reqEditors ...RequestEditorFn) (*GenerateMergeReportResponse, error)
+
 	// AddServiceAccountWithBodyWithResponse request with any body
 	AddServiceAccountWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddServiceAccountResponse, error)
 
@@ -7916,6 +7997,27 @@ func (r SendUploadReminderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r SendUploadReminderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GenerateMergeReportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GenerateMergeReportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GenerateMergeReportResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -8975,6 +9077,23 @@ func (c *ClientWithResponses) SendUploadReminderWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseSendUploadReminderResponse(rsp)
+}
+
+// GenerateMergeReportWithBodyWithResponse request with arbitrary body returning *GenerateMergeReportResponse
+func (c *ClientWithResponses) GenerateMergeReportWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GenerateMergeReportResponse, error) {
+	rsp, err := c.GenerateMergeReportWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGenerateMergeReportResponse(rsp)
+}
+
+func (c *ClientWithResponses) GenerateMergeReportWithResponse(ctx context.Context, clinicId ClinicId, body GenerateMergeReportJSONRequestBody, reqEditors ...RequestEditorFn) (*GenerateMergeReportResponse, error) {
+	rsp, err := c.GenerateMergeReport(ctx, clinicId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGenerateMergeReportResponse(rsp)
 }
 
 // AddServiceAccountWithBodyWithResponse request with arbitrary body returning *AddServiceAccountResponse
@@ -10289,6 +10408,22 @@ func ParseSendUploadReminderResponse(rsp *http.Response) (*SendUploadReminderRes
 	}
 
 	response := &SendUploadReminderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGenerateMergeReportResponse parses an HTTP response from a GenerateMergeReportWithResponse call
+func ParseGenerateMergeReportResponse(rsp *http.Response) (*GenerateMergeReportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GenerateMergeReportResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

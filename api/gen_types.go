@@ -915,6 +915,12 @@ type Error struct {
 // FloatFilter defines model for FloatFilter.
 type FloatFilter = string
 
+// GenerateMergeReport defines model for GenerateMergeReport.
+type GenerateMergeReport struct {
+	// SourceId Clinic identifier.
+	SourceId *Id `json:"sourceId,omitempty"`
+}
+
 // Id Clinic identifier.
 type Id = string
 
@@ -2225,6 +2231,9 @@ type UpdatePatientJSONRequestBody = Patient
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody = PatientPermissions
+
+// GenerateMergeReportJSONRequestBody defines body for GenerateMergeReport for application/json ContentType.
+type GenerateMergeReportJSONRequestBody = GenerateMergeReport
 
 // AddServiceAccountJSONRequestBody defines body for AddServiceAccount for application/json ContentType.
 type AddServiceAccountJSONRequestBody = AddServiceAccount
