@@ -60,7 +60,7 @@ func (c ClinicianPlans) PreventsMerge() bool {
 	return PlansPreventMerge(c)
 }
 
-func (c ClinicianPlans) PendingInvitesByWorkspace() map[string]int{
+func (c ClinicianPlans) PendingInvitesByWorkspace() map[string]int {
 	result := make(map[string]int)
 	for _, p := range c {
 		if p.IsPendingInvite() {
@@ -169,12 +169,14 @@ func (s *TargetClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, 
 type ClinicianPlanExecutor struct {
 	logger               *zap.SugaredLogger
 	cliniciansCollection *mongo.Collection
+	clinicsCollection    *mongo.Collection
 }
 
 func NewClinicianPlanExecutor(logger *zap.SugaredLogger, db *mongo.Database) *ClinicianPlanExecutor {
 	return &ClinicianPlanExecutor{
 		logger:               logger,
 		cliniciansCollection: db.Collection(clinicians.CollectionName),
+		clinicsCollection:    db.Collection(clinics.CollectionName),
 	}
 }
 
@@ -184,6 +186,7 @@ func (c *ClinicianPlanExecutor) Execute(ctx context.Context, plan ClinicianPlan,
 		id = *plan.Clinician.UserId
 		idType = "userId"
 	} else {
+		// invites
 		id = plan.Clinician.Id.Hex()
 		idType = "id"
 	}
@@ -239,6 +242,14 @@ func (c *ClinicianPlanExecutor) moveClinician(ctx context.Context, plan Clinicia
 	if res.ModifiedCount != 1 {
 		return fmt.Errorf("error moving clinician: unexpected modified count %v", res.ModifiedCount)
 	}
+
+	if plan.Clinician.UserId != nil {
+		res, err = c.clinicsCollection.UpdateOne(ctx, bson.M{"_id": target.Id}, bson.M{"$addToSet": bson.M{"admins": plan.Clinician.UserId}})
+		if err != nil {
+			return fmt.Errorf("error updating clinic admins: %w", err)
+		}
+	}
+
 	return nil
 }
 

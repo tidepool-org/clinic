@@ -3,11 +3,8 @@ package merge_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
-	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
-	"github.com/tidepool-org/clinic/patients"
-	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
 )
 
 const (
@@ -18,36 +15,18 @@ const (
 )
 
 var _ = Describe("Patient Cluster Reporter", func() {
-	var source clinics.Clinic
-	var sourcePatients []patients.Patient
 	var clusters merge.PatientClusters
 
 	BeforeEach(func() {
-		source = *clinicsTest.RandomClinic()
-		sourcePatients = make([]patients.Patient, patientCount)
-		for i := 0; i < patientCount; i++ {
-			sourcePatient := patientsTest.RandomPatient()
-			sourcePatient.ClinicId = source.Id
-			sourcePatients[i] = sourcePatient
-		}
+		data := mergeTest.RandomDataForClustering(mergeTest.ClusterParams{
+			PatientCount:                          patientCount,
+			ClusterCount:                          expectedClusters,
+			InClusterLikelyDuplicateAccountsCount: inClusterLikelyDuplicateAccountsCount,
+			InClusterNameOnlyMatchAccountsCount:   inClusterNameOnlyMatchAccountsCount,
+			InClusterMRNOnlyMatchAccountsCount:    inClusterMRNOnlyMatchAccountsCount,
+		})
 
-		for i := 0; i < expectedClusters; i++ {
-			last := sourcePatients[i]
-			for j := 0; j < inClusterLikelyDuplicateAccountsCount; j++ {
-				last = likelyDuplicatePatientAccount(source.Id, last)
-				sourcePatients = append(sourcePatients, last)
-			}
-			for j := 0; j < inClusterNameOnlyMatchAccountsCount; j++ {
-				last = nameOnlyMatchPatientAccount(source.Id, last)
-				sourcePatients = append(sourcePatients, last)
-			}
-			for j := 0; j < inClusterMRNOnlyMatchAccountsCount; j++ {
-				last = mrnOnlyMatchPatientAccount(source.Id, last)
-				sourcePatients = append(sourcePatients, last)
-			}
-		}
-
-		reporter := merge.NewPatientClusterReporter(sourcePatients)
+		reporter := merge.NewPatientClusterReporter(data.Patients)
 		Expect(reporter).ToNot(BeNil())
 
 		var err error

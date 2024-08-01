@@ -8,15 +8,13 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
-	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
 	"github.com/tidepool-org/clinic/patients"
-	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
-	"math/rand"
 	"time"
 )
 
@@ -37,47 +35,18 @@ var _ = Describe("New Merge Planner", func() {
 	var plans merge.PatientPlans
 
 	BeforeEach(func() {
-		source = *clinicsTest.RandomClinic()
-		target = *clinicsTest.RandomClinic()
-		sourcePatients = make([]patients.Patient, patientCount)
-		targetPatients = make([]patients.Patient, patientCount)
-		targetPatientsWithDuplicates = make(map[string]patients.Patient)
-
-		for i := 0; i < patientCount; i++ {
-			sourcePatient := patientsTest.RandomPatient()
-			sourcePatient.ClinicId = source.Id
-			sourcePatient.Tags = randomTagIds(len(source.PatientTags) - 1, source.PatientTags)
-			sourcePatients[i] = sourcePatient
-
-			targetPatient := patientsTest.RandomPatient()
-			targetPatient.ClinicId = target.Id
-			targetPatient.Tags = randomTagIds(len(target.PatientTags) - 1, target.PatientTags)
-			targetPatients[i] = targetPatient
-		}
-
-		i := 0
-		for j := 0; j < duplicateAccountsCount; j++ {
-			targetPatient := duplicatePatientAccount(target.Id, sourcePatients[i])
-			targetPatient.Tags = randomTagIds(len(target.PatientTags) - 1, target.PatientTags)
-			targetPatients = append(targetPatients, targetPatient)
-			targetPatientsWithDuplicates[*sourcePatients[i].UserId] = targetPatient
-			i++
-		}
-		for j := 0; j < likelyDuplicateAccountsCount; j++ {
-			targetPatient := likelyDuplicatePatientAccount(target.Id, sourcePatients[i])
-			targetPatients = append(targetPatients, targetPatient)
-			i++
-		}
-		for j := 0; j < nameOnlyMatchAccountsCount; j++ {
-			targetPatient := nameOnlyMatchPatientAccount(target.Id, sourcePatients[i])
-			targetPatients = append(targetPatients, targetPatient)
-			i++
-		}
-		for j := 0; j < mrnOnlyMatchAccountsCount; j++ {
-			targetPatient := mrnOnlyMatchPatientAccount(target.Id, sourcePatients[i])
-			targetPatients = append(targetPatients, targetPatient)
-			i++
-		}
+		data := mergeTest.RandomData(mergeTest.Params{
+			PatientCount:                 patientCount,
+			DuplicateAccountsCount:       duplicateAccountsCount,
+			LikelyDuplicateAccountsCount: likelyDuplicateAccountsCount,
+			NameOnlyMatchAccountsCount:   nameOnlyMatchAccountsCount,
+			MrnOnlyMatchAccountsCount:    mrnOnlyMatchAccountsCount,
+		})
+		source = data.Source
+		target = data.Target
+		sourcePatients = data.SourcePatients
+		targetPatients = data.TargetPatients
+		targetPatientsWithDuplicates = data.TargetPatientsWithDuplicates
 
 		planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 		Expect(err).ToNot(HaveOccurred())
@@ -274,58 +243,3 @@ var _ = Describe("New Merge Planner", func() {
 		})
 	})
 })
-
-
-func duplicatePatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.UserId = patient.UserId
-	return duplicate
-}
-
-func mrnOnlyMatchPatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.Mrn = patient.Mrn
-	return duplicate
-}
-
-func nameOnlyMatchPatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.FullName = patient.FullName
-	return duplicate
-}
-
-func likelyDuplicatePatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-
-	r := rand.Intn(3)
-	if r == 0 {
-		duplicate.FullName = patient.FullName
-		duplicate.BirthDate = patient.BirthDate
-	} else if r == 1 {
-		duplicate.FullName = patient.FullName
-		duplicate.Mrn = patient.Mrn
-	} else if r == 2 {
-		duplicate.BirthDate = patient.BirthDate
-		duplicate.Mrn = patient.Mrn
-	}
-
-	return duplicate
-}
-
-func randomTagIds(count int, tags []clinics.PatientTag) *[]primitive.ObjectID {
-	if count > len(tags) {
-		count = len(tags)
-	}
-	rand.Shuffle(len(tags), func(i, j int) {
-		tags[i], tags[j] = tags[j], tags[i]
-	})
-	result := make([]primitive.ObjectID, count)
-	for i := range result {
-		result[i] = *tags[i].Id
-	}
-	return &result
-}

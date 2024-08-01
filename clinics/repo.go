@@ -17,12 +17,12 @@ import (
 )
 
 const (
-	clinicsCollectionName = "clinics"
+	CollectionName = "clinics"
 )
 
 func NewRepository(db *mongo.Database, lifecycle fx.Lifecycle) (Service, error) {
 	repo := &repository{
-		collection: db.Collection(clinicsCollectionName),
+		collection: db.Collection(CollectionName),
 	}
 
 	lifecycle.Append(fx.Hook{
@@ -505,7 +505,11 @@ func (c *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 	selector := bson.M{"_id": clinicId}
 
 	update := bson.M{
-		"$addToSet": bson.M{"shareCodes": shareCodes},
+		"$addToSet": bson.M{
+			"shareCodes": bson.M{
+				"$each": shareCodes,
+			},
+		},
 		"$set": bson.M{
 			"updatedTime":          time.Now(),
 		},

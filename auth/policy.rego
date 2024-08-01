@@ -416,6 +416,14 @@ allow {
   input.path = ["v1", "clinics", _, "migrations"]
 }
 
+# Allow backend services to merge clinics
+# POST /v1/clinics/:clinicId/merge
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "merge"]
+}
+
 # Allow backend services to access the list of migrations for a given clinic
 # GET /v1/clinics/:clinicId/migrations
 allow {
