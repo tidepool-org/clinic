@@ -999,6 +999,7 @@ type Patient struct {
 	// Mrn The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`
 	Permissions *PatientPermissions `json:"permissions,omitempty"`
+	Reviews     []PatientReview     `json:"reviews"`
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
@@ -1455,6 +1456,15 @@ type PatientPermissions struct {
 	View      *map[string]interface{} `json:"view,omitempty"`
 }
 
+// PatientReview A summary of a patients recent data
+type PatientReview struct {
+	ClinicianId string    `json:"clinicianId"`
+	Time        time.Time `json:"time"`
+}
+
+// PatientReviews defines model for PatientReviews.
+type PatientReviews = []PatientReview
+
 // PatientSummary A summary of a patients recent data
 type PatientSummary struct {
 	// BgmStats A summary of a users recent BGM glucose values
@@ -1604,8 +1614,9 @@ type TidePatient struct {
 	FullName *string `json:"fullName,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id   *TidepoolUserId `json:"id,omitempty"`
-	Tags *PatientTagIds  `json:"tags"`
+	Id      *TidepoolUserId `json:"id,omitempty"`
+	Reviews []PatientReview `json:"reviews"`
+	Tags    *PatientTagIds  `json:"tags"`
 }
 
 // TideResultPatient defines model for TideResultPatient.
@@ -1790,6 +1801,9 @@ type ListPatientsParams struct {
 
 	// OffsetPeriods If we should display, filter, and sort based on the offset periods or default periods
 	OffsetPeriods *bool `form:"offsetPeriods,omitempty" json:"offsetPeriods,omitempty"`
+
+	// LastReviewed Inclusive
+	LastReviewed *time.Time `form:"lastReviewed,omitempty" json:"lastReviewed,omitempty"`
 
 	// CgmAverageGlucoseMmol Average glucose value of records in Mmol/L
 	CgmAverageGlucoseMmol *FloatFilter `form:"cgm.averageGlucoseMmol,omitempty" json:"cgm.averageGlucoseMmol,omitempty"`

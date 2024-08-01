@@ -180,6 +180,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		CreatedTime:   &patient.CreatedTime,
 		UpdatedTime:   &patient.UpdatedTime,
 		Summary:       NewSummaryDto(patient.Summary),
+		Reviews:       NewReviewsDto(patient.Reviews),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -200,6 +201,8 @@ func NewPatient(dto Patient) patients.Patient {
 		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
+		Summary:       NewSummary(dto.Summary),
+		Reviews:       NewReviews(dto.Reviews),
 	}
 
 	if dto.Tags != nil {
@@ -235,7 +238,6 @@ func NewPatient(dto Patient) patients.Patient {
 		}
 		patient.DataSources = &dataSources
 	}
-
 	return patient
 }
 
@@ -378,6 +380,30 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	return patientSummary
 }
 
+func NewReviewDto(review patients.Review) PatientReview {
+	return PatientReview(review)
+}
+
+func NewReview(review PatientReview) patients.Review {
+	return patients.Review(review)
+}
+
+func NewReviewsDto(reviews []patients.Review) PatientReviews {
+	result := make(PatientReviews, len(reviews))
+	for i := 0; i < len(reviews); i++ {
+		result[i] = NewReviewDto(reviews[i])
+	}
+	return result
+}
+
+func NewReviews(reviews PatientReviews) []patients.Review {
+	result := make([]patients.Review, len(reviews))
+	for i := 0; i < len(reviews); i++ {
+		result[i] = NewReview(reviews[i])
+	}
+	return result
+}
+
 func NewTideDto(tide *patients.Tide) *Tide {
 	if tide == nil {
 		return nil
@@ -406,7 +432,6 @@ func NewTideDto(tide *patients.Tide) *Tide {
 			c = append(c, TideResultPatient{
 				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
-				Patient:                    TidePatient(patient.Patient),
 				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
 				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
 				TimeInHighPercent:          patient.TimeInHighPercent,
@@ -415,6 +440,13 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
 				TimeInVeryHighPercent:      patient.TimeInVeryHighPercent,
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
+				Patient: TidePatient{
+					Email:    patient.Patient.Email,
+					FullName: patient.Patient.FullName,
+					Id:       patient.Patient.Id,
+					Reviews:  NewReviewsDto(patient.Patient.Reviews),
+					Tags:     patient.Patient.Tags,
+				},
 			})
 		}
 		tideResult.Results[category] = c
@@ -807,6 +839,8 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 	}
 
 	expandedSorts := map[string]string{
+		"lastReviewed": "reviews.0.time",
+
 		"lastUpdatedDate": "summary." + *typ + "Stats.dates.lastUpdatedDate",
 
 		"hasLastUploadDate": "summary." + *typ + "Stats.dates.hasLastUploadDate",
@@ -1075,6 +1109,7 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"fullName":       {},
 		"birthDate":      {},
 		"lastUploadDate": {},
+		"lastReviewed":   {},
 		"lastData":       {},
 		"firstData":      {},
 		"outdatedSince":  {},
@@ -1166,6 +1201,7 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"fullName":       {},
 		"birthDate":      {},
 		"lastUploadDate": {},
+		"lastReviewed":   {},
 		"lastData":       {},
 		"firstData":      {},
 		"outdatedSince":  {},

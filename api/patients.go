@@ -22,9 +22,10 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
 	filter := patients.Filter{
-		ClinicId: strp(string(clinicId)),
-		Search:   searchToString(params.Search),
-		Tags:     params.Tags,
+		ClinicId:     strp(string(clinicId)),
+		Search:       searchToString(params.Search),
+		Tags:         params.Tags,
+		LastReviewed: params.LastReviewed,
 	}
 
 	if params.Period == nil || *params.Period == "" {
@@ -442,4 +443,61 @@ func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error
 	}
 
 	return ec.JSON(http.StatusOK, dtos)
+}
+
+func (h *Handler) UpdatePatientReviews(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	clinicianId := authData.SubjectId
+
+	review := patients.Review{
+		ClinicianId: clinicianId,
+		Time:        time.Now().UTC().Truncate(time.Millisecond),
+	}
+
+	reviews, err := h.patients.AddReview(ctx, clinicId, patientId, review)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewReviewsDto(reviews))
+}
+
+func (h *Handler) DeletePatientReviews(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
+	ctx := ec.Request().Context()
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	clinicianId := authData.SubjectId
+
+	reviews, err := h.patients.DeleteReview(ctx, clinicId, clinicianId, patientId)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewReviewsDto(reviews))
 }
