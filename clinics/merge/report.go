@@ -323,9 +323,9 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("Email ---")
 	for _, a := range adminTasks {
 		currentRow = sh.AddRow()
-		currentRow.AddCell().SetValue(a.Name)
+		currentRow.AddCell().SetValue(a.GetClinicianName())
 		currentRow.AddCell().SetValue(strings.Join(a.Workspaces, ", "))
-		currentRow.AddCell().SetValue(a.Email)
+		currentRow.AddCell().SetValue(a.GetClinicianEmail())
 	}
 	sh.AddRow()
 
@@ -336,12 +336,27 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("Downgrade (Only if the person is an Admin at Workspace 1 but a Member at Workspace 2) ----")
 	for _, plan := range nonAdminTasks {
 		currentRow = sh.AddRow()
-		currentRow.AddCell().SetValue(plan.Name)
+		currentRow.AddCell().SetValue(plan.GetClinicianName())
 		currentRow.AddCell().SetValue(strings.Join(plan.Workspaces, ", "))
-		currentRow.AddCell().SetValue(plan.Email)
+		currentRow.AddCell().SetValue(plan.GetClinicianEmail())
 		if plan.Downgraded {
 			currentRow.AddCell().SetValue("Yes")
 		}
+	}
+	sh.AddRow()
+
+	pendingInvites := 0
+	for _, count := range r.plan.CliniciansPlan.PendingInvitesByWorkspace() {
+		pendingInvites += count
+	}
+
+	currentRow = sh.AddRow()
+	currentRow.AddCell().SetValue(fmt.Sprintf("Pending Invites (%v)", pendingInvites))
+	currentRow.AddCell().SetValue("Workspace ---")
+	for workspace, count := range r.plan.CliniciansPlan.PendingInvitesByWorkspace() {
+		currentRow = sh.AddRow()
+		currentRow.AddCell().SetValue(count)
+		currentRow.AddCell().SetValue(workspace)
 	}
 	sh.AddRow()
 
@@ -428,10 +443,10 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("- Likely Duplicate Accounts")
 	currentRow.AddCell().SetValue(likelyDuplicateCount)
 	currentRow = sh.AddRow()
-	currentRow.AddCell().SetValue("- Duplicate MRNs")
+	currentRow.AddCell().SetValue("- Duplicate MRN Only")
 	currentRow.AddCell().SetValue(duplicateMRNsCount)
 	currentRow = sh.AddRow()
-	currentRow.AddCell().SetValue("- Duplicate Names")
+	currentRow.AddCell().SetValue("- Duplicate Name Only")
 	currentRow.AddCell().SetValue(duplicateNamesCount)
 	sh.AddRow()
 

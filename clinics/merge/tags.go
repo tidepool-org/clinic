@@ -2,7 +2,10 @@ package merge
 
 import (
 	"context"
+	"fmt"
 	"github.com/tidepool-org/clinic/clinics"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 	"sort"
 )
 
@@ -17,6 +20,9 @@ type TagPlan struct {
 	TagAction  string
 	Workspaces []string
 	Merge      bool
+
+	SourceClinicId *primitive.ObjectID
+	TargetClinicId *primitive.ObjectID
 }
 
 func (t TagPlan) PreventsMerge() bool {
@@ -66,9 +72,11 @@ func NewSourceTagMergePlanner(tag clinics.PatientTag, source, target clinics.Cli
 
 func (t *SourceTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
 	plan := TagPlan{
-		Name:       t.tag.Name,
-		Workspaces: []string{*t.source.Name},
-		TagAction:  TagActionCreate,
+		Name:           t.tag.Name,
+		Workspaces:     []string{*t.source.Name},
+		TagAction:      TagActionCreate,
+		SourceClinicId: t.source.Id,
+		TargetClinicId: t.target.Id,
 	}
 
 	for _, tt := range t.target.PatientTags {
@@ -101,14 +109,16 @@ func NewTargetTagMergePlanner(tag clinics.PatientTag, source, target clinics.Cli
 
 func (t *TargetTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
 	plan := TagPlan{
-		Name:       t.tag.Name,
-		Workspaces: []string{*t.target.Name},
-		TagAction:  TagActionRetain,
+		Name:           t.tag.Name,
+		Workspaces:     []string{*t.target.Name},
+		TagAction:      TagActionRetain,
+		TargetClinicId: t.target.Id,
 	}
 
 	for _, tt := range t.source.PatientTags {
 		if tt.Name == t.tag.Name {
 			plan.Workspaces = append(plan.Workspaces, *t.source.Name)
+			plan.SourceClinicId = t.source.Id
 			sort.Strings(plan.Workspaces)
 			break
 		}
@@ -118,4 +128,28 @@ func (t *TargetTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
 	}
 
 	return plan, nil
+}
+
+type TagPlanExecutor struct {
+	logger         *zap.SugaredLogger
+	clinicsService clinics.Service
+}
+
+func NewTagPlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Service) *TagPlanExecutor {
+	return &TagPlanExecutor{
+		logger: logger,
+		clinicsService: clinicsService,
+	}
+}
+
+func (t *TagPlanExecutor) Execute(ctx context.Context, plan TagPlan) error {
+	if plan.TagAction == TagActionSkip || plan.TagAction == TagActionRetain {
+		t.logger.Debugw("skipping tag", "plan", plan)
+		return nil
+	} else if plan.TagAction == TagActionCreate {
+		_, err := t.clinicsService.CreatePatientTag(ctx, plan.TargetClinicId.Hex(), plan.Name)
+		return err
+	} else {
+		return fmt.Errorf("unexpected tag plan action %v for tag %s", plan.TagAction, plan.Name)
+	}
 }

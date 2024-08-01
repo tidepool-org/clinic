@@ -21,7 +21,6 @@ type SettingsPlan struct {
 	Name        string `bson:"name"`
 	SourceValue string `bson:"sourceValue"`
 	TargetValue string `bson:"targetValue"`
-	CanMerge    bool   `bson:"canMerge"`
 }
 
 func (s SettingsPlan) ValuesMatch() bool {
@@ -29,13 +28,13 @@ func (s SettingsPlan) ValuesMatch() bool {
 }
 
 func (s SettingsPlan) PreventsMerge() bool {
-	return s.ValuesMatch()
+	return !s.ValuesMatch()
 }
 
 type SettingsPlans []SettingsPlan
 
 func (s SettingsPlans) PreventsMerge() bool {
-	return PlansPreventMerge(s)
+	return false
 }
 
 type SettingsReporterPlanner struct {
@@ -150,14 +149,13 @@ func (m MembershipRestrictionsMergePlan) PreventsMerge() bool {
 	sourceMap := m.membershipRestrictionsToMap(m.SourceValue)
 	targetMap := m.membershipRestrictionsToMap(m.TargetValue)
 
-	// Check if the source map is a superset of the target map
-	for domain, idp := range sourceMap {
-		if targetIdp, ok := targetMap[domain]; ok && idp != targetIdp {
-			return false
-		}
+	// Check if the source map is a subset of the target map
+	for sourceDomain, sourceIDP := range sourceMap {
+		targetIDP, ok := targetMap[sourceDomain]
+		return !ok || sourceIDP != targetIDP
 	}
 
-	return true
+	return false
 }
 
 func (m MembershipRestrictionsMergePlan) membershipRestrictionsToMap(restrictions []clinics.MembershipRestrictions) map[string]string {

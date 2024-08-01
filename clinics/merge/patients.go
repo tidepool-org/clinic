@@ -6,6 +6,11 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
+	"time"
 )
 
 const (
@@ -81,6 +86,9 @@ func (p PatientPlans) GetConflictCounts() map[string]int {
 }
 
 type PatientPlan struct {
+	SourceClinicId *primitive.ObjectID
+	TargetClinicId *primitive.ObjectID
+
 	SourcePatient *patients.Patient
 	TargetPatient *patients.Patient
 
@@ -92,6 +100,8 @@ type PatientPlan struct {
 	TargetTagNames []string
 
 	PostMigrationTagNames []string
+
+	CanExecuteAction bool
 }
 
 func (p PatientPlan) HasConflicts() bool {
@@ -104,7 +114,7 @@ func (p PatientPlan) HasConflicts() bool {
 }
 
 func (p PatientPlan) PreventsMerge() bool {
-	return false
+	return !p.CanExecuteAction
 }
 
 type Conflict struct {
@@ -144,10 +154,13 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))
 	for _, patient := range p.sourcePatients {
 		plan := PatientPlan{
-			SourcePatient:  &patient,
-			SourceTagNames: getPatientTagNames(patient, p.sourceTags),
-			Conflicts:      make(map[string][]Conflict),
-			PatientAction:  PatientActionMove,
+			SourceClinicId:   p.source.Id,
+			TargetClinicId:   p.target.Id,
+			SourcePatient:    &patient,
+			SourceTagNames:   getPatientTagNames(patient, p.sourceTags),
+			Conflicts:        make(map[string][]Conflict),
+			PatientAction:    PatientActionMove,
+			CanExecuteAction: true,
 		}
 
 		duplicates := getDuplicates(patient, targetByAttribute)
@@ -172,13 +185,22 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				Patient:  *target,
 			})
 		}
+		if plan.PatientAction == PatientActionMove {
+			// Do not allow moving patients without MRNs to clinics where MRNs are required
+			if p.target.MRNSettings != nil && p.target.MRNSettings.Required && (patient.Mrn == nil || *patient.Mrn == "") {
+				plan.CanExecuteAction = false
+			}
+		}
 		list = append(list, plan)
 	}
 
 	for _, patient := range p.targetPatients {
 		plan := PatientPlan{
-			TargetPatient:  &patient,
-			TargetTagNames: getPatientTagNames(patient, p.targetTags),
+			SourceClinicId:   p.source.Id,
+			TargetClinicId:   p.target.Id,
+			TargetPatient:    &patient,
+			TargetTagNames:   getPatientTagNames(patient, p.targetTags),
+			CanExecuteAction: true,
 		}
 		if _, ok := mergeTargetPatients[getUserId(patient)]; ok {
 			plan.PatientAction = PatientActionMergeInto
@@ -216,6 +238,155 @@ func getPatientTagNames(patient patients.Patient, tags map[string]*clinics.Patie
 			}
 		}
 		return tagNames
+	}
+	return nil
+}
+
+type PatientPlanExecutor struct {
+	logger             *zap.SugaredLogger
+	patientsCollection *mongo.Collection
+}
+
+func NewPatientPlanExecutor(logger *zap.SugaredLogger, db *mongo.Database) *PatientPlanExecutor {
+	return &PatientPlanExecutor{
+		logger:             logger,
+		patientsCollection: db.Collection(patients.CollectionName),
+	}
+}
+
+func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, source, target clinics.Clinic) error {
+	switch plan.PatientAction {
+	case PatientActionMove:
+		p.logger.Infow(
+			"moving patient",
+			"clinicId", source.Id.Hex(),
+			"userId", plan.SourcePatient.UserId,
+			"targetClinicId", target.Id.Hex(),
+		)
+		return p.movePatient(ctx, plan, target)
+	case PatientActionMerge:
+		p.logger.Infow(
+			"merging patient",
+			"clinicId", source.Id.Hex(),
+			"userId", plan.SourcePatient.UserId,
+			"targetClinicId", target.Id.Hex(),
+			"targetUserId", *plan.TargetPatient.UserId,
+		)
+		return p.mergePatient(ctx, plan, target)
+	case PatientActionRetain:
+		p.logger.Infow(
+			"retaining patient",
+			"clinicId", target.Id.Hex(),
+			"userId", plan.TargetPatient.UserId,
+		)
+		return nil
+	case PatientActionMergeInto:
+		p.logger.Infow(
+			"patient is a target of a merge",
+			"clinicId", target.Id.Hex(),
+			"userId", plan.TargetPatient.UserId,
+		)
+		return nil
+	default:
+		return fmt.Errorf("unexpected plan action %s", plan.PatientAction)
+	}
+}
+
+func (p *PatientPlanExecutor) movePatient(ctx context.Context, plan PatientPlan, target clinics.Clinic) error {
+	tagNames := map[string]struct{}{}
+	for _, name := range plan.PostMigrationTagNames {
+		tagNames[name] = struct{}{}
+	}
+
+	tagIds := make([]primitive.ObjectID, 0, len(tagNames))
+	for _, tag := range target.PatientTags {
+		if _, ok := tagNames[tag.Name]; ok {
+			tagIds = append(tagIds, *tag.Id)
+		}
+	}
+
+	selector := bson.M{
+		"clinicId": plan.SourcePatient.ClinicId,
+		"userId":   plan.SourcePatient.UserId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"clinicId":    plan.TargetClinicId,
+			"tags":        tagIds,
+			"updatedTime": time.Now(),
+		},
+	}
+
+	res, err := p.patientsCollection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error moving patient: %w", err)
+	}
+	if res.ModifiedCount != 1 {
+		return fmt.Errorf("error moving patient: unexpected modified count %v", res.ModifiedCount)
+	}
+	return nil
+}
+
+func (p *PatientPlanExecutor) mergePatient(ctx context.Context, plan PatientPlan, target clinics.Clinic) error {
+	if err := p.mergeTags(ctx, plan, target); err != nil {
+		return fmt.Errorf("error updating patient tags: %w", err)
+	}
+	if err := p.deleteSourcePatient(ctx, plan); err != nil {
+		return fmt.Errorf("error deleting patient %s: %w", *plan.SourcePatient.UserId, err)
+	}
+	return nil
+}
+
+func (p *PatientPlanExecutor) mergeTags(ctx context.Context, plan PatientPlan, target clinics.Clinic) error {
+	tagNames := map[string]struct{}{}
+	for _, name := range plan.PostMigrationTagNames {
+		tagNames[name] = struct{}{}
+	}
+	tagIds := make([]primitive.ObjectID, 0, len(tagNames))
+	for _, tag := range target.PatientTags {
+		if _, ok := tagNames[tag.Name]; ok {
+			tagIds = append(tagIds, *tag.Id)
+			delete(tagNames, tag.Name)
+		}
+	}
+	if len(tagIds) == 0 {
+		return nil
+	}
+
+	selector := bson.M{
+		"clinicId": plan.TargetPatient.ClinicId,
+		"userId":   plan.TargetPatient.UserId,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"tags":        tagIds,
+			"updatedTime": time.Now(),
+		},
+	}
+
+	res, err := p.patientsCollection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error updating patient %s tags: %w", selector, err)
+	}
+	if res.ModifiedCount != 1 {
+		return fmt.Errorf("error updating patient %s tags: unexpected modified count %v", selector, res.ModifiedCount)
+	}
+
+	return nil
+}
+
+func (p *PatientPlanExecutor) deleteSourcePatient(ctx context.Context, plan PatientPlan) error {
+	selector := bson.M{
+		"clinicId": plan.SourcePatient.ClinicId,
+		"userId":   plan.SourcePatient.UserId,
+	}
+	res, err := p.patientsCollection.DeleteOne(ctx, selector)
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount != 1 {
+		return fmt.Errorf("unexpected deleted count %v", res.DeletedCount)
 	}
 	return nil
 }
