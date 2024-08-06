@@ -3,6 +3,11 @@ package http.authz.clinic
 subject_id := input.auth.subjectId
 is_backend_service := input.auth.serverAccess == true
 
+is_trials_cli_user {
+  input.auth.clientId == "trials-cli"
+  subject_id
+}
+
 is_authenticated_user {
   not is_backend_service
   subject_id
@@ -42,6 +47,14 @@ allow {
 # POST /v1/clinics
 allow {
   is_authenticated_user
+  input.method == "POST"
+  input.path = ["v1", "clinics"]
+}
+
+# Allow trials cli user to create a new clinic
+# POST /v1/clinics
+allow {
+  is_trials_cli_user
   input.method == "POST"
   input.path = ["v1", "clinics"]
 }
