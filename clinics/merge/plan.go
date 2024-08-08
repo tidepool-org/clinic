@@ -2,6 +2,7 @@ package merge
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Plan interface {
@@ -10,6 +11,21 @@ type Plan interface {
 
 type Planner[T Plan] interface {
 	Plan(ctx context.Context) (T, error)
+}
+
+type PersistentPlan[T Plan] struct {
+	Id     *primitive.ObjectID `bson:"_id,omitempty"`
+	Plan   T                   `bson:"plan"`
+	PlanId primitive.ObjectID  `bson:"planId"`
+	Type   string              `bson:"type"`
+}
+
+func NewPersistentPlan[T Plan](planId primitive.ObjectID, typ string, p T) PersistentPlan[T] {
+	return PersistentPlan[T]{
+		Plan:   p,
+		PlanId: planId,
+		Type:   typ,
+	}
 }
 
 func RunPlanners[T Plan](ctx context.Context, planners []Planner[T]) ([]T, error) {

@@ -16,13 +16,13 @@ const (
 )
 
 type TagPlan struct {
-	Name       string
-	TagAction  string
-	Workspaces []string
-	Merge      bool
+	Name       string `bson:"name"`
+	TagAction  string `bson:"tagAction"`
+	Workspaces []string `bson:"workspaces"`
+	Merge      bool `bson:"merge"`
 
-	SourceClinicId *primitive.ObjectID
-	TargetClinicId *primitive.ObjectID
+	SourceClinicId *primitive.ObjectID `bson:"sourceClinicId"`
+	TargetClinicId *primitive.ObjectID `bson:"targetClinicId"`
 }
 
 func (t TagPlan) PreventsMerge() bool {

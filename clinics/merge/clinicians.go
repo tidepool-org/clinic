@@ -25,11 +25,11 @@ const (
 )
 
 type ClinicianPlan struct {
-	Clinician       clinicians.Clinician
-	ClinicianAction string
-	Downgraded      bool
-	ResultingRoles  []string
-	Workspaces      []string
+	Clinician       clinicians.Clinician `bson:"clinician"`
+	ClinicianAction string               `bson:"clinicianAction"`
+	Downgraded      bool                 `bson:"downgraded"`
+	ResultingRoles  []string             `bson:"resultingRoles"`
+	Workspaces      []string             `bson:"workspaces"`
 }
 
 func (c ClinicianPlan) IsPendingInvite() bool {
