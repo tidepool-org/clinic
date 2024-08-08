@@ -492,7 +492,7 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	err = h.ClinicMergePlanExecutor.Execute(ctx, plan)
+	_, err = h.ClinicMergePlanExecutor.Execute(ctx, plan)
 	if err != nil {
 		return err
 	}

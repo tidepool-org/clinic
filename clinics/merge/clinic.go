@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -15,19 +16,27 @@ import (
 	"time"
 )
 
+const (
+	plansCollectionName = "merge_plans"
+	planTypeTag         = "tag"
+	planTypePatient     = "patient"
+	planTypeClinician   = "clinician"
+	planTypeClinic      = "clinic"
+)
+
 type ClinicMergePlan struct {
-	Source clinics.Clinic
-	Target clinics.Clinic
+	Source clinics.Clinic `bson:"source"`
+	Target clinics.Clinic `bson:"target"`
 
-	MembershipRestrictionsMergePlan MembershipRestrictionsMergePlan
-	SourcePatientClusters           PatientClusters
-	TargetPatientClusters           PatientClusters
-	SettingsPlans                   SettingsPlans
-	TagsPlans                       TagPlans
-	ClinicianPlans                  ClinicianPlans
-	PatientPlans                    PatientPlans
+	MembershipRestrictionsMergePlan MembershipRestrictionsMergePlan `bson:"-"`
+	SourcePatientClusters           PatientClusters                 `bson:"-"`
+	TargetPatientClusters           PatientClusters                 `bson:"-"`
+	SettingsPlans                   SettingsPlans                   `bson:"-"`
+	TagsPlans                       TagPlans                        `bson:"-"`
+	ClinicianPlans                  ClinicianPlans                  `bson:"-"`
+	PatientPlans                    PatientPlans                    `bson:"-"`
 
-	CreatedTime time.Time
+	CreatedTime time.Time `bson:"createdTime"`
 }
 
 func (c ClinicMergePlan) PreventsMerge() bool {
@@ -283,19 +292,23 @@ type ClinicPlanExecutor struct {
 	DB             *mongo.Database
 }
 
-func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) error {
+func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) (primitive.ObjectID, error) {
 	logger := c.Logger.With("clinicId", plan.Source.Id.Hex(), "targetClinicId", plan.Target.Id.Hex())
 	if plan.PreventsMerge() {
 		err := fmt.Errorf("the merge plan does not allow execution")
 		logger.Errorw("cannot merge clinics", "error", err)
-		return err
+		return primitive.NilObjectID, err
 	}
 
+	planId := primitive.NewObjectID()
 	_, err := store.WithTransaction(ctx, c.DBClient, func(sessionContext mongo.SessionContext) (any, error) {
 		tpe := NewTagPlanExecutor(logger, c.ClinicsService)
 		logger.Info("starting tags migration")
 		for _, p := range plan.TagsPlans {
 			if err := tpe.Execute(ctx, p); err != nil {
+				return nil, err
+			}
+			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeTag, p)); err != nil {
 				return nil, err
 			}
 		}
@@ -306,6 +319,9 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 			if err := ppe.Execute(ctx, p, plan.Source, plan.Target); err != nil {
 				return nil, err
 			}
+			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypePatient, p)); err != nil {
+				return nil, err
+			}
 		}
 
 		logger.Info("starting clinicians migration")
@@ -314,14 +330,26 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 			if err := cpe.Execute(ctx, p, plan.Target); err != nil {
 				return nil, err
 			}
+			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeClinician, p)); err != nil {
+				return nil, err
+			}
 		}
 
 		logger.Info("finalizing clinic merge")
 		if err := c.ClinicManager.FinalizeMerge(ctx, plan.Source.Id.Hex(), plan.Target.Id.Hex()); err != nil {
 			return nil, err
 		}
+		if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeClinic, plan)); err != nil {
+			return nil, err
+		}
 
 		return nil, nil
 	})
+
+	return planId, err
+}
+
+func (c *ClinicPlanExecutor) persistPlan(ctx context.Context, plan any) error {
+	_, err := c.DB.Collection(plansCollectionName).InsertOne(ctx, plan)
 	return err
 }

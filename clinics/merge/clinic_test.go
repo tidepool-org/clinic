@@ -20,6 +20,8 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/go-common/clients/shoreline"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
@@ -36,9 +38,10 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	var app *fxtest.App
 
 	var plan merge.ClinicMergePlan
+	var planId primitive.ObjectID
 	var executor *merge.ClinicPlanExecutor
 	var planner merge.Planner[merge.ClinicMergePlan]
-
+	var db *mongo.Database
 
 	var source clinics.Clinic
 	var sourceAdmin clinicians.Clinician
@@ -47,7 +50,6 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	var targetAdmin clinicians.Clinician
 	var targetPatientsWithDuplicates map[string]patients.Patient
 	var targetPatients []patients.Patient
-
 
 	BeforeAll(func() {
 		tb := GinkgoT()
@@ -59,6 +61,7 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 				logger.Suggar,
 				dbTest.GetTestDatabase,
 				func(database *mongo.Database) *mongo.Client {
+					db = database
 					return database.Client()
 				},
 				func() patients.UserService {
@@ -129,7 +132,9 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	})
 
 	It("successfully executes the plan", func() {
-		Expect(executor.Execute(context.Background(), plan)).To(Succeed())
+		var err error
+		planId, err = executor.Execute(context.Background(), plan)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("moves the source patients to the target clinic", func() {
@@ -211,7 +216,6 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 			expectedTagNames = append(expectedTagNames, tag)
 		}
 
-
 		result, err := clinicsService.Get(context.Background(), target.Id.Hex())
 		Expect(err).ToNot(HaveOccurred())
 
@@ -222,7 +226,68 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 
 		Expect(resultingTagNames).To(ConsistOf(expectedTagNames))
 	})
+
+	It("contains plan for each source tag", func() {
+		for _, tag := range source.PatientTags {
+			hasMergePlan(db, bson.M{
+				"planId":    planId,
+				"type":      "tag",
+				"plan.name": tag.Name,
+			}, 1)
+		}
+	})
+
+	It("contains plan for each target tag", func() {
+		for _, tag := range source.PatientTags {
+			hasMergePlan(db, bson.M{
+				"planId":    planId,
+				"type":      "tag",
+				"plan.name": tag.Name,
+			}, 1)
+		}
+	})
+
+	It("contains plan for each source patient", func() {
+		for _, patient := range sourcePatients {
+			hasMergePlan(db, bson.M{
+				"planId":                    planId,
+				"type":                      "patient",
+				"plan.sourcePatient.userId": *patient.UserId,
+			}, 1)
+		}
+	})
+
+	It("contains plan for source admin", func() {
+		hasMergePlan(db, bson.M{
+			"planId":                planId,
+			"type":                  "clinician",
+			"plan.clinician.userId": *sourceAdmin.UserId,
+		}, 1)
+	})
+
+	It("contains plan for target admin", func() {
+		hasMergePlan(db, bson.M{
+			"planId":                planId,
+			"type":                  "clinician",
+			"plan.clinician.userId": *targetAdmin.UserId,
+		}, 1)
+	})
+
+	It("contains plan for clinics", func() {
+		hasMergePlan(db, bson.M{
+			"planId":          planId,
+			"type":            "clinic",
+			"plan.source._id": source.Id,
+			"plan.target._id": target.Id,
+		}, 1)
+	})
 })
+
+func hasMergePlan(db *mongo.Database, filter bson.M, expectedCount int) {
+	res, err := db.Collection("merge_plans").CountDocuments(context.Background(), filter)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(res).To(BeNumerically("==", expectedCount))
+}
 
 func createClinic(userService *patientsTest.MockUserService, clinicManager manager.Manager, clinic clinics.Clinic, admin clinicians.Clinician) clinics.Clinic {
 	userService.EXPECT().GetUser(*admin.UserId).Return(&shoreline.UserData{
@@ -236,11 +301,10 @@ func createClinic(userService *patientsTest.MockUserService, clinicManager manag
 		FullName: admin.Name,
 	}, nil)
 
-
 	clinic.Admins = nil
 	result, err := clinicManager.CreateClinic(context.Background(), &manager.CreateClinic{
-		Clinic:            clinic,
-		CreatorUserId:     *admin.UserId,
+		Clinic:        clinic,
+		CreatorUserId: *admin.UserId,
 	})
 	Expect(err).ToNot(HaveOccurred())
 	return *result
