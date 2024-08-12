@@ -7,9 +7,9 @@ RUN apk --no-cache update && \
     adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic
 USER tidepool
-RUN go install github.com/air-verse/air@v1.52.2
+RUN --mount=type=cache,target=$HOME/.cache/go-build go install github.com/air-verse/air@v1.52.2
 COPY --chown=tidepool . .
-RUN ./build.sh
+RUN --mount=type=cache,target=$HOME/.cache/go-build ./build.sh
 CMD ["air"]
 
 # Production
@@ -22,7 +22,7 @@ RUN apk --no-cache update && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic
 USER tidepool
 COPY --chown=tidepool . .
-RUN ./build.sh
+RUN --mount=type=cache,target=$HOME/.cache/go-build ./build.sh
 WORKDIR /go/src/github.com/tidepool-org/clinic/dist
 CMD ["./clinic"]
 
