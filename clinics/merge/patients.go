@@ -89,6 +89,9 @@ type PatientPlan struct {
 	SourceClinicId *primitive.ObjectID `bson:"sourceClinicId"`
 	TargetClinicId *primitive.ObjectID `bson:"targetClinicId"`
 
+	SourceClinicName string `bson:"sourceClinicName"`
+	TargetClinicName string `bson:"targetClinicName"`
+
 	SourcePatient *patients.Patient `bson:"sourcePatient"`
 	TargetPatient *patients.Patient `bson:"targetPatient"`
 
@@ -156,7 +159,9 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 		sanitizePatient(&patient)
 		plan := PatientPlan{
 			SourceClinicId:   p.source.Id,
+			SourceClinicName: *p.source.Name,
 			TargetClinicId:   p.target.Id,
+			TargetClinicName: *p.target.Name,
 			SourcePatient:    &patient,
 			SourceTagNames:   getPatientTagNames(patient, p.sourceTags),
 			Conflicts:        make(map[string][]Conflict),
@@ -200,7 +205,9 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 		sanitizePatient(&patient)
 		plan := PatientPlan{
 			SourceClinicId:   p.source.Id,
+			SourceClinicName: *p.source.Name,
 			TargetClinicId:   p.target.Id,
+			TargetClinicName: *p.target.Name,
 			TargetPatient:    &patient,
 			TargetTagNames:   getPatientTagNames(patient, p.targetTags),
 			CanExecuteAction: true,

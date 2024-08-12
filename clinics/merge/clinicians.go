@@ -30,6 +30,9 @@ type ClinicianPlan struct {
 	Downgraded      bool                 `bson:"downgraded"`
 	ResultingRoles  []string             `bson:"resultingRoles"`
 	Workspaces      []string             `bson:"workspaces"`
+
+	SourceClinicName string `bson:"sourceClinicName"`
+	TargetClinicName string `bson:"targetClinicName"`
 }
 
 func (c ClinicianPlan) IsPendingInvite() bool {
@@ -104,6 +107,8 @@ func (s *SourceClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, 
 		ClinicianAction: ClinicianActionMove,
 		ResultingRoles:  s.clinician.Roles,
 		Workspaces:      []string{*s.source.Name},
+		SourceClinicName: *s.source.Name,
+		TargetClinicName: *s.target.Name,
 	}
 
 	if s.clinician.UserId != nil {
@@ -149,6 +154,8 @@ func (s *TargetClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, 
 		ClinicianAction: ClinicianActionRetain,
 		ResultingRoles:  s.clinician.Roles,
 		Workspaces:      []string{*s.target.Name},
+		SourceClinicName: *s.source.Name,
+		TargetClinicName: *s.target.Name,
 	}
 
 	if s.clinician.UserId != nil {
