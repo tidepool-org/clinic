@@ -3,9 +3,14 @@ package http.authz.clinic
 subject_id := input.auth.subjectId
 is_backend_service := input.auth.serverAccess == true
 
-is_trials_cli_user {
-  input.auth.clientId == "trials-cli"
-  subject_id
+is_trials_cli_client {
+  #input.auth.clientId == "trials-cli"
+  #print(subject_id)
+  #subject_id == "trials-cli"
+  # this is clearly not what I want, but...
+
+  subject_id == "a95cab0d-5b46-47b3-88ad-9c6a74bdc261"
+  #subject_id
 }
 
 is_authenticated_user {
@@ -54,7 +59,7 @@ allow {
 # Allow trials cli user to create a new clinic
 # POST /v1/clinics
 allow {
-  is_trials_cli_user
+  is_trials_cli_client
   input.method == "POST"
   input.path = ["v1", "clinics"]
 }
@@ -317,6 +322,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow trials CLI to list patients
+# GET /v1/clinics/:clinicId/patients
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patients"]
+  is_trials_cli_client
+}
+
 # Allow backend services to list patients
 # GET /v1/clinics/:clinicId/patients
 allow {
@@ -393,6 +406,14 @@ allow {
 # POST /v1/clinics/:clinicId/patients/:patientId
 allow {
   is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _]
+}
+
+# Allow trials-cli to create a patient from existing user
+# POST /v1/clinics/:clinicId/patients/:patientId
+allow {
+  is_trials_cli_client
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients", _]
 }
