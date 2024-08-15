@@ -238,7 +238,7 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	})
 
 	It("contains plan for each target tag", func() {
-		for _, tag := range source.PatientTags {
+		for _, tag := range target.PatientTags {
 			hasMergePlan(db, bson.M{
 				"planId":    planId,
 				"type":      "tag",
