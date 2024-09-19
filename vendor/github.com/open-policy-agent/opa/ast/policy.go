@@ -100,7 +100,9 @@ var Wildcard = &Term{Value: Var("_")}
 var WildcardPrefix = "$"
 
 // Keywords contains strings that map to language keywords.
-var Keywords = [...]string{
+var Keywords = KeywordsV0
+
+var KeywordsV0 = [...]string{
 	"not",
 	"package",
 	"import",
@@ -114,6 +116,24 @@ var Keywords = [...]string{
 	"some",
 }
 
+var KeywordsV1 = [...]string{
+	"not",
+	"package",
+	"import",
+	"as",
+	"default",
+	"else",
+	"with",
+	"null",
+	"true",
+	"false",
+	"some",
+	"if",
+	"contains",
+	"in",
+	"every",
+}
+
 // IsKeyword returns true if s is a language keyword.
 func IsKeyword(s string) bool {
 	for _, x := range Keywords {
@@ -121,6 +141,26 @@ func IsKeyword(s string) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// IsKeywordInRegoVersion returns true if s is a language keyword.
+func IsKeywordInRegoVersion(s string, regoVersion RegoVersion) bool {
+	switch regoVersion {
+	case RegoV0:
+		for _, x := range KeywordsV0 {
+			if x == s {
+				return true
+			}
+		}
+	case RegoV1, RegoV0CompatV1:
+		for _, x := range KeywordsV1 {
+			if x == s {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 
@@ -530,7 +570,7 @@ func (pkg *Package) MarshalJSON() ([]byte, error) {
 }
 
 // IsValidImportPath returns an error indicating if the import path is invalid.
-// If the import path is invalid, err is nil.
+// If the import path is valid, err is nil.
 func IsValidImportPath(v Value) (err error) {
 	switch v := v.(type) {
 	case Var:
@@ -994,16 +1034,22 @@ func (head *Head) setJSONOptions(opts astJSON.Options) {
 
 func (head *Head) MarshalJSON() ([]byte, error) {
 	var loc *Location
-	if head.jsonOptions.MarshalOptions.IncludeLocation.Head {
+	includeLoc := head.jsonOptions.MarshalOptions.IncludeLocation
+	if includeLoc.Head {
 		if head.Location != nil {
 			loc = head.Location
+		}
+
+		for _, term := range head.Reference {
+			if term.Location != nil {
+				term.jsonOptions.MarshalOptions.IncludeLocation.Term = includeLoc.Term
+			}
 		}
 	}
 
 	// NOTE(sr): we do this to override the rendering of `head.Reference`.
 	// It's still what'll be used via the default means of encoding/json
 	// for unmarshaling a json object into a Head struct!
-	// NOTE(charlieegan3): we also need to optionally include the location
 	type h Head
 	return json.Marshal(struct {
 		h
