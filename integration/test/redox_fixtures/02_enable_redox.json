@@ -12,6 +12,7 @@
   "provider": "redox",
   "mrnIdType": "MR",
   "scheduledReports": {
+    "cadence": "14d",
     "onUploadEnabled": true,
     "onUploadNoteEventType": "Replace"
   }

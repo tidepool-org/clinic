@@ -4734,8 +4734,19 @@ components:
             - New
             - Replace
           default: New
+        cadence:
+          type: string
+          x-stoplight:
+            id: ibtk59wcgho89
+          enum:
+            - 0d
+            - 7d
+            - 14d
+            - 30d
+          description: The cadence of the scheduled reports. Set to '0d' to disable all scheduled reports except the ones which are sent after an upload is finished
       required:
         - onUploadEnabled
+        - cadence
     GenerateMergeReport:
       title: GenerateMergeReport
       x-stoplight:

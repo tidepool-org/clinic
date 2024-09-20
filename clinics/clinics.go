@@ -143,6 +143,7 @@ type EHRProcedureCodes struct {
 }
 
 type ScheduledReports struct {
+	Cadence               string  `bson:"cadence"`
 	OnUploadEnabled       bool    `bson:"onUploadEnabled"`
 	OnUploadNoteEventType *string `bson:"onUploadNoteEventType"`
 }

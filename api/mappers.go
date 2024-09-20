@@ -677,6 +677,7 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 		MrnIdType: dto.MrnIdType,
 		Provider:  string(dto.Provider),
 		ScheduledReports: clinics.ScheduledReports{
+			Cadence: string(dto.ScheduledReports.Cadence),
 			OnUploadEnabled: dto.ScheduledReports.OnUploadEnabled,
 		},
 	}
@@ -734,6 +735,12 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 		dto.Facility = &EHRFacility{
 			Name: settings.Facility.Name,
 		}
+	}
+	if settings.ScheduledReports.Cadence != "" {
+		dto.ScheduledReports.Cadence = ScheduledReportsCadence(settings.ScheduledReports.Cadence)
+	} else {
+		// Default to 14 days
+		dto.ScheduledReports.Cadence = N14d
 	}
 
 	return dto
