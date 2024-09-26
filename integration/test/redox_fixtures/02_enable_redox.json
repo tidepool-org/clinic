@@ -15,5 +15,9 @@
     "cadence": "14d",
     "onUploadEnabled": true,
     "onUploadNoteEventType": "Replace"
+  },
+  "tags": {
+    "codes": ["PATIENT_TAGS"],
+    "separator": ","
   }
 }

@@ -680,9 +680,15 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 			Cadence: string(dto.ScheduledReports.Cadence),
 			OnUploadEnabled: dto.ScheduledReports.OnUploadEnabled,
 		},
+		Tags: clinics.TagsSettings{
+			Separator: dto.Tags.Separator,
+		},
 	}
 	if settings.ScheduledReports.OnUploadEnabled && dto.ScheduledReports.OnUploadNoteEventType != nil {
 		settings.ScheduledReports.OnUploadNoteEventType = strp(string(*dto.ScheduledReports.OnUploadNoteEventType))
+	}
+	if dto.Tags.Codes != nil {
+		settings.Tags.Codes = *dto.Tags.Codes
 	}
 	if dto.DestinationIds != nil {
 		settings.DestinationIds = &clinics.EHRDestinationIds{
@@ -719,6 +725,10 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 		ScheduledReports: ScheduledReports{
 			OnUploadEnabled: settings.ScheduledReports.OnUploadEnabled,
 		},
+		Tags: EHRTagsSettings{
+			Codes: &settings.Tags.Codes,
+			Separator: settings.Tags.Separator,
+		},
 	}
 	if settings.ScheduledReports.OnUploadNoteEventType != nil {
 		eventType := ScheduledReportsOnUploadNoteEventType(*settings.ScheduledReports.OnUploadNoteEventType)
@@ -742,7 +752,6 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 		// Default to 14 days
 		dto.ScheduledReports.Cadence = N14d
 	}
-
 	return dto
 }
 
