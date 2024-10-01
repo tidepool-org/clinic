@@ -919,7 +919,7 @@ type EHRSettingsProvider string
 
 // EHRTagsSettings This configuration only applies to integrations using Redox Data Model
 type EHRTagsSettings struct {
-	// Codes The code of the additional clinical info item of the order which will be used to select which tags to associate to the patient
+	// Codes The code of the additional clinical info item of the order which will be used to select which tags to associate to the patient. If this is defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
 	Codes *[]string `json:"codes,omitempty"`
 
 	// Separator If set to a non-empty string, the tag values will be split using this separator

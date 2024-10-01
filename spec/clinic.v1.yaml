@@ -4773,7 +4773,7 @@ components:
           type: array
           x-stoplight:
             id: fcr5es83pzi6r
-          description: The code of the additional clinical info item of the order which will be used to select which tags to associate to the patient
+          description: 'The code of the additional clinical info item of the order which will be used to select which tags to associate to the patient. If this is defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.'
           items:
             x-stoplight:
               id: h40mu6ujxknzf
