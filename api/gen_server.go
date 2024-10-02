@@ -142,9 +142,6 @@ type ServerInterface interface {
 	// Send Upload Reminder
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
 	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
-	// Generate Clinic Merge Report
-	// (POST /v1/clinics/{clinicId}/reports/merge)
-	GenerateMergeReport(ctx echo.Context, clinicId ClinicId) error
 	// Add Service Account
 	// (POST /v1/clinics/{clinicId}/service_accounts)
 	AddServiceAccount(ctx echo.Context, clinicId ClinicId) error
@@ -1608,18 +1605,18 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.coefficientOfVariationDelta: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateFrom" -------------
+	// ------------- Optional query parameter "cgm.lastDataFrom" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateFrom", ctx.QueryParams(), &params.CgmLastUploadDateFrom)
+	err = runtime.BindQueryParameter("form", true, false, "cgm.lastDataFrom", ctx.QueryParams(), &params.CgmLastDataFrom)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateFrom: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastDataFrom: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateTo" -------------
+	// ------------- Optional query parameter "cgm.lastDataTo" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
+	err = runtime.BindQueryParameter("form", true, false, "cgm.lastDataTo", ctx.QueryParams(), &params.CgmLastDataTo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastDataTo: %s", err))
 	}
 
 	// ------------- Optional query parameter "bgm.averageGlucoseMmolDelta" -------------
@@ -1748,18 +1745,18 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.totalRecordsDelta: %s", err))
 	}
 
-	// ------------- Optional query parameter "bgm.lastUploadDateFrom" -------------
+	// ------------- Optional query parameter "bgm.lastDataFrom" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "bgm.lastUploadDateFrom", ctx.QueryParams(), &params.BgmLastUploadDateFrom)
+	err = runtime.BindQueryParameter("form", true, false, "bgm.lastDataFrom", ctx.QueryParams(), &params.BgmLastDataFrom)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.lastUploadDateFrom: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.lastDataFrom: %s", err))
 	}
 
-	// ------------- Optional query parameter "bgm.lastUploadDateTo" -------------
+	// ------------- Optional query parameter "bgm.lastDataTo" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "bgm.lastUploadDateTo", ctx.QueryParams(), &params.BgmLastUploadDateTo)
+	err = runtime.BindQueryParameter("form", true, false, "bgm.lastDataTo", ctx.QueryParams(), &params.BgmLastDataTo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.lastUploadDateTo: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.lastDataTo: %s", err))
 	}
 
 	// ------------- Optional query parameter "tags" -------------
@@ -2112,24 +2109,6 @@ func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
 	return err
 }
 
-// GenerateMergeReport converts echo context to params.
-func (w *ServerInterfaceWrapper) GenerateMergeReport(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "clinicId" -------------
-	var clinicId ClinicId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
-	}
-
-	ctx.Set(SessionTokenScopes, []string{})
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GenerateMergeReport(ctx, clinicId)
-	return err
-}
-
 // AddServiceAccount converts echo context to params.
 func (w *ServerInterfaceWrapper) AddServiceAccount(ctx echo.Context) error {
 	var err error
@@ -2303,18 +2282,11 @@ func (w *ServerInterfaceWrapper) TideReport(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
 	}
 
-	// ------------- Optional query parameter "cgm.lastUploadDateFrom" -------------
+	// ------------- Optional query parameter "lastDataCutoff" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateFrom", ctx.QueryParams(), &params.CgmLastUploadDateFrom)
+	err = runtime.BindQueryParameter("form", true, false, "lastDataCutoff", ctx.QueryParams(), &params.LastDataCutoff)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateFrom: %s", err))
-	}
-
-	// ------------- Optional query parameter "cgm.lastUploadDateTo" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "cgm.lastUploadDateTo", ctx.QueryParams(), &params.CgmLastUploadDateTo)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastUploadDateTo: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter lastDataCutoff: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -2701,7 +2673,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.UpdatePatientReviews)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request", wrapper.SendDexcomConnectRequest)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
-	router.POST(baseURL+"/v1/clinics/:clinicId/reports/merge", wrapper.GenerateMergeReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/service_accounts", wrapper.AddServiceAccount)
 	router.GET(baseURL+"/v1/clinics/:clinicId/settings/ehr", wrapper.GetEHRSettings)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/ehr", wrapper.UpdateEHRSettings)

@@ -103,6 +103,7 @@ type FileLoader interface {
 	WithCapabilities(*ast.Capabilities) FileLoader
 	WithJSONOptions(*astJSON.Options) FileLoader
 	WithRegoVersion(ast.RegoVersion) FileLoader
+	WithFollowSymlinks(bool) FileLoader
 }
 
 // NewFileLoader returns a new FileLoader instance.
@@ -114,14 +115,15 @@ func NewFileLoader() FileLoader {
 }
 
 type fileLoader struct {
-	metrics    metrics.Metrics
-	filter     Filter
-	bvc        *bundle.VerificationConfig
-	skipVerify bool
-	files      map[string]bundle.FileInfo
-	opts       ast.ParserOptions
-	fsys       fs.FS
-	reader     io.Reader
+	metrics        metrics.Metrics
+	filter         Filter
+	bvc            *bundle.VerificationConfig
+	skipVerify     bool
+	files          map[string]bundle.FileInfo
+	opts           ast.ParserOptions
+	fsys           fs.FS
+	reader         io.Reader
+	followSymlinks bool
 }
 
 // WithFS provides an fs.FS to use for loading files. You can pass nil to
@@ -188,6 +190,12 @@ func (fl *fileLoader) WithRegoVersion(version ast.RegoVersion) FileLoader {
 	return fl
 }
 
+// WithFollowSymlinks enables or disables following symlinks when loading files
+func (fl *fileLoader) WithFollowSymlinks(followSymlinks bool) FileLoader {
+	fl.followSymlinks = followSymlinks
+	return fl
+}
+
 // All returns a Result object loaded (recursively) from the specified paths.
 func (fl fileLoader) All(paths []string) (*Result, error) {
 	return fl.Filtered(paths, nil)
@@ -239,6 +247,10 @@ func (fl fileLoader) AsBundle(path string) (*bundle.Bundle, error) {
 		return nil, err
 	}
 
+	if err := checkForUNCPath(path); err != nil {
+		return nil, err
+	}
+
 	var bundleLoader bundle.DirectoryLoader
 	var isDir bool
 	if fl.reader != nil {
@@ -246,9 +258,11 @@ func (fl fileLoader) AsBundle(path string) (*bundle.Bundle, error) {
 	} else {
 		bundleLoader, isDir, err = GetBundleDirectoryLoaderFS(fl.fsys, path, fl.filter)
 	}
+
 	if err != nil {
 		return nil, err
 	}
+	bundleLoader = bundleLoader.WithFollowSymlinks(fl.followSymlinks)
 
 	br := bundle.NewCustomReader(bundleLoader).
 		WithMetrics(fl.metrics).
@@ -257,6 +271,7 @@ func (fl fileLoader) AsBundle(path string) (*bundle.Bundle, error) {
 		WithProcessAnnotations(fl.opts.ProcessAnnotation).
 		WithCapabilities(fl.opts.Capabilities).
 		WithJSONOptions(fl.opts.JSONOptions).
+		WithFollowSymlinks(fl.followSymlinks).
 		WithRegoVersion(fl.opts.RegoVersion)
 
 	// For bundle directories add the full path in front of module file names
@@ -290,6 +305,10 @@ func GetBundleDirectoryLoaderWithFilter(path string, filter Filter) (bundle.Dire
 func GetBundleDirectoryLoaderFS(fsys fs.FS, path string, filter Filter) (bundle.DirectoryLoader, bool, error) {
 	path, err := fileurl.Clean(path)
 	if err != nil {
+		return nil, false, err
+	}
+
+	if err := checkForUNCPath(path); err != nil {
 		return nil, false, err
 	}
 
@@ -653,12 +672,18 @@ func allRec(fsys fs.FS, path string, filter Filter, errors *Errors, loaded *Resu
 		return
 	}
 
+	if err := checkForUNCPath(path); err != nil {
+		errors.add(err)
+		return
+	}
+
 	var info fs.FileInfo
 	if fsys != nil {
 		info, err = fs.Stat(fsys, path)
 	} else {
 		info, err = os.Stat(path)
 	}
+
 	if err != nil {
 		errors.add(err)
 		return
@@ -793,4 +818,20 @@ func makeDir(path []string, x interface{}) (map[string]interface{}, bool) {
 		return obj, true
 	}
 	return makeDir(path[:len(path)-1], map[string]interface{}{path[len(path)-1]: x})
+}
+
+// isUNC reports whether path is a UNC path.
+func isUNC(path string) bool {
+	return len(path) > 1 && isSlash(path[0]) && isSlash(path[1])
+}
+
+func isSlash(c uint8) bool {
+	return c == '\\' || c == '/'
+}
+
+func checkForUNCPath(path string) error {
+	if isUNC(path) {
+		return fmt.Errorf("UNC path read is not allowed: %s", path)
+	}
+	return nil
 }
