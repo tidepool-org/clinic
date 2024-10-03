@@ -267,14 +267,8 @@ paths:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateFrom
+          name: lastDataCutoff
           description: Inclusive
-        - schema:
-            type: string
-            format: date-time
-          in: query
-          name: cgm.lastUploadDateTo
-          description: Exclusive
   '/v1/clinics/{clinicId}/patients':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -755,13 +749,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateFrom
+          name: cgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateTo
+          name: cgm.lastDataTo
           description: Exclusive
         - schema:
             $ref: '#/components/schemas/FloatFilter'
@@ -857,13 +851,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: bgm.lastUploadDateFrom
+          name: bgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: bgm.lastUploadDateTo
+          name: bgm.lastDataTo
           description: Exclusive
         - schema:
             type: array
@@ -2170,24 +2164,6 @@ paths:
         - Clinics
         - Internal
       x-internal: true
-  '/v1/clinics/{clinicId}/reports/merge':
-    parameters:
-      - $ref: '#/components/parameters/clinicId'
-    post:
-      summary: Generate Clinic Merge Report
-      operationId: GenerateMergeReport
-      responses:
-        '200':
-          description: OK
-      description: Generates a spreadsheet report for merging two clinics
-      tags:
-        - Clinics
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GenerateMergeReport'
-        description: ''
 components:
   schemas:
     Error:
@@ -3372,10 +3348,7 @@ components:
           type: string
           pattern: ^(1d|7d|14d|30d)$
           example: 7d
-        lastUploadDateFrom:
-          type: string
-          format: date-time
-        lastUploadDateTo:
+        lastDataCutoff:
           type: string
           format: date-time
         highGlucoseThreshold:
@@ -3402,8 +3375,7 @@ components:
         - schemaVersion
         - clinicId
         - period
-        - lastUploadDateFrom
-        - lastUploadDateTo
+        - lastDataCutoff
         - highGlucoseThreshold
         - veryHighGlucoseThreshold
         - lowGlucoseThreshold
@@ -3532,6 +3504,9 @@ components:
           type: number
           example: 200
           x-go-type: int
+        lastData:
+          type: string
+          format: date-time
         patient:
           $ref: '#/components/schemas/TidePatient'
       required:
@@ -3547,6 +3522,7 @@ components:
         - timeInTargetPercent
         - timeCGMUsePercent
         - meetingTargets
+        - noData
       additionalProperties:
         type: array
         items:
@@ -4736,16 +4712,6 @@ components:
           default: New
       required:
         - onUploadEnabled
-    GenerateMergeReport:
-      title: GenerateMergeReport
-      x-stoplight:
-        id: 3oq18sasrzo0o
-      type: object
-      properties:
-        sourceId:
-          $ref: '#/components/schemas/Id'
-      required:
-        - sourceId
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token

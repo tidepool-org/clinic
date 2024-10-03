@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	CollectionName = "clinicians"
+	cliniciansCollectionName = "clinicians"
 )
 
 func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (*Repository, error) {
 	repo := &Repository{
-		collection: db.Collection(CollectionName),
+		collection: db.Collection(cliniciansCollectionName),
 		logger:     logger,
 	}
 
