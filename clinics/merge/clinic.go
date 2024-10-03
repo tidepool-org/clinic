@@ -6,6 +6,7 @@ import (
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
+	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -286,7 +287,7 @@ type ClinicPlanExecutor struct {
 func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) error {
 	logger := c.Logger.With("clinicId", plan.Source.Id.Hex(), "targetClinicId", plan.Target.Id.Hex())
 	if plan.PreventsMerge() {
-		err := fmt.Errorf("the merge plan does not allow execution")
+		err := fmt.Errorf("%w: the merge plan does not allow execution", errs.BadRequest)
 		logger.Errorw("cannot merge clinics", "error", err)
 		return err
 	}
