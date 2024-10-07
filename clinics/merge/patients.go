@@ -86,22 +86,25 @@ func (p PatientPlans) GetConflictCounts() map[string]int {
 }
 
 type PatientPlan struct {
-	SourceClinicId *primitive.ObjectID
-	TargetClinicId *primitive.ObjectID
+	SourceClinicId *primitive.ObjectID `bson:"sourceClinicId"`
+	TargetClinicId *primitive.ObjectID `bson:"targetClinicId"`
 
-	SourcePatient *patients.Patient
-	TargetPatient *patients.Patient
+	SourceClinicName string `bson:"sourceClinicName"`
+	TargetClinicName string `bson:"targetClinicName"`
 
-	Conflicts map[string][]Conflict
+	SourcePatient *patients.Patient `bson:"sourcePatient"`
+	TargetPatient *patients.Patient `bson:"targetPatient"`
 
-	PatientAction string
+	Conflicts map[string][]Conflict `bson:"conflicts"`
 
-	SourceTagNames []string
-	TargetTagNames []string
+	PatientAction string `bson:"patientAction"`
 
-	PostMigrationTagNames []string
+	SourceTagNames []string `bson:"sourceTagNames"`
+	TargetTagNames []string `bson:"targetTagNames"`
 
-	CanExecuteAction bool
+	PostMigrationTagNames []string `bson:"postMigrationTagNames"`
+
+	CanExecuteAction bool `bson:"canExecuteAction"`
 }
 
 func (p PatientPlan) HasConflicts() bool {
@@ -118,8 +121,8 @@ func (p PatientPlan) PreventsMerge() bool {
 }
 
 type Conflict struct {
-	Category string
-	Patient  patients.Patient
+	Category string           `bson:"category"`
+	Patient  patients.Patient `bson:"patient"`
 }
 
 type PatientMergePlanner struct {
@@ -153,9 +156,12 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	mergeTargetPatients := map[string]struct{}{}
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))
 	for _, patient := range p.sourcePatients {
+		sanitizePatient(&patient)
 		plan := PatientPlan{
 			SourceClinicId:   p.source.Id,
+			SourceClinicName: *p.source.Name,
 			TargetClinicId:   p.target.Id,
+			TargetClinicName: *p.target.Name,
 			SourcePatient:    &patient,
 			SourceTagNames:   getPatientTagNames(patient, p.sourceTags),
 			Conflicts:        make(map[string][]Conflict),
@@ -170,6 +176,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				return nil, err
 			}
 
+			sanitizePatient(target)
 			if conflictCategory == PatientConflictCategoryDuplicateAccounts {
 				mergeTargetPatients[userId] = struct{}{}
 				plan.PatientAction = PatientActionMerge
@@ -195,9 +202,12 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	}
 
 	for _, patient := range p.targetPatients {
+		sanitizePatient(&patient)
 		plan := PatientPlan{
 			SourceClinicId:   p.source.Id,
+			SourceClinicName: *p.source.Name,
 			TargetClinicId:   p.target.Id,
+			TargetClinicName: *p.target.Name,
 			TargetPatient:    &patient,
 			TargetTagNames:   getPatientTagNames(patient, p.targetTags),
 			CanExecuteAction: true,
@@ -240,6 +250,11 @@ func getPatientTagNames(patient patients.Patient, tags map[string]*clinics.Patie
 		return tagNames
 	}
 	return nil
+}
+
+// Do not persist summaries
+func sanitizePatient(patient *patients.Patient) {
+	patient.Summary = nil
 }
 
 type PatientPlanExecutor struct {
