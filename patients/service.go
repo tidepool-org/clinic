@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
 	"time"
 
@@ -14,33 +15,38 @@ import (
 )
 
 type service struct {
-	clinics          clinics.Service
-	repo             Repository
-	custodialService CustodialService
-	logger           *zap.SugaredLogger
+	dbClient *mongo.Client
+	logger   *zap.SugaredLogger
+
+	clinics             clinics.Service
+	custodialService     CustodialService
+	patientDeletionsRepo PatientDeletionsRepository
+	patientsRepo         Repository
 }
 
 var _ Service = &service{}
 
-func NewService(repo Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger) (Service, error) {
+func NewService(patientDeletions PatientDeletionsRepository, repo Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (Service, error) {
 	return &service{
-		clinics:          clinics,
-		repo:             repo,
-		custodialService: custodialService,
-		logger:           logger,
+		dbClient:             dbClient,
+		logger:               logger,
+		clinics:              clinics,
+		custodialService:     custodialService,
+		patientDeletionsRepo: patientDeletions,
+		patientsRepo:         repo,
 	}, nil
 }
 
 func (s *service) Get(ctx context.Context, clinicId string, userId string) (*Patient, error) {
-	return s.repo.Get(ctx, clinicId, userId)
+	return s.patientsRepo.Get(ctx, clinicId, userId)
 }
 
 func (s *service) Count(ctx context.Context, filter *Filter) (int, error) {
-	return s.repo.Count(ctx, filter)
+	return s.patientsRepo.Count(ctx, filter)
 }
 
 func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pagination, sorts []*store.Sort) (*ListResult, error) {
-	return s.repo.List(ctx, filter, pagination, sorts)
+	return s.patientsRepo.List(ctx, filter, pagination, sorts)
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
@@ -69,7 +75,7 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
 
-	result, err := s.repo.Create(ctx, patient)
+	result, err := s.patientsRepo.Create(ctx, patient)
 
 	s.updateClinicPatientCount(ctx, clinicId)
 
@@ -103,26 +109,56 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 	}
 
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
-	return s.repo.Update(ctx, update)
+	return s.patientsRepo.Update(ctx, update)
 }
 func (s *service) AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error) {
-	return s.repo.AddReview(ctx, clinicId, userId, review)
+	return s.patientsRepo.AddReview(ctx, clinicId, userId, review)
 }
 
 func (s *service) DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]Review, error) {
-	return s.repo.DeleteReview(ctx, clinicId, clinicianId, userId)
+	return s.patientsRepo.DeleteReview(ctx, clinicId, clinicianId, userId)
 }
 
 func (s *service) UpdateEmail(ctx context.Context, userId string, email *string) error {
 	s.logger.Infow("updating patient email", "userId", userId, "email", email)
-	return s.repo.UpdateEmail(ctx, userId, email)
+	return s.patientsRepo.UpdateEmail(ctx, userId, email)
 }
 
-func (s *service) Remove(ctx context.Context, clinicId string, userId string) error {
+func (s *service) Remove(ctx context.Context, clinicId string, userId string, clinicianId *string) error {
 	s.logger.Infow("deleting patient from clinic", "userId", userId, "clinicId", clinicId)
-	if err := s.repo.Remove(ctx, clinicId, userId); err != nil {
+	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		patient, err := s.patientsRepo.Get(sessionCtx, clinicId, userId)
+		if err != nil {
+			return nil, err
+		}
+		if patient == nil {
+			return nil, fmt.Errorf("unable to delete patient: %w", ErrNotFound)
+		}
+
+		err = s.patientsRepo.Remove(sessionCtx, clinicId, userId, clinicianId)
+		if err != nil {
+			return nil, err
+		}
+
+		deletion := PatientDeletion{
+			Patient:     *patient,
+			DeletedTime: time.Now(),
+			DeletedByUserId: clinicianId,
+		}
+
+		err = s.patientDeletionsRepo.Create(sessionCtx, deletion)
+		if err != nil {
+			return nil, fmt.Errorf("unable to persist deleted patient record: %w", err)
+		}
+
+		return nil, nil
+	}
+
+	_, err := store.WithTransaction(ctx, s.dbClient, transaction)
+	if err != nil {
 		return err
 	}
+
 	s.updateClinicPatientCount(ctx, clinicId)
 	return nil
 }
@@ -137,13 +173,13 @@ func (s *service) UpdatePermissions(ctx context.Context, clinicId, userId string
 			"deleting patient from clinic because the patient revoked all permissions",
 			"userId", userId, "clinicId", clinicId,
 		)
-		return nil, s.Remove(ctx, clinicId, userId)
+		return nil, s.Remove(ctx, clinicId, userId, &userId)
 	}
-	return s.repo.UpdatePermissions(ctx, clinicId, userId, permissions)
+	return s.patientsRepo.UpdatePermissions(ctx, clinicId, userId, permissions)
 }
 
 func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error) {
-	patient, err := s.repo.DeletePermission(ctx, clinicId, userId, permission)
+	patient, err := s.patientsRepo.DeletePermission(ctx, clinicId, userId, permission)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +188,7 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 			"deleting patient from clinic because the patient revoked all permissions",
 			"userId", userId, "clinicId", clinicId,
 		)
-		if err := s.Remove(ctx, clinicId, userId); err != nil {
+		if err := s.Remove(ctx, clinicId, userId, &userId); err != nil {
 			// the patient was removed by concurrent request which is not a problem,
 			// because it had to be removed as a result of the current operation
 			if errors.Is(err, ErrNotFound) {
@@ -167,7 +203,7 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 
 func (s *service) DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error) {
 	s.logger.Infow("deleting patients from all clinics", "userId", userId)
-	clinicIds, err := s.repo.DeleteFromAllClinics(ctx, userId)
+	clinicIds, err := s.patientsRepo.DeleteFromAllClinics(ctx, userId)
 	for _, clinicId := range clinicIds {
 		s.updateClinicPatientCount(ctx, clinicId)
 	}
@@ -177,7 +213,7 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, userId string) ([]st
 func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error) {
 	s.logger.Infow("deleting all non-custodial patient of clinic", "clinicId", clinicId)
 
-	deleted, err := s.repo.DeleteNonCustodialPatientsOfClinic(ctx, clinicId)
+	deleted, err := s.patientsRepo.DeleteNonCustodialPatientsOfClinic(ctx, clinicId)
 	if deleted {
 		s.updateClinicPatientCount(ctx, clinicId)
 	}
@@ -186,22 +222,22 @@ func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinic
 
 func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
 	s.logger.Infow("updating summaries for user", "userId", userId)
-	return s.repo.UpdateSummaryInAllClinics(ctx, userId, summary)
+	return s.patientsRepo.UpdateSummaryInAllClinics(ctx, userId, summary)
 }
 
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error) {
 	s.logger.Infow("updating last upload reminder time for user", "clinicId", update.ClinicId, "userId", update.UserId)
-	return s.repo.UpdateLastUploadReminderTime(ctx, update)
+	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)
 }
 
 func (s *service) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
 	s.logger.Infow("updating last requested dexcom connect time for user", "clinicId", update.ClinicId, "userId", update.UserId)
-	return s.repo.UpdateLastRequestedDexcomConnectTime(ctx, update)
+	return s.patientsRepo.UpdateLastRequestedDexcomConnectTime(ctx, update)
 }
 
 func (s *service) AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
 	s.logger.Infow("assigning tag to patients", "clinicId", clinicId, "tagId", tagId)
-	return s.repo.AssignPatientTagToClinicPatients(ctx, clinicId, tagId, patientIds)
+	return s.patientsRepo.AssignPatientTagToClinicPatients(ctx, clinicId, tagId, patientIds)
 }
 
 func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
@@ -211,12 +247,12 @@ func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinic
 	}
 
 	s.logger.Infow("deleting tag from patients", "clinicId", clinicId, "tagId", tagId, "target", target)
-	return s.repo.DeletePatientTagFromClinicPatients(ctx, clinicId, tagId, patientIds)
+	return s.patientsRepo.DeletePatientTagFromClinicPatients(ctx, clinicId, tagId, patientIds)
 }
 
 func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error {
 	s.logger.Infow("updating data sources for clinic patients", "userId", userId)
-	return s.repo.UpdatePatientDataSources(ctx, userId, dataSources)
+	return s.patientsRepo.UpdatePatientDataSources(ctx, userId, dataSources)
 }
 
 func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error {
@@ -238,17 +274,17 @@ func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId st
 	}
 
 	s.logger.Infow("updating patient subscription", "clinicId", clinicId, "userId", userId, "update", update)
-	return s.repo.UpdateEHRSubscription(ctx, clinicId, userId, update)
+	return s.patientsRepo.UpdateEHRSubscription(ctx, clinicId, userId, update)
 }
 
 func (s *service) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
 	s.logger.Infow("rescheduling all patient subscriptions", "subscription", subscription, "clinicId", clinicId)
-	return s.repo.RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection)
+	return s.patientsRepo.RescheduleLastSubscriptionOrderForAllPatients(ctx, clinicId, subscription, ordersCollection, targetCollection)
 }
 
 func (s *service) RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error {
 	s.logger.Infow("rescheduling patient subscriptions", "subscription", subscription, "clinicIds", strings.Join(clinicIds, ", "), "userId", userId)
-	return s.repo.RescheduleLastSubscriptionOrderForPatient(ctx, clinicIds, userId, subscription, ordersCollection, targetCollection)
+	return s.patientsRepo.RescheduleLastSubscriptionOrderForPatient(ctx, clinicIds, userId, subscription, ordersCollection, targetCollection)
 }
 
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, existingUserId *string, patient *Patient) error {
@@ -267,7 +303,7 @@ func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, exist
 				ClinicId: &clinicId,
 				Mrn:      patient.Mrn,
 			}
-			res, err := s.repo.List(ctx, filter, store.Pagination{Limit: 2, Offset: 0}, nil)
+			res, err := s.patientsRepo.List(ctx, filter, store.Pagination{Limit: 2, Offset: 0}, nil)
 			if err != nil {
 				return err
 			}
@@ -325,7 +361,7 @@ func (s *service) enforcePatientCountSettings(ctx context.Context, clinicId stri
 }
 
 func (s *service) updateClinicPatientCount(ctx context.Context, clinicId string) {
-	patientCount, err := s.repo.Count(ctx, &Filter{ClinicId: &clinicId, ExcludeDemo: true})
+	patientCount, err := s.patientsRepo.Count(ctx, &Filter{ClinicId: &clinicId, ExcludeDemo: true})
 	if err != nil {
 		s.logger.Errorw("error fetching clinic patient count", "error", err, "clinicId", clinicId)
 		return
@@ -359,7 +395,7 @@ func getUpdatedBy(update PatientUpdate) *string {
 }
 
 func (s *service) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
-	return s.repo.TideReport(ctx, clinicId, params)
+	return s.patientsRepo.TideReport(ctx, clinicId, params)
 }
 
 func mrnChanged(existing Patient, updated Patient) bool {

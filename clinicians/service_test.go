@@ -55,6 +55,7 @@ var _ = Describe("Clinicians Service", func() {
 					clinics.NewRepository,
 					clinicians.NewRepository,
 					clinicians.NewService,
+					patients.NewPatientDeletionsRepository,
 					patients.NewRepository,
 					patients.NewService,
 					patients.NewCustodialService,

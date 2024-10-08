@@ -200,17 +200,17 @@ func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination, sort interfa
 }
 
 // Remove mocks base method.
-func (m *MockRepository) Remove(ctx context.Context, clinicId, userId string) error {
+func (m *MockRepository) Remove(ctx context.Context, clinicId, userId string, deletedUserId *string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", ctx, clinicId, userId)
+	ret := m.ctrl.Call(m, "Remove", ctx, clinicId, userId, deletedUserId)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Remove indicates an expected call of Remove.
-func (mr *MockRepositoryMockRecorder) Remove(ctx, clinicId, userId interface{}) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) Remove(ctx, clinicId, userId, deletedUserId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockRepository)(nil).Remove), ctx, clinicId, userId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockRepository)(nil).Remove), ctx, clinicId, userId, deletedUserId)
 }
 
 // RescheduleLastSubscriptionOrderForAllPatients mocks base method.
