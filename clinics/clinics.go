@@ -116,6 +116,7 @@ type EHRSettings struct {
 	SourceId         string             `bson:"sourceId"`
 	MrnIdType        string             `bson:"mrnIdType"`
 	ScheduledReports ScheduledReports   `bson:"scheduledReports"`
+	Tags             TagsSettings        `bson:"tags"`
 }
 
 func (e *EHRSettings) GetMrnIDType() string {
@@ -143,6 +144,7 @@ type EHRProcedureCodes struct {
 }
 
 type ScheduledReports struct {
+	Cadence               string  `bson:"cadence"`
 	OnUploadEnabled       bool    `bson:"onUploadEnabled"`
 	OnUploadNoteEventType *string `bson:"onUploadNoteEventType"`
 }
@@ -150,6 +152,11 @@ type ScheduledReports struct {
 type MRNSettings struct {
 	Required bool `bson:"required"`
 	Unique   bool `bson:"unique"`
+}
+
+type TagsSettings struct {
+	Codes     []string `bson:"codes"`
+	Separator *string  `bson:"separator"`
 }
 
 type PatientCount struct {
