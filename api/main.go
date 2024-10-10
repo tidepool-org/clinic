@@ -151,7 +151,7 @@ func Dependencies() []fx.Option {
 			store.NewClient,
 			store.NewDatabase,
 			patients.NewRepository,
-			patients.NewPatientDeletionsRepository,
+			patients.NewDeletionsRepository,
 			patients.NewCustodialService,
 			patients.NewService,
 			redox.NewConfig,

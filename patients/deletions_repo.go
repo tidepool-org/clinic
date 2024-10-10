@@ -11,19 +11,19 @@ import (
 )
 
 const (
-	PatientDeletionsCollectionName = "patient_deletions"
+	DeletionsCollectionName = "patient_deletions"
 )
 
-//go:generate mockgen --build_flags=--mod=mod -source=./deleted_repo.go -destination=./test/mock_deleted_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockDeletedRepository
+//go:generate mockgen --build_flags=--mod=mod -source=./deletions_repo.go -destination=./test/mock_deletions_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockDeletionsRepository
 
 type PatientDeletionsRepository interface {
 	Create(context.Context, PatientDeletion) error
 }
 
 
-func NewPatientDeletionsRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (PatientDeletionsRepository, error) {
+func NewDeletionsRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (PatientDeletionsRepository, error) {
 	repo := &patientDeletionsRepository{
-		collection: db.Collection(PatientDeletionsCollectionName),
+		collection: db.Collection(DeletionsCollectionName),
 		logger:     logger,
 	}
 
@@ -66,6 +66,9 @@ func (p *patientDeletionsRepository) Initialize(ctx context.Context) error {
 func (p *patientDeletionsRepository) Create(ctx context.Context, deletion PatientDeletion) error {
 	if deletion.DeletedTime.IsZero() {
 		return fmt.Errorf("deleted time cannot be zero")
+	}
+	if deletion.Patient.UserId == nil {
+		return fmt.Errorf("patient user id cannot be nil")
 	}
 	if _, err := p.collection.InsertOne(ctx, deletion); err != nil {
 		return fmt.Errorf("error persisting deleted patient: %w", err)

@@ -124,7 +124,7 @@ func (s *service) UpdateEmail(ctx context.Context, userId string, email *string)
 	return s.patientsRepo.UpdateEmail(ctx, userId, email)
 }
 
-func (s *service) Remove(ctx context.Context, clinicId string, userId string, clinicianId *string) error {
+func (s *service) Remove(ctx context.Context, clinicId string, userId string, deletedByUserId *string) error {
 	s.logger.Infow("deleting patient from clinic", "userId", userId, "clinicId", clinicId)
 	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
 		patient, err := s.patientsRepo.Get(sessionCtx, clinicId, userId)
@@ -135,7 +135,7 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, cl
 			return nil, fmt.Errorf("unable to delete patient: %w", ErrNotFound)
 		}
 
-		err = s.patientsRepo.Remove(sessionCtx, clinicId, userId, clinicianId)
+		err = s.patientsRepo.Remove(sessionCtx, clinicId, userId, deletedByUserId)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +143,7 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, cl
 		deletion := PatientDeletion{
 			Patient:     *patient,
 			DeletedTime: time.Now(),
-			DeletedByUserId: clinicianId,
+			DeletedByUserId: deletedByUserId,
 		}
 
 		err = s.patientDeletionsRepo.Create(sessionCtx, deletion)

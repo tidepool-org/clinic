@@ -29,7 +29,7 @@ var _ = Describe("Patient Deletions Repository", func() {
 		database = dbTest.GetTestDatabase()
 		collection = database.Collection("patient_deletions")
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repo, err = patients.NewPatientDeletionsRepository(database, zap.NewNop().Sugar(), lifecycle)
+		repo, err = patients.NewDeletionsRepository(database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repo).ToNot(BeNil())
 		lifecycle.RequireStart()

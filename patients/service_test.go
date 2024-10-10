@@ -3,7 +3,7 @@ package patients_test
 import (
 	"context"
 	"fmt"
-	test2 "github.com/tidepool-org/clinic/store/test"
+
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -15,6 +15,7 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	clinicStoreTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -29,20 +30,20 @@ var _ = Describe("Patients Service", func() {
 	var clinicsService *clinicsTest.MockService
 	var repo *patientsTest.MockRepository
 	var deletionsRepo *patientsTest.MockDeletedPatientsRepository
-	var deletedRepoCtrl *gomock.Controller
+	var deletionsRepoCtrl *gomock.Controller
 	var repoCtrl *gomock.Controller
 	var clinicsCtrl *gomock.Controller
 
 	BeforeEach(func() {
-		deletedRepoCtrl = gomock.NewController(GinkgoT())
+		deletionsRepoCtrl = gomock.NewController(GinkgoT())
 		repoCtrl = gomock.NewController(GinkgoT())
 		clinicsCtrl = gomock.NewController(GinkgoT())
 
-		deletionsRepo = patientsTest.NewMockDeletedPatientsRepository(deletedRepoCtrl)
+		deletionsRepo = patientsTest.NewMockDeletedPatientsRepository(deletionsRepoCtrl)
 		repo = patientsTest.NewMockRepository(repoCtrl)
 		clinicsService = clinicsTest.NewMockService(clinicsCtrl)
 
-		client := test2.GetTestDatabase().Client()
+		client := clinicStoreTest.GetTestDatabase().Client()
 
 		var err error
 		service, err = patients.NewService(deletionsRepo, repo, clinicsService, nil, zap.NewNop().Sugar(), client)

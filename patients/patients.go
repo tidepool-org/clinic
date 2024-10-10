@@ -48,7 +48,7 @@ type Service interface {
 	AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error)
 	DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]Review, error)
 	UpdateEmail(ctx context.Context, userId string, email *string) error
-	Remove(ctx context.Context, clinicId string, userId string, deletedUserId *string) error
+	Remove(ctx context.Context, clinicId string, userId string, deletedByUserId *string) error
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
 	DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error)
