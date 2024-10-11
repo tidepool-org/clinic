@@ -29,7 +29,7 @@ var _ = Describe("Patients Service", func() {
 	var service patients.Service
 	var clinicsService *clinicsTest.MockService
 	var repo *patientsTest.MockRepository
-	var deletionsRepo *patientsTest.MockDeletedPatientsRepository
+	var deletionsRepo *patientsTest.MockDeletionsRepository
 	var deletionsRepoCtrl *gomock.Controller
 	var repoCtrl *gomock.Controller
 	var clinicsCtrl *gomock.Controller
@@ -39,7 +39,7 @@ var _ = Describe("Patients Service", func() {
 		repoCtrl = gomock.NewController(GinkgoT())
 		clinicsCtrl = gomock.NewController(GinkgoT())
 
-		deletionsRepo = patientsTest.NewMockDeletedPatientsRepository(deletionsRepoCtrl)
+		deletionsRepo = patientsTest.NewMockDeletionsRepository(deletionsRepoCtrl)
 		repo = patientsTest.NewMockRepository(repoCtrl)
 		clinicsService = clinicsTest.NewMockService(clinicsCtrl)
 

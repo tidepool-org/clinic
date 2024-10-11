@@ -20,7 +20,7 @@ import (
 
 
 var _ = Describe("Patient Deletions Repository", func() {
-	var repo patients.PatientDeletionsRepository
+	var repo patients.DeletionsRepository
 	var database *mongo.Database
 	var collection *mongo.Collection
 
@@ -37,13 +37,13 @@ var _ = Describe("Patient Deletions Repository", func() {
 
 	Describe("Create", func() {
 		var clinician shoreline.UserData
-		var deletion patients.PatientDeletion
+		var deletion patients.Deletion
 		var matchPatientFields types.GomegaMatcher
 
 		BeforeEach(func() {
 			clinician = patientsTest.RandomUser()
 			patientId := primitive.NewObjectID()
-			deletion = patients.PatientDeletion{
+			deletion = patients.Deletion{
 				Patient:       patientsTest.RandomPatient(),
 				DeletedTime:   time.Now(),
 				DeletedByUserId: &clinician.UserID,
@@ -56,7 +56,7 @@ var _ = Describe("Patient Deletions Repository", func() {
 			err := repo.Create(context.Background(), deletion)
 			Expect(err).ToNot(HaveOccurred())
 
-			var result patients.PatientDeletion
+			var result patients.Deletion
 			err = collection.FindOne(context.Background(), bson.M{
 				"patient._id": deletion.Patient.Id,
 			}).Decode(&result)

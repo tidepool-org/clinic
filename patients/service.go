@@ -19,21 +19,21 @@ type service struct {
 	logger   *zap.SugaredLogger
 
 	clinics             clinics.Service
-	custodialService     CustodialService
-	patientDeletionsRepo PatientDeletionsRepository
-	patientsRepo         Repository
+	custodialService CustodialService
+	deletionsRepo    DeletionsRepository
+	patientsRepo     Repository
 }
 
 var _ Service = &service{}
 
-func NewService(patientDeletions PatientDeletionsRepository, repo Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (Service, error) {
+func NewService(deletionsRepo DeletionsRepository, repo Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (Service, error) {
 	return &service{
-		dbClient:             dbClient,
-		logger:               logger,
-		clinics:              clinics,
-		custodialService:     custodialService,
-		patientDeletionsRepo: patientDeletions,
-		patientsRepo:         repo,
+		dbClient:         dbClient,
+		logger:           logger,
+		clinics:          clinics,
+		custodialService: custodialService,
+		deletionsRepo:    deletionsRepo,
+		patientsRepo:     repo,
 	}, nil
 }
 
@@ -140,13 +140,13 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, de
 			return nil, err
 		}
 
-		deletion := PatientDeletion{
+		deletion := Deletion{
 			Patient:     *patient,
 			DeletedTime: time.Now(),
 			DeletedByUserId: deletedByUserId,
 		}
 
-		err = s.patientDeletionsRepo.Create(sessionCtx, deletion)
+		err = s.deletionsRepo.Create(sessionCtx, deletion)
 		if err != nil {
 			return nil, fmt.Errorf("unable to persist deleted patient record: %w", err)
 		}

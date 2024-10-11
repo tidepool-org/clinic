@@ -61,11 +61,11 @@ var _ = Describe("Clinics Manager", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsRepo).ToNot(BeNil())
 
-		patientDeletionsRepo, err := patients.NewDeletionsRepository(database, lgr, lifecycle)
+		deletionsRepo, err := patients.NewDeletionsRepository(database, lgr, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(patientDeletionsRepo).ToNot(BeNil())
+		Expect(deletionsRepo).ToNot(BeNil())
 
-		patientsService, err = patients.NewService(patientDeletionsRepo, patientsRepo, clinicsRepo, nil, lgr, database.Client())
+		patientsService, err = patients.NewService(deletionsRepo, patientsRepo, clinicsRepo, nil, lgr, database.Client())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsService).ToNot(BeNil())
 

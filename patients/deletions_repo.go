@@ -16,13 +16,13 @@ const (
 
 //go:generate mockgen --build_flags=--mod=mod -source=./deletions_repo.go -destination=./test/mock_deletions_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockDeletionsRepository
 
-type PatientDeletionsRepository interface {
-	Create(context.Context, PatientDeletion) error
+type DeletionsRepository interface {
+	Create(context.Context, Deletion) error
 }
 
 
-func NewDeletionsRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (PatientDeletionsRepository, error) {
-	repo := &patientDeletionsRepository{
+func NewDeletionsRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (DeletionsRepository, error) {
+	repo := &deletionsRepository{
 		collection: db.Collection(DeletionsCollectionName),
 		logger:     logger,
 	}
@@ -36,12 +36,12 @@ func NewDeletionsRepository(db *mongo.Database, logger *zap.SugaredLogger, lifec
 	return repo, nil
 }
 
-type patientDeletionsRepository struct {
+type deletionsRepository struct {
 	collection *mongo.Collection
 	logger     *zap.SugaredLogger
 }
 
-func (p *patientDeletionsRepository) Initialize(ctx context.Context) error {
+func (p *deletionsRepository) Initialize(ctx context.Context) error {
 	_, err := p.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
@@ -63,7 +63,7 @@ func (p *patientDeletionsRepository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (p *patientDeletionsRepository) Create(ctx context.Context, deletion PatientDeletion) error {
+func (p *deletionsRepository) Create(ctx context.Context, deletion Deletion) error {
 	if deletion.DeletedTime.IsZero() {
 		return fmt.Errorf("deleted time cannot be zero")
 	}

@@ -94,7 +94,7 @@ func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
 }
 
-type PatientDeletion struct {
+type Deletion struct {
 	Id              *primitive.ObjectID `bson:"_id,omitempty"`
 	Patient         Patient             `bson:"patient"`
 	DeletedTime     time.Time           `bson:"deletedTime,omitempty"`
