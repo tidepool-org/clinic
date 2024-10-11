@@ -170,7 +170,7 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 	return patient, nil
 }
 
-func (r *repository) Remove(ctx context.Context, clinicId string, userId string) error {
+func (r *repository) Remove(ctx context.Context, clinicId string, userId string, _ *string) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,

@@ -147,7 +147,7 @@ func (c *manager) DeleteClinic(ctx context.Context, clinicId string) error {
 			return nil, fmt.Errorf("%w: deletion of non-empty clinics is not allowed", errors.BadRequest)
 		}
 
-		if err := c.patientsService.Remove(sessionCtx, clinicId, c.config.ClinicDemoPatientUserId); err != nil && !errs.Is(err, errors.NotFound) {
+		if err := c.patientsService.Remove(sessionCtx, clinicId, c.config.ClinicDemoPatientUserId, nil); err != nil && !errs.Is(err, errors.NotFound) {
 			return nil, err
 		}
 

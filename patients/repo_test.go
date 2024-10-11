@@ -383,7 +383,7 @@ var _ = Describe("Patients Repository", func() {
 
 		Describe("Remove", func() {
 			It("removes the correct patient from the collection", func() {
-				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				res := collection.FindOne(context.Background(), bson.M{"$and": []bson.M{{"userId": randomPatient.UserId}, {"clinicId": randomPatient.ClinicId}}})
