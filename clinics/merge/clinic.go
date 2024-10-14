@@ -154,7 +154,7 @@ func (m *ClinicMergePlanner) TagsMergePlan(source, target clinics.Clinic) ([]Pla
 	return plans, nil
 }
 
-func (m *ClinicMergePlanner) PatientsMergePlan(ctx context.Context, source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) (Planner[PatientPlans], error) {
+func (m *ClinicMergePlanner) PatientsMergePlan(_ context.Context, source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) (Planner[PatientPlans], error) {
 	return NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 }
 
@@ -315,7 +315,7 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		}
 
 		logger.Info("starting patients migration")
-		ppe := NewPatientPlanExecutor(logger, c.DB)
+		ppe := NewPatientPlanExecutor(logger, c.ClinicsService, c.DB)
 		for _, p := range plan.PatientPlans {
 			if err := ppe.Execute(ctx, p, plan.Source, plan.Target); err != nil {
 				return nil, err

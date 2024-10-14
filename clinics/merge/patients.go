@@ -258,18 +258,29 @@ func sanitizePatient(patient *patients.Patient) {
 }
 
 type PatientPlanExecutor struct {
-	logger             *zap.SugaredLogger
+	clinicsService clinics.Service
 	patientsCollection *mongo.Collection
+
+	logger             *zap.SugaredLogger
 }
 
-func NewPatientPlanExecutor(logger *zap.SugaredLogger, db *mongo.Database) *PatientPlanExecutor {
+func NewPatientPlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Service, db *mongo.Database) *PatientPlanExecutor {
 	return &PatientPlanExecutor{
-		logger:             logger,
+		clinicsService: clinicsService,
 		patientsCollection: db.Collection(patients.CollectionName),
+
+		logger:             logger,
 	}
 }
 
 func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, source, target clinics.Clinic) error {
+	// Fetch the updated clinic object to make sure we are capturing
+	// the tags that were migrated from the source clinic
+	updated, err := p.clinicsService.Get(ctx, target.Id.Hex())
+	if err != nil {
+		return err
+	}
+
 	switch plan.PatientAction {
 	case PatientActionMove:
 		p.logger.Infow(
@@ -278,7 +289,7 @@ func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, sou
 			"userId", plan.SourcePatient.UserId,
 			"targetClinicId", target.Id.Hex(),
 		)
-		return p.movePatient(ctx, plan, target)
+		return p.movePatient(ctx, plan, *updated)
 	case PatientActionMerge:
 		p.logger.Infow(
 			"merging patient",
@@ -287,7 +298,7 @@ func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, sou
 			"targetClinicId", target.Id.Hex(),
 			"targetUserId", *plan.TargetPatient.UserId,
 		)
-		return p.mergePatient(ctx, plan, target)
+		return p.mergePatient(ctx, plan, *updated)
 	case PatientActionRetain:
 		p.logger.Infow(
 			"retaining patient",

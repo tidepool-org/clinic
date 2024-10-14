@@ -3,12 +3,14 @@ package merge_test
 import (
 	"context"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson"
@@ -134,10 +136,15 @@ var _ = Describe("New Merge Planner", func() {
 	Describe("Executor", func() {
 		var executor *merge.PatientPlanExecutor
 		var collection *mongo.Collection
+		var updated clinics.Clinic
 
 		BeforeEach(func() {
 			db := test.GetTestDatabase()
-			executor = merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), db)
+
+			clinicsCtrl := gomock.NewController(GinkgoT())
+			clinicsService := clinicsTest.NewMockService(clinicsCtrl)
+
+			executor = merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), clinicsService, db)
 			collection = db.Collection("patients")
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
 			defer cancel()
@@ -155,10 +162,24 @@ var _ = Describe("New Merge Planner", func() {
 			Expect(res.InsertedIDs).To(HaveLen(len(documents)))
 
 			// The executor expects tags to be migrated before the patients
+			updated = target
+			updated.PatientTags = nil
+
+			// Retain target tag ids
+			for _, tag := range target.PatientTags {
+				updated.PatientTags = append(updated.PatientTags, tag)
+			}
+
+			// Recreate source tags in target clinic as if they were migrated
 			for _, tag := range source.PatientTags {
 				id := primitive.NewObjectID()
-				target.PatientTags = append(target.PatientTags, clinics.PatientTag{Id: &id, Name: tag.Name})
+				updated.PatientTags = append(updated.PatientTags, clinics.PatientTag{Id: &id, Name: tag.Name})
 			}
+
+			clinicsService.EXPECT().
+				Get(gomock.Any(), target.Id.Hex()).
+				Return(&updated, nil).
+				AnyTimes()
 
 			var errs []error
 			for _, plan := range plans {
@@ -193,6 +214,11 @@ var _ = Describe("New Merge Planner", func() {
 			for _, tag := range source.PatientTags {
 				sourceTagsById[tag.Id.Hex()] = tag
 			}
+			updatedClinicTagsById := make(map[string]clinics.PatientTag)
+			for _, tag := range updated.PatientTags {
+				updatedClinicTagsById[tag.Id.Hex()] = tag
+			}
+
 			for _, patient := range sourcePatients {
 				targetPatient, ok := targetPatientsWithDuplicates[*patient.UserId]
 				if !ok {
@@ -208,9 +234,7 @@ var _ = Describe("New Merge Planner", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Tags).ToNot(BeNil())
 
-
 				expectedTagNames := mapset.NewSet[string]()
-
 				for _, tagId := range *patient.Tags {
 					expectedTagNames.Append(sourceTagsById[tagId.Hex()].Name)
 				}
@@ -218,9 +242,9 @@ var _ = Describe("New Merge Planner", func() {
 					expectedTagNames.Append(targetTagsById[tagId.Hex()].Name)
 				}
 
-				resultTagNames := make([]string, 0, len(*patient.Tags))
+				resultTagNames := make([]string, 0, len(*result.Tags))
 				for _, tagId := range *result.Tags {
-					resultTagNames = append(resultTagNames, targetTagsById[tagId.Hex()].Name)
+					resultTagNames = append(resultTagNames, updatedClinicTagsById[tagId.Hex()].Name)
 				}
 
 				Expect(resultTagNames).To(ConsistOf(expectedTagNames.ToSlice()))
