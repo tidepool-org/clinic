@@ -2,9 +2,8 @@ package patients_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"strings"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -20,6 +19,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
+	"strings"
+	"time"
 )
 
 var DemoPatientId = "demo"
@@ -1344,6 +1345,90 @@ var _ = Describe("Patients Repository", func() {
 				Expect(result).To(BeNil())
 			})
 		})
+
+		Describe("Add Reviews", func() {
+			It("correctly adds review", func() {
+				clinicianId := test.Faker.UUID().V4()
+				ts := time.Now().UTC().Truncate(time.Millisecond)
+
+				review := patients.Review{
+					ClinicianId: clinicianId,
+					Time:        ts,
+				}
+
+				reviews, err := repo.AddReview(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, review)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(reviews)).To(Equal(1))
+				Expect(reviews[0]).To(BeComparableTo(review))
+			})
+
+			It("correctly adds multiple reviews", func() {
+				limit := 2
+				clinicianId := test.Faker.UUID().V4()
+				ts := time.Now().UTC().Truncate(time.Millisecond)
+
+				reviews := make([]patients.Review, limit+1)
+				for i := 0; i < len(reviews); i++ {
+					By(fmt.Sprintf("inserting review %d", i+1))
+					reviews[i] = patients.Review{
+						ClinicianId: clinicianId,
+						Time:        ts.Add(time.Hour * time.Duration(i)),
+					}
+
+					results, err := repo.AddReview(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, reviews[i])
+					Expect(err).ToNot(HaveOccurred())
+					Expect(results[0]).To(BeComparableTo(reviews[i]))
+
+					if i+1 >= limit {
+						Expect(len(results)).To(Equal(limit))
+					} else {
+						Expect(len(results)).To(Equal(i + 1))
+					}
+				}
+			})
+
+			Describe("Delete Reviews", func() {
+				It("correctly deletes review", func() {
+					clinicianId := test.Faker.UUID().V4()
+					ts := time.Now().UTC().Truncate(time.Millisecond)
+
+					reviews := make([]patients.Review, 2)
+					for i := 0; i < len(reviews); i++ {
+						By(fmt.Sprintf("inserting review %d", i+1))
+						reviews[i] = patients.Review{
+							ClinicianId: clinicianId,
+							Time:        ts.Add(time.Hour * time.Duration(i)),
+						}
+
+						_, err := repo.AddReview(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, reviews[i])
+						Expect(err).ToNot(HaveOccurred())
+					}
+
+					results, err := repo.DeleteReview(context.Background(), randomPatient.ClinicId.Hex(), clinicianId, *randomPatient.UserId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(results)).To(Equal(1))
+					Expect(results[0]).To(Equal(reviews[0]))
+				})
+
+				It("correctly fails to delete non-owner review", func() {
+					clinicianId := test.Faker.UUID().V4()
+					ts := time.Now().UTC().Truncate(time.Millisecond)
+
+					review := patients.Review{
+						ClinicianId: clinicianId,
+						Time:        ts,
+					}
+
+					results, err := repo.AddReview(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, review)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(results)).To(Equal(1))
+
+					results, err = repo.DeleteReview(context.Background(), randomPatient.ClinicId.Hex(), "nobody", *randomPatient.UserId)
+					Expect(err).To(HaveOccurred())
+					Expect(errors.Is(err, patients.ErrReviewNotOwner)).To(BeTrue())
+				})
+			})
+		})
 	})
 
 })
@@ -1366,6 +1451,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"CreatedTime":                    Ignore(),
 		"InvitedBy":                      Ignore(),
 		"Summary":                        Ignore(),
+		"Reviews":                        Ignore(),
 		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
 		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),

@@ -334,6 +334,72 @@ func (r *repository) UpdateEmail(ctx context.Context, userId string, email *stri
 	return err
 }
 
+func (r *repository) AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId":   userId,
+	}
+
+	update := bson.M{
+		"$push": bson.M{
+			"reviews": bson.M{
+				"$each":     []Review{review},
+				"$position": 0,
+				"$slice":    2,
+			},
+		},
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	patient := Patient{}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return patient.Reviews, nil
+}
+
+func (r *repository) DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]Review, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId":              clinicObjId,
+		"userId":                userId,
+		"reviews.0.clinicianId": clinicianId,
+	}
+
+	update := bson.M{"$pop": bson.M{"reviews": -1}}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	opts.SetProjection(bson.M{"reviews": 1})
+
+	patient := Patient{}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
+	if err != nil {
+		// This checking is after the fact to avoid get-modify-update race
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			err = r.collection.FindOne(ctx, bson.M{"clinicId": clinicObjId, "userId": userId}).Decode(&patient)
+			if err != nil {
+				if errors.Is(err, mongo.ErrNoDocuments) {
+					return nil, ErrNotFound
+				}
+				return nil, err
+			}
+
+			if patient.Reviews[0].ClinicianId != clinicianId {
+				return nil, ErrReviewNotOwner
+			}
+
+		}
+		return nil, err
+	}
+	return patient.Reviews, nil
+}
+
 func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
@@ -848,6 +914,10 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 		}
 	}
 
+	if filter.LastReviewed != nil {
+		selector["reviews.0.time"] = bson.M{"$lte": filter.LastReviewed}
+	}
+
 	if f, ok := filter.CGMTime["lastUploadDate"]; ok {
 		cgmLastUploadDate := bson.M{}
 
@@ -1160,6 +1230,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 					FullName: patient.FullName,
 					Id:       patient.UserId,
 					Tags:     &patientTags,
+					Reviews:  patient.Reviews,
 				},
 				AverageGlucoseMmol:         patient.Summary.CGM.Periods[*params.Period].AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.Summary.CGM.Periods[*params.Period].GlucoseManagementIndicator,
@@ -1229,6 +1300,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 					FullName: patient.FullName,
 					Id:       patient.UserId,
 					Tags:     &patientTags,
+					Reviews:  patient.Reviews,
 				},
 				AverageGlucoseMmol:         patient.Summary.CGM.Periods[*params.Period].AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.Summary.CGM.Periods[*params.Period].GlucoseManagementIndicator,
