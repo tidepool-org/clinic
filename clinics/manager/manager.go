@@ -162,9 +162,7 @@ func (c *manager) FinalizeMerge(ctx context.Context, sourceId, targetId string) 
 	}
 
 	// Refresh patient count of target clinic
-	_, err = c.GetClinicPatientCount(ctx, targetId)
-
-	return err
+	return c.refreshPatientCount(ctx, targetId)
 }
 
 func (c *manager) GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error) {
@@ -186,6 +184,16 @@ func (c *manager) GetClinicPatientCount(ctx context.Context, clinicId string) (*
 	}
 
 	return patientCount, nil
+}
+
+func (c *manager) refreshPatientCount(ctx context.Context, clinicId string) error {
+	count, err := c.patientsService.Count(ctx, &patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})
+	if err != nil {
+		return err
+	}
+
+	patientCount := &clinics.PatientCount{PatientCount: count}
+	return c.clinics.UpdatePatientCount(ctx, clinicId, patientCount)
 }
 
 // Creates a clinic document in mongo and retries if there is a violation of the unique share code constraint
