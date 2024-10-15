@@ -38,7 +38,7 @@ func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
 		filter.EHREnabled = params.EhrEnabled
 	}
 
-	list, err := h.clinics.List(ctx, &filter, page)
+	list, err := h.Clinics.List(ctx, &filter, page)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 		CreateDemoPatient: true,
 	}
 
-	result, err := h.clinicsManager.CreateClinic(ctx, &create)
+	result, err := h.ClinicsManager.CreateClinic(ctx, &create)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 
 func (h *Handler) GetClinic(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	clinic, err := h.clinics.Get(ctx, string(clinicId))
+	clinic, err := h.Clinics.Get(ctx, string(clinicId))
 	if err != nil {
 		return err
 	}
@@ -97,14 +97,14 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
-	result, err := h.clinics.Update(ctx, string(clinicId), NewClinic(dto))
+	result, err := h.Clinics.Update(ctx, string(clinicId), NewClinic(dto))
 	if err != nil {
 		return err
 	}
 
 	// Update patient count settings if the country has changed
 	if result.UpdatePatientCountSettingsForCountry() {
-		if err := h.clinics.UpdatePatientCountSettings(ctx, clinicId, result.PatientCountSettings); err != nil {
+		if err := h.Clinics.UpdatePatientCountSettings(ctx, clinicId, result.PatientCountSettings); err != nil {
 			return err
 		}
 	}
@@ -114,7 +114,7 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) DeleteClinic(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	err := h.clinicsManager.DeleteClinic(ctx, string(clinicId))
+	err := h.ClinicsManager.DeleteClinic(ctx, string(clinicId))
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (h *Handler) GetClinicByShareCode(ec echo.Context, shareCode string) error 
 		ShareCodes: []string{shareCode},
 	}
 
-	list, err := h.clinics.List(ctx, &filter, store.Pagination{Limit: 2})
+	list, err := h.Clinics.List(ctx, &filter, store.Pagination{Limit: 2})
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (h *Handler) GetClinicByShareCode(ec echo.Context, shareCode string) error 
 
 func (h *Handler) TriggerInitialMigration(ec echo.Context, clinicId string) error {
 	ctx := ec.Request().Context()
-	migration, err := h.clinicsMigrator.TriggerInitialMigration(ctx, clinicId)
+	migration, err := h.ClinicsMigrator.TriggerInitialMigration(ctx, clinicId)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (h *Handler) TriggerInitialMigration(ec echo.Context, clinicId string) erro
 
 func (h *Handler) ListMigrations(ec echo.Context, clinicId string) error {
 	ctx := ec.Request().Context()
-	migrations, err := h.clinicsMigrator.ListMigrations(ctx, clinicId)
+	migrations, err := h.ClinicsMigrator.ListMigrations(ctx, clinicId)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (h *Handler) MigrateLegacyClinicianPatients(ec echo.Context, clinicId strin
 		return err
 	}
 
-	migration, err := h.clinicsMigrator.MigrateLegacyClinicianPatients(ctx, clinicId, dto.UserId)
+	migration, err := h.ClinicsMigrator.MigrateLegacyClinicianPatients(ctx, clinicId, dto.UserId)
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func (h *Handler) MigrateLegacyClinicianPatients(ec echo.Context, clinicId strin
 func (h *Handler) GetMigration(ec echo.Context, clinicId Id, userId UserId) error {
 	ctx := ec.Request().Context()
 
-	migration, err := h.clinicsMigrator.GetMigration(ctx, string(clinicId), string(userId))
+	migration, err := h.ClinicsMigrator.GetMigration(ctx, string(clinicId), string(userId))
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func (h *Handler) UpdateMigration(ec echo.Context, clinicId Id, userId UserId) e
 		return err
 	}
 
-	migration, err := h.clinicsMigrator.UpdateMigrationStatus(ctx, string(clinicId), string(userId), string(dto.Status))
+	migration, err := h.ClinicsMigrator.UpdateMigrationStatus(ctx, string(clinicId), string(userId), string(dto.Status))
 	if err != nil {
 		return err
 	}
@@ -209,10 +209,10 @@ func (h *Handler) UpdateMigration(ec echo.Context, clinicId Id, userId UserId) e
 
 func (h *Handler) DeleteUserFromClinics(ec echo.Context, userId UserId) error {
 	ctx := ec.Request().Context()
-	if _, err := h.patients.DeleteFromAllClinics(ctx, string(userId)); err != nil {
+	if _, err := h.Patients.DeleteFromAllClinics(ctx, string(userId)); err != nil {
 		return err
 	}
-	if err := h.clinicians.DeleteFromAllClinics(ctx, string(userId)); err != nil {
+	if err := h.Clinicians.DeleteFromAllClinics(ctx, string(userId)); err != nil {
 		return err
 	}
 
@@ -235,12 +235,12 @@ func (h *Handler) UpdateClinicUserDetails(ec echo.Context, userId UserId) error 
 			UserId: id,
 			Email:  *email,
 		}
-		if err := h.clinicians.UpdateAll(ctx, update); err != nil {
+		if err := h.Clinicians.UpdateAll(ctx, update); err != nil {
 			return err
 		}
 	}
 
-	if err := h.patients.UpdateEmail(ctx, id, email); err != nil {
+	if err := h.Patients.UpdateEmail(ctx, id, email); err != nil {
 		return err
 	}
 
@@ -254,7 +254,7 @@ func (h *Handler) UpdateTier(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	if err := h.clinics.UpdateTier(ctx, string(clinicId), string(dto.Tier)); err != nil {
+	if err := h.Clinics.UpdateTier(ctx, string(clinicId), string(dto.Tier)); err != nil {
 		return err
 	}
 
@@ -268,7 +268,7 @@ func (h *Handler) UpdateSuppressedNotifications(ec echo.Context, clinicId Clinic
 		return err
 	}
 
-	if err := h.clinics.UpdateSuppressedNotifications(ctx, string(clinicId), clinics.SuppressedNotifications(dto.SuppressedNotifications)); err != nil {
+	if err := h.Clinics.UpdateSuppressedNotifications(ctx, string(clinicId), clinics.SuppressedNotifications(dto.SuppressedNotifications)); err != nil {
 		return err
 	}
 
@@ -282,7 +282,7 @@ func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	updated, err := h.clinics.CreatePatientTag(ctx, string(clinicId), dto.Name)
+	updated, err := h.Clinics.CreatePatientTag(ctx, string(clinicId), dto.Name)
 	if err != nil {
 		return err
 	}
@@ -297,7 +297,7 @@ func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 		return err
 	}
 
-	updated, err := h.clinics.UpdatePatientTag(ctx, string(clinicId), string(patientTagId), dto.Name)
+	updated, err := h.Clinics.UpdatePatientTag(ctx, string(clinicId), string(patientTagId), dto.Name)
 	if err != nil {
 		return err
 	}
@@ -308,7 +308,7 @@ func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	updated, err := h.clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId))
+	updated, err := h.Clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId))
 	if err != nil {
 		return err
 	}
@@ -318,7 +318,7 @@ func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 
 func (h *Handler) ListMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	updated, err := h.clinics.ListMembershipRestrictions(ctx, clinicId)
+	updated, err := h.Clinics.ListMembershipRestrictions(ctx, clinicId)
 	if err != nil {
 		return err
 	}
@@ -333,7 +333,7 @@ func (h *Handler) UpdateMembershipRestrictions(ec echo.Context, clinicId ClinicI
 		return err
 	}
 
-	if err := h.clinics.UpdateMembershipRestrictions(ctx, clinicId, NewMembershipRestrictions(dto)); err != nil {
+	if err := h.Clinics.UpdateMembershipRestrictions(ctx, clinicId, NewMembershipRestrictions(dto)); err != nil {
 		return err
 	}
 
@@ -343,7 +343,7 @@ func (h *Handler) UpdateMembershipRestrictions(ec echo.Context, clinicId ClinicI
 func (h *Handler) GetEHRSettings(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 
-	settings, err := h.clinics.GetEHRSettings(ctx, clinicId)
+	settings, err := h.Clinics.GetEHRSettings(ctx, clinicId)
 	if err != nil {
 		return err
 	}
@@ -364,7 +364,7 @@ func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	settings := NewEHRSettings(dto)
-	err := h.clinics.UpdateEHRSettings(ctx, clinicId, settings)
+	err := h.Clinics.UpdateEHRSettings(ctx, clinicId, settings)
 	if err != nil {
 		return err
 	}
@@ -375,7 +375,7 @@ func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
 func (h *Handler) GetMRNSettings(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 
-	settings, err := h.clinics.GetMRNSettings(ctx, clinicId)
+	settings, err := h.Clinics.GetMRNSettings(ctx, clinicId)
 	if err != nil {
 		return err
 	}
@@ -397,7 +397,7 @@ func (h *Handler) UpdateMRNSettings(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	err := h.clinics.UpdateMRNSettings(ctx, clinicId, &clinics.MRNSettings{
+	err := h.Clinics.UpdateMRNSettings(ctx, clinicId, &clinics.MRNSettings{
 		Required: dto.Required,
 		Unique:   dto.Unique,
 	})
@@ -412,7 +412,7 @@ func (h *Handler) UpdateMRNSettings(ec echo.Context, clinicId ClinicId) error {
 func (h *Handler) GetPatientCountSettings(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 
-	patientCountSettings, err := h.clinics.GetPatientCountSettings(ctx, clinicId)
+	patientCountSettings, err := h.Clinics.GetPatientCountSettings(ctx, clinicId)
 	if err != nil {
 		return err
 	} else if patientCountSettings == nil {
@@ -434,7 +434,7 @@ func (h *Handler) UpdatePatientCountSettings(ec echo.Context, clinicId ClinicId)
 		return errors.BadRequest
 	}
 
-	if err := h.clinics.UpdatePatientCountSettings(ctx, clinicId, patientCountSettings); err != nil {
+	if err := h.Clinics.UpdatePatientCountSettings(ctx, clinicId, patientCountSettings); err != nil {
 		return err
 	}
 
@@ -444,7 +444,7 @@ func (h *Handler) UpdatePatientCountSettings(ec echo.Context, clinicId ClinicId)
 func (h *Handler) GetPatientCount(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 
-	patientCount, err := h.clinicsManager.GetClinicPatientCount(ctx, clinicId)
+	patientCount, err := h.ClinicsManager.GetClinicPatientCount(ctx, clinicId)
 	if err != nil {
 		return err
 	}
@@ -461,7 +461,7 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 		return err
 	}
 
-	planner := merge.NewClinicMergePlanner(h.clinics, h.patients, h.clinicians, *dto.SourceId, clinicId)
+	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
 	plan, err := planner.Plan(ctx)
 	if err != nil {
 		return err
@@ -476,4 +476,26 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.ms-excel")
 	ec.Response().WriteHeader(http.StatusOK)
 	return file.Write(ec.Response())
+}
+
+func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	dto := MergeClinic{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+
+	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
+	plan, err := planner.Plan(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = h.ClinicMergePlanExecutor.Execute(ctx, plan)
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
 }

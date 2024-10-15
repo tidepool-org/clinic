@@ -1172,4 +1172,28 @@ var _ = Describe("Request Authorizer", func() {
 		err := authorizer.EvaluatePolicy(context.Background(), input)
 		Expect(err).ToNot(HaveOccurred())
 	})
+
+	It("it allows orca to merge clinics", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "orca",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+
+	It("it doesn't allow clinic admins to merge clinics", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},
+			"method": "POST",
+			"auth": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
 })

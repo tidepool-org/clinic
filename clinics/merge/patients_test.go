@@ -3,20 +3,20 @@ package merge_test
 import (
 	"context"
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
+	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
-	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
-	"math/rand"
 	"time"
 )
 
@@ -37,47 +37,18 @@ var _ = Describe("New Merge Planner", func() {
 	var plans merge.PatientPlans
 
 	BeforeEach(func() {
-		source = *clinicsTest.RandomClinic()
-		target = *clinicsTest.RandomClinic()
-		sourcePatients = make([]patients.Patient, patientCount)
-		targetPatients = make([]patients.Patient, patientCount)
-		targetPatientsWithDuplicates = make(map[string]patients.Patient)
-
-		for i := 0; i < patientCount; i++ {
-			sourcePatient := patientsTest.RandomPatient()
-			sourcePatient.ClinicId = source.Id
-			sourcePatient.Tags = randomTagIds(len(source.PatientTags) - 1, source.PatientTags)
-			sourcePatients[i] = sourcePatient
-
-			targetPatient := patientsTest.RandomPatient()
-			targetPatient.ClinicId = target.Id
-			targetPatient.Tags = randomTagIds(len(target.PatientTags) - 1, target.PatientTags)
-			targetPatients[i] = targetPatient
-		}
-
-		i := 0
-		for j := 0; j < duplicateAccountsCount; j++ {
-			targetPatient := duplicatePatientAccount(target.Id, sourcePatients[i])
-			targetPatient.Tags = randomTagIds(len(target.PatientTags) - 1, target.PatientTags)
-			targetPatients = append(targetPatients, targetPatient)
-			targetPatientsWithDuplicates[*sourcePatients[i].UserId] = targetPatient
-			i++
-		}
-		for j := 0; j < likelyDuplicateAccountsCount; j++ {
-			targetPatient := likelyDuplicatePatientAccount(target.Id, sourcePatients[i])
-			targetPatients = append(targetPatients, targetPatient)
-			i++
-		}
-		for j := 0; j < nameOnlyMatchAccountsCount; j++ {
-			targetPatient := nameOnlyMatchPatientAccount(target.Id, sourcePatients[i])
-			targetPatients = append(targetPatients, targetPatient)
-			i++
-		}
-		for j := 0; j < mrnOnlyMatchAccountsCount; j++ {
-			targetPatient := mrnOnlyMatchPatientAccount(target.Id, sourcePatients[i])
-			targetPatients = append(targetPatients, targetPatient)
-			i++
-		}
+		data := mergeTest.RandomData(mergeTest.Params{
+			PatientCount:                 patientCount,
+			DuplicateAccountsCount:       duplicateAccountsCount,
+			LikelyDuplicateAccountsCount: likelyDuplicateAccountsCount,
+			NameOnlyMatchAccountsCount:   nameOnlyMatchAccountsCount,
+			MrnOnlyMatchAccountsCount:    mrnOnlyMatchAccountsCount,
+		})
+		source = data.Source
+		target = data.Target
+		sourcePatients = data.SourcePatients
+		targetPatients = data.TargetPatients
+		targetPatientsWithDuplicates = data.TargetPatientsWithDuplicates
 
 		planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 		Expect(err).ToNot(HaveOccurred())
@@ -117,6 +88,10 @@ var _ = Describe("New Merge Planner", func() {
 					Expect(plan.TargetPatient.UserId).To(PointTo(Equal(*plan.SourcePatient.UserId)))
 					Expect(plan.Conflicts).ToNot(BeEmpty())
 					Expect(plan.Conflicts[merge.PatientConflictCategoryDuplicateAccounts]).ToNot(BeEmpty())
+					Expect(plan.SourceTagNames).ToNot(BeEmpty())
+					Expect(plan.PostMigrationTagNames).To(ContainElements(plan.SourceTagNames))
+					Expect(plan.TargetTagNames).ToNot(BeEmpty())
+					Expect(plan.PostMigrationTagNames).To(ContainElements(plan.TargetTagNames))
 				case merge.PatientActionMergeInto:
 					// Duplicate account - this action is produced for each target patient which has a duplicate in the source clinic
 					Expect(plan.SourcePatient).To(BeNil())
@@ -126,6 +101,8 @@ var _ = Describe("New Merge Planner", func() {
 					// Move source patient to target. There may be conflicts.
 					Expect(plan.SourcePatient).ToNot(BeNil())
 					Expect(plan.TargetPatient).To(BeNil())
+					Expect(plan.SourceTagNames).ToNot(BeEmpty())
+					Expect(plan.PostMigrationTagNames).To(ConsistOf(plan.SourceTagNames))
 				default:
 					Fail("unexpected merge plan action")
 				}
@@ -165,10 +142,15 @@ var _ = Describe("New Merge Planner", func() {
 	Describe("Executor", func() {
 		var executor *merge.PatientPlanExecutor
 		var collection *mongo.Collection
+		var updated clinics.Clinic
 
 		BeforeEach(func() {
 			db := test.GetTestDatabase()
-			executor = merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), db)
+
+			clinicsCtrl := gomock.NewController(GinkgoT())
+			clinicsService := clinicsTest.NewMockService(clinicsCtrl)
+
+			executor = merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), clinicsService, db)
 			collection = db.Collection("patients")
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
 			defer cancel()
@@ -186,10 +168,24 @@ var _ = Describe("New Merge Planner", func() {
 			Expect(res.InsertedIDs).To(HaveLen(len(documents)))
 
 			// The executor expects tags to be migrated before the patients
+			updated = target
+			updated.PatientTags = nil
+
+			// Retain target tag ids
+			for _, tag := range target.PatientTags {
+				updated.PatientTags = append(updated.PatientTags, tag)
+			}
+
+			// Recreate source tags in target clinic as if they were migrated
 			for _, tag := range source.PatientTags {
 				id := primitive.NewObjectID()
-				target.PatientTags = append(target.PatientTags, clinics.PatientTag{Id: &id, Name: tag.Name})
+				updated.PatientTags = append(updated.PatientTags, clinics.PatientTag{Id: &id, Name: tag.Name})
 			}
+
+			clinicsService.EXPECT().
+				Get(gomock.Any(), target.Id.Hex()).
+				Return(&updated, nil).
+				AnyTimes()
 
 			var errs []error
 			for _, plan := range plans {
@@ -224,6 +220,11 @@ var _ = Describe("New Merge Planner", func() {
 			for _, tag := range source.PatientTags {
 				sourceTagsById[tag.Id.Hex()] = tag
 			}
+			updatedClinicTagsById := make(map[string]clinics.PatientTag)
+			for _, tag := range updated.PatientTags {
+				updatedClinicTagsById[tag.Id.Hex()] = tag
+			}
+
 			for _, patient := range sourcePatients {
 				targetPatient, ok := targetPatientsWithDuplicates[*patient.UserId]
 				if !ok {
@@ -239,9 +240,7 @@ var _ = Describe("New Merge Planner", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Tags).ToNot(BeNil())
 
-
 				expectedTagNames := mapset.NewSet[string]()
-
 				for _, tagId := range *patient.Tags {
 					expectedTagNames.Append(sourceTagsById[tagId.Hex()].Name)
 				}
@@ -249,9 +248,9 @@ var _ = Describe("New Merge Planner", func() {
 					expectedTagNames.Append(targetTagsById[tagId.Hex()].Name)
 				}
 
-				resultTagNames := make([]string, 0, len(*patient.Tags))
+				resultTagNames := make([]string, 0, len(*result.Tags))
 				for _, tagId := range *result.Tags {
-					resultTagNames = append(resultTagNames, targetTagsById[tagId.Hex()].Name)
+					resultTagNames = append(resultTagNames, updatedClinicTagsById[tagId.Hex()].Name)
 				}
 
 				Expect(resultTagNames).To(ConsistOf(expectedTagNames.ToSlice()))
@@ -274,58 +273,3 @@ var _ = Describe("New Merge Planner", func() {
 		})
 	})
 })
-
-
-func duplicatePatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.UserId = patient.UserId
-	return duplicate
-}
-
-func mrnOnlyMatchPatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.Mrn = patient.Mrn
-	return duplicate
-}
-
-func nameOnlyMatchPatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.FullName = patient.FullName
-	return duplicate
-}
-
-func likelyDuplicatePatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-
-	r := rand.Intn(3)
-	if r == 0 {
-		duplicate.FullName = patient.FullName
-		duplicate.BirthDate = patient.BirthDate
-	} else if r == 1 {
-		duplicate.FullName = patient.FullName
-		duplicate.Mrn = patient.Mrn
-	} else if r == 2 {
-		duplicate.BirthDate = patient.BirthDate
-		duplicate.Mrn = patient.Mrn
-	}
-
-	return duplicate
-}
-
-func randomTagIds(count int, tags []clinics.PatientTag) *[]primitive.ObjectID {
-	if count > len(tags) {
-		count = len(tags)
-	}
-	rand.Shuffle(len(tags), func(i, j int) {
-		tags[i], tags[j] = tags[j], tags[i]
-	})
-	result := make([]primitive.ObjectID, count)
-	for i := range result {
-		result[i] = *tags[i].Id
-	}
-	return &result
-}

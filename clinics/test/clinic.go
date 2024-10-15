@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -77,7 +78,7 @@ func RandomTags(count int) []clinics.PatientTag {
 	for i, _ := range tags {
 		id := RandomObjectId()
 		tags[i].Id = &id
-		tags[i].Name = Faker.Company().Name()
+		tags[i].Name = fmt.Sprintf("%.20s", Faker.Person().LastName())
 	}
 
 	return tags

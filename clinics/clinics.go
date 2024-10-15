@@ -58,6 +58,7 @@ type Service interface {
 	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
 	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
 	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
+	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 }
 
 type Filter struct {

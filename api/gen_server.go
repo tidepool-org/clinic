@@ -73,6 +73,9 @@ type ServerInterface interface {
 	// Update Membership Restrictions
 	// (PUT /v1/clinics/{clinicId}/membership_restrictions)
 	UpdateMembershipRestrictions(ctx echo.Context, clinicId ClinicId) error
+	// Merge Clinic
+	// (POST /v1/clinics/{clinicId}/merge)
+	MergeClinic(ctx echo.Context, clinicId ClinicId) error
 	// Trigger initial migration
 	// (POST /v1/clinics/{clinicId}/migrate)
 	TriggerInitialMigration(ctx echo.Context, clinicId string) error
@@ -738,6 +741,24 @@ func (w *ServerInterfaceWrapper) UpdateMembershipRestrictions(ctx echo.Context) 
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.UpdateMembershipRestrictions(ctx, clinicId)
+	return err
+}
+
+// MergeClinic converts echo context to params.
+func (w *ServerInterfaceWrapper) MergeClinic(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.MergeClinic(ctx, clinicId)
 	return err
 }
 
@@ -2678,6 +2699,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.AssociateClinicianToUser)
 	router.GET(baseURL+"/v1/clinics/:clinicId/membership_restrictions", wrapper.ListMembershipRestrictions)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/membership_restrictions", wrapper.UpdateMembershipRestrictions)
+	router.POST(baseURL+"/v1/clinics/:clinicId/merge", wrapper.MergeClinic)
 	router.POST(baseURL+"/v1/clinics/:clinicId/migrate", wrapper.TriggerInitialMigration)
 	router.GET(baseURL+"/v1/clinics/:clinicId/migrations", wrapper.ListMigrations)
 	router.POST(baseURL+"/v1/clinics/:clinicId/migrations", wrapper.MigrateLegacyClinicianPatients)

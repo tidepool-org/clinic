@@ -97,7 +97,7 @@ func (r Report) addSourcePatients(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("Latest Upload ---")
 	sh.AddRow()
 
-	for _, plan := range r.plan.PatientsPlan.GetSourcePatientPlans() {
+	for _, plan := range r.plan.PatientPlans.GetSourcePatientPlans() {
 		addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames)
 	}
 	return nil
@@ -119,7 +119,7 @@ func (r Report) addTargetPatients(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("Latest Upload ---")
 	sh.AddRow()
 
-	for _, plan := range r.plan.PatientsPlan.GetTargetPatientPlans() {
+	for _, plan := range r.plan.PatientPlans.GetTargetPatientPlans() {
 		addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames)
 	}
 	return nil
@@ -170,7 +170,7 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("Latest Upload ---")
 
 	count := 1
-	for _, patientPlan := range r.plan.PatientsPlan {
+	for _, patientPlan := range r.plan.PatientPlans {
 		if patientPlan.SourcePatient == nil || !patientPlan.HasConflicts() {
 			continue
 		}
@@ -284,7 +284,7 @@ func (r Report) addSettingsSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue(r.plan.MembershipRestrictionsMergePlan.GetSourceValue())
 	currentRow.AddCell().SetValue(r.plan.MembershipRestrictionsMergePlan.GetTargetValue())
 
-	for _, s := range r.plan.SettingsPlan {
+	for _, s := range r.plan.SettingsPlans {
 		currentRow = sh.AddRow()
 		currentRow.AddCell().SetValue(s.Name)
 		if s.ValuesMatch() {
@@ -305,7 +305,7 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	adminTasks := make([]ClinicianPlan, 0)
 	nonAdminTasks := make([]ClinicianPlan, 0)
 
-	for _, c := range r.plan.CliniciansPlan {
+	for _, c := range r.plan.ClinicianPlans {
 		if c.ClinicianAction == ClinicianActionMergeInto {
 			// Results will be reported by the corresponding source merge task
 			continue
@@ -346,14 +346,14 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 	sh.AddRow()
 
 	pendingInvites := 0
-	for _, count := range r.plan.CliniciansPlan.PendingInvitesByWorkspace() {
+	for _, count := range r.plan.ClinicianPlans.PendingInvitesByWorkspace() {
 		pendingInvites += count
 	}
 
 	currentRow = sh.AddRow()
 	currentRow.AddCell().SetValue(fmt.Sprintf("Pending Invites (%v)", pendingInvites))
 	currentRow.AddCell().SetValue("Workspace ---")
-	for workspace, count := range r.plan.CliniciansPlan.PendingInvitesByWorkspace() {
+	for workspace, count := range r.plan.ClinicianPlans.PendingInvitesByWorkspace() {
 		currentRow = sh.AddRow()
 		currentRow.AddCell().SetValue(count)
 		currentRow.AddCell().SetValue(workspace)
@@ -364,14 +364,14 @@ func (r Report) addClinicianSummary(sh *xlsx.Sheet) error {
 }
 
 func (r Report) addTagsSummary(sh *xlsx.Sheet) error {
-	resultingTagsCount := r.plan.TagsPlan.GetResultingTagsCount()
+	resultingTagsCount := r.plan.TagsPlans.GetResultingTagsCount()
 
 	currentRow := sh.AddRow()
 	currentRow.AddCell().SetValue(fmt.Sprintf("Resulting Tags (%v) ---", resultingTagsCount))
 	currentRow.AddCell().SetValue("Workspace ---")
 	currentRow.AddCell().SetValue("Merge ---")
 
-	for _, plan := range r.plan.TagsPlan {
+	for _, plan := range r.plan.TagsPlans {
 		if plan.TagAction == TagActionSkip {
 			continue
 		}
@@ -391,9 +391,9 @@ func (r Report) addTagsSummary(sh *xlsx.Sheet) error {
 func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	adminTasks := make([]ClinicianPlan, 0)
 	nonAdminTasks := make([]ClinicianPlan, 0)
-	membersDowngraded := r.plan.CliniciansPlan.GetDowngradedMembersCount()
+	membersDowngraded := r.plan.ClinicianPlans.GetDowngradedMembersCount()
 
-	for _, plan := range r.plan.CliniciansPlan {
+	for _, plan := range r.plan.ClinicianPlans {
 		if plan.ClinicianAction == ClinicianActionMergeInto {
 			// Results will be reported by the corresponding source merge task
 			continue
@@ -417,8 +417,8 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("- Members downgraded from Admin")
 	currentRow.AddCell().SetValue(membersDowngraded)
 
-	resultingTagsCount := r.plan.TagsPlan.GetResultingTagsCount()
-	duplicateTagsCount := r.plan.TagsPlan.GetDuplicateTagsCount()
+	resultingTagsCount := r.plan.TagsPlans.GetResultingTagsCount()
+	duplicateTagsCount := r.plan.TagsPlans.GetDuplicateTagsCount()
 
 	currentRow = sh.AddRow()
 	currentRow.AddCell().SetValue("Resulting Tags")
@@ -427,11 +427,11 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("- Duplicate tags that will be merged")
 	currentRow.AddCell().SetValue(duplicateTagsCount)
 
-	resultingPatientsCount := r.plan.PatientsPlan.GetResultingPatientsCount()
-	duplicateAccountsCounts := r.plan.PatientsPlan.GetConflictCounts()[PatientConflictCategoryDuplicateAccounts]
-	likelyDuplicateCount := r.plan.PatientsPlan.GetConflictCounts()[PatientConflictCategoryLikelyDuplicateAccounts]
-	duplicateMRNsCount := r.plan.PatientsPlan.GetConflictCounts()[PatientConflictCategoryMRNOnlyMatch]
-	duplicateNamesCount := r.plan.PatientsPlan.GetConflictCounts()[PatientConflictCategoryNameOnlyMatch]
+	resultingPatientsCount := r.plan.PatientPlans.GetResultingPatientsCount()
+	duplicateAccountsCounts := r.plan.PatientPlans.GetConflictCounts()[PatientConflictCategoryDuplicateAccounts]
+	likelyDuplicateCount := r.plan.PatientPlans.GetConflictCounts()[PatientConflictCategoryLikelyDuplicateAccounts]
+	duplicateMRNsCount := r.plan.PatientPlans.GetConflictCounts()[PatientConflictCategoryMRNOnlyMatch]
+	duplicateNamesCount := r.plan.PatientPlans.GetConflictCounts()[PatientConflictCategoryNameOnlyMatch]
 
 	currentRow = sh.AddRow()
 	currentRow.AddCell().SetValue("Resulting Patient Accounts")
