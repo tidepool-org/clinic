@@ -88,6 +88,10 @@ var _ = Describe("New Merge Planner", func() {
 					Expect(plan.TargetPatient.UserId).To(PointTo(Equal(*plan.SourcePatient.UserId)))
 					Expect(plan.Conflicts).ToNot(BeEmpty())
 					Expect(plan.Conflicts[merge.PatientConflictCategoryDuplicateAccounts]).ToNot(BeEmpty())
+					Expect(plan.SourceTagNames).ToNot(BeEmpty())
+					Expect(plan.PostMigrationTagNames).To(ContainElements(plan.SourceTagNames))
+					Expect(plan.TargetTagNames).ToNot(BeEmpty())
+					Expect(plan.PostMigrationTagNames).To(ContainElements(plan.TargetTagNames))
 				case merge.PatientActionMergeInto:
 					// Duplicate account - this action is produced for each target patient which has a duplicate in the source clinic
 					Expect(plan.SourcePatient).To(BeNil())
@@ -97,6 +101,8 @@ var _ = Describe("New Merge Planner", func() {
 					// Move source patient to target. There may be conflicts.
 					Expect(plan.SourcePatient).ToNot(BeNil())
 					Expect(plan.TargetPatient).To(BeNil())
+					Expect(plan.SourceTagNames).ToNot(BeEmpty())
+					Expect(plan.PostMigrationTagNames).To(ConsistOf(plan.SourceTagNames))
 				default:
 					Fail("unexpected merge plan action")
 				}

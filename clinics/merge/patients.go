@@ -158,15 +158,16 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	for _, patient := range p.sourcePatients {
 		sanitizePatient(&patient)
 		plan := PatientPlan{
-			SourceClinicId:   p.source.Id,
-			SourceClinicName: *p.source.Name,
-			TargetClinicId:   p.target.Id,
-			TargetClinicName: *p.target.Name,
-			SourcePatient:    &patient,
-			SourceTagNames:   getPatientTagNames(patient, p.sourceTags),
-			Conflicts:        make(map[string][]Conflict),
-			PatientAction:    PatientActionMove,
-			CanExecuteAction: true,
+			SourceClinicId:        p.source.Id,
+			SourceClinicName:      *p.source.Name,
+			TargetClinicId:        p.target.Id,
+			TargetClinicName:      *p.target.Name,
+			SourcePatient:         &patient,
+			SourceTagNames:        getPatientTagNames(patient, p.sourceTags),
+			Conflicts:             make(map[string][]Conflict),
+			PatientAction:         PatientActionMove,
+			PostMigrationTagNames: getPatientTagNames(patient, p.sourceTags),
+			CanExecuteAction:      true,
 		}
 
 		duplicates := getDuplicates(patient, targetByAttribute)
@@ -258,18 +259,18 @@ func sanitizePatient(patient *patients.Patient) {
 }
 
 type PatientPlanExecutor struct {
-	clinicsService clinics.Service
+	clinicsService     clinics.Service
 	patientsCollection *mongo.Collection
 
-	logger             *zap.SugaredLogger
+	logger *zap.SugaredLogger
 }
 
 func NewPatientPlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Service, db *mongo.Database) *PatientPlanExecutor {
 	return &PatientPlanExecutor{
-		clinicsService: clinicsService,
+		clinicsService:     clinicsService,
 		patientsCollection: db.Collection(patients.CollectionName),
 
-		logger:             logger,
+		logger: logger,
 	}
 }
 
