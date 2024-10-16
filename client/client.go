@@ -233,6 +233,9 @@ type ClientInterface interface {
 
 	UpdatePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ConnectProvider request
+	ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdatePatientPermissionsWithBody request with any body
 	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -982,6 +985,18 @@ func (c *Client) UpdatePatientWithBody(ctx context.Context, clinicId ClinicId, p
 
 func (c *Client) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientRequest(c.Server, clinicId, patientId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectProviderRequest(c.Server, clinicId, patientId, providerId)
 	if err != nil {
 		return nil, err
 	}
@@ -5263,6 +5278,54 @@ func NewUpdatePatientRequestWithBody(server string, clinicId ClinicId, patientId
 	return req, nil
 }
 
+// NewConnectProviderRequest generates requests for ConnectProvider
+func NewConnectProviderRequest(server string, clinicId ClinicId, patientId PatientId, providerId ProviderId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "providerId", runtime.ParamLocationPath, providerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/connect/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdatePatientPermissionsRequest calls the generic UpdatePatientPermissions builder with application/json body
 func NewUpdatePatientPermissionsRequest(server string, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -6944,6 +7007,9 @@ type ClientWithResponsesInterface interface {
 
 	UpdatePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientResponse, error)
 
+	// ConnectProviderWithResponse request
+	ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error)
+
 	// UpdatePatientPermissionsWithBodyWithResponse request with any body
 	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientPermissionsResponse, error)
 
@@ -7867,6 +7933,27 @@ func (r UpdatePatientResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdatePatientResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConnectProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectProviderResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9015,6 +9102,15 @@ func (c *ClientWithResponses) UpdatePatientWithResponse(ctx context.Context, cli
 		return nil, err
 	}
 	return ParseUpdatePatientResponse(rsp)
+}
+
+// ConnectProviderWithResponse request returning *ConnectProviderResponse
+func (c *ClientWithResponses) ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error) {
+	rsp, err := c.ConnectProvider(ctx, clinicId, patientId, providerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectProviderResponse(rsp)
 }
 
 // UpdatePatientPermissionsWithBodyWithResponse request with arbitrary body returning *UpdatePatientPermissionsResponse
@@ -10274,6 +10370,22 @@ func ParseUpdatePatientResponse(rsp *http.Response) (*UpdatePatientResponse, err
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseConnectProviderResponse parses an HTTP response from a ConnectProviderWithResponse call
+func ParseConnectProviderResponse(rsp *http.Response) (*ConnectProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
