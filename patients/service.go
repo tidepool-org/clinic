@@ -230,9 +230,9 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *Uplo
 	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)
 }
 
-func (s *service) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
-	s.logger.Infow("updating last requested dexcom connect time for user", "clinicId", update.ClinicId, "userId", update.UserId)
-	return s.patientsRepo.UpdateLastRequestedDexcomConnectTime(ctx, update)
+func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) (*Patient, error) {
+	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "provider", request.ProviderName)
+	return s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request)
 }
 
 func (s *service) AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
