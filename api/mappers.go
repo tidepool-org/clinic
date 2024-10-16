@@ -181,6 +181,10 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		UpdatedTime:   &patient.UpdatedTime,
 		Summary:       NewSummaryDto(patient.Summary),
 		Reviews:       NewReviewsDto(patient.Reviews),
+		ConnectionRequests: &ProviderConnectionRequests{
+			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
+			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
+		},
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -188,10 +192,41 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	if !patient.LastUploadReminderTime.IsZero() {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
 	}
-	if !patient.LastRequestedDexcomConnectTime.IsZero() {
+
+	// Provide backward compatible API until clients start using the new field 'providerConnectionRequests'
+	if patient.ProviderConnectionRequests != nil {
+		if dexcom, exists := patient.ProviderConnectionRequests[patients.DexcomDataSourceProviderName]; exists && len(dexcom) > 0 {
+			if patient.LastRequestedDexcomConnectTime.After(dexcom[0].CreatedTime) {
+				dto.LastRequestedDexcomConnectTime = &patient.LastRequestedDexcomConnectTime
+			} else {
+				dto.LastRequestedDexcomConnectTime = &dexcom[0].CreatedTime
+			}
+		}
+	}
+	if !patient.LastRequestedDexcomConnectTime.IsZero() && dto.LastRequestedDexcomConnectTime == nil {
 		dto.LastRequestedDexcomConnectTime = &patient.LastRequestedDexcomConnectTime
 	}
+
 	return dto
+}
+
+func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequest {
+	empty := make([]ProviderConnectionRequest, 0)
+	if requests == nil {
+		return empty
+	}
+	requestsForProvider, exist := requests[string(provider)]
+	if !exist || len(requests) == 0 {
+		return empty
+	}
+	result := make([]ProviderConnectionRequest, len(requestsForProvider))
+	for i, request := range requestsForProvider {
+		result[i] = ProviderConnectionRequest{
+			CreatedTime:  request.CreatedTime,
+			ProviderName: request.ProviderName,
+		}
+	}
+	return result
 }
 
 func NewPatient(dto Patient) patients.Patient {
@@ -1599,4 +1634,15 @@ func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.Sum
 
 	parseDateRangeFilter(filters, "lastUploadDate", params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
 	return
+}
+
+func NewDataProvider(providerId ProviderId) (string, error) {
+	switch providerId {
+	case Dexcom:
+		return patients.DexcomDataSourceProviderName, nil
+	case Twiist:
+		return patients.TwiistDataSourceProviderName, nil
+	default:
+		return "", fmt.Errorf("%w: invalid provider id: %s", errors.BadRequest, string(providerId))
+	}
 }
