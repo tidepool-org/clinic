@@ -22,10 +22,14 @@ var (
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
 	ErrReviewNotOwner     = fmt.Errorf("%w: cannot revert review from another clinician", errors.Conflict)
 
-	PendingDexcomDataSourceExpirationDuration = time.Hour * 24 * 30
-	DexcomDataSourceProviderName              = "dexcom"
-	DataSourceStatePending                    = "pending"
-	DataSourceStatePendingReconnect           = "pendingReconnect"
+	PendingDataSourceExpirationDuration = time.Hour * 24 * 30
+
+	DexcomDataSourceProviderName = "dexcom"
+	TwiistDataSourceProviderName = "twiist"
+	AbbottDataSourceProviderName = "abbott"
+
+	DataSourceStatePending          = "pending"
+	DataSourceStatePendingReconnect = "pendingReconnect"
 
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
@@ -55,7 +59,7 @@ type Service interface {
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error)
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
-	UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error)
+	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) (*Patient, error)
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
@@ -66,28 +70,31 @@ type Service interface {
 }
 
 type Patient struct {
-	Id                             *primitive.ObjectID   `bson:"_id,omitempty"`
-	ClinicId                       *primitive.ObjectID   `bson:"clinicId,omitempty"`
-	UserId                         *string               `bson:"userId,omitempty"`
-	BirthDate                      *string               `bson:"birthDate"`
-	Email                          *string               `bson:"email"`
-	FullName                       *string               `bson:"fullName"`
-	Mrn                            *string               `bson:"mrn"`
-	TargetDevices                  *[]string             `bson:"targetDevices"`
-	Tags                           *[]primitive.ObjectID `bson:"tags,omitempty"`
-	DataSources                    *[]DataSource         `bson:"dataSources,omitempty"`
-	Permissions                    *Permissions          `bson:"permissions,omitempty"`
-	IsMigrated                     bool                  `bson:"isMigrated,omitempty"`
-	LegacyClinicianIds             []string              `bson:"legacyClinicianIds,omitempty"`
-	CreatedTime                    time.Time             `bson:"createdTime,omitempty"`
-	UpdatedTime                    time.Time             `bson:"updatedTime,omitempty"`
-	InvitedBy                      *string               `bson:"invitedBy,omitempty"`
-	Summary                        *Summary              `bson:"summary,omitempty"`
-	Reviews                        []Review              `bson:"reviews,omitempty"`
-	LastUploadReminderTime         time.Time             `bson:"lastUploadReminderTime,omitempty"`
+	Id                         *primitive.ObjectID        `bson:"_id,omitempty"`
+	ClinicId                   *primitive.ObjectID        `bson:"clinicId,omitempty"`
+	UserId                     *string                    `bson:"userId,omitempty"`
+	BirthDate                  *string                    `bson:"birthDate"`
+	Email                      *string                    `bson:"email"`
+	FullName                   *string                    `bson:"fullName"`
+	Mrn                        *string                    `bson:"mrn"`
+	TargetDevices              *[]string                  `bson:"targetDevices"`
+	Tags                       *[]primitive.ObjectID      `bson:"tags,omitempty"`
+	DataSources                *[]DataSource              `bson:"dataSources,omitempty"`
+	Permissions                *Permissions               `bson:"permissions,omitempty"`
+	IsMigrated                 bool                       `bson:"isMigrated,omitempty"`
+	LegacyClinicianIds         []string                   `bson:"legacyClinicianIds,omitempty"`
+	CreatedTime                time.Time                  `bson:"createdTime,omitempty"`
+	UpdatedTime                time.Time                  `bson:"updatedTime,omitempty"`
+	InvitedBy                  *string                    `bson:"invitedBy,omitempty"`
+	Summary                    *Summary                   `bson:"summary,omitempty"`
+	Reviews                    []Review                   `bson:"reviews,omitempty"`
+	LastUploadReminderTime     time.Time                  `bson:"lastUploadReminderTime,omitempty"`
+	ProviderConnectionRequests ProviderConnectionRequests `bson:"providerConnectionRequests,omitempty"`
+	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
+	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
+
+	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
-	RequireUniqueMrn               bool                  `bson:"requireUniqueMrn"`
-	EHRSubscriptions               EHRSubscriptions      `bson:"ehrSubscriptions,omitempty"`
 }
 
 func (p Patient) IsCustodial() bool {
@@ -120,6 +127,17 @@ type MatchedMessage struct {
 type Review struct {
 	ClinicianId string    `json:"clinicianId"`
 	Time        time.Time `json:"time"`
+}
+
+type LastConnectionRequests map[string]time.Time
+
+type ProviderConnectionRequests map[string]ConnectionRequests
+
+type ConnectionRequests []ConnectionRequest
+
+type ConnectionRequest struct {
+	ProviderName string    `bson:"providerName"`
+	CreatedTime  time.Time `bson:"createdTime"`
 }
 
 type SubscriptionUpdate struct {
@@ -199,12 +217,6 @@ type UploadReminderUpdate struct {
 	UserId    string
 	UpdatedBy string
 	Time      time.Time
-}
-
-type LastRequestedDexcomConnectUpdate struct {
-	ClinicId string
-	UserId   string
-	Time     time.Time
 }
 
 type Summary struct {

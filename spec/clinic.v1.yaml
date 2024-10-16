@@ -267,8 +267,14 @@ paths:
             type: string
             format: date-time
           in: query
-          name: lastDataCutoff
+          name: cgm.lastUploadDateFrom
           description: Inclusive
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: cgm.lastUploadDateTo
+          description: Exclusive
   '/v1/clinics/{clinicId}/patients':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -749,13 +755,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: cgm.lastDataFrom
+          name: cgm.lastUploadDateFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: cgm.lastDataTo
+          name: cgm.lastUploadDateTo
           description: Exclusive
         - schema:
             $ref: '#/components/schemas/FloatFilter'
@@ -851,13 +857,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: bgm.lastDataFrom
+          name: bgm.lastUploadDateFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: bgm.lastDataTo
+          name: bgm.lastUploadDateTo
           description: Exclusive
         - schema:
             type: array
@@ -2201,6 +2207,21 @@ paths:
         - Internal
       x-internal: true
       description: 'Merges tags, patients, clinicians, invites and share codes of the source clinic'
+  '/v1/clinics/{clinicId}/patients/{patientId}/connect/{providerId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+      - $ref: '#/components/parameters/providerId'
+    post:
+      summary: ''
+      operationId: ConnectProvider
+      responses:
+        '204':
+          description: No Content
+      tags:
+        - Clinics
+        - Internal
+      description: Send a new request to the patient to connect a data provider
 components:
   schemas:
     Error:
@@ -2980,7 +3001,6 @@ components:
     Patient:
       type: object
       title: Patient
-      description: ''
       properties:
         id:
           $ref: '#/components/schemas/TidepoolUserId'
@@ -3039,12 +3059,18 @@ components:
           x-go-type-skip-optional-pointer: true
           items:
             $ref: '#/components/schemas/PatientReview'
+        connectionRequests:
+          $ref: '#/components/schemas/ProviderConnectionRequests'
+          x-stoplight:
+            id: 502rliv0l2tyy
+          description: Requests for each provider are listed in reverse chronological order
       required:
         - id
         - fullName
         - birthDate
         - createdTime
         - updatedTime
+        - connectionRequests
     Patients:
       type: array
       items:
@@ -3385,7 +3411,10 @@ components:
           type: string
           pattern: ^(1d|7d|14d|30d)$
           example: 7d
-        lastDataCutoff:
+        lastUploadDateFrom:
+          type: string
+          format: date-time
+        lastUploadDateTo:
           type: string
           format: date-time
         highGlucoseThreshold:
@@ -3412,7 +3441,8 @@ components:
         - schemaVersion
         - clinicId
         - period
-        - lastDataCutoff
+        - lastUploadDateFrom
+        - lastUploadDateTo
         - highGlucoseThreshold
         - veryHighGlucoseThreshold
         - lowGlucoseThreshold
@@ -3473,11 +3503,6 @@ components:
           x-go-type-skip-optional-pointer: true
           items:
             $ref: '#/components/schemas/PatientReview'
-        dataSources:
-          type: array
-          nullable: true
-          items:
-            $ref: '#/components/schemas/DataSource'
       required:
         - id
         - tags
@@ -3546,9 +3571,6 @@ components:
           type: number
           example: 200
           x-go-type: int
-        lastData:
-          type: string
-          format: date-time
         patient:
           $ref: '#/components/schemas/TidePatient'
       required:
@@ -3564,7 +3586,6 @@ components:
         - timeInTargetPercent
         - timeCGMUsePercent
         - meetingTargets
-        - noData
       additionalProperties:
         type: array
         items:
@@ -4531,10 +4552,6 @@ components:
           x-stoplight:
             id: lgfrpsps4x37a
           description: Scheduled Report Settings
-        tags:
-          $ref: '#/components/schemas/EHRTagsSettings'
-          x-stoplight:
-            id: hp97ilzsssprv
       required:
         - enabled
         - sourceId
@@ -4542,7 +4559,6 @@ components:
         - mrnIdType
         - provider
         - scheduledReports
-        - tags
     EHRFacility:
       title: Facility
       x-stoplight:
@@ -4563,8 +4579,6 @@ components:
       properties:
         messageRef:
           $ref: '#/components/schemas/EHRMatchMessageRef'
-        patients:
-          $ref: '#/components/schemas/EHRMatchRequestPatientsOptions'
     EHRMatchResponse:
       title: EHRMatchResponse
       x-stoplight:
@@ -4759,19 +4773,8 @@ components:
             - New
             - Replace
           default: New
-        cadence:
-          type: string
-          x-stoplight:
-            id: ibtk59wcgho89
-          enum:
-            - 7d
-            - 14d
-            - 30d
-            - DISABLED
-          description: The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
       required:
         - onUploadEnabled
-        - cadence
     GenerateMergeReport:
       title: GenerateMergeReport
       x-stoplight:
@@ -4790,58 +4793,67 @@ components:
       properties:
         sourceId:
           $ref: '#/components/schemas/Id'
-    EHRTagsSettings:
-      title: EHR Tags Settings
+    ProviderConnectionRequest:
+      title: Provider Connection Request
       x-stoplight:
-        id: w3h05rpqc45iv
-      type: object
-      description: This configuration only applies to integrations using Redox Data Model
-      properties:
-        codes:
-          type: array
-          x-stoplight:
-            id: fcr5es83pzi6r
-          description: 'Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.'
-          items:
-            x-stoplight:
-              id: h40mu6ujxknzf
-            type: string
-        separator:
-          type: string
-          x-stoplight:
-            id: ic7t703igp2rn
-          description: 'If set to a non-empty string, the tag values will be split using this separator'
-          minLength: 1
-    EHRMatchRequestPatientsOptions:
-      title: Patient Matching Options
-      x-stoplight:
-        id: 43n6iid3zghxm
+        id: nim4cceb0lu0w
       type: object
       properties:
-        criteria:
-          type: array
-          x-stoplight:
-            id: 1odrg3q8zzdil
-          description: Performs an "OR" match for each item in the array
-          minItems: 1
-          items:
-            x-stoplight:
-              id: mgi1k2jyojc4k
-            type: string
-            enum:
-              - MRN
-              - MRN_DOB
-              - DOB_FULLNAME
-        onUniqueMatch:
+        createdTime:
           type: string
           x-stoplight:
-            id: s9ujf5ce4vhc1
-          enum:
-            - ENABLE_REPORTS
-            - DISABLE_REPORTS
-          description: Optional action to be performed when a unique match has been found
+            id: efcvyea5slw36
+          format: date-time
+        providerName:
+          $ref: '#/components/schemas/ProviderId'
+          x-stoplight:
+            id: ej94kmuykpg1k
       required:
-        - criteria
+        - createdTime
+        - providerName
+    ProviderConnectionRequests:
+      title: providerconnectionrequests.v1
+      x-stoplight:
+        id: c8q7wrz5rtge5
+      type: object
+      properties:
+        twiist:
+          type: array
+          x-stoplight:
+            id: 7ve65jmart7pj
+          items:
+            $ref: '#/components/schemas/ProviderConnectionRequest'
+            x-stoplight:
+              id: 47ez7wiccxdut
+        dexcom:
+          type: array
+          x-stoplight:
+            id: 7ve65jmart7pj
+          items:
+            $ref: '#/components/schemas/ProviderConnectionRequest'
+            x-stoplight:
+              id: 913pgkbkz62eq
+        abbott:
+          type: array
+          x-stoplight:
+            id: u9rfvrr2njlcq
+          items:
+            $ref: '#/components/schemas/ProviderConnectionRequest'
+            x-stoplight:
+              id: 47ez7wiccxdut
+      required:
+        - twiist
+        - dexcom
+        - abbott
+    ProviderId:
+      title: Third-Party Data Providers
+      x-stoplight:
+        id: fdmfczqym3ocn
+      type: string
+      enum:
+        - dexcom
+        - twiist
+        - abbott
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
@@ -4960,6 +4972,13 @@ components:
       schema:
         type: boolean
       description: Retrieve clinics with enabled EHR integration
+    providerId:
+      name: providerId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ProviderId'
+      description: Provider ID
 tags:
   - name: Clinics
     description: 'Manage clinics, clinians and patients.'
