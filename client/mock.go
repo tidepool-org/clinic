@@ -194,6 +194,26 @@ func (mr *MockClientInterfaceMockRecorder) AssociateClinicianToUserWithBody(ctx,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssociateClinicianToUserWithBody", reflect.TypeOf((*MockClientInterface)(nil).AssociateClinicianToUserWithBody), varargs...)
 }
 
+// ConnectProvider mocks base method.
+func (m *MockClientInterface) ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, patientId, providerId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ConnectProvider", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectProvider indicates an expected call of ConnectProvider.
+func (mr *MockClientInterfaceMockRecorder) ConnectProvider(ctx, clinicId, patientId, providerId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, patientId, providerId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectProvider", reflect.TypeOf((*MockClientInterface)(nil).ConnectProvider), varargs...)
+}
+
 // CreateClinic mocks base method.
 func (m *MockClientInterface) CreateClinic(ctx context.Context, body CreateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -2215,6 +2235,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) AssociateClinicianToUser
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, clinicId, inviteId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssociateClinicianToUserWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).AssociateClinicianToUserWithResponse), varargs...)
+}
+
+// ConnectProviderWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, clinicId, patientId, providerId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ConnectProviderWithResponse", varargs...)
+	ret0, _ := ret[0].(*ConnectProviderResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectProviderWithResponse indicates an expected call of ConnectProviderWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) ConnectProviderWithResponse(ctx, clinicId, patientId, providerId interface{}, reqEditors ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, clinicId, patientId, providerId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectProviderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ConnectProviderWithResponse), varargs...)
 }
 
 // CreateClinicWithBodyWithResponse mocks base method.

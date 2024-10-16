@@ -667,6 +667,13 @@ const (
 	RUNNING   MigrationStatus = "RUNNING"
 )
 
+// Defines values for ProviderId.
+const (
+	Abbott ProviderId = "abbott"
+	Dexcom ProviderId = "dexcom"
+	Twiist ProviderId = "twiist"
+)
+
 // Defines values for ScheduledReportsOnUploadNoteEventType.
 const (
 	ScheduledReportsOnUploadNoteEventTypeNew     ScheduledReportsOnUploadNoteEventType = "New"
@@ -988,11 +995,12 @@ type Migrations = []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date `json:"birthDate"`
-	CreatedTime          *time.Time         `json:"createdTime,omitempty"`
-	DataSources          *[]DataSource      `json:"dataSources"`
-	Email                *string            `json:"email,omitempty"`
+	AttestationSubmitted *bool                      `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date         `json:"birthDate"`
+	ConnectionRequests   ProviderConnectionRequests `json:"connectionRequests"`
+	CreatedTime          *time.Time                 `json:"createdTime,omitempty"`
+	DataSources          *[]DataSource              `json:"dataSources"`
+	Email                *string                    `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
@@ -1555,6 +1563,22 @@ type PhoneNumber struct {
 	Number string  `json:"number"`
 	Type   *string `json:"type,omitempty"`
 }
+
+// ProviderConnectionRequest defines model for ProviderConnectionRequest.
+type ProviderConnectionRequest struct {
+	CreatedTime  time.Time  `json:"createdTime"`
+	ProviderName ProviderId `json:"providerName"`
+}
+
+// ProviderConnectionRequests defines model for ProviderConnectionRequests.
+type ProviderConnectionRequests struct {
+	Abbott []ProviderConnectionRequest `json:"abbott"`
+	Dexcom []ProviderConnectionRequest `json:"dexcom"`
+	Twiist []ProviderConnectionRequest `json:"twiist"`
+}
+
+// ProviderId defines model for ProviderId.
+type ProviderId string
 
 // ScheduledReports Scheduled Report Settings
 type ScheduledReports struct {

@@ -127,6 +127,9 @@ type ServerInterface interface {
 	// Update Patient
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId})
 	UpdatePatient(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+
+	// (POST /v1/clinics/{clinicId}/patients/{patientId}/connect/{providerId})
+	ConnectProvider(ctx echo.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId) error
 	// Update Patient Permissions
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId}/permissions)
 	UpdatePatientPermissions(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
@@ -1969,6 +1972,40 @@ func (w *ServerInterfaceWrapper) UpdatePatient(ctx echo.Context) error {
 	return err
 }
 
+// ConnectProvider converts echo context to params.
+func (w *ServerInterfaceWrapper) ConnectProvider(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientId", ctx.Param("patientId"), &patientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	// ------------- Path parameter "providerId" -------------
+	var providerId ProviderId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "providerId", ctx.Param("providerId"), &providerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter providerId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ConnectProvider(ctx, clinicId, patientId, providerId)
+	return err
+}
+
 // UpdatePatientPermissions converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdatePatientPermissions(ctx echo.Context) error {
 	var err error
@@ -2717,6 +2754,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.GetPatient)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.CreatePatientFromUser)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/connect/:providerId", wrapper.ConnectProvider)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.DeletePatientReviews)
