@@ -288,20 +288,19 @@ var _ = Describe("Patients Repository", func() {
 			BeforeEach(func() {
 				update = patientsTest.RandomPatientUpdate()
 				expected := patients.Patient{
-					Id:                             randomPatient.Id,
-					ClinicId:                       randomPatient.ClinicId,
-					UserId:                         randomPatient.UserId,
-					BirthDate:                      update.Patient.BirthDate,
-					Email:                          update.Patient.Email,
-					FullName:                       update.Patient.FullName,
-					Mrn:                            update.Patient.Mrn,
-					Tags:                           update.Patient.Tags,
-					TargetDevices:                  update.Patient.TargetDevices,
-					Permissions:                    update.Patient.Permissions,
-					IsMigrated:                     randomPatient.IsMigrated,
-					LastRequestedDexcomConnectTime: update.Patient.LastRequestedDexcomConnectTime,
-					DataSources:                    update.Patient.DataSources,
-					EHRSubscriptions:               update.Patient.EHRSubscriptions,
+					Id:               randomPatient.Id,
+					ClinicId:         randomPatient.ClinicId,
+					UserId:           randomPatient.UserId,
+					BirthDate:        update.Patient.BirthDate,
+					Email:            update.Patient.Email,
+					FullName:         update.Patient.FullName,
+					Mrn:              update.Patient.Mrn,
+					Tags:             update.Patient.Tags,
+					TargetDevices:    update.Patient.TargetDevices,
+					Permissions:      update.Patient.Permissions,
+					IsMigrated:       randomPatient.IsMigrated,
+					DataSources:      update.Patient.DataSources,
+					EHRSubscriptions: update.Patient.EHRSubscriptions,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -1470,6 +1469,63 @@ var _ = Describe("Patients Repository", func() {
 				})
 			})
 		})
+
+		Describe("Add provider connection request", func() {
+			BeforeEach(func() {
+				dataSources := patients.DataSources{{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					State:        "pending",
+				}}
+				err := repo.UpdatePatientDataSources(context.Background(), *randomPatient.UserId, &dataSources)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("correctly updates the datasource to pending reconnect when the data source already exists", func() {
+				id := primitive.NewObjectID()
+				modifiedTime := time.Now()
+				dataSources := patients.DataSources{{
+					DataSourceId: &id,
+					ModifiedTime: &modifiedTime,
+					ProviderName: patients.DexcomDataSourceProviderName,
+					State:        "pending",
+				}}
+				err := repo.UpdatePatientDataSources(context.Background(), *randomPatient.UserId, &dataSources)
+				Expect(err).ToNot(HaveOccurred())
+
+				request := patients.ConnectionRequest{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
+				}
+
+				patient, err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient).ToNot(BeNil())
+				Expect(patient.DataSources).ToNot(BeNil())
+				Expect(*patient.DataSources).To(HaveLen(1))
+				Expect((*patient.DataSources)[0].State).To(Equal("pendingReconnect"))
+			})
+
+			It("correctly adds multiple requests", func() {
+				request := patients.ConnectionRequest{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					CreatedTime:  time.Now().Truncate(time.Millisecond),
+				}
+
+				_, err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				Expect(err).ToNot(HaveOccurred())
+				patient, err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(patient).ToNot(BeNil())
+				Expect(patient.ProviderConnectionRequests).To(HaveKey("dexcom"))
+
+				dexcom := patient.ProviderConnectionRequests["dexcom"]
+				Expect(dexcom).To(HaveLen(2))
+				Expect(dexcom[0]).To(BeComparableTo(request))
+				Expect(dexcom[1]).To(BeComparableTo(request))
+			})
+		})
+
 	})
 
 })
@@ -1493,6 +1549,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"InvitedBy":                      Ignore(),
 		"Summary":                        Ignore(),
 		"Reviews":                        Ignore(),
+		"ProviderConnectionRequests":     Equal(patient.ProviderConnectionRequests),
 		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
 		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),

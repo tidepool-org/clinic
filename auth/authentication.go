@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/golang-lru/simplelru"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"net/http"
 	"sync"
@@ -29,6 +30,16 @@ type Auth struct {
 
 func IsServerAuth(a *Auth) bool {
 	return a != nil && a.ServerAccess
+}
+
+func (a *Auth) AssertAuthenticatedUser() error {
+	if a == nil || a.SubjectId == "" {
+		return fmt.Errorf("%w: expected authenticated user id", errors.BadRequest)
+	}
+	if a.ServerAccess {
+		return fmt.Errorf("%w: expected user access token", errors.BadRequest)
+	}
+	return nil
 }
 
 type Authenticator interface {

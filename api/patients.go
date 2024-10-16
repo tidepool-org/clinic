@@ -205,12 +205,11 @@ func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, p
 		}
 	}
 
-	update := patients.LastRequestedDexcomConnectUpdate{
-		ClinicId: clinicId,
-		Time:     time.Now(),
-		UserId:   patientId,
+	request := patients.ConnectionRequest{
+		ProviderName: patients.DexcomDataSourceProviderName,
+		CreatedTime:         time.Now(),
 	}
-	patient, err := h.Patients.UpdateLastRequestedDexcomConnectTime(ctx, &update)
+	patient, err := h.Patients.AddProviderConnectionRequest(ctx, clinicId, patientId, request)
 	if err != nil {
 		return err
 	}
@@ -498,4 +497,30 @@ func (h *Handler) DeletePatientReviews(ec echo.Context, clinicId ClinicId, patie
 	}
 
 	return ec.JSON(http.StatusOK, NewReviewsDto(reviews))
+}
+
+func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId) error {
+	ctx := ec.Request().Context()
+
+	authData := auth.GetAuthData(ctx)
+	if err := authData.AssertAuthenticatedUser(); err != nil {
+		return err
+	}
+
+	provider, err := NewDataProvider(providerId)
+	if err != nil {
+		return err
+	}
+
+	request := patients.ConnectionRequest{
+		ProviderName: provider,
+		CreatedTime:  time.Now(),
+	}
+
+	patient, err := h.Patients.AddProviderConnectionRequest(ctx, clinicId, patientId, request)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }

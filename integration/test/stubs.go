@@ -139,7 +139,10 @@ func ShorelineStub() *httptest.Server {
 			body, _ := io.ReadAll(r.Body)
 			_ = json.Unmarshal(body, &user)
 
-			if user.Username == "xealth@tidepool.org" {
+			if user.Username == "test@tidepool.org" {
+				resp, _ = json.Marshal(clinicianUser)
+				w.WriteHeader(http.StatusCreated)
+			} else if user.Username == "xealth@tidepool.org" {
 				xealthPatientCreated = true
 				resp, _ = json.Marshal(xealthUser)
 				w.WriteHeader(http.StatusCreated)

@@ -500,10 +500,9 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		}
 
 		if connectDexcom {
-			if match.Patient, err = d.patients.UpdateLastRequestedDexcomConnectTime(ctx, &patients.LastRequestedDexcomConnectUpdate{
-				ClinicId: create.ClinicId.Hex(),
-				UserId:   *match.Patient.UserId,
-				Time:     time.Now(),
+			if match.Patient, err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
+				ProviderName: patients.DexcomDataSourceProviderName,
+				CreatedTime: time.Now(),
 			}); err != nil {
 				return fmt.Errorf("unable to update dexcom connection: %w", err)
 			}

@@ -564,53 +564,60 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
-func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
-	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
+func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) (*Patient, error) {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	currentTime := time.Now()
 
 	// We fetch the current dexcom data source to determine if we are requesting an initial connection
 	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
-	patient, err := r.Get(ctx, update.ClinicId, update.UserId)
+	patient, err := r.Get(ctx, clinicId, userId)
 	if err != nil {
 		return nil, fmt.Errorf("error finding patient: %w", err)
 	}
 
-	var patientDexcomDataSource DataSource
+	var providerDataSource DataSource
 	if patient.DataSources != nil {
 		for _, source := range *patient.DataSources {
-			if source.ProviderName == DexcomDataSourceProviderName {
-				patientDexcomDataSource = source
+			if source.ProviderName == request.ProviderName {
+				providerDataSource = source
 			}
 		}
 	}
 
 	selector := bson.M{
 		"clinicId":                 clinicObjId,
-		"userId":                   update.UserId,
-		"dataSources.providerName": DexcomDataSourceProviderName,
+		"userId":                   userId,
+		"dataSources.providerName": request.ProviderName,
 	}
 
 	// Default update for initial connection requests
 	mongoUpdate := bson.M{
 		"$set": bson.M{
-			"lastRequestedDexcomConnectTime": update.Time,
 			"updatedTime":                    currentTime,
-			"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
+			"dataSources.$.expirationTime":   currentTime.Add(PendingDataSourceExpirationDuration),
 			"dataSources.$.state":            DataSourceStatePending,
 		},
 	}
 
 	// Update for previously connected requests
-	if patientDexcomDataSource.ModifiedTime != nil {
+	if providerDataSource.ModifiedTime != nil {
 		mongoUpdate = bson.M{
 			"$set": bson.M{
-				"lastRequestedDexcomConnectTime": update.Time,
 				"updatedTime":                    currentTime,
-				"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
+				"dataSources.$.expirationTime":   currentTime.Add(PendingDataSourceExpirationDuration),
 				"dataSources.$.modifiedTime":     currentTime,
 				"dataSources.$.state":            DataSourceStatePendingReconnect,
 			},
 		}
+	}
+
+	key := "providerConnectionRequests." + request.ProviderName
+	mongoUpdate["$push"] = bson.M{
+		key: bson.M{
+			"$each": bson.A{request},
+			// Prepend, so the most recent request is stored first
+			"$position": 0,
+		},
 	}
 
 	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
@@ -621,7 +628,7 @@ func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, u
 		return nil, fmt.Errorf("error updating patient: %w", err)
 	}
 
-	return r.Get(ctx, update.ClinicId, update.UserId)
+	return r.Get(ctx, clinicId, userId)
 }
 
 func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
