@@ -681,6 +681,12 @@ const (
 	Tier0400 Tier = "tier0400"
 )
 
+// Defines values for ProviderId.
+const (
+	Dexcom ProviderId = "dexcom"
+	Twiist ProviderId = "twiist"
+)
+
 // Defines values for FindPatientsParamsWorkspaceIdType.
 const (
 	FindPatientsParamsWorkspaceIdTypeClinicId    FindPatientsParamsWorkspaceIdType = "clinicId"
@@ -984,9 +990,12 @@ type Migrations = []Migration
 type Patient struct {
 	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
 	BirthDate            openapi_types.Date `json:"birthDate"`
-	CreatedTime          *time.Time         `json:"createdTime,omitempty"`
-	DataSources          *[]DataSource      `json:"dataSources"`
-	Email                *string            `json:"email,omitempty"`
+
+	// ConnectionRequests Requests for each provider are listed in reverse chronological order
+	ConnectionRequests *ProviderConnectionRequests `json:"connectionRequests,omitempty"`
+	CreatedTime        *time.Time                  `json:"createdTime,omitempty"`
+	DataSources        *[]DataSource               `json:"dataSources"`
+	Email              *string                     `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
@@ -1550,6 +1559,18 @@ type PhoneNumber struct {
 	Type   *string `json:"type,omitempty"`
 }
 
+// ProviderConnectionRequest defines model for ProviderConnectionRequest.
+type ProviderConnectionRequest struct {
+	CreatedTime  time.Time `json:"createdTime"`
+	ProviderName string    `json:"providerName"`
+}
+
+// ProviderConnectionRequests Requests for each provider are listed in reverse chronological order
+type ProviderConnectionRequests struct {
+	Dexcom []ProviderConnectionRequest `json:"dexcom"`
+	Twiist []ProviderConnectionRequest `json:"twiist"`
+}
+
 // ScheduledReports Scheduled Report Settings
 type ScheduledReports struct {
 	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
@@ -1723,6 +1744,9 @@ type PatientId = string
 
 // PatientTagId defines model for patientTagId.
 type PatientTagId = string
+
+// ProviderId defines model for providerId.
+type ProviderId string
 
 // Role defines model for role.
 type Role = string

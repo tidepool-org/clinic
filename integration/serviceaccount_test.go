@@ -19,7 +19,7 @@ var _ = Describe("Service Account Integration Test", Ordered, func() {
 	Describe("Create a clinic", func() {
 		It("Succeeds", func() {
 			rec := httptest.NewRecorder()
-			req := prepareRequest(http.MethodPost, "/v1/clinics", "./test/serviceaccount_fixtures/01_create_clinic.json")
+			req := prepareRequest(http.MethodPost, "/v1/clinics", "./test/common_fixtures/01_create_clinic.json")
 			asClinician(req)
 
 			server.ServeHTTP(rec, req)
