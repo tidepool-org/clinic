@@ -287,7 +287,14 @@ func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, param
 
 func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	err := h.Patients.Remove(ctx, string(clinicId), string(patientId))
+
+	var deletedByUserId *string
+	authData := auth.GetAuthData(ctx)
+	if authData != nil && authData.ServerAccess == false {
+		deletedByUserId = &authData.SubjectId
+	}
+
+	err := h.Patients.Remove(ctx, clinicId, patientId, deletedByUserId)
 	if err != nil {
 		return err
 	}

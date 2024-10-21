@@ -72,6 +72,7 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 				clinics.NewRepository,
 				clinicians.NewRepository,
 				clinicians.NewService,
+				patients.NewDeletionsRepository,
 				patients.NewRepository,
 				patients.NewService,
 				patients.NewCustodialService,
