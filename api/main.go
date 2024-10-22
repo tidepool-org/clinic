@@ -72,7 +72,7 @@ func SetReady(healthCheck *HealthCheck, db *mongo.Database, lifecycle fx.Lifecyc
 	})
 }
 
-func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator, logger *zap.Logger) (*echo.Echo, error) {
+func NewServer(handler Handler, healthCheck *HealthCheck, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator, logger *zap.Logger) (*echo.Echo, error) {
 	e := echo.New()
 	logger.Info("Starting Main Loop")
 	swagger, err := GetSwagger()
@@ -136,7 +136,7 @@ func NewServer(handler *Handler, healthCheck *HealthCheck, authorizer auth.Reque
 
 	e.HTTPErrorHandler = errors.CustomHTTPErrorHandler
 	e.GET("/ready", healthCheck.Ready)
-	RegisterHandlers(e, handler)
+	RegisterHandlers(e, &handler)
 
 	return e, nil
 }
@@ -173,7 +173,6 @@ func Dependencies() []fx.Option {
 			auth.NewServiceAccountAuthenticator,
 			auth.NewRequestAuthorizer,
 			NewHealthCheck,
-			NewHandler,
 			NewServer,
 		),
 		fx.WithLogger(func(log *zap.Logger) fxevent.Logger {

@@ -18,8 +18,9 @@ func WithTransaction(ctx context.Context, dbClient *mongo.Client, txn Transactio
 	}
 	defer session.EndSession(ctx)
 
-	wc := writeconcern.New(writeconcern.WMajority())
-	rc := readconcern.Snapshot()
-	txnOpts := options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
+	txnOpts := options.
+		Transaction().
+		SetWriteConcern(writeconcern.Majority()).
+		SetReadConcern(readconcern.Snapshot())
 	return session.WithTransaction(ctx, txn, txnOpts)
 }

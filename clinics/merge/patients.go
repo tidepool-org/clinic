@@ -86,22 +86,25 @@ func (p PatientPlans) GetConflictCounts() map[string]int {
 }
 
 type PatientPlan struct {
-	SourceClinicId *primitive.ObjectID
-	TargetClinicId *primitive.ObjectID
+	SourceClinicId *primitive.ObjectID `bson:"sourceClinicId"`
+	TargetClinicId *primitive.ObjectID `bson:"targetClinicId"`
 
-	SourcePatient *patients.Patient
-	TargetPatient *patients.Patient
+	SourceClinicName string `bson:"sourceClinicName"`
+	TargetClinicName string `bson:"targetClinicName"`
 
-	Conflicts map[string][]Conflict
+	SourcePatient *patients.Patient `bson:"sourcePatient"`
+	TargetPatient *patients.Patient `bson:"targetPatient"`
 
-	PatientAction string
+	Conflicts map[string][]Conflict `bson:"conflicts"`
 
-	SourceTagNames []string
-	TargetTagNames []string
+	PatientAction string `bson:"patientAction"`
 
-	PostMigrationTagNames []string
+	SourceTagNames []string `bson:"sourceTagNames"`
+	TargetTagNames []string `bson:"targetTagNames"`
 
-	CanExecuteAction bool
+	PostMigrationTagNames []string `bson:"postMigrationTagNames"`
+
+	CanExecuteAction bool `bson:"canExecuteAction"`
 }
 
 func (p PatientPlan) HasConflicts() bool {
@@ -118,8 +121,8 @@ func (p PatientPlan) PreventsMerge() bool {
 }
 
 type Conflict struct {
-	Category string
-	Patient  patients.Patient
+	Category string           `bson:"category"`
+	Patient  patients.Patient `bson:"patient"`
 }
 
 type PatientMergePlanner struct {
@@ -153,14 +156,18 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	mergeTargetPatients := map[string]struct{}{}
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))
 	for _, patient := range p.sourcePatients {
+		sanitizePatient(&patient)
 		plan := PatientPlan{
-			SourceClinicId:   p.source.Id,
-			TargetClinicId:   p.target.Id,
-			SourcePatient:    &patient,
-			SourceTagNames:   getPatientTagNames(patient, p.sourceTags),
-			Conflicts:        make(map[string][]Conflict),
-			PatientAction:    PatientActionMove,
-			CanExecuteAction: true,
+			SourceClinicId:        p.source.Id,
+			SourceClinicName:      *p.source.Name,
+			TargetClinicId:        p.target.Id,
+			TargetClinicName:      *p.target.Name,
+			SourcePatient:         &patient,
+			SourceTagNames:        getPatientTagNames(patient, p.sourceTags),
+			Conflicts:             make(map[string][]Conflict),
+			PatientAction:         PatientActionMove,
+			PostMigrationTagNames: getPatientTagNames(patient, p.sourceTags),
+			CanExecuteAction:      true,
 		}
 
 		duplicates := getDuplicates(patient, targetByAttribute)
@@ -170,6 +177,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				return nil, err
 			}
 
+			sanitizePatient(target)
 			if conflictCategory == PatientConflictCategoryDuplicateAccounts {
 				mergeTargetPatients[userId] = struct{}{}
 				plan.PatientAction = PatientActionMerge
@@ -195,9 +203,12 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	}
 
 	for _, patient := range p.targetPatients {
+		sanitizePatient(&patient)
 		plan := PatientPlan{
 			SourceClinicId:   p.source.Id,
+			SourceClinicName: *p.source.Name,
 			TargetClinicId:   p.target.Id,
+			TargetClinicName: *p.target.Name,
 			TargetPatient:    &patient,
 			TargetTagNames:   getPatientTagNames(patient, p.targetTags),
 			CanExecuteAction: true,
@@ -242,19 +253,35 @@ func getPatientTagNames(patient patients.Patient, tags map[string]*clinics.Patie
 	return nil
 }
 
-type PatientPlanExecutor struct {
-	logger             *zap.SugaredLogger
-	patientsCollection *mongo.Collection
+// Do not persist summaries
+func sanitizePatient(patient *patients.Patient) {
+	patient.Summary = nil
 }
 
-func NewPatientPlanExecutor(logger *zap.SugaredLogger, db *mongo.Database) *PatientPlanExecutor {
+type PatientPlanExecutor struct {
+	clinicsService     clinics.Service
+	patientsCollection *mongo.Collection
+
+	logger *zap.SugaredLogger
+}
+
+func NewPatientPlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Service, db *mongo.Database) *PatientPlanExecutor {
 	return &PatientPlanExecutor{
-		logger:             logger,
+		clinicsService:     clinicsService,
 		patientsCollection: db.Collection(patients.CollectionName),
+
+		logger: logger,
 	}
 }
 
 func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, source, target clinics.Clinic) error {
+	// Fetch the updated clinic object to make sure we are capturing
+	// the tags that were migrated from the source clinic
+	updated, err := p.clinicsService.Get(ctx, target.Id.Hex())
+	if err != nil {
+		return err
+	}
+
 	switch plan.PatientAction {
 	case PatientActionMove:
 		p.logger.Infow(
@@ -263,7 +290,7 @@ func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, sou
 			"userId", plan.SourcePatient.UserId,
 			"targetClinicId", target.Id.Hex(),
 		)
-		return p.movePatient(ctx, plan, target)
+		return p.movePatient(ctx, plan, *updated)
 	case PatientActionMerge:
 		p.logger.Infow(
 			"merging patient",
@@ -272,7 +299,7 @@ func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, sou
 			"targetClinicId", target.Id.Hex(),
 			"targetUserId", *plan.TargetPatient.UserId,
 		)
-		return p.mergePatient(ctx, plan, target)
+		return p.mergePatient(ctx, plan, *updated)
 	case PatientActionRetain:
 		p.logger.Infow(
 			"retaining patient",
