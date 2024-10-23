@@ -163,10 +163,10 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 			TargetClinicId:        p.target.Id,
 			TargetClinicName:      *p.target.Name,
 			SourcePatient:         &patient,
-			SourceTagNames:        getPatientTagNames(patient, p.sourceTags),
+			SourceTagNames:        getUniquePatientTagNames(patient, p.sourceTags),
 			Conflicts:             make(map[string][]Conflict),
 			PatientAction:         PatientActionMove,
-			PostMigrationTagNames: getPatientTagNames(patient, p.sourceTags),
+			PostMigrationTagNames: getUniquePatientTagNames(patient, p.sourceTags),
 			CanExecuteAction:      true,
 		}
 
@@ -182,7 +182,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				mergeTargetPatients[userId] = struct{}{}
 				plan.PatientAction = PatientActionMerge
 				plan.TargetPatient = target
-				plan.TargetTagNames = getPatientTagNames(*target, p.targetTags)
+				plan.TargetTagNames = getUniquePatientTagNames(*target, p.targetTags)
 
 				uniqueTags := mapset.NewSet[string](plan.SourceTagNames...)
 				uniqueTags.Append(plan.TargetTagNames...)
@@ -210,7 +210,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 			TargetClinicId:   p.target.Id,
 			TargetClinicName: *p.target.Name,
 			TargetPatient:    &patient,
-			TargetTagNames:   getPatientTagNames(patient, p.targetTags),
+			TargetTagNames:   getUniquePatientTagNames(patient, p.targetTags),
 			CanExecuteAction: true,
 		}
 		if _, ok := mergeTargetPatients[getUserId(patient)]; ok {
@@ -240,15 +240,16 @@ func buildTagsMap(tags []clinics.PatientTag) map[string]*clinics.PatientTag {
 	return m
 }
 
-func getPatientTagNames(patient patients.Patient, tags map[string]*clinics.PatientTag) []string {
+func getUniquePatientTagNames(patient patients.Patient, tags map[string]*clinics.PatientTag) []string {
 	if patient.Tags != nil && len(*patient.Tags) > 0 {
-		tagNames := make([]string, 0, len(*patient.Tags))
+		tagNames := mapset.NewSet[string]()
 		for _, tagId := range *patient.Tags {
 			if tag, ok := tags[tagId.Hex()]; ok && tag != nil {
-				tagNames = append(tagNames, tag.Name)
+				tagNames.Append(tag.Name)
 			}
+
 		}
-		return tagNames
+		return tagNames.ToSlice()
 	}
 	return nil
 }
