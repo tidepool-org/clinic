@@ -227,7 +227,7 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 				currentRow.AddCell()
 				currentRow.AddCell().SetValue("(retained)")
 				currentRow.AddCell().SetValue(pointer.ToString(r.plan.Target.Name))
-				addPatientDetails(currentRow, conflict.Patient, getPatientTagNames(conflict.Patient, targetTags))
+				addPatientDetails(currentRow, conflict.Patient, getUniquePatientTagNames(conflict.Patient, targetTags))
 			}
 		}
 
@@ -486,7 +486,7 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clini
 			currentRow = sh.AddRow()
 			currentRow.AddCell()
 
-			addPatientDetails(currentRow, p.Patient, getPatientTagNames(p.Patient, tags))
+			addPatientDetails(currentRow, p.Patient, getUniquePatientTagNames(p.Patient, tags))
 
 			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryLikelyDuplicateAccounts], ", "))
 			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryNameOnlyMatch], ", "))
