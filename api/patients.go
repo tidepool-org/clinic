@@ -55,7 +55,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		return err
 	}
 
-	list, err := h.patients.List(ctx, &filter, page, sorts)
+	list, err := h.Patients.List(ctx, &filter, page, sorts)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 		patient.InvitedBy = &authData.SubjectId
 	}
 
-	result, err := h.patients.Create(ctx, patient)
+	result, err := h.Patients.Create(ctx, patient)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 
 func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	patient, err := h.patients.Get(ctx, string(clinicId), string(patientId))
+	patient, err := h.Patients.Get(ctx, string(clinicId), string(patientId))
 	if err != nil {
 		return err
 	}
@@ -125,12 +125,12 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 	patient.UserId = strp(patientId)
 	patient.ClinicId = &clinicObjId
 
-	if err = h.users.PopulatePatientDetailsFromExistingUser(ctx, &patient); err != nil {
+	if err = h.Users.PopulatePatientDetailsFromExistingUser(ctx, &patient); err != nil {
 		return err
 	}
 	patient.Email = pstrToLower(patient.Email)
 
-	result, err := h.patients.Create(ctx, patient)
+	result, err := h.Patients.Create(ctx, patient)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		Patient:   NewPatient(dto),
 		UpdatedBy: authData.SubjectId,
 	}
-	patient, err := h.patients.Update(ctx, update)
+	patient, err := h.Patients.Update(ctx, update)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 		UserId:   string(patientId),
 		Time:     time.Now(),
 	}
-	patient, err := h.patients.UpdateLastUploadReminderTime(ctx, &update)
+	patient, err := h.Patients.UpdateLastUploadReminderTime(ctx, &update)
 	if err != nil {
 		return err
 	}
@@ -225,7 +225,7 @@ func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, p
 		Time:     time.Now(),
 		UserId:   patientId,
 	}
-	patient, err := h.patients.UpdateLastRequestedDexcomConnectTime(ctx, &update)
+	patient, err := h.Patients.UpdateLastRequestedDexcomConnectTime(ctx, &update)
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, p
 		return err
 	}
 
-	patient, err := h.patients.UpdatePermissions(ctx, string(clinicId), string(patientId), NewPermissions(&dto))
+	patient, err := h.Patients.UpdatePermissions(ctx, string(clinicId), string(patientId), NewPermissions(&dto))
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, p
 
 func (h *Handler) DeletePatientPermission(ec echo.Context, clinicId ClinicId, patientId PatientId, permission string) error {
 	ctx := ec.Request().Context()
-	_, err := h.patients.DeletePermission(ctx, string(clinicId), string(patientId), permission)
+	_, err := h.Patients.DeletePermission(ctx, string(clinicId), string(patientId), permission)
 	if err != nil {
 		return err
 	}
@@ -266,7 +266,7 @@ func (h *Handler) DeletePatientPermission(ec echo.Context, clinicId ClinicId, pa
 func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, params ListClinicsForPatientParams) error {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
-	list, err := h.patients.List(ctx, &patients.Filter{UserId: strp(string(patientId))}, page, nil)
+	list, err := h.Patients.List(ctx, &patients.Filter{UserId: strp(string(patientId))}, page, nil)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, param
 		clinicIds = append(clinicIds, patient.ClinicId.Hex())
 	}
 
-	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
+	clinicList, err := h.Clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
 	dtos, err := NewPatientClinicRelationshipsDto(list.Patients, clinicList)
 	if err != nil {
 		return err
@@ -287,7 +287,14 @@ func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, param
 
 func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	err := h.patients.Remove(ctx, string(clinicId), string(patientId))
+
+	var deletedByUserId *string
+	authData := auth.GetAuthData(ctx)
+	if authData != nil && authData.ServerAccess == false {
+		deletedByUserId = &authData.SubjectId
+	}
+
+	err := h.Patients.Remove(ctx, clinicId, patientId, deletedByUserId)
 	if err != nil {
 		return err
 	}
@@ -305,7 +312,7 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 		}
 	}
 
-	err := h.patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto))
+	err := h.Patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto))
 	if err != nil {
 		return err
 	}
@@ -315,7 +322,7 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 
 func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideReportParams) error {
 	ctx := ec.Request().Context()
-	tide, err := h.patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
+	tide, err := h.Patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
 	if err != nil {
 		return err
 	}
@@ -336,7 +343,7 @@ func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId C
 		dto = nil
 	}
 
-	err := h.patients.DeletePatientTagFromClinicPatients(ctx, string(clinicId), string(patientTagId), dto)
+	err := h.Patients.DeletePatientTagFromClinicPatients(ctx, string(clinicId), string(patientTagId), dto)
 
 	if err != nil {
 		return err
@@ -353,7 +360,7 @@ func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId Cli
 		return err
 	}
 
-	err := h.patients.AssignPatientTagToClinicPatients(ctx, string(clinicId), string(patientTagId), dto)
+	err := h.Patients.AssignPatientTagToClinicPatients(ctx, string(clinicId), string(patientTagId), dto)
 
 	if err != nil {
 		return err
@@ -369,7 +376,7 @@ func (h *Handler) UpdatePatientDataSources(ec echo.Context, userId UserId) error
 		return err
 	}
 
-	err := h.patients.UpdatePatientDataSources(ctx, string(userId), &dto)
+	err := h.Patients.UpdatePatientDataSources(ctx, string(userId), &dto)
 	if err != nil {
 		return err
 	}
@@ -391,7 +398,7 @@ func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error
 	cliniciansFilter := &clinicians.Filter{
 		UserId: &authData.SubjectId,
 	}
-	clinicianList, err := h.clinicians.List(ctx, cliniciansFilter, maxClinics)
+	clinicianList, err := h.Clinicians.List(ctx, cliniciansFilter, maxClinics)
 	if err != nil {
 		return err
 	}
@@ -403,7 +410,7 @@ func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error
 		}
 	}
 
-	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, maxClinics)
+	clinicList, err := h.Clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, maxClinics)
 	if err != nil {
 		return err
 	}
@@ -432,7 +439,7 @@ func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error
 		Mrn:       params.Mrn,
 		BirthDate: params.BirthDate,
 	}
-	list, err := h.patients.List(ctx, &filter, page, nil)
+	list, err := h.Patients.List(ctx, &filter, page, nil)
 	if err != nil {
 		return err
 	}
@@ -468,7 +475,7 @@ func (h *Handler) UpdatePatientReviews(ec echo.Context, clinicId ClinicId, patie
 		Time:        time.Now().UTC().Truncate(time.Millisecond),
 	}
 
-	reviews, err := h.patients.AddReview(ctx, clinicId, patientId, review)
+	reviews, err := h.Patients.AddReview(ctx, clinicId, patientId, review)
 	if err != nil {
 		return err
 	}
@@ -494,7 +501,7 @@ func (h *Handler) DeletePatientReviews(ec echo.Context, clinicId ClinicId, patie
 
 	clinicianId := authData.SubjectId
 
-	reviews, err := h.patients.DeleteReview(ctx, clinicId, clinicianId, patientId)
+	reviews, err := h.Patients.DeleteReview(ctx, clinicId, clinicianId, patientId)
 	if err != nil {
 		return err
 	}

@@ -16,7 +16,7 @@ func (h *Handler) VerifyEndpoint(ec echo.Context) error {
 	if err := ec.Bind(&request); err != nil {
 		return err
 	}
-	result, err := h.redox.VerifyEndpoint(request)
+	result, err := h.Redox.VerifyEndpoint(request)
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func (h *Handler) ProcessEHRMessage(ec echo.Context) error {
 	ctx := ec.Request().Context()
 
 	// Make sure the request is initiated by redox
-	if err := h.redox.AuthorizeRequest(ec.Request()); err != nil {
+	if err := h.Redox.AuthorizeRequest(ec.Request()); err != nil {
 		return err
 	}
 
@@ -38,7 +38,7 @@ func (h *Handler) ProcessEHRMessage(ec echo.Context) error {
 		return err
 	}
 
-	return h.redox.ProcessEHRMessage(ctx, raw)
+	return h.Redox.ProcessEHRMessage(ctx, raw)
 }
 
 func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
@@ -61,7 +61,7 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != EHRMatchMessageRefEventTypeNew {
 		return fmt.Errorf("%w: only new order messages are supported", errors.BadRequest)
 	}
-	msg, err := h.redox.FindMessage(
+	msg, err := h.Redox.FindMessage(
 		ctx,
 		request.MessageRef.DocumentId,
 		string(request.MessageRef.DataModel),
@@ -80,13 +80,13 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	if err != nil {
 		return err
 	}
-	clinic, err := h.redox.FindMatchingClinic(ctx, criteria)
+	clinic, err := h.Redox.FindMatchingClinic(ctx, criteria)
 	if err != nil {
 		return err
 	}
 
 	update := redox.GetUpdateFromNewOrder(*clinic, documentId, *order)
-	matchedPatients, err := h.redox.MatchNewOrderToPatient(ctx, *clinic, *order, update)
+	matchedPatients, err := h.Redox.MatchNewOrderToPatient(ctx, *clinic, *order, update)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 
 func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	if err := h.redox.RescheduleSubscriptionOrders(ctx, clinicId); err != nil {
+	if err := h.Redox.RescheduleSubscriptionOrders(ctx, clinicId); err != nil {
 		return err
 	}
 
@@ -115,7 +115,7 @@ func (h *Handler) SyncEHRData(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) SyncEHRDataForPatient(ec echo.Context, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	if err := h.redox.RescheduleSubscriptionOrdersForPatient(ctx, patientId); err != nil {
+	if err := h.Redox.RescheduleSubscriptionOrdersForPatient(ctx, patientId); err != nil {
 		return err
 	}
 

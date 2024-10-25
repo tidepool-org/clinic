@@ -146,8 +146,8 @@ func (m MembershipRestrictionsMergePlan) getSerializedValue(restrictions []clini
 }
 
 func (m MembershipRestrictionsMergePlan) PreventsMerge() bool {
-	sourceMap := m.membershipRestrictionsToMap(m.SourceValue)
-	targetMap := m.membershipRestrictionsToMap(m.TargetValue)
+	sourceMap := membershipRestrictionsToMap(m.SourceValue)
+	targetMap := membershipRestrictionsToMap(m.TargetValue)
 
 	// Check if the source map is a subset of the target map
 	for sourceDomain, sourceIDP := range sourceMap {
@@ -158,7 +158,7 @@ func (m MembershipRestrictionsMergePlan) PreventsMerge() bool {
 	return false
 }
 
-func (m MembershipRestrictionsMergePlan) membershipRestrictionsToMap(restrictions []clinics.MembershipRestrictions) map[string]string {
+func membershipRestrictionsToMap(restrictions []clinics.MembershipRestrictions) map[string]string {
 	result := map[string]string{}
 	for _, r := range restrictions {
 		result[r.EmailDomain] = r.RequiredIdp

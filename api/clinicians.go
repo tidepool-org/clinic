@@ -42,7 +42,7 @@ func (h *Handler) ListClinicians(ec echo.Context, clinicId ClinicId, params List
 		Role:     roleToString(params.Role),
 	}
 
-	list, err := h.clinicians.List(ctx, &filter, page)
+	list, err := h.Clinicians.List(ctx, &filter, page)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (h *Handler) DeleteClinician(ec echo.Context, clinicId ClinicId, clinicianI
 		return err
 	}
 
-	err := h.clinicians.Delete(ctx, string(clinicId), string(clinicianId))
+	err := h.Clinicians.Delete(ctx, string(clinicId), string(clinicianId))
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (h *Handler) DeleteClinician(ec echo.Context, clinicId ClinicId, clinicianI
 
 func (h *Handler) GetClinician(ec echo.Context, clinicId ClinicId, clinicianId ClinicianId) error {
 	ctx := ec.Request().Context()
-	clinician, err := h.clinicians.Get(ctx, string(clinicId), string(clinicianId))
+	clinician, err := h.Clinicians.Get(ctx, string(clinicId), string(clinicianId))
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (h *Handler) CreateClinician(ec echo.Context, clinicId ClinicId) error {
 
 	clinician := NewClinician(dto)
 	clinician.ClinicId = &clinicObjId
-	result, err := h.clinicians.Create(ctx, clinician)
+	result, err := h.Clinicians.Create(ctx, clinician)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianI
 		Clinician:   NewClinicianUpdate(dto),
 	}
 
-	result, err := h.cliniciansUpdater.Update(ctx, update)
+	result, err := h.Clinicians.Update(ctx, update)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (h *Handler) ListClinicsForClinician(ec echo.Context, userId UserId, params
 
 func (h *Handler) GetInvitedClinician(ec echo.Context, clinicId ClinicId, inviteId InviteId) error {
 	ctx := ec.Request().Context()
-	clinician, err := h.clinicians.GetInvite(ctx, string(clinicId), string(inviteId))
+	clinician, err := h.Clinicians.GetInvite(ctx, string(clinicId), string(inviteId))
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (h *Handler) DeleteInvitedClinician(ec echo.Context, clinicId ClinicId, inv
 		return err
 	}
 
-	if err := h.clinicians.DeleteInvite(ctx, string(clinicId), string(inviteId)); err != nil {
+	if err := h.Clinicians.DeleteInvite(ctx, string(clinicId), string(inviteId)); err != nil {
 		return err
 	}
 
@@ -185,7 +185,7 @@ func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId ClinicId, i
 		UserId:   dto.UserId,
 	}
 
-	clinician, err := h.cliniciansUpdater.AssociateInvite(ctx, associate)
+	clinician, err := h.Clinicians.AssociateInvite(ctx, associate)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId ClinicId, i
 
 func (h *Handler) EnableNewClinicExperience(ec echo.Context, userId string) error {
 	ctx := ec.Request().Context()
-	clinic, err := h.clinicsMigrator.CreateEmptyClinic(ctx, userId)
+	clinic, err := h.ClinicsMigrator.CreateEmptyClinic(ctx, userId)
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func (h *Handler) AddServiceAccount(ec echo.Context, clinicId ClinicId) error {
 		return ec.JSON(http.StatusBadRequest, "invalid clinic id")
 	}
 
-	acc, err := h.serviceAccountAuthenticator.GetServiceAccount(ctx, dto.ClientId, dto.ClientSecret)
+	acc, err := h.ServiceAccountAuthenticator.GetServiceAccount(ctx, dto.ClientId, dto.ClientSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get service account for client %s: %w", dto.ClientId, err)
 	}
@@ -231,7 +231,7 @@ func (h *Handler) AddServiceAccount(ec echo.Context, clinicId ClinicId) error {
 		Roles:            []string{clinicians.RoleClinicMember},
 		IsServiceAccount: true,
 	}
-	result, err := h.clinicians.Create(ctx, clinician)
+	result, err := h.Clinicians.Create(ctx, clinician)
 	if err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func (h *Handler) AddServiceAccount(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page store.Pagination) error {
 	ctx := ec.Request().Context()
-	cliniciansList, err := h.clinicians.List(ctx, &filter, page)
+	cliniciansList, err := h.Clinicians.List(ctx, &filter, page)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page st
 		clinicIds = append(clinicIds, clinician.ClinicId.Hex())
 	}
 
-	clinicList, err := h.clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
+	clinicList, err := h.Clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
 	dtos, err := NewClinicianClinicRelationshipsDto(cliniciansList, clinicList)
 	if err != nil {
 		return err
@@ -262,7 +262,7 @@ func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page st
 
 func (h *Handler) assertClinicMigrated(ctx context.Context, clinicId ClinicId) error {
 	id := string(clinicId)
-	clinic, err := h.clinics.Get(ctx, id)
+	clinic, err := h.Clinics.Get(ctx, id)
 	if err != nil {
 		return err
 	}
