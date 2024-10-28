@@ -392,6 +392,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow backend services to update patient account
+# PUT /v1/clinics/:clinicId/patients/:patientId
+allow {
+  is_backend_service
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patients", _]
+}
+
 # Allow backend services to create an empty clinic for legacy clinician
 # POST /v1/clinicians/:userId/migrate
 allow {
