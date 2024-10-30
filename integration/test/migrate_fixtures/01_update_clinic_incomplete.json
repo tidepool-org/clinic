@@ -1,0 +1,16 @@
+{
+  "address": "1 Todd's Way",
+  "city": "San Francisco",
+  "country": "USA",
+  "name": "Todd's Clinic",
+  "phoneNumbers": [
+    {
+      "number": "+15551115555"
+    }
+  ],
+  "postalCode": "90210",
+  "preferredBgUnits": "mg/dL",
+  "state": "California",
+  "timezone": "US/Pacific",
+  "website": "http://www.test.com"
+}
