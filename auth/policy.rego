@@ -150,6 +150,22 @@ allow {
   input.path = ["v1", "clinics", _]
 }
 
+# Allow backend services to update clinic
+# PUT /v1/clinics/:clinicId
+allow {
+  is_backend_service
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _]
+}
+
+# Allow backend services to delete clinic
+# DELETE /v1/clinics/:clinicId
+allow {
+  is_backend_service
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _]
+}
+
 # Allow currently authenticated clinician to update clinic
 # PUT /v1/clinics/:clinicId
 allow {
@@ -159,7 +175,7 @@ allow {
 }
 
 # Allow currently authenticated clinician to delete clinic
-# PUT /v1/clinics/:clinicId
+# DELETE /v1/clinics/:clinicId
 allow {
   input.method == "DELETE"
   input.path = ["v1", "clinics", _]
