@@ -46,7 +46,7 @@ go-flags:
 	go env -w GOFLAGS=-mod=mod
 
 tools/bin/ginkgo:
-	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.19.0
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.21.0
 
 # Runs tests
 .PHONY: test
@@ -59,7 +59,7 @@ build: go-flags
 	./build.sh
 
 $(OAPI_CODEGEN):
-	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.3.0
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.1
 
 $(MOCKGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/golang/mock/mockgen@v1.6.0

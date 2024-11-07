@@ -267,14 +267,8 @@ paths:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateFrom
+          name: lastDataCutoff
           description: Inclusive
-        - schema:
-            type: string
-            format: date-time
-          in: query
-          name: cgm.lastUploadDateTo
-          description: Exclusive
   '/v1/clinics/{clinicId}/patients':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -755,13 +749,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateFrom
+          name: cgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: cgm.lastUploadDateTo
+          name: cgm.lastDataTo
           description: Exclusive
         - schema:
             $ref: '#/components/schemas/FloatFilter'
@@ -857,13 +851,13 @@ paths:
             type: string
             format: date-time
           in: query
-          name: bgm.lastUploadDateFrom
+          name: bgm.lastDataFrom
           description: Inclusive
         - schema:
             type: string
             format: date-time
           in: query
-          name: bgm.lastUploadDateTo
+          name: bgm.lastDataTo
           description: Exclusive
         - schema:
             type: array
@@ -3391,10 +3385,7 @@ components:
           type: string
           pattern: ^(1d|7d|14d|30d)$
           example: 7d
-        lastUploadDateFrom:
-          type: string
-          format: date-time
-        lastUploadDateTo:
+        lastDataCutoff:
           type: string
           format: date-time
         highGlucoseThreshold:
@@ -3421,8 +3412,7 @@ components:
         - schemaVersion
         - clinicId
         - period
-        - lastUploadDateFrom
-        - lastUploadDateTo
+        - lastDataCutoff
         - highGlucoseThreshold
         - veryHighGlucoseThreshold
         - lowGlucoseThreshold
@@ -3483,6 +3473,11 @@ components:
           x-go-type-skip-optional-pointer: true
           items:
             $ref: '#/components/schemas/PatientReview'
+        dataSources:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/DataSource'
       required:
         - id
         - tags
@@ -3551,6 +3546,9 @@ components:
           type: number
           example: 200
           x-go-type: int
+        lastData:
+          type: string
+          format: date-time
         patient:
           $ref: '#/components/schemas/TidePatient'
       required:
@@ -3566,6 +3564,7 @@ components:
         - timeInTargetPercent
         - timeCGMUsePercent
         - meetingTargets
+        - noData
       additionalProperties:
         type: array
         items:

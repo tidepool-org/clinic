@@ -11,8 +11,7 @@ type TideConfig struct {
 	ClinicId                 string      `json:"clinicId,omitempty"`
 	Filters                  TideFilters `json:"filters"`
 	HighGlucoseThreshold     float64     `json:"highGlucoseThreshold"`
-	LastUploadDateFrom       time.Time   `json:"lastUploadDateFrom"`
-	LastUploadDateTo         time.Time   `json:"lastUploadDateTo"`
+	LastDataCutoff           time.Time   `json:"lastDataCutoff"`
 	LowGlucoseThreshold      float64     `json:"lowGlucoseThreshold"`
 	Period                   string      `json:"period"`
 	SchemaVersion            int         `json:"schemaVersion"`
@@ -30,11 +29,12 @@ type TideFilters struct {
 }
 
 type TidePatient struct {
-	Email    *string   `json:"email"`
-	FullName *string   `json:"fullName"`
-	Id       *string   `json:"id,omitempty"`
-	Tags     *[]string `json:"tags"`
-	Reviews  []Review  `json:"reviews"`
+	Email       *string       `json:"email"`
+	FullName    *string       `json:"fullName"`
+	Id          *string       `json:"id,omitempty"`
+	Tags        []string      `json:"tags"`
+	Reviews     []Review      `json:"reviews"`
+	DataSources *[]DataSource `json:"dataSources"`
 }
 
 type TideResultPatient struct {
@@ -51,6 +51,7 @@ type TideResultPatient struct {
 	TimeInVeryLowPercent       *float64    `json:"timeInVeryLowPercent,omitempty"`
 	TimeInAnyHighPercent       *float64    `json:"timeInAnyHighPercent,omitempty"`
 	TimeInAnyLowPercent        *float64    `json:"timeInAnyLowPercent,omitempty"`
+	LastData                   *time.Time  `json:"lastData,omitempty"`
 }
 
-type TideResults map[string]*[]TideResultPatient
+type TideResults map[string][]TideResultPatient

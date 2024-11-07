@@ -245,8 +245,7 @@ type DataSource struct {
 }
 
 type TideReportParams struct {
-	Period                *string
-	Tags                  *[]string
-	CgmLastUploadDateFrom *time.Time
-	CgmLastUploadDateTo   *time.Time
+	Period         *string
+	Tags           *[]string
+	LastDataCutoff *time.Time
 }
