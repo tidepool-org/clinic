@@ -1260,7 +1260,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"$or": bson.A{
 				bson.M{"summary.cgmStats.dates.lastData": bson.M{"$not": bson.M{"$gte": params.LastDataCutoff}}},
 				bson.M{"dataSources": bson.M{
-					"$elemMatch": bson.M{"providerName": "dexcom", "state": bson.M{"$ne": "active"}}},
+					"$elemMatch": bson.M{"providerName": "dexcom", "state": bson.M{"$ne": "connected"}}},
 				},
 			},
 		}
