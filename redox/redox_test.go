@@ -121,7 +121,7 @@ var _ = Describe("Redox", func() {
 
 		It("inserts the message if the data is valid", func() {
 			ctx := context.Background()
-			payload, err := test.LoadFixture("test/fixtures/subscribeorder.json")
+			payload, err := test.LoadFixture("test/fixtures/enable_reports_order.json")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(payload).ToNot(HaveLen(0))
 
@@ -218,7 +218,7 @@ var _ = Describe("Redox", func() {
 				clinic = *clinicsTest.RandomClinic()
 				patient = patientsTest.RandomPatient()
 
-				payload, err := test.LoadFixture("test/fixtures/subscribeorder.json")
+				payload, err := test.LoadFixture("test/fixtures/enable_reports_order.json")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(payload).ToNot(HaveLen(0))
 
@@ -329,7 +329,52 @@ var _ = Describe("Redox", func() {
 				clinic = *clinicsTest.RandomClinic()
 				patient = patientsTest.RandomPatient()
 
-				payload, err := test.LoadFixture("test/fixtures/accountorder.json")
+				payload, err := test.LoadFixture("test/fixtures/create_account_order.json")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(payload).ToNot(HaveLen(0))
+
+				err = json.Unmarshal(payload, &order)
+				Expect(err).ToNot(HaveOccurred())
+
+				update = nil
+			})
+
+			It("returns unique patients when multiple matches are found", func() {
+				fixtureMrn := "0000000001"
+				fixtureDateOfBirth := "2008-01-06"
+				fixtureFullName := "Timothy Bixby"
+				clinicId := clinic.Id.Hex()
+
+				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+					ClinicId: &clinicId,
+					Mrn:      &fixtureMrn,
+				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+					Patients:   []*patients.Patient{&patient, &patient},
+					TotalCount: 2,
+				}, nil)
+
+				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
+					ClinicId:  &clinicId,
+					BirthDate: &fixtureDateOfBirth,
+					FullName:  &fixtureFullName,
+				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
+					Patients:   []*patients.Patient{&patient},
+					TotalCount: 1,
+				}, nil)
+
+				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(1))
+			})
+
+		})
+
+		Context("with create account and enable reports order", func() {
+			BeforeEach(func() {
+				clinic = *clinicsTest.RandomClinic()
+				patient = patientsTest.RandomPatient()
+
+				payload, err := test.LoadFixture("test/fixtures/create_account_enable_reports_order.json")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(payload).ToNot(HaveLen(0))
 

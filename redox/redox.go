@@ -318,6 +318,8 @@ func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Cli
 		return h.MatchPatientsForSubscriptionOrder(ctx, clinic, order, update)
 	} else if procedureCodes.CreateAccount != nil && code == *procedureCodes.CreateAccount {
 		return h.FindMatchingPatientsForAccountCreationOrder(ctx, clinic, order)
+	} else if procedureCodes.CreateAccountAndEnableReports != nil && code == *procedureCodes.CreateAccountAndEnableReports {
+		return h.FindMatchingPatientsForAccountCreationOrder(ctx, clinic, order)
 	}
 
 	return nil, nil
