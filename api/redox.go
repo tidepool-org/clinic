@@ -3,7 +3,9 @@ package api
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/redox"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -56,10 +58,6 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("%w: invalid documentId", errors.BadRequest)
 	}
-	criteria, err := NewMatchOrderCriteria(request.Criteria)
-	if err != nil {
-		return fmt.Errorf("%w: invalid criteria", errors.BadRequest)
-	}
 
 	// We only support new order messages for now
 	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != EHRMatchMessageRefEventTypeNew {
@@ -80,12 +78,43 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 		return err
 	}
 
-	result, err := h.Redox.MatchNewOrderToPatient(ctx, redox.MatchOrder{
+	matchOrder := redox.MatchOrder{
 		DocumentId:        documentId,
 		Order:             *order,
-		PatientAttributes: criteria,
-	})
+	}
+	if request.Patients != nil {
+		criteria, err := NewMatchOrderCriteria(request.Patients.Criteria)
+		if err != nil {
+			return fmt.Errorf("%w: invalid criteria", errors.BadRequest)
+		}
+		matchOrder.PatientAttributes = criteria
 
+		if request.Patients.OnUniqueMatch != nil {
+			update := &patients.SubscriptionUpdate{
+				MatchedMessage: patients.MatchedMessage{
+					DocumentId: documentId,
+					DataModel:  order.Meta.DataModel,
+					EventType:  order.Meta.EventType,
+				},
+				Provider: clinics.EHRProviderRedox,
+			}
+
+			switch *request.Patients.OnUniqueMatch {
+			case ENABLEREPORTS:
+				update.Name = patients.SubscriptionRedoxSummaryAndReports
+				update.Active = true
+			case DISABLEREPORTS:
+				update.Name = patients.SubscriptionRedoxSummaryAndReports
+				update.Active = false
+			default:
+				return fmt.Errorf("%w: invalid 'onMatch' value %s", errors.BadRequest, *request.Patients.OnUniqueMatch)
+			}
+
+			matchOrder.SubscriptionUpdate = update
+		}
+	}
+
+	result, err := h.Redox.MatchNewOrderToPatient(ctx, matchOrder)
 	if err != nil {
 		return err
 	}

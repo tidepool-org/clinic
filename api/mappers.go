@@ -1618,7 +1618,7 @@ func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.Sum
 	return
 }
 
-func NewMatchOrderCriteria(criteria []EHRMatchRequestCriteria) ([]string, error) {
+func NewMatchOrderCriteria(criteria []EHRMatchRequestPatientsCriteria) ([]string, error) {
 	result := make([]string, 0, len(criteria))
 	for _, c := range criteria {
 		val := string(c)

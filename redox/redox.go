@@ -47,9 +47,10 @@ type Redox interface {
 	RescheduleSubscriptionOrdersForPatient(ctx context.Context, patientId string) error
 }
 type MatchOrder struct {
-	DocumentId        primitive.ObjectID
-	Order             models.NewOrder
-	PatientAttributes []string
+	DocumentId         primitive.ObjectID
+	Order              models.NewOrder
+	PatientAttributes  []string
+	SubscriptionUpdate *patients.SubscriptionUpdate
 }
 
 type MatchResult struct {
@@ -335,10 +336,9 @@ func (h *Handler) MatchNewOrderToPatient(ctx context.Context, matchOrder MatchOr
 	}
 
 	// Update the subscription for matched patient only if single match was found
-	update := GetUpdateFromNewOrder(*clinic, matchOrder.DocumentId, matchOrder.Order)
-	if update != nil && len(matchingPatients) == 1 {
+	if matchOrder.SubscriptionUpdate != nil && len(matchingPatients) == 1 {
 		match := matchingPatients[0]
-		err = h.patients.UpdateEHRSubscription(ctx, clinic.Id.Hex(), *match.UserId, *update)
+		err = h.patients.UpdateEHRSubscription(ctx, clinic.Id.Hex(), *match.UserId, *matchOrder.SubscriptionUpdate)
 		if err != nil {
 			return nil, err
 		}
@@ -517,37 +517,4 @@ func UnmarshallMessage[S *T, T Model](envelope models.MessageEnvelope) (S, error
 	}
 
 	return model, nil
-}
-
-func GetUpdateFromNewOrder(clinic clinics.Clinic, documentId primitive.ObjectID, order models.NewOrder) *patients.SubscriptionUpdate {
-	code := GetProcedureCodeFromOrder(order)
-	update := patients.SubscriptionUpdate{
-		MatchedMessage: patients.MatchedMessage{
-			DocumentId: documentId,
-			DataModel:  order.Meta.DataModel,
-			EventType:  order.Meta.EventType,
-		},
-		Provider: clinics.EHRProviderRedox,
-	}
-
-	if clinic.EHRSettings.ProcedureCodes.EnableSummaryReports != nil && *clinic.EHRSettings.ProcedureCodes.EnableSummaryReports == code {
-		update.Name = patients.SubscriptionRedoxSummaryAndReports
-		update.Active = true
-		return &update
-	} else if clinic.EHRSettings.ProcedureCodes.DisableSummaryReports != nil && *clinic.EHRSettings.ProcedureCodes.DisableSummaryReports == code {
-		update.Name = patients.SubscriptionRedoxSummaryAndReports
-		update.Active = false
-		return &update
-	}
-
-	return nil
-}
-
-func GetProcedureCodeFromOrder(order models.NewOrder) (code string) {
-	if order.Order.Procedure == nil || order.Order.Procedure.Code == nil {
-		return
-	}
-
-	code = *order.Order.Procedure.Code
-	return
 }

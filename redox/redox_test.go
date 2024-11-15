@@ -211,7 +211,6 @@ var _ = Describe("Redox", func() {
 		var clinic clinics.Clinic
 		var patient patients.Patient
 		var order models.NewOrder
-		var update *patients.SubscriptionUpdate
 		var matchOrder redox.MatchOrder
 		var documentId primitive.ObjectID
 
@@ -238,7 +237,7 @@ var _ = Describe("Redox", func() {
 					EXPECT().
 					List(gomock.Any(), gomock.Any(), gomock.Any()).Return([]*clinics.Clinic{&clinic}, nil)
 
-				update = &patients.SubscriptionUpdate{
+				matchOrder.SubscriptionUpdate = &patients.SubscriptionUpdate{
 					Name:     "summaryAndReports",
 					Provider: clinics.EHRProviderRedox,
 					Active:   true,
@@ -290,7 +289,7 @@ var _ = Describe("Redox", func() {
 					gomock.Any(),
 					gomock.Eq(clinicId),
 					gomock.Eq(*patient.UserId),
-					gomock.Eq(*update),
+					gomock.Eq(*matchOrder.SubscriptionUpdate),
 				).Return(nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
@@ -357,9 +356,9 @@ var _ = Describe("Redox", func() {
 					EXPECT().
 					List(gomock.Any(), gomock.Any(), gomock.Any()).Return([]*clinics.Clinic{&clinic}, nil)
 
-				update = nil
 				matchOrder.Order = order
 				matchOrder.PatientAttributes = []string{redox.MRNPatientMatchingCriteria, redox.DOBAndFullNamePatientMatchingCriteria}
+				matchOrder.SubscriptionUpdate = nil
 			})
 
 			It("returns unique patients when multiple matches are found", func() {
@@ -405,14 +404,13 @@ var _ = Describe("Redox", func() {
 				err = json.Unmarshal(payload, &order)
 				Expect(err).ToNot(HaveOccurred())
 
-				matchOrder.Order = order
-				matchOrder.PatientAttributes = []string{redox.MRNPatientMatchingCriteria, redox.DOBAndFullNamePatientMatchingCriteria}
 				clinicsService.
 					EXPECT().
 					List(gomock.Any(), gomock.Any(), gomock.Any()).Return([]*clinics.Clinic{&clinic}, nil)
 
-
-				update = nil
+				matchOrder.Order = order
+				matchOrder.PatientAttributes = []string{redox.MRNPatientMatchingCriteria, redox.DOBAndFullNamePatientMatchingCriteria}
+				matchOrder.SubscriptionUpdate = nil
 			})
 
 			It("returns unique patients when multiple matches are found", func() {

@@ -654,11 +654,17 @@ const (
 	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
-// Defines values for EHRMatchRequestCriteria.
+// Defines values for EHRMatchRequestPatientsCriteria.
 const (
-	DOBFULLNAME EHRMatchRequestCriteria = "DOB_FULLNAME"
-	MRN         EHRMatchRequestCriteria = "MRN"
-	MRNDOB      EHRMatchRequestCriteria = "MRN_DOB"
+	DOBFULLNAME EHRMatchRequestPatientsCriteria = "DOB_FULLNAME"
+	MRN         EHRMatchRequestPatientsCriteria = "MRN"
+	MRNDOB      EHRMatchRequestPatientsCriteria = "MRN_DOB"
+)
+
+// Defines values for EHRMatchRequestPatientsOnUniqueMatch.
+const (
+	DISABLEREPORTS EHRMatchRequestPatientsOnUniqueMatch = "DISABLE_REPORTS"
+	ENABLEREPORTS  EHRMatchRequestPatientsOnUniqueMatch = "ENABLE_REPORTS"
 )
 
 // Defines values for EHRSettingsProvider.
@@ -881,13 +887,23 @@ type EHRMatchMessageRefEventType string
 
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	// Criteria Performs an "OR" match for each item in the array. If criteria is not provided, patients will be matched if both MRN and DOB match the order
-	Criteria   []EHRMatchRequestCriteria `json:"criteria"`
-	MessageRef *EHRMatchMessageRef       `json:"messageRef,omitempty"`
+	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
+
+	// Patients Patient matching options
+	Patients *struct {
+		// Criteria Performs an "OR" match for each item in the array
+		Criteria []EHRMatchRequestPatientsCriteria `json:"criteria"`
+
+		// OnUniqueMatch Optional action to be performed when a unique match has been found
+		OnUniqueMatch *EHRMatchRequestPatientsOnUniqueMatch `json:"onUniqueMatch,omitempty"`
+	} `json:"patients,omitempty"`
 }
 
-// EHRMatchRequestCriteria defines model for EHRMatchRequest.Criteria.
-type EHRMatchRequestCriteria string
+// EHRMatchRequestPatientsCriteria defines model for EHRMatchRequest.Patients.Criteria.
+type EHRMatchRequestPatientsCriteria string
+
+// EHRMatchRequestPatientsOnUniqueMatch Optional action to be performed when a unique match has been found
+type EHRMatchRequestPatientsOnUniqueMatch string
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {

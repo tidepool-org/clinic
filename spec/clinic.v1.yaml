@@ -4564,22 +4564,36 @@ components:
       properties:
         messageRef:
           $ref: '#/components/schemas/EHRMatchMessageRef'
-        criteria:
-          type: array
+        patients:
+          type: object
           x-stoplight:
-            id: 1odrg3q8zzdil
-          description: 'Performs an "OR" match for each item in the array. If criteria is not provided, patients will be matched if both MRN and DOB match the order'
-          minItems: 1
-          items:
-            x-stoplight:
-              id: mgi1k2jyojc4k
-            type: string
-            enum:
-              - MRN
-              - MRN_DOB
-              - DOB_FULLNAME
-      required:
-        - criteria
+            id: f40eseluu9qk0
+          description: Patient matching options
+          properties:
+            criteria:
+              type: array
+              x-stoplight:
+                id: 1odrg3q8zzdil
+              description: Performs an "OR" match for each item in the array
+              minItems: 1
+              items:
+                x-stoplight:
+                  id: mgi1k2jyojc4k
+                type: string
+                enum:
+                  - MRN
+                  - MRN_DOB
+                  - DOB_FULLNAME
+            onUniqueMatch:
+              type: string
+              x-stoplight:
+                id: s9ujf5ce4vhc1
+              enum:
+                - ENABLE_REPORTS
+                - DISABLE_REPORTS
+              description: Optional action to be performed when a unique match has been found
+          required:
+            - criteria
     EHRMatchResponse:
       title: EHRMatchResponse
       x-stoplight:
