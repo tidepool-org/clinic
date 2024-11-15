@@ -121,7 +121,7 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 		})
 
 		It("Matches the order successfully", func() {
-			body := fmt.Sprintf(`{"messageRef": {"dataModel": "Order", "eventType": "New", "documentId": "%s"}}`, documentId)
+			body := fmt.Sprintf(`{"messageRef": {"dataModel": "Order", "eventType": "New", "documentId": "%s"}, "criteria": ["MRN_DOB"]}`, documentId)
 			rec := httptest.NewRecorder()
 			req := prepareRequestWithBody(http.MethodPost, "/v1/redox/match", bytes.NewBufferString(body))
 			asServer(req)

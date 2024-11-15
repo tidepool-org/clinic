@@ -56,6 +56,10 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("%w: invalid documentId", errors.BadRequest)
 	}
+	criteria, err := NewMatchOrderCriteria(request.Criteria)
+	if err != nil {
+		return fmt.Errorf("%w: invalid criteria", errors.BadRequest)
+	}
 
 	// We only support new order messages for now
 	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != EHRMatchMessageRefEventTypeNew {
@@ -76,28 +80,23 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 		return err
 	}
 
-	criteria, err := redox.GetClinicMatchingCriteriaFromNewOrder(order)
-	if err != nil {
-		return err
-	}
-	clinic, err := h.Redox.FindMatchingClinic(ctx, criteria)
-	if err != nil {
-		return err
-	}
+	result, err := h.Redox.MatchNewOrderToPatient(ctx, redox.MatchOrder{
+		DocumentId:        documentId,
+		Order:             *order,
+		PatientAttributes: criteria,
+	})
 
-	update := redox.GetUpdateFromNewOrder(*clinic, documentId, *order)
-	matchedPatients, err := h.Redox.MatchNewOrderToPatient(ctx, *clinic, *order, update)
 	if err != nil {
 		return err
 	}
 
 	response := EHRMatchResponse{
-		Clinic:   NewClinicDto(clinic),
-		Settings: *NewEHRSettingsDto(clinic.EHRSettings),
+		Clinic:   NewClinicDto(&result.Clinic),
+		Settings: *NewEHRSettingsDto(result.Clinic.EHRSettings),
 	}
 
-	if matchedPatients != nil {
-		dto := NewPatientsDto(matchedPatients)
+	if result.Patients != nil {
+		dto := NewPatientsDto(result.Patients)
 		response.Patients = &dto
 	}
 

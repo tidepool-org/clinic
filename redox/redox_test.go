@@ -212,6 +212,8 @@ var _ = Describe("Redox", func() {
 		var patient patients.Patient
 		var order models.NewOrder
 		var update *patients.SubscriptionUpdate
+		var matchOrder redox.MatchOrder
+		var documentId primitive.ObjectID
 
 		Context("with a subscription order", func() {
 			BeforeEach(func() {
@@ -225,12 +227,23 @@ var _ = Describe("Redox", func() {
 				err = json.Unmarshal(payload, &order)
 				Expect(err).ToNot(HaveOccurred())
 
+				documentId = primitive.NewObjectID()
+				matchOrder = redox.MatchOrder{
+					DocumentId:        documentId,
+					Order:             order,
+					PatientAttributes: []string{redox.MRNAndDOBPatientMatchingCriteria},
+				}
+
+				clinicsService.
+					EXPECT().
+					List(gomock.Any(), gomock.Any(), gomock.Any()).Return([]*clinics.Clinic{&clinic}, nil)
+
 				update = &patients.SubscriptionUpdate{
-					Name:     "test",
-					Provider: clinics.EHRProviderXealth,
-					Active:   false,
+					Name:     "summaryAndReports",
+					Provider: clinics.EHRProviderRedox,
+					Active:   true,
 					MatchedMessage: patients.MatchedMessage{
-						DocumentId: primitive.NewObjectID(),
+						DocumentId: documentId,
 						DataModel:  "Order",
 						EventType:  "New",
 					},
@@ -238,23 +251,24 @@ var _ = Describe("Redox", func() {
 			})
 
 			It("does not return an error when mrn cannot be found", func() {
-				order.Patient.Identifiers = nil
-				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				matchOrder.Order.Patient.Identifiers = nil
+				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(res).To(BeNil())
+				Expect(res).ToNot(BeNil())
+				Expect(res.Patients).To(BeEmpty())
 			})
 
 			It("returns an error when demographics is empty", func() {
-				order.Patient.Demographics = nil
-				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				matchOrder.Order.Patient.Demographics = nil
+				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
 				Expect(err).To(MatchError(errors.BadRequest))
 				Expect(res).To(BeNil())
 			})
 
 			It("returns an error when date of birth is empty", func() {
-				order.Patient.Demographics.DOB = nil
-				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				matchOrder.Order.Patient.Demographics.DOB = nil
+				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
 				Expect(err).To(MatchError(errors.BadRequest))
 				Expect(res).To(BeNil())
 			})
@@ -274,14 +288,15 @@ var _ = Describe("Redox", func() {
 
 				patientsService.EXPECT().UpdateEHRSubscription(
 					gomock.Any(),
-					gomock.Eq(patient.ClinicId.Hex()),
+					gomock.Eq(clinicId),
 					gomock.Eq(*patient.UserId),
 					gomock.Eq(*update),
 				).Return(nil)
 
-				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
 				Expect(err).To(BeNil())
-				Expect(res).To(HaveLen(1))
+				Expect(res).ToNot(BeNil())
+				Expect(res.Patients).To(HaveLen(1))
 			})
 
 			It("returns all patients when multiple matches are found", func() {
@@ -299,9 +314,10 @@ var _ = Describe("Redox", func() {
 					TotalCount: 2,
 				}, nil)
 
-				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
 				Expect(err).To(BeNil())
-				Expect(res).To(HaveLen(2))
+				Expect(res).ToNot(BeNil())
+				Expect(res.Patients).To(HaveLen(2))
 			})
 
 			It("does not return error when no patients are found", func() {
@@ -318,9 +334,10 @@ var _ = Describe("Redox", func() {
 					TotalCount: 0,
 				}, nil)
 
-				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
 				Expect(err).To(BeNil())
-				Expect(res).To(HaveLen(0))
+				Expect(res).ToNot(BeNil())
+				Expect(res.Patients).To(HaveLen(0))
 			})
 		})
 
@@ -336,7 +353,13 @@ var _ = Describe("Redox", func() {
 				err = json.Unmarshal(payload, &order)
 				Expect(err).ToNot(HaveOccurred())
 
+				clinicsService.
+					EXPECT().
+					List(gomock.Any(), gomock.Any(), gomock.Any()).Return([]*clinics.Clinic{&clinic}, nil)
+
 				update = nil
+				matchOrder.Order = order
+				matchOrder.PatientAttributes = []string{redox.MRNPatientMatchingCriteria, redox.DOBAndFullNamePatientMatchingCriteria}
 			})
 
 			It("returns unique patients when multiple matches are found", func() {
@@ -362,9 +385,10 @@ var _ = Describe("Redox", func() {
 					TotalCount: 1,
 				}, nil)
 
-				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
 				Expect(err).To(BeNil())
-				Expect(res).To(HaveLen(1))
+				Expect(res).ToNot(BeNil())
+				Expect(res.Patients).To(HaveLen(1))
 			})
 
 		})
@@ -381,6 +405,13 @@ var _ = Describe("Redox", func() {
 				err = json.Unmarshal(payload, &order)
 				Expect(err).ToNot(HaveOccurred())
 
+				matchOrder.Order = order
+				matchOrder.PatientAttributes = []string{redox.MRNPatientMatchingCriteria, redox.DOBAndFullNamePatientMatchingCriteria}
+				clinicsService.
+					EXPECT().
+					List(gomock.Any(), gomock.Any(), gomock.Any()).Return([]*clinics.Clinic{&clinic}, nil)
+
+
 				update = nil
 			})
 
@@ -407,9 +438,10 @@ var _ = Describe("Redox", func() {
 					TotalCount: 1,
 				}, nil)
 
-				res, err := handler.MatchNewOrderToPatient(context.Background(), clinic, order, update)
+				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
 				Expect(err).To(BeNil())
-				Expect(res).To(HaveLen(1))
+				Expect(res).ToNot(BeNil())
+				Expect(res.Patients).To(HaveLen(1))
 			})
 
 		})

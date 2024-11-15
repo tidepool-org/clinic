@@ -654,6 +654,13 @@ const (
 	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
+// Defines values for EHRMatchRequestCriteria.
+const (
+	DOBFULLNAME EHRMatchRequestCriteria = "DOB_FULLNAME"
+	MRN         EHRMatchRequestCriteria = "MRN"
+	MRNDOB      EHRMatchRequestCriteria = "MRN_DOB"
+)
+
 // Defines values for EHRSettingsProvider.
 const (
 	Redox  EHRSettingsProvider = "redox"
@@ -874,8 +881,13 @@ type EHRMatchMessageRefEventType string
 
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
+	// Criteria Performs an "OR" match for each item in the array. If criteria is not provided, patients will be matched if both MRN and DOB match the order
+	Criteria   []EHRMatchRequestCriteria `json:"criteria"`
+	MessageRef *EHRMatchMessageRef       `json:"messageRef,omitempty"`
 }
+
+// EHRMatchRequestCriteria defines model for EHRMatchRequest.Criteria.
+type EHRMatchRequestCriteria string
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {

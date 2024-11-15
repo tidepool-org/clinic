@@ -26,6 +26,10 @@ const (
 	messagesCollectionName                           = "redox"
 	summaryAndReportsRescheduledOrdersCollectionName = "scheduledSummaryAndReportsOrders"
 	rescheduledMessagesExpiration                    = 30 * 24 * time.Hour
+
+	MRNPatientMatchingCriteria            = "MRN"
+	MRNAndDOBPatientMatchingCriteria      = "MRN_DOB"
+	DOBAndFullNamePatientMatchingCriteria = "DOB_FULLNAME"
 )
 
 type Config struct {
@@ -37,10 +41,20 @@ type Redox interface {
 	AuthorizeRequest(req *http.Request) error
 	ProcessEHRMessage(ctx context.Context, raw []byte) error
 	FindMessage(ctx context.Context, documentId, dataModel, eventType string) (*models.MessageEnvelope, error)
-	MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error)
+	MatchNewOrderToPatient(ctx context.Context, match MatchOrder) (*MatchResult, error)
 	FindMatchingClinic(ctx context.Context, criteria ClinicMatchingCriteria) (*clinics.Clinic, error)
 	RescheduleSubscriptionOrders(ctx context.Context, clinicId string) error
 	RescheduleSubscriptionOrdersForPatient(ctx context.Context, patientId string) error
+}
+type MatchOrder struct {
+	DocumentId        primitive.ObjectID
+	Order             models.NewOrder
+	PatientAttributes []string
+}
+
+type MatchResult struct {
+	Clinic   clinics.Clinic
+	Patients []*patients.Patient
 }
 
 func NewConfig() (Config, error) {
@@ -306,61 +320,38 @@ func (h *Handler) RescheduleSubscriptionOrdersForPatient(ctx context.Context, pa
 	)
 }
 
-func (h *Handler) MatchNewOrderToPatient(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error) {
+func (h *Handler) MatchNewOrderToPatient(ctx context.Context, matchOrder MatchOrder) (*MatchResult, error) {
+	clinic, err := h.FindMatchingClinicFromNewOrder(ctx, &matchOrder.Order)
+	if err != nil {
+		return nil, err
+	}
 	if clinic.EHRSettings == nil {
 		return nil, fmt.Errorf("%w: clinic has no EHR settings", errors.BadRequest)
 	}
 
-	code := GetProcedureCodeFromOrder(order)
-	procedureCodes := clinic.EHRSettings.ProcedureCodes
-	if (procedureCodes.EnableSummaryReports != nil && code == *procedureCodes.EnableSummaryReports) ||
-		(procedureCodes.DisableSummaryReports != nil && code == *procedureCodes.DisableSummaryReports) {
-		return h.MatchPatientsForSubscriptionOrder(ctx, clinic, order, update)
-	} else if procedureCodes.CreateAccount != nil && code == *procedureCodes.CreateAccount {
-		return h.FindMatchingPatientsForAccountCreationOrder(ctx, clinic, order)
-	} else if procedureCodes.CreateAccountAndEnableReports != nil && code == *procedureCodes.CreateAccountAndEnableReports {
-		return h.FindMatchingPatientsForAccountCreationOrder(ctx, clinic, order)
-	}
-
-	return nil, nil
-}
-
-func (h *Handler) MatchPatientsForSubscriptionOrder(ctx context.Context, clinic clinics.Clinic, order models.NewOrder, update *patients.SubscriptionUpdate) ([]*patients.Patient, error) {
-	criteria, err := GetPatientMatchingCriteriaFromNewOrder(order, clinic)
+	matchingPatients, err := h.findMatchingPatients(ctx, *clinic, matchOrder)
 	if err != nil {
 		return nil, err
 	}
-	if criteria == nil {
-		return nil, nil
-	}
 
-	clinicId := clinic.Id.Hex()
-	filter := patients.Filter{
-		ClinicId:  &clinicId,
-		Mrn:       &criteria.Mrn,
-		BirthDate: &criteria.DateOfBirth,
-	}
-
-	page := store.Pagination{
-		Offset: 0,
-		Limit:  100,
-	}
-
-	result, err := h.patients.List(ctx, &filter, page, nil)
-
-	if err == nil && result.TotalCount == 1 && result.Patients[0] != nil && update != nil {
-		// Update the subscription for matched patient only if single match was found
-		match := result.Patients[0]
-		if err := h.patients.UpdateEHRSubscription(ctx, match.ClinicId.Hex(), *match.UserId, *update); err != nil {
+	// Update the subscription for matched patient only if single match was found
+	update := GetUpdateFromNewOrder(*clinic, matchOrder.DocumentId, matchOrder.Order)
+	if update != nil && len(matchingPatients) == 1 {
+		match := matchingPatients[0]
+		err = h.patients.UpdateEHRSubscription(ctx, clinic.Id.Hex(), *match.UserId, *update)
+		if err != nil {
 			return nil, err
 		}
 	}
 
-	return result.Patients, err
+	return &MatchResult{
+		Clinic:   *clinic,
+		Patients: matchingPatients,
+	}, nil
 }
 
-func (h *Handler) FindMatchingPatientsForAccountCreationOrder(ctx context.Context, clinic clinics.Clinic, order models.NewOrder) ([]*patients.Patient, error) {
-	criteria, err := GetPatientMatchingCriteriaFromNewOrder(order, clinic)
+func (h *Handler) findMatchingPatients(ctx context.Context, clinic clinics.Clinic, matchOrder MatchOrder) ([]*patients.Patient, error) {
+	criteria, err := GetPatientMatchingValuesFromNewOrder(matchOrder.Order, clinic)
 	if err != nil {
 		return nil, err
 	}
@@ -368,56 +359,38 @@ func (h *Handler) FindMatchingPatientsForAccountCreationOrder(ctx context.Contex
 		return nil, nil
 	}
 
+	unique := map[string]struct{}{}
 	var matchingPatients []*patients.Patient
 
-	clinicId := clinic.Id.Hex()
-	page := store.Pagination{
-		Offset: 0,
-		Limit:  100,
-	}
-
-	filter := patients.Filter{
-		ClinicId: &clinicId,
-		Mrn:      &criteria.Mrn,
-	}
-	result, err := h.patients.List(ctx, &filter, page, nil)
+	filters, err := criteria.GetFilters(clinic.Id.Hex(), matchOrder.PatientAttributes)
 	if err != nil {
 		return nil, err
 	}
-
-	unique := map[string]struct{}{}
-	if result.TotalCount > 0 {
-		for _, patient := range result.Patients {
-			if patient == nil || patient.UserId == nil {
-				continue
-			}
-			if _, ok := unique[*patient.UserId]; ok {
-				continue
-			}
-			unique[*patient.UserId] = struct{}{}
-			matchingPatients = append(matchingPatients, patient)
+	for _, filter := range filters {
+		// When matches are non-unique, the results are not useful to clients.
+		// It's unlikely that the count of matched patients will be more than a few,
+		// so querying for 100 will make it obvious that something is wrong
+		page := store.Pagination{
+			Offset: 0,
+			Limit:  100,
 		}
-	}
 
-	filter = patients.Filter{
-		ClinicId:  &clinicId,
-		BirthDate: &criteria.DateOfBirth,
-		FullName:  &criteria.FullName,
-	}
-	result, err = h.patients.List(ctx, &filter, page, nil)
-	if err != nil {
-		return nil, err
-	}
-	if result.TotalCount > 0 {
-		for _, patient := range result.Patients {
-			if patient == nil || patient.UserId == nil {
-				continue
+		result, err := h.patients.List(ctx, &filter, page, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if result.TotalCount > 0 {
+			for _, patient := range result.Patients {
+				if patient == nil || patient.UserId == nil {
+					continue
+				}
+				if _, ok := unique[*patient.UserId]; ok {
+					continue
+				}
+				unique[*patient.UserId] = struct{}{}
+				matchingPatients = append(matchingPatients, patient)
 			}
-			if _, ok := unique[*patient.UserId]; ok {
-				continue
-			}
-			unique[*patient.UserId] = struct{}{}
-			matchingPatients = append(matchingPatients, patient)
 		}
 	}
 
@@ -433,12 +406,41 @@ type VerificationResponse struct {
 	Challenge string `json:"challenge"`
 }
 
-type PatientMatchingCriteria struct {
+type PatientMatchingValues struct {
 	FirstName   string
 	LastName    string
 	FullName    string
-	Mrn         string
+	MRN         string
 	DateOfBirth string
+}
+
+func (p PatientMatchingValues) GetFilters(clinicId string, criteria []string) ([]patients.Filter, error) {
+	result := make([]patients.Filter, 0, len(criteria))
+	for _, c := range criteria {
+		switch c {
+		case MRNPatientMatchingCriteria:
+			result = append(result, patients.Filter{
+				ClinicId: &clinicId,
+				Mrn:      &p.MRN,
+			})
+		case MRNAndDOBPatientMatchingCriteria:
+			result = append(result, patients.Filter{
+				ClinicId:  &clinicId,
+				Mrn:       &p.MRN,
+				BirthDate: &p.DateOfBirth,
+			})
+		case DOBAndFullNamePatientMatchingCriteria:
+			result = append(result, patients.Filter{
+				ClinicId:  &clinicId,
+				BirthDate: &p.DateOfBirth,
+				FullName:  &p.FullName,
+			})
+		default:
+			return nil, fmt.Errorf("%w: invalid critera: %s", errors.BadRequest, c)
+		}
+	}
+
+	return result, nil
 }
 
 type ClinicMatchingCriteria struct {
@@ -460,48 +462,48 @@ func GetClinicMatchingCriteriaFromNewOrder(order *models.NewOrder) (ClinicMatchi
 	return criteria, nil
 }
 
-func GetPatientMatchingCriteriaFromNewOrder(order models.NewOrder, clinic clinics.Clinic) (*PatientMatchingCriteria, error) {
+func GetPatientMatchingValuesFromNewOrder(order models.NewOrder, clinic clinics.Clinic) (*PatientMatchingValues, error) {
 	if clinic.EHRSettings == nil {
 		return nil, fmt.Errorf("%w: clinic has no EHR settings", errors.BadRequest)
 	}
-	criteria := &PatientMatchingCriteria{}
+	values := &PatientMatchingValues{}
 
 	mrnIdType := clinic.EHRSettings.GetMrnIDType()
 	for _, identifier := range order.Patient.Identifiers {
 		if identifier.IDType == mrnIdType {
-			criteria.Mrn = identifier.ID
+			values.MRN = identifier.ID
 		}
 	}
 
 	if order.Patient.Demographics != nil {
 		names := make([]string, 0, 2)
 		if order.Patient.Demographics.DOB != nil {
-			criteria.DateOfBirth = *order.Patient.Demographics.DOB
+			values.DateOfBirth = *order.Patient.Demographics.DOB
 		}
 		if order.Patient.Demographics.FirstName != nil {
-			criteria.FirstName = *order.Patient.Demographics.FirstName
-			names = append(names, criteria.FirstName)
+			values.FirstName = *order.Patient.Demographics.FirstName
+			names = append(names, values.FirstName)
 		}
 		if order.Patient.Demographics.LastName != nil {
-			criteria.LastName = *order.Patient.Demographics.LastName
-			names = append(names, criteria.LastName)
+			values.LastName = *order.Patient.Demographics.LastName
+			names = append(names, values.LastName)
 		}
 		if len(names) > 0 {
-			criteria.FullName = strings.Join(names, " ")
+			values.FullName = strings.Join(names, " ")
 		}
 	}
 
-	if criteria.Mrn == "" {
+	if values.MRN == "" {
 		return nil, nil
 	}
-	if criteria.DateOfBirth == "" {
+	if values.DateOfBirth == "" {
 		return nil, fmt.Errorf("%w: date of birth is missing", errors.BadRequest)
 	}
-	if criteria.FullName == "" {
+	if values.FullName == "" {
 		return nil, fmt.Errorf("%w: full name is missing", errors.BadRequest)
 	}
 
-	return criteria, nil
+	return values, nil
 }
 
 type Model interface {

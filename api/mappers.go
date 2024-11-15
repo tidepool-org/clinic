@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/tidepool-org/clinic/redox"
 	"regexp"
 	"strconv"
 	"strings"
@@ -543,7 +544,7 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 }
 
 func NewPatientsDto(patients []*patients.Patient) []Patient {
-	dtos := make([]Patient, 0)
+	dtos := make([]Patient, 0, len(patients))
 	for _, p := range patients {
 		if p != nil {
 			dtos = append(dtos, NewPatientDto(p))
@@ -1615,4 +1616,21 @@ func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.Sum
 
 	parseDateRangeFilter(filters, "lastUploadDate", params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
 	return
+}
+
+func NewMatchOrderCriteria(criteria []EHRMatchRequestCriteria) ([]string, error) {
+	result := make([]string, 0, len(criteria))
+	for _, c := range criteria {
+		val := string(c)
+		switch val {
+		case redox.MRNPatientMatchingCriteria:
+		case redox.DOBAndFullNamePatientMatchingCriteria:
+		case redox.MRNAndDOBPatientMatchingCriteria:
+			result = append(result, val)
+		default:
+			return nil, fmt.Errorf("%s is not a invalid criteria type",  val)
+		}
+	}
+
+	return result, nil
 }

@@ -4564,6 +4564,22 @@ components:
       properties:
         messageRef:
           $ref: '#/components/schemas/EHRMatchMessageRef'
+        criteria:
+          type: array
+          x-stoplight:
+            id: 1odrg3q8zzdil
+          description: 'Performs an "OR" match for each item in the array. If criteria is not provided, patients will be matched if both MRN and DOB match the order'
+          minItems: 1
+          items:
+            x-stoplight:
+              id: mgi1k2jyojc4k
+            type: string
+            enum:
+              - MRN
+              - MRN_DOB
+              - DOB_FULLNAME
+      required:
+        - criteria
     EHRMatchResponse:
       title: EHRMatchResponse
       x-stoplight:
