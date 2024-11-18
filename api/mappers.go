@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/redox"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1622,14 +1621,7 @@ func NewMatchOrderCriteria(criteria []EHRMatchRequestPatientsCriteria) ([]string
 	result := make([]string, 0, len(criteria))
 	for _, c := range criteria {
 		val := string(c)
-		switch val {
-		case redox.MRNPatientMatchingCriteria:
-		case redox.DOBAndFullNamePatientMatchingCriteria:
-		case redox.MRNAndDOBPatientMatchingCriteria:
-			result = append(result, val)
-		default:
-			return nil, fmt.Errorf("%s is not a invalid criteria type",  val)
-		}
+		result = append(result, val)
 	}
 
 	return result, nil
