@@ -350,6 +350,14 @@ func (h *Handler) MatchNewOrderToPatient(ctx context.Context, matchOrder MatchOr
 	}, nil
 }
 
+// findMatchingPatients based on a MatchOrder.
+//
+// The number of matching patients is limited to 100 per filter. It is expected that consumers of this
+// function are searching for unique patient matches. It is normal for a small number (< 10)
+// of patients to match, but 100 matches strongly indicates an unexpected filter behavior.
+//
+// Placing a limit of 100 prevents a misconfigured filter from needlessly returning all of a
+// clinic's patients.
 func (h *Handler) findMatchingPatients(ctx context.Context, clinic clinics.Clinic, matchOrder MatchOrder) ([]*patients.Patient, error) {
 	criteria, err := GetPatientMatchingValuesFromNewOrder(matchOrder.Order, clinic)
 	if err != nil {
@@ -367,9 +375,6 @@ func (h *Handler) findMatchingPatients(ctx context.Context, clinic clinics.Clini
 		return nil, err
 	}
 	for _, filter := range filters {
-		// When matches are non-unique, the results are not useful to clients.
-		// It's unlikely that the count of matched patients will be more than a few,
-		// so querying for 100 will make it obvious that something is wrong
 		page := store.Pagination{
 			Offset: 0,
 			Limit:  100,
@@ -385,7 +390,7 @@ func (h *Handler) findMatchingPatients(ctx context.Context, clinic clinics.Clini
 				if patient == nil || patient.UserId == nil {
 					continue
 				}
-				if _, ok := unique[*patient.UserId]; ok {
+				if _, found := unique[*patient.UserId]; found {
 					continue
 				}
 				unique[*patient.UserId] = struct{}{}

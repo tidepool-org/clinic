@@ -654,17 +654,17 @@ const (
 	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
-// Defines values for EHRMatchRequestPatientsCriteria.
+// Defines values for EHRMatchRequestPatientsOptionsCriteria.
 const (
-	DOBFULLNAME EHRMatchRequestPatientsCriteria = "DOB_FULLNAME"
-	MRN         EHRMatchRequestPatientsCriteria = "MRN"
-	MRNDOB      EHRMatchRequestPatientsCriteria = "MRN_DOB"
+	DOBFULLNAME EHRMatchRequestPatientsOptionsCriteria = "DOB_FULLNAME"
+	MRN         EHRMatchRequestPatientsOptionsCriteria = "MRN"
+	MRNDOB      EHRMatchRequestPatientsOptionsCriteria = "MRN_DOB"
 )
 
-// Defines values for EHRMatchRequestPatientsOnUniqueMatch.
+// Defines values for EHRMatchRequestPatientsOptionsOnUniqueMatch.
 const (
-	DISABLEREPORTS EHRMatchRequestPatientsOnUniqueMatch = "DISABLE_REPORTS"
-	ENABLEREPORTS  EHRMatchRequestPatientsOnUniqueMatch = "ENABLE_REPORTS"
+	DISABLEREPORTS EHRMatchRequestPatientsOptionsOnUniqueMatch = "DISABLE_REPORTS"
+	ENABLEREPORTS  EHRMatchRequestPatientsOptionsOnUniqueMatch = "ENABLE_REPORTS"
 )
 
 // Defines values for EHRSettingsProvider.
@@ -887,23 +887,24 @@ type EHRMatchMessageRefEventType string
 
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
-
-	// Patients Patient matching options
-	Patients *struct {
-		// Criteria Performs an "OR" match for each item in the array
-		Criteria []EHRMatchRequestPatientsCriteria `json:"criteria"`
-
-		// OnUniqueMatch Optional action to be performed when a unique match has been found
-		OnUniqueMatch *EHRMatchRequestPatientsOnUniqueMatch `json:"onUniqueMatch,omitempty"`
-	} `json:"patients,omitempty"`
+	MessageRef *EHRMatchMessageRef             `json:"messageRef,omitempty"`
+	Patients   *EHRMatchRequestPatientsOptions `json:"patients,omitempty"`
 }
 
-// EHRMatchRequestPatientsCriteria defines model for EHRMatchRequest.Patients.Criteria.
-type EHRMatchRequestPatientsCriteria string
+// EHRMatchRequestPatientsOptions defines model for EHRMatchRequestPatientsOptions.
+type EHRMatchRequestPatientsOptions struct {
+	// Criteria Performs an "OR" match for each item in the array
+	Criteria []EHRMatchRequestPatientsOptionsCriteria `json:"criteria"`
 
-// EHRMatchRequestPatientsOnUniqueMatch Optional action to be performed when a unique match has been found
-type EHRMatchRequestPatientsOnUniqueMatch string
+	// OnUniqueMatch Optional action to be performed when a unique match has been found
+	OnUniqueMatch *EHRMatchRequestPatientsOptionsOnUniqueMatch `json:"onUniqueMatch,omitempty"`
+}
+
+// EHRMatchRequestPatientsOptionsCriteria defines model for EHRMatchRequestPatientsOptions.Criteria.
+type EHRMatchRequestPatientsOptionsCriteria string
+
+// EHRMatchRequestPatientsOptionsOnUniqueMatch Optional action to be performed when a unique match has been found
+type EHRMatchRequestPatientsOptionsOnUniqueMatch string
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {
