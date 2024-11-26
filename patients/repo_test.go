@@ -1497,7 +1497,10 @@ var _ = Describe("Patients Repository", func() {
 					CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
 				}
 
-				patient, err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(patient).ToNot(BeNil())
 				Expect(patient.DataSources).ToNot(BeNil())
@@ -1511,9 +1514,13 @@ var _ = Describe("Patients Repository", func() {
 					CreatedTime:  time.Now().Truncate(time.Millisecond),
 				}
 
-				_, err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
 				Expect(err).ToNot(HaveOccurred())
-				patient, err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+
+				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(patient).ToNot(BeNil())

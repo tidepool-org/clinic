@@ -59,7 +59,7 @@ type Service interface {
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error)
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
-	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) (*Patient, error)
+	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error

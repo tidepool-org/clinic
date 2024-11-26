@@ -62,6 +62,7 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 		})
 	})
 
+
 	Describe("Send Dexcom Connection Request", func() {
 		It("Succeeds", func() {
 			rec := httptest.NewRecorder()
@@ -70,15 +71,28 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
+		})
+
+		It("Get updated patient succeeds", func() {
+			endpoint := fmt.Sprintf("/v1/clinics/%v/patients/%s", *clinic.Id, *patient.Id)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet, endpoint, "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
 
 			dec := json.NewDecoder(rec.Result().Body)
 			Expect(dec.Decode(&patient)).To(Succeed())
+			Expect(patient.Id).To(PointTo(Not(BeEmpty())))
 		})
 
 		It("Adds the connection request", func() {
 			Expect(patient.ConnectionRequests.Dexcom).To(HaveLen(1))
-			Expect(patient.ConnectionRequests.Dexcom[0].ProviderName).To(Equal(string(api.Dexcom)))
+			Expect(patient.ConnectionRequests.Dexcom[0].ProviderName).To(Equal(api.Dexcom))
 		})
 	})
 
@@ -90,15 +104,28 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
+		})
+
+		It("Get updated patient succeeds", func() {
+			endpoint := fmt.Sprintf("/v1/clinics/%v/patients/%s", *clinic.Id, *patient.Id)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet, endpoint, "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
 
 			dec := json.NewDecoder(rec.Result().Body)
 			Expect(dec.Decode(&patient)).To(Succeed())
+			Expect(patient.Id).To(PointTo(Not(BeEmpty())))
 		})
 
 		It("Adds the connection request", func() {
 			Expect(patient.ConnectionRequests.Twiist).To(HaveLen(1))
-			Expect(patient.ConnectionRequests.Twiist[0].ProviderName).To(Equal(string(api.Twiist)))
+			Expect(patient.ConnectionRequests.Twiist[0].ProviderName).To(Equal(api.Twiist))
 		})
 	})
 
@@ -110,20 +137,32 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
+		})
+
+		It("Get updated patient succeeds", func() {
+			endpoint := fmt.Sprintf("/v1/clinics/%v/patients/%s", *clinic.Id, *patient.Id)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet, endpoint, "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
 
 			dec := json.NewDecoder(rec.Result().Body)
 			Expect(dec.Decode(&patient)).To(Succeed())
+			Expect(patient.Id).To(PointTo(Not(BeEmpty())))
 		})
 
 		It("Adds the connection request in correct order", func() {
 			Expect(patient.ConnectionRequests.Dexcom).To(HaveLen(2))
-			Expect(patient.ConnectionRequests.Dexcom[0].ProviderName).To(Equal(string(api.Dexcom)))
+			Expect(patient.ConnectionRequests.Dexcom[0].ProviderName).To(Equal(api.Dexcom))
 			Expect(patient.ConnectionRequests.Dexcom[0].CreatedTime).To(Not(BeZero()))
-			Expect(patient.ConnectionRequests.Dexcom[1].ProviderName).To(Equal(string(api.Dexcom)))
+			Expect(patient.ConnectionRequests.Dexcom[1].ProviderName).To(Equal(api.Dexcom))
 			Expect(patient.ConnectionRequests.Dexcom[1].CreatedTime).To(Not(BeZero()))
 			Expect(patient.ConnectionRequests.Dexcom[0].CreatedTime).To(BeTemporally(">", patient.ConnectionRequests.Dexcom[1].CreatedTime))
 		})
 	})
-
 })

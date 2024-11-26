@@ -500,11 +500,15 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		}
 
 		if connectDexcom {
-			if match.Patient, err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
+			if err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
 				ProviderName: patients.DexcomDataSourceProviderName,
 				CreatedTime: time.Now(),
 			}); err != nil {
 				return fmt.Errorf("unable to update dexcom connection: %w", err)
+			}
+			match.Patient, err = d.patients.Get(ctx, create.ClinicId.Hex(), *match.Patient.UserId)
+			if err != nil {
+				return fmt.Errorf("unable to get updated patient")
 			}
 		}
 	}

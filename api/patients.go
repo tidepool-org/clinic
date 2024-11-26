@@ -188,35 +188,6 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
-func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
-	ctx := ec.Request().Context()
-
-	authData := auth.GetAuthData(ctx)
-	if authData == nil || authData.SubjectId == "" {
-		return &echo.HTTPError{
-			Code:    http.StatusBadRequest,
-			Message: "expected authenticated user id",
-		}
-	}
-	if authData.ServerAccess {
-		return &echo.HTTPError{
-			Code:    http.StatusBadRequest,
-			Message: "expected user access token",
-		}
-	}
-
-	request := patients.ConnectionRequest{
-		ProviderName: patients.DexcomDataSourceProviderName,
-		CreatedTime:         time.Now(),
-	}
-	patient, err := h.Patients.AddProviderConnectionRequest(ctx, clinicId, patientId, request)
-	if err != nil {
-		return err
-	}
-
-	return ec.JSON(http.StatusOK, NewPatientDto(patient))
-}
-
 func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := PatientPermissions{}
@@ -517,10 +488,10 @@ func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId 
 		CreatedTime:  time.Now(),
 	}
 
-	patient, err := h.Patients.AddProviderConnectionRequest(ctx, clinicId, patientId, request)
+	err = h.Patients.AddProviderConnectionRequest(ctx, clinicId, patientId, request)
 	if err != nil {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+	return ec.NoContent(http.StatusNoContent)
 }

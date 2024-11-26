@@ -230,7 +230,7 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *Uplo
 	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)
 }
 
-func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) (*Patient, error) {
+func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error {
 	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "provider", request.ProviderName)
 	return s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request)
 }
