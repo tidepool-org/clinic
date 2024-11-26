@@ -1725,23 +1725,6 @@ paths:
       description: Sends upload reminder to the patient
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/patients/{patientId}/send_dexcom_connect_request':
-    parameters:
-      - $ref: '#/components/parameters/clinicId'
-      - $ref: '#/components/parameters/patientId'
-    post:
-      summary: Resend Dexcom connect request email
-      operationId: SendDexcomConnectRequest
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Patient'
-      description: Resend Dexcom connect request to the email address of the patient
-      tags:
-        - Clinics
   '/v1/clinics/{clinicId}/patients/assign_tag/{patientTagId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -3043,10 +3026,6 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/DataSource'
-        lastRequestedDexcomConnectTime:
-          type: string
-          format: date-time
-          readOnly: true
         lastUploadReminderTime:
           type: string
           format: date-time
@@ -3064,6 +3043,7 @@ components:
           x-stoplight:
             id: 502rliv0l2tyy
           description: Requests for each provider are listed in reverse chronological order
+          readOnly: true
       required:
         - id
         - fullName
@@ -4816,6 +4796,7 @@ components:
       x-stoplight:
         id: c8q7wrz5rtge5
       type: object
+      readOnly: true
       properties:
         twiist:
           type: array

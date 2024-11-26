@@ -995,20 +995,19 @@ type Migrations = []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	AttestationSubmitted *bool                      `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date         `json:"birthDate"`
-	ConnectionRequests   ProviderConnectionRequests `json:"connectionRequests"`
-	CreatedTime          *time.Time                 `json:"createdTime,omitempty"`
-	DataSources          *[]DataSource              `json:"dataSources"`
-	Email                *string                    `json:"email,omitempty"`
+	AttestationSubmitted *bool                       `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date          `json:"birthDate"`
+	ConnectionRequests   *ProviderConnectionRequests `json:"connectionRequests,omitempty"`
+	CreatedTime          *time.Time                  `json:"createdTime,omitempty"`
+	DataSources          *[]DataSource               `json:"dataSources"`
+	Email                *string                     `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id                             *TidepoolUserId `json:"id,omitempty"`
-	LastRequestedDexcomConnectTime *time.Time      `json:"lastRequestedDexcomConnectTime,omitempty"`
-	LastUploadReminderTime         *time.Time      `json:"lastUploadReminderTime,omitempty"`
+	Id                     *TidepoolUserId `json:"id,omitempty"`
+	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`

@@ -1214,26 +1214,6 @@ func (mr *MockClientInterfaceMockRecorder) ProcessEHRMessageWithBody(ctx, conten
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEHRMessageWithBody", reflect.TypeOf((*MockClientInterface)(nil).ProcessEHRMessageWithBody), varargs...)
 }
 
-// SendDexcomConnectRequest mocks base method.
-func (m *MockClientInterface) SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, clinicId, patientId}
-	for _, a := range reqEditors {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "SendDexcomConnectRequest", varargs...)
-	ret0, _ := ret[0].(*http.Response)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SendDexcomConnectRequest indicates an expected call of SendDexcomConnectRequest.
-func (mr *MockClientInterfaceMockRecorder) SendDexcomConnectRequest(ctx, clinicId, patientId interface{}, reqEditors ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, clinicId, patientId}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendDexcomConnectRequest", reflect.TypeOf((*MockClientInterface)(nil).SendDexcomConnectRequest), varargs...)
-}
-
 // SendUploadReminder mocks base method.
 func (m *MockClientInterface) SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3255,26 +3235,6 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ProcessEHRMessageWithRes
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEHRMessageWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ProcessEHRMessageWithResponse), varargs...)
-}
-
-// SendDexcomConnectRequestWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) SendDexcomConnectRequestWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectRequestResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, clinicId, patientId}
-	for _, a := range reqEditors {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "SendDexcomConnectRequestWithResponse", varargs...)
-	ret0, _ := ret[0].(*SendDexcomConnectRequestResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SendDexcomConnectRequestWithResponse indicates an expected call of SendDexcomConnectRequestWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) SendDexcomConnectRequestWithResponse(ctx, clinicId, patientId interface{}, reqEditors ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, clinicId, patientId}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendDexcomConnectRequestWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SendDexcomConnectRequestWithResponse), varargs...)
 }
 
 // SendUploadReminderWithResponse mocks base method.
