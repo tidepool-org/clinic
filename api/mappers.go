@@ -181,7 +181,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		UpdatedTime:   &patient.UpdatedTime,
 		Summary:       NewSummaryDto(patient.Summary),
 		Reviews:       NewReviewsDto(patient.Reviews),
-		ConnectionRequests: ProviderConnectionRequests{
+		ConnectionRequests: &ProviderConnectionRequests{
 			Abbott: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Abbott),
 			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
 			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
@@ -194,18 +194,12 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
 	}
 
-	// Provide backward compatible API until clients start using the new field 'providerConnectionRequests'
-	if patient.ProviderConnectionRequests != nil {
-		if dexcom, exists := patient.ProviderConnectionRequests[patients.DexcomDataSourceProviderName]; exists && len(dexcom) > 0 {
-			if patient.LastRequestedDexcomConnectTime.After(dexcom[0].CreatedTime) {
-				dto.LastRequestedDexcomConnectTime = &patient.LastRequestedDexcomConnectTime
-			} else {
-				dto.LastRequestedDexcomConnectTime = &dexcom[0].CreatedTime
-			}
-		}
-	}
-	if !patient.LastRequestedDexcomConnectTime.IsZero() && dto.LastRequestedDexcomConnectTime == nil {
-		dto.LastRequestedDexcomConnectTime = &patient.LastRequestedDexcomConnectTime
+	// Populate the new connection requests structure from the now deprecated lastRequestedDexcomConnectTime
+	if len(dto.ConnectionRequests.Dexcom) == 0 && !patient.LastRequestedDexcomConnectTime.IsZero() {
+		dto.ConnectionRequests.Dexcom = []ProviderConnectionRequest{{
+			ProviderName: Dexcom,
+			CreatedTime: patient.LastRequestedDexcomConnectTime,
+		}}
 	}
 
 	return dto

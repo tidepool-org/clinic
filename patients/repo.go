@@ -564,7 +564,7 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
-func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) (*Patient, error) {
+func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	currentTime := time.Now()
 
@@ -572,7 +572,7 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
 	patient, err := r.Get(ctx, clinicId, userId)
 	if err != nil {
-		return nil, fmt.Errorf("error finding patient: %w", err)
+		return fmt.Errorf("error finding patient: %w", err)
 	}
 
 	var providerDataSource DataSource
@@ -623,12 +623,12 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return ErrNotFound
 		}
-		return nil, fmt.Errorf("error updating patient: %w", err)
+		return fmt.Errorf("error updating patient: %w", err)
 	}
 
-	return r.Get(ctx, clinicId, userId)
+	return nil
 }
 
 func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {

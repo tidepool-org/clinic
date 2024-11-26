@@ -654,6 +654,19 @@ const (
 	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
+// Defines values for EHRMatchRequestPatientsOptionsCriteria.
+const (
+	DOBFULLNAME EHRMatchRequestPatientsOptionsCriteria = "DOB_FULLNAME"
+	MRN         EHRMatchRequestPatientsOptionsCriteria = "MRN"
+	MRNDOB      EHRMatchRequestPatientsOptionsCriteria = "MRN_DOB"
+)
+
+// Defines values for EHRMatchRequestPatientsOptionsOnUniqueMatch.
+const (
+	DISABLEREPORTS EHRMatchRequestPatientsOptionsOnUniqueMatch = "DISABLE_REPORTS"
+	ENABLEREPORTS  EHRMatchRequestPatientsOptionsOnUniqueMatch = "ENABLE_REPORTS"
+)
+
 // Defines values for EHRSettingsProvider.
 const (
 	Redox  EHRSettingsProvider = "redox"
@@ -672,6 +685,14 @@ const (
 	Abbott ProviderId = "abbott"
 	Dexcom ProviderId = "dexcom"
 	Twiist ProviderId = "twiist"
+)
+
+// Defines values for ScheduledReportsCadence.
+const (
+	DISABLED ScheduledReportsCadence = "DISABLED"
+	N14d     ScheduledReportsCadence = "14d"
+	N30d     ScheduledReportsCadence = "30d"
+	N7d      ScheduledReportsCadence = "7d"
 )
 
 // Defines values for ScheduledReportsOnUploadNoteEventType.
@@ -873,8 +894,24 @@ type EHRMatchMessageRefEventType string
 
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
+	MessageRef *EHRMatchMessageRef             `json:"messageRef,omitempty"`
+	Patients   *EHRMatchRequestPatientsOptions `json:"patients,omitempty"`
 }
+
+// EHRMatchRequestPatientsOptions defines model for EHRMatchRequestPatientsOptions.
+type EHRMatchRequestPatientsOptions struct {
+	// Criteria Performs an "OR" match for each item in the array
+	Criteria []EHRMatchRequestPatientsOptionsCriteria `json:"criteria"`
+
+	// OnUniqueMatch Optional action to be performed when a unique match has been found
+	OnUniqueMatch *EHRMatchRequestPatientsOptionsOnUniqueMatch `json:"onUniqueMatch,omitempty"`
+}
+
+// EHRMatchRequestPatientsOptionsCriteria defines model for EHRMatchRequestPatientsOptions.Criteria.
+type EHRMatchRequestPatientsOptionsCriteria string
+
+// EHRMatchRequestPatientsOptionsOnUniqueMatch Optional action to be performed when a unique match has been found
+type EHRMatchRequestPatientsOptionsOnUniqueMatch string
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {
@@ -908,10 +945,22 @@ type EHRSettings struct {
 	// ScheduledReports Scheduled Report Settings
 	ScheduledReports ScheduledReports `json:"scheduledReports"`
 	SourceId         string           `json:"sourceId"`
+
+	// Tags This configuration only applies to integrations using Redox Data Model
+	Tags EHRTagsSettings `json:"tags"`
 }
 
 // EHRSettingsProvider defines model for EHRSettings.Provider.
 type EHRSettingsProvider string
+
+// EHRTagsSettings This configuration only applies to integrations using Redox Data Model
+type EHRTagsSettings struct {
+	// Codes Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
+	Codes *[]string `json:"codes,omitempty"`
+
+	// Separator If set to a non-empty string, the tag values will be split using this separator
+	Separator *string `json:"separator,omitempty"`
+}
 
 // Error defines model for Error.
 type Error struct {
@@ -995,20 +1044,19 @@ type Migrations = []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	AttestationSubmitted *bool                      `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date         `json:"birthDate"`
-	ConnectionRequests   ProviderConnectionRequests `json:"connectionRequests"`
-	CreatedTime          *time.Time                 `json:"createdTime,omitempty"`
-	DataSources          *[]DataSource              `json:"dataSources"`
-	Email                *string                    `json:"email,omitempty"`
+	AttestationSubmitted *bool                       `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date          `json:"birthDate"`
+	ConnectionRequests   *ProviderConnectionRequests `json:"connectionRequests,omitempty"`
+	CreatedTime          *time.Time                  `json:"createdTime,omitempty"`
+	DataSources          *[]DataSource               `json:"dataSources"`
+	Email                *string                     `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id                             *TidepoolUserId `json:"id,omitempty"`
-	LastRequestedDexcomConnectTime *time.Time      `json:"lastRequestedDexcomConnectTime,omitempty"`
-	LastUploadReminderTime         *time.Time      `json:"lastUploadReminderTime,omitempty"`
+	Id                     *TidepoolUserId `json:"id,omitempty"`
+	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`
@@ -1582,10 +1630,16 @@ type ProviderId string
 
 // ScheduledReports Scheduled Report Settings
 type ScheduledReports struct {
+	// Cadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
+	Cadence ScheduledReportsCadence `json:"cadence"`
+
 	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
 	OnUploadEnabled       bool                                   `json:"onUploadEnabled"`
 	OnUploadNoteEventType *ScheduledReportsOnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
 }
+
+// ScheduledReportsCadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
+type ScheduledReportsCadence string
 
 // ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
 type ScheduledReportsOnUploadNoteEventType string
@@ -1609,8 +1663,7 @@ type TideConfig struct {
 
 	// HighGlucoseThreshold Threshold used for determining if a value is high
 	HighGlucoseThreshold float64   `json:"highGlucoseThreshold"`
-	LastUploadDateFrom   time.Time `json:"lastUploadDateFrom"`
-	LastUploadDateTo     time.Time `json:"lastUploadDateTo"`
+	LastDataCutoff       time.Time `json:"lastDataCutoff"`
 
 	// LowGlucoseThreshold Threshold used for determining if a value is low
 	LowGlucoseThreshold float64 `json:"lowGlucoseThreshold"`
@@ -1638,7 +1691,8 @@ type TideFilters struct {
 
 // TidePatient defines model for TidePatient.
 type TidePatient struct {
-	Email *string `json:"email,omitempty"`
+	DataSources *[]DataSource `json:"dataSources"`
+	Email       *string       `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName *string `json:"fullName,omitempty"`
@@ -1656,6 +1710,7 @@ type TideResultPatient struct {
 
 	// GlucoseManagementIndicator A derived value which emulates A1C
 	GlucoseManagementIndicator *float64    `json:"glucoseManagementIndicator,omitempty"`
+	LastData                   *time.Time  `json:"lastData,omitempty"`
 	Patient                    TidePatient `json:"patient"`
 
 	// TimeCGMUseMinutes Counter of minutes spent wearing a cgm
@@ -2093,11 +2148,11 @@ type ListPatientsParams struct {
 	// CgmCoefficientOfVariationDelta Delta of the coefficient of glucose values in Mmol/L
 	CgmCoefficientOfVariationDelta *FloatFilter `form:"cgm.coefficientOfVariationDelta,omitempty" json:"cgm.coefficientOfVariationDelta,omitempty"`
 
-	// CgmLastUploadDateFrom Inclusive
-	CgmLastUploadDateFrom *time.Time `form:"cgm.lastUploadDateFrom,omitempty" json:"cgm.lastUploadDateFrom,omitempty"`
+	// CgmLastDataFrom Inclusive
+	CgmLastDataFrom *time.Time `form:"cgm.lastDataFrom,omitempty" json:"cgm.lastDataFrom,omitempty"`
 
-	// CgmLastUploadDateTo Exclusive
-	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
+	// CgmLastDataTo Exclusive
+	CgmLastDataTo *time.Time `form:"cgm.lastDataTo,omitempty" json:"cgm.lastDataTo,omitempty"`
 
 	// BgmAverageGlucoseMmolDelta Delta of the average glucose values in Mmol/L
 	BgmAverageGlucoseMmolDelta *FloatFilter `form:"bgm.averageGlucoseMmolDelta,omitempty" json:"bgm.averageGlucoseMmolDelta,omitempty"`
@@ -2153,11 +2208,11 @@ type ListPatientsParams struct {
 	// BgmTotalRecordsDelta Delta of total record count
 	BgmTotalRecordsDelta *IntFilter `form:"bgm.totalRecordsDelta,omitempty" json:"bgm.totalRecordsDelta,omitempty"`
 
-	// BgmLastUploadDateFrom Inclusive
-	BgmLastUploadDateFrom *time.Time `form:"bgm.lastUploadDateFrom,omitempty" json:"bgm.lastUploadDateFrom,omitempty"`
+	// BgmLastDataFrom Inclusive
+	BgmLastDataFrom *time.Time `form:"bgm.lastDataFrom,omitempty" json:"bgm.lastDataFrom,omitempty"`
 
-	// BgmLastUploadDateTo Exclusive
-	BgmLastUploadDateTo *time.Time `form:"bgm.lastUploadDateTo,omitempty" json:"bgm.lastUploadDateTo,omitempty"`
+	// BgmLastDataTo Exclusive
+	BgmLastDataTo *time.Time `form:"bgm.lastDataTo,omitempty" json:"bgm.lastDataTo,omitempty"`
 
 	// Tags Comma-separated list of patient tag IDs
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
@@ -2171,11 +2226,8 @@ type TideReportParams struct {
 	// Tags Comma-separated list of patient tag IDs
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
 
-	// CgmLastUploadDateFrom Inclusive
-	CgmLastUploadDateFrom *time.Time `form:"cgm.lastUploadDateFrom,omitempty" json:"cgm.lastUploadDateFrom,omitempty"`
-
-	// CgmLastUploadDateTo Exclusive
-	CgmLastUploadDateTo *time.Time `form:"cgm.lastUploadDateTo,omitempty" json:"cgm.lastUploadDateTo,omitempty"`
+	// LastDataCutoff Inclusive
+	LastDataCutoff *time.Time `form:"lastDataCutoff,omitempty" json:"lastDataCutoff,omitempty"`
 }
 
 // FindPatientsParams defines parameters for FindPatients.
