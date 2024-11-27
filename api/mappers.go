@@ -206,13 +206,9 @@ func NewPatientDto(patient *patients.Patient) Patient {
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequest {
-	empty := make([]ProviderConnectionRequest, 0)
-	if requests == nil {
-		return empty
-	}
-	requestsForProvider, exist := requests[string(provider)]
-	if !exist || len(requests) == 0 {
-		return empty
+	var requestsForProvider patients.ConnectionRequests
+	if requests != nil {
+		requestsForProvider = requests[string(provider)]
 	}
 	result := make([]ProviderConnectionRequest, len(requestsForProvider))
 	for i, request := range requestsForProvider {
