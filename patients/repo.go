@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	errors2 "github.com/tidepool-org/clinic/errors"
 	"regexp"
 	"strings"
 	"time"
@@ -1099,25 +1100,25 @@ func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]
 
 func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
 	if clinicId == "" {
-		return nil, errors.New("empty clinicId provided")
+		return nil, fmt.Errorf("%w: empty clinicId provided", errors2.BadRequest)
 	}
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 
 	if params.Tags == nil || len(*params.Tags) < 1 {
-		return nil, errors.New("no tags provided")
+		return nil, fmt.Errorf("%w: no tags provided", errors2.BadRequest)
 	}
 	tags := store.ObjectIDSFromStringArray(*params.Tags)
 
 	if params.LastDataCutoff == nil || params.LastDataCutoff.IsZero() {
-		return nil, errors.New("no lastDataCutoff provided")
+		return nil, fmt.Errorf("%w: no lastDataCutoff provided", errors2.BadRequest)
 	}
 
 	if params.Period == nil {
-		return nil, errors.New("no period provided")
+		return nil, fmt.Errorf("%w: no period provided", errors2.BadRequest)
 	}
 
 	if *params.Period != "1d" && *params.Period != "7d" && *params.Period != "14d" && *params.Period != "30d" {
-		return nil, errors.New("provided period is not one of the valid periods")
+		return nil, fmt.Errorf("%w: provided period is not one of the valid periods", errors2.BadRequest)
 	}
 
 	type Category struct {
