@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tidepool-org/platform/pointer"
 	"regexp"
 	"strings"
 	"time"
@@ -1110,7 +1109,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	tags := store.ObjectIDSFromStringArray(*params.Tags)
 
 	if params.LastDataCutoff == nil || params.LastDataCutoff.IsZero() {
-		params.LastDataCutoff = pointer.FromAny(time.Now().UTC().AddDate(0, 0, -5))
+		return nil, errors.New("no lastDataCutoff provided")
 	}
 
 	if params.Period == nil {
