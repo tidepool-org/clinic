@@ -40,7 +40,14 @@ func (c ClinicianPlan) IsPendingInvite() bool {
 }
 
 func (c ClinicianPlan) PreventsMerge() bool {
-	return c.ClinicianAction == ClinicianActionMove && c.IsPendingInvite()
+	return len(c.Errors()) > 0
+}
+
+func (c ClinicianPlan) Errors() []Error {
+	if c.ClinicianAction == ClinicianActionMove && c.IsPendingInvite() {
+		return []Error{ErrorCannotMergeWorkspaceWithPendingInvites}
+	}
+	return nil
 }
 
 func (c ClinicianPlan) GetClinicianName() string {
@@ -61,6 +68,10 @@ type ClinicianPlans []ClinicianPlan
 
 func (c ClinicianPlans) PreventsMerge() bool {
 	return PlansPreventMerge(c)
+}
+
+func (c ClinicianPlans) Errors() []Error {
+	return PlansErrors(c)
 }
 
 func (c ClinicianPlans) PendingInvitesByWorkspace() map[string]int {
