@@ -408,6 +408,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow backend services to update patient account
+# PUT /v1/clinics/:clinicId/patients/:patientId
+allow {
+  is_backend_service
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patients", _]
+}
+
 # Allow backend services to create an empty clinic for legacy clinician
 # POST /v1/clinicians/:userId/migrate
 allow {
@@ -511,6 +519,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow backend services to create a patient tag
+# POST /v1/clinics/:clinicId/patient_tags
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patient_tags"]
+}
+
 # Allow currently authenticated clinic member to update a patient tag
 # PUT /v1/clinics/:clinicId/patient_tags/:patientTagId
 allow {
@@ -519,12 +535,28 @@ allow {
   clinician_has_read_access
 }
 
+# Allow backend services to update patient tags
+# POST /v1/clinics/:clinicId/patient_tags
+allow {
+  is_backend_service
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patient_tags", _]
+}
+
 # Allow currently authenticated clinic admin to delete a patient tag
 # DELETE /v1/clinics/:clinicId/patient_tags/:patientTagId
 allow {
   input.method == "DELETE"
   input.path = ["v1", "clinics", _, "patient_tags", _]
   clinician_has_write_access
+}
+
+# Allow backend services to delete patient tags
+# DELETE /v1/clinics/:clinicId/patient_tags/:patientTagId
+allow {
+  is_backend_service
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "patient_tags", _]
 }
 
 # Allow backend services or clinic admins to delete a patient tag from all clinic patients

@@ -203,7 +203,6 @@ var _ = Describe("Patients Repository", func() {
 					ClinicId:  result.ClinicId.Hex(),
 					UserId:    *result.UserId,
 					Patient:   *result,
-					UpdatedBy: "12345",
 				})
 				Expect(err).To(HaveOccurred())
 				Expect(updated).To(BeNil())
@@ -233,7 +232,6 @@ var _ = Describe("Patients Repository", func() {
 					ClinicId:  result.ClinicId.Hex(),
 					UserId:    *result.UserId,
 					Patient:   *result,
-					UpdatedBy: "12345",
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())

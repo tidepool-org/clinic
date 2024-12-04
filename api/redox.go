@@ -3,7 +3,9 @@ package api
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/redox"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -76,28 +78,54 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 		return err
 	}
 
-	criteria, err := redox.GetClinicMatchingCriteriaFromNewOrder(order)
-	if err != nil {
-		return err
+	matchOrder := redox.MatchOrder{
+		DocumentId:        documentId,
+		Order:             *order,
 	}
-	clinic, err := h.Redox.FindMatchingClinic(ctx, criteria)
-	if err != nil {
-		return err
+	if request.Patients != nil {
+		criteria, err := NewMatchOrderCriteria(request.Patients.Criteria)
+		if err != nil {
+			return fmt.Errorf("%w: invalid criteria", errors.BadRequest)
+		}
+		matchOrder.PatientAttributes = criteria
+
+		if request.Patients.OnUniqueMatch != nil {
+			update := &patients.SubscriptionUpdate{
+				MatchedMessage: patients.MatchedMessage{
+					DocumentId: documentId,
+					DataModel:  order.Meta.DataModel,
+					EventType:  order.Meta.EventType,
+				},
+				Provider: clinics.EHRProviderRedox,
+			}
+
+			switch *request.Patients.OnUniqueMatch {
+			case ENABLEREPORTS:
+				update.Name = patients.SubscriptionRedoxSummaryAndReports
+				update.Active = true
+			case DISABLEREPORTS:
+				update.Name = patients.SubscriptionRedoxSummaryAndReports
+				update.Active = false
+			default:
+				return fmt.Errorf("%w: invalid 'onMatch' value %s", errors.BadRequest, *request.Patients.OnUniqueMatch)
+			}
+
+			matchOrder.SubscriptionUpdate = update
+		}
 	}
 
-	update := redox.GetUpdateFromNewOrder(*clinic, documentId, *order)
-	matchedPatients, err := h.Redox.MatchNewOrderToPatient(ctx, *clinic, *order, update)
+	result, err := h.Redox.MatchNewOrderToPatient(ctx, matchOrder)
 	if err != nil {
 		return err
 	}
 
 	response := EHRMatchResponse{
-		Clinic:   NewClinicDto(clinic),
-		Settings: *NewEHRSettingsDto(clinic.EHRSettings),
+		Clinic:   NewClinicDto(&result.Clinic),
+		Settings: *NewEHRSettingsDto(result.Clinic.EHRSettings),
 	}
 
-	if matchedPatients != nil {
-		dto := NewPatientsDto(matchedPatients)
+	if result.Patients != nil {
+		dto := NewPatientsDto(result.Patients)
 		response.Patients = &dto
 	}
 
