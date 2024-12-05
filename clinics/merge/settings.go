@@ -31,9 +31,9 @@ func (s SettingsPlan) PreventsMerge() bool {
 	return len(s.Errors()) > 0
 }
 
-func (s SettingsPlan) Errors() []Error {
+func (s SettingsPlan) Errors() []ReportError {
 	if !s.ValuesMatch() {
-		return []Error{ErrorWorkspaceSettingsMismatch}
+		return []ReportError{ErrorWorkspaceSettingsMismatch}
 	}
 	return nil
 }
@@ -44,7 +44,7 @@ func (s SettingsPlans) PreventsMerge() bool {
 	return PlansPreventMerge(s)
 }
 
-func (s SettingsPlans) Errors() []Error {
+func (s SettingsPlans) Errors() []ReportError {
 	return PlansErrors(s)
 }
 
@@ -145,7 +145,7 @@ func (m MembershipRestrictionsMergePlan) PreventsMerge() bool {
 	return len(m.Errors()) > 0
 }
 
-func (m MembershipRestrictionsMergePlan) Errors() []Error {
+func (m MembershipRestrictionsMergePlan) Errors() []ReportError {
 	sourceMap := membershipRestrictionsToMap(m.SourceValue)
 	targetMap := membershipRestrictionsToMap(m.TargetValue)
 
@@ -153,7 +153,7 @@ func (m MembershipRestrictionsMergePlan) Errors() []Error {
 	for sourceDomain, sourceIDP := range sourceMap {
 		targetIDP, ok := targetMap[sourceDomain]
 		if !ok || sourceIDP != targetIDP {
-			return []Error{ErrorWorkspaceSettingsMismatch}
+			return []ReportError{ErrorWorkspaceSettingsMismatch}
 		}
 	}
 

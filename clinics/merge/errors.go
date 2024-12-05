@@ -1,23 +1,28 @@
 package merge
 
 import (
-	"errors"
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-type Error error
+type ReportError struct {
+	Message string
+}
+
+func NewReportError(message string) ReportError {
+	return ReportError{Message: message}
+}
 
 var (
-	ErrorDuplicateMRNInTargetWorkspace          Error = errors.New("MRN uniqueness error(s) for duplicate accounts. View error(s) on the 'Duplicates in Merged Workspace' tab")
-	ErrorMRNRequiredInTargetWorkspace           Error = errors.New("Target workspace requires MRNs")
-	ErrorCannotMergeWorkspaceWithPendingInvites Error = errors.New("Pending invites is source workspace")
-	ErrorWorkspaceSettingsMismatch              Error = errors.New("Settings mismatch")
+	ErrorDuplicateMRNInTargetWorkspace           = NewReportError("MRN uniqueness error(s) for duplicate accounts. View error(s) on the 'Duplicates in Merged Workspace' tab")
+	ErrorMRNRequiredInTargetWorkspace            = NewReportError("Target workspace requires MRNs")
+	ErrorCannotMergeWorkspaceWithPendingInvites  = NewReportError("Pending invites is source workspace")
+	ErrorWorkspaceSettingsMismatch               = NewReportError("Settings mismatch")
 )
 
-func GetUniqueErrorMessages(errs []Error) []string {
+func GetUniqueErrorMessages(errs []ReportError) []string {
 	set := mapset.NewSet[string]()
 	for _, r := range errs {
-		set.Add(r.Error())
+		set.Add(r.Message)
 	}
 	return set.ToSlice()
 }

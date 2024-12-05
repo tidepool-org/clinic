@@ -62,7 +62,7 @@ func (c ClinicMergePlan) PreventsMerge() bool {
 	return false
 }
 
-func (c ClinicMergePlan) Errors() []Error {
+func (c ClinicMergePlan) Errors() []ReportError {
 	return PlansErrors(c.Plans())
 }
 

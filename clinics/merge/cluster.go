@@ -34,7 +34,7 @@ func (p PatientClusters) PreventsMerge() bool {
 	return false
 }
 
-func (p PatientClusters) Errors() []Error {
+func (p PatientClusters) Errors() []ReportError {
 	return nil
 }
 

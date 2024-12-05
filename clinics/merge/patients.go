@@ -35,7 +35,7 @@ func (p PatientPlans) PreventsMerge() bool {
 	return PlansPreventMerge(p)
 }
 
-func (p PatientPlans) Errors() []Error {
+func (p PatientPlans) Errors() []ReportError {
 	return PlansErrors(p)
 }
 
@@ -109,8 +109,8 @@ type PatientPlan struct {
 	PostMigrationTagNames      []string `bson:"postMigrationTagNames"`
 	PostMigrationMRNUniqueness bool     `bson:"postMigrationMRNUniqueness"`
 
-	CanExecuteAction bool  `bson:"canExecuteAction"`
-	Error            Error `bson:"-"`
+	CanExecuteAction bool         `bson:"canExecuteAction"`
+	Error            *ReportError `bson:"error"`
 }
 
 func (p PatientPlan) HasConflicts() bool {
@@ -126,9 +126,9 @@ func (p PatientPlan) PreventsMerge() bool {
 	return !p.CanExecuteAction || len(p.Errors()) > 0
 }
 
-func (p PatientPlan) Errors() []Error {
+func (p PatientPlan) Errors() []ReportError {
 	if p.Error != nil {
-		return []Error{p.Error}
+		return []ReportError{*p.Error}
 	}
 	return nil
 }
@@ -212,7 +212,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 					// Do not allow moving patients without MRNs to clinics where MRNs are required
 					if p.target.MRNSettings.Required {
 						plan.CanExecuteAction = false
-						plan.Error = ErrorMRNRequiredInTargetWorkspace
+						plan.Error = &ErrorMRNRequiredInTargetWorkspace
 					}
 				} else {
 					if p.target.MRNSettings.Unique {
@@ -222,7 +222,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 						// Do not allow moving patients if there are patients with the same MRN in the target clinic
 						if pts := targetByAttribute.GetPatientsWithMRN(*patient.Mrn); len(pts) > 0 {
 							plan.CanExecuteAction = false
-							plan.Error = ErrorDuplicateMRNInTargetWorkspace
+							plan.Error = &ErrorDuplicateMRNInTargetWorkspace
 						}
 					}
 				}

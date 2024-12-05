@@ -7,7 +7,7 @@ import (
 
 type Plan interface {
 	PreventsMerge() bool
-	Errors() []Error
+	Errors() []ReportError
 }
 
 type Planner[T Plan] interface {
@@ -50,8 +50,8 @@ func PlansPreventMerge[T Plan](plans []T) bool {
 	return false
 }
 
-func PlansErrors[T Plan](plans []T) []Error {
-	errs := make([]Error, 0)
+func PlansErrors[T Plan](plans []T) []ReportError {
+	errs := make([]ReportError, 0)
 	for _, s := range plans {
 		errs = append(errs, s.Errors()...)
 	}

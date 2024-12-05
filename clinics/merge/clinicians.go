@@ -43,9 +43,9 @@ func (c ClinicianPlan) PreventsMerge() bool {
 	return len(c.Errors()) > 0
 }
 
-func (c ClinicianPlan) Errors() []Error {
+func (c ClinicianPlan) Errors() []ReportError {
 	if c.ClinicianAction == ClinicianActionMove && c.IsPendingInvite() {
-		return []Error{ErrorCannotMergeWorkspaceWithPendingInvites}
+		return []ReportError{ErrorCannotMergeWorkspaceWithPendingInvites}
 	}
 	return nil
 }
@@ -70,7 +70,7 @@ func (c ClinicianPlans) PreventsMerge() bool {
 	return PlansPreventMerge(c)
 }
 
-func (c ClinicianPlans) Errors() []Error {
+func (c ClinicianPlans) Errors() []ReportError {
 	return PlansErrors(c)
 }
 
