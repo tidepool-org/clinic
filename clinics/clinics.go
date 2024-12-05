@@ -240,7 +240,6 @@ func (c *Clinic) HasAllRequiredFields() bool {
 		isStringSet(c.Address) &&
 		isStringSet(c.City) &&
 		isStringSet(c.ClinicType) &&
-		isStringSet(c.ClinicSize) &&
 		isStringSet(c.Country) &&
 		isStringSet(c.Name) &&
 		isStringSet(c.PostalCode) &&
