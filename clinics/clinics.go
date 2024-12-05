@@ -245,9 +245,6 @@ func (c *Clinic) HasAllRequiredFields() bool {
 		isStringSet(c.PostalCode) &&
 		isStringSet(c.State) &&
 		isStringSet(&c.PreferredBgUnits) &&
-		c.Id != nil &&
-		c.PhoneNumbers != nil &&
-		hasValidPhoneNumber(*c.PhoneNumbers) &&
 		hasValidPatientTags(c.PatientTags)
 }
 
