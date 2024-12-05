@@ -101,6 +101,10 @@ func asClinician(req *http.Request) {
 	req.Header.Set("x-tidepool-session-token", integrationTest.TestUserToken)
 }
 
+func asLegacyClinic(req *http.Request) {
+	req.Header.Set("x-tidepool-session-token", integrationTest.TestLegacyClinicToken)
+}
+
 func asServer(req *http.Request) {
 	req.Header.Set("x-tidepool-session-token", integrationTest.TestServerToken)
 }

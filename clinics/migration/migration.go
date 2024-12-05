@@ -3,6 +3,8 @@ package migration
 import (
 	"context"
 	"fmt"
+	"github.com/tidepool-org/clinic/store"
+	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 
 	"github.com/tidepool-org/clinic/clinicians"
@@ -19,6 +21,7 @@ const (
 )
 
 var ErrAlreadyMigrated = fmt.Errorf("%w: clinic is already migrated", internalErrs.ConstraintViolation)
+var ErrIncompleteClinicProfile = fmt.Errorf("%w: incomplete clinic profile", internalErrs.ConstraintViolation)
 
 type Migration struct {
 	ClinicId    *primitive.ObjectID `json:"clinicId" bson:"clinicId"`
@@ -60,9 +63,13 @@ type Params struct {
 	CliniciansService clinicians.Service
 	MigrationRepo     Repository
 	UserService       patients.UserService
+
+	DBClient *mongo.Client
 }
 
 type migrator struct {
+	dbClient *mongo.Client
+
 	clinicsCreator    manager.Manager
 	clinicsService    clinics.Service
 	cliniciansService clinicians.Service
@@ -72,6 +79,7 @@ type migrator struct {
 
 func NewMigrator(p Params) (Migrator, error) {
 	return &migrator{
+		dbClient:          p.DBClient,
 		clinicsCreator:    p.ClinicsCreator,
 		clinicsService:    p.ClinicsService,
 		cliniciansService: p.CliniciansService,
@@ -102,6 +110,16 @@ func (m *migrator) MigrateLegacyClinicianPatients(ctx context.Context, clinicId,
 		return nil, err
 	}
 
+	clinic, err := m.clinicsService.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Allow migrating legacy clinician patients only after the initial migration has been triggered
+	if !clinic.IsMigrated {
+		return nil, ErrAlreadyMigrated
+	}
+
 	migration := NewMigration(clinicId, userId)
 	return m.migrationRepo.Create(ctx, migration)
 }
@@ -114,28 +132,35 @@ func (m *migrator) TriggerInitialMigration(ctx context.Context, clinicId string)
 	if clinic.IsMigrated {
 		return nil, ErrAlreadyMigrated
 	}
+	if !clinic.CanMigrate() {
+		return nil, ErrIncompleteClinicProfile
+	}
 
 	userId, err := getClinicianForInitialMigration(clinic)
 	if err != nil {
 		return nil, err
 	}
-	if err := m.assertUserIsClinician(userId); err != nil {
+	if err = m.assertUserIsClinician(userId); err != nil {
 		return nil, err
 	}
 
-	migration := NewMigration(clinicId, userId)
-	result, err := m.migrationRepo.Create(ctx, migration)
-	if err != nil {
-		return nil, err
-	}
+	result, err := store.WithTransaction(ctx, m.dbClient, func(sessionContext mongo.SessionContext) (any, error) {
+		migration := NewMigration(clinicId, userId)
+		result, err := m.migrationRepo.Create(ctx, migration)
+		if err != nil {
+			return nil, err
+		}
 
-	clinic.IsMigrated = true
-	_, err = m.clinicsService.Update(ctx, clinicId, clinic)
-	if err != nil {
-		return nil, err
-	}
+		clinic.IsMigrated = true
+		_, err = m.clinicsService.Update(ctx, clinicId, clinic)
+		if err != nil {
+			return nil, err
+		}
 
-	return result, nil
+		return result, nil
+	})
+
+	return result.(*Migration), err
 }
 
 func (m *migrator) GetMigration(ctx context.Context, clinicId string, userId string) (*Migration, error) {
