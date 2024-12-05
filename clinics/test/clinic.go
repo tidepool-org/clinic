@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"math/rand"
 	"time"
 
@@ -74,11 +75,17 @@ func RandomClinic() *clinics.Clinic {
 }
 
 func RandomTags(count int) []clinics.PatientTag {
+	names := mapset.NewSet[string]()
 	tags := make([]clinics.PatientTag, count)
 	for i, _ := range tags {
 		id := RandomObjectId()
+		name := fmt.Sprintf("%.20s", Faker.Person().LastName())
+		for names.Contains(name) {
+			name = fmt.Sprintf("%.20s", Faker.Person().LastName())
+		}
+		names.Append(name)
 		tags[i].Id = &id
-		tags[i].Name = fmt.Sprintf("%.20s", Faker.Person().LastName())
+		tags[i].Name = name
 	}
 
 	return tags

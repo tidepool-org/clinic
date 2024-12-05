@@ -3,6 +3,7 @@ package merge_test
 import (
 	"context"
 	"errors"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -205,17 +206,14 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	})
 
 	It("merge tags correctly", func() {
-		uniqueTags := make(map[string]struct{})
+		uniqueTags := mapset.NewSet[string]()
 		for _, t := range source.PatientTags {
-			uniqueTags[t.Name] = struct{}{}
+			uniqueTags.Append(t.Name)
 		}
 		for _, t := range target.PatientTags {
-			uniqueTags[t.Name] = struct{}{}
+			uniqueTags.Append(t.Name)
 		}
-		expectedTagNames := make([]string, 0, len(uniqueTags))
-		for tag := range uniqueTags {
-			expectedTagNames = append(expectedTagNames, tag)
-		}
+		expectedTagNames := uniqueTags.ToSlice()
 
 		result, err := clinicsService.Get(context.Background(), target.Id.Hex())
 		Expect(err).ToNot(HaveOccurred())
@@ -230,21 +228,29 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 
 	It("contains plan for each source tag", func() {
 		for _, tag := range source.PatientTags {
+			expectedCount := 1
+			if clinicHasTagWithName(target, tag.Name) {
+				expectedCount = 2
+			}
 			hasMergePlan(db, bson.M{
-				"planId":    planId,
-				"type":      "tag",
-				"plan.name": tag.Name,
-			}, 1)
+				"planId":              planId,
+				"type":                "tag",
+				"plan.name":           tag.Name,
+			}, expectedCount)
 		}
 	})
 
 	It("contains plan for each target tag", func() {
 		for _, tag := range target.PatientTags {
+			expectedCount := 1
+			if clinicHasTagWithName(source, tag.Name) {
+				expectedCount = 2
+			}
 			hasMergePlan(db, bson.M{
-				"planId":    planId,
-				"type":      "tag",
-				"plan.name": tag.Name,
-			}, 1)
+				"planId":              planId,
+				"type":                "tag",
+				"plan.name":           tag.Name,
+			}, expectedCount)
 		}
 	})
 
@@ -309,4 +315,12 @@ func createClinic(userService *patientsTest.MockUserService, clinicManager manag
 	})
 	Expect(err).ToNot(HaveOccurred())
 	return *result
+}
+
+func clinicHasTagWithName(clinic clinics.Clinic, tagName string) bool {
+	tagNames := mapset.NewSet[string]()
+	for _, tag := range clinic.PatientTags {
+		tagNames.Append(tag.Name)
+	}
+	return tagNames.Contains(tagName)
 }

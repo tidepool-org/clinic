@@ -192,7 +192,6 @@ type PatientUpdate struct {
 	ClinicId  string
 	UserId    string
 	Patient   Patient
-	UpdatedBy string
 }
 
 type UploadReminderUpdate struct {

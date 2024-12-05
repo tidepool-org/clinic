@@ -120,8 +120,17 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 			documentId = document.Id.Hex()
 		})
 
-		It("Matches the order successfully", func() {
-			body := fmt.Sprintf(`{"messageRef": {"dataModel": "Order", "eventType": "New", "documentId": "%s"}}`, documentId)
+		It("Matches the order by DOB and Full Name", func() {
+			body := fmt.Sprintf(`{
+				"messageRef": {
+					"dataModel": "Order", 
+					"eventType": "New", 
+					"documentId": "%s"
+				},
+                "patients": {
+					"criteria": ["DOB_FULLNAME"]
+                }
+			}`, documentId)
 			rec := httptest.NewRecorder()
 			req := prepareRequestWithBody(http.MethodPost, "/v1/redox/match", bytes.NewBufferString(body))
 			asServer(req)
@@ -129,6 +138,67 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			var response client.EHRMatchResponse
+			Expect(json.NewDecoder(rec.Result().Body).Decode(&response)).To(Succeed())
+			Expect(response.Patients).ToNot(BeNil())
+			Expect(response.Patients).To(PointTo(HaveLen(1)))
+
+			expectedMRN := "0000000001"
+			expectedFullName := "Timothy Bixby"
+			expectedDateOfBirth := "2008-01-06"
+			Expect((*response.Patients)[0].Mrn).To(PointTo(Equal(expectedMRN)))
+			Expect((*response.Patients)[0].FullName).To(Equal(expectedFullName))
+			Expect((*response.Patients)[0].BirthDate.String()).To(Equal(expectedDateOfBirth))
+		})
+
+		It("Doesn't enable the Redox subscription for the patient when sending only match request without action", func() {
+			db := test.GetTestDatabase()
+			Expect(db).ToNot(BeNil())
+
+			clinicId, _ := primitive.ObjectIDFromHex(*clinic.Id)
+			selector := bson.M{
+				"userId":   *patient.Id,
+				"clinicId": clinicId,
+			}
+
+			p := patients.Patient{}
+			err := db.Collection("patients").FindOne(context.Background(), selector).Decode(&p)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(p.EHRSubscriptions).To(HaveLen(0))
+		})
+
+		It("Matches the order by MRN and DOB successfully", func() {
+			body := fmt.Sprintf(`{
+				"messageRef": {
+					"dataModel": "Order", 
+					"eventType": "New", 
+					"documentId": "%s"
+				},
+                "patients": {
+					"criteria": ["MRN_DOB"],
+	            	"onUniqueMatch": "ENABLE_REPORTS"
+                }
+			}`, documentId)
+			rec := httptest.NewRecorder()
+			req := prepareRequestWithBody(http.MethodPost, "/v1/redox/match", bytes.NewBufferString(body))
+			asServer(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			var response client.EHRMatchResponse
+			Expect(json.NewDecoder(rec.Result().Body).Decode(&response)).To(Succeed())
+			Expect(response.Patients).ToNot(BeNil())
+			Expect(response.Patients).To(PointTo(HaveLen(1)))
+
+			expectedMRN := "0000000001"
+			expectedFullName := "Timothy Bixby"
+			expectedDateOfBirth := "2008-01-06"
+			Expect((*response.Patients)[0].Mrn).To(PointTo(Equal(expectedMRN)))
+			Expect((*response.Patients)[0].FullName).To(Equal(expectedFullName))
+			Expect((*response.Patients)[0].BirthDate.String()).To(Equal(expectedDateOfBirth))
 		})
 
 		It("Enables the Redox subscription for the patient", func() {
