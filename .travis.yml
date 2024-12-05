@@ -3,15 +3,15 @@ dist: jammy
 language: go
 
 go:
-  - 1.22.4
+  - 1.23.2
 
 services:
   - docker
 
 env:
   global:
-    - MONGODB=6.0.15
-    - MONGOSH=2.2.10
+    - MONGODB=6.0.18
+    - MONGOSH=2.3.3
 
 cache:
   directories:

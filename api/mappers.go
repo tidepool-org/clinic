@@ -414,8 +414,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 			ClinicId:                 &tide.Config.ClinicId,
 			Filters:                  TideFilters(tide.Config.Filters),
 			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
-			LastUploadDateFrom:       tide.Config.LastUploadDateFrom,
-			LastUploadDateTo:         tide.Config.LastUploadDateTo,
+			LastDataCutoff:           tide.Config.LastDataCutoff,
 			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
 			Period:                   tide.Config.Period,
 			SchemaVersion:            tide.Config.SchemaVersion,
@@ -428,7 +427,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 
 	for category, tidePatients := range tide.Results {
 		c := make([]TideResultPatient, 0, 50)
-		for _, patient := range *tidePatients {
+		for _, patient := range tidePatients {
 			c = append(c, TideResultPatient{
 				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
@@ -440,12 +439,14 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
 				TimeInVeryHighPercent:      patient.TimeInVeryHighPercent,
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
+				LastData:                   patient.LastData,
 				Patient: TidePatient{
-					Email:    patient.Patient.Email,
-					FullName: patient.Patient.FullName,
-					Id:       patient.Patient.Id,
-					Reviews:  NewReviewsDto(patient.Patient.Reviews),
-					Tags:     patient.Patient.Tags,
+					Email:       patient.Patient.Email,
+					FullName:    patient.Patient.FullName,
+					Id:          patient.Patient.Id,
+					Tags:        &patient.Patient.Tags,
+					Reviews:     NewReviewsDto(patient.Patient.Reviews),
+					DataSources: NewPatientDataSourcesDto(patient.Patient.DataSources),
 				},
 			})
 		}
@@ -1606,14 +1607,14 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 func ParseCGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
 	filters = patients.SummaryDateFilters{}
 
-	parseDateRangeFilter(filters, "lastUploadDate", params.CgmLastUploadDateFrom, params.CgmLastUploadDateTo)
+	parseDateRangeFilter(filters, "lastData", params.CgmLastDataFrom, params.CgmLastDataTo)
 	return
 }
 
 func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
 	filters = patients.SummaryDateFilters{}
 
-	parseDateRangeFilter(filters, "lastUploadDate", params.BgmLastUploadDateFrom, params.BgmLastUploadDateTo)
+	parseDateRangeFilter(filters, "lastData", params.BgmLastDataFrom, params.BgmLastDataTo)
 	return
 }
 
