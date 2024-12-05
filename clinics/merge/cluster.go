@@ -34,6 +34,10 @@ func (p PatientClusters) PreventsMerge() bool {
 	return false
 }
 
+func (p PatientClusters) Errors() []ReportError {
+	return nil
+}
+
 type PatientCluster struct {
 	Patients []PatientConflicts
 }
@@ -192,6 +196,10 @@ func getConflictCategory(attrs []string) *string {
 
 // Attribute Type -> Attribute Value -> List of patients sharding the values
 type attributeMap map[string]map[string][]*patients.Patient
+
+func (a attributeMap) GetPatientsWithMRN(value string) []*patients.Patient {
+	return a[PatientAttributeMRN][value]
+}
 
 func buildAttributeMap(pts []patients.Patient) attributeMap {
 	a := attributeMap{}
