@@ -345,7 +345,13 @@ func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId Cli
 		return err
 	}
 
-	err := h.Patients.AssignPatientTagToClinicPatients(ctx, string(clinicId), string(patientTagId), dto)
+
+	// We pass an empty request body as nil which will target all clinic patients for tag assignment
+	if ec.Request().Body == http.NoBody {
+		dto = nil
+	}
+
+	err := h.Patients.AssignPatientTagToClinicPatients(ctx, clinicId, patientTagId, dto)
 
 	if err != nil {
 		return err
