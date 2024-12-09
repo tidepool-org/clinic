@@ -18,12 +18,14 @@ import (
 
 const (
 	TestUserId               = "1234567890"
+	TestLegacyClinicUserId   = "2345678901"
 	TestServiceAccountUserId = "9999999999"
 	TestServiceAccountToken  = "service-account"
 	TestXealthUserId         = "1234567891"
 	TestXealthGuardianUserId = "1234567893"
 	TestRedoxUserId          = "1234567892"
 	TestUserToken            = "user"
+	TestLegacyClinicToken    = "clinic"
 	TestServerId             = "server"
 	TestServerToken          = "server"
 	TestRestrictedToken      = "1234567890abcdef1234567890abcdef"
@@ -74,6 +76,17 @@ var (
 		EmailVerified:  true,
 	}
 
+	clinicUser = shoreline.UserData{
+		UserID:   TestLegacyClinicUserId,
+		Username: "clinic@tidepool.org",
+		Emails: []string{
+			"clinic@tidepool.org",
+		},
+		PasswordExists: true,
+		Roles:          []string{"clinic"},
+		EmailVerified:  true,
+	}
+
 	createClinicUserUrlRegexp      = regexp.MustCompile("/v1/clinics/.+/users")
 	createRestrictedTokenUrlRegexp = regexp.MustCompile("/v1/users/(.+)/restricted_tokens")
 )
@@ -88,6 +101,11 @@ func ShorelineStub() *httptest.Server {
 				UserID:   TestUserId,
 				IsServer: false,
 			})
+		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/token/%s", TestLegacyClinicToken) {
+			resp, _ = json.Marshal(shoreline.TokenData{
+				UserID:   TestLegacyClinicUserId,
+				IsServer: true,
+			})
 		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/token/%s", TestServerToken) {
 			resp, _ = json.Marshal(shoreline.TokenData{
 				UserID:   TestServerId,
@@ -100,6 +118,8 @@ func ShorelineStub() *httptest.Server {
 			})
 		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", TestUserId) {
 			resp, _ = json.Marshal(clinicianUser)
+		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", TestLegacyClinicUserId) {
+			resp, _ = json.Marshal(clinicUser)
 		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", "xealth@tidepool.org") {
 			if !xealthPatientCreated {
 				w.WriteHeader(http.StatusNotFound)
@@ -148,6 +168,11 @@ func SeagullStub() *httptest.Server {
 		var resp []byte
 		if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/%s/profile", TestUserId) {
 			fullName := "Clinician 1"
+			resp, _ = json.Marshal(patients.Profile{
+				FullName: &fullName,
+			})
+		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/%s/profile", TestLegacyClinicUserId) {
+			fullName := "Clinic 1"
 			resp, _ = json.Marshal(patients.Profile{
 				FullName: &fullName,
 			})
