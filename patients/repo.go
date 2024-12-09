@@ -696,7 +696,10 @@ func (r *repository) AssignPatientTagToClinicPatients(ctx context.Context, clini
 	tagsFieldisNullSelector := bson.M{
 		"clinicId": clinicObjId,
 		"tags":     bson.M{"$type": bson.TypeNull},
-		"userId":   bson.M{"$in": patientIds},
+	}
+	// Apply the tag to all patients if the slice is EXPLICITLY nil (and not just empty)
+	if patientIds != nil {
+		tagsFieldisNullSelector["userId"] = bson.M{"$in": patientIds}
 	}
 
 	tagsFieldisNullUpdate := bson.M{
@@ -713,7 +716,10 @@ func (r *repository) AssignPatientTagToClinicPatients(ctx context.Context, clini
 	selector := bson.M{
 		"clinicId": clinicObjId,
 		"tags":     bson.M{"$nin": bson.A{patientTagId}},
-		"userId":   bson.M{"$in": patientIds},
+	}
+	// Apply the tag to all patients if the slice is EXPLICITLY nil (and not just empty)
+	if patientIds != nil {
+		selector["userId"] = bson.M{"$in": patientIds}
 	}
 
 	update := bson.M{
