@@ -176,7 +176,9 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 		}
 
 		status := "(retained)"
-		if patientPlan.PatientAction == PatientActionMerge {
+		if patientPlan.PreventsMerge() {
+			status = "(ERROR)"
+		} else if patientPlan.PatientAction == PatientActionMerge {
 			status = "(combined)"
 		}
 		currentRow = sh.AddRow()
@@ -258,12 +260,14 @@ func (r Report) addSummaryHeader(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("Can execute merge plan?")
 	if r.plan.PreventsMerge() {
 		currentRow.AddCell().SetValue("No")
+		errs := GetUniqueErrorMessages(r.plan.Errors())
+		errMessage := fmt.Sprintf("No. %s", strings.Join(errs, "; "))
+		currentRow.AddCell().SetValue(errMessage)
 	} else {
 		currentRow.AddCell().SetValue("Yes")
 	}
 	sh.AddRow()
 
-	r.plan.PreventsMerge()
 	return nil
 }
 

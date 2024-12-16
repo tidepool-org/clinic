@@ -29,10 +29,18 @@ func (t TagPlan) PreventsMerge() bool {
 	return false
 }
 
+func (t TagPlan) Errors() []ReportError {
+	return nil
+}
+
 type TagPlans []TagPlan
 
 func (t TagPlans) PreventsMerge() bool {
 	return PlansPreventMerge(t)
+}
+
+func (t TagPlans) Errors() []ReportError {
+	return PlansErrors(t)
 }
 
 func (t TagPlans) GetResultingTagsCount() int {
