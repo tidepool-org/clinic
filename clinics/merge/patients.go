@@ -208,7 +208,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 		}
 		if plan.PatientAction == PatientActionMove {
 			if p.target.MRNSettings != nil {
-				if patient.Mrn == nil || *patient.Mrn == "" {
+				if mrn := getMRN(patient); mrn == "" {
 					// Do not allow moving patients without MRNs to clinics where MRNs are required
 					if p.target.MRNSettings.Required {
 						plan.CanExecuteAction = false
@@ -220,7 +220,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 						plan.PostMigrationMRNUniqueness = true
 
 						// Do not allow moving patients if there are patients with the same MRN in the target clinic
-						if pts := targetByAttribute.GetPatientsWithMRN(*patient.Mrn); len(pts) > 0 {
+						if pts := targetByAttribute.GetPatientsWithMRN(mrn); len(pts) > 0 {
 							plan.CanExecuteAction = false
 							plan.Error = &ErrorDuplicateMRNInTargetWorkspace
 						}
