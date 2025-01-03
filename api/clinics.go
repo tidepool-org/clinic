@@ -467,6 +467,10 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 		return err
 	}
 
+	if ec.Request().Header.Get("Accept") == "application/json" {
+		return ec.JSON(http.StatusOK, plan)
+	}
+
 	report := merge.NewReport(plan)
 	file, err := report.Generate()
 	if err != nil {

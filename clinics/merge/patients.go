@@ -35,6 +35,10 @@ func (p PatientPlans) PreventsMerge() bool {
 	return PlansPreventMerge(p)
 }
 
+func (p PatientPlans) Errors() []ReportError {
+	return PlansErrors(p)
+}
+
 func (p PatientPlans) GetSourcePatientPlans() PatientPlans {
 	var plans PatientPlans
 	for _, plan := range p {
@@ -102,9 +106,11 @@ type PatientPlan struct {
 	SourceTagNames []string `bson:"sourceTagNames"`
 	TargetTagNames []string `bson:"targetTagNames"`
 
-	PostMigrationTagNames []string `bson:"postMigrationTagNames"`
+	PostMigrationTagNames      []string `bson:"postMigrationTagNames"`
+	PostMigrationMRNUniqueness bool     `bson:"postMigrationMRNUniqueness"`
 
-	CanExecuteAction bool `bson:"canExecuteAction"`
+	CanExecuteAction bool         `bson:"canExecuteAction"`
+	Error            *ReportError `bson:"error"`
 }
 
 func (p PatientPlan) HasConflicts() bool {
@@ -117,7 +123,14 @@ func (p PatientPlan) HasConflicts() bool {
 }
 
 func (p PatientPlan) PreventsMerge() bool {
-	return !p.CanExecuteAction
+	return !p.CanExecuteAction || len(p.Errors()) > 0
+}
+
+func (p PatientPlan) Errors() []ReportError {
+	if p.Error != nil {
+		return []ReportError{*p.Error}
+	}
+	return nil
 }
 
 type Conflict struct {
@@ -194,10 +207,27 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 			})
 		}
 		if plan.PatientAction == PatientActionMove {
-			// Do not allow moving patients without MRNs to clinics where MRNs are required
-			if p.target.MRNSettings != nil && p.target.MRNSettings.Required && (patient.Mrn == nil || *patient.Mrn == "") {
-				plan.CanExecuteAction = false
+			if p.target.MRNSettings != nil {
+				if mrn := getMRN(patient); mrn == "" {
+					// Do not allow moving patients without MRNs to clinics where MRNs are required
+					if p.target.MRNSettings.Required {
+						plan.CanExecuteAction = false
+						plan.Error = &ErrorMRNRequiredInTargetWorkspace
+					}
+				} else {
+					if p.target.MRNSettings.Unique {
+						// Ensure MRNs are unique after patients are moved
+						plan.PostMigrationMRNUniqueness = true
+
+						// Do not allow moving patients if there are patients with the same MRN in the target clinic
+						if pts := targetByAttribute.GetPatientsWithMRN(mrn); len(pts) > 0 {
+							plan.CanExecuteAction = false
+							plan.Error = &ErrorDuplicateMRNInTargetWorkspace
+						}
+					}
+				}
 			}
+
 		}
 		list = append(list, plan)
 	}
@@ -340,9 +370,10 @@ func (p *PatientPlanExecutor) movePatient(ctx context.Context, plan PatientPlan,
 
 	update := bson.M{
 		"$set": bson.M{
-			"clinicId":    plan.TargetClinicId,
-			"tags":        tagIds,
-			"updatedTime": time.Now(),
+			"clinicId":         plan.TargetClinicId,
+			"requireUniqueMrn": plan.PostMigrationMRNUniqueness,
+			"tags":             tagIds,
+			"updatedTime":      time.Now(),
 		},
 	}
 

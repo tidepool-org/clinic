@@ -28,13 +28,24 @@ func (s SettingsPlan) ValuesMatch() bool {
 }
 
 func (s SettingsPlan) PreventsMerge() bool {
-	return !s.ValuesMatch()
+	return len(s.Errors()) > 0
+}
+
+func (s SettingsPlan) Errors() []ReportError {
+	if !s.ValuesMatch() {
+		return []ReportError{ErrorWorkspaceSettingsMismatch}
+	}
+	return nil
 }
 
 type SettingsPlans []SettingsPlan
 
 func (s SettingsPlans) PreventsMerge() bool {
-	return false
+	return PlansPreventMerge(s)
+}
+
+func (s SettingsPlans) Errors() []ReportError {
+	return PlansErrors(s)
 }
 
 type SettingsReporterPlanner struct {
@@ -130,6 +141,25 @@ func (m MembershipRestrictionsMergePlan) GetTargetValue() string {
 	return m.getSerializedValue(m.TargetValue)
 }
 
+func (m MembershipRestrictionsMergePlan) PreventsMerge() bool {
+	return len(m.Errors()) > 0
+}
+
+func (m MembershipRestrictionsMergePlan) Errors() []ReportError {
+	sourceMap := membershipRestrictionsToMap(m.SourceValue)
+	targetMap := membershipRestrictionsToMap(m.TargetValue)
+
+	// Check if the source map is a subset of the target map
+	for sourceDomain, sourceIDP := range sourceMap {
+		targetIDP, ok := targetMap[sourceDomain]
+		if !ok || sourceIDP != targetIDP {
+			return []ReportError{ErrorWorkspaceSettingsMismatch}
+		}
+	}
+
+	return nil
+}
+
 func (m MembershipRestrictionsMergePlan) getSerializedValue(restrictions []clinics.MembershipRestrictions) string {
 	result := "N/A"
 
@@ -143,19 +173,6 @@ func (m MembershipRestrictionsMergePlan) getSerializedValue(restrictions []clini
 	}
 
 	return result
-}
-
-func (m MembershipRestrictionsMergePlan) PreventsMerge() bool {
-	sourceMap := membershipRestrictionsToMap(m.SourceValue)
-	targetMap := membershipRestrictionsToMap(m.TargetValue)
-
-	// Check if the source map is a subset of the target map
-	for sourceDomain, sourceIDP := range sourceMap {
-		targetIDP, ok := targetMap[sourceDomain]
-		return !ok || sourceIDP != targetIDP
-	}
-
-	return false
 }
 
 func membershipRestrictionsToMap(restrictions []clinics.MembershipRestrictions) map[string]string {
