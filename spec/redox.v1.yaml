@@ -1344,10 +1344,9 @@ components:
                   type: string
                   nullable: true
             Extensions:
-              type: array
+              type: object
               x-stoplight:
                 id: 0gnhldre4wsiy
-              items: {}
         Observations:
           type: array
           items:
