@@ -116,8 +116,8 @@ type NewFlowsheet struct {
 		Notes *[]interface{} `json:"Notes,omitempty"`
 	} `json:"Patient"`
 	Visit *struct {
-		AccountNumber *string        `json:"AccountNumber"`
-		Extensions    *[]interface{} `json:"Extensions,omitempty"`
+		AccountNumber *string                 `json:"AccountNumber"`
+		Extensions    *map[string]interface{} `json:"Extensions,omitempty"`
 		Location      *struct {
 			Bed                   *string `json:"Bed"`
 			Department            *string `json:"Department"`
