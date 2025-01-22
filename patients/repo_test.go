@@ -532,7 +532,7 @@ var _ = Describe("Patients Repository", func() {
 				newPatientTag := primitive.NewObjectID()
 				clinicId := primitive.NewObjectID()
 
-				// Add set common clinic ID for all patients
+				// Сet common clinic ID for all patients
 				for _, patient := range allPatients {
 					selector := bson.M{
 						"clinicId": patient.ClinicId,
@@ -571,6 +571,49 @@ var _ = Describe("Patients Repository", func() {
 				res, err = collection.CountDocuments(context.Background(), selector)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(int64(2)))
+			})
+
+			It("assigns the correct patient tag to all patients", func() {
+				newPatientTag := primitive.NewObjectID()
+				clinicId := primitive.NewObjectID()
+
+				// Add set common clinic ID for all patients
+				for _, patient := range allPatients {
+					selector := bson.M{
+						"clinicId": patient.ClinicId,
+						"userId":   patient.UserId,
+					}
+
+					update := bson.M{
+						"$set": bson.M{
+							"clinicId": clinicId,
+						},
+					}
+
+					_, err := collection.UpdateOne(context.Background(), selector, update)
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				selector := bson.M{
+					"tags": newPatientTag,
+				}
+
+				// No patients should be returned when querying for the new tag
+				res, err := collection.CountDocuments(context.Background(), selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(0)))
+
+				// Nil array will apply the tag to all patients
+				var patientIds []string
+
+				// Perform the assign operation
+				err = repo.AssignPatientTagToClinicPatients(context.Background(), clinicId.Hex(), newPatientTag.Hex(), patientIds)
+				Expect(err).ToNot(HaveOccurred())
+
+				// All patients should have matching tag
+				res, err = collection.CountDocuments(context.Background(), selector)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(int64(len(allPatients))))
 			})
 		})
 
