@@ -137,6 +137,32 @@ var _ = Describe("New Merge Planner", func() {
 				}
 			}
 		})
+
+		It("fails for merge plans with MRN conflicts when the target workspace requires unique MRNs", func() {
+			target.MRNSettings = &clinics.MRNSettings{
+				Unique:   true,
+			}
+			planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
+			Expect(err).ToNot(HaveOccurred())
+
+			patientPlans, err := planner.Plan(context.Background())
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(patientPlans.PreventsMerge()).To(BeTrue())
+			Expect(patientPlans.Errors()).ToNot(BeEmpty())
+
+			for _, plan := range patientPlans {
+				if plan.PatientAction != merge.PatientActionMerge {
+					continue
+				}
+				if len(plan.Conflicts[merge.PatientConflictCategoryMRNOnlyMatch]) == 0 {
+					continue
+				}
+
+				Expect(plan.Error).To(Equal(merge.ErrorDuplicateMRNInTargetWorkspace))
+				Expect(plan.PreventsMerge()).To(BeTrue())
+			}
+		})
 	})
 
 	Describe("Executor", func() {

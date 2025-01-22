@@ -40,24 +40,30 @@ type ClinicMergePlan struct {
 	CreatedTime time.Time `bson:"createdTime"`
 }
 
-func (c ClinicMergePlan) PreventsMerge() bool {
-	fs := []func() bool{
-		c.MembershipRestrictionsMergePlan.PreventsMerge,
-		c.SourcePatientClusters.PreventsMerge,
-		c.TargetPatientClusters.PreventsMerge,
-		c.SettingsPlans.PreventsMerge,
-		c.TagsPlans.PreventsMerge,
-		c.ClinicianPlans.PreventsMerge,
-		c.PatientPlans.PreventsMerge,
+func (c ClinicMergePlan) Plans() []Plan {
+	return []Plan{
+		c.MembershipRestrictionsMergePlan,
+		c.SourcePatientClusters,
+		c.TargetPatientClusters,
+		c.SettingsPlans,
+		c.TagsPlans,
+		c.ClinicianPlans,
+		c.PatientPlans,
 	}
+}
 
-	for _, preventsMerge := range fs {
-		if preventsMerge() {
+func (c ClinicMergePlan) PreventsMerge() bool {
+	for _, plan := range c.Plans() {
+		if plan.PreventsMerge() {
 			return true
 		}
 	}
 
 	return false
+}
+
+func (c ClinicMergePlan) Errors() []ReportError {
+	return PlansErrors(c.Plans())
 }
 
 type ClinicMergePlanner struct {

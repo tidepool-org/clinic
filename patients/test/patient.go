@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/tidepool-org/clinic/patients"
@@ -24,13 +25,14 @@ func RandomPatient() patients.Patient {
 	tags := []primitive.ObjectID{primitive.NewObjectID()}
 	permissions := RandomPermissions()
 	dataSources := RandomDataSources()
+	mrn := test.Faker.UUID().V4()
 	return patients.Patient{
 		ClinicId:         &clinicId,
 		UserId:           strp(test.Faker.UUID().V4()),
 		BirthDate:        strp(test.Faker.Time().ISO8601(time.Now())[:10]),
 		Email:            strp(test.Faker.Internet().Email()),
 		FullName:         strp(test.Faker.Person().Name()),
-		Mrn:              strp(test.Faker.UUID().V4()),
+		Mrn:              strp(test.Faker.RandomStringElement([]string{mrn, strings.ToUpper(mrn)})),
 		Tags:             &tags,
 		TargetDevices:    &devices,
 		Permissions:      &permissions,
