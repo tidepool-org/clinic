@@ -18,7 +18,7 @@ type service struct {
 	dbClient *mongo.Client
 	logger   *zap.SugaredLogger
 
-	clinics             clinics.Service
+	clinics          clinics.Service
 	custodialService CustodialService
 	deletionsRepo    DeletionsRepository
 	patientsRepo     Repository
@@ -88,6 +88,10 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		return nil, err
 	}
 
+	if update.Patient.Summary != nil {
+		update.Patient.Summary = nil
+	}
+
 	if err := s.enforceMrnSettings(ctx, update.ClinicId, &update.UserId, &update.Patient); err != nil {
 		return nil, err
 	}
@@ -141,8 +145,8 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, de
 		}
 
 		deletion := Deletion{
-			Patient:     *patient,
-			DeletedTime: time.Now(),
+			Patient:         *patient,
+			DeletedTime:     time.Now(),
 			DeletedByUserId: deletedByUserId,
 		}
 
