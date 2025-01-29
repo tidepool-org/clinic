@@ -28,7 +28,7 @@ require (
 	github.com/tealeg/xlsx/v3 v3.3.11
 	github.com/tidepool-org/clinic/client v0.0.0
 	github.com/tidepool-org/clinic/redox_models v0.0.0
-	github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c
+	github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 	github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886
 	go.mongodb.org/mongo-driver v1.17.1
 	go.uber.org/fx v1.23.0
@@ -131,11 +131,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.32.0 // indirect
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.29.0 // indirect
-	golang.org/x/net v0.31.0 // indirect
-	golang.org/x/sync v0.9.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
