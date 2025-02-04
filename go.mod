@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic
 
-go 1.23.2
+go 1.23.3
 
 require (
 	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.59.0

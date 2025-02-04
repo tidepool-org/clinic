@@ -25,3 +25,6 @@ artifact_docker.sh
 *.envrc
 *.env
 *.test
+
+# codegen sed backup files
+/xealth_client/gen*.go.bak
