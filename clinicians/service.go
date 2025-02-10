@@ -3,6 +3,7 @@ package clinicians
 import (
 	"context"
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
@@ -176,7 +177,7 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string) 
 			// because the clinic doesn't have any clinicians
 			if len(remaining) == 0 {
 				s.logger.Infow("deleting all non-custodial patients of clinic", "clinicId", clinicId)
-				if _, err := s.patientsService.DeleteNonCustodialPatientsOfClinic(sessCtx, clinicId); err != nil {
+				if err = s.patientsService.DeleteNonCustodialPatientsOfClinic(sessCtx, clinicId, deletions.Metadata{}); err != nil {
 					return nil, err
 				}
 			}

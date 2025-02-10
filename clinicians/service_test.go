@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -21,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
@@ -55,7 +55,6 @@ var _ = Describe("Clinicians Service", func() {
 					clinics.NewRepository,
 					clinicians.NewRepository,
 					clinicians.NewService,
-					patients.NewDeletionsRepository,
 					patients.NewRepository,
 					patients.NewService,
 					patients.NewCustodialService,
