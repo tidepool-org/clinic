@@ -64,7 +64,7 @@ $(OAPI_CODEGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.1
 
 $(MOCKGEN):
-	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/golang/mock/mockgen@v1.6.0
+	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install go.uber.org/mock/mockgen@v0.5.0
 
 $(SWAGGER_CLI): npm-tools
 

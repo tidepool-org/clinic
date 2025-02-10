@@ -2,7 +2,7 @@ package xealth_test
 
 import (
 	"encoding/json"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"

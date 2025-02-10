@@ -4,6 +4,7 @@ import (
 	"context"
 	errs "errors"
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 
 	"github.com/tidepool-org/clinic/errors"
 
@@ -247,7 +248,9 @@ func (c *manager) deleteClinic(ctx context.Context, clinicId string) error {
 		return fmt.Errorf("%w: deletion of non-empty clinics is not allowed", errors.BadRequest)
 	}
 
-	if err := c.patientsService.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId, &c.config.ClinicDemoPatientUserId); err != nil && !errs.Is(err, errors.NotFound) {
+	if err := c.patientsService.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId, deletions.Metadata{
+		DeletedByUserId: &c.config.ClinicDemoPatientUserId,
+	}); err != nil && !errs.Is(err, errors.NotFound) {
 		return err
 	}
 
