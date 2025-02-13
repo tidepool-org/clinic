@@ -4,6 +4,7 @@ import (
 	"context"
 	errs "errors"
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 
 	"github.com/tidepool-org/clinic/errors"
 
@@ -28,7 +29,7 @@ type CreateClinic struct {
 
 type Manager interface {
 	CreateClinic(ctx context.Context, create *CreateClinic) (*clinics.Clinic, error)
-	DeleteClinic(ctx context.Context, clinicId string) error
+	DeleteClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error
 	GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error)
 	FinalizeMerge(ctx context.Context, sourceId, targetId string) error
 }
@@ -132,9 +133,9 @@ func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 	return result.(*clinics.Clinic), nil
 }
 
-func (c *manager) DeleteClinic(ctx context.Context, clinicId string) error {
+func (c *manager) DeleteClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error {
 	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		return nil, c.deleteClinic(sessionCtx, clinicId)
+		return nil, c.deleteClinic(sessionCtx, clinicId, metadata)
 	}
 
 	_, err := store.WithTransaction(ctx, c.dbClient, transaction)
@@ -148,7 +149,7 @@ func (c *manager) FinalizeMerge(ctx context.Context, sourceId, targetId string) 
 	}
 
 	// Delete clinics if allowed by patient list
-	err = c.deleteClinic(ctx, sourceId)
+	err = c.deleteClinic(ctx, sourceId, deletions.Metadata{})
 	if err != nil {
 		return err
 	}
@@ -232,7 +233,7 @@ func (c *manager) getDemoPatient(ctx context.Context) (*patients.Patient, error)
 	return patient, nil
 }
 
-func (c *manager) deleteClinic(ctx context.Context, clinicId string) error {
+func (c *manager) deleteClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error {
 	filter := patients.Filter{ClinicId: &clinicId}
 	pagination := store.Pagination{Limit: 2}
 	res, err := c.patientsService.List(ctx, &filter, pagination, nil)
@@ -247,15 +248,16 @@ func (c *manager) deleteClinic(ctx context.Context, clinicId string) error {
 		return fmt.Errorf("%w: deletion of non-empty clinics is not allowed", errors.BadRequest)
 	}
 
-	if err := c.patientsService.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId, &c.config.ClinicDemoPatientUserId); err != nil && !errs.Is(err, errors.NotFound) {
+	if err := c.patientsService.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId, metadata); err != nil && !errs.Is(err, errors.NotFound) {
 		return err
 	}
 
-	if err := c.cliniciansRepository.DeleteAll(ctx, clinicId); err != nil {
+	// Using the repository directly, because the service wraps delete all in transaction
+	if err := c.cliniciansRepository.DeleteAll(ctx, clinicId, metadata); err != nil {
 		return  err
 	}
 
-	return c.clinics.Delete(ctx, clinicId)
+	return c.clinics.Delete(ctx, clinicId, metadata)
 }
 
 func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool {

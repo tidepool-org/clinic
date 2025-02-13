@@ -2,7 +2,6 @@ package manager_test
 
 import (
 	"context"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -11,6 +10,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/deletions"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson"
@@ -53,7 +53,7 @@ var _ = Describe("Clinics Manager", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(cliniciansRepo).ToNot(BeNil())
 
-		clinicsRepo, err := clinics.NewRepository(database, lifecycle)
+		clinicsRepo, err := clinics.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(clinicsRepo).ToNot(BeNil())
 
@@ -61,11 +61,7 @@ var _ = Describe("Clinics Manager", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsRepo).ToNot(BeNil())
 
-		deletionsRepo, err := patients.NewDeletionsRepository(database, lgr, lifecycle)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(deletionsRepo).ToNot(BeNil())
-
-		patientsService, err = patients.NewService(deletionsRepo, patientsRepo, clinicsRepo, nil, lgr, database.Client())
+		patientsService, err = patients.NewService(patientsRepo, clinicsRepo, nil, lgr, database.Client())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsService).ToNot(BeNil())
 
@@ -98,7 +94,7 @@ var _ = Describe("Clinics Manager", func() {
 			})
 
 			It("deletes the clinic object", func() {
-				err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex())
+				err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex(), deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 
 				selector := bson.M{
@@ -132,7 +128,7 @@ var _ = Describe("Clinics Manager", func() {
 				})
 
 				It("deletes the clinic object", func() {
-					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex())
+					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex(), deletions.Metadata{})
 					Expect(err).ToNot(HaveOccurred())
 
 					selector := bson.M{
@@ -145,7 +141,7 @@ var _ = Describe("Clinics Manager", func() {
 				})
 
 				It("deletes the patient object", func() {
-					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex())
+					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex(), deletions.Metadata{})
 					Expect(err).ToNot(HaveOccurred())
 
 					patientSelector := bson.M{
@@ -158,7 +154,7 @@ var _ = Describe("Clinics Manager", func() {
 				})
 
 				It("deletes the clinician object", func() {
-					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex())
+					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex(), deletions.Metadata{})
 					Expect(err).ToNot(HaveOccurred())
 
 					clinicianSelector := bson.M{
@@ -199,7 +195,7 @@ var _ = Describe("Clinics Manager", func() {
 				})
 
 				It("returns an error and doesn't delete the clinic object", func() {
-					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex())
+					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex(), deletions.Metadata{})
 					Expect(err).To(HaveOccurred())
 
 					selector := bson.M{
@@ -212,7 +208,7 @@ var _ = Describe("Clinics Manager", func() {
 				})
 
 				It("returns an error and doesn't delete patient objects", func() {
-					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex())
+					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex(), deletions.Metadata{})
 					Expect(err).To(HaveOccurred())
 
 					selector := bson.M{
@@ -225,7 +221,7 @@ var _ = Describe("Clinics Manager", func() {
 				})
 
 				It("returns an error and doesn't delete clinician objects", func() {
-					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex())
+					err := mngr.DeleteClinic(context.Background(), clinic.Id.Hex(), deletions.Metadata{})
 					Expect(err).To(HaveOccurred())
 
 					selector := bson.M{

@@ -3,6 +3,7 @@ package clinics_test
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,7 +27,7 @@ var _ = Describe("Clinics", func() {
 		var err error
 		database = dbTest.GetTestDatabase()
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repo, err = clinics.NewRepository(database, lifecycle)
+		repo, err = clinics.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repo).ToNot(BeNil())
 		lifecycle.RequireStart()

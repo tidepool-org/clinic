@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"regexp"
 	"strings"
@@ -34,15 +35,27 @@ type Repository interface {
 }
 
 func NewRepository(config *config.Config, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Repository, error) {
+	deletionsRepo, err := deletions.NewRepository[Patient]("patient", db, logger)
+	if err != nil {
+		return nil, err
+	}
+
 	repo := &repository{
-		config:     config,
-		collection: db.Collection(CollectionName),
-		logger:     logger,
+		config:        config,
+		collection:    db.Collection(CollectionName),
+		deletionsRepo: deletionsRepo,
+		logger:        logger,
 	}
 
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			return repo.Initialize(ctx)
+			if err = repo.Initialize(ctx); err != nil {
+				return err
+			}
+			if err = repo.deletionsRepo.Initialize(ctx, []string{"clinicId,userId"}); err != nil {
+				return err
+			}
+			return nil
 		},
 	})
 
@@ -50,9 +63,10 @@ func NewRepository(config *config.Config, db *mongo.Database, logger *zap.Sugare
 }
 
 type repository struct {
-	config     *config.Config
-	collection *mongo.Collection
-	logger     *zap.SugaredLogger
+	config        *config.Config
+	collection    *mongo.Collection
+	logger        *zap.SugaredLogger
+	deletionsRepo deletions.Repository[Patient]
 }
 
 func (r *repository) Initialize(ctx context.Context) error {
@@ -171,11 +185,20 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 	return patient, nil
 }
 
-func (r *repository) Remove(ctx context.Context, clinicId string, userId string, _ *string) error {
+func (r *repository) Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
 		"userId":   userId,
+	}
+
+	patient, err := r.Get(ctx, clinicId, userId)
+	if err != nil {
+		return err
+	}
+	err = r.deletionsRepo.Create(ctx, *patient, metadata)
+	if err != nil {
+		return nil
 	}
 
 	res, err := r.collection.DeleteOne(ctx, selector)
@@ -460,35 +483,27 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	return r.Get(ctx, clinicId, userId)
 }
 
-func (r *repository) DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error) {
+func (r *repository) DeleteFromAllClinics(ctx context.Context, userId string, metadata deletions.Metadata) ([]string, error) {
 	selector := bson.M{
 		"userId": userId,
 	}
 
-	cursor, err := r.collection.Find(ctx, selector)
+	patients, err := r.deleteMany(ctx, selector, metadata)
 	if err != nil {
-		return nil, fmt.Errorf("error listing patients: %w", err)
-	}
-
-	var patients []*Patient
-	if err = cursor.All(ctx, &patients); err != nil {
-		return nil, fmt.Errorf("error decoding patients list: %w", err)
+		return nil, err
 	}
 
 	var clinicIds []string
 	for _, patient := range patients {
-		selector["clinicId"] = patient.ClinicId
-		result, err := r.collection.DeleteOne(ctx, selector)
-		if err != nil {
-			return clinicIds, fmt.Errorf("error deleting patient: %w", err)
-		} else if result.DeletedCount >= 0 {
-			clinicIds = append(clinicIds, patient.ClinicId.Hex())
-		}
+		clinicIds = append(clinicIds, patient.ClinicId.Hex())
 	}
+
 	return clinicIds, nil
 }
 
-func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error) {
+// DeleteNonCustodialPatientsOfClinic deletes all non-custodial patients of a clinic. Persists deleted objects in deletions collection.
+// MUST be executed in a transaction to ensure atomicity.
+func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -498,8 +513,48 @@ func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, cli
 		},
 	}
 
+	_, err := r.deleteMany(ctx, selector, metadata)
+	return err
+}
+
+
+func (r *repository) deleteMany(ctx context.Context, selector bson.M, metadata deletions.Metadata) ([]Patient, error) {
+	cursor, err := r.collection.Find(ctx, selector)
+	if err != nil {
+		return nil, fmt.Errorf("error listing patients: %w", err)
+	}
+
+	var patients []Patient
+	if err = cursor.All(ctx, &patients); err != nil {
+		return nil, fmt.Errorf("error decoding patients list: %w", err)
+	}
+
+	if len(patients) == 0 {
+		return patients, nil
+	}
+
+	err = r.deletionsRepo.CreateMany(ctx, patients, metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]primitive.ObjectID, 0, len(patients))
+	for _, patient := range patients {
+		ids = append(ids, *patient.Id)
+	}
+	selector["_id"] = bson.M{
+		"$in": ids,
+	}
+
 	result, err := r.collection.DeleteMany(ctx, selector)
-	return result.DeletedCount > 0, err
+	if err != nil {
+		return nil, err
+	}
+	if result.DeletedCount != int64(len(patients)) {
+		return nil, fmt.Errorf("unabel to delete all non custodial patients of a clinic")
+	}
+
+	return patients, nil
 }
 
 func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {

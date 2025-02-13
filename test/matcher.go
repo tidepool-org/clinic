@@ -2,7 +2,7 @@ package test
 
 import (
 	"fmt"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 type funcMatcher[T any] struct {
