@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/api"
 	integrationTest "github.com/tidepool-org/clinic/integration/test"
@@ -17,8 +18,6 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
-
-	. "github.com/onsi/ginkgo/v2"
 )
 
 const (
@@ -136,4 +135,8 @@ func prepareRequestWithBody(method, endpoint string, body io.Reader) *http.Reque
 	req := httptest.NewRequest(method, endpoint, body)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	return req
+}
+
+func testCtx() context.Context {
+	return context.Background()
 }

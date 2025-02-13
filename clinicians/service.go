@@ -121,25 +121,28 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 	return s.repository.List(ctx, filter, pagination)
 }
 
-func (s *service) Delete(ctx context.Context, clinicId string, clinicianId string) error {
-	_, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		clinician, err := s.repository.Get(sessionCtx, clinicId, clinicianId)
-		if err != nil {
-			return nil, err
-		}
+func (s *service) Delete(ctx context.Context, clinicId string, clinicianId string, metadata deletions.Metadata) error {
+	clinician, err := s.repository.Get(ctx, clinicId, clinicianId)
+	if err != nil {
+		return err
+	}
 
-		return nil, s.deleteSingle(sessionCtx, clinician, false)
+	_, err = store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		return nil, s.deleteSingle(sessionCtx, clinician, metadata, false)
 	})
 
 	return err
 }
 
-func (s *service) DeleteAll(ctx context.Context, clinicId string) error {
+func (s *service) DeleteAll(ctx context.Context, clinicId string, metadata deletions.Metadata) error {
 	s.logger.Infow("deleting all clinicians", "clinicId", clinicId)
-	return s.repository.DeleteAll(ctx, clinicId)
+	_, err := store.WithTransaction(ctx, s.dbClient, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		return nil, s.repository.DeleteAll(ctx, clinicId, metadata)
+	})
+	return err
 }
 
-func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string) error {
+func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string, metadata deletions.Metadata) error {
 	_, err := store.WithTransaction(ctx, s.dbClient, func(sessCtx mongo.SessionContext) (interface{}, error) {
 		filter := &Filter{
 			UserId: &clinicianId,
@@ -157,7 +160,7 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string) 
 
 		for _, clinician := range clinicianList {
 			clinicId := clinician.ClinicId.Hex()
-			if err := s.deleteSingle(sessCtx, clinician, true); err != nil {
+			if err := s.deleteSingle(sessCtx, clinician, metadata, true); err != nil {
 				return nil, err
 			}
 
@@ -190,9 +193,9 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string) 
 	return err
 }
 
-func (s *service) deleteSingle(ctx context.Context, clinician *Clinician, allowOrphaning bool) error {
+func (s *service) deleteSingle(ctx context.Context, clinician *Clinician, metadata deletions.Metadata, allowOrphaning bool) error {
 	s.logger.Infow("deleting user from clinic", "userId", *clinician.UserId, "clinicId", clinician.ClinicId.Hex())
-	err := s.repository.Delete(ctx, clinician.ClinicId.Hex(), *clinician.UserId)
+	err := s.repository.Delete(ctx, clinician.ClinicId.Hex(), *clinician.UserId, metadata)
 	if err != nil {
 		return err
 	}

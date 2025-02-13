@@ -7,6 +7,7 @@ import (
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -57,7 +58,13 @@ func (h *Handler) DeleteClinician(ec echo.Context, clinicId ClinicId, clinicianI
 		return err
 	}
 
-	err := h.Clinicians.Delete(ctx, string(clinicId), string(clinicianId))
+	var deletedByUserId *string
+	authData := auth.GetAuthData(ctx)
+	if authData != nil && authData.ServerAccess == false {
+		deletedByUserId = &authData.SubjectId
+	}
+
+	err := h.Clinicians.Delete(ctx, clinicId, clinicianId, deletions.Metadata{DeletedByUserId: deletedByUserId})
 	if err != nil {
 		return err
 	}

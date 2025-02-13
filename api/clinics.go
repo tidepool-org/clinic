@@ -115,7 +115,14 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) DeleteClinic(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	err := h.ClinicsManager.DeleteClinic(ctx, string(clinicId))
+
+	var metadata deletions.Metadata
+	authData := auth.GetAuthData(ctx)
+	if authData != nil && authData.ServerAccess == false {
+		metadata.DeletedByUserId = &authData.SubjectId
+	}
+
+	err := h.ClinicsManager.DeleteClinic(ctx, clinicId, metadata)
 	if err != nil {
 		return err
 	}
@@ -220,7 +227,7 @@ func (h *Handler) DeleteUserFromClinics(ec echo.Context, userId UserId) error {
 	if _, err := h.Patients.DeleteFromAllClinics(ctx, userId, metadata); err != nil {
 		return err
 	}
-	if err := h.Clinicians.DeleteFromAllClinics(ctx, string(userId)); err != nil {
+	if err := h.Clinicians.DeleteFromAllClinics(ctx, userId, metadata); err != nil {
 		return err
 	}
 
