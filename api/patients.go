@@ -151,11 +151,6 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		Patient:  NewPatient(dto),
 	}
 
-	// Prevent clients from setting readonly summary property
-	if update.Patient.Summary != nil {
-		update.Patient.Summary = nil
-	}
-
 	patient, err := h.Patients.Update(ctx, update)
 	if err != nil {
 		return err
