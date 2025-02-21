@@ -3033,6 +3033,7 @@ components:
           readOnly: true
         summary:
           $ref: '#/components/schemas/PatientSummary'
+          readOnly: true
         reviews:
           type: array
           nullable: true

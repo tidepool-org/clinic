@@ -201,7 +201,6 @@ func NewPatient(dto Patient) patients.Patient {
 		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
-		Summary:       NewSummary(dto.Summary),
 		Reviews:       NewReviews(dto.Reviews),
 	}
 
@@ -678,7 +677,7 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 		MrnIdType: dto.MrnIdType,
 		Provider:  string(dto.Provider),
 		ScheduledReports: clinics.ScheduledReports{
-			Cadence: string(dto.ScheduledReports.Cadence),
+			Cadence:         string(dto.ScheduledReports.Cadence),
 			OnUploadEnabled: dto.ScheduledReports.OnUploadEnabled,
 		},
 		Tags: clinics.TagsSettings{
@@ -727,7 +726,7 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 			OnUploadEnabled: settings.ScheduledReports.OnUploadEnabled,
 		},
 		Tags: EHRTagsSettings{
-			Codes: &settings.Tags.Codes,
+			Codes:     &settings.Tags.Codes,
 			Separator: settings.Tags.Separator,
 		},
 	}
