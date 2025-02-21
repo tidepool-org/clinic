@@ -88,10 +88,6 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		return nil, err
 	}
 
-	if update.Patient.Summary != nil {
-		update.Patient.Summary = nil
-	}
-
 	if err := s.enforceMrnSettings(ctx, update.ClinicId, &update.UserId, &update.Patient); err != nil {
 		return nil, err
 	}

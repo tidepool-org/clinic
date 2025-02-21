@@ -146,10 +146,16 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 	}
 
 	update := patients.PatientUpdate{
-		ClinicId:  clinicId,
-		UserId:    patientId,
-		Patient:   NewPatient(dto),
+		ClinicId: clinicId,
+		UserId:   patientId,
+		Patient:  NewPatient(dto),
 	}
+
+	// Prevent clients from setting readonly summary property
+	if update.Patient.Summary != nil {
+		update.Patient.Summary = nil
+	}
+
 	patient, err := h.Patients.Update(ctx, update)
 	if err != nil {
 		return err
@@ -344,7 +350,6 @@ func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId Cli
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
-
 
 	// We pass an empty request body as nil which will target all clinic patients for tag assignment
 	if ec.Request().Body == http.NoBody {
