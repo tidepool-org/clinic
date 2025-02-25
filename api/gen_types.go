@@ -684,6 +684,7 @@ const (
 const (
 	DISABLED ScheduledReportsCadence = "DISABLED"
 	N14d     ScheduledReportsCadence = "14d"
+	N1d      ScheduledReportsCadence = "1d"
 	N30d     ScheduledReportsCadence = "30d"
 	N7d      ScheduledReportsCadence = "7d"
 )
