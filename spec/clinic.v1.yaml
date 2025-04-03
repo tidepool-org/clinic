@@ -4767,6 +4767,7 @@ components:
           x-stoplight:
             id: ibtk59wcgho89
           enum:
+            - 1d
             - 7d
             - 14d
             - 30d
