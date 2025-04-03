@@ -644,12 +644,6 @@ const (
 	DataSourceStatePendingReconnect DataSourceState = "pendingReconnect"
 )
 
-// Defines values for EHRFlowsheetSettingsCoefficientOfVariationUnits.
-const (
-	PERCENTAGE   EHRFlowsheetSettingsCoefficientOfVariationUnits = "PERCENTAGE"
-	UNITINTERVAL EHRFlowsheetSettingsCoefficientOfVariationUnits = "UNIT_INTERVAL"
-)
-
 // Defines values for EHRMatchMessageRefDataModel.
 const (
 	Order EHRMatchMessageRefDataModel = "Order"
@@ -880,12 +874,9 @@ type EHRFacility struct {
 
 // EHRFlowsheetSettings defines model for EHRFlowsheetSettings.
 type EHRFlowsheetSettings struct {
-	// CoefficientOfVariationUnits When set to 'PERCENTAGE' the coefficient of variation will be set to the percentage rounded to 1 decimal point - e.g. 12.3%. When set to 'INTERVAL_UNIT' it will be formatted as a decimal in the unit interval [0, 1] rounded to 4 decimal points, e.g. 0.1233.
-	CoefficientOfVariationUnits EHRFlowsheetSettingsCoefficientOfVariationUnits `json:"coefficientOfVariationUnits"`
+	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
+	Icode bool `json:"icode"`
 }
-
-// EHRFlowsheetSettingsCoefficientOfVariationUnits When set to 'PERCENTAGE' the coefficient of variation will be set to the percentage rounded to 1 decimal point - e.g. 12.3%. When set to 'INTERVAL_UNIT' it will be formatted as a decimal in the unit interval [0, 1] rounded to 4 decimal points, e.g. 0.1233.
-type EHRFlowsheetSettingsCoefficientOfVariationUnits string
 
 // EHRMatchMessageRef defines model for EHRMatchMessageRef.
 type EHRMatchMessageRef struct {
