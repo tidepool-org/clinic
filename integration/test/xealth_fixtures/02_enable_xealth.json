@@ -10,5 +10,8 @@
     "cadence": "DISABLED",
     "onUploadEnabled": false
   },
-  "tags": {}
+  "tags": {},
+  "flowsheets": {
+    "icode": true
+  }
 }

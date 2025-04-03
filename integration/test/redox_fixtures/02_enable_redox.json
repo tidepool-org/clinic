@@ -17,7 +17,12 @@
     "onUploadNoteEventType": "Replace"
   },
   "tags": {
-    "codes": ["PATIENT_TAGS"],
+    "codes": [
+      "PATIENT_TAGS"
+    ],
     "separator": ","
+  },
+  "flowsheets": {
+    "icode": false
   }
 }

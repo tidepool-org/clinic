@@ -654,6 +654,19 @@ const (
 	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
+// Defines values for EHRMatchRequestPatientsOptionsCriteria.
+const (
+	DOBFULLNAME EHRMatchRequestPatientsOptionsCriteria = "DOB_FULLNAME"
+	MRN         EHRMatchRequestPatientsOptionsCriteria = "MRN"
+	MRNDOB      EHRMatchRequestPatientsOptionsCriteria = "MRN_DOB"
+)
+
+// Defines values for EHRMatchRequestPatientsOptionsOnUniqueMatch.
+const (
+	DISABLEREPORTS EHRMatchRequestPatientsOptionsOnUniqueMatch = "DISABLE_REPORTS"
+	ENABLEREPORTS  EHRMatchRequestPatientsOptionsOnUniqueMatch = "ENABLE_REPORTS"
+)
+
 // Defines values for EHRSettingsProvider.
 const (
 	Redox  EHRSettingsProvider = "redox"
@@ -665,6 +678,14 @@ const (
 	COMPLETED MigrationStatus = "COMPLETED"
 	PENDING   MigrationStatus = "PENDING"
 	RUNNING   MigrationStatus = "RUNNING"
+)
+
+// Defines values for ScheduledReportsCadence.
+const (
+	DISABLED ScheduledReportsCadence = "DISABLED"
+	N14d     ScheduledReportsCadence = "14d"
+	N30d     ScheduledReportsCadence = "30d"
+	N7d      ScheduledReportsCadence = "7d"
 )
 
 // Defines values for ScheduledReportsOnUploadNoteEventType.
@@ -851,6 +872,12 @@ type EHRFacility struct {
 	Name string `json:"name"`
 }
 
+// EHRFlowsheetSettings defines model for EHRFlowsheetSettings.
+type EHRFlowsheetSettings struct {
+	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
+	Icode bool `json:"icode"`
+}
+
 // EHRMatchMessageRef defines model for EHRMatchMessageRef.
 type EHRMatchMessageRef struct {
 	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
@@ -866,8 +893,24 @@ type EHRMatchMessageRefEventType string
 
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
+	MessageRef *EHRMatchMessageRef             `json:"messageRef,omitempty"`
+	Patients   *EHRMatchRequestPatientsOptions `json:"patients,omitempty"`
 }
+
+// EHRMatchRequestPatientsOptions defines model for EHRMatchRequestPatientsOptions.
+type EHRMatchRequestPatientsOptions struct {
+	// Criteria Performs an "OR" match for each item in the array
+	Criteria []EHRMatchRequestPatientsOptionsCriteria `json:"criteria"`
+
+	// OnUniqueMatch Optional action to be performed when a unique match has been found
+	OnUniqueMatch *EHRMatchRequestPatientsOptionsOnUniqueMatch `json:"onUniqueMatch,omitempty"`
+}
+
+// EHRMatchRequestPatientsOptionsCriteria defines model for EHRMatchRequestPatientsOptions.Criteria.
+type EHRMatchRequestPatientsOptionsCriteria string
+
+// EHRMatchRequestPatientsOptionsOnUniqueMatch Optional action to be performed when a unique match has been found
+type EHRMatchRequestPatientsOptionsOnUniqueMatch string
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {
@@ -892,19 +935,32 @@ type EHRSettings struct {
 	DestinationIds *EHRDestinationIds `json:"destinationIds,omitempty"`
 
 	// Enabled Enable or disable the EHR integration
-	Enabled        bool                `json:"enabled"`
-	Facility       *EHRFacility        `json:"facility,omitempty"`
-	MrnIdType      string              `json:"mrnIdType"`
-	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
-	Provider       EHRSettingsProvider `json:"provider"`
+	Enabled        bool                 `json:"enabled"`
+	Facility       *EHRFacility         `json:"facility,omitempty"`
+	Flowsheets     EHRFlowsheetSettings `json:"flowsheets"`
+	MrnIdType      string               `json:"mrnIdType"`
+	ProcedureCodes EHRProcedureCodes    `json:"procedureCodes"`
+	Provider       EHRSettingsProvider  `json:"provider"`
 
 	// ScheduledReports Scheduled Report Settings
 	ScheduledReports ScheduledReports `json:"scheduledReports"`
 	SourceId         string           `json:"sourceId"`
+
+	// Tags This configuration only applies to integrations using Redox Data Model
+	Tags EHRTagsSettings `json:"tags"`
 }
 
 // EHRSettingsProvider defines model for EHRSettings.Provider.
 type EHRSettingsProvider string
+
+// EHRTagsSettings This configuration only applies to integrations using Redox Data Model
+type EHRTagsSettings struct {
+	// Codes Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
+	Codes *[]string `json:"codes,omitempty"`
+
+	// Separator If set to a non-empty string, the tag values will be split using this separator
+	Separator *string `json:"separator,omitempty"`
+}
 
 // Error defines model for Error.
 type Error struct {
@@ -1558,10 +1614,16 @@ type PhoneNumber struct {
 
 // ScheduledReports Scheduled Report Settings
 type ScheduledReports struct {
+	// Cadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
+	Cadence ScheduledReportsCadence `json:"cadence"`
+
 	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
 	OnUploadEnabled       bool                                   `json:"onUploadEnabled"`
 	OnUploadNoteEventType *ScheduledReportsOnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
 }
+
+// ScheduledReportsCadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
+type ScheduledReportsCadence string
 
 // ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
 type ScheduledReportsOnUploadNoteEventType string

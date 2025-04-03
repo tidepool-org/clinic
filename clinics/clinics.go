@@ -18,6 +18,7 @@ const (
 
 	CountryCodeUS                                    = "US"
 	PatientCountSettingsHardLimitPatientCountDefault = 250
+	DefaultCoefficientOfVariationUnits               = "UNIT_INTERVAL"
 )
 
 var (
@@ -117,7 +118,8 @@ type EHRSettings struct {
 	SourceId         string             `bson:"sourceId"`
 	MrnIdType        string             `bson:"mrnIdType"`
 	ScheduledReports ScheduledReports   `bson:"scheduledReports"`
-	Tags             TagsSettings        `bson:"tags"`
+	Tags             TagsSettings       `bson:"tags"`
+	Flowsheets       FlowsheetSettings  `bson:"flowsheets"`
 }
 
 func (e *EHRSettings) GetMrnIDType() string {
@@ -158,6 +160,17 @@ type MRNSettings struct {
 type TagsSettings struct {
 	Codes     []string `bson:"codes"`
 	Separator *string  `bson:"separator"`
+}
+
+type FlowsheetSettings struct {
+	Icode bool `bson:"icode,omitempty"`
+}
+
+func getOrElse[T any, PT *T](val PT, def T) T {
+	if val == nil {
+		return def
+	}
+	return *val
 }
 
 type PatientCount struct {
