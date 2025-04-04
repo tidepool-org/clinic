@@ -439,6 +439,8 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
 				TimeInVeryHighPercent:      patient.TimeInVeryHighPercent,
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
+				TimeInAnyLowPercent:        patient.TimeInAnyLowPercent,
+				TimeInAnyHighPercent:       patient.TimeInAnyHighPercent,
 				LastData:                   patient.LastData,
 				Patient: TidePatient{
 					Email:       patient.Patient.Email,
