@@ -208,7 +208,7 @@ func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics
 	if err != nil {
 		return nil, err
 	}
-	if result.TotalCount > limit {
+	if result.MatchingCount > limit {
 		return nil, fmt.Errorf("too many patients in clinic")
 	}
 

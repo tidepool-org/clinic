@@ -3321,6 +3321,12 @@ components:
       properties:
         count:
           type: integer
+          description: The number of items matching the filter
+        totalCount:
+          type: integer
+          x-stoplight:
+            id: hya2p7j9qr1h2
+          description: The total number of items
     PatientsResponse:
       title: PatientsResponse
       type: object

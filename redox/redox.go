@@ -385,7 +385,7 @@ func (h *Handler) findMatchingPatients(ctx context.Context, clinic clinics.Clini
 			return nil, err
 		}
 
-		if result.TotalCount > 0 {
+		if result.MatchingCount > 0 {
 			for _, patient := range result.Patients {
 				if patient == nil || patient.UserId == nil {
 					continue
