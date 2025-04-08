@@ -1,6 +1,8 @@
 package merge_test
 
 import (
+	"encoding/json"
+	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinics/merge"
@@ -8,7 +10,7 @@ import (
 )
 
 const (
-	expectedClusters = 50
+	expectedClusters                      = 50
 	inClusterLikelyDuplicateAccountsCount = 2
 	inClusterNameOnlyMatchAccountsCount   = 3
 	inClusterMRNOnlyMatchAccountsCount    = 4
@@ -19,7 +21,6 @@ var _ = Describe("Patient Cluster Reporter", func() {
 
 	BeforeEach(func() {
 		data := mergeTest.RandomDataForClustering(mergeTest.ClusterParams{
-			PatientCount:                          patientCount,
 			ClusterCount:                          expectedClusters,
 			InClusterLikelyDuplicateAccountsCount: inClusterLikelyDuplicateAccountsCount,
 			InClusterNameOnlyMatchAccountsCount:   inClusterNameOnlyMatchAccountsCount,
@@ -41,7 +42,12 @@ var _ = Describe("Patient Cluster Reporter", func() {
 
 		It("have the expected number of duplicates withing the cluster", func() {
 			expectedClusterSize := 1 + inClusterLikelyDuplicateAccountsCount + inClusterMRNOnlyMatchAccountsCount + inClusterNameOnlyMatchAccountsCount
-			for _, cluster := range clusters {
+			for i, cluster := range clusters {
+				if len(cluster.Patients) != expectedClusterSize {
+					res, _ := json.Marshal(cluster.Patients)
+					fmt.Println(i)
+					fmt.Println(string(res))
+				}
 				Expect(cluster.Patients).To(HaveLen(expectedClusterSize))
 			}
 		})

@@ -92,7 +92,7 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 		app.RequireStart()
 
 		data := mergeTest.RandomData(mergeTest.Params{
-			PatientCount:                 patientCount,
+			UniquePatientCount:           patientCount,
 			DuplicateAccountsCount:       duplicateAccountsCount,
 			LikelyDuplicateAccountsCount: likelyDuplicateAccountsCount,
 			NameOnlyMatchAccountsCount:   nameOnlyMatchAccountsCount,
