@@ -2,9 +2,9 @@ package clinicians_test
 
 import (
 	"context"
+	"github.com/tidepool-org/clinic/deletions"
 	"sync"
 
-	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -21,6 +21,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
@@ -55,7 +56,6 @@ var _ = Describe("Clinicians Service", func() {
 					clinics.NewRepository,
 					clinicians.NewRepository,
 					clinicians.NewService,
-					patients.NewDeletionsRepository,
 					patients.NewRepository,
 					patients.NewService,
 					patients.NewCustodialService,
@@ -154,7 +154,7 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Prevents orphaning a clinic", func() {
-			err := cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			err := cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
 
 			res, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
@@ -166,7 +166,7 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Allows orphaning when deleting from all clinics", func() {
-			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -181,7 +181,7 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(created.Id).ToNot(BeNil())
 			Expect(created.UserId).ToNot(BeNil())
 
-			err = cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			err = cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 
 			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
@@ -230,7 +230,7 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Allows orphaning when deleting from all clinics", func() {
-			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 
 			for _, clinic := range clinicsList {
@@ -251,7 +251,7 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete all clinician records
-			err = cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			err = cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 
 			// Check clinicians records were deleted
@@ -275,7 +275,7 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete all clinician records
-			err = cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId)
+			err = cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 
 			// Check clinicians records were deleted
@@ -326,11 +326,11 @@ var _ = Describe("Clinicians Service", func() {
 
 		AfterEach(func() {
 			for _, clinician := range admins {
-				err := cliniciansService.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				err := cliniciansService.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 			}
 			for _, clinician := range members {
-				err := cliniciansService.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				err := cliniciansService.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 			}
 		})

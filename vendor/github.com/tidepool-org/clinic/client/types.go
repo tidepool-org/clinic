@@ -680,6 +680,13 @@ const (
 	RUNNING   MigrationStatus = "RUNNING"
 )
 
+// Defines values for ProviderId.
+const (
+	Abbott ProviderId = "abbott"
+	Dexcom ProviderId = "dexcom"
+	Twiist ProviderId = "twiist"
+)
+
 // Defines values for ScheduledReportsCadence.
 const (
 	DISABLED ScheduledReportsCadence = "DISABLED"
@@ -872,12 +879,6 @@ type EHRFacility struct {
 	Name string `json:"name"`
 }
 
-// EHRFlowsheetSettings defines model for EHRFlowsheetSettings.
-type EHRFlowsheetSettings struct {
-	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
-	Icode bool `json:"icode"`
-}
-
 // EHRMatchMessageRef defines model for EHRMatchMessageRef.
 type EHRMatchMessageRef struct {
 	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
@@ -935,12 +936,11 @@ type EHRSettings struct {
 	DestinationIds *EHRDestinationIds `json:"destinationIds,omitempty"`
 
 	// Enabled Enable or disable the EHR integration
-	Enabled        bool                 `json:"enabled"`
-	Facility       *EHRFacility         `json:"facility,omitempty"`
-	Flowsheets     EHRFlowsheetSettings `json:"flowsheets"`
-	MrnIdType      string               `json:"mrnIdType"`
-	ProcedureCodes EHRProcedureCodes    `json:"procedureCodes"`
-	Provider       EHRSettingsProvider  `json:"provider"`
+	Enabled        bool                `json:"enabled"`
+	Facility       *EHRFacility        `json:"facility,omitempty"`
+	MrnIdType      string              `json:"mrnIdType"`
+	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
+	Provider       EHRSettingsProvider `json:"provider"`
 
 	// ScheduledReports Scheduled Report Settings
 	ScheduledReports ScheduledReports `json:"scheduledReports"`
@@ -1044,19 +1044,19 @@ type Migrations = []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date `json:"birthDate"`
-	CreatedTime          *time.Time         `json:"createdTime,omitempty"`
-	DataSources          *[]DataSource      `json:"dataSources"`
-	Email                *string            `json:"email,omitempty"`
+	AttestationSubmitted *bool                       `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date          `json:"birthDate"`
+	ConnectionRequests   *ProviderConnectionRequests `json:"connectionRequests,omitempty"`
+	CreatedTime          *time.Time                  `json:"createdTime,omitempty"`
+	DataSources          *[]DataSource               `json:"dataSources"`
+	Email                *string                     `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id                             *TidepoolUserId `json:"id,omitempty"`
-	LastRequestedDexcomConnectTime *time.Time      `json:"lastRequestedDexcomConnectTime,omitempty"`
-	LastUploadReminderTime         *time.Time      `json:"lastUploadReminderTime,omitempty"`
+	Id                     *TidepoolUserId `json:"id,omitempty"`
+	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`
@@ -1611,6 +1611,22 @@ type PhoneNumber struct {
 	Number string  `json:"number"`
 	Type   *string `json:"type,omitempty"`
 }
+
+// ProviderConnectionRequest defines model for ProviderConnectionRequest.
+type ProviderConnectionRequest struct {
+	CreatedTime  time.Time  `json:"createdTime"`
+	ProviderName ProviderId `json:"providerName"`
+}
+
+// ProviderConnectionRequests defines model for ProviderConnectionRequests.
+type ProviderConnectionRequests struct {
+	Abbott []ProviderConnectionRequest `json:"abbott"`
+	Dexcom []ProviderConnectionRequest `json:"dexcom"`
+	Twiist []ProviderConnectionRequest `json:"twiist"`
+}
+
+// ProviderId defines model for ProviderId.
+type ProviderId string
 
 // ScheduledReports Scheduled Report Settings
 type ScheduledReports struct {

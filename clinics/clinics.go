@@ -3,6 +3,7 @@ package clinics
 import (
 	"context"
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -41,7 +42,7 @@ type Service interface {
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error)
 	Create(ctx context.Context, clinic *Clinic) (*Clinic, error)
 	Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error)
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id string, metadata deletions.Metadata) error
 	UpsertAdmin(ctx context.Context, clinicId, clinicianId string) error
 	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
 	UpdateTier(ctx context.Context, clinicId, tier string) error

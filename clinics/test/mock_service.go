@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	clinics "github.com/tidepool-org/clinic/clinics"
+	deletions "github.com/tidepool-org/clinic/deletions"
 	store "github.com/tidepool-org/clinic/store"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -87,17 +88,17 @@ func (mr *MockServiceMockRecorder) CreatePatientTag(ctx, clinicId, tagName any) 
 }
 
 // Delete mocks base method.
-func (m *MockService) Delete(ctx context.Context, id string) error {
+func (m *MockService) Delete(ctx context.Context, id string, metadata deletions.Metadata) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id, metadata)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockServiceMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockServiceMockRecorder) Delete(ctx, id, metadata any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockService)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockService)(nil).Delete), ctx, id, metadata)
 }
 
 // DeletePatientTag mocks base method.

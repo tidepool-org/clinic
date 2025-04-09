@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
 	"time"
@@ -18,21 +19,19 @@ type service struct {
 	dbClient *mongo.Client
 	logger   *zap.SugaredLogger
 
-	clinics             clinics.Service
+	clinics          clinics.Service
 	custodialService CustodialService
-	deletionsRepo    DeletionsRepository
 	patientsRepo     Repository
 }
 
 var _ Service = &service{}
 
-func NewService(deletionsRepo DeletionsRepository, repo Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (Service, error) {
+func NewService(repo Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (Service, error) {
 	return &service{
 		dbClient:         dbClient,
 		logger:           logger,
 		clinics:          clinics,
 		custodialService: custodialService,
-		deletionsRepo:    deletionsRepo,
 		patientsRepo:     repo,
 	}, nil
 }
@@ -124,37 +123,12 @@ func (s *service) UpdateEmail(ctx context.Context, userId string, email *string)
 	return s.patientsRepo.UpdateEmail(ctx, userId, email)
 }
 
-func (s *service) Remove(ctx context.Context, clinicId string, userId string, deletedByUserId *string) error {
+func (s *service) Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error {
 	s.logger.Infow("deleting patient from clinic", "userId", userId, "clinicId", clinicId)
-	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		patient, err := s.patientsRepo.Get(sessionCtx, clinicId, userId)
-		if err != nil {
-			return nil, err
-		}
-		if patient == nil {
-			return nil, fmt.Errorf("unable to delete patient: %w", ErrNotFound)
-		}
-
-		err = s.patientsRepo.Remove(sessionCtx, clinicId, userId, deletedByUserId)
-		if err != nil {
-			return nil, err
-		}
-
-		deletion := Deletion{
-			Patient:     *patient,
-			DeletedTime: time.Now(),
-			DeletedByUserId: deletedByUserId,
-		}
-
-		err = s.deletionsRepo.Create(sessionCtx, deletion)
-		if err != nil {
-			return nil, fmt.Errorf("unable to persist deleted patient record: %w", err)
-		}
-
-		return nil, nil
-	}
-
-	_, err := store.WithTransaction(ctx, s.dbClient, transaction)
+	_, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		err := s.patientsRepo.Remove(sessionCtx, clinicId, userId, metadata)
+		return nil, err
+	})
 	if err != nil {
 		return err
 	}
@@ -164,18 +138,25 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, de
 }
 
 func (s *service) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
-	if permissions != nil && permissions.Custodian != nil {
-		// Custodian permission cannot be set after patients claimed their accounts
-		permissions.Custodian = nil
+	res, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		if permissions != nil && permissions.Custodian != nil {
+			// Custodian permission cannot be set after patients claimed their accounts
+			permissions.Custodian = nil
+		}
+		if permissions == nil || permissions.Empty() {
+			s.logger.Infow(
+				"deleting patient from clinic because the patient revoked all permissions",
+				"userId", userId, "clinicId", clinicId,
+			)
+			return nil, s.Remove(ctx, clinicId, userId, deletions.Metadata{DeletedByUserId: &userId})
+		}
+		return s.patientsRepo.UpdatePermissions(ctx, clinicId, userId, permissions)
+	})
+	if err != nil || res == nil {
+		return nil, err
 	}
-	if permissions == nil || permissions.Empty() {
-		s.logger.Infow(
-			"deleting patient from clinic because the patient revoked all permissions",
-			"userId", userId, "clinicId", clinicId,
-		)
-		return nil, s.Remove(ctx, clinicId, userId, &userId)
-	}
-	return s.patientsRepo.UpdatePermissions(ctx, clinicId, userId, permissions)
+
+	return res.(*Patient), nil
 }
 
 func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error) {
@@ -188,7 +169,7 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 			"deleting patient from clinic because the patient revoked all permissions",
 			"userId", userId, "clinicId", clinicId,
 		)
-		if err := s.Remove(ctx, clinicId, userId, &userId); err != nil {
+		if err := s.Remove(ctx, clinicId, userId, deletions.Metadata{DeletedByUserId: &userId}); err != nil {
 			// the patient was removed by concurrent request which is not a problem,
 			// because it had to be removed as a result of the current operation
 			if errors.Is(err, ErrNotFound) {
@@ -201,23 +182,36 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 	return patient, err
 }
 
-func (s *service) DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error) {
+func (s *service) DeleteFromAllClinics(ctx context.Context, userId string, metadata deletions.Metadata) ([]string, error) {
 	s.logger.Infow("deleting patients from all clinics", "userId", userId)
-	clinicIds, err := s.patientsRepo.DeleteFromAllClinics(ctx, userId)
-	for _, clinicId := range clinicIds {
-		s.updateClinicPatientCount(ctx, clinicId)
+	res, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		clinicIds, err := s.patientsRepo.DeleteFromAllClinics(ctx, userId, metadata)
+		for _, clinicId := range clinicIds {
+			s.updateClinicPatientCount(ctx, clinicId)
+		}
+		return clinicIds, err
+	})
+
+	if err != nil {
+		return nil, err
 	}
-	return clinicIds, err
+
+	return res.([]string), nil
 }
 
-func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error) {
+func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error {
 	s.logger.Infow("deleting all non-custodial patient of clinic", "clinicId", clinicId)
+	_, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		err := s.patientsRepo.DeleteNonCustodialPatientsOfClinic(ctx, clinicId, metadata)
+		if err != nil {
+			return nil, err
+		}
 
-	deleted, err := s.patientsRepo.DeleteNonCustodialPatientsOfClinic(ctx, clinicId)
-	if deleted {
 		s.updateClinicPatientCount(ctx, clinicId)
-	}
-	return deleted, err
+		return nil, nil
+	})
+
+	return err
 }
 
 func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
