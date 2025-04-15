@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinics"
@@ -21,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 

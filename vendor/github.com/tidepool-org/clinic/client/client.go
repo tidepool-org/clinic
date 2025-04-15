@@ -181,12 +181,12 @@ type ClientInterface interface {
 	MigrateLegacyClinicianPatients(ctx context.Context, clinicId string, body MigrateLegacyClinicianPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMigration request
-	GetMigration(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetMigration(ctx context.Context, clinicId ClinicIdV1, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateMigrationWithBody request with any body
-	UpdateMigrationWithBody(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateMigrationWithBody(ctx context.Context, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateMigration(ctx context.Context, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetPatientCount request
 	GetPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -307,6 +307,9 @@ type ClientInterface interface {
 
 	// FindPatients request
 	FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeletePatientSummary request
+	DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SyncEHRDataForPatient request
 	SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -757,7 +760,7 @@ func (c *Client) MigrateLegacyClinicianPatients(ctx context.Context, clinicId st
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMigration(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) GetMigration(ctx context.Context, clinicId ClinicIdV1, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetMigrationRequest(c.Server, clinicId, userId)
 	if err != nil {
 		return nil, err
@@ -769,7 +772,7 @@ func (c *Client) GetMigration(ctx context.Context, clinicId Id, userId UserId, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateMigrationWithBody(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdateMigrationWithBody(ctx context.Context, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateMigrationRequestWithBody(c.Server, clinicId, userId, contentType, body)
 	if err != nil {
 		return nil, err
@@ -781,7 +784,7 @@ func (c *Client) UpdateMigrationWithBody(ctx context.Context, clinicId Id, userI
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) UpdateMigration(ctx context.Context, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateMigrationRequest(c.Server, clinicId, userId, body)
 	if err != nil {
 		return nil, err
@@ -1323,6 +1326,18 @@ func (c *Client) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateT
 
 func (c *Client) FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFindPatientsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientSummaryRequest(c.Server, summaryId)
 	if err != nil {
 		return nil, err
 	}
@@ -2812,7 +2827,7 @@ func NewMigrateLegacyClinicianPatientsRequestWithBody(server string, clinicId st
 }
 
 // NewGetMigrationRequest generates requests for GetMigration
-func NewGetMigrationRequest(server string, clinicId Id, userId UserId) (*http.Request, error) {
+func NewGetMigrationRequest(server string, clinicId ClinicIdV1, userId UserId) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -2853,7 +2868,7 @@ func NewGetMigrationRequest(server string, clinicId Id, userId UserId) (*http.Re
 }
 
 // NewUpdateMigrationRequest calls the generic UpdateMigration builder with application/json body
-func NewUpdateMigrationRequest(server string, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody) (*http.Request, error) {
+func NewUpdateMigrationRequest(server string, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -2864,7 +2879,7 @@ func NewUpdateMigrationRequest(server string, clinicId Id, userId UserId, body U
 }
 
 // NewUpdateMigrationRequestWithBody generates requests for UpdateMigration with any type of body
-func NewUpdateMigrationRequestWithBody(server string, clinicId Id, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateMigrationRequestWithBody(server string, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -6253,6 +6268,40 @@ func NewFindPatientsRequest(server string, params *FindPatientsParams) (*http.Re
 	return req, nil
 }
 
+// NewDeletePatientSummaryRequest generates requests for DeletePatientSummary
+func NewDeletePatientSummaryRequest(server string, summaryId SummaryId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "summaryId", runtime.ParamLocationPath, summaryId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/patients/summary/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSyncEHRDataForPatientRequest generates requests for SyncEHRDataForPatient
 func NewSyncEHRDataForPatientRequest(server string, patientId PatientId) (*http.Request, error) {
 	var err error
@@ -6952,12 +7001,12 @@ type ClientWithResponsesInterface interface {
 	MigrateLegacyClinicianPatientsWithResponse(ctx context.Context, clinicId string, body MigrateLegacyClinicianPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*MigrateLegacyClinicianPatientsResponse, error)
 
 	// GetMigrationWithResponse request
-	GetMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*GetMigrationResponse, error)
+	GetMigrationWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, reqEditors ...RequestEditorFn) (*GetMigrationResponse, error)
 
 	// UpdateMigrationWithBodyWithResponse request with any body
-	UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error)
+	UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error)
 
-	UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error)
+	UpdateMigrationWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error)
 
 	// GetPatientCountWithResponse request
 	GetPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetPatientCountResponse, error)
@@ -7079,6 +7128,9 @@ type ClientWithResponsesInterface interface {
 	// FindPatientsWithResponse request
 	FindPatientsWithResponse(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*FindPatientsResponse, error)
 
+	// DeletePatientSummaryWithResponse request
+	DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error)
+
 	// SyncEHRDataForPatientWithResponse request
 	SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error)
 
@@ -7135,7 +7187,7 @@ type ClientWithResponsesInterface interface {
 type ListAllCliniciansResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]ClinicianClinicRelationship
+	JSON200      *[]ClinicianClinicRelationshipV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7157,7 +7209,7 @@ func (r ListAllCliniciansResponse) StatusCode() int {
 type ListClinicsForClinicianResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ClinicianClinicRelationships
+	JSON200      *ClinicianClinicRelationshipsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7179,7 +7231,7 @@ func (r ListClinicsForClinicianResponse) StatusCode() int {
 type EnableNewClinicExperienceResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinic
+	JSON200      *ClinicV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7201,10 +7253,10 @@ func (r EnableNewClinicExperienceResponse) StatusCode() int {
 type ListClinicsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinics
-	JSON400      *Error
-	JSON403      *Error
-	JSON500      *Error
+	JSON200      *ClinicsV1
+	JSON400      *ErrorV1
+	JSON403      *ErrorV1
+	JSON500      *ErrorV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7226,7 +7278,7 @@ func (r ListClinicsResponse) StatusCode() int {
 type CreateClinicResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinic
+	JSON200      *ClinicV1
 	XML200       *map[string]interface{}
 }
 
@@ -7249,7 +7301,7 @@ func (r CreateClinicResponse) StatusCode() int {
 type GetClinicByShareCodeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinic
+	JSON200      *ClinicV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7292,7 +7344,7 @@ func (r DeleteClinicResponse) StatusCode() int {
 type GetClinicResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinic
+	JSON200      *ClinicV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7314,7 +7366,7 @@ func (r GetClinicResponse) StatusCode() int {
 type UpdateClinicResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinic
+	JSON200      *ClinicV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7336,7 +7388,7 @@ func (r UpdateClinicResponse) StatusCode() int {
 type ListCliniciansResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinicians
+	JSON200      *CliniciansV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7400,7 +7452,7 @@ func (r DeleteClinicianResponse) StatusCode() int {
 type GetClinicianResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinician
+	JSON200      *ClinicianV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7485,7 +7537,7 @@ func (r DeleteInvitedClinicianResponse) StatusCode() int {
 type GetInvitedClinicianResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinician
+	JSON200      *ClinicianV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7507,7 +7559,7 @@ func (r GetInvitedClinicianResponse) StatusCode() int {
 type AssociateClinicianToUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Clinician
+	JSON200      *ClinicianV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7529,7 +7581,7 @@ func (r AssociateClinicianToUserResponse) StatusCode() int {
 type ListMembershipRestrictionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *MembershipRestrictions
+	JSON200      *MembershipRestrictionsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7551,7 +7603,7 @@ func (r ListMembershipRestrictionsResponse) StatusCode() int {
 type UpdateMembershipRestrictionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *MembershipRestrictions
+	JSON200      *MembershipRestrictionsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7594,7 +7646,7 @@ func (r MergeClinicResponse) StatusCode() int {
 type TriggerInitialMigrationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Migration
+	JSON200      *MigrationV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7616,7 +7668,7 @@ func (r TriggerInitialMigrationResponse) StatusCode() int {
 type ListMigrationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Migrations
+	JSON200      *MigrationsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7638,7 +7690,7 @@ func (r ListMigrationsResponse) StatusCode() int {
 type MigrateLegacyClinicianPatientsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON202      *Migration
+	JSON202      *MigrationV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7660,7 +7712,7 @@ func (r MigrateLegacyClinicianPatientsResponse) StatusCode() int {
 type GetMigrationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Migration
+	JSON200      *MigrationV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7682,7 +7734,7 @@ func (r GetMigrationResponse) StatusCode() int {
 type UpdateMigrationResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Migration
+	JSON200      *MigrationV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7704,7 +7756,7 @@ func (r UpdateMigrationResponse) StatusCode() int {
 type GetPatientCountResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientCount
+	JSON200      *PatientCountV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7789,7 +7841,7 @@ func (r UpdatePatientTagResponse) StatusCode() int {
 type ListPatientsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientsResponse
+	JSON200      *PatientsResponseV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7811,7 +7863,7 @@ func (r ListPatientsResponse) StatusCode() int {
 type CreatePatientAccountResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Patient
+	JSON200      *PatientV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7896,7 +7948,7 @@ func (r DeletePatientResponse) StatusCode() int {
 type GetPatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Patient
+	JSON200      *PatientV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7918,7 +7970,7 @@ func (r GetPatientResponse) StatusCode() int {
 type CreatePatientFromUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Patient
+	JSON200      *PatientV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7940,7 +7992,7 @@ func (r CreatePatientFromUserResponse) StatusCode() int {
 type UpdatePatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Patient
+	JSON200      *PatientV1
 }
 
 // Status returns HTTPResponse.Status
@@ -7962,7 +8014,7 @@ func (r UpdatePatientResponse) StatusCode() int {
 type UpdatePatientPermissionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientReviews
+	JSON200      *PatientPermissionsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8005,7 +8057,7 @@ func (r DeletePatientPermissionResponse) StatusCode() int {
 type DeletePatientReviewsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientReviews
+	JSON200      *PatientReviewsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8027,7 +8079,7 @@ func (r DeletePatientReviewsResponse) StatusCode() int {
 type UpdatePatientReviewsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientReviews
+	JSON200      *PatientReviewsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8049,7 +8101,7 @@ func (r UpdatePatientReviewsResponse) StatusCode() int {
 type SendDexcomConnectRequestResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Patient
+	JSON200      *PatientV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8134,7 +8186,7 @@ func (r AddServiceAccountResponse) StatusCode() int {
 type GetEHRSettingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *EHRSettings
+	JSON200      *EhrSettingsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8177,7 +8229,7 @@ func (r UpdateEHRSettingsResponse) StatusCode() int {
 type GetMRNSettingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *MRNSettings
+	JSON200      *MrnSettingsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8220,7 +8272,7 @@ func (r UpdateMRNSettingsResponse) StatusCode() int {
 type GetPatientCountSettingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientCountSettings
+	JSON200      *PatientCountSettingsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8284,7 +8336,7 @@ func (r UpdateSuppressedNotificationsResponse) StatusCode() int {
 type TideReportResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Tide
+	JSON200      *TideResponseV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8327,7 +8379,7 @@ func (r UpdateTierResponse) StatusCode() int {
 type FindPatientsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientClinicRelationships
+	JSON200      *PatientClinicRelationshipsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8340,6 +8392,27 @@ func (r FindPatientsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r FindPatientsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeletePatientSummaryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePatientSummaryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePatientSummaryResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -8391,7 +8464,7 @@ func (r UpdatePatientSummaryResponse) StatusCode() int {
 type ListClinicsForPatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *PatientClinicRelationships
+	JSON200      *PatientClinicRelationshipsV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8455,7 +8528,7 @@ func (r ProcessEHRMessageResponse) StatusCode() int {
 type MatchClinicAndPatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *EHRMatchResponse
+	JSON200      *EhrMatchResponseV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8931,7 +9004,7 @@ func (c *ClientWithResponses) MigrateLegacyClinicianPatientsWithResponse(ctx con
 }
 
 // GetMigrationWithResponse request returning *GetMigrationResponse
-func (c *ClientWithResponses) GetMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*GetMigrationResponse, error) {
+func (c *ClientWithResponses) GetMigrationWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, reqEditors ...RequestEditorFn) (*GetMigrationResponse, error) {
 	rsp, err := c.GetMigration(ctx, clinicId, userId, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -8940,7 +9013,7 @@ func (c *ClientWithResponses) GetMigrationWithResponse(ctx context.Context, clin
 }
 
 // UpdateMigrationWithBodyWithResponse request with arbitrary body returning *UpdateMigrationResponse
-func (c *ClientWithResponses) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
+func (c *ClientWithResponses) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
 	rsp, err := c.UpdateMigrationWithBody(ctx, clinicId, userId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -8948,7 +9021,7 @@ func (c *ClientWithResponses) UpdateMigrationWithBodyWithResponse(ctx context.Co
 	return ParseUpdateMigrationResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
+func (c *ClientWithResponses) UpdateMigrationWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
 	rsp, err := c.UpdateMigration(ctx, clinicId, userId, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -9346,6 +9419,15 @@ func (c *ClientWithResponses) FindPatientsWithResponse(ctx context.Context, para
 	return ParseFindPatientsResponse(rsp)
 }
 
+// DeletePatientSummaryWithResponse request returning *DeletePatientSummaryResponse
+func (c *ClientWithResponses) DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error) {
+	rsp, err := c.DeletePatientSummary(ctx, summaryId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePatientSummaryResponse(rsp)
+}
+
 // SyncEHRDataForPatientWithResponse request returning *SyncEHRDataForPatientResponse
 func (c *ClientWithResponses) SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error) {
 	rsp, err := c.SyncEHRDataForPatient(ctx, patientId, reqEditors...)
@@ -9527,7 +9609,7 @@ func ParseListAllCliniciansResponse(rsp *http.Response) (*ListAllCliniciansRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []ClinicianClinicRelationship
+		var dest []ClinicianClinicRelationshipV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9553,7 +9635,7 @@ func ParseListClinicsForClinicianResponse(rsp *http.Response) (*ListClinicsForCl
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ClinicianClinicRelationships
+		var dest ClinicianClinicRelationshipsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9579,7 +9661,7 @@ func ParseEnableNewClinicExperienceResponse(rsp *http.Response) (*EnableNewClini
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinic
+		var dest ClinicV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9605,28 +9687,28 @@ func ParseListClinicsResponse(rsp *http.Response) (*ListClinicsResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinics
+		var dest ClinicsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest Error
+		var dest ErrorV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Error
+		var dest ErrorV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Error
+		var dest ErrorV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9652,7 +9734,7 @@ func ParseCreateClinicResponse(rsp *http.Response) (*CreateClinicResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinic
+		var dest ClinicV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9685,7 +9767,7 @@ func ParseGetClinicByShareCodeResponse(rsp *http.Response) (*GetClinicByShareCod
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinic
+		var dest ClinicV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9727,7 +9809,7 @@ func ParseGetClinicResponse(rsp *http.Response) (*GetClinicResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinic
+		var dest ClinicV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9753,7 +9835,7 @@ func ParseUpdateClinicResponse(rsp *http.Response) (*UpdateClinicResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinic
+		var dest ClinicV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9779,7 +9861,7 @@ func ParseListCliniciansResponse(rsp *http.Response) (*ListCliniciansResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinicians
+		var dest CliniciansV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9837,7 +9919,7 @@ func ParseGetClinicianResponse(rsp *http.Response) (*GetClinicianResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinician
+		var dest ClinicianV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9911,7 +9993,7 @@ func ParseGetInvitedClinicianResponse(rsp *http.Response) (*GetInvitedClinicianR
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinician
+		var dest ClinicianV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9937,7 +10019,7 @@ func ParseAssociateClinicianToUserResponse(rsp *http.Response) (*AssociateClinic
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Clinician
+		var dest ClinicianV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9963,7 +10045,7 @@ func ParseListMembershipRestrictionsResponse(rsp *http.Response) (*ListMembershi
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MembershipRestrictions
+		var dest MembershipRestrictionsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -9989,7 +10071,7 @@ func ParseUpdateMembershipRestrictionsResponse(rsp *http.Response) (*UpdateMembe
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MembershipRestrictions
+		var dest MembershipRestrictionsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10031,7 +10113,7 @@ func ParseTriggerInitialMigrationResponse(rsp *http.Response) (*TriggerInitialMi
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Migration
+		var dest MigrationV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10057,7 +10139,7 @@ func ParseListMigrationsResponse(rsp *http.Response) (*ListMigrationsResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Migrations
+		var dest MigrationsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10083,7 +10165,7 @@ func ParseMigrateLegacyClinicianPatientsResponse(rsp *http.Response) (*MigrateLe
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
-		var dest Migration
+		var dest MigrationV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10109,7 +10191,7 @@ func ParseGetMigrationResponse(rsp *http.Response) (*GetMigrationResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Migration
+		var dest MigrationV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10135,7 +10217,7 @@ func ParseUpdateMigrationResponse(rsp *http.Response) (*UpdateMigrationResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Migration
+		var dest MigrationV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10161,7 +10243,7 @@ func ParseGetPatientCountResponse(rsp *http.Response) (*GetPatientCountResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientCount
+		var dest PatientCountV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10235,7 +10317,7 @@ func ParseListPatientsResponse(rsp *http.Response) (*ListPatientsResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientsResponse
+		var dest PatientsResponseV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10261,7 +10343,7 @@ func ParseCreatePatientAccountResponse(rsp *http.Response) (*CreatePatientAccoun
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Patient
+		var dest PatientV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10335,7 +10417,7 @@ func ParseGetPatientResponse(rsp *http.Response) (*GetPatientResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Patient
+		var dest PatientV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10361,7 +10443,7 @@ func ParseCreatePatientFromUserResponse(rsp *http.Response) (*CreatePatientFromU
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Patient
+		var dest PatientV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10387,7 +10469,7 @@ func ParseUpdatePatientResponse(rsp *http.Response) (*UpdatePatientResponse, err
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Patient
+		var dest PatientV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10413,7 +10495,7 @@ func ParseUpdatePatientPermissionsResponse(rsp *http.Response) (*UpdatePatientPe
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientReviews
+		var dest PatientPermissionsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10455,7 +10537,7 @@ func ParseDeletePatientReviewsResponse(rsp *http.Response) (*DeletePatientReview
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientReviews
+		var dest PatientReviewsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10481,7 +10563,7 @@ func ParseUpdatePatientReviewsResponse(rsp *http.Response) (*UpdatePatientReview
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientReviews
+		var dest PatientReviewsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10507,7 +10589,7 @@ func ParseSendDexcomConnectRequestResponse(rsp *http.Response) (*SendDexcomConne
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Patient
+		var dest PatientV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10581,7 +10663,7 @@ func ParseGetEHRSettingsResponse(rsp *http.Response) (*GetEHRSettingsResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest EHRSettings
+		var dest EhrSettingsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10623,7 +10705,7 @@ func ParseGetMRNSettingsResponse(rsp *http.Response) (*GetMRNSettingsResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MRNSettings
+		var dest MrnSettingsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10665,7 +10747,7 @@ func ParseGetPatientCountSettingsResponse(rsp *http.Response) (*GetPatientCountS
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientCountSettings
+		var dest PatientCountSettingsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10723,7 +10805,7 @@ func ParseTideReportResponse(rsp *http.Response) (*TideReportResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Tide
+		var dest TideResponseV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10765,12 +10847,28 @@ func ParseFindPatientsResponse(rsp *http.Response) (*FindPatientsResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientClinicRelationships
+		var dest PatientClinicRelationshipsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseDeletePatientSummaryResponse parses an HTTP response from a DeletePatientSummaryWithResponse call
+func ParseDeletePatientSummaryResponse(rsp *http.Response) (*DeletePatientSummaryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePatientSummaryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
@@ -10823,7 +10921,7 @@ func ParseListClinicsForPatientResponse(rsp *http.Response) (*ListClinicsForPati
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest PatientClinicRelationships
+		var dest PatientClinicRelationshipsV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10881,7 +10979,7 @@ func ParseMatchClinicAndPatientResponse(rsp *http.Response) (*MatchClinicAndPati
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest EHRMatchResponse
+		var dest EhrMatchResponseV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
