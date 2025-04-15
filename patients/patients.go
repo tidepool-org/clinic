@@ -34,8 +34,6 @@ var (
 		Upload:    &permission,
 		Note:      &permission,
 	}
-
-	precedingScheduledOrderPeriod = time.Minute * 5
 )
 
 //go:generate mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
