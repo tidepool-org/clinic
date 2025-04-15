@@ -65,11 +65,10 @@ type PatientBGMPeriod struct {
 type PatientBGMPeriods map[string]PatientBGMPeriod
 
 type PatientBGMStats struct {
-	Config        PatientSummaryConfig `bson:"config,omitempty" json:"config,omitempty"`
-	Dates         PatientSummaryDates  `bson:"dates,omitempty" json:"dates,omitempty"`
-	OffsetPeriods PatientBGMPeriods    `bson:"offsetPeriods,omitempty" json:"offsetPeriods,omitempty"`
-	Periods       PatientBGMPeriods    `bson:"periods,omitempty" json:"periods,omitempty"`
-	TotalHours    int                  `bson:"totalHours" json:"totalHours"`
+	Id      string               `bson:"id" json:"id"`
+	Config  PatientSummaryConfig `bson:"config,omitempty" json:"config,omitempty"`
+	Dates   PatientSummaryDates  `bson:"dates,omitempty" json:"dates,omitempty"`
+	Periods PatientBGMPeriods    `bson:"periods,omitempty" json:"periods,omitempty"`
 }
 
 func (s *PatientBGMStats) GetLastUploadDate() time.Time {
@@ -196,11 +195,10 @@ type PatientCGMPeriod struct {
 type PatientCGMPeriods map[string]PatientCGMPeriod
 
 type PatientCGMStats struct {
-	Config        PatientSummaryConfig `bson:"config,omitempty" json:"config,omitempty"`
-	Dates         PatientSummaryDates  `bson:"dates,omitempty" json:"dates,omitempty"`
-	OffsetPeriods PatientCGMPeriods    `bson:"offsetPeriods,omitempty" json:"offsetPeriods,omitempty"`
-	Periods       PatientCGMPeriods    `bson:"periods,omitempty" json:"periods,omitempty"`
-	TotalHours    int                  `bson:"totalHours" json:"totalHours"`
+	Id      string               `bson:"id" json:"id"`
+	Config  PatientSummaryConfig `bson:"config,omitempty" json:"config,omitempty"`
+	Dates   PatientSummaryDates  `bson:"dates,omitempty" json:"dates,omitempty"`
+	Periods PatientCGMPeriods    `bson:"periods,omitempty" json:"periods,omitempty"`
 }
 
 func (s *PatientCGMStats) GetLastUploadDate() time.Time {

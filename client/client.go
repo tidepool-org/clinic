@@ -308,6 +308,9 @@ type ClientInterface interface {
 	// FindPatients request
 	FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeletePatientSummary request
+	DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SyncEHRDataForPatient request
 	SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1323,6 +1326,18 @@ func (c *Client) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateT
 
 func (c *Client) FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFindPatientsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientSummaryRequest(c.Server, summaryId)
 	if err != nil {
 		return nil, err
 	}
@@ -6253,6 +6268,40 @@ func NewFindPatientsRequest(server string, params *FindPatientsParams) (*http.Re
 	return req, nil
 }
 
+// NewDeletePatientSummaryRequest generates requests for DeletePatientSummary
+func NewDeletePatientSummaryRequest(server string, summaryId SummaryId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "summaryId", runtime.ParamLocationPath, summaryId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/patients/summary/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSyncEHRDataForPatientRequest generates requests for SyncEHRDataForPatient
 func NewSyncEHRDataForPatientRequest(server string, patientId PatientId) (*http.Request, error) {
 	var err error
@@ -7078,6 +7127,9 @@ type ClientWithResponsesInterface interface {
 
 	// FindPatientsWithResponse request
 	FindPatientsWithResponse(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*FindPatientsResponse, error)
+
+	// DeletePatientSummaryWithResponse request
+	DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error)
 
 	// SyncEHRDataForPatientWithResponse request
 	SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error)
@@ -8346,6 +8398,27 @@ func (r FindPatientsResponse) StatusCode() int {
 	return 0
 }
 
+type DeletePatientSummaryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePatientSummaryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePatientSummaryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SyncEHRDataForPatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -9344,6 +9417,15 @@ func (c *ClientWithResponses) FindPatientsWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseFindPatientsResponse(rsp)
+}
+
+// DeletePatientSummaryWithResponse request returning *DeletePatientSummaryResponse
+func (c *ClientWithResponses) DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error) {
+	rsp, err := c.DeletePatientSummary(ctx, summaryId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePatientSummaryResponse(rsp)
 }
 
 // SyncEHRDataForPatientWithResponse request returning *SyncEHRDataForPatientResponse
@@ -10771,6 +10853,22 @@ func ParseFindPatientsResponse(rsp *http.Response) (*FindPatientsResponse, error
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseDeletePatientSummaryResponse parses an HTTP response from a DeletePatientSummaryWithResponse call
+func ParseDeletePatientSummaryResponse(rsp *http.Response) (*DeletePatientSummaryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePatientSummaryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

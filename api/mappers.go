@@ -277,9 +277,8 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 
 	if dto.CgmStats != nil {
 		patientSummary.CGM = &patients.PatientCGMStats{
-			Periods:       patients.PatientCGMPeriods{},
-			OffsetPeriods: patients.PatientCGMPeriods{},
-			TotalHours:    dto.CgmStats.TotalHours,
+			Id:      *dto.CgmStats.Id,
+			Periods: patients.PatientCGMPeriods{},
 		}
 
 		patientSummary.CGM.Config = patients.PatientSummaryConfig(dto.CgmStats.Config)
@@ -290,19 +289,12 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				patientSummary.CGM.Periods[k] = patients.PatientCGMPeriod(source)
 			}
 		}
-
-		if dto.CgmStats.OffsetPeriods != nil {
-			for k, source := range dto.CgmStats.OffsetPeriods {
-				patientSummary.CGM.OffsetPeriods[k] = patients.PatientCGMPeriod(source)
-			}
-		}
 	}
 
 	if dto.BgmStats != nil {
 		patientSummary.BGM = &patients.PatientBGMStats{
-			Periods:       patients.PatientBGMPeriods{},
-			OffsetPeriods: patients.PatientBGMPeriods{},
-			TotalHours:    dto.BgmStats.TotalHours,
+			Id:      *dto.BgmStats.Id,
+			Periods: patients.PatientBGMPeriods{},
 		}
 
 		patientSummary.BGM.Config = patients.PatientSummaryConfig(dto.BgmStats.Config)
@@ -311,12 +303,6 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		if dto.BgmStats.Periods != nil {
 			for k, source := range dto.BgmStats.Periods {
 				patientSummary.BGM.Periods[k] = patients.PatientBGMPeriod(source)
-			}
-		}
-
-		if dto.BgmStats.OffsetPeriods != nil {
-			for k, source := range dto.BgmStats.OffsetPeriods {
-				patientSummary.BGM.OffsetPeriods[k] = patients.PatientBGMPeriod(source)
 			}
 		}
 	}
@@ -333,9 +319,9 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 	if summary.CGM != nil {
 		patientSummary.CgmStats = &PatientCGMStats{
+			Id:            &summary.CGM.Id,
 			Periods:       PatientCGMPeriods{},
 			OffsetPeriods: PatientCGMPeriods{},
-			TotalHours:    summary.CGM.TotalHours,
 		}
 
 		patientSummary.CgmStats.Config = PatientSummaryConfig(summary.CGM.Config)
@@ -346,19 +332,13 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 				patientSummary.CgmStats.Periods[k] = PatientCGMPeriod(source)
 			}
 		}
-
-		if summary.CGM.OffsetPeriods != nil {
-			for k, source := range summary.CGM.OffsetPeriods {
-				patientSummary.CgmStats.OffsetPeriods[k] = PatientCGMPeriod(source)
-			}
-		}
 	}
 
 	if summary.BGM != nil {
 		patientSummary.BgmStats = &PatientBGMStats{
+			Id:            &summary.BGM.Id,
 			Periods:       PatientBGMPeriods{},
 			OffsetPeriods: PatientBGMPeriods{},
-			TotalHours:    summary.BGM.TotalHours,
 		}
 
 		patientSummary.BgmStats.Config = PatientSummaryConfig(summary.BGM.Config)
@@ -367,12 +347,6 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		if summary.BGM.Periods != nil {
 			for k, source := range summary.BGM.Periods {
 				patientSummary.BgmStats.Periods[k] = PatientBGMPeriod(source)
-			}
-		}
-
-		if summary.BGM.OffsetPeriods != nil {
-			for k, source := range summary.BGM.OffsetPeriods {
-				patientSummary.BgmStats.OffsetPeriods[k] = PatientBGMPeriod(source)
 			}
 		}
 	}

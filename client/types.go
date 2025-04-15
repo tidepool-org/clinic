@@ -1218,6 +1218,9 @@ type PatientBGMStats struct {
 	// Dates dates tracked for summary calculation
 	Dates PatientSummaryDates `json:"dates,omitempty"`
 
+	// Id Summary Unique Identifier
+	Id *SummaryIdV1 `json:"id,omitempty"`
+
 	// OffsetPeriods A map to each supported BGM summary period
 	OffsetPeriods PatientBGMPeriods `json:"offsetPeriods,omitempty"`
 
@@ -1466,6 +1469,9 @@ type PatientCGMStats struct {
 
 	// Dates dates tracked for summary calculation
 	Dates PatientSummaryDates `json:"dates,omitempty"`
+
+	// Id Summary Unique Identifier
+	Id *SummaryIdV1 `json:"id,omitempty"`
 
 	// OffsetPeriods A map to each supported CGM summary period
 	OffsetPeriods PatientCGMPeriods `json:"offsetPeriods,omitempty"`
@@ -1761,6 +1767,9 @@ type UpdateUserDetails struct {
 	Email *openapi_types.Email `json:"email,omitempty"`
 }
 
+// SummaryIdV1 Summary Unique Identifier
+type SummaryIdV1 = string
+
 // ClinicId defines model for clinicId.
 type ClinicId = string
 
@@ -1805,6 +1814,9 @@ type ShareCode = string
 
 // Sort defines model for sort.
 type Sort = string
+
+// SummaryId Summary Unique Identifier
+type SummaryId = SummaryIdV1
 
 // UserId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type UserId = TidepoolUserId

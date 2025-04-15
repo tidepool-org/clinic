@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	errors2 "github.com/tidepool-org/clinic/errors"
 	"regexp"
 	"strings"
 	"time"
+
+	errors2 "github.com/tidepool-org/clinic/errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -534,6 +535,35 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
+	// we dont know which type the summary Id is from, so we must try deleting both.
+	selectorCgm := bson.M{
+		"summary.cgmStats.id": summaryId,
+	}
+	updateCgm := bson.M{"$unset": "summary.cgmStats"}
+
+	selectorBgm := bson.M{
+		"summary.bgmStats.id": summaryId,
+	}
+	updateBgm := bson.M{"$unset": "summary.bgmStats"}
+
+	resCgm, err := r.collection.UpdateMany(ctx, selectorCgm, updateCgm)
+	if err != nil {
+		return fmt.Errorf("error removing cgmStats from patient: %w", err)
+	}
+
+	resBgm, err := r.collection.UpdateMany(ctx, selectorBgm, updateBgm)
+	if err != nil {
+		return fmt.Errorf("error removing bgmStats from patient: %w", err)
+	}
+
+	if resCgm.ModifiedCount == 0 && resBgm.ModifiedCount == 0 {
 		return ErrNotFound
 	}
 
