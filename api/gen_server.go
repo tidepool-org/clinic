@@ -181,9 +181,6 @@ type ServerInterface interface {
 	// Find Patients
 	// (GET /v1/patients)
 	FindPatients(ctx echo.Context, params FindPatientsParams) error
-	// DeletePatientSummary
-	// (DELETE /v1/patients/summary/{summaryId})
-	DeletePatientSummary(ctx echo.Context, summaryId SummaryId) error
 	// Sync EHR Data for Patient
 	// (POST /v1/patients/{patientId}/ehr/sync)
 	SyncEHRDataForPatient(ctx echo.Context, patientId PatientId) error
@@ -205,6 +202,9 @@ type ServerInterface interface {
 	// Redox Verify Endpoint
 	// (POST /v1/redox/verify)
 	VerifyEndpoint(ctx echo.Context) error
+	// DeletePatientSummary
+	// (DELETE /v1/summaries/{summaryId}/clinics)
+	DeletePatientSummary(ctx echo.Context, summaryId SummaryId) error
 	// Remove User from Clinics
 	// (DELETE /v1/users/{userId}/clinics)
 	DeleteUserFromClinics(ctx echo.Context, userId UserId) error
@@ -2412,24 +2412,6 @@ func (w *ServerInterfaceWrapper) FindPatients(ctx echo.Context) error {
 	return err
 }
 
-// DeletePatientSummary converts echo context to params.
-func (w *ServerInterfaceWrapper) DeletePatientSummary(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "summaryId" -------------
-	var summaryId SummaryId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "summaryId", ctx.Param("summaryId"), &summaryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summaryId: %s", err))
-	}
-
-	ctx.Set(SessionTokenScopes, []string{})
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.DeletePatientSummary(ctx, summaryId)
-	return err
-}
-
 // SyncEHRDataForPatient converts echo context to params.
 func (w *ServerInterfaceWrapper) SyncEHRDataForPatient(ctx echo.Context) error {
 	var err error
@@ -2548,6 +2530,24 @@ func (w *ServerInterfaceWrapper) VerifyEndpoint(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.VerifyEndpoint(ctx)
+	return err
+}
+
+// DeletePatientSummary converts echo context to params.
+func (w *ServerInterfaceWrapper) DeletePatientSummary(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "summaryId" -------------
+	var summaryId SummaryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "summaryId", ctx.Param("summaryId"), &summaryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summaryId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeletePatientSummary(ctx, summaryId)
 	return err
 }
 
@@ -2749,7 +2749,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/tide_report", wrapper.TideReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.GET(baseURL+"/v1/patients", wrapper.FindPatients)
-	router.DELETE(baseURL+"/v1/patients/summary/:summaryId", wrapper.DeletePatientSummary)
 	router.POST(baseURL+"/v1/patients/:patientId/ehr/sync", wrapper.SyncEHRDataForPatient)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
@@ -2757,6 +2756,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/redox", wrapper.ProcessEHRMessage)
 	router.POST(baseURL+"/v1/redox/match", wrapper.MatchClinicAndPatient)
 	router.POST(baseURL+"/v1/redox/verify", wrapper.VerifyEndpoint)
+	router.DELETE(baseURL+"/v1/summaries/:summaryId/clinics", wrapper.DeletePatientSummary)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
 	router.POST(baseURL+"/v1/xealth/notification", wrapper.XealthNotification)
