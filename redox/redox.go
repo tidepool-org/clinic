@@ -26,7 +26,7 @@ const (
 	verificationTokenHeader                          = "verification-token"
 	messagesCollectionName                           = "redox"
 	summaryAndReportsRescheduledOrdersCollectionName = "scheduledSummaryAndReportsOrders"
-	rescheduledMessagesExpiration                    = 30 * 24 * time.Hour
+	rescheduledMessagesExpiration                    = 90 * 24 * time.Hour
 
 	MRNPatientMatchingCriteria            = "MRN"
 	MRNAndDOBPatientMatchingCriteria      = "MRN_DOB"
@@ -119,11 +119,19 @@ func (h *Handler) Initialize(ctx context.Context) error {
 	_, err = h.rescheduledSummaryAndReportsCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
+				{Key: "lastMatchedOrder._id", Value: 1},
+				{Key: "createdTime", Value: -1},
+			},
+			Options: options.Index().
+				SetName("LastMatchedOrderByID"),
+		},
+		{
+			Keys: bson.D{
 				{Key: "createdTime", Value: 1},
 			},
 			Options: options.Index().
 				SetExpireAfterSeconds(int32(rescheduledMessagesExpiration.Seconds())).
-				SetName("CleanupExpiredRescheduledOrders"),
+				SetName("CleanupExpiredRescheduledOrdersAfter90d"),
 		},
 	})
 

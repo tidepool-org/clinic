@@ -1421,13 +1421,6 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 				"foreignField": "lastMatchedOrder._id",
 				"pipeline": []bson.M{
 					{
-						"$match": bson.M{
-							"createdTime": bson.M{
-								"$gt": time.Now().Add(-precedingScheduledOrderPeriod),
-							},
-						},
-					},
-					{
 						"$sort": bson.M{
 							"createdTime": -1,
 						},
