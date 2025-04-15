@@ -17,6 +17,7 @@ const (
 
 var (
 	ErrNotFound           = fmt.Errorf("patient %w", errors.NotFound)
+	SummaryNotFound       = fmt.Errorf("summary %w", errors.NoChange)
 	ErrPermissionNotFound = fmt.Errorf("permission %w", errors.NotFound)
 	ErrDuplicatePatient   = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
@@ -54,6 +55,7 @@ type Service interface {
 	DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error)
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error)
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
+	DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error)
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
@@ -189,9 +191,9 @@ type ListResult struct {
 }
 
 type PatientUpdate struct {
-	ClinicId  string
-	UserId    string
-	Patient   Patient
+	ClinicId string
+	UserId   string
+	Patient  Patient
 }
 
 type UploadReminderUpdate struct {
