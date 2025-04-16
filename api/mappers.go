@@ -704,11 +704,14 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 		MrnIdType: dto.MrnIdType,
 		Provider:  string(dto.Provider),
 		ScheduledReports: clinics.ScheduledReports{
-			Cadence: string(dto.ScheduledReports.Cadence),
+			Cadence:         string(dto.ScheduledReports.Cadence),
 			OnUploadEnabled: dto.ScheduledReports.OnUploadEnabled,
 		},
 		Tags: clinics.TagsSettings{
 			Separator: dto.Tags.Separator,
+		},
+		Flowsheets: clinics.FlowsheetSettings{
+			Icode: dto.Flowsheets.Icode,
 		},
 	}
 	if settings.ScheduledReports.OnUploadEnabled && dto.ScheduledReports.OnUploadNoteEventType != nil {
@@ -753,8 +756,11 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 			OnUploadEnabled: settings.ScheduledReports.OnUploadEnabled,
 		},
 		Tags: EHRTagsSettings{
-			Codes: &settings.Tags.Codes,
+			Codes:     &settings.Tags.Codes,
 			Separator: settings.Tags.Separator,
+		},
+		Flowsheets: EHRFlowsheetSettings{
+			Icode: settings.Flowsheets.Icode,
 		},
 	}
 	if settings.ScheduledReports.OnUploadNoteEventType != nil {

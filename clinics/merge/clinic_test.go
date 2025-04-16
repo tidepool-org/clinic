@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"

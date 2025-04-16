@@ -691,6 +691,7 @@ const (
 const (
 	DISABLED ScheduledReportsCadence = "DISABLED"
 	N14d     ScheduledReportsCadence = "14d"
+	N1d      ScheduledReportsCadence = "1d"
 	N30d     ScheduledReportsCadence = "30d"
 	N7d      ScheduledReportsCadence = "7d"
 )
@@ -879,6 +880,12 @@ type EHRFacility struct {
 	Name string `json:"name"`
 }
 
+// EHRFlowsheetSettings defines model for EHRFlowsheetSettings.
+type EHRFlowsheetSettings struct {
+	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
+	Icode bool `json:"icode"`
+}
+
 // EHRMatchMessageRef defines model for EHRMatchMessageRef.
 type EHRMatchMessageRef struct {
 	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
@@ -936,11 +943,12 @@ type EHRSettings struct {
 	DestinationIds *EHRDestinationIds `json:"destinationIds,omitempty"`
 
 	// Enabled Enable or disable the EHR integration
-	Enabled        bool                `json:"enabled"`
-	Facility       *EHRFacility        `json:"facility,omitempty"`
-	MrnIdType      string              `json:"mrnIdType"`
-	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
-	Provider       EHRSettingsProvider `json:"provider"`
+	Enabled        bool                 `json:"enabled"`
+	Facility       *EHRFacility         `json:"facility,omitempty"`
+	Flowsheets     EHRFlowsheetSettings `json:"flowsheets"`
+	MrnIdType      string               `json:"mrnIdType"`
+	ProcedureCodes EHRProcedureCodes    `json:"procedureCodes"`
+	Provider       EHRSettingsProvider  `json:"provider"`
 
 	// ScheduledReports Scheduled Report Settings
 	ScheduledReports ScheduledReports `json:"scheduledReports"`

@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic
 
-go 1.23.3
+go 1.24.1
 
 require (
 	github.com/DataDog/datadog-agent/pkg/util/fxutil v0.59.0
@@ -12,7 +12,6 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/golang-jwt/jwt/v4 v4.5.1
-	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru v1.0.2
 	github.com/jaswdr/faker v1.19.1
@@ -33,6 +32,7 @@ require (
 	github.com/tidepool-org/platform v1.33.1-0.20240412022409-2d52339c4886
 	go.mongodb.org/mongo-driver v1.17.1
 	go.uber.org/fx v1.23.0
+	go.uber.org/mock v0.5.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.24.0
 )
