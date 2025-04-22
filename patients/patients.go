@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -68,6 +69,8 @@ type Service interface {
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 	RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error
+	DeleteSites(ctx context.Context, clinicId string, siteId string) error
+	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
 }
 
 type Patient struct {
@@ -93,6 +96,7 @@ type Patient struct {
 	ProviderConnectionRequests ProviderConnectionRequests `bson:"providerConnectionRequests,omitempty"`
 	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
+	Sites                      []sites.Site               `bson:"sites,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
@@ -172,6 +176,8 @@ type Filter struct {
 	BirthDate    *string
 	FullName     *string
 	LastReviewed *time.Time
+	// Sites to which the patient must be assigned to be included.
+	Sites *[]string
 
 	HasSubscription *bool
 	HasMRN          *bool
