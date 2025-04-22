@@ -684,6 +684,7 @@ const (
 const (
 	DISABLED ScheduledReportsCadence = "DISABLED"
 	N14d     ScheduledReportsCadence = "14d"
+	N1d      ScheduledReportsCadence = "1d"
 	N30d     ScheduledReportsCadence = "30d"
 	N7d      ScheduledReportsCadence = "7d"
 )
@@ -1062,6 +1063,7 @@ type Patient struct {
 	Mrn         *string             `json:"mrn,omitempty"`
 	Permissions *PatientPermissions `json:"permissions,omitempty"`
 	Reviews     []PatientReview     `json:"reviews"`
+	Sites       []Site              `json:"sites"`
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
@@ -1628,6 +1630,15 @@ type ScheduledReportsCadence string
 // ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
 type ScheduledReportsOnUploadNoteEventType string
 
+// Site A clinic's phyical or logical location.
+type Site struct {
+	// Id String representation of a resource id
+	Id *string `json:"id,omitempty"`
+
+	// Name The site description.
+	Name string `json:"name"`
+}
+
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {
 	PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
@@ -1801,6 +1812,9 @@ type Search = string
 
 // ShareCode defines model for shareCode.
 type ShareCode = string
+
+// SiteId defines model for siteId.
+type SiteId = string
 
 // Sort defines model for sort.
 type Sort = string
@@ -2315,6 +2329,12 @@ type UpdateMRNSettingsJSONRequestBody = MRNSettings
 
 // UpdatePatientCountSettingsJSONRequestBody defines body for UpdatePatientCountSettings for application/json ContentType.
 type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettings
+
+// ListSitesJSONRequestBody defines body for ListSites for application/json ContentType.
+type ListSitesJSONRequestBody = Site
+
+// UpdateSiteJSONRequestBody defines body for UpdateSite for application/json ContentType.
+type UpdateSiteJSONRequestBody = Site
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications

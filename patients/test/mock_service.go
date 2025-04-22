@@ -175,6 +175,20 @@ func (mr *MockServiceMockRecorder) DeleteReview(ctx, clinicId, clinicianId, user
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReview", reflect.TypeOf((*MockService)(nil).DeleteReview), ctx, clinicId, clinicianId, userId)
 }
 
+// DeleteSites mocks base method.
+func (m *MockService) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSites", ctx, clinicId, siteId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSites indicates an expected call of DeleteSites.
+func (mr *MockServiceMockRecorder) DeleteSites(ctx, clinicId, siteId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSites", reflect.TypeOf((*MockService)(nil).DeleteSites), ctx, clinicId, siteId)
+}
+
 // Get mocks base method.
 func (m *MockService) Get(ctx context.Context, clinicId, userId string) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -362,6 +376,20 @@ func (m *MockService) UpdatePermissions(ctx context.Context, clinicId, userId st
 func (mr *MockServiceMockRecorder) UpdatePermissions(ctx, clinicId, userId, permissions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockService)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
+}
+
+// UpdateSites mocks base method.
+func (m *MockService) UpdateSites(ctx context.Context, clinicId, siteId string, site *patients.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSites", ctx, clinicId, siteId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSites indicates an expected call of UpdateSites.
+func (mr *MockServiceMockRecorder) UpdateSites(ctx, clinicId, siteId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSites", reflect.TypeOf((*MockService)(nil).UpdateSites), ctx, clinicId, siteId, site)
 }
 
 // UpdateSummaryInAllClinics mocks base method.

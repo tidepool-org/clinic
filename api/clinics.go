@@ -1,16 +1,20 @@
 package api
 
 import (
+	stderrors "errors"
 	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -489,7 +493,6 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-
 	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
 	plan, err := planner.Plan(ctx)
 	if err != nil {
@@ -502,4 +505,39 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) ListSites(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	sites, err := h.ClinicsManager.ListSites(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, sites)
+}
+
+func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
+	ctx := ec.Request().Context()
+	site := &patients.Site{}
+	if err := ec.Bind(site); err != nil {
+		return errors.BadRequest
+	}
+	if err := h.Patients.UpdateSites(ctx, clinicId, siteId, site); err != nil {
+		if stderrors.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound
+		}
+		return err
+	}
+	return nil
+}
+
+func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
+	ctx := ec.Request().Context()
+	if err := h.Patients.DeleteSites(ctx, clinicId, siteId); err != nil {
+		if stderrors.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound
+		}
+		return err
+	}
+	return nil
 }

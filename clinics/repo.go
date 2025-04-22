@@ -511,7 +511,7 @@ func (c *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 			},
 		},
 		"$set": bson.M{
-			"updatedTime":          time.Now(),
+			"updatedTime": time.Now(),
 		},
 	}
 
@@ -522,7 +522,6 @@ func (c *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 
 	return err
 }
-
 
 func (c *repository) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
 	clinic, err := c.Get(ctx, clinicId)

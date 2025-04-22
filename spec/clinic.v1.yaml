@@ -905,6 +905,50 @@ paths:
               $ref: '#/components/schemas/PatientTag'
       tags:
         - Clinics
+  '/v1/clinics/{clinicId}/sites':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: List Sites
+      operationId: ListSites
+      responses:
+        '200':
+          description: OK
+      description: List sites
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Site'
+      tags:
+        - Clinics
+  '/v1/clinics/{clinicId}/sites/{siteId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/siteId'
+    put:
+      summary: Update a Site
+      operationId: UpdateSite
+      responses:
+        '204':
+          description: No Content
+      description: Update a Site
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Site'
+      tags:
+        - Clinics
+    delete:
+      summary: Delete a Site
+      operationId: DeleteSite
+      responses:
+        '204':
+          description: No Content
+      description: Delete a Site
+      tags:
+        - Clinics
   '/v1/clinics/{clinicId}/clinicians/{clinicianId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -3039,6 +3083,12 @@ components:
           x-go-type-skip-optional-pointer: true
           items:
             $ref: '#/components/schemas/PatientReview'
+        sites:
+          type: array
+          nullable: true
+          x-go-type-skip-optional-pointer: true
+          items:
+            $ref: '#/components/schemas/Site'
       required:
         - id
         - fullName
@@ -3075,6 +3125,32 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/PatientTag'
+    Site:
+      type: object
+      title: Site
+      description: A clinic's phyical or logical location.
+      properties:
+        id:
+          title: Object Id
+          type: string
+          description: String representation of a resource id
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+          readOnly: true
+        name:
+          type: string
+          description: The site description.
+          minLength: 1
+          maxLength: 200
+          pattern: '^[[:graph:]\p{L}\p{N}][[:graph:]\p{L}\p{N} ]*$'
+      required:
+        - id
+        - name
+    Sites:
+      type: array
+      items:
+        $ref: '#/components/schemas/Site'
     DateTime:
       title: Date/Time
       description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
@@ -4767,6 +4843,7 @@ components:
           x-stoplight:
             id: ibtk59wcgho89
           enum:
+            - 1d
             - 7d
             - 14d
             - 30d
@@ -4897,6 +4974,13 @@ components:
         pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
     patientTagId:
       name: patientTagId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-f0-9]{24}$'
+    siteId:
+      name: siteId
       in: path
       required: true
       schema:

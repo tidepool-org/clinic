@@ -4,21 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"go.uber.org/zap"
 )
 
 type service struct {
 	dbClient *mongo.Client
 	logger   *zap.SugaredLogger
 
-	clinics             clinics.Service
+	clinics          clinics.Service
 	custodialService CustodialService
 	deletionsRepo    DeletionsRepository
 	patientsRepo     Repository
@@ -141,8 +142,8 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, de
 		}
 
 		deletion := Deletion{
-			Patient:     *patient,
-			DeletedTime: time.Now(),
+			Patient:         *patient,
+			DeletedTime:     time.Now(),
 			DeletedByUserId: deletedByUserId,
 		}
 
@@ -285,6 +286,16 @@ func (s *service) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Cont
 func (s *service) RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error {
 	s.logger.Infow("rescheduling patient subscriptions", "subscription", subscription, "clinicIds", strings.Join(clinicIds, ", "), "userId", userId)
 	return s.patientsRepo.RescheduleLastSubscriptionOrderForPatient(ctx, clinicIds, userId, subscription, ordersCollection, targetCollection)
+}
+
+func (s *service) UpdateSites(ctx context.Context, clinicId, siteId string, site *Site) error {
+	s.logger.Infow("updating sites", "clinicId", clinicId, "siteId", siteId, "site", site)
+	return s.patientsRepo.UpdateSites(ctx, clinicId, siteId, site)
+}
+
+func (s *service) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	s.logger.Infow("deleting sites", "clinicId", clinicId, "siteId", siteId)
+	return s.patientsRepo.DeleteSites(ctx, clinicId, siteId)
 }
 
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, existingUserId *string, patient *Patient) error {
