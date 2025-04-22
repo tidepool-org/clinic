@@ -3,6 +3,7 @@ package patients_test
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"time"
 
@@ -18,6 +19,8 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/sites"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	clinicStoreTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
 )
@@ -70,6 +73,7 @@ var _ = Describe("Patients Service", func() {
 			randomPatient.Permissions = &patients.Permissions{
 				Upload: &patients.Permission{},
 			}
+			randomPatient.Sites = []sites.Site{}
 
 			matchPatientFields = patientFieldsMatcher(randomPatient)
 		})
@@ -399,6 +403,68 @@ var _ = Describe("Patients Service", func() {
 					})
 				})
 			})
+
+		})
+
+		When("a site is included", func() {
+			BeforeEach(func() {
+				clinicsService.EXPECT().
+					GetMRNSettings(gomock.Any(), gomock.Any()).
+					Return(&clinics.MRNSettings{Required: true}, nil)
+			})
+
+			It("accepts a valid site", func() {
+				site := sitesTest.Random()
+				randomPatient.Sites = []sites.Site{site}
+				clinicsService.EXPECT().
+					UpdatePatientCount(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil)
+				repo.EXPECT().
+					Count(gomock.Any(), gomock.Any()).Return(1, nil)
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return([]sites.Site{site}, nil)
+				repo.EXPECT().
+					Create(gomock.Any(), gomock.Eq(randomPatient)).
+					Return(&randomPatient, nil)
+
+				got, err := service.Create(context.Background(), randomPatient)
+				Expect(err).To(Succeed())
+				Expect(got.Sites).To(HaveLen(1))
+				Expect(got.Sites[0].Name).To(Equal(site.Name))
+			})
+
+			It("requires that the site exist in the clinic", func() {
+				site := sitesTest.Random()
+				randomPatient.Sites = []sites.Site{site}
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return([]sites.Site{}, nil)
+
+				_, err := service.Create(context.Background(), randomPatient)
+				Expect(err).To(MatchError(clinics.ErrSiteNotFound))
+			})
+
+			It("ignores the names of updated sites, deferring to the clinic's sites' names", func() {
+				site := sitesTest.Random()
+				outOfDate := site
+				outOfDate.Name = "old name for " + site.Name
+				randomPatient.Sites = []sites.Site{outOfDate}
+				clinicsService.EXPECT().
+					UpdatePatientCount(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil)
+				repo.EXPECT().
+					Count(gomock.Any(), gomock.Any()).Return(1, nil)
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return([]sites.Site{site}, nil)
+				repo.EXPECT(). // This is the meat of this test.
+						Create(gomock.Any(), matchesSites(site)).
+						Return(&randomPatient, nil)
+
+				_, err := service.Create(context.Background(), randomPatient)
+				Expect(err).To(Succeed())
+			})
 		})
 	})
 
@@ -512,7 +578,7 @@ var _ = Describe("Patients Service", func() {
 
 			It("deactivates subscriptions if patients mrn has changed", func() {
 				repo.EXPECT().
-					Update(gomock.Any(), gomock.All(test.Match[patients.PatientUpdate](func(update patients.PatientUpdate) bool {
+					Update(gomock.Any(), gomock.All(test.Match(func(update patients.PatientUpdate) bool {
 						if len(update.Patient.EHRSubscriptions) == 0 {
 							return false
 						}
@@ -527,6 +593,46 @@ var _ = Describe("Patients Service", func() {
 				updatedPatient, err := service.Update(context.Background(), update)
 				Expect(err).To(BeNil())
 				Expect(updatedPatient).ToNot(BeNil())
+			})
+		})
+
+		When("a site is added", func() {
+			BeforeEach(func() {
+				repo.
+					EXPECT().
+					Get(gomock.Any(), gomock.Eq(update.ClinicId), gomock.Eq(update.UserId)).
+					Return(&update.Patient, nil)
+				clinicsService.
+					EXPECT().
+					GetMRNSettings(gomock.Any(), gomock.Eq(update.ClinicId)).
+					Return(nil, nil)
+			})
+
+			It("accepts a valid site", func() {
+				sites := sitesTest.RandomSlice(1)
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return(sites, nil)
+				update.Patient.Sites = sites
+				repo.EXPECT().
+					Update(gomock.Any(), gomock.Cond(patientSitesMatch(sites))).
+					Return(&update.Patient, nil)
+
+				got, err := service.Update(context.Background(), update)
+				Expect(err).To(Succeed())
+				Expect(got.Sites).To(HaveLen(1))
+				Expect(got.Sites[0].Name).To(Equal(sites[0].Name))
+			})
+
+			It("requires that the site exist in the clinic", func() {
+				sites := sitesTest.RandomSlice(1)
+				update.Patient.Sites = sites
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return(nil, nil)
+
+				_, err := service.Update(context.Background(), update)
+				Expect(err).To(MatchError(clinics.ErrSiteNotFound))
 			})
 		})
 	})
@@ -798,3 +904,58 @@ var _ = Describe("Patients Service", func() {
 		})
 	})
 })
+
+func patientSitesMatch(expectedSites []sites.Site) func(patients.PatientUpdate) bool {
+	return func(u patients.PatientUpdate) bool {
+		for _, site := range u.Patient.Sites {
+			if !slices.ContainsFunc(expectedSites, site.Equals) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+type sitesMatcher struct {
+	expected []sites.Site
+	got      []sites.Site
+	message  string
+}
+
+var _ gomock.Matcher = (*sitesMatcher)(nil)
+
+func matchesSites(expected ...sites.Site) *sitesMatcher {
+	return &sitesMatcher{
+		expected: expected,
+	}
+}
+
+func (s *sitesMatcher) Matches(x any) bool {
+	patient, ok := x.(patients.Patient)
+	if !ok {
+		s.message = fmt.Sprintf("expected a patient.Patient, got %T", x)
+		return false
+	}
+	matched := map[string]struct{}{}
+
+	for _, patientSite := range patient.Sites {
+		for _, site := range s.expected {
+			if patientSite.Equals(site) {
+				matched[site.Name] = struct{}{}
+				break
+			}
+		}
+	}
+	matches := len(matched) == len(s.expected)
+	if !matches {
+		s.got = patient.Sites
+	}
+	return matches
+}
+
+func (s *sitesMatcher) String() string {
+	if s.message != "" {
+		return s.message
+	}
+	return fmt.Sprintf("expected sites to match %s; got %s", s.expected, s.got)
+}

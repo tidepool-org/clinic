@@ -254,6 +254,9 @@ func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page st
 	}
 
 	clinicList, err := h.Clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
+	if err != nil {
+		return err
+	}
 	dtos, err := NewClinicianClinicRelationshipsDto(cliniciansList, clinicList)
 	if err != nil {
 		return err
