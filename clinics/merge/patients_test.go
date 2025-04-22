@@ -2,6 +2,7 @@ package merge_test
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -19,6 +20,7 @@ import (
 	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store/test"
 )
 
@@ -37,6 +39,7 @@ var _ = Describe("New Merge Planner", func() {
 	var targetPatients []patients.Patient
 	var targetPatientsWithDuplicates map[string]patients.Patient
 	var plans merge.PatientPlans
+	var planner *merge.PatientMergePlanner
 
 	BeforeEach(func() {
 		data := mergeTest.RandomData(mergeTest.Params{
@@ -52,9 +55,9 @@ var _ = Describe("New Merge Planner", func() {
 		targetPatients = data.TargetPatients
 		targetPatientsWithDuplicates = data.TargetPatientsWithDuplicates
 
-		planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
+		var err error
+		planner, err = merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 		Expect(err).ToNot(HaveOccurred())
-
 		plans, err = planner.Plan(context.Background())
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -287,6 +290,130 @@ var _ = Describe("New Merge Planner", func() {
 
 				Expect(resultTagNames).To(ConsistOf(expectedTagNames.ToSlice()))
 			}
+		})
+
+		Context("a patient that is retained", func() {
+			retained := func() (*patients.Patient, []sites.Site) {
+				for _, plan := range plans {
+					if plan.PatientAction == merge.PatientActionRetain && len(plan.TargetPatient.Sites) > 0 {
+						res := collection.FindOne(context.Background(), bson.M{
+							"clinicId": plan.TargetClinicId,
+							"userId":   *plan.TargetPatient.UserId,
+						})
+						Expect(res.Err()).To(Succeed())
+						p := &patients.Patient{}
+						Expect(res.Decode(p)).To(Succeed())
+						return p, plan.TargetPatient.Sites
+					}
+				}
+				Fail("no suitable retained patients found")
+				return nil, nil
+			}
+
+			It("keeps its sites", func() {
+				patient, sites := retained()
+				Expect(patient.Sites).To(Equal(sites))
+			})
+		})
+
+		Context("a patient that is moved", func() {
+			moved := func() (*patients.Patient, []sites.Site) {
+				for _, plan := range plans {
+					if plan.PatientAction == merge.PatientActionMove && len(plan.SourcePatient.Sites) > 0 {
+						res := collection.FindOne(context.Background(), bson.M{
+							"clinicId": plan.TargetClinicId,
+							"userId":   *plan.SourcePatient.UserId,
+						})
+						Expect(res.Err()).To(Succeed())
+						p := &patients.Patient{}
+						Expect(res.Decode(p)).To(Succeed())
+						return p, plan.SourcePatient.Sites
+					}
+				}
+				Fail("no suitable moved patients found")
+				return nil, nil
+			}
+
+			It("keeps its sites", func() {
+				patient, sites := moved()
+				Expect(patient.Sites).To(Equal(sites))
+			})
+		})
+
+		Context("a patient that is merged", func() {
+			merged := func() (*patients.Patient, *patients.Patient, *patients.Patient) {
+				for _, plan := range plans {
+					if plan.PatientAction != merge.PatientActionMerge {
+						continue
+					}
+					if len(plan.SourcePatient.Sites) < 1 {
+						continue
+					}
+					if len(plan.TargetPatient.Sites) < 1 {
+						continue
+					}
+					res := collection.FindOne(context.Background(), bson.M{
+						"clinicId": plan.TargetClinicId,
+						"userId":   *plan.TargetPatient.UserId,
+					})
+					if err := res.Err(); err != nil {
+						continue
+					}
+					p := &patients.Patient{}
+					if err := res.Decode(p); err != nil {
+						continue
+					}
+					return p, plan.SourcePatient, plan.TargetPatient
+				}
+				Fail("no suitable merged patients found")
+				return nil, nil, nil
+			}
+
+			It("has a union of its sites, including duplicates", func() {
+				// Note: The execution of a patient plan is not responsible for renaming
+				// duplicate site names, so any duplicates will remain.
+				patient, srcPatient, targetPatient := merged()
+				Expect(patient.Sites).To(ConsistOf(slices.Concat(srcPatient.Sites, targetPatient.Sites)))
+			})
+		})
+
+		Context("a patient that is merged into", func() {
+			mergedInto := func() (*patients.Patient, *patients.Patient) {
+				for _, plan := range plans {
+					if plan.PatientAction != merge.PatientActionMergeInto {
+						continue
+					}
+					if len(plan.TargetPatient.Sites) < 1 {
+						continue
+					}
+					res := collection.FindOne(context.Background(), bson.M{
+						"clinicId": plan.TargetClinicId,
+						"userId":   *plan.TargetPatient.UserId,
+					})
+					if err := res.Err(); err != nil {
+						continue
+					}
+					p := &patients.Patient{}
+					if err := res.Decode(p); err != nil {
+						continue
+					}
+					return p, plan.TargetPatient
+				}
+				Fail("no suitable merged into patients found")
+				return nil, nil
+			}
+
+			It("doesn't lose its original sites", func() {
+				// Note: The execution of a patient plan is not responsible for renaming
+				// duplicate site names, so any duplicates will remain.
+				//
+				// The "merge into" action can't see that the resulting sites are 100%
+				// accurate, because there's no record of the source patient in a "merge
+				// info" action. However, that behavior is covered in the "merge" action's
+				// tests.
+				patient, targetPatient := mergedInto()
+				Expect(patient.Sites).To(ContainElements(targetPatient.Sites))
+			})
 		})
 
 		It("removes source patients which have duplicates from the source clinic", func() {
