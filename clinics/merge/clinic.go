@@ -22,6 +22,7 @@ import (
 const (
 	plansCollectionName = "merge_plans"
 	planTypeTag         = "tag"
+	planTypeSite        = "site"
 	planTypePatient     = "patient"
 	planTypeClinician   = "clinician"
 	planTypeClinic      = "clinic"
@@ -36,6 +37,7 @@ type ClinicMergePlan struct {
 	TargetPatientClusters           PatientClusters                 `bson:"-"`
 	SettingsPlans                   SettingsPlans                   `bson:"-"`
 	TagsPlans                       TagPlans                        `bson:"-"`
+	SitesPlans                      SitesPlans                      `bson:"-"`
 	ClinicianPlans                  ClinicianPlans                  `bson:"-"`
 	PatientPlans                    PatientPlans                    `bson:"-"`
 
@@ -114,6 +116,10 @@ func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, er
 	if err != nil {
 		return
 	}
+	intermediate.SitePlanners, err = m.SitesMergePlan(*source, *target)
+	if err != nil {
+		return
+	}
 	intermediate.ClinicianPlanners, err = m.CliniciansMergePlan(ctx, *source, *target)
 	if err != nil {
 		return
@@ -158,6 +164,17 @@ func (m *ClinicMergePlanner) TagsMergePlan(source, target clinics.Clinic) ([]Pla
 	}
 	for _, tag := range target.PatientTags {
 		plans = append(plans, NewTargetTagMergePlanner(tag, source, target))
+	}
+	return plans, nil
+}
+
+func (m *ClinicMergePlanner) SitesMergePlan(source, target clinics.Clinic) ([]Planner[SitePlan], error) {
+	plans := make([]Planner[SitePlan], 0, len(source.Sites)+len(target.Sites))
+	for _, sourceSite := range source.Sites {
+		plans = append(plans, NewSourceSiteMergePlanner(sourceSite, source, target))
+	}
+	for _, targetSite := range target.Sites {
+		plans = append(plans, NewTargetSiteMergePlanner(targetSite, source, target))
 	}
 	return plans, nil
 }
@@ -264,6 +281,7 @@ type intermediatePlanner struct {
 	MembershipRestrictionsMergePlanner Planner[MembershipRestrictionsMergePlan]
 	SettingsPlanners                   []Planner[SettingsPlan]
 	TagPlanners                        []Planner[TagPlan]
+	SitePlanners                       []Planner[SitePlan]
 	ClinicianPlanners                  []Planner[ClinicianPlan]
 
 	SourcePatientClusters Planner[PatientClusters]
@@ -296,6 +314,10 @@ func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, e
 	if err != nil {
 		return
 	}
+	plan.SitesPlans, err = RunPlanners(ctx, i.SitePlanners)
+	if err != nil {
+		return
+	}
 	plan.ClinicianPlans, err = RunPlanners(ctx, i.ClinicianPlanners)
 	if err != nil {
 		return
@@ -310,11 +332,12 @@ func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, e
 type ClinicPlanExecutor struct {
 	fx.In
 
-	Logger         *zap.SugaredLogger
-	ClinicsService clinics.Service
-	ClinicManager  manager.Manager
-	DBClient       *mongo.Client
-	DB             *mongo.Database
+	Logger          *zap.SugaredLogger
+	ClinicsService  clinics.Service
+	PatientsService patients.Service
+	ClinicManager   manager.Manager
+	DBClient        *mongo.Client
+	DB              *mongo.Database
 }
 
 func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) (primitive.ObjectID, error) {
@@ -327,8 +350,22 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 
 	planId := primitive.NewObjectID()
 	_, err := store.WithTransaction(ctx, c.DBClient, func(sessionContext mongo.SessionContext) (any, error) {
-		tpe := NewTagPlanExecutor(logger, c.ClinicsService)
+		// Site plans must be executed before clinics or patients for merging to proceed
+		// properly. The clinic and patient merge processes both assume that sites already
+		// have unique names, which the execution of the site plans accomplishes.
+		logger.Info("starting sites migration")
+		spe := NewSitePlanExecutor(logger, c.ClinicsService, c.PatientsService)
+		for _, plan := range plan.SitesPlans {
+			if err := spe.Execute(sessionContext, plan); err != nil {
+				return nil, err
+			}
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeSite, plan)); err != nil {
+				return nil, err
+			}
+		}
+
 		logger.Info("starting tags migration")
+		tpe := NewTagPlanExecutor(logger, c.ClinicsService)
 		for _, p := range plan.TagsPlans {
 			if err := tpe.Execute(sessionContext, p); err != nil {
 				return nil, err

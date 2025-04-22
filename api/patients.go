@@ -27,6 +27,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		ClinicId:     strp(string(clinicId)),
 		Search:       searchToString(params.Search),
 		Tags:         params.Tags,
+		Sites:        params.Sites,
 		LastReviewed: params.LastReviewed,
 	}
 
@@ -130,7 +131,12 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 		return err
 	}
 
-	patient := NewPatientFromCreate(dto)
+	clinicSites, err := h.Clinics.ListSites(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	patient := NewPatientFromCreate(dto, clinicSites)
 	patient.UserId = strp(patientId)
 	patient.ClinicId = &clinicObjId
 

@@ -7,14 +7,13 @@ import (
 	"go.uber.org/zap"
 	"strings"
 	"time"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
-
 	"github.com/tidepool-org/clinic/deletions"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -70,6 +69,15 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetUnique(true).
 				SetName("UniqueCanonicalShareCode"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "_id", Value: 1},
+				{Key: "sites.*.name", Value: 1},
+			},
+			Options: options.Index().
+				SetUnique(true).
+				SetName("UniqueSiteNamesPerClinic"),
 		},
 	})
 	return err
@@ -556,6 +564,91 @@ func (r *repository) UpdatePatientCount(ctx context.Context, id string, patientC
 	}
 
 	return err
+}
+
+func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) error {
+	id, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	if site.Id.IsZero() {
+		site.Id = primitive.NewObjectID()
+	}
+	selector := bson.M{"_id": id}
+	update := bson.M{
+		"$push":        bson.M{"sites": site},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	res := c.collection.FindOneAndUpdate(ctx, selector, update)
+	if err := res.Err(); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) error {
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return err
+	}
+	selector := bson.M{
+		"_id":      clinicOID,
+		"sites.id": siteOID,
+	}
+	update := bson.M{
+		"$pull":        bson.M{"sites": bson.M{"id": siteOID}},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	res, err := c.collection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount != 1 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (c *repository) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
+	clinic, err := c.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	return clinic.Sites, nil
+}
+
+func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return err
+	}
+	selector := bson.M{
+		"_id":      clinicOID,
+		"sites.id": siteOID,
+	}
+	update := bson.M{
+		"$set":         bson.M{"sites.$.name": site.Name},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	res, err := c.collection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount != 1 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {

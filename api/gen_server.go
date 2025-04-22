@@ -169,6 +169,15 @@ type ServerInterface interface {
 	// Update Patient Count Settings
 	// (PUT /v1/clinics/{clinicId}/settings/patient_count)
 	UpdatePatientCountSettings(ctx echo.Context, clinicId ClinicId) error
+	// Create a Site
+	// (POST /v1/clinics/{clinicId}/sites)
+	CreateSite(ctx echo.Context, clinicId ClinicId) error
+	// Delete a Site
+	// (DELETE /v1/clinics/{clinicId}/sites/{siteId})
+	DeleteSite(ctx echo.Context, clinicId ClinicId, siteId SiteId) error
+	// Update a Site
+	// (PUT /v1/clinics/{clinicId}/sites/{siteId})
+	UpdateSite(ctx echo.Context, clinicId ClinicId, siteId SiteId) error
 	// Update Suppressed Notifications
 	// (POST /v1/clinics/{clinicId}/suppressed_notifications)
 	UpdateSuppressedNotifications(ctx echo.Context, clinicId ClinicId) error
@@ -1842,6 +1851,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
 	}
 
+	// ------------- Optional query parameter "sites" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "sites", ctx.QueryParams(), &params.Sites)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sites: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.ListPatients(ctx, clinicId, params)
 	return err
@@ -2337,6 +2353,76 @@ func (w *ServerInterfaceWrapper) UpdatePatientCountSettings(ctx echo.Context) er
 	return err
 }
 
+// CreateSite converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateSite(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CreateSite(ctx, clinicId)
+	return err
+}
+
+// DeleteSite converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteSite(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", ctx.Param("siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter siteId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteSite(ctx, clinicId, siteId)
+	return err
+}
+
+// UpdateSite converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateSite(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", ctx.Param("siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter siteId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdateSite(ctx, clinicId, siteId)
+	return err
+}
+
 // UpdateSuppressedNotifications converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdateSuppressedNotifications(ctx echo.Context) error {
 	var err error
@@ -2802,6 +2888,9 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/mrn", wrapper.UpdateMRNSettings)
 	router.GET(baseURL+"/v1/clinics/:clinicId/settings/patient_count", wrapper.GetPatientCountSettings)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/patient_count", wrapper.UpdatePatientCountSettings)
+	router.POST(baseURL+"/v1/clinics/:clinicId/sites", wrapper.CreateSite)
+	router.DELETE(baseURL+"/v1/clinics/:clinicId/sites/:siteId", wrapper.DeleteSite)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/sites/:siteId", wrapper.UpdateSite)
 	router.POST(baseURL+"/v1/clinics/:clinicId/suppressed_notifications", wrapper.UpdateSuppressedNotifications)
 	router.GET(baseURL+"/v1/clinics/:clinicId/tide_report", wrapper.TideReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)

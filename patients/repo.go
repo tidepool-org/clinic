@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"regexp"
 	"strings"
 	"time"
@@ -17,7 +16,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -314,6 +315,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 			return nil, err
 		}
 	} else {
+		patient.Sites = uniqSites(patient.Sites)
 		patient.CreatedTime = time.Now()
 		patient.UpdatedTime = time.Now()
 		if _, err = r.collection.InsertOne(ctx, patient); err != nil {
@@ -334,6 +336,7 @@ func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*
 
 	patient := patientUpdate.Patient
 	patient.UpdatedTime = time.Now()
+	patient.Sites = uniqSites(patient.Sites)
 
 	update := bson.M{
 		"$set": patient,
@@ -347,6 +350,19 @@ func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*
 	}
 
 	return r.Get(ctx, patientUpdate.ClinicId, patientUpdate.UserId)
+}
+
+func uniqSites(allSites []sites.Site) []sites.Site {
+	uniq := map[string]struct{}{}
+	out := []sites.Site{}
+	for _, site := range allSites {
+		siteID := site.Id.Hex()
+		if _, seen := uniq[siteID]; !seen {
+			out = append(out, site)
+			uniq[siteID] = struct{}{}
+		}
+	}
+	return out
 }
 
 func (r *repository) UpdateEmail(ctx context.Context, userId string, email *string) error {
@@ -1032,6 +1048,24 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 		}
 	}
 
+	if filter.Sites != nil {
+		ids := store.ObjectIDSFromStringArray(*filter.Sites)
+		if len(ids) > 0 {
+			selector["sites"] = bson.M{
+				"$elemMatch": bson.M{
+					"id": bson.M{"$in": ids},
+				},
+			}
+		} else {
+			// filter.Sites wasn't nil, but the values provided were not ObjectIDs, which
+			// indicates a search for patients WITHOUT any sites assigned.
+			selector["$or"] = []bson.M{
+				{"sites": bson.M{"$size": 0}},
+				{"sites": bson.M{"$exists": 0}},
+			}
+		}
+	}
+
 	if filter.LastReviewed != nil {
 		selector["reviews.0.time"] = bson.M{"$lte": filter.LastReviewed}
 	}
@@ -1440,6 +1474,54 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	}
 
 	return &tide, nil
+}
+
+func (r *repository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return fmt.Errorf("parsing site's ObjectId (%s): %w", siteId, err)
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId (%s): %w", clinicId, err)
+	}
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"sites": bson.M{
+			"$elemMatch": bson.M{"id": siteOID},
+		},
+	}
+	update := bson.M{
+		"$pull": bson.M{"sites": bson.M{"id": siteOID}},
+		"$set":  bson.M{"updatedTime": time.Now()},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return fmt.Errorf("parsing site's ObjectId: %w", err)
+	}
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"sites.id": siteOID,
+	}
+	update := bson.M{
+		"$set":         bson.M{"sites.$.name": site.Name},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+	return nil
 }
 
 type RescheduleOrderPipelineParams struct {

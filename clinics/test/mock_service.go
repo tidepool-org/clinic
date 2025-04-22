@@ -15,6 +15,7 @@ import (
 
 	clinics "github.com/tidepool-org/clinic/clinics"
 	deletions "github.com/tidepool-org/clinic/deletions"
+	sites "github.com/tidepool-org/clinic/sites"
 	store "github.com/tidepool-org/clinic/store"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -87,6 +88,20 @@ func (mr *MockServiceMockRecorder) CreatePatientTag(ctx, clinicId, tagName any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePatientTag", reflect.TypeOf((*MockService)(nil).CreatePatientTag), ctx, clinicId, tagName)
 }
 
+// CreateSite mocks base method.
+func (m *MockService) CreateSite(ctx context.Context, clinicId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSite", ctx, clinicId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateSite indicates an expected call of CreateSite.
+func (mr *MockServiceMockRecorder) CreateSite(ctx, clinicId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSite", reflect.TypeOf((*MockService)(nil).CreateSite), ctx, clinicId, site)
+}
+
 // Delete mocks base method.
 func (m *MockService) Delete(ctx context.Context, id string, metadata deletions.Metadata) error {
 	m.ctrl.T.Helper()
@@ -114,6 +129,20 @@ func (m *MockService) DeletePatientTag(ctx context.Context, clinicId, tagId stri
 func (mr *MockServiceMockRecorder) DeletePatientTag(ctx, clinicId, tagId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTag", reflect.TypeOf((*MockService)(nil).DeletePatientTag), ctx, clinicId, tagId)
+}
+
+// DeleteSite mocks base method.
+func (m *MockService) DeleteSite(ctx context.Context, clinicId, siteId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSite", ctx, clinicId, siteId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSite indicates an expected call of DeleteSite.
+func (mr *MockServiceMockRecorder) DeleteSite(ctx, clinicId, siteId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSite", reflect.TypeOf((*MockService)(nil).DeleteSite), ctx, clinicId, siteId)
 }
 
 // Get mocks base method.
@@ -219,6 +248,21 @@ func (m *MockService) ListMembershipRestrictions(ctx context.Context, clinicId s
 func (mr *MockServiceMockRecorder) ListMembershipRestrictions(ctx, clinicId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembershipRestrictions", reflect.TypeOf((*MockService)(nil).ListMembershipRestrictions), ctx, clinicId)
+}
+
+// ListSites mocks base method.
+func (m *MockService) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSites", ctx, clinicId)
+	ret0, _ := ret[0].([]sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSites indicates an expected call of ListSites.
+func (mr *MockServiceMockRecorder) ListSites(ctx, clinicId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSites", reflect.TypeOf((*MockService)(nil).ListSites), ctx, clinicId)
 }
 
 // RemoveAdmin mocks base method.
@@ -333,6 +377,20 @@ func (m *MockService) UpdatePatientTag(ctx context.Context, clinicId, tagId, tag
 func (mr *MockServiceMockRecorder) UpdatePatientTag(ctx, clinicId, tagId, tagName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientTag", reflect.TypeOf((*MockService)(nil).UpdatePatientTag), ctx, clinicId, tagId, tagName)
+}
+
+// UpdateSite mocks base method.
+func (m *MockService) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSite", ctx, clinicId, siteId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSite indicates an expected call of UpdateSite.
+func (mr *MockServiceMockRecorder) UpdateSite(ctx, clinicId, siteId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSite", reflect.TypeOf((*MockService)(nil).UpdateSite), ctx, clinicId, siteId, site)
 }
 
 // UpdateSuppressedNotifications mocks base method.
