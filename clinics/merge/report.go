@@ -1,6 +1,7 @@
 package merge
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/pointer"
+	"github.com/tidepool-org/clinic/sites"
 )
 
 const (
@@ -73,6 +75,7 @@ func (r Report) addSummarySheet(report *xlsx.File) error {
 		r.addMeasuresSummary,
 		r.addClinicianSummary,
 		r.addTagsSummary,
+		r.addSitesSummary,
 	}
 	for _, fn := range components {
 		if err := fn(sh); err != nil {
@@ -96,11 +99,16 @@ func (r Report) addSourcePatients(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("DOB ---")
 	currentRow.AddCell().SetValue("MRN ---")
 	currentRow.AddCell().SetValue("Tags ---")
+	currentRow.AddCell().SetValue("Sites ---")
 	currentRow.AddCell().SetValue("Latest Upload ---")
 	sh.AddRow()
 
 	for _, plan := range r.plan.PatientPlans.GetSourcePatientPlans() {
-		addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames)
+		sourceSiteNames := []string{}
+		for _, site := range (*plan.SourcePatient).Sites {
+			sourceSiteNames = append(sourceSiteNames, site.Name)
+		}
+		addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames, r.plan.Target.Sites)
 	}
 	return nil
 }
@@ -118,11 +126,12 @@ func (r Report) addTargetPatients(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("DOB ---")
 	currentRow.AddCell().SetValue("MRN ---")
 	currentRow.AddCell().SetValue("Tags ---")
+	currentRow.AddCell().SetValue("Sites ---")
 	currentRow.AddCell().SetValue("Latest Upload ---")
 	sh.AddRow()
 
 	for _, plan := range r.plan.PatientPlans.GetTargetPatientPlans() {
-		addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames)
+		addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames, r.plan.Target.Sites)
 	}
 	return nil
 }
@@ -169,6 +178,7 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("DOB ---")
 	currentRow.AddCell().SetValue("MRN ---")
 	currentRow.AddCell().SetValue("Tags ---")
+	currentRow.AddCell().SetValue("Sites ---")
 	currentRow.AddCell().SetValue("Latest Upload ---")
 
 	count := 1
@@ -187,7 +197,7 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 		currentRow.AddCell().SetValue(fmt.Sprintf("Patient %v", count))
 		currentRow.AddCell().SetValue(status)
 		currentRow.AddCell().SetValue(pointer.ToString(r.plan.Source.Name))
-		addPatientDetails(currentRow, *patientPlan.SourcePatient, patientPlan.SourceTagNames)
+		addPatientDetails(currentRow, *patientPlan.SourcePatient, patientPlan.SourceTagNames, r.plan.Target.Sites)
 
 		conflicts := patientPlan.Conflicts[PatientConflictCategoryDuplicateAccounts]
 		if num := len(conflicts); num > 1 {
@@ -202,13 +212,13 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 			currentRow.AddCell()
 			currentRow.AddCell().SetValue("(result)")
 			currentRow.AddCell()
-			addPatientDetails(currentRow, conflict.Patient, patientPlan.PostMigrationTagNames)
+			addPatientDetails(currentRow, conflict.Patient, patientPlan.PostMigrationTagNames, r.plan.Target.Sites)
 
 			currentRow = sh.AddRow()
 			currentRow.AddCell()
 			currentRow.AddCell().SetValue("(combined)")
 			currentRow.AddCell().SetValue(pointer.ToString(r.plan.Target.Name))
-			addPatientDetails(currentRow, conflict.Patient, patientPlan.TargetTagNames)
+			addPatientDetails(currentRow, conflict.Patient, patientPlan.TargetTagNames, r.plan.Target.Sites)
 		}
 
 		conflictCategories := map[string]string{
@@ -231,7 +241,7 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 				currentRow.AddCell()
 				currentRow.AddCell().SetValue("(retained)")
 				currentRow.AddCell().SetValue(pointer.ToString(r.plan.Target.Name))
-				addPatientDetails(currentRow, conflict.Patient, getUniquePatientTagNames(conflict.Patient, targetTags))
+				addPatientDetails(currentRow, conflict.Patient, getUniquePatientTagNames(conflict.Patient, targetTags), r.plan.Target.Sites)
 			}
 		}
 
@@ -385,8 +395,43 @@ func (r Report) addTagsSummary(sh *xlsx.Sheet) error {
 		currentRow = sh.AddRow()
 		currentRow.AddCell().SetValue(plan.Name)
 		currentRow.AddCell().SetValue(strings.Join(plan.Workspaces, ", "))
-		if plan.Merge == true {
+		if plan.Merge {
 			currentRow.AddCell().SetValue("Yes")
+		}
+	}
+	sh.AddRow()
+
+	return nil
+}
+
+func (r Report) addSitesSummary(sh *xlsx.Sheet) error {
+	resultingSitesCount := r.plan.SitesPlans.GetResultingSitesCount()
+
+	currentRow := sh.AddRow()
+	currentRow.AddCell().SetValue(fmt.Sprintf("Resulting Sites (%d) ---", resultingSitesCount))
+	currentRow.AddCell().SetValue("Workspace ---")
+	currentRow.AddCell().SetValue("Action ---")
+
+	slices.SortFunc(r.plan.SitesPlans, func(i, j SitePlan) int {
+		return cmp.Compare(strings.ToLower(i.Name()), strings.ToLower(j.Name()))
+	})
+	for _, plan := range r.plan.SitesPlans {
+		currentRow = sh.AddRow()
+		switch plan.Action {
+		case SiteActionMove:
+			currentRow.AddCell().SetValue(plan.Name())
+			currentRow.AddCell().SetValue(plan.SourceWorkspace)
+			currentRow.AddCell().SetValue("Create")
+		case SiteActionRename:
+			currentRow.AddCell().SetValue(plan.Name())
+			currentRow.AddCell().SetValue(plan.SourceWorkspace)
+			currentRow.AddCell().SetValue("Rename")
+		case SiteActionRetain:
+			currentRow.AddCell().SetValue(plan.Name())
+			currentRow.AddCell().SetValue(plan.SourceWorkspace)
+			currentRow.AddCell().SetValue("Retain")
+		default:
+			return fmt.Errorf("unhandled site action %s: %s", plan.Name(), plan.Action)
 		}
 	}
 	sh.AddRow()
@@ -433,6 +478,15 @@ func (r Report) addMeasuresSummary(sh *xlsx.Sheet) error {
 	currentRow.AddCell().SetValue("- Duplicate tags that will be merged")
 	currentRow.AddCell().SetValue(duplicateTagsCount)
 
+	resultingSitesCount := r.plan.SitesPlans.GetResultingSitesCount()
+	renamedSitesCount := r.plan.SitesPlans.GetRenamedSitesCount()
+	currentRow = sh.AddRow()
+	currentRow.AddCell().SetValue("Resulting Sites")
+	currentRow.AddCell().SetValue(resultingSitesCount)
+	currentRow = sh.AddRow()
+	currentRow.AddCell().SetValue("- Duplicate sites that will be renamed")
+	currentRow.AddCell().SetValue(renamedSitesCount)
+
 	resultingPatientsCount := r.plan.PatientPlans.GetResultingPatientsCount()
 	duplicateAccountsCounts := r.plan.PatientPlans.GetConflictCounts()[PatientConflictCategoryDuplicateAccounts]
 	likelyDuplicateCount := r.plan.PatientPlans.GetConflictCounts()[PatientConflictCategoryLikelyDuplicateAccounts]
@@ -476,6 +530,7 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clini
 	currentRow.AddCell().SetValue("DOB ---")
 	currentRow.AddCell().SetValue("MRN ---")
 	currentRow.AddCell().SetValue("Tags ---")
+	currentRow.AddCell().SetValue("Sites ---")
 	currentRow.AddCell().SetValue("Latest Upload ---")
 	currentRow.AddCell().SetValue("Likely Duplicates ---")
 	currentRow.AddCell().SetValue("Name Only Matches ---")
@@ -492,7 +547,7 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clini
 			currentRow = sh.AddRow()
 			currentRow.AddCell()
 
-			addPatientDetails(currentRow, p.Patient, getUniquePatientTagNames(p.Patient, tags))
+			addPatientDetails(currentRow, p.Patient, getUniquePatientTagNames(p.Patient, tags), clinic.Sites) // TODO(EAW): not sure clinic.Sitesxo is correct
 
 			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryLikelyDuplicateAccounts], ", "))
 			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryNameOnlyMatch], ", "))
@@ -503,7 +558,7 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clini
 	}
 }
 
-func addPatientDetails(row *xlsx.Row, patient patients.Patient, tags []string) {
+func addPatientDetails(row *xlsx.Row, patient patients.Patient, tags []string, sites []sites.Site) {
 	row.AddCell().SetValue(pointer.ToString(patient.FullName))
 	if !patient.IsCustodial() {
 		row.AddCell().SetValue("Y")
@@ -514,6 +569,18 @@ func addPatientDetails(row *xlsx.Row, patient patients.Patient, tags []string) {
 	row.AddCell().SetValue(pointer.ToString(patient.BirthDate))
 	row.AddCell().SetValue(pointer.ToString(patient.Mrn))
 	row.AddCell().SetValue(strings.Join(tags, ", "))
+	siteNames := []string{}
+	for _, site := range patient.Sites {
+		renamed, err := maybeRenameSite(site, sites)
+		if err != nil {
+			continue
+		}
+		siteNames = append(siteNames, renamed)
+	}
+	slices.SortFunc(siteNames, func(i, j string) int {
+		return cmp.Compare(strings.ToLower(i), strings.ToLower(j))
+	})
+	row.AddCell().SetValue(strings.Join(siteNames, ", "))
 	if patient.Summary != nil && !patient.Summary.GetLastUploadDate().IsZero() {
 		row.AddCell().SetValue(patient.Summary.GetLastUploadDate().Format(LastUploadTimeFormat))
 	} else {

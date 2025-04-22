@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -13,6 +14,8 @@ import (
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/sites"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	"github.com/tidepool-org/clinic/test"
 )
 
@@ -51,18 +54,26 @@ func RandomData(p Params) Data {
 
 	targetPatientsWithDuplicates := make(map[string]patients.Patient)
 
+	srcDupSite := sitesTest.Random()
+	source.Sites = append(source.Sites, srcDupSite)
+	tgtDupSite := sitesTest.Random()
+	tgtDupSite.Name = srcDupSite.Name
+	target.Sites = append(target.Sites, tgtDupSite)
+
 	var sourcePatients, targetPatients []patients.Patient
 
 	unique, sourcePatients = removeTailElements(unique, p.UniquePatientCount)
 	for i := range sourcePatients {
 		sourcePatients[i].ClinicId = source.Id
 		sourcePatients[i].Tags = randomTagIds(len(source.PatientTags)-1, source.PatientTags)
+		sourcePatients[i].Sites = []sites.Site{source.Sites[rand.IntN(len(source.Sites))]}
 	}
 
 	unique, targetPatients = removeTailElements(unique, p.UniquePatientCount)
 	for i := range targetPatients {
 		targetPatients[i].ClinicId = target.Id
 		targetPatients[i].Tags = randomTagIds(len(target.PatientTags)-1, target.PatientTags)
+		targetPatients[i].Sites = []sites.Site{target.Sites[rand.IntN(len(target.Sites))]}
 	}
 
 	i := 0
@@ -79,6 +90,10 @@ func RandomData(p Params) Data {
 		// and append it to the final list of patients
 		makeDuplicatePatientAccount(sourcePatient, &targetPatient)
 
+		if j == 0 { // ensure that at least one merging patient has the duplicate site
+			sourcePatients[i].Sites = append(sourcePatients[i].Sites, srcDupSite)
+			targetPatient.Sites = append(targetPatient.Sites, tgtDupSite)
+		}
 		targetPatients = append(targetPatients, targetPatient)
 		targetPatientsWithDuplicates[*sourcePatient.UserId] = targetPatient
 	}

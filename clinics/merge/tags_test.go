@@ -74,7 +74,6 @@ var _ = Describe("Tags", func() {
 				Expect(plan.PreventsMerge()).To(BeFalse())
 				Expect(plan.TagAction).To(Equal(expectedTagAction))
 				Expect(plan.Workspaces).To(ConsistOf(expectedWorkspaces))
-
 			}
 		})
 	})
@@ -100,7 +99,6 @@ var _ = Describe("Tags", func() {
 				Expect(plan.PreventsMerge()).To(BeFalse())
 				Expect(plan.TagAction).To(Equal(expectedTagAction))
 				Expect(plan.Workspaces).To(ConsistOf(expectedWorkspaces))
-
 			}
 		})
 	})

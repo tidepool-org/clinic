@@ -869,6 +869,16 @@ paths:
           description: Comma-separated list of patient tag IDs
           style: form
           explode: false
+        - name: sites
+          schema:
+            type: array
+            items:
+              type: string
+              format: '^[a-f0-9]{24}$'
+          in: query
+          description: Comma-separated list of clinic site IDs
+          style: form
+          explode: false
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
@@ -903,6 +913,62 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatientTag'
+      tags:
+        - Clinics
+  '/v1/clinics/{clinicId}/sites':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: List Sites
+      operationId: ListSites
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicSites'
+      description: List sites
+      tags:
+        - Clinics
+    post:
+      summary: Create a Site
+      operationId: CreateSite
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Site'
+      tags:
+        - Clinics
+  '/v1/clinics/{clinicId}/sites/{siteId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/siteId'
+    put:
+      summary: Update a Site
+      operationId: UpdateSite
+      responses:
+        '204':
+          description: No Content
+      description: Update a Site
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Site'
+      tags:
+        - Clinics
+    delete:
+      summary: Delete a Site
+      operationId: DeleteSite
+      responses:
+        '204':
+          description: No Content
+      description: Delete a Site
       tags:
         - Clinics
   '/v1/clinics/{clinicId}/clinicians/{clinicianId}':
@@ -2269,6 +2335,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PatientTag'
+        sites:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClinicSite'
         lastDeletedPatientTag:
           $ref: '#/components/schemas/PatientTag'
         phoneNumbers:
@@ -3054,6 +3124,12 @@ components:
             id: 502rliv0l2tyy
           description: Requests for each provider are listed in reverse chronological order
           readOnly: true
+        sites:
+          type: array
+          nullable: true
+          x-go-type-skip-optional-pointer: true
+          items:
+            $ref: '#/components/schemas/Site'
       required:
         - id
         - fullName
@@ -3091,6 +3167,49 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/PatientTag'
+    ClinicSites:
+      type: array
+      items:
+        $ref: '#/components/schemas/ClinicSite'
+    ClinicSite:
+      allOf:
+        - $ref: '#/components/schemas/Site'
+        - type: object
+          title: Site Patients
+          description: Site properties specific to a clinic.
+          properties:
+            patients:
+              type: integer
+              x-go-type-skip-optional-pointer: true
+              description: The number of patients associated with the site.
+              readOnly: true
+              minimum: 0
+          required:
+            - patients
+    Site:
+      type: object
+      title: Site
+      description: A clinic's phyical or logical location.
+      properties:
+        id:
+          title: Object Id
+          type: string
+          x-go-type-skip-optional-pointer: true
+          description: String representation of a resource id
+          minLength: 24
+          maxLength: 24
+          pattern: '^[a-f0-9]{24}$'
+          readOnly: true
+        name:
+          type: string
+          x-go-type-skip-optional-pointer: true
+          description: The site description.
+          minLength: 1
+          maxLength: 200
+          pattern: '^[[:graph:]\p{L}\p{N}][[:graph:]\p{L}\p{N} ]*$'
+      required:
+        - id
+        - name
     DateTime:
       title: Date/Time
       description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
@@ -3260,6 +3379,8 @@ components:
           minLength: 1
         tags:
           $ref: '#/components/schemas/PatientTagIds'
+        siteIds:
+          $ref: '#/components/schemas/SiteIds'
     AssociateClinicianToUser:
       title: Associate Clinician
       type: object
@@ -3385,6 +3506,19 @@ components:
       items:
         title: Patient Tag ID
         description: Patient Tag identifier.
+        type: string
+        minLength: 24
+        maxLength: 24
+        pattern: '^[a-f0-9]{24}$'
+        readOnly: true
+    SiteIds:
+      type: array
+      title: Site ID List
+      uniqueItems: true
+      nullable: true
+      items:
+        title: Site ID
+        description: Site identifier.
         type: string
         minLength: 24
         maxLength: 24
@@ -4992,6 +5126,13 @@ components:
         pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
     patientTagId:
       name: patientTagId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-f0-9]{24}$'
+    siteId:
+      name: siteId
       in: path
       required: true
       schema:

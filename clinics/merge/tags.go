@@ -91,7 +91,7 @@ func (t *SourceTagMergePlanner) Plan(ctx context.Context) (TagPlan, error) {
 
 	for _, tt := range t.target.PatientTags {
 		if tt.Name == t.tag.Name {
-			// Tag already exist in target workspace, do nothing
+			// Tag already exists in target workspace, do nothing
 			plan.TagAction = TagActionSkip
 			plan.Workspaces = append(plan.Workspaces, *t.target.Name)
 			sort.Strings(plan.Workspaces)

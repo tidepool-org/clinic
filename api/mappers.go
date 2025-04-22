@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime/types"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/clinicians"
@@ -16,6 +15,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -112,6 +112,17 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		}
 		dto.PatientTags = &patientTags
 	}
+	if c.Sites != nil {
+		clinicSites := make([]ClinicSite, 0, len(c.Sites))
+		for _, site := range c.Sites {
+			clinicSites = append(clinicSites, ClinicSite{
+				Id:       site.Id.Hex(),
+				Name:     site.Name,
+				Patients: site.Patients,
+			})
+		}
+		dto.Sites = &clinicSites
+	}
 	if c.Timezone != nil {
 		tz := ClinicTimezone(*c.Timezone)
 		dto.Timezone = &tz
@@ -187,6 +198,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
 			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
 		},
+		Sites: NewSitesDto(patient.Sites),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -229,6 +241,7 @@ func NewPatient(dto Patient) patients.Patient {
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
 		Reviews:       NewReviews(dto.Reviews),
+		Sites:         NewSites(dto.Sites),
 	}
 
 	if dto.Tags != nil {
@@ -267,7 +280,7 @@ func NewPatient(dto Patient) patients.Patient {
 	return patient
 }
 
-func NewPatientFromCreate(dto CreatePatient) patients.Patient {
+func NewPatientFromCreate(dto CreatePatient, clinicSites []sites.Site) patients.Patient {
 	patient := patients.Patient{
 		Permissions: NewPermissions(dto.Permissions),
 	}
@@ -290,6 +303,15 @@ func NewPatientFromCreate(dto CreatePatient) patients.Patient {
 	if dto.Tags != nil {
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
+	}
+	if dto.SiteIds != nil {
+		for _, siteID := range *dto.SiteIds {
+			for _, clinicSite := range clinicSites {
+				if clinicSite.Id.Hex() == siteID {
+					patient.Sites = append(patient.Sites, clinicSite)
+				}
+			}
+		}
 	}
 	return patient
 }
@@ -1650,4 +1672,35 @@ func NewMatchOrderCriteria(criteria []EHRMatchRequestPatientsOptionsCriteria) ([
 	}
 
 	return result, nil
+}
+
+func NewSitesDto(sites []sites.Site) []Site {
+	result := make([]Site, len(sites))
+	for i := range len(sites) {
+		result[i] = NewSiteDto(sites[i])
+	}
+	return result
+}
+
+func NewSiteDto(site sites.Site) Site {
+	return Site{
+		Id:   site.Id.Hex(),
+		Name: site.Name,
+	}
+}
+
+func NewSites(s []Site) []sites.Site {
+	result := make([]sites.Site, len(s))
+	for i := range len(s) {
+		result[i] = NewSite(s[i])
+	}
+	return result
+}
+
+func NewSite(site Site) sites.Site {
+	oid, _ := primitive.ObjectIDFromHex(site.Id)
+	return sites.Site{
+		Id:   oid,
+		Name: site.Name,
+	}
 }
