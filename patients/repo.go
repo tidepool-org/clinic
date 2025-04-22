@@ -1437,3 +1437,51 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 
 	return pipeline
 }
+
+func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, site *Site) error {
+	oid, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return fmt.Errorf("parsing ObjectId: %w", err)
+	}
+	filter := bson.M{
+		"Sites": bson.M{
+			"$elemMatch": bson.M{
+				"_id": oid,
+			},
+		},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"Sites.$.Name": site.Name,
+			"updatedTime":  time.Now(),
+		},
+	}
+	if _, err := r.collection.UpdateMany(ctx, filter, update); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	oid, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return fmt.Errorf("parsing ObjectId: %w", err)
+	}
+	filter := bson.M{
+		"Sites": bson.M{
+			"$elemMatch": bson.M{
+				"_id": oid,
+			},
+		},
+	}
+	update := bson.M{
+		"$pull": bson.M{"Sites": bson.M{"_id": oid}},
+		"$set": bson.M{
+			"updatedTime": time.Now(),
+		},
+	}
+	if _, err := r.collection.UpdateMany(ctx, filter, update); err != nil {
+		return err
+	}
+	return nil
+}

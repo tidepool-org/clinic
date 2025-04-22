@@ -1070,6 +1070,7 @@ type Patient struct {
 	Mrn         *string             `json:"mrn,omitempty"`
 	Permissions *PatientPermissions `json:"permissions,omitempty"`
 	Reviews     []PatientReview     `json:"reviews"`
+	Sites       []Site              `json:"sites"`
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummary `json:"summary,omitempty"`
@@ -1652,6 +1653,18 @@ type ScheduledReportsCadence string
 // ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
 type ScheduledReportsOnUploadNoteEventType string
 
+// Site A clinic's phyical or logical location.
+type Site struct {
+	// Id String representation of a resource id
+	Id *string `json:"id,omitempty"`
+
+	// Name The site description.
+	Name string `json:"name"`
+}
+
+// Sites defines model for Sites.
+type Sites = []Site
+
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {
 	PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
@@ -1825,6 +1838,9 @@ type Search = string
 
 // ShareCode defines model for shareCode.
 type ShareCode = string
+
+// SiteId defines model for siteId.
+type SiteId = string
 
 // Sort defines model for sort.
 type Sort = string
@@ -2271,6 +2287,9 @@ type ViewPDFReportParams struct {
 	RestrictedToken string `form:"restricted_token" json:"restricted_token"`
 }
 
+// UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
+type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetails
+
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
 type CreateClinicJSONRequestBody = Clinic
 
@@ -2340,6 +2359,12 @@ type UpdateMRNSettingsJSONRequestBody = MRNSettings
 // UpdatePatientCountSettingsJSONRequestBody defines body for UpdatePatientCountSettings for application/json ContentType.
 type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettings
 
+// CreateSiteJSONRequestBody defines body for CreateSite for application/json ContentType.
+type CreateSiteJSONRequestBody = Site
+
+// UpdateSiteJSONRequestBody defines body for UpdateSite for application/json ContentType.
+type UpdateSiteJSONRequestBody = Site
+
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications
 
@@ -2357,6 +2382,3 @@ type ProcessEHRMessageJSONRequestBody = ProcessEHRMessageJSONBody
 
 // MatchClinicAndPatientJSONRequestBody defines body for MatchClinicAndPatient for application/json ContentType.
 type MatchClinicAndPatientJSONRequestBody = EHRMatchRequest
-
-// UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
-type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetails

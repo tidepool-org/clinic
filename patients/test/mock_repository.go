@@ -189,6 +189,20 @@ func (mr *MockRepositoryMockRecorder) DeleteReview(ctx, clinicId, clinicianId, u
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReview", reflect.TypeOf((*MockRepository)(nil).DeleteReview), ctx, clinicId, clinicianId, userId)
 }
 
+// DeleteSites mocks base method.
+func (m *MockRepository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSites", ctx, clinicId, siteId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSites indicates an expected call of DeleteSites.
+func (mr *MockRepositoryMockRecorder) DeleteSites(ctx, clinicId, siteId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSites", reflect.TypeOf((*MockRepository)(nil).DeleteSites), ctx, clinicId, siteId)
+}
+
 // Get mocks base method.
 func (m *MockRepository) Get(ctx context.Context, clinicId, userId string) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -361,6 +375,20 @@ func (m *MockRepository) UpdatePermissions(ctx context.Context, clinicId, userId
 func (mr *MockRepositoryMockRecorder) UpdatePermissions(ctx, clinicId, userId, permissions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockRepository)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
+}
+
+// UpdateSites mocks base method.
+func (m *MockRepository) UpdateSites(ctx context.Context, clinicId, siteId string, site *patients.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSites", ctx, clinicId, siteId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSites indicates an expected call of UpdateSites.
+func (mr *MockRepositoryMockRecorder) UpdateSites(ctx, clinicId, siteId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSites", reflect.TypeOf((*MockRepository)(nil).UpdateSites), ctx, clinicId, siteId, site)
 }
 
 // UpdateSummaryInAllClinics mocks base method.

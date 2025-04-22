@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -19,8 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 var DemoPatientId = "demo"
@@ -200,9 +201,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patient.Mrn
 				updated, err := repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).To(HaveOccurred())
 				Expect(updated).To(BeNil())
@@ -229,9 +230,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patientsTest.RandomPatient().Mrn
 				result, err = repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -1562,5 +1563,6 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
 		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
+		"Sites":                          Ignore(),
 	})
 }

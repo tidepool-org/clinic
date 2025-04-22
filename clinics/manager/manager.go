@@ -12,6 +12,7 @@ import (
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 )
@@ -31,6 +32,7 @@ type Manager interface {
 	DeleteClinic(ctx context.Context, clinicId string) error
 	GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error)
 	FinalizeMerge(ctx context.Context, sourceId, targetId string) error
+	ListSites(ctx context.Context, clinicId string) ([]*patients.Site, error)
 }
 
 type manager struct {
@@ -252,7 +254,7 @@ func (c *manager) deleteClinic(ctx context.Context, clinicId string) error {
 	}
 
 	if err := c.cliniciansRepository.DeleteAll(ctx, clinicId); err != nil {
-		return  err
+		return err
 	}
 
 	return c.clinics.Delete(ctx, clinicId)
@@ -268,4 +270,25 @@ func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool
 		return true
 	}
 	return false
+}
+
+func (c *manager) ListSites(ctx context.Context, clinicId string) ([]*patients.Site, error) {
+	filter := &patients.Filter{ClinicId: &clinicId}
+	limit := 1000000
+	page := store.DefaultPagination().WithLimit(limit)
+	list, err := c.patientsService.List(ctx, filter, page, nil)
+	if err != nil {
+		return nil, err
+	}
+	sites := []*patients.Site{}
+	uniqSites := map[*primitive.ObjectID]struct{}{}
+	for _, patient := range list.Patients {
+		for _, site := range patient.Sites {
+			if _, found := uniqSites[site.Id]; !found {
+				sites = append(sites, &site)
+			}
+		}
+	}
+
+	return sites, nil
 }
