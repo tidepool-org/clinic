@@ -337,7 +337,7 @@ var _ = Describe("Clinicians Service", func() {
 			}
 		})
 
-		It("Applies role filter correctly", func() {
+		It("Applies role filter correctly", func() { // Flappy, but not often, maybe 1 in 400 runs
 			role := test.Faker.RandomStringElement([]string{"CLINIC_ADMIN", "CLINIC_MEMBER"})
 			filter := clinicians.Filter{
 				Role: &role,

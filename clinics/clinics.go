@@ -3,12 +3,13 @@ package clinics
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -34,6 +35,9 @@ var ErrDuplicateShareCode = fmt.Errorf("%w share code", errors.Duplicate)
 var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin", errors.ConstraintViolation)
 var MaximumPatientTags = 50
 var ErrMaximumPatientTagsExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %v patient tags", errors.ConstraintViolation, MaximumPatientTags)
+var ErrDuplicateSiteName = fmt.Errorf("%w site name", errors.Duplicate)
+var ErrMaximumSitesExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %d sites", errors.ConstraintViolation, sites.MaxSitesPerClinic)
+var ErrSiteNotFound = fmt.Errorf("%w: the clinic has no site with that name", errors.ConstraintViolation)
 
 //go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockRepository
 
@@ -61,6 +65,10 @@ type Service interface {
 	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
 	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
+	CreateSite(ctx context.Context, clinicId string, site *sites.Site) error
+	DeleteSite(ctx context.Context, clinicId, siteId string) error
+	ListSites(ctx context.Context, clinicId string) ([]sites.Site, error)
+	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error
 }
 
 type Filter struct {
@@ -103,6 +111,7 @@ type Clinic struct {
 	MRNSettings             *MRNSettings             `bson:"mrnSettings,omitempty"`
 	PatientCountSettings    *PatientCountSettings    `bson:"patientCountSettings,omitempty"`
 	PatientCount            *PatientCount            `bson:"patientCount,omitempty"`
+	Sites                   []sites.Site             `bson:"sites,omitempty"`
 }
 
 func (c Clinic) IsOUS() bool {

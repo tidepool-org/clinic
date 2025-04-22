@@ -3,12 +3,14 @@ package clinicians
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"sort"
-	"time"
 )
 
 var (

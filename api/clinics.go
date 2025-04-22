@@ -1,11 +1,14 @@
 package api
 
 import (
+	stderrors "errors"
 	"fmt"
 	"github.com/tidepool-org/clinic/deletions"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -13,6 +16,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -85,7 +89,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 
 func (h *Handler) GetClinic(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	clinic, err := h.Clinics.Get(ctx, string(clinicId))
+	clinic, err := h.ClinicsManager.GetWithPatientCounts(ctx, string(clinicId))
 	if err != nil {
 		return err
 	}
@@ -493,6 +497,8 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 		return err
 	}
 
+	disposition := fmt.Sprintf("attachment; filename=merge-report-%d.xlsx", time.Now().Unix())
+	ec.Response().Header().Set(echo.HeaderContentDisposition, disposition)
 	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.ms-excel")
 	ec.Response().WriteHeader(http.StatusOK)
 	return file.Write(ec.Response())
@@ -517,4 +523,51 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	site := &SiteV1{}
+	if err := ec.Bind(site); err != nil {
+		return errors.BadRequest
+	}
+	if err := h.ClinicsManager.CreateSite(ctx, clinicId, site.Name); err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, site)
+}
+
+func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
+	ctx := ec.Request().Context()
+	if err := h.ClinicsManager.DeleteSite(ctx, clinicId, siteId); err != nil {
+		if stderrors.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound
+		}
+		return err
+	}
+	return nil
+}
+
+func (h *Handler) ListSites(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, sites)
+}
+
+func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
+	ctx := ec.Request().Context()
+	site := &sites.Site{}
+	if err := ec.Bind(site); err != nil {
+		return errors.BadRequest
+	}
+	if err := h.ClinicsManager.UpdateSite(ctx, clinicId, siteId, site); err != nil {
+		if stderrors.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound
+		}
+		return err
+	}
+	return nil
 }

@@ -3,11 +3,14 @@ package merge_test
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gstruct"
+	"github.com/onsi/gomega/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,8 +18,7 @@ import (
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
-
-	"github.com/tidepool-org/go-common/clients/shoreline"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -25,11 +27,12 @@ import (
 	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
 	"github.com/tidepool-org/clinic/config"
 	errs "github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 type ClinicMergeTest struct {
@@ -66,12 +69,16 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 
 	database := dbTest.GetTestDatabase()
 	patientsCollection := database.Collection("patients")
+	testLogger := func() *zap.SugaredLogger {
+		enc := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+		core := zapcore.NewCore(enc, zapcore.AddSync(GinkgoWriter), zapcore.DebugLevel)
+		return zap.New(core).Sugar()
+	}
 
 	t.app = fxtest.New(tb,
 		fx.NopLogger,
 		fx.Provide(
-			zap.NewNop,
-			logger.Suggar,
+			testLogger,
 			dbTest.GetTestDatabase,
 			func(database *mongo.Database) *mongo.Client {
 				t.db = database
@@ -243,6 +250,14 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	It("merges sites", func() {
+		merged, err := t.clinicsService.Get(context.Background(), t.target.Id.Hex())
+		Expect(err).To(Succeed())
+		Expect(len(merged.Sites)).To(Equal(len(t.source.Sites)+len(t.target.Sites)), fmt.Sprintf("merged sites: %+v", merged.Sites))
+		Expect(merged.Sites).To(matchPlannedSites(t.plan.SitesPlans))
+		Expect(merged.Sites).To(haveUniqueNames())
+	})
+
 	It("moves the source patients to the target clinic", func() {
 		clinicId := t.target.Id.Hex()
 		filter := patients.Filter{ClinicId: &clinicId}
@@ -394,7 +409,7 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	})
 })
 
-var _ = Describe("New Clinic Merge Planner (w/ Large patient populations)", Ordered, func() {
+var _ = Describe("New Clinic Merge Planner (w/ Large patient populations)", Ordered, Label("slow"), func() {
 	var t *ClinicMergeTest
 	var params = mergeTest.Params{UniquePatientCount: 1025}
 
@@ -449,4 +464,59 @@ func clinicHasTagWithName(clinic clinics.Clinic, tagName string) bool {
 		tagNames.Append(tag.Name)
 	}
 	return tagNames.Contains(tagName)
+}
+
+func haveUniqueNames() types.GomegaMatcher {
+	return &uniqueNamesMatcher{}
+}
+
+type uniqueNamesMatcher struct{}
+
+func (h *uniqueNamesMatcher) Match(actual interface{}) (bool, error) {
+	sites, ok := actual.([]sites.Site)
+	if !ok {
+		return false, fmt.Errorf("hasMatchingSite matcher expects a []sites.Site")
+	}
+	uniq := map[string]struct{}{}
+	for _, site := range sites {
+		if _, found := uniq[site.Name]; found {
+			return false, nil
+		}
+		uniq[site.Name] = struct{}{}
+	}
+	return true, nil
+}
+
+func (h *uniqueNamesMatcher) FailureMessage(actual interface{}) string {
+	return format.Message(actual, "to have unique Names")
+}
+
+func (h *uniqueNamesMatcher) NegatedFailureMessage(actual interface{}) string {
+	return format.Message(actual, "not to have unique Names")
+}
+
+// matchPlannedSites implements GomegaMatcher to compare SitePlans with resulting Sites.
+type matchPlannedSites []merge.SitePlan
+
+func (m matchPlannedSites) Match(actual interface{}) (bool, error) {
+	sites, ok := actual.([]sites.Site)
+	if !ok {
+		return false, fmt.Errorf("matchesPlannedSites matcher expects a []sites.Site")
+	}
+	for _, site := range sites {
+		for _, plan := range []merge.SitePlan(m) {
+			if plan.ExpectedRename == site.Name && site.Id.Hex() == plan.Site.Id.Hex() {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func (m matchPlannedSites) FailureMessage(actual interface{}) string {
+	return format.Message(actual, "to match planned sites")
+}
+
+func (m matchPlannedSites) NegatedFailureMessage(actual interface{}) string {
+	return format.Message(actual, "not to match planned sites")
 }
