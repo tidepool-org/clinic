@@ -2,26 +2,32 @@ package manager_test
 
 import (
 	"context"
+	"fmt"
+	"slices"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
-	"github.com/tidepool-org/clinic/clinics/test"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
-	patientsTest "github.com/tidepool-org/clinic/patients/test"
-	dbTest "github.com/tidepool-org/clinic/store/test"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx/fxtest"
-
 	"github.com/tidepool-org/clinic/patients"
+	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/sites"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
+	"github.com/tidepool-org/clinic/store"
+	dbTest "github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/clinic/test"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 func Ptr[T any](value T) *T {
@@ -90,7 +96,7 @@ var _ = Describe("Clinics Manager", func() {
 
 		Context("With existing clinic", func() {
 			BeforeEach(func() {
-				clinic = test.RandomClinic()
+				clinic = clinicsTest.RandomClinic()
 
 				res, err := clinicsCollection.InsertOne(context.Background(), clinic)
 				Expect(err).ToNot(HaveOccurred())
@@ -248,7 +254,7 @@ var _ = Describe("Clinics Manager", func() {
 		var clinicIdString string
 
 		BeforeEach(func() {
-			clinic = test.RandomClinic()
+			clinic = clinicsTest.RandomClinic()
 			res, err := clinicsCollection.InsertOne(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).ToNot(BeNil())
@@ -324,4 +330,284 @@ var _ = Describe("Clinics Manager", func() {
 			})
 		})
 	})
+
+	Context("Sites", func() {
+		Describe("CreateSite", func() {
+			It("works", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+
+				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(Succeed())
+			})
+
+			It("prevents duplicate site names in a single clinic", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+
+				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(Succeed())
+				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(MatchError(clinics.ErrDuplicateSiteName))
+			})
+
+			It("allows duplicate site names between different clinics", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+
+				clinic2, _ := th.createTestClinicWithoutSites(GinkgoTB())
+				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(Succeed())
+				Expect(mngr.CreateSite(ctx, clinic2.Id.Hex(), th.Site.Name)).To(Succeed())
+			})
+
+			It("limits the number of sites per clinic", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				for i := range sites.MaxSitesPerClinic - 1 { // 1 is already created by the helper
+					name := fmt.Sprintf("%s%d", th.Site.Name, i)
+					Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), name)).To(Succeed())
+				}
+
+				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(MatchError(clinics.ErrMaximumSitesExceeded))
+			})
+		})
+
+		Describe("DeleteSite", func() {
+			It("works", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				siteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+
+				Expect(mngr.DeleteSite(ctx, clinicId, siteId)).To(Succeed())
+			})
+
+			It("removes the site from clinics", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				siteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				Expect(mngr.DeleteSite(ctx, clinicId, siteId)).To(Succeed())
+				clinic, err := th.ClinicsRepo.Get(ctx, clinicId)
+				Expect(err).To(Succeed())
+
+				for _, site := range clinic.Sites {
+					Expect(site.Id.Hex()).ToNot(Equal(siteId))
+				}
+			})
+
+			It("removes the site from patients", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				siteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				Expect(mngr.DeleteSite(ctx, clinicId, siteId)).To(Succeed())
+				patients, err := th.PatientsRepo.List(ctx, &patients.Filter{
+					ClinicId: &clinicId,
+				}, store.DefaultPagination(), nil)
+				Expect(err).To(Succeed())
+
+				for _, patient := range patients.Patients {
+					Expect(slices.ContainsFunc(patient.Sites, func(s sites.Site) bool {
+						return s.Id.Hex() == siteId
+					})).To(BeFalse())
+				}
+			})
+		})
+
+		// While ListSites is a function on the clinics.Service interface (not
+		// manager.Manager), I'm testing it here, because all of the other useful functions
+		// for dealing with clinic sites are already set up here and it makes the testing
+		// much easier.
+		Describe("ListSites", func() {
+			It("works", func() {
+				ctx, _, th := newCreateSiteTestHelper(GinkgoTB())
+
+				clinicId := th.Clinic.Id.Hex()
+
+				sites, err := th.ClinicsRepo.ListSites(ctx, clinicId)
+				Expect(err).To(Succeed())
+
+				Expect(sites).To(HaveLen(1))
+				Expect(sites[0].Name).To(Equal(th.Clinic.Sites[0].Name))
+			})
+		})
+
+		Describe("UpdateSite", func() {
+			It("works", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				siteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				newSite := &sites.Site{Name: "fooberry-jones"}
+
+				Expect(mngr.UpdateSite(ctx, clinicId, siteId, newSite)).To(Succeed())
+			})
+
+			It("updates the clinic's sites", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				siteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				newSite := &sites.Site{Name: "fooberry-jones"}
+				Expect(mngr.UpdateSite(ctx, clinicId, siteId, newSite)).To(Succeed())
+				clinic, err := th.ClinicsRepo.Get(ctx, clinicId)
+				Expect(err).To(Succeed())
+
+				Expect(slices.ContainsFunc(clinic.Sites, func(s sites.Site) bool {
+					return s.Name == newSite.Name
+				})).To(BeTrue())
+			})
+
+			It("updates clinic's patients (denormalized)", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				siteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				newSite := &sites.Site{Name: "fooberry-jones"}
+				Expect(mngr.UpdateSite(ctx, clinicId, siteId, newSite)).To(Succeed())
+				patients, err := th.PatientsRepo.List(ctx, &patients.Filter{
+					ClinicId: &clinicId,
+				}, store.DefaultPagination(), nil)
+				Expect(err).To(Succeed())
+
+				for _, patient := range patients.Patients {
+					Expect(slices.ContainsFunc(patient.Sites, func(s sites.Site) bool {
+						return s.Id.Hex() == siteId
+					})).To(BeFalse())
+				}
+			})
+		})
+	})
 })
+
+type createSiteTestHelper struct {
+	Clinician    *clinicians.Clinician
+	Clinic       *clinics.Clinic
+	ClinicsRepo  clinics.Service
+	PatientsRepo patients.Service
+	Site         *sites.Site
+	mngr         manager.Manager
+}
+
+func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *createSiteTestHelper) {
+	t.Helper()
+	ctx := context.Background()
+	db := dbTest.GetTestDatabase()
+	lifecycle := fxtest.NewLifecycle(t)
+	lgr := zap.NewNop().Sugar()
+	clinicsRepo, err := clinics.NewRepository(db, lifecycle)
+	if err != nil {
+		t.Fatalf("failed to create clinics repo: %s", err)
+	}
+	patientsRepo, err := patients.NewRepository(&config.Config{}, db, lgr, lifecycle)
+	if err != nil {
+		t.Fatalf("failed to create patients repo: %s", err)
+	}
+	deletionsRepo, err := patients.NewDeletionsRepository(db, lgr, lifecycle)
+	if err != nil {
+		t.Fatalf("failed to create deletions repo: %s", err)
+	}
+	cliniciansRepo, err := clinicians.NewRepository(db, lgr, lifecycle)
+	if err != nil {
+		t.Fatalf("failed to create clinicians repo: %s", err)
+	}
+	patientsService, err := patients.NewService(deletionsRepo, patientsRepo, clinicsRepo, nil, lgr, db.Client())
+	if err != nil {
+		t.Fatalf("failed to create patients service: %s", err)
+	}
+
+	params := manager.Params{
+		Clinics:              clinicsRepo,
+		CliniciansRepository: cliniciansRepo,
+		Config:               &config.Config{ClinicDemoPatientUserId: "demo"},
+		DbClient:             db.Client(),
+		PatientsService:      patientsService,
+		ShareCodeGenerator:   newMockShareCodeGenerator(),
+		UserService:          newMockUserService(),
+	}
+	mngr, err := manager.NewManager(params)
+	if err != nil {
+		t.Fatalf("failed to create new clinics manager: %s", err)
+	}
+	testClinicInput := clinicsTest.RandomClinic()
+	testClinicInput.Sites = []sites.Site{}
+	testClinician := cliniciansTest.RandomClinician()
+	testClinic, err := mngr.CreateClinic(ctx, &manager.CreateClinic{
+		Clinic:        *testClinicInput,
+		CreatorUserId: *testClinician.UserId,
+	})
+	if err != nil {
+		t.Fatalf("failed to create test clinic: %s", err)
+	}
+	if testClinic == nil {
+		t.Fatalf("failed to create test clinic")
+	}
+	if testClinic != nil && testClinic.Id != nil {
+		testClinician.ClinicId = testClinic.Id
+	}
+
+	preCreatedSite := sitesTest.Random()
+	if err := mngr.CreateSite(ctx, testClinic.Id.Hex(), preCreatedSite.Name); err != nil {
+		t.Fatalf("failed to create pre-existing clinic site: %s", err)
+	}
+	testClinic, err = clinicsRepo.Get(ctx, testClinic.Id.Hex())
+	if err != nil {
+		t.Fatalf("failed to reload clinic (to pick up pre-existing site): %s", err)
+	}
+
+	site := sitesTest.Random()
+	for site.Name == preCreatedSite.Name {
+		site = sitesTest.Random()
+	}
+
+	return ctx, mngr, &createSiteTestHelper{
+		Clinician:    testClinician,
+		Clinic:       testClinic,
+		ClinicsRepo:  clinicsRepo,
+		PatientsRepo: patientsRepo,
+		Site:         &site,
+		mngr:         mngr,
+	}
+}
+
+func (c *createSiteTestHelper) createTestClinicWithoutSites(t testing.TB) (*clinics.Clinic, *clinicians.Clinician) {
+	testClinic := clinicsTest.RandomClinic()
+	testClinic.Sites = []sites.Site{}
+	testClinician := cliniciansTest.RandomClinician()
+	_, err := c.mngr.CreateClinic(context.Background(), &manager.CreateClinic{
+		Clinic:        *testClinic,
+		CreatorUserId: *testClinician.UserId,
+	})
+	if err != nil {
+		t.Fatalf("failed to create test clinic: %s", err)
+	}
+	return testClinic, testClinician
+}
+
+type mockUserService struct{}
+
+func newMockUserService() *mockUserService {
+	return &mockUserService{}
+}
+
+func (m *mockUserService) CreateCustodialAccount(ctx context.Context, patient patients.Patient) (*shoreline.UserData, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockUserService) GetUser(userId string) (*shoreline.UserData, error) {
+	return &shoreline.UserData{
+		UserID:   userId,
+		Username: "test@example.com",
+		Emails:   []string{"test@example.com"},
+	}, nil
+}
+
+func (m *mockUserService) GetUserProfile(ctx context.Context, userId string) (*patients.Profile, error) {
+	return &patients.Profile{}, nil
+}
+
+func (m *mockUserService) UpdateCustodialAccount(ctx context.Context, patient patients.Patient) error {
+	panic("not implemented") // TODO: Implement
+}
+
+func (m *mockUserService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *patients.Patient) error {
+	panic("not implemented") // TODO: Implement
+}
+
+type mockShareCodeGenerator struct{}
+
+func newMockShareCodeGenerator() *mockShareCodeGenerator {
+	return &mockShareCodeGenerator{}
+}
+
+func (m *mockShareCodeGenerator) Generate() string {
+	return test.Faker.Lorem().Word()
+}
