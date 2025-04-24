@@ -1719,23 +1719,6 @@ paths:
       description: Sends upload reminder to the patient
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/patients/{patientId}/send_dexcom_connect_request':
-    parameters:
-      - $ref: '#/components/parameters/clinicId'
-      - $ref: '#/components/parameters/patientId'
-    post:
-      summary: Resend Dexcom connect request email
-      operationId: SendDexcomConnectRequest
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Patient'
-      description: Resend Dexcom connect request to the email address of the patient
-      tags:
-        - Clinics
   '/v1/clinics/{clinicId}/patients/assign_tag/{patientTagId}':
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -2201,6 +2184,21 @@ paths:
         - Internal
       x-internal: true
       description: 'Merges tags, patients, clinicians, invites and share codes of the source clinic'
+  '/v1/clinics/{clinicId}/patients/{patientId}/connect/{providerId}':
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+      - $ref: '#/components/parameters/providerId'
+    post:
+      summary: ''
+      operationId: ConnectProvider
+      responses:
+        '204':
+          description: No Content
+      tags:
+        - Clinics
+        - Internal
+      description: Send a new request to the patient to connect a data provider
 components:
   schemas:
     Error:
@@ -2980,7 +2978,6 @@ components:
     Patient:
       type: object
       title: Patient
-      description: ''
       properties:
         id:
           $ref: '#/components/schemas/TidepoolUserId'
@@ -3023,10 +3020,6 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/DataSource'
-        lastRequestedDexcomConnectTime:
-          type: string
-          format: date-time
-          readOnly: true
         lastUploadReminderTime:
           type: string
           format: date-time
@@ -3039,12 +3032,19 @@ components:
           x-go-type-skip-optional-pointer: true
           items:
             $ref: '#/components/schemas/PatientReview'
+        connectionRequests:
+          $ref: '#/components/schemas/ProviderConnectionRequests'
+          x-stoplight:
+            id: 502rliv0l2tyy
+          description: Requests for each provider are listed in reverse chronological order
+          readOnly: true
       required:
         - id
         - fullName
         - birthDate
         - createdTime
         - updatedTime
+        - connectionRequests
     Patients:
       type: array
       items:
@@ -4855,6 +4855,68 @@ components:
           description: 'Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.'
       required:
         - icode
+    ProviderConnectionRequest:
+      title: Provider Connection Request
+      x-stoplight:
+        id: nim4cceb0lu0w
+      type: object
+      properties:
+        createdTime:
+          type: string
+          x-stoplight:
+            id: efcvyea5slw36
+          format: date-time
+        providerName:
+          $ref: '#/components/schemas/ProviderId'
+          x-stoplight:
+            id: ej94kmuykpg1k
+      required:
+        - createdTime
+        - providerName
+    ProviderConnectionRequests:
+      title: providerconnectionrequests.v1
+      x-stoplight:
+        id: c8q7wrz5rtge5
+      type: object
+      readOnly: true
+      properties:
+        twiist:
+          type: array
+          x-stoplight:
+            id: 7ve65jmart7pj
+          items:
+            $ref: '#/components/schemas/ProviderConnectionRequest'
+            x-stoplight:
+              id: 47ez7wiccxdut
+        dexcom:
+          type: array
+          x-stoplight:
+            id: 7ve65jmart7pj
+          items:
+            $ref: '#/components/schemas/ProviderConnectionRequest'
+            x-stoplight:
+              id: 913pgkbkz62eq
+        abbott:
+          type: array
+          x-stoplight:
+            id: u9rfvrr2njlcq
+          items:
+            $ref: '#/components/schemas/ProviderConnectionRequest'
+            x-stoplight:
+              id: 47ez7wiccxdut
+      required:
+        - twiist
+        - dexcom
+        - abbott
+    ProviderId:
+      title: Third-Party Data Providers
+      x-stoplight:
+        id: fdmfczqym3ocn
+      type: string
+      enum:
+        - dexcom
+        - twiist
+        - abbott
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
@@ -4973,6 +5035,13 @@ components:
       schema:
         type: boolean
       description: Retrieve clinics with enabled EHR integration
+    providerId:
+      name: providerId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ProviderId'
+      description: Provider ID
 tags:
   - name: Clinics
     description: 'Manage clinics, clinians and patients.'
