@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	patients "github.com/tidepool-org/clinic/patients"
+	sites "github.com/tidepool-org/clinic/sites"
 	store "github.com/tidepool-org/clinic/store"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -378,7 +379,7 @@ func (mr *MockRepositoryMockRecorder) UpdatePermissions(ctx, clinicId, userId, p
 }
 
 // UpdateSites mocks base method.
-func (m *MockRepository) UpdateSites(ctx context.Context, clinicId, siteId string, site *patients.Site) error {
+func (m *MockRepository) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateSites", ctx, clinicId, siteId, site)
 	ret0, _ := ret[0].(error)

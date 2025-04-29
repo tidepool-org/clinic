@@ -12,6 +12,7 @@ import (
 
 	"github.com/tidepool-org/clinic/clinics"
 	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -109,7 +110,7 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		}
 	}
 
-	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
+	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId, "update", update)
 	return s.patientsRepo.Update(ctx, update)
 }
 func (s *service) AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error) {
@@ -288,7 +289,7 @@ func (s *service) RescheduleLastSubscriptionOrderForPatient(ctx context.Context,
 	return s.patientsRepo.RescheduleLastSubscriptionOrderForPatient(ctx, clinicIds, userId, subscription, ordersCollection, targetCollection)
 }
 
-func (s *service) UpdateSites(ctx context.Context, clinicId, siteId string, site *Site) error {
+func (s *service) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
 	s.logger.Infow("updating sites", "clinicId", clinicId, "siteId", siteId, "site", site)
 	return s.patientsRepo.UpdateSites(ctx, clinicId, siteId, site)
 }

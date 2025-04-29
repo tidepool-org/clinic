@@ -4,17 +4,18 @@ import (
 	"context"
 	errs "errors"
 	"fmt"
+	"log/slog"
 
-	"github.com/tidepool-org/clinic/errors"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx"
 )
 
 const (
@@ -32,7 +33,12 @@ type Manager interface {
 	DeleteClinic(ctx context.Context, clinicId string) error
 	GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error)
 	FinalizeMerge(ctx context.Context, sourceId, targetId string) error
-	ListSites(ctx context.Context, clinicId string) ([]*patients.Site, error)
+	// CreateSite within a clinic.
+	//
+	// CreateSite is expected to return an error if a site with the given name already
+	// exists, or if creating a new site would exceed the maximum number of sites.
+	CreateSite(_ context.Context, clinicId string, name string) error
+	DeleteSite(_ context.Context, clinicId string, name string) error
 }
 
 type manager struct {
@@ -272,23 +278,61 @@ func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool
 	return false
 }
 
-func (c *manager) ListSites(ctx context.Context, clinicId string) ([]*patients.Site, error) {
-	filter := &patients.Filter{ClinicId: &clinicId}
-	limit := 1000000
-	page := store.DefaultPagination().WithLimit(limit)
-	list, err := c.patientsService.List(ctx, filter, page, nil)
+// CreateSite implements [Manager].
+func (c *manager) CreateSite(ctx context.Context, clinicId, name string) error {
+	tx := func(sessionCtx mongo.SessionContext) (any, error) {
+		return nil, c.createSite(sessionCtx, clinicId, name)
+	}
+	_, err := store.WithTransaction(ctx, c.dbClient, tx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	sites := []*patients.Site{}
-	uniqSites := map[*primitive.ObjectID]struct{}{}
-	for _, patient := range list.Patients {
-		for _, site := range patient.Sites {
-			if _, found := uniqSites[site.Id]; !found {
-				sites = append(sites, &site)
-			}
-		}
-	}
+	return nil
+}
 
-	return sites, nil
+// createSite creates a new site, after checking containts.
+//
+// This should be run in a transaction to prevent races when checking for existing sites and
+// creating new ones. See [CreateSite].
+func (c *manager) createSite(ctx context.Context, clinicId, name string) error {
+	clinic, err := c.clinics.Get(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	if exists := sites.SiteExistsWithName(clinic.Sites, name); exists {
+		return clinics.ErrDuplicateSiteName
+	}
+	if len(clinic.Sites) >= sites.MaxSitesPerClinic {
+		return clinics.ErrMaximumSitesExceeded
+	}
+	site := sites.New(name)
+	if err := c.clinics.CreateSite(ctx, clinicId, site); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *manager) DeleteSite(ctx context.Context, clinicId, siteId string) error {
+	tx := func(sessionCtx mongo.SessionContext) (any, error) {
+		return nil, c.deleteSite(sessionCtx, clinicId, siteId)
+	}
+	_, err := store.WithTransaction(ctx, c.dbClient, tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// deleteSite deletes a site, and ripples the changes to a clinic's patients.
+//
+// This should be run in a transaction to prevent races.
+func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error {
+	if err := c.patientsService.DeleteSites(ctx, clinicId, siteId); err != nil {
+		return err
+	}
+	if err := c.clinics.DeleteSite(ctx, clinicId, siteId); err != nil {
+		return err
+	}
+	slog.Info("clinic manager", "clinic", clinicId, "site", siteId)
+	return nil
 }

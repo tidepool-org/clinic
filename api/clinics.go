@@ -14,7 +14,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	"github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -507,9 +507,21 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	return ec.NoContent(http.StatusOK)
 }
 
+func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	site := &Site{}
+	if err := ec.Bind(site); err != nil {
+		return errors.BadRequest
+	}
+	if err := h.ClinicsManager.CreateSite(ctx, clinicId, site.Name); err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, site)
+}
+
 func (h *Handler) ListSites(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	sites, err := h.ClinicsManager.ListSites(ctx, clinicId)
+	sites, err := h.Clinics.ListSites(ctx, clinicId)
 	if err != nil {
 		return err
 	}
@@ -518,7 +530,7 @@ func (h *Handler) ListSites(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
 	ctx := ec.Request().Context()
-	site := &patients.Site{}
+	site := &sites.Site{}
 	if err := ec.Bind(site); err != nil {
 		return errors.BadRequest
 	}
@@ -533,7 +545,7 @@ func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 
 func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
 	ctx := ec.Request().Context()
-	if err := h.Patients.DeleteSites(ctx, clinicId, siteId); err != nil {
+	if err := h.ClinicsManager.DeleteSite(ctx, clinicId, siteId); err != nil {
 		if stderrors.Is(err, mongo.ErrNoDocuments) {
 			return errors.NotFound
 		}

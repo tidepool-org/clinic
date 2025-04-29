@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -68,7 +69,7 @@ type Service interface {
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 	RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error
-	UpdateSites(ctx context.Context, clinicId string, siteId string, site *Site) error
+	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
 	DeleteSites(ctx context.Context, clinicId string, siteId string) error
 }
 
@@ -95,7 +96,7 @@ type Patient struct {
 	ProviderConnectionRequests ProviderConnectionRequests `bson:"providerConnectionRequests,omitempty"`
 	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
-	Sites                      []Site                     `bson:"sites,omitempty"`
+	Sites                      []sites.Site               `bson:"sites,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
@@ -268,14 +269,4 @@ type TideReportParams struct {
 	Period         *string
 	Tags           *[]string
 	LastDataCutoff *time.Time
-}
-
-// Site of a clinic to which this [Patient] is associated.
-//
-// I'd rather this were defined in the clinic package, but as it stands, patients need
-// access to it, and clinics already imports patients. If I don't think of something better,
-// I might consider renaming this to ClinicSite as a result.
-type Site struct {
-	Id   *primitive.ObjectID `bson:"_id,omitempty"`
-	Name string              `bson:"name,omitempty"`
 }

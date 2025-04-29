@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/tidepool-org/clinic/config"
 	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -1438,50 +1440,59 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 	return pipeline
 }
 
-func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, site *Site) error {
-	oid, err := primitive.ObjectIDFromHex(siteId)
+func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
 	if err != nil {
 		return fmt.Errorf("parsing ObjectId: %w", err)
 	}
-	filter := bson.M{
-		"Sites": bson.M{
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"sites": bson.M{
 			"$elemMatch": bson.M{
-				"_id": oid,
+				"id": siteOID,
 			},
 		},
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"Sites.$.Name": site.Name,
+			"sites.$.name": site.Name,
 			"updatedTime":  time.Now(),
 		},
 	}
-	if _, err := r.collection.UpdateMany(ctx, filter, update); err != nil {
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *repository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
-	oid, err := primitive.ObjectIDFromHex(siteId)
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
 	if err != nil {
-		return fmt.Errorf("parsing ObjectId: %w", err)
+		return fmt.Errorf("parsing site's ObjectId: %w", err)
 	}
-	filter := bson.M{
-		"Sites": bson.M{
-			"$elemMatch": bson.M{
-				"_id": oid,
-			},
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"sites": bson.M{
+			"$elemMatch": bson.M{"id": siteOID},
 		},
 	}
 	update := bson.M{
-		"$pull": bson.M{"Sites": bson.M{"_id": oid}},
-		"$set": bson.M{
-			"updatedTime": time.Now(),
-		},
+		"$pull": bson.M{"sites": bson.M{"id": siteOID}},
+		"$set":  bson.M{"updatedTime": time.Now()},
 	}
-	if _, err := r.collection.UpdateMany(ctx, filter, update); err != nil {
+	slog.Info("delete sites in patients repo", "update", update)
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		slog.Info("error deleting sites: in patients repo updatemany", "error", err)
 		return err
 	}
+	slog.Info("patients service")
 	return nil
 }
