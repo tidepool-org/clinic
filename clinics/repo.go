@@ -56,16 +56,6 @@ func (c *repository) Initialize(ctx context.Context) error {
 				SetUnique(true).
 				SetName("UniqueCanonicalShareCode"),
 		},
-		{
-			Keys: bson.D{
-				{Key: "ehrSettings.sourceId", Value: 1},
-				{Key: "ehrSettings.facility.name", Value: 1},
-			},
-			Options: options.Index().
-				SetUnique(true).
-				SetName("UniqueEHRSourceFacility").
-				SetPartialFilterExpression(bson.D{{"ehrSettings.sourceId", bson.M{"$exists": true}}}),
-		},
 	})
 	return err
 }
@@ -107,9 +97,6 @@ func (c *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	if filter.EHRProvider != nil {
 		selector["ehrSettings.provider"] = filter.EHRProvider
-	}
-	if filter.EHRFacilityName != nil {
-		selector["ehrSettings.facility.name"] = filter.EHRFacilityName
 	}
 	if filter.EHREnabled != nil {
 		selector["ehrSettings.enabled"] = filter.EHREnabled
@@ -511,7 +498,7 @@ func (c *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 			},
 		},
 		"$set": bson.M{
-			"updatedTime":          time.Now(),
+			"updatedTime": time.Now(),
 		},
 	}
 
@@ -522,7 +509,6 @@ func (c *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 
 	return err
 }
-
 
 func (c *repository) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
 	clinic, err := c.Get(ctx, clinicId)

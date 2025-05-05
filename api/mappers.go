@@ -198,7 +198,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	if len(dto.ConnectionRequests.Dexcom) == 0 && !patient.LastRequestedDexcomConnectTime.IsZero() {
 		dto.ConnectionRequests.Dexcom = []ProviderConnectionRequest{{
 			ProviderName: Dexcom,
-			CreatedTime: patient.LastRequestedDexcomConnectTime,
+			CreatedTime:  patient.LastRequestedDexcomConnectTime,
 		}}
 	}
 
@@ -727,11 +727,6 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 			Results:   dto.DestinationIds.Results,
 		}
 	}
-	if dto.Facility != nil {
-		settings.Facility = &clinics.EHRFacility{
-			Name: dto.Facility.Name,
-		}
-	}
 
 	return settings
 }
@@ -772,11 +767,6 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 			Flowsheet: settings.DestinationIds.Flowsheet,
 			Notes:     settings.DestinationIds.Notes,
 			Results:   settings.DestinationIds.Results,
-		}
-	}
-	if settings.Facility != nil {
-		dto.Facility = &EHRFacility{
-			Name: settings.Facility.Name,
 		}
 	}
 	if settings.ScheduledReports.Cadence != "" {

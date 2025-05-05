@@ -60,9 +60,6 @@ func RandomClinic() *clinics.Clinic {
 	clinic.EHRSettings = &clinics.EHRSettings{
 		Enabled:  true,
 		Provider: "xealth",
-		Facility: &clinics.EHRFacility{
-			Name: Faker.Company().Name(),
-		},
 		ProcedureCodes: clinics.EHRProcedureCodes{
 			EnableSummaryReports:          strp("12345"),
 			DisableSummaryReports:         strp("23456"),
@@ -113,9 +110,6 @@ func EnableXealth(clinic *clinics.Clinic, deployment string) *clinics.Clinic {
 	clinic.EHRSettings = &clinics.EHRSettings{
 		Enabled:  true,
 		Provider: "xealth",
-		Facility: &clinics.EHRFacility{
-			Name: Faker.Company().Name(),
-		},
 		ProcedureCodes: clinics.EHRProcedureCodes{
 			EnableSummaryReports:          strp("12345"),
 			DisableSummaryReports:         strp("23456"),
