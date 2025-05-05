@@ -3,7 +3,6 @@ package merge_test
 import (
 	"context"
 	mapset "github.com/deckarep/golang-set/v2"
-	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -16,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 	"time"
 )
@@ -30,23 +30,23 @@ const (
 
 var _ = Describe("New Merge Planner", func() {
 	var source clinics.Clinic
-	var target clinics.Clinic
 	var sourcePatients []patients.Patient
-	var targetPatientsWithDuplicates map[string]patients.Patient
+	var target clinics.Clinic
 	var targetPatients []patients.Patient
+	var targetPatientsWithDuplicates map[string]patients.Patient
 	var plans merge.PatientPlans
 
 	BeforeEach(func() {
 		data := mergeTest.RandomData(mergeTest.Params{
-			PatientCount:                 patientCount,
+			UniquePatientCount:           patientCount,
 			DuplicateAccountsCount:       duplicateAccountsCount,
 			LikelyDuplicateAccountsCount: likelyDuplicateAccountsCount,
 			NameOnlyMatchAccountsCount:   nameOnlyMatchAccountsCount,
 			MrnOnlyMatchAccountsCount:    mrnOnlyMatchAccountsCount,
 		})
 		source = data.Source
-		target = data.Target
 		sourcePatients = data.SourcePatients
+		target = data.Target
 		targetPatients = data.TargetPatients
 		targetPatientsWithDuplicates = data.TargetPatientsWithDuplicates
 
@@ -70,7 +70,7 @@ var _ = Describe("New Merge Planner", func() {
 
 		It("have the expected number of resulting patients", func() {
 			count := plans.GetResultingPatientsCount()
-			expected := len(sourcePatients) + len(targetPatients) - duplicateAccountsCount
+			expected := len(sourcePatients) + len(targetPatients) - len(targetPatientsWithDuplicates)
 
 			Expect(count).To(Equal(expected))
 		})
@@ -220,6 +220,10 @@ var _ = Describe("New Merge Planner", func() {
 				}
 			}
 			Expect(errs).To(BeEmpty())
+		})
+
+		AfterEach(func() {
+
 		})
 
 		It("moves all source patients which don't have duplicates", func() {

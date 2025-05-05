@@ -1,23 +1,17 @@
 package test
 
 import (
-	"github.com/jaswdr/faker"
-	"github.com/onsi/ginkgo/v2"
 	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"math/rand"
-)
-
-var (
-	Faker = faker.NewWithSeed(rand.NewSource(ginkgo.GinkgoRandomSeed()))
 )
 
 func RandomClinician() *clinicians.Clinician {
 	clinicId := primitive.NewObjectID()
-	userId := Faker.UUID().V4()
-	email := Faker.Internet().Email()
-	name := Faker.Person().Name()
-	roles := []string{Faker.RandomStringElement([]string{"CLINIC_MEMBER", "CLINIC_ADMIN"})}
+	userId := test.Faker.UUID().V4()
+	email := test.Faker.Internet().Email()
+	name := test.Faker.Person().Name()
+	roles := []string{test.Faker.RandomStringElement([]string{"CLINIC_MEMBER", "CLINIC_ADMIN"})}
 
 	return &clinicians.Clinician{
 		ClinicId: &clinicId,
@@ -29,7 +23,7 @@ func RandomClinician() *clinicians.Clinician {
 }
 
 func RandomClinicianInvite() *clinicians.Clinician {
-	inviteId := Faker.UUID().V4()
+	inviteId := test.Faker.UUID().V4()
 	clinician := RandomClinician()
 	clinician.UserId = nil
 	clinician.Name = nil

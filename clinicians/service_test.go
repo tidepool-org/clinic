@@ -2,9 +2,9 @@ package clinicians_test
 
 import (
 	"context"
+	"github.com/tidepool-org/clinic/test"
 	"sync"
 
-	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -21,6 +21,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
@@ -336,7 +337,7 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Applies role filter correctly", func() {
-			role := cliniciansTest.Faker.RandomStringElement([]string{"CLINIC_ADMIN", "CLINIC_MEMBER"})
+			role := test.Faker.RandomStringElement([]string{"CLINIC_ADMIN", "CLINIC_MEMBER"})
 			filter := clinicians.Filter{
 				Role: &role,
 			}
@@ -375,7 +376,7 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Updates an existing clinician", func() {
-			updatedName := cliniciansTest.Faker.Person().Name()
+			updatedName := test.Faker.Person().Name()
 
 			result, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
 			Expect(err).ToNot(HaveOccurred())
@@ -383,7 +384,7 @@ var _ = Describe("Clinicians Service", func() {
 
 			result.Name = &updatedName
 			clinicianUpdate := &clinicians.ClinicianUpdate{
-				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
+				UpdatedBy:   test.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
 				Clinician:   *result,
@@ -405,7 +406,7 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(newClinician).ToNot(BeNil())
 
 			clinicianUpdate := &clinicians.ClinicianUpdate{
-				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
+				UpdatedBy:   test.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
 				Clinician: clinicians.Clinician{
@@ -431,7 +432,7 @@ var _ = Describe("Clinicians Service", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			clinicianUpdate := &clinicians.ClinicianUpdate{
-				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
+				UpdatedBy:   test.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
 				Clinician: clinicians.Clinician{
@@ -449,7 +450,7 @@ var _ = Describe("Clinicians Service", func() {
 
 		It("Prevents orphaning a clinic", func() {
 			clinicianUpdate := &clinicians.ClinicianUpdate{
-				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
+				UpdatedBy:   test.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
 				Clinician: clinicians.Clinician{
@@ -470,7 +471,7 @@ var _ = Describe("Clinicians Service", func() {
 		It("Updates the roles history", func() {
 			roles := []string{"CLINIC_ADMIN", "PRESCRIBER"}
 			clinicianUpdate := &clinicians.ClinicianUpdate{
-				UpdatedBy:   cliniciansTest.Faker.UUID().V4(),
+				UpdatedBy:   test.Faker.UUID().V4(),
 				ClinicId:    clinician.ClinicId.Hex(),
 				ClinicianId: *clinician.UserId,
 				Clinician: clinicians.Clinician{
@@ -520,8 +521,8 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Adds the user id to the clinic admins attribute of a clinic", func() {
-			userId := cliniciansTest.Faker.UUID().V4()
-			name := cliniciansTest.Faker.Person().Name()
+			userId := test.Faker.UUID().V4()
+			name := test.Faker.Person().Name()
 
 			association := clinicians.AssociateInvite{
 				ClinicId: clinic.Id.Hex(),

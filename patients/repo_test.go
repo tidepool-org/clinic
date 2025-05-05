@@ -8,12 +8,12 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
-	"github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -64,7 +64,7 @@ var _ = Describe("Patients Repository", func() {
 			Expect(result.InsertedIDs).To(HaveLen(count))
 			allPatientIds = result.InsertedIDs
 
-			randomPatient = documents[dbTest.Faker.IntBetween(0, count-1)].(patients.Patient)
+			randomPatient = documents[test.Faker.IntBetween(0, count-1)].(patients.Patient)
 			matchPatientFields = patientFieldsMatcher(randomPatient)
 		})
 

@@ -3,19 +3,15 @@ package test
 import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"math/rand"
+	"github.com/tidepool-org/clinic/test"
 	"time"
 
-	"github.com/jaswdr/faker"
-	"github.com/onsi/ginkgo/v2"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var (
-	Faker = faker.NewWithSeed(rand.NewSource(ginkgo.GinkgoRandomSeed()))
-)
+
 
 func strp(val string) *string {
 	return &val
@@ -34,34 +30,34 @@ func RandomClinics(count int) []*clinics.Clinic {
 }
 
 func RandomClinic() *clinics.Clinic {
-	shareCode := Faker.UUID().V4()
+	shareCode := test.Faker.UUID().V4()
 	shareCodes := []string{shareCode}
-	admins := []string{Faker.UUID().V4()}
+	admins := []string{test.Faker.UUID().V4()}
 	id := RandomObjectId()
 
 	clinic := clinics.NewClinicWithDefaults()
 	clinic.Id = &id
-	clinic.Address = strp(Faker.Address().Address())
-	clinic.City = strp(Faker.Address().City())
-	clinic.ClinicType = strp(Faker.RandomStringElement([]string{"Diabetes Clinic", "Hospital"}))
-	clinic.ClinicSize = strp(Faker.RandomStringElement([]string{"0-100", "100-1000"}))
-	clinic.Country = strp(Faker.Address().Country())
-	clinic.Name = strp(Faker.Company().Name())
+	clinic.Address = strp(test.Faker.Address().Address())
+	clinic.City = strp(test.Faker.Address().City())
+	clinic.ClinicType = strp(test.Faker.RandomStringElement([]string{"Diabetes Clinic", "Hospital"}))
+	clinic.ClinicSize = strp(test.Faker.RandomStringElement([]string{"0-100", "100-1000"}))
+	clinic.Country = strp(test.Faker.Address().Country())
+	clinic.Name = strp(test.Faker.Company().Name())
 	clinic.PatientTags = RandomTags(3)
-	clinic.PostalCode = strp(Faker.Address().PostCode())
-	clinic.State = strp(Faker.Address().State())
+	clinic.PostalCode = strp(test.Faker.Address().PostCode())
+	clinic.State = strp(test.Faker.Address().State())
 	clinic.CanonicalShareCode = strp(shareCode)
-	clinic.Website = strp(Faker.Internet().Domain())
+	clinic.Website = strp(test.Faker.Internet().Domain())
 	clinic.ShareCodes = &shareCodes
 	clinic.Admins = &admins
-	clinic.CreatedTime = Faker.Time().Time(time.Now())
-	clinic.UpdatedTime = Faker.Time().Time(time.Now())
+	clinic.CreatedTime = test.Faker.Time().Time(time.Now())
+	clinic.UpdatedTime = test.Faker.Time().Time(time.Now())
 	clinic.IsMigrated = false
 	clinic.EHRSettings = &clinics.EHRSettings{
 		Enabled:  true,
 		Provider: "xealth",
 		Facility: &clinics.EHRFacility{
-			Name: Faker.Company().Name(),
+			Name: test.Faker.Company().Name(),
 		},
 		ProcedureCodes: clinics.EHRProcedureCodes{
 			EnableSummaryReports:          strp("12345"),
@@ -69,7 +65,7 @@ func RandomClinic() *clinics.Clinic {
 			CreateAccount:                 strp("34567"),
 			CreateAccountAndEnableReports: strp("45678"),
 		},
-		SourceId: Faker.UUID().V4(),
+		SourceId: test.Faker.UUID().V4(),
 	}
 	return clinic
 }
@@ -79,9 +75,9 @@ func RandomTags(count int) []clinics.PatientTag {
 	tags := make([]clinics.PatientTag, count)
 	for i, _ := range tags {
 		id := RandomObjectId()
-		name := fmt.Sprintf("%.20s", Faker.Person().LastName())
+		name := fmt.Sprintf("%d %.20s", test.Faker.Company().EIN(), test.Faker.Company().Name())
 		for names.Contains(name) {
-			name = fmt.Sprintf("%.20s", Faker.Person().LastName())
+			name = fmt.Sprintf("%d %.20s", test.Faker.Company().EIN(), test.Faker.Company().Name())
 		}
 		names.Append(name)
 		tags[i].Id = &id
@@ -92,11 +88,11 @@ func RandomTags(count int) []clinics.PatientTag {
 }
 
 func RandomObjectId() primitive.ObjectID {
-	return primitive.NewObjectIDFromTimestamp(Faker.Time().TimeBetween(time.Now().Add(-time.Hour*24*365), time.Now()))
+	return primitive.NewObjectIDFromTimestamp(test.Faker.Time().TimeBetween(time.Now().Add(-time.Hour*24*365), time.Now()))
 }
 
 func RandomClinicCreate() *manager.CreateClinic {
-	userId := Faker.UUID().V4()
+	userId := test.Faker.UUID().V4()
 	clinic := RandomClinic()
 	clinic.Admins = nil
 	clinic.CanonicalShareCode = nil
@@ -114,7 +110,7 @@ func EnableXealth(clinic *clinics.Clinic, deployment string) *clinics.Clinic {
 		Enabled:  true,
 		Provider: "xealth",
 		Facility: &clinics.EHRFacility{
-			Name: Faker.Company().Name(),
+			Name: test.Faker.Company().Name(),
 		},
 		ProcedureCodes: clinics.EHRProcedureCodes{
 			EnableSummaryReports:          strp("12345"),

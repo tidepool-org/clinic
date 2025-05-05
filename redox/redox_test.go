@@ -281,8 +281,8 @@ var _ = Describe("Redox", func() {
 					Mrn:       &fixtureMrn,
 					BirthDate: &fixtureDateOfBirth,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient},
-					TotalCount: 1,
+					Patients:      []*patients.Patient{&patient},
+					MatchingCount: 1,
 				}, nil)
 
 				patientsService.EXPECT().UpdateEHRSubscription(
@@ -309,8 +309,8 @@ var _ = Describe("Redox", func() {
 					Mrn:       &fixtureMrn,
 					BirthDate: &fixtureDateOfBirth,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient, &second},
-					TotalCount: 2,
+					Patients:      []*patients.Patient{&patient, &second},
+					MatchingCount: 2,
 				}, nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
@@ -329,8 +329,8 @@ var _ = Describe("Redox", func() {
 					Mrn:       &fixtureMrn,
 					BirthDate: &fixtureDateOfBirth,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{},
-					TotalCount: 0,
+					Patients:      []*patients.Patient{},
+					MatchingCount: 0,
 				}, nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
@@ -371,8 +371,8 @@ var _ = Describe("Redox", func() {
 					ClinicId: &clinicId,
 					Mrn:      &fixtureMrn,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient, &patient},
-					TotalCount: 2,
+					Patients:      []*patients.Patient{&patient, &patient},
+					MatchingCount: 2,
 				}, nil)
 
 				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
@@ -380,8 +380,8 @@ var _ = Describe("Redox", func() {
 					BirthDate: &fixtureDateOfBirth,
 					FullName:  &fixtureFullName,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient},
-					TotalCount: 1,
+					Patients:      []*patients.Patient{&patient},
+					MatchingCount: 1,
 				}, nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
@@ -423,8 +423,8 @@ var _ = Describe("Redox", func() {
 					ClinicId: &clinicId,
 					Mrn:      &fixtureMrn,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient, &patient},
-					TotalCount: 2,
+					Patients:      []*patients.Patient{&patient, &patient},
+					MatchingCount: 2,
 				}, nil)
 
 				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
@@ -432,8 +432,8 @@ var _ = Describe("Redox", func() {
 					BirthDate: &fixtureDateOfBirth,
 					FullName:  &fixtureFullName,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient},
-					TotalCount: 1,
+					Patients:      []*patients.Patient{&patient},
+					MatchingCount: 1,
 				}, nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)

@@ -1,12 +1,13 @@
 package clinics_test
 
 import (
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/clinics/test"
+	"github.com/tidepool-org/clinic/test"
 )
 
 var _ = Describe("Clinics", func() {
@@ -116,7 +117,7 @@ var _ = Describe("Clinics", func() {
 		var random *clinics.Clinic
 
 		BeforeEach(func() {
-			list = test.RandomClinics(10)
+			list = clinicsTest.RandomClinics(10)
 			index = test.Faker.Generator.Intn(10)
 			random = list[index]
 		})

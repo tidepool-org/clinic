@@ -3,12 +3,11 @@ package test
 import (
 	"fmt"
 	"github.com/tidepool-org/go-common/clients/shoreline"
-	"math/rand"
 	"strings"
 	"time"
 
 	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -86,7 +85,7 @@ func RandomPermission() string {
 
 func RandomPermissions() patients.Permissions {
 	a := append([]string{}, permissions...)
-	rand.Shuffle(len(a), func(i, j int) { a[i], a[j] = a[j], a[i] })
+	test.Rand.Shuffle(len(a), func(i, j int) { a[i], a[j] = a[j], a[i] })
 	count := test.Faker.IntBetween(1, len(a))
 	a = a[:count]
 	permissions := patients.Permissions{}

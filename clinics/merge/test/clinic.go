@@ -1,14 +1,17 @@
 package test
 
 import (
+	"fmt"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"math/rand"
+	"time"
 )
 
 type Data struct {
@@ -23,59 +26,103 @@ type Data struct {
 }
 
 type Params struct {
-	PatientCount                 int
-	DuplicateAccountsCount       int
+	UniquePatientCount     int
+	DuplicateAccountsCount int
 	LikelyDuplicateAccountsCount int
 	NameOnlyMatchAccountsCount   int
 	MrnOnlyMatchAccountsCount    int
 }
 
 func RandomData(p Params) Data {
+	duplicateCount := p.DuplicateAccountsCount + p.LikelyDuplicateAccountsCount + p.NameOnlyMatchAccountsCount + p.MrnOnlyMatchAccountsCount
+	totalCount := 2 * p.UniquePatientCount + duplicateCount
+
+	unique := generateUniquePatients(totalCount)
+
 	source := *clinicsTest.RandomClinic()
 	sourceAdmin := cliniciansTest.RandomClinician()
 	sourceAdmin.ClinicId = source.Id
-	sourcePatients := make([]patients.Patient, p.PatientCount)
 
 	target := *clinicsTest.RandomClinic()
 	targetAdmin := cliniciansTest.RandomClinician()
 	targetAdmin.ClinicId = target.Id
-	targetPatients := make([]patients.Patient, p.PatientCount)
+
 	targetPatientsWithDuplicates := make(map[string]patients.Patient)
 
-	for i := 0; i < p.PatientCount; i++ {
-		sourcePatient := patientsTest.RandomPatient()
-		sourcePatient.ClinicId = source.Id
-		sourcePatient.Tags = randomTagIds(len(source.PatientTags)-1, source.PatientTags)
-		sourcePatients[i] = sourcePatient
+	var sourcePatients, targetPatients []patients.Patient
 
-		targetPatient := patientsTest.RandomPatient()
-		targetPatient.ClinicId = target.Id
-		targetPatient.Tags = randomTagIds(len(target.PatientTags)-1, target.PatientTags)
-		targetPatients[i] = targetPatient
+	unique, sourcePatients = removeTailElements(unique, p.UniquePatientCount)
+	for i := range sourcePatients {
+		sourcePatients[i].ClinicId = source.Id
+		sourcePatients[i].Tags = randomTagIds(len(source.PatientTags)-1, source.PatientTags)
+	}
+
+	unique, targetPatients = removeTailElements(unique, p.UniquePatientCount)
+	for i := range targetPatients {
+		targetPatients[i].ClinicId = target.Id
+		targetPatients[i].Tags = randomTagIds(len(target.PatientTags)-1, target.PatientTags)
 	}
 
 	i := 0
 	for j := 0; j < p.DuplicateAccountsCount; j++ {
-		targetPatient := duplicatePatientAccount(target.Id, sourcePatients[i])
+		sourcePatient := sourcePatients[i]
+		i++
+
+		var targetPatient patients.Patient
+		unique, targetPatient = removeTailElement(unique)
+		targetPatient.ClinicId = target.Id
 		targetPatient.Tags = randomTagIds(len(target.PatientTags)-1, target.PatientTags)
+
+		// Modify the unique patient to make it match the "Duplicate Account" criteria,
+		// and append it to the final list of patients
+		makeDuplicatePatientAccount(sourcePatient, &targetPatient)
+
 		targetPatients = append(targetPatients, targetPatient)
-		targetPatientsWithDuplicates[*sourcePatients[i].UserId] = targetPatient
-		i++
+		targetPatientsWithDuplicates[*sourcePatient.UserId] = targetPatient
 	}
+
 	for j := 0; j < p.LikelyDuplicateAccountsCount; j++ {
-		targetPatient := likelyDuplicatePatientAccount(target.Id, sourcePatients[i])
-		targetPatients = append(targetPatients, targetPatient)
+		sourcePatient := sourcePatients[i]
 		i++
+
+		var targetPatient patients.Patient
+		unique, targetPatient = removeTailElement(unique)
+		targetPatient.ClinicId = target.Id
+
+		// Modify the unique patient to make it match the "Likely Duplicate" criteria,
+		// and append it to the final list of patients for clustering
+		makeLikelyDuplicatePatientAccount(sourcePatient, &targetPatient)
+		targetPatients = append(targetPatients, targetPatient)
 	}
+
 	for j := 0; j < p.NameOnlyMatchAccountsCount; j++ {
-		targetPatient := nameOnlyMatchPatientAccount(target.Id, sourcePatients[i])
-		targetPatients = append(targetPatients, targetPatient)
+		sourcePatient := sourcePatients[i]
 		i++
+
+		var targetPatient patients.Patient
+		unique, targetPatient = removeTailElement(unique)
+		targetPatient.ClinicId = target.Id
+
+		// Modify the unique patient to make it match the "Name Only" criteria,
+		// and append it to the final list of patients for clustering
+		makeNameOnlyMatchPatientAccount(sourcePatient, &targetPatient)
+
+		targetPatients = append(targetPatients, targetPatient)
 	}
+
 	for j := 0; j < p.MrnOnlyMatchAccountsCount; j++ {
-		targetPatient := mrnOnlyMatchPatientAccount(target.Id, sourcePatients[i])
-		targetPatients = append(targetPatients, targetPatient)
+		sourcePatient := sourcePatients[i]
 		i++
+
+		var targetPatient patients.Patient
+		unique, targetPatient = removeTailElement(unique)
+		targetPatient.ClinicId = target.Id
+
+		// Modify the unique patient to make it match the "MRN Only" criteria,
+		// and append it to the final list of patients for clustering
+		makeMRNOnlyMatchPatientAccount(sourcePatient, &targetPatient)
+
+		targetPatients = append(targetPatients, targetPatient)
 	}
 
 	return Data{
@@ -95,7 +142,6 @@ type ClusterData struct {
 }
 
 type ClusterParams struct {
-	PatientCount                          int
 	ClusterCount                          int
 	InClusterLikelyDuplicateAccountsCount int
 	InClusterNameOnlyMatchAccountsCount   int
@@ -104,26 +150,45 @@ type ClusterParams struct {
 
 func RandomDataForClustering(c ClusterParams) ClusterData {
 	clinic := *clinicsTest.RandomClinic()
-	patientsList := make([]patients.Patient, c.PatientCount)
-	for i := 0; i < c.PatientCount; i++ {
-		patient := patientsTest.RandomPatient()
+	clusterSize := c.InClusterNameOnlyMatchAccountsCount + c.InClusterMRNOnlyMatchAccountsCount + c.InClusterLikelyDuplicateAccountsCount
+	uniqueCount := c.ClusterCount + c.ClusterCount * (clusterSize)
+
+	unique := generateUniquePatients(uniqueCount)
+	for _, patient := range unique {
 		patient.ClinicId = clinic.Id
-		patientsList[i] = patient
 	}
 
+	var patientsList []patients.Patient
+	unique, patientsList = removeTailElements(unique, c.ClusterCount)
+
 	for i := 0; i < c.ClusterCount; i++ {
-		last := patientsList[i]
+		patient := patientsList[i]
 		for j := 0; j < c.InClusterLikelyDuplicateAccountsCount; j++ {
-			last = likelyDuplicatePatientAccount(clinic.Id, last)
-			patientsList = append(patientsList, last)
+			var duplicate patients.Patient
+			unique, duplicate = removeTailElement(unique)
+
+			// Modify the unique patient to make it match the "Likely Duplicate" criteria
+			// and append it to the final list of patients for clustering
+			makeLikelyDuplicatePatientAccount(patient, &duplicate)
+			patientsList = append(patientsList, duplicate)
 		}
 		for j := 0; j < c.InClusterNameOnlyMatchAccountsCount; j++ {
-			last = nameOnlyMatchPatientAccount(clinic.Id, last)
-			patientsList = append(patientsList, last)
+			var duplicate patients.Patient
+			unique, duplicate = removeTailElement(unique)
+
+			// Modify the unique patient to make it match the "Name Only" criteria
+			// and append it to the final list of patients for clustering
+			makeNameOnlyMatchPatientAccount(patient, &duplicate)
+			patientsList = append(patientsList, duplicate)
 		}
 		for j := 0; j < c.InClusterMRNOnlyMatchAccountsCount; j++ {
-			last = mrnOnlyMatchPatientAccount(clinic.Id, last)
-			patientsList = append(patientsList, last)
+			var duplicate patients.Patient
+			unique, duplicate = removeTailElement(unique)
+
+			// Modify the unique patient to make it match the "MRN Only" criteria
+			// and append it to the final list of patients for clustering
+			makeMRNOnlyMatchPatientAccount(patient, &duplicate)
+			patientsList = append(patientsList, duplicate)
 		}
 	}
 
@@ -133,51 +198,37 @@ func RandomDataForClustering(c ClusterParams) ClusterData {
 	}
 }
 
-func duplicatePatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.UserId = patient.UserId
-	return duplicate
+func makeDuplicatePatientAccount(source patients.Patient, target *patients.Patient) {
+	target.UserId = cloneVal(source.UserId)
 }
 
-func mrnOnlyMatchPatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.Mrn = patient.Mrn
-	return duplicate
+func makeMRNOnlyMatchPatientAccount(source patients.Patient, target *patients.Patient) {
+	target.Mrn = cloneVal(source.Mrn)
 }
 
-func nameOnlyMatchPatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-	duplicate.FullName = patient.FullName
-	return duplicate
+func makeNameOnlyMatchPatientAccount(source patients.Patient, target *patients.Patient) {
+	target.FullName = cloneVal(source.FullName)
 }
 
-func likelyDuplicatePatientAccount(clinicId *primitive.ObjectID, patient patients.Patient) patients.Patient {
-	duplicate := patientsTest.RandomPatient()
-	duplicate.ClinicId = clinicId
-
-	r := rand.Intn(3)
+func makeLikelyDuplicatePatientAccount(source patients.Patient, target *patients.Patient) {
+	r := test.Rand.Intn(3)
 	if r == 0 {
-		duplicate.FullName = patient.FullName
-		duplicate.BirthDate = patient.BirthDate
+		target.FullName = cloneVal(source.FullName)
+		target.BirthDate = cloneVal(source.BirthDate)
 	} else if r == 1 {
-		duplicate.FullName = patient.FullName
-		duplicate.Mrn = patient.Mrn
+		target.FullName = cloneVal(source.FullName)
+		target.Mrn = cloneVal(source.Mrn)
 	} else if r == 2 {
-		duplicate.BirthDate = patient.BirthDate
-		duplicate.Mrn = patient.Mrn
+		target.BirthDate = cloneVal(source.BirthDate)
+		target.Mrn = cloneVal(source.Mrn)
 	}
-
-	return duplicate
 }
 
 func randomTagIds(count int, tags []clinics.PatientTag) *[]primitive.ObjectID {
 	if count > len(tags) {
 		count = len(tags)
 	}
-	rand.Shuffle(len(tags), func(i, j int) {
+	test.Rand.Shuffle(len(tags), func(i, j int) {
 		tags[i], tags[j] = tags[j], tags[i]
 	})
 	result := make([]primitive.ObjectID, count)
@@ -185,4 +236,54 @@ func randomTagIds(count int, tags []clinics.PatientTag) *[]primitive.ObjectID {
 		result[i] = *tags[i].Id
 	}
 	return &result
+}
+
+
+func generateUnique(generate func() string, count int) []string {
+	unique := mapset.NewSet[string]()
+	for i := 0; i < count; {
+		if unique.Add(generate()) {
+			i++
+		}
+	}
+	return unique.ToSlice()
+}
+
+func generateUniquePatients(count int) []patients.Patient {
+	uniqueBirthDates := generateUnique(func() string {
+		return test.Faker.Time().ISO8601(time.Now())[:10]
+	}, count)
+	uniqueMRNs := generateUnique(test.Faker.UUID().V4, count)
+	uniqueNames := generateUnique(test.Faker.Person().Name, count)
+	uniqueUserIDs := generateUnique(test.Faker.UUID().V4, count)
+
+	result := make([]patients.Patient, count)
+	for i := range result {
+		result[i] = patientsTest.RandomPatient()
+		result[i].BirthDate = &uniqueBirthDates[i]
+		result[i].FullName = &uniqueNames[i]
+		result[i].Mrn = &uniqueMRNs[i]
+		result[i].UserId = &uniqueUserIDs[i]
+	}
+	return result
+}
+
+func removeTailElement(pts []patients.Patient) ([]patients.Patient, patients.Patient) {
+	head, tail := removeTailElements(pts, 1)
+	return head, tail[0]
+}
+
+func removeTailElements(pts []patients.Patient, count int) ([]patients.Patient, []patients.Patient) {
+	if count > len(pts)  {
+		panic(fmt.Sprintf("cannot remove %d elements from a list with length %d", count, len(pts)))
+	}
+
+	tail := append(make([]patients.Patient, 0, count), pts[len(pts) - count:]...)
+	head := append(make([]patients.Patient, 0, len(pts) - count), pts[:len(pts) - count]...)
+	return head, tail
+}
+
+func cloneVal[T *S, S any](p T) T {
+	val := *p
+	return &val
 }

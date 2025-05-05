@@ -60,7 +60,14 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewPatientsResponseDto(list))
+	clinicPatientsCount, err := h.Patients.Count(ctx, &patients.Filter{
+		ClinicId:     strp(clinicId),
+	})
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientsResponseDto(list, clinicPatientsCount))
 }
 
 func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error {
