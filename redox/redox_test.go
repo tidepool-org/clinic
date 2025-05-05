@@ -152,8 +152,7 @@ var _ = Describe("Redox", func() {
 			clinic.Id = &clinicId
 
 			criteria = redox.ClinicMatchingCriteria{
-				SourceId:     clinic.EHRSettings.SourceId,
-				FacilityName: &clinic.EHRSettings.Facility.Name,
+				SourceId: clinic.EHRSettings.SourceId,
 			}
 		})
 
@@ -167,10 +166,9 @@ var _ = Describe("Redox", func() {
 		It("returns the matching clinic when only one clinic matches", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
-				EHRProvider:     &clinics.EHRProviderRedox,
-				EHREnabled:      &ehrEnabled,
-				EHRSourceId:     &criteria.SourceId,
-				EHRFacilityName: criteria.FacilityName,
+				EHRProvider: &clinics.EHRProviderRedox,
+				EHREnabled:  &ehrEnabled,
+				EHRSourceId: &criteria.SourceId,
 			}), gomock.Any()).Return([]*clinics.Clinic{clinic}, nil)
 
 			res, err := handler.FindMatchingClinic(context.Background(), criteria)
@@ -181,10 +179,9 @@ var _ = Describe("Redox", func() {
 		It("returns an error when multiple clinics match the criteria", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
-				EHRProvider:     &clinics.EHRProviderRedox,
-				EHREnabled:      &ehrEnabled,
-				EHRSourceId:     &criteria.SourceId,
-				EHRFacilityName: criteria.FacilityName,
+				EHRProvider: &clinics.EHRProviderRedox,
+				EHREnabled:  &ehrEnabled,
+				EHRSourceId: &criteria.SourceId,
 			}), gomock.Any()).Return([]*clinics.Clinic{clinic, clinicsTest.RandomClinic()}, nil)
 
 			res, err := handler.FindMatchingClinic(context.Background(), criteria)
@@ -195,10 +192,9 @@ var _ = Describe("Redox", func() {
 		It("returns an error when no clinics match the criteria", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
-				EHRProvider:     &clinics.EHRProviderRedox,
-				EHREnabled:      &ehrEnabled,
-				EHRSourceId:     &criteria.SourceId,
-				EHRFacilityName: criteria.FacilityName,
+				EHRProvider: &clinics.EHRProviderRedox,
+				EHREnabled:  &ehrEnabled,
+				EHRSourceId: &criteria.SourceId,
 			}), gomock.Any()).Return([]*clinics.Clinic{}, nil)
 
 			res, err := handler.FindMatchingClinic(context.Background(), criteria)
