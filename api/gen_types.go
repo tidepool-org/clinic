@@ -874,12 +874,6 @@ type EHRDestinationIds struct {
 	Results string `json:"results"`
 }
 
-// EHRFacility defines model for EHRFacility.
-type EHRFacility struct {
-	// Name Ordering Facility Name
-	Name string `json:"name"`
-}
-
 // EHRFlowsheetSettings defines model for EHRFlowsheetSettings.
 type EHRFlowsheetSettings struct {
 	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
@@ -944,7 +938,6 @@ type EHRSettings struct {
 
 	// Enabled Enable or disable the EHR integration
 	Enabled        bool                 `json:"enabled"`
-	Facility       *EHRFacility         `json:"facility,omitempty"`
 	Flowsheets     EHRFlowsheetSettings `json:"flowsheets"`
 	MrnIdType      string               `json:"mrnIdType"`
 	ProcedureCodes EHRProcedureCodes    `json:"procedureCodes"`
