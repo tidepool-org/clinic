@@ -3,18 +3,20 @@ package merge
 import (
 	"context"
 	"fmt"
+	"slices"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx"
-	"go.uber.org/zap"
-	"slices"
-	"time"
 )
 
 const (
@@ -198,25 +200,29 @@ func (m *ClinicMergePlanner) CliniciansMergePlan(ctx context.Context, source, ta
 
 func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics.Clinic) ([]patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
-	limit := 1000000
 
+	filter := patients.Filter{ClinicId: &clinicId}
+	// A randomly chosen patient record (with a summary) measures a little less than 10k
+	// bytes. The limit of a MongoDB Document is 16 MB. That means limit should be ≲
+	// 1600. Let's go with 1024; a nice power of 2.
+	limit := 1024
 	page := store.DefaultPagination().WithLimit(limit)
-	filter := patients.Filter{
-		ClinicId: &clinicId,
-	}
-	result, err := m.patients.List(ctx, &filter, page, nil)
-	if err != nil {
-		return nil, err
-	}
-	if result.TotalCount > limit {
-		return nil, fmt.Errorf("too many patients in clinic")
-	}
+	sort := []*store.Sort{{Attribute: "_id", Ascending: true}}
+	list := []patients.Patient{}
 
-	list := make([]patients.Patient, 0, len(result.Patients))
-	for _, p := range result.Patients {
-		list = append(list, *p)
+	for {
+		result, err := m.patients.List(ctx, &filter, page, sort)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range result.Patients {
+			list = append(list, *p)
+		}
+		if len(list) == result.TotalCount || len(result.Patients) == 0 {
+			break
+		}
+		page.Offset += len(result.Patients)
 	}
-
 	return list, nil
 }
 
