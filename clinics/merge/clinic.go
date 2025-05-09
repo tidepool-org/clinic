@@ -201,11 +201,8 @@ func (m *ClinicMergePlanner) CliniciansMergePlan(ctx context.Context, source, ta
 func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics.Clinic) ([]patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
 
-	filter := patients.Filter{ClinicId: &clinicId}
-	// A randomly chosen patient record (with a summary) measures a little less than 10k
-	// bytes. The limit of a MongoDB Document is 16 MB. That means limit should be ≲
-	// 1600. Let's go with 1024; a nice power of 2.
-	limit := 1024
+	filter := patients.Filter{ClinicId: &clinicId, ExcludeSummary: true}
+	limit := 100000 // When ExcludeSummary is set on the filter, this limit should be fine.
 	page := store.DefaultPagination().WithLimit(limit)
 	sort := []*store.Sort{{Attribute: "_id", Ascending: true}}
 	list := []patients.Patient{}
@@ -215,6 +212,7 @@ func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics
 		if err != nil {
 			return nil, err
 		}
+		list = slices.Grow(list, len(result.Patients))
 		for _, p := range result.Patients {
 			list = append(list, *p)
 		}
