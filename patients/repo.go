@@ -203,8 +203,11 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	// and the patients from a single query
 	pipeline := []bson.M{
 		{"$match": r.generateListFilterQuery(filter)},
-		{"$sort": generateListSortStage(sorts)},
 	}
+	if filter.ExcludeSummary {
+		pipeline = append(pipeline, bson.M{"$unset": "summary"})
+	}
+	pipeline = append(pipeline, bson.M{"$sort": generateListSortStage(sorts)})
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
 	hasFullNameSort := false
