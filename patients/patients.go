@@ -183,7 +183,8 @@ type Filter struct {
 	CGMTime SummaryDateFilters
 	BGMTime SummaryDateFilters
 
-	ExcludeDemo bool
+	ExcludeDemo    bool
+	ExcludeSummary bool
 }
 
 type Permission = map[string]interface{}
