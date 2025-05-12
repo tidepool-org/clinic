@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	errors2 "github.com/tidepool-org/clinic/errors"
 	"regexp"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/config"
+	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -204,8 +204,8 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	pipeline := []bson.M{
 		{"$match": r.generateListFilterQuery(filter)},
 	}
-	if filter.ExcludeSummary {
-		pipeline = append(pipeline, bson.M{"$unset": "summary"})
+	if filter.ExcludeSummaryExceptFieldsInMergeReports {
+		pipeline = append(pipeline, excludeSummaryExceptFieldsInMergeReports()...)
 	}
 	pipeline = append(pipeline, bson.M{"$sort": generateListSortStage(sorts)})
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
@@ -243,6 +243,25 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 
 	return &result, nil
+}
+
+// excludeSummaryExceptFieldsInMergeReports from a MongoDB aggregation pipeline.
+//
+// For when you don't want the entire summary to be included in the result, but the last
+// updated date is expected to be used when generating clinic merge reports.
+func excludeSummaryExceptFieldsInMergeReports() []bson.M {
+	out := []bson.M{}
+	out = append(out, bson.M{"$addFields": bson.M{
+		"__tmp_cgm__": "$summary.cgmStats.dates",
+		"__tmp_bgm__": "$summary.bgmStats.dates",
+	}})
+	out = append(out, bson.M{"$unset": "summary"})
+	out = append(out, bson.M{"$addFields": bson.M{
+		"summary.cgmStats.dates": "$__tmp_cgm__",
+		"summary.bgmStats.dates": "$__tmp_bgm__",
+	}})
+	out = append(out, bson.M{"$unset": []string{"__tmp_bgm__", "__tmp_cgm__"}})
+	return out
 }
 
 func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
@@ -596,9 +615,9 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	// Default update for initial connection requests
 	mongoUpdate := bson.M{
 		"$set": bson.M{
-			"updatedTime":                    currentTime,
-			"dataSources.$.expirationTime":   currentTime.Add(PendingDataSourceExpirationDuration),
-			"dataSources.$.state":            DataSourceStatePending,
+			"updatedTime":                  currentTime,
+			"dataSources.$.expirationTime": currentTime.Add(PendingDataSourceExpirationDuration),
+			"dataSources.$.state":          DataSourceStatePending,
 		},
 	}
 
@@ -606,10 +625,10 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	if providerDataSource.ModifiedTime != nil {
 		mongoUpdate = bson.M{
 			"$set": bson.M{
-				"updatedTime":                    currentTime,
-				"dataSources.$.expirationTime":   currentTime.Add(PendingDataSourceExpirationDuration),
-				"dataSources.$.modifiedTime":     currentTime,
-				"dataSources.$.state":            DataSourceStatePendingReconnect,
+				"updatedTime":                  currentTime,
+				"dataSources.$.expirationTime": currentTime.Add(PendingDataSourceExpirationDuration),
+				"dataSources.$.modifiedTime":   currentTime,
+				"dataSources.$.state":          DataSourceStatePendingReconnect,
 			},
 		}
 	}
