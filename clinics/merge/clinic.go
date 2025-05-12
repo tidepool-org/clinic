@@ -201,8 +201,22 @@ func (m *ClinicMergePlanner) CliniciansMergePlan(ctx context.Context, source, ta
 func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics.Clinic) ([]patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
 
-	filter := patients.Filter{ClinicId: &clinicId, ExcludeSummary: true}
-	limit := 100000 // When ExcludeSummary is set on the filter, this limit should be fine.
+	filter := patients.Filter{
+		ClinicId:                                 &clinicId,
+		ExcludeSummaryExceptFieldsInMergeReports: true,
+		ExcludeDemo:                              true,
+	}
+	// limit the number of patients to stay under MongoDB's pipeline stage limit (100 MB).
+	//
+	// Analysis of patient records (including those without summaries) indicates that using
+	// the ExcludeSummaryExceptFieldsInMergeReports flag above, then average patient records
+	// are around 591.9 B in size. 100 MB / 640 B == 156250, but to be extra conservative
+	// against future increases in this size, and because clinic users are more likely to
+	// have summaries than not, we'll set to the limit to 75000 patients.
+	//
+	// For the above analysis I used this query:
+	//   db.patients.aggregate([{$limit:200000},{$addFields:{__tmp_cgm__:"$summary.cgmStats.dates",__tmp_bgm__:"$summary.bgmStats.dates"}},{$unset:"summary"},{$addFields:{"summary.bgmStats.dates":"$__tmp_bgm__","summary.cgmStats.dates":"__tmp_cgm__"}},{$unset:["__tmp_cgm__","__tmp_bgm__"]}, {$replaceWith: { size: {$bsonSize: '$$ROOT'}} },{ $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$size' }, avg: { $avg: '$size' } } }, { $unset: '_id' } ])
+	limit := 75000
 	page := store.DefaultPagination().WithLimit(limit)
 	sort := []*store.Sort{{Attribute: "_id", Ascending: true}}
 	list := []patients.Patient{}
