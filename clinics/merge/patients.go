@@ -3,14 +3,16 @@ package merge
 import (
 	"context"
 	"fmt"
+	"time"
+
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/patients"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
-	"time"
+
+	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/patients"
 )
 
 const (
@@ -169,7 +171,6 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	mergeTargetPatients := map[string]struct{}{}
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))
 	for _, patient := range p.sourcePatients {
-		sanitizePatient(&patient)
 		plan := PatientPlan{
 			SourceClinicId:        p.source.Id,
 			SourceClinicName:      *p.source.Name,
@@ -190,7 +191,6 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				return nil, err
 			}
 
-			sanitizePatient(target)
 			if conflictCategory == PatientConflictCategoryDuplicateAccounts {
 				mergeTargetPatients[userId] = struct{}{}
 				plan.PatientAction = PatientActionMerge
@@ -233,7 +233,6 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	}
 
 	for _, patient := range p.targetPatients {
-		sanitizePatient(&patient)
 		plan := PatientPlan{
 			SourceClinicId:   p.source.Id,
 			SourceClinicName: *p.source.Name,
