@@ -107,6 +107,18 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 	t.targetPatients = data.TargetPatients
 	t.targetPatientsWithDuplicates = data.TargetPatientsWithDuplicates
 
+	summaryPlaceholder := &patients.Summary{
+		CGM: &patients.PatientCGMStats{
+			Config:        patients.PatientSummaryConfig{},
+			Dates:         patients.PatientSummaryDates{},
+			OffsetPeriods: patients.PatientCGMPeriods{},
+			Periods:       patients.PatientCGMPeriods{},
+			TotalHours:    0,
+		},
+	}
+	t.sourcePatients[0].Summary = summaryPlaceholder
+	t.targetPatients[0].Summary = summaryPlaceholder
+
 	t.source = createClinic(t.userService, t.clinicManager, data.Source, data.SourceAdmin)
 	t.target = createClinic(t.userService, t.clinicManager, data.Target, data.TargetAdmin)
 
@@ -158,6 +170,28 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 		var err error
 		t.plan, err = t.planner.Plan(context.Background())
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("doesn't remove patient summaries", func() {
+		// Summaries should only be removed just before persistence. Removing them too early
+		// might preclude information from them appearing in generated merge reports.
+		sourceFound := false
+		targetFound := false
+		for _, p := range t.plan.PatientPlans {
+			if p.SourcePatient != nil && p.SourcePatient.Summary != nil {
+				sourceFound = true
+				continue
+			}
+			if p.TargetPatient != nil && p.TargetPatient.Summary != nil {
+				targetFound = true
+				continue
+			}
+			if targetFound && sourceFound {
+				break
+			}
+		}
+		Expect(sourceFound).To(BeTrue())
+		Expect(targetFound).To(BeTrue())
 	})
 
 	It("successfully executes the plan", func() {

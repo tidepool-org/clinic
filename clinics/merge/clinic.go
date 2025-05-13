@@ -344,6 +344,12 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 			if err := ppe.Execute(ctx, p, plan.Source, plan.Target); err != nil {
 				return nil, err
 			}
+			if p.SourcePatient != nil {
+				sanitizePatient(p.SourcePatient)
+			}
+			if p.TargetPatient != nil {
+				sanitizePatient(p.TargetPatient)
+			}
 			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypePatient, p)); err != nil {
 				return nil, err
 			}
