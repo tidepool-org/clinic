@@ -619,6 +619,34 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 	return nil
 }
 
+func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return err
+	}
+	selector := bson.M{
+		"_id":   clinicOID,
+		"sites": bson.M{"$elemMatch": bson.M{"id": siteOID}},
+	}
+	update := bson.D{
+		{Key: "$set", Value: bson.M{"sites.$": site}},
+		{Key: "$currentDate", Value: bson.M{"updatedTime": true}},
+	}
+	res, err := c.collection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount != 1 {
+		return ErrNotFound
+	}
+	slog.Info("updated site from clinic", "id", clinicId, "site", siteId, "name", site.Name)
+	return nil
+}
+
 func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
 	if len(clinic.PatientTags) >= MaximumPatientTags {
 		return ErrMaximumPatientTagsExceeded

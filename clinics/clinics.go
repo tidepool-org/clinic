@@ -66,6 +66,7 @@ type Service interface {
 	CreateSite(ctx context.Context, clinicId string, site *sites.Site) error
 	ListSites(ctx context.Context, clinicId string) ([]sites.Site, error)
 	DeleteSite(ctx context.Context, clinicId, siteId string) error
+	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error
 }
 
 type Filter struct {

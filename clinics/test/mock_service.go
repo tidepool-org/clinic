@@ -378,6 +378,20 @@ func (mr *MockServiceMockRecorder) UpdatePatientTag(ctx, clinicId, tagId, tagNam
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientTag", reflect.TypeOf((*MockService)(nil).UpdatePatientTag), ctx, clinicId, tagId, tagName)
 }
 
+// UpdateSite mocks base method.
+func (m *MockService) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSite", ctx, clinicId, siteId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSite indicates an expected call of UpdateSite.
+func (mr *MockServiceMockRecorder) UpdateSite(ctx, clinicId, siteId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSite", reflect.TypeOf((*MockService)(nil).UpdateSite), ctx, clinicId, siteId, site)
+}
+
 // UpdateSuppressedNotifications mocks base method.
 func (m *MockService) UpdateSuppressedNotifications(ctx context.Context, clinicId string, suppressedNotifications clinics.SuppressedNotifications) error {
 	m.ctrl.T.Helper()

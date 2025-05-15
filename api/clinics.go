@@ -534,7 +534,7 @@ func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 	if err := ec.Bind(site); err != nil {
 		return errors.BadRequest
 	}
-	if err := h.Patients.UpdateSites(ctx, clinicId, siteId, site); err != nil {
+	if err := h.ClinicsManager.UpdateSite(ctx, clinicId, siteId, site); err != nil {
 		if stderrors.Is(err, mongo.ErrNoDocuments) {
 			return errors.NotFound
 		}

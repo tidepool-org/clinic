@@ -176,6 +176,8 @@ type Filter struct {
 	BirthDate    *string
 	FullName     *string
 	LastReviewed *time.Time
+	// Sites to which the patient must be tagged.
+	Sites *[]string
 
 	HasSubscription *bool
 	HasMRN          *bool

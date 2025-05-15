@@ -775,3 +775,16 @@ allow {
   input.path = ["v1", "clinics", _, "sites", _]
   clinician_has_write_access
 }
+
+# Allow backend services or clinic admins to update a site
+# PUT /v1/clinics/:clinicId/sites/:siteId
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "sites", _]
+  is_backend_service
+}
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "sites",_]
+  clinician_has_write_access
+}

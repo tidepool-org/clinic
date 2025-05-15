@@ -4,7 +4,6 @@ import (
 	"context"
 	errs "errors"
 	"fmt"
-	"log/slog"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
@@ -39,6 +38,7 @@ type Manager interface {
 	// exists, or if creating a new site would exceed the maximum number of sites.
 	CreateSite(_ context.Context, clinicId string, name string) error
 	DeleteSite(_ context.Context, clinicId string, name string) error
+	UpdateSite(_ context.Context, clinicId string, name string, site *sites.Site) error
 }
 
 type manager struct {
@@ -333,6 +333,32 @@ func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error
 	if err := c.clinics.DeleteSite(ctx, clinicId, siteId); err != nil {
 		return err
 	}
-	slog.Info("clinic manager", "clinic", clinicId, "site", siteId)
+	return nil
+}
+
+func (c *manager) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	tx := func(sessionCtx mongo.SessionContext) (any, error) {
+		return nil, c.updateSite(sessionCtx, clinicId, siteId, site)
+	}
+	_, err := store.WithTransaction(ctx, c.dbClient, tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// updateSite and ripple the changes to a clinic's patients.
+//
+// This should be run in a transaction to prevent races.
+func (c *manager) updateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	if err := c.clinics.UpdateSite(ctx, clinicId, siteId, site); err != nil {
+		return err
+	}
+	if err := c.patientsService.UpdateSites(ctx, clinicId, siteId, site); err != nil {
+		if errs.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound
+		}
+		return err
+	}
 	return nil
 }

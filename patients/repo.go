@@ -952,6 +952,12 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 		}
 	}
 
+	if filter.Sites != nil {
+		selector["sites"] = bson.M{
+			"$all": store.ObjectIDSFromStringArray(*filter.Sites),
+		}
+	}
+
 	if filter.LastReviewed != nil {
 		selector["reviews.0.time"] = bson.M{"$lte": filter.LastReviewed}
 	}
