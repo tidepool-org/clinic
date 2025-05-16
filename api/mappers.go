@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime/types"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/clinicians"
@@ -424,38 +423,6 @@ func NewReviewsDto(reviews []patients.Review) PatientReviews {
 		result[i] = NewReviewDto(reviews[i])
 	}
 	return result
-}
-
-func NewSitesDto(sites []sites.Site) Sites {
-	result := make(Sites, len(sites))
-	for i := range len(sites) {
-		result[i] = NewSiteDto(sites[i])
-	}
-	return result
-}
-
-func NewSites(s []Site) []sites.Site {
-	result := make([]sites.Site, len(s))
-	for i := range len(s) {
-		result[i] = NewSite(s[i])
-	}
-	return result
-}
-
-func NewSite(site Site) sites.Site {
-	oid, _ := primitive.ObjectIDFromHex(*site.Id)
-	return sites.Site{
-		Id:   oid,
-		Name: site.Name,
-	}
-}
-
-func NewSiteDto(site sites.Site) Site {
-	oid := site.Id.Hex()
-	return Site{
-		Id:   &oid,
-		Name: site.Name,
-	}
 }
 
 func NewReviews(reviews PatientReviews) []patients.Review {
@@ -1711,6 +1678,34 @@ func NewMatchOrderCriteria(criteria []EHRMatchRequestPatientsOptionsCriteria) ([
 	return result, nil
 }
 
-// func NewSite(s *Site) *sites.Site {
-// 	return sites.New(s.Name)
-// }
+func NewSitesDto(sites []sites.Site) Sites {
+	result := make(Sites, len(sites))
+	for i := range len(sites) {
+		result[i] = NewSiteDto(sites[i])
+	}
+	return result
+}
+
+func NewSiteDto(site sites.Site) Site {
+	oid := site.Id.Hex()
+	return Site{
+		Id:   &oid,
+		Name: site.Name,
+	}
+}
+
+func NewSites(s []Site) []sites.Site {
+	result := make([]sites.Site, len(s))
+	for i := range len(s) {
+		result[i] = NewSite(s[i])
+	}
+	return result
+}
+
+func NewSite(site Site) sites.Site {
+	oid, _ := primitive.ObjectIDFromHex(*site.Id)
+	return sites.Site{
+		Id:   oid,
+		Name: site.Name,
+	}
+}

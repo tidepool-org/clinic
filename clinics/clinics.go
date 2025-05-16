@@ -64,8 +64,8 @@ type Service interface {
 	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 	CreateSite(ctx context.Context, clinicId string, site *sites.Site) error
-	ListSites(ctx context.Context, clinicId string) ([]sites.Site, error)
 	DeleteSite(ctx context.Context, clinicId, siteId string) error
+	ListSites(ctx context.Context, clinicId string) ([]sites.Site, error)
 	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error
 }
 
@@ -82,7 +82,6 @@ type Filter struct {
 	ScheduledReportsOnUploadEnabled *bool
 }
 
-// Clinic is a thing.
 type Clinic struct {
 	Id                      *primitive.ObjectID      `bson:"_id,omitempty"`
 	Address                 *string                  `bson:"address,omitempty"`

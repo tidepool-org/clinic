@@ -37,8 +37,16 @@ type Manager interface {
 	// CreateSite is expected to return an error if a site with the given name already
 	// exists, or if creating a new site would exceed the maximum number of sites.
 	CreateSite(_ context.Context, clinicId string, name string) error
+	// DeleteSite within a clinic.
+	//
+	// The Site should be removed from the clinic and any patient records that include the
+	// site.
 	DeleteSite(_ context.Context, clinicId string, name string) error
-	UpdateSite(_ context.Context, clinicId string, name string, site *sites.Site) error
+	// UpdateSite within a clinic.
+	//
+	// Sites are denormalized over the clinics and patients collections. This function
+	// should handle maintaining that denormalization.
+	UpdateSite(_ context.Context, clinicId, siteId string, site *sites.Site) error
 }
 
 type manager struct {
@@ -290,10 +298,9 @@ func (c *manager) CreateSite(ctx context.Context, clinicId, name string) error {
 	return nil
 }
 
-// createSite creates a new site, after checking containts.
+// createSite after checking containts.
 //
-// This should be run in a transaction to prevent races when checking for existing sites and
-// creating new ones. See [CreateSite].
+// This should be run in a transaction to prevent races.
 func (c *manager) createSite(ctx context.Context, clinicId, name string) error {
 	clinic, err := c.clinics.Get(ctx, clinicId)
 	if err != nil {
@@ -312,6 +319,7 @@ func (c *manager) createSite(ctx context.Context, clinicId, name string) error {
 	return nil
 }
 
+// DeleteSite implements [Manager].
 func (c *manager) DeleteSite(ctx context.Context, clinicId, siteId string) error {
 	tx := func(sessionCtx mongo.SessionContext) (any, error) {
 		return nil, c.deleteSite(sessionCtx, clinicId, siteId)
@@ -323,7 +331,7 @@ func (c *manager) DeleteSite(ctx context.Context, clinicId, siteId string) error
 	return nil
 }
 
-// deleteSite deletes a site, and ripples the changes to a clinic's patients.
+// deleteSite and ripple the changes to a clinic's patients.
 //
 // This should be run in a transaction to prevent races.
 func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error {
@@ -336,6 +344,7 @@ func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error
 	return nil
 }
 
+// UpdateSite implements [Manager].
 func (c *manager) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
 	tx := func(sessionCtx mongo.SessionContext) (any, error) {
 		return nil, c.updateSite(sessionCtx, clinicId, siteId, site)

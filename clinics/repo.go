@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -578,16 +577,7 @@ func (c *repository) CreateSite(ctx context.Context, clinicId string, site *site
 		}
 		return err
 	}
-	slog.Info("created site", "clinicId", clinicId, "name", site.Name)
 	return nil
-}
-
-func (c *repository) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
-	clinic, err := c.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-	return clinic.Sites, nil
 }
 
 func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) error {
@@ -611,12 +601,18 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 	if err != nil {
 		return err
 	}
-	slog.Info("DeleteSite", "res", res)
 	if res.ModifiedCount != 1 {
 		return ErrNotFound
 	}
-	slog.Info("deleted site from clinic", "id", clinicId, "site", siteId)
 	return nil
+}
+
+func (c *repository) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
+	clinic, err := c.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	return clinic.Sites, nil
 }
 
 func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
@@ -643,7 +639,6 @@ func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, si
 	if res.ModifiedCount != 1 {
 		return ErrNotFound
 	}
-	slog.Info("updated site from clinic", "id", clinicId, "site", siteId, "name", site.Name)
 	return nil
 }
 

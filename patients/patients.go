@@ -69,8 +69,8 @@ type Service interface {
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 	RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error
-	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
 	DeleteSites(ctx context.Context, clinicId string, siteId string) error
+	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
 }
 
 type Patient struct {
@@ -176,7 +176,7 @@ type Filter struct {
 	BirthDate    *string
 	FullName     *string
 	LastReviewed *time.Time
-	// Sites to which the patient must be tagged.
+	// Sites to which the patient must be assigned to be included.
 	Sites *[]string
 
 	HasSubscription *bool

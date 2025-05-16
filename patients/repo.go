@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -1332,6 +1331,60 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	return &tide, nil
 }
 
+func (r *repository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return fmt.Errorf("parsing site's ObjectId: %w", err)
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"sites": bson.M{
+			"$elemMatch": bson.M{"id": siteOID},
+		},
+	}
+	update := bson.M{
+		"$pull": bson.M{"sites": bson.M{"id": siteOID}},
+		"$set":  bson.M{"updatedTime": time.Now()},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return fmt.Errorf("parsing ObjectId: %w", err)
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"sites": bson.M{
+			"$elemMatch": bson.M{
+				"id": siteOID,
+			},
+		},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"sites.$.name": site.Name,
+			"updatedTime":  time.Now(),
+		},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+	return nil
+}
+
 type RescheduleOrderPipelineParams struct {
 	clinicIds                []string
 	userId                   *string
@@ -1444,61 +1497,4 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 	)
 
 	return pipeline
-}
-
-func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
-	siteOID, err := primitive.ObjectIDFromHex(siteId)
-	if err != nil {
-		return fmt.Errorf("parsing ObjectId: %w", err)
-	}
-	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
-	if err != nil {
-		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
-	}
-	selector := bson.M{
-		"clinicId": clinicOID,
-		"sites": bson.M{
-			"$elemMatch": bson.M{
-				"id": siteOID,
-			},
-		},
-	}
-	update := bson.M{
-		"$set": bson.M{
-			"sites.$.name": site.Name,
-			"updatedTime":  time.Now(),
-		},
-	}
-	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *repository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
-	siteOID, err := primitive.ObjectIDFromHex(siteId)
-	if err != nil {
-		return fmt.Errorf("parsing site's ObjectId: %w", err)
-	}
-	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
-	if err != nil {
-		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
-	}
-	selector := bson.M{
-		"clinicId": clinicOID,
-		"sites": bson.M{
-			"$elemMatch": bson.M{"id": siteOID},
-		},
-	}
-	update := bson.M{
-		"$pull": bson.M{"sites": bson.M{"id": siteOID}},
-		"$set":  bson.M{"updatedTime": time.Now()},
-	}
-	slog.Info("delete sites in patients repo", "update", update)
-	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
-		slog.Info("error deleting sites: in patients repo updatemany", "error", err)
-		return err
-	}
-	slog.Info("patients service")
-	return nil
 }
