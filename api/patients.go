@@ -9,11 +9,12 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var defaultPeriod = "14d"
@@ -25,6 +26,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		ClinicId:     strp(string(clinicId)),
 		Search:       searchToString(params.Search),
 		Tags:         params.Tags,
+		Sites:        params.Sites,
 		LastReviewed: params.LastReviewed,
 	}
 
@@ -146,9 +148,9 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 	}
 
 	update := patients.PatientUpdate{
-		ClinicId:  clinicId,
-		UserId:    patientId,
-		Patient:   NewPatient(dto),
+		ClinicId: clinicId,
+		UserId:   patientId,
+		Patient:  NewPatient(dto),
 	}
 	patient, err := h.Patients.Update(ctx, update)
 	if err != nil {
@@ -314,7 +316,6 @@ func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId Cli
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
-
 
 	// We pass an empty request body as nil which will target all clinic patients for tag assignment
 	if ec.Request().Body == http.NoBody {

@@ -952,8 +952,18 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 	}
 
 	if filter.Sites != nil {
-		selector["sites"] = bson.M{
-			"$all": store.ObjectIDSFromStringArray(*filter.Sites),
+		ids := store.ObjectIDSFromStringArray(*filter.Sites)
+		if len(ids) > 0 {
+			selector["sites"] = bson.M{
+				"$elemMatch": bson.M{
+					"id": bson.M{"$in": ids},
+				},
+			}
+		} else {
+			selector["$or"] = []bson.M{
+				{"sites": bson.M{"$size": 0}},
+				{"sites": bson.M{"$exists": 0}},
+			}
 		}
 	}
 

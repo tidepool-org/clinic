@@ -2240,6 +2240,9 @@ type ListPatientsParams struct {
 
 	// Tags Comma-separated list of patient tag IDs
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+
+	// Sites Comma-separated list of clinic site IDs
+	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.
