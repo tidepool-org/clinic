@@ -2,14 +2,16 @@ package test
 
 import (
 	"fmt"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 	"math/rand"
 	"strings"
 	"time"
 
-	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/tidepool-org/clinic/patients"
+	sites "github.com/tidepool-org/clinic/sites"
+	"github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 var permissions = []string{"view", "upload", "note", "custodian"}
@@ -138,5 +140,14 @@ func setPermission(permissions *patients.Permissions, p string) {
 		permissions.Upload = &patients.Permission{}
 	case "custodian":
 		permissions.Custodian = &patients.Permission{}
+	}
+}
+
+func RandomSite() sites.Site {
+	id := primitive.NewObjectID()
+	name := test.Faker.Lorem().Word()
+	return sites.Site{
+		Name: name,
+		Id:   id,
 	}
 }

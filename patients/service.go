@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -73,6 +74,19 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 
 	if patient.UserId == nil {
 		return nil, errors.New("user id is missing")
+	}
+
+	if len(patient.Sites) > 0 {
+		clinicSites, err := s.clinics.ListSites(ctx, clinicId)
+		if err != nil {
+			return nil, err
+		}
+		for _, pSite := range patient.Sites {
+			if !slices.ContainsFunc(clinicSites, hasMatchingSite(pSite)) {
+				// TODO: log the non-existent site name for debugging
+				return nil, fmt.Errorf("clinic site doesn't exist: %w", ErrNotFound)
+			}
+		}
 	}
 
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
@@ -422,4 +436,8 @@ func deactiveAllSubscriptions(subscriptions EHRSubscriptions) EHRSubscriptions {
 		subscriptions[name] = sub
 	}
 	return subscriptions
+}
+
+func hasMatchingSite(pSite sites.Site) func(sites.Site) bool {
+	return func(cSite sites.Site) bool { return pSite.Name == cSite.Name }
 }

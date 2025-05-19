@@ -6,19 +6,21 @@ import (
 
 	"time"
 
-	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/sites"
 	clinicStoreTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.uber.org/zap"
 )
 
 func Ptr[T any](value T) *T {
@@ -397,6 +399,47 @@ var _ = Describe("Patients Service", func() {
 						})
 					})
 				})
+			})
+
+		})
+
+		When("a site is included", func() {
+			BeforeEach(func() {
+				clinicsService.EXPECT().
+					GetMRNSettings(gomock.Any(), gomock.Any()).
+					Return(&clinics.MRNSettings{Required: true}, nil)
+			})
+
+			It("accepts a valid site", func() {
+				site := patientsTest.RandomSite()
+				randomPatient.Sites = []sites.Site{site}
+				clinicsService.EXPECT().
+					UpdatePatientCount(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil)
+				repo.EXPECT().
+					Count(gomock.Any(), gomock.Any()).Return(1, nil)
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return([]sites.Site{site}, nil)
+				repo.EXPECT().
+					Create(gomock.Any(), gomock.Eq(randomPatient)).
+					Return(&randomPatient, nil)
+
+				got, err := service.Create(context.Background(), randomPatient)
+				Expect(err).To(Succeed())
+				Expect(got.Sites).To(HaveLen(1))
+				Expect(got.Sites[0].Name).To(Equal(site.Name))
+			})
+
+			It("requires that the site exist in the clinic", func() {
+				site := patientsTest.RandomSite()
+				randomPatient.Sites = []sites.Site{site}
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return([]sites.Site{}, nil)
+
+				_, err := service.Create(context.Background(), randomPatient)
+				Expect(err).To(MatchError(errors.NotFound))
 			})
 		})
 	})
