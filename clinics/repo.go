@@ -593,10 +593,12 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 		"_id":   clinicOID,
 		"sites": bson.M{"$elemMatch": bson.M{"id": siteOID}},
 	}
+
 	update := bson.M{
 		"$pull":        bson.M{"sites": bson.M{"id": siteOID}},
 		"$currentDate": bson.M{"updatedTime": true},
 	}
+
 	res, err := c.collection.UpdateOne(ctx, selector, update)
 	if err != nil {
 		return err

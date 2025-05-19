@@ -1344,11 +1344,11 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 func (r *repository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
 	siteOID, err := primitive.ObjectIDFromHex(siteId)
 	if err != nil {
-		return fmt.Errorf("parsing site's ObjectId: %w", err)
+		return fmt.Errorf("parsing site's ObjectId (%s): %w", siteId, err)
 	}
 	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
-		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+		return fmt.Errorf("parsing clinic's ObjectId (%s): %w", clinicId, err)
 	}
 	selector := bson.M{
 		"clinicId": clinicOID,

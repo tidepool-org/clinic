@@ -41,7 +41,7 @@ type Manager interface {
 	//
 	// The Site should be removed from the clinic and any patient records that include the
 	// site.
-	DeleteSite(_ context.Context, clinicId string, name string) error
+	DeleteSite(_ context.Context, clinicId string, siteId string) error
 	// UpdateSite within a clinic.
 	//
 	// Sites are denormalized over the clinics and patients collections. This function
