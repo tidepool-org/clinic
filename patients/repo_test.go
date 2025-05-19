@@ -11,17 +11,18 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx/fxtest"
-	"go.uber.org/zap"
 )
 
 var DemoPatientId = "demo"
@@ -1563,6 +1564,6 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
 		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
-		"Sites":                          Ignore(),
+		"Sites":                          Equal(patient.Sites),
 	})
 }

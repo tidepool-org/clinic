@@ -84,7 +84,7 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 		for _, pSite := range patient.Sites {
 			if !slices.ContainsFunc(clinicSites, hasMatchingSite(pSite)) {
 				// TODO: log the non-existent site name for debugging
-				return nil, fmt.Errorf("clinic site doesn't exist: %w", ErrNotFound)
+				return nil, clinics.ErrSiteNotFound
 			}
 		}
 	}
@@ -121,6 +121,19 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		}
 		if err = s.custodialService.UpdateAccount(ctx, update.Patient); err != nil {
 			return nil, err
+		}
+	}
+
+	if len(update.Patient.Sites) > 0 {
+		clinicSites, err := s.clinics.ListSites(ctx, update.ClinicId)
+		if err != nil {
+			return nil, err
+		}
+		for _, pSite := range update.Patient.Sites {
+			if !slices.ContainsFunc(clinicSites, hasMatchingSite(pSite)) {
+				// TODO: log the non-existent site name for debugging
+				return nil, clinics.ErrSiteNotFound
+			}
 		}
 	}
 

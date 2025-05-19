@@ -3,6 +3,7 @@ package patients_test
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"time"
 
@@ -71,6 +72,7 @@ var _ = Describe("Patients Service", func() {
 			randomPatient.Permissions = &patients.Permissions{
 				Upload: &patients.Permission{},
 			}
+			randomPatient.Sites = []sites.Site{}
 
 			matchPatientFields = patientFieldsMatcher(randomPatient)
 		})
@@ -439,7 +441,7 @@ var _ = Describe("Patients Service", func() {
 					Return([]sites.Site{}, nil)
 
 				_, err := service.Create(context.Background(), randomPatient)
-				Expect(err).To(MatchError(errors.NotFound))
+				Expect(err).To(MatchError(clinics.ErrSiteNotFound))
 			})
 		})
 	})
@@ -554,7 +556,7 @@ var _ = Describe("Patients Service", func() {
 
 			It("deactivates subscriptions if patients mrn has changed", func() {
 				repo.EXPECT().
-					Update(gomock.Any(), gomock.All(test.Match[patients.PatientUpdate](func(update patients.PatientUpdate) bool {
+					Update(gomock.Any(), gomock.All(test.Match(func(update patients.PatientUpdate) bool {
 						if len(update.Patient.EHRSubscriptions) == 0 {
 							return false
 						}
@@ -569,6 +571,46 @@ var _ = Describe("Patients Service", func() {
 				updatedPatient, err := service.Update(context.Background(), update)
 				Expect(err).To(BeNil())
 				Expect(updatedPatient).ToNot(BeNil())
+			})
+		})
+
+		When("a site is added", func() {
+			BeforeEach(func() {
+				repo.
+					EXPECT().
+					Get(gomock.Any(), gomock.Eq(update.ClinicId), gomock.Eq(update.UserId)).
+					Return(&update.Patient, nil)
+				clinicsService.
+					EXPECT().
+					GetMRNSettings(gomock.Any(), gomock.Eq(update.ClinicId)).
+					Return(nil, nil)
+			})
+
+			It("accepts a valid site", func() {
+				sites := []sites.Site{patientsTest.RandomSite()}
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return(sites, nil)
+				update.Patient.Sites = sites
+				repo.EXPECT().
+					Update(gomock.Any(), gomock.Cond(patientSitesMatch(sites))).
+					Return(&update.Patient, nil)
+
+				got, err := service.Update(context.Background(), update)
+				Expect(err).To(Succeed())
+				Expect(got.Sites).To(HaveLen(1))
+				Expect(got.Sites[0].Name).To(Equal(sites[0].Name))
+			})
+
+			It("requires that the site exist in the clinic", func() {
+				sites := []sites.Site{patientsTest.RandomSite()}
+				update.Patient.Sites = sites
+				clinicsService.EXPECT().
+					ListSites(gomock.Any(), gomock.Any()).
+					Return(nil, nil)
+
+				_, err := service.Update(context.Background(), update)
+				Expect(err).To(MatchError(clinics.ErrSiteNotFound))
 			})
 		})
 	})
@@ -840,3 +882,16 @@ var _ = Describe("Patients Service", func() {
 		})
 	})
 })
+
+func patientSitesMatch(expectedSites []sites.Site) func(patients.PatientUpdate) bool {
+	return func(u patients.PatientUpdate) bool {
+		for _, site := range u.Patient.Sites {
+			if !slices.ContainsFunc(expectedSites, func(s sites.Site) bool {
+				return s.Name == site.Name && s.Id.Hex() == site.Id.Hex()
+			}) {
+				return false
+			}
+		}
+		return true
+	}
+}
