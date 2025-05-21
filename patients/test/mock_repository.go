@@ -189,6 +189,20 @@ func (mr *MockRepositoryMockRecorder) DeleteReview(ctx, clinicId, clinicianId, u
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReview", reflect.TypeOf((*MockRepository)(nil).DeleteReview), ctx, clinicId, clinicianId, userId)
 }
 
+// DeleteSummaryInAllClinics mocks base method.
+func (m *MockRepository) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSummaryInAllClinics", ctx, summaryId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSummaryInAllClinics indicates an expected call of DeleteSummaryInAllClinics.
+func (mr *MockRepositoryMockRecorder) DeleteSummaryInAllClinics(ctx, summaryId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSummaryInAllClinics", reflect.TypeOf((*MockRepository)(nil).DeleteSummaryInAllClinics), ctx, summaryId)
+}
+
 // Get mocks base method.
 func (m *MockRepository) Get(ctx context.Context, clinicId, userId string) (*patients.Patient, error) {
 	m.ctrl.T.Helper()

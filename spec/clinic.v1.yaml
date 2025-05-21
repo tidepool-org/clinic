@@ -1651,6 +1651,21 @@ paths:
             schema:
               $ref: '#/components/schemas/PatientSummary'
         description: ''
+  '/v1/summaries/{summaryId}/clinics':
+    parameters:
+      - $ref: '#/components/parameters/summaryId'
+    delete:
+      summary: DeletePatientSummary
+      operationId: DeletePatientSummary
+      responses:
+        '200':
+          description: OK
+        '204':
+          description: No Change
+      description: Internal endpoint which deletes the summary in all patient records which match the summary id.
+      tags:
+        - Clinics
+        - Internal
   '/v1/patients/{userId}/data_sources':
     parameters:
       - $ref: '#/components/parameters/userId'
@@ -2190,7 +2205,7 @@ paths:
       - $ref: '#/components/parameters/patientId'
       - $ref: '#/components/parameters/providerId'
     post:
-      summary: ''
+      summary: Connect Provider
       operationId: ConnectProvider
       responses:
         '204':
@@ -3834,6 +3849,8 @@ components:
       title: bgmstats.v1
       description: A summary of a users recent BGM glucose values
       properties:
+        id:
+          $ref: '#/components/schemas/summaryId.v1'
         config:
           $ref: '#/components/schemas/PatientSummaryConfig'
         dates:
@@ -4309,6 +4326,8 @@ components:
       title: cgmstats.v1
       description: A summary of a users recent CGM glucose values
       properties:
+        id:
+          $ref: '#/components/schemas/summaryId.v1'
         config:
           $ref: '#/components/schemas/PatientSummaryConfig'
         dates:
@@ -4323,6 +4342,15 @@ components:
           $ref: '#/components/schemas/PatientCGMPeriods'
       required:
         - totalHours
+    summaryId.v1:
+      title: Summary ID
+      description: Summary Unique Identifier
+      type: string
+      minLength: 24
+      maxLength: 24
+      pattern: '^[a-f0-9]{24}$'
+      readOnly: true
+      example: 2fe2488217ee43e1b2e83c2f
     PatientSummaryConfig:
       type: object
       title: config.v1
@@ -4971,6 +4999,12 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/TidepoolUserId'
+    summaryId:
+      name: summaryId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/summaryId.v1'
     inviteId:
       name: inviteId
       in: path
