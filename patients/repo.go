@@ -960,6 +960,8 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 				},
 			}
 		} else {
+			// filter.Sites wasn't nil, but the values provided were not ObjectIDs, which
+			// indicates a search for patients WITHOUT any sites assigned.
 			selector["$or"] = []bson.M{
 				{"sites": bson.M{"$size": 0}},
 				{"sites": bson.M{"$exists": 0}},
