@@ -22,6 +22,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 )
@@ -1284,7 +1285,7 @@ var _ = Describe("Patients Repository", func() {
 
 				// existing sites match no patients
 				p := allPatients[0]
-				existingSite := patientsTest.RandomSite()
+				existingSite := sitesTest.Random()
 				p.Sites = []sites.Site{existingSite}
 				update := patients.PatientUpdate{
 					ClinicId: p.ClinicId.Hex(),
@@ -1302,7 +1303,7 @@ var _ = Describe("Patients Repository", func() {
 				Expect(*result2.Patients[0].UserId).To(Equal(*got.UserId))
 
 				// multiple sites are OR-ed
-				newSites := []string{(*filter.Sites)[0], patientsTest.RandomSite().Id.Hex()}
+				newSites := []string{(*filter.Sites)[0], sitesTest.Random().Id.Hex()}
 				filter.Sites = &newSites
 				result3, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
 				Expect(err).To(Succeed())
@@ -1612,7 +1613,7 @@ var _ = Describe("Patients Repository", func() {
 				clinicId := randomPatient.ClinicId.Hex()
 				userId := *randomPatient.UserId
 				patientWithSites = randomPatient
-				patientWithSites.Sites = []sites.Site{patientsTest.RandomSite()}
+				patientWithSites.Sites = sitesTest.RandomSlice(1)
 				update := patients.PatientUpdate{
 					ClinicId: clinicId,
 					UserId:   userId,
@@ -1644,7 +1645,7 @@ var _ = Describe("Patients Repository", func() {
 				clinicId := randomPatient.ClinicId.Hex()
 				userId := *randomPatient.UserId
 				patientWithSites = randomPatient
-				patientWithSites.Sites = []sites.Site{patientsTest.RandomSite()}
+				patientWithSites.Sites = sitesTest.RandomSlice(1)
 				update := patients.PatientUpdate{
 					ClinicId: clinicId,
 					UserId:   userId,

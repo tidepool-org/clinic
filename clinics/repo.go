@@ -565,6 +565,7 @@ func (c *repository) CreateSite(ctx context.Context, clinicId string, site *site
 	if err != nil {
 		return err
 	}
+	// TODO: validate that the site's id exists
 	selector := bson.M{"_id": id}
 	update := bson.M{
 		"$push":        bson.M{"sites": site},

@@ -20,6 +20,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	clinicStoreTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
 )
@@ -413,7 +414,7 @@ var _ = Describe("Patients Service", func() {
 			})
 
 			It("accepts a valid site", func() {
-				site := patientsTest.RandomSite()
+				site := sitesTest.Random()
 				randomPatient.Sites = []sites.Site{site}
 				clinicsService.EXPECT().
 					UpdatePatientCount(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -434,7 +435,7 @@ var _ = Describe("Patients Service", func() {
 			})
 
 			It("requires that the site exist in the clinic", func() {
-				site := patientsTest.RandomSite()
+				site := sitesTest.Random()
 				randomPatient.Sites = []sites.Site{site}
 				clinicsService.EXPECT().
 					ListSites(gomock.Any(), gomock.Any()).
@@ -587,7 +588,7 @@ var _ = Describe("Patients Service", func() {
 			})
 
 			It("accepts a valid site", func() {
-				sites := []sites.Site{patientsTest.RandomSite()}
+				sites := sitesTest.RandomSlice(1)
 				clinicsService.EXPECT().
 					ListSites(gomock.Any(), gomock.Any()).
 					Return(sites, nil)
@@ -603,7 +604,7 @@ var _ = Describe("Patients Service", func() {
 			})
 
 			It("requires that the site exist in the clinic", func() {
-				sites := []sites.Site{patientsTest.RandomSite()}
+				sites := sitesTest.RandomSlice(1)
 				update.Patient.Sites = sites
 				clinicsService.EXPECT().
 					ListSites(gomock.Any(), gomock.Any()).

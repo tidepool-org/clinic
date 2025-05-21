@@ -4,6 +4,7 @@ package sites
 // physical or logical location to ease the management of patient lists.
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
@@ -14,6 +15,10 @@ import (
 type Site struct {
 	Id   primitive.ObjectID `bson:"id,omitempty" json:"id"`
 	Name string             `bson:"name,omitempty" json:"name"`
+}
+
+func (s Site) String() string {
+	return fmt.Sprintf("{Id:%s Name:%s}", s.Id.Hex(), s.Name)
 }
 
 func SiteExistsWithName(sites []Site, name string) bool {

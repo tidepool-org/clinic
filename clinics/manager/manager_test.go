@@ -10,6 +10,8 @@ import (
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinicians"
@@ -18,16 +20,13 @@ import (
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/go-common/clients/shoreline"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx/fxtest"
-
-	"github.com/tidepool-org/clinic/patients"
 )
 
 func Ptr[T any](value T) *T {
@@ -534,8 +533,8 @@ func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *c
 		testClinician.ClinicId = testClinic.Id
 	}
 
-	existingSite := patientsTest.RandomSite()
-	if err := mngr.CreateSite(ctx, testClinic.Id.Hex(), existingSite.Name); err != nil {
+	preCreatedSite := sitesTest.Random()
+	if err := mngr.CreateSite(ctx, testClinic.Id.Hex(), preCreatedSite.Name); err != nil {
 		t.Fatalf("failed to create pre-existing clinic site: %s", err)
 	}
 	testClinic, err = clinicsRepo.Get(ctx, testClinic.Id.Hex())
@@ -543,7 +542,10 @@ func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *c
 		t.Fatalf("failed to reload clinic (to pick up pre-existing site): %s", err)
 	}
 
-	site := patientsTest.RandomSite()
+	site := sitesTest.Random()
+	for site.Name == preCreatedSite.Name {
+		site = sitesTest.Random()
+	}
 
 	return ctx, mngr, &createSiteTestHelper{
 		Clinician:    testClinician,
