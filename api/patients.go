@@ -146,9 +146,9 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 	}
 
 	update := patients.PatientUpdate{
-		ClinicId:  clinicId,
-		UserId:    patientId,
-		Patient:   NewPatient(dto),
+		ClinicId: clinicId,
+		UserId:   patientId,
+		Patient:  NewPatient(dto),
 	}
 	patient, err := h.Patients.Update(ctx, update)
 	if err != nil {
@@ -275,6 +275,16 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 	return ec.NoContent(http.StatusOK)
 }
 
+func (h *Handler) DeletePatientSummary(ec echo.Context, summaryId SummaryId) error {
+	ctx := ec.Request().Context()
+	err := h.Patients.DeleteSummaryInAllClinics(ctx, summaryId)
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
 func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideReportParams) error {
 	ctx := ec.Request().Context()
 	tide, err := h.Patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
@@ -314,7 +324,6 @@ func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId Cli
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
-
 
 	// We pass an empty request body as nil which will target all clinic patients for tag assignment
 	if ec.Request().Body == http.NoBody {
