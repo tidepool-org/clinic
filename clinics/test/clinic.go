@@ -2,15 +2,16 @@ package test
 
 import (
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
 	"math/rand"
 	"time"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/jaswdr/faker"
 	"github.com/onsi/ginkgo/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -27,7 +28,7 @@ func RandomClinics(count int) []*clinics.Clinic {
 	}
 
 	clinics := make([]*clinics.Clinic, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		clinics[i] = RandomClinic()
 	}
 	return clinics
@@ -77,7 +78,7 @@ func RandomClinic() *clinics.Clinic {
 func RandomTags(count int) []clinics.PatientTag {
 	names := mapset.NewSet[string]()
 	tags := make([]clinics.PatientTag, count)
-	for i, _ := range tags {
+	for i := range tags {
 		id := RandomObjectId()
 		name := fmt.Sprintf("%.20s", Faker.Person().LastName())
 		for names.Contains(name) {

@@ -197,7 +197,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				plan.TargetPatient = target
 				plan.TargetTagNames = getUniquePatientTagNames(*target, p.targetTags)
 
-				uniqueTags := mapset.NewSet[string](plan.SourceTagNames...)
+				uniqueTags := mapset.NewSet(plan.SourceTagNames...)
 				uniqueTags.Append(plan.TargetTagNames...)
 				plan.PostMigrationTagNames = uniqueTags.ToSlice()
 			}

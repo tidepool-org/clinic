@@ -1,14 +1,16 @@
 package test
 
 import (
+	"math/rand"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"math/rand"
 )
 
 type Data struct {
