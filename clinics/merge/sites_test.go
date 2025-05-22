@@ -2,7 +2,6 @@ package merge_test
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -50,7 +49,7 @@ var _ = Describe("Sites", func() {
 				expectedWorkspaces := []string{*source.Name}
 				expectedSiteAction := merge.SiteActionCreate
 				if isDuplicate {
-					expectedSiteAction = merge.SiteActionSkip
+					expectedSiteAction = merge.SiteActionRename
 					expectedWorkspaces = append(expectedWorkspaces, *target.Name)
 				}
 
@@ -97,8 +96,13 @@ var _ = Describe("Sites", func() {
 		var clinicsCtrl *gomock.Controller
 
 		BeforeEach(func() {
-			site := sitesTest.Random()
-			source.Sites = append(source.Sites, site)
+			nSites := len(source.Sites)
+			for len(source.Sites) < nSites+3 {
+				rSite := sitesTest.Random()
+				if !sites.SiteExistsWithName(source.Sites, rSite.Name) {
+					source.Sites = append(source.Sites, rSite)
+				}
+			}
 
 			for _, site := range source.Sites {
 				planner := merge.NewSourceSiteMergePlanner(site, source, target)
@@ -115,6 +119,7 @@ var _ = Describe("Sites", func() {
 
 			clinicsCtrl = gomock.NewController(GinkgoT())
 			clinicsService = clinicsTest.NewMockService(clinicsCtrl)
+			// zap.Must(zap.NewDevelopment()).Sugar()
 			executor = merge.NewSitePlanExecutor(zap.NewNop().Sugar(), clinicsService)
 		})
 
@@ -122,17 +127,50 @@ var _ = Describe("Sites", func() {
 			clinicsCtrl.Finish()
 		})
 
-		It("creates a site in the target clinic for all non-overlapping sites", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
-			defer cancel()
-
-			created := 0
+		It("increments the suffix on duplicate sites", func() {
+			targetID := target.Id.Hex()
+			GinkgoT().Logf("sourceID is %s; targetID is %s", source.Id.Hex(), targetID)
+			GinkgoT().Logf("source has these sites: %+v", source.Sites)
 			for _, site := range source.Sites {
-				if _, ok := duplicateSites[site.Name]; ok {
-					continue
+				if _, found := duplicateSites[site.Name]; found {
+					clinicsService.EXPECT().ListSites(gomock.Any(), targetID).
+						Return(target.Sites, nil)
+					clinicsService.EXPECT().CreateSite(gomock.Any(), targetID, incrementedSiteMatcher(site)).
+						Return(nil)
+				} else {
+					clinicsService.EXPECT().CreateSite(gomock.Any(), targetID, siteMatcher(site)).
+						Return(nil)
 				}
-				clinicsService.EXPECT().CreateSite(gomock.Any(), target.Id.Hex(), siteMatcher(site))
-				created++
+			}
+			ctx := context.Background()
+			var errs []error
+			for _, plan := range plans {
+				if err := executor.Execute(ctx, plan); err != nil {
+					errs = append(errs, err)
+				}
+			}
+			Expect(errs).To(BeEmpty())
+		})
+
+		It("creates a site in the target clinic for all non-overlapping sites", func() {
+			ctx := context.Background()
+			GinkgoT().Logf("sourceID is %s; targetID is %s", source.Id.Hex(), target.Id.Hex())
+			GinkgoT().Logf("source has these sites: %+v", source.Sites)
+			created := 0
+			targetID := target.Id.Hex()
+			for _, site := range source.Sites {
+				if _, found := duplicateSites[site.Name]; found {
+					clinicsService.EXPECT().ListSites(gomock.Any(), targetID).
+						Return(target.Sites, nil)
+					clinicsService.EXPECT().CreateSite(gomock.Any(), targetID, incrementedSiteMatcher(site)).
+						Return(nil)
+					GinkgoT().Logf("duplicate site will be incremented %s", site)
+				} else {
+					clinicsService.EXPECT().CreateSite(gomock.Any(), targetID, siteMatcher(site)).
+						Return(nil)
+					GinkgoT().Logf("will create site %s", site)
+					created++
+				}
 			}
 
 			var errs []error
@@ -143,13 +181,17 @@ var _ = Describe("Sites", func() {
 			}
 			Expect(errs).To(BeEmpty())
 
-			Expect(created > 0).To(BeTrue())
+			Expect(created).To(Equal(len(source.Sites) - len(duplicateSites)))
 		})
 	})
 })
 
 func siteMatcher(toMatch sites.Site) gomock.Matcher {
 	return &condSiteMatcher{name: toMatch.Name}
+}
+
+func incrementedSiteMatcher(toMatch sites.Site) gomock.Matcher {
+	return &condSiteMatcher{name: toMatch.Name + " (2)"}
 }
 
 type condSiteMatcher struct {

@@ -3,7 +3,9 @@ package merge
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
+	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -18,6 +20,7 @@ const (
 	SiteActionSkip   SiteAction = "SKIP"
 	SiteActionCreate SiteAction = "CREATE"
 	SiteActionRetain SiteAction = "RETAIN"
+	SiteActionRename SiteAction = "RENAME"
 )
 
 type SitePlan struct {
@@ -98,8 +101,7 @@ func (t *SourceSiteMergePlanner) Plan(ctx context.Context) (SitePlan, error) {
 
 	for _, targetSite := range t.target.Sites {
 		if targetSite.Name == t.site.Name {
-			// Site already exists in target workspace, do nothing
-			plan.SiteAction = SiteActionSkip
+			plan.SiteAction = SiteActionRename
 			plan.Workspaces = append(plan.Workspaces, *t.target.Name)
 			sort.Strings(plan.Workspaces)
 			break
@@ -160,16 +162,57 @@ func NewSitePlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Servi
 }
 
 func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
-	if plan.SiteAction == SiteActionSkip || plan.SiteAction == SiteActionRetain {
+	switch plan.SiteAction {
+	case SiteActionRetain, SiteActionSkip:
 		t.logger.Debugw("skipping site", "plan", plan)
-		return nil
-	} else if plan.SiteAction == SiteActionCreate {
+	case SiteActionCreate:
+		t.logger.Debugw("creating target site", "plan", plan.Name(), "site", plan.Site)
 		err := t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
 		if err != nil {
 			return err
 		}
-		return nil
-	} else {
+	case SiteActionRename:
+		targetSites, err := t.clinicsService.ListSites(ctx, plan.TargetClinicId.Hex())
+		if err != nil {
+			return fmt.Errorf("unable to list target clinic sites for site %s: %s", plan.Name(), err)
+		}
+		proposedName := plan.Site.Name
+		for sites.SiteExistsWithName(targetSites, proposedName) {
+			incremented, err := incNumericSuffix(plan.Site)
+			if err != nil {
+				return err
+			}
+			proposedName = incremented
+		}
+		if proposedName == plan.Site.Name {
+			t.logger.Debugw("a site marked RENAME didn't need it; strange", "plan", plan)
+			return nil
+		}
+		plan.Site.Name = proposedName
+		t.logger.Debugw("creating target site", "plan", plan.Name(), "site", plan.Site)
+		err = t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
+		if err != nil {
+			return err
+		}
+	default:
 		return fmt.Errorf("unexpected site plan action %v for site %s", plan.SiteAction, plan.Name())
 	}
+	return nil
+}
+
+var siteNameSuffix = regexp.MustCompile(` \((\d+)\)$`)
+
+func incNumericSuffix(s sites.Site) (string, error) {
+	matches := siteNameSuffix.FindStringSubmatch(s.Name)
+	if len(matches) != 2 {
+		// It has no numeric suffix, so add " (2)".
+		return s.Name + " (2)", nil
+	}
+	n, err := strconv.Atoi(matches[1])
+	if err != nil {
+		// This can only happen if siteNameSuffix is faulty.
+		return "", fmt.Errorf("highly strange error in incNumericSuffix")
+	}
+	base := s.Name[:len(s.Name)-len(matches[1])]
+	return fmt.Sprintf("%s (%d)", base, n+1), nil
 }
