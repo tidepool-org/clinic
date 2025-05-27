@@ -1327,6 +1327,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		// AND either of the following:
 		// 2. Have no data within the cutoff, typically the period length being looked at, subtracted from now
 		// 3. Have a dexcom session, and it is not successfully connected
+		// 4. Have never had cgm data, resulting in a missing lastData field
 		selector := bson.M{
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
