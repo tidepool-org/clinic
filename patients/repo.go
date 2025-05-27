@@ -1298,15 +1298,14 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		selector := bson.M{
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
-			"$and": bson.A{
-				bson.M{"$or": bson.A{
+			"$or": bson.A{
+				bson.M{"summary.cgmStats.dates.lastData": nil},
+				bson.M{"$and": bson.A{
 					bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": time.Now().UTC().Add(-8 * time.Hour)}},
-					bson.M{"summary.cgmStats.dates.lastData": nil},
-				}},
-				bson.M{"$or": bson.A{
-					bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": params.LastDataCutoff}},
-					bson.M{"summary.cgmStats.dates.lastData": nil},
-					bson.M{"dataSources": bson.M{"$elemMatch": bson.M{"providerName": "dexcom", "state": bson.M{"$ne": "connected"}}}},
+					bson.M{"$or": bson.A{
+						bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": params.LastDataCutoff}},
+						bson.M{"dataSources": bson.M{"$elemMatch": bson.M{"providerName": "dexcom", "state": bson.M{"$ne": "connected"}}}},
+					}},
 				}},
 			},
 		}
