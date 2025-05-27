@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -284,7 +285,7 @@ func (r *repoTestHelper) createTestClinic() *clinics.Clinic {
 	// NewClinicWithDefaults doesn't set an Id
 	clinic.Id = Ptr(primitive.NewObjectID())
 	// NewClinicWithDefaults doesn't set share codes
-	code := clinicsTest.Faker.Lorem().Word()
+	code := uuid.NewString()
 	clinic.ShareCodes = Ptr([]string{code})
 	clinic.CanonicalShareCode = &code
 	newClinic, err := r.Repo.Create(context.Background(), clinic)
