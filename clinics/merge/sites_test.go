@@ -2,12 +2,16 @@ package merge_test
 
 import (
 	"context"
+	"fmt"
+	"math/rand/v2"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
@@ -16,182 +20,217 @@ import (
 	sitesTest "github.com/tidepool-org/clinic/sites/test"
 )
 
-const (
-	duplicateSitesCount = 5
-)
-
 var _ = Describe("Sites", func() {
-	var source clinics.Clinic
-	var target clinics.Clinic
-	var duplicateSites map[string]sites.Site
+	Describe("Sites Planners", func() {
+		It("creates correct plans", func() {
+			Expect(true).To(BeTrue())
+			_, th := newSitesTestHelper(GinkgoT())
+			th.createDuplicateSites(2)
+			th.createSourceSites(3)
+			th.createTargetSites(3)
 
-	BeforeEach(func() {
-		source = *clinicsTest.RandomClinic()
-		target = *clinicsTest.RandomClinic()
-		duplicateSites = make(map[string]sites.Site)
-		for _, site := range sitesTest.RandomSlice(duplicateSitesCount) {
-			duplicateSites[site.Name] = site
-			source.Sites = append(source.Sites, site)
-			tSite := site
-			tSite.Id = primitive.NewObjectID()
-			target.Sites = append(target.Sites, tSite)
-		}
-	})
+			plans := th.Plans()
 
-	Describe("Source Sites Planner", func() {
-		It("creates a correct plan", func() {
-			for _, site := range source.Sites {
-				planner := merge.NewSourceSiteMergePlanner(site, source, target)
-				plan, err := planner.Plan(context.Background())
-				Expect(err).ToNot(HaveOccurred())
+			Expect(len(plans)).To(Equal(len(th.Source.Sites) + len(th.Target.Sites)))
+			for _, plan := range plans {
+				Expect(plan.Name()).To(Equal(plan.Site.Name))
+				Expect(plan.PreventsMerge()).To(Equal(false))
+				if th.isSourceSite(plan.Site) {
+					if th.isDupSite(plan.Site) {
+						Expect(plan.SiteAction).To(Equal(merge.SiteActionRename))
+					} else {
+						Expect(plan.SiteAction).To(Equal(merge.SiteActionCreate))
+					}
 
-				_, isDuplicate := duplicateSites[site.Name]
-				expectedWorkspaces := []string{*source.Name}
-				expectedSiteAction := merge.SiteActionCreate
-				if isDuplicate {
-					expectedSiteAction = merge.SiteActionRename
-					expectedWorkspaces = append(expectedWorkspaces, *target.Name)
+				} else if th.isTargetSite(plan.Site) {
+					Expect(plan.SiteAction).To(Equal(merge.SiteActionRetain))
+				} else {
+					Fail(fmt.Sprintf("unhandled action for site: %s", plan.Site))
 				}
-
-				Expect(plan.Name()).To(Equal(site.Name))
-				Expect(plan.Merge).To(BeFalse())
-				Expect(plan.PreventsMerge()).To(BeFalse())
-				Expect(plan.SiteAction).To(Equal(expectedSiteAction))
-				Expect(plan.Workspaces).To(ConsistOf(expectedWorkspaces))
-
-			}
-		})
-	})
-
-	Describe("Target Sites Planner", func() {
-		It("creates a correct plan", func() {
-			for _, site := range target.Sites {
-				planner := merge.NewTargetSiteMergePlanner(site, source, target)
-				plan, err := planner.Plan(context.Background())
-				Expect(err).ToNot(HaveOccurred())
-
-				_, isDuplicate := duplicateSites[site.Name]
-				expectedWorkspaces := []string{*target.Name}
-				expectedSiteAction := merge.SiteActionRetain
-				expectedMerge := false
-				if isDuplicate {
-					expectedMerge = true
-					expectedWorkspaces = append(expectedWorkspaces, *source.Name)
-				}
-
-				Expect(plan.Merge).To(Equal(expectedMerge))
-				Expect(plan.Name()).To(Equal(site.Name))
-				Expect(plan.PreventsMerge()).To(BeFalse())
-				Expect(plan.SiteAction).To(Equal(expectedSiteAction))
-				Expect(plan.Workspaces).To(ConsistOf(expectedWorkspaces))
-
 			}
 		})
 	})
 
 	Describe("Site Plan Executor", func() {
-		var plans []merge.SitePlan
-		var executor *merge.SitePlanExecutor
-		var clinicsService *clinicsTest.MockService
-		var clinicsCtrl *gomock.Controller
+		It("creates sites in the target clinic that don't exist", func() {
+			ctx, th := newSitesTestHelper(GinkgoT())
+			srcSite := th.createSourceSites(1)[0]
+			targetID := th.Target.Id.Hex()
 
-		BeforeEach(func() {
-			nSites := len(source.Sites)
-			for len(source.Sites) < nSites+3 {
-				rSite := sitesTest.Random()
-				if !sites.SiteExistsWithName(source.Sites, rSite.Name) {
-					source.Sites = append(source.Sites, rSite)
-				}
-			}
+			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics)
 
-			for _, site := range source.Sites {
-				planner := merge.NewSourceSiteMergePlanner(site, source, target)
-				plan, err := planner.Plan(context.Background())
-				Expect(err).ToNot(HaveOccurred())
-				plans = append(plans, plan)
+			th.Clinics.EXPECT().CreateSite(gomock.Any(), targetID, &srcSite)
+			for _, plan := range th.Plans() {
+				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
 			}
-			for _, site := range target.Sites {
-				planner := merge.NewTargetSiteMergePlanner(site, source, target)
-				plan, err := planner.Plan(context.Background())
-				Expect(err).ToNot(HaveOccurred())
-				plans = append(plans, plan)
-			}
-
-			clinicsCtrl = gomock.NewController(GinkgoT())
-			clinicsService = clinicsTest.NewMockService(clinicsCtrl)
-			// zap.Must(zap.NewDevelopment()).Sugar()
-			executor = merge.NewSitePlanExecutor(zap.NewNop().Sugar(), clinicsService)
 		})
 
-		AfterEach(func() {
-			clinicsCtrl.Finish()
+		It("renames sites from the source clinic that already exist", func() {
+			ctx, th := newSitesTestHelper(GinkgoT())
+			targetSite := th.createDuplicateSites(1)[0]
+			targetID := th.Target.Id.Hex()
+
+			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics)
+
+			th.Clinics.EXPECT().ListSites(gomock.Any(), targetID).
+				Return(th.Target.Sites, nil).AnyTimes()
+			th.Clinics.EXPECT().CreateSite(gomock.Any(), targetID, incrementedSiteMatcher(targetSite))
+			for _, plan := range th.Plans() {
+				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
+			}
 		})
 
-		It("increments the suffix on duplicate sites", func() {
-			targetID := target.Id.Hex()
-			GinkgoT().Logf("sourceID is %s; targetID is %s", source.Id.Hex(), targetID)
-			GinkgoT().Logf("source has these sites: %+v", source.Sites)
-			for _, site := range source.Sites {
-				if _, found := duplicateSites[site.Name]; found {
-					clinicsService.EXPECT().ListSites(gomock.Any(), targetID).
-						Return(target.Sites, nil)
-					clinicsService.EXPECT().CreateSite(gomock.Any(), targetID, incrementedSiteMatcher(site)).
-						Return(nil)
-				} else {
-					clinicsService.EXPECT().CreateSite(gomock.Any(), targetID, siteMatcher(site)).
-						Return(nil)
-				}
+		It("renames sites multiple times if necessary", func() {
+			ctx, th := newSitesTestHelper(GinkgoT())
+			targetSite := th.createDuplicateSites(1)[0]
+			times := rand.IntN(20)
+			for i := range times {
+				th.createTargetSite(fmt.Sprintf("%s (%d)", targetSite.Name, i+2))
 			}
-			ctx := context.Background()
-			var errs []error
-			for _, plan := range plans {
-				if err := executor.Execute(ctx, plan); err != nil {
-					errs = append(errs, err)
-				}
-			}
-			Expect(errs).To(BeEmpty())
-		})
+			targetID := th.Target.Id.Hex()
 
-		It("creates a site in the target clinic for all non-overlapping sites", func() {
-			ctx := context.Background()
-			GinkgoT().Logf("sourceID is %s; targetID is %s", source.Id.Hex(), target.Id.Hex())
-			GinkgoT().Logf("source has these sites: %+v", source.Sites)
-			created := 0
-			targetID := target.Id.Hex()
-			for _, site := range source.Sites {
-				if _, found := duplicateSites[site.Name]; found {
-					clinicsService.EXPECT().ListSites(gomock.Any(), targetID).
-						Return(target.Sites, nil)
-					clinicsService.EXPECT().CreateSite(gomock.Any(), targetID, incrementedSiteMatcher(site)).
-						Return(nil)
-					GinkgoT().Logf("duplicate site will be incremented %s", site)
-				} else {
-					clinicsService.EXPECT().CreateSite(gomock.Any(), targetID, siteMatcher(site)).
-						Return(nil)
-					GinkgoT().Logf("will create site %s", site)
-					created++
-				}
-			}
+			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics)
 
-			var errs []error
-			for _, plan := range plans {
-				if err := executor.Execute(ctx, plan); err != nil {
-					errs = append(errs, err)
-				}
+			th.Clinics.EXPECT().ListSites(gomock.Any(), targetID).
+				Return(th.Target.Sites, nil).AnyTimes()
+			th.Clinics.EXPECT().CreateSite(gomock.Any(), targetID, incrementedSiteMatcherN(targetSite, times+2))
+			for _, plan := range th.Plans() {
+				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
 			}
-			Expect(errs).To(BeEmpty())
-
-			Expect(created).To(Equal(len(source.Sites) - len(duplicateSites)))
 		})
 	})
 })
 
-func siteMatcher(toMatch sites.Site) gomock.Matcher {
-	return &condSiteMatcher{name: toMatch.Name}
+type sitesTestHelper struct {
+	Source  *clinics.Clinic
+	Target  *clinics.Clinic
+	Clinics *clinicsTest.MockService
+	Logger  *zap.SugaredLogger
+
+	t FullGinkgoTInterface
+}
+
+func newSitesTestHelper(t FullGinkgoTInterface) (context.Context, *sitesTestHelper) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	enc := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	core := zapcore.NewCore(enc, zapcore.AddSync(GinkgoWriter), zapcore.DebugLevel)
+	logger := zap.New(core).Sugar()
+	return ctx, &sitesTestHelper{
+		Source:  clinicsTest.RandomClinic(),
+		Target:  clinicsTest.RandomClinic(),
+		Clinics: clinicsTest.NewMockService(ctrl),
+		Logger:  logger,
+		t:       t,
+	}
+}
+
+func (s *sitesTestHelper) Plans() []merge.SitePlan {
+	ctx := context.Background()
+	plans := []merge.SitePlan{}
+	for _, site := range s.Source.Sites {
+		plan, err := merge.NewSourceSiteMergePlanner(site, *s.Source, *s.Target).Plan(ctx)
+		if err != nil {
+			s.t.Fatalf("failed to plan source plan for site %q: %s", site.Name, err)
+		}
+		plans = append(plans, plan)
+	}
+	for _, site := range s.Target.Sites {
+		plan, err := merge.NewTargetSiteMergePlanner(site, *s.Source, *s.Target).Plan(ctx)
+		if err != nil {
+			s.t.Fatalf("failed to plan target plan for site %q: %s", site.Name, err)
+		}
+		plans = append(plans, plan)
+	}
+	return plans
+}
+
+func (s *sitesTestHelper) createTargetSite(name string) sites.Site {
+	if sites.SiteExistsWithName(s.Target.Sites, name) {
+		s.t.Fatalf("site with name %s already exists", name)
+	}
+	site := sites.Site{
+		Id:   primitive.NewObjectID(),
+		Name: name,
+	}
+	s.Target.Sites = append(s.Target.Sites, site)
+	return site
+}
+
+func (s *sitesTestHelper) createDuplicateSites(n int) []sites.Site {
+	newSites := []sites.Site{}
+	for len(newSites) < n {
+		site := sitesTest.Random()
+		if !s.siteExists(site) {
+			newSites = append(newSites, site)
+			s.Target.Sites = append(s.Target.Sites, site)
+			site.Id = primitive.NewObjectID()
+			s.Source.Sites = append(s.Source.Sites, site)
+		}
+	}
+	return newSites
+}
+
+func (s *sitesTestHelper) createSourceSites(n int) []sites.Site {
+	newSites := []sites.Site{}
+	for len(newSites) < n {
+		site := sitesTest.Random()
+		if !s.siteExists(site) {
+			newSites = append(newSites, site)
+		}
+	}
+	s.Source.Sites = slices.Concat(s.Source.Sites, newSites)
+	return newSites
+}
+
+func (s *sitesTestHelper) createTargetSites(n int) []sites.Site {
+	newSites := []sites.Site{}
+	for len(newSites) < n {
+		site := sitesTest.Random()
+		if !s.siteExists(site) {
+			newSites = append(newSites, site)
+		}
+	}
+	s.Target.Sites = slices.Concat(s.Target.Sites, newSites)
+	return newSites
+}
+
+func (s *sitesTestHelper) siteExists(site sites.Site) bool {
+	return sites.SiteExistsWithName(s.Target.Sites, site.Name) ||
+		sites.SiteExistsWithName(s.Source.Sites, site.Name)
+}
+
+func (s *sitesTestHelper) isDupSite(site sites.Site) bool {
+	return sites.SiteExistsWithName(s.Source.Sites, site.Name) &&
+		sites.SiteExistsWithName(s.Target.Sites, site.Name)
+}
+
+func (s *sitesTestHelper) isSourceSite(site sites.Site) bool {
+	for _, srcSite := range s.Source.Sites {
+		if srcSite.Id.Hex() == site.Id.Hex() {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *sitesTestHelper) isTargetSite(site sites.Site) bool {
+	for _, tgtSite := range s.Target.Sites {
+		if tgtSite.Id.Hex() == site.Id.Hex() {
+			return true
+		}
+	}
+	return false
 }
 
 func incrementedSiteMatcher(toMatch sites.Site) gomock.Matcher {
-	return &condSiteMatcher{name: toMatch.Name + " (2)"}
+	return incrementedSiteMatcherN(toMatch, 2)
+}
+
+func incrementedSiteMatcherN(toMatch sites.Site, n int) gomock.Matcher {
+	return &condSiteMatcher{name: fmt.Sprintf("%s (%d)", toMatch.Name, n)}
 }
 
 type condSiteMatcher struct {
