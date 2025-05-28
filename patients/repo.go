@@ -1013,8 +1013,13 @@ func ApplyDateFilter(selector bson.M, typ string, field string, pair FilterDateP
 
 func generateListSortStage(sorts []*store.Sort) bson.D {
 	var s bson.D
+	idSortExists := false
+
 	for _, sort := range sorts {
 		if sort != nil {
+			if sort.Attribute == "_id" {
+				idSortExists = true
+			}
 			s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
 		}
 	}
@@ -1026,8 +1031,9 @@ func generateListSortStage(sorts []*store.Sort) bson.D {
 	// Including _id in the sort query ensures that $skip aggregation works correctly
 	// See https://docs.mongodb.com/manual/reference/operator/aggregation/skip/
 	// for more details
-	s = append(s, bson.E{Key: "_id", Value: 1})
-
+	if !idSortExists {
+		s = append(s, bson.E{Key: "_id", Value: 1})
+	}
 	return s
 }
 
