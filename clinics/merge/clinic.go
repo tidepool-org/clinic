@@ -218,11 +218,11 @@ func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics
 	//   db.patients.aggregate([{$limit:200000},{$addFields:{__tmp_cgm__:"$summary.cgmStats.dates",__tmp_bgm__:"$summary.bgmStats.dates"}},{$unset:"summary"},{$addFields:{"summary.bgmStats.dates":"$__tmp_bgm__","summary.cgmStats.dates":"__tmp_cgm__"}},{$unset:["__tmp_cgm__","__tmp_bgm__"]}, {$replaceWith: { size: {$bsonSize: '$$ROOT'}} },{ $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$size' }, avg: { $avg: '$size' } } }, { $unset: '_id' } ])
 	limit := 75000
 	page := store.DefaultPagination().WithLimit(limit)
-	sort := []*store.Sort{{Attribute: "_id", Ascending: true}}
+	//sort := []*store.Sort{{Attribute: "_id", Ascending: true}}
 	list := []patients.Patient{}
 
 	for {
-		result, err := m.patients.List(ctx, &filter, page, sort)
+		result, err := m.patients.List(ctx, &filter, page, nil)
 		if err != nil {
 			return nil, err
 		}
