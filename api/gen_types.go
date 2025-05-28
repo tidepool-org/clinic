@@ -680,6 +680,13 @@ const (
 	RUNNING   MigrationStatusV1 = "RUNNING"
 )
 
+// Defines values for ProviderIdV1.
+const (
+	Abbott ProviderIdV1 = "abbott"
+	Dexcom ProviderIdV1 = "dexcom"
+	Twiist ProviderIdV1 = "twiist"
+)
+
 // Defines values for ScheduledReportsV1Cadence.
 const (
 	DISABLED ScheduledReportsV1Cadence = "DISABLED"
@@ -1467,19 +1474,19 @@ type ObjectidV1 = string
 
 // PatientV1 defines model for patient.v1.
 type PatientV1 struct {
-	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date `json:"birthDate"`
-	CreatedTime          *time.Time         `json:"createdTime,omitempty"`
-	DataSources          *[]DataSourceV1    `json:"dataSources"`
-	Email                *string            `json:"email,omitempty"`
+	AttestationSubmitted *bool                         `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date            `json:"birthDate"`
+	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
+	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
+	DataSources          *[]DataSourceV1               `json:"dataSources"`
+	Email                *string                       `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id                             *Tidepooluserid `json:"id,omitempty"`
-	LastRequestedDexcomConnectTime *time.Time      `json:"lastRequestedDexcomConnectTime,omitempty"`
-	LastUploadReminderTime         *time.Time      `json:"lastUploadReminderTime,omitempty"`
+	Id                     *Tidepooluserid `json:"id,omitempty"`
+	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
 	Mrn         *string               `json:"mrn,omitempty"`
@@ -1585,6 +1592,22 @@ type PhoneNumbersV1 = []PhoneNumberV1
 
 // PostalCodeV1 Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
 type PostalCodeV1 = string
+
+// ProviderConnectionRequestV1 defines model for providerConnectionRequest.v1.
+type ProviderConnectionRequestV1 struct {
+	CreatedTime  time.Time    `json:"createdTime"`
+	ProviderName ProviderIdV1 `json:"providerName"`
+}
+
+// ProviderConnectionRequestsV1 defines model for providerConnectionRequests.v1.
+type ProviderConnectionRequestsV1 struct {
+	Abbott []ProviderConnectionRequestV1 `json:"abbott"`
+	Dexcom []ProviderConnectionRequestV1 `json:"dexcom"`
+	Twiist []ProviderConnectionRequestV1 `json:"twiist"`
+}
+
+// ProviderIdV1 defines model for providerId.v1.
+type ProviderIdV1 string
 
 // ProviderNameV1 defines model for providerName.v1.
 type ProviderNameV1 = string
@@ -1820,6 +1843,9 @@ type PatientId = string
 
 // PatientTagId defines model for patientTagId.
 type PatientTagId = string
+
+// ProviderId defines model for providerId.
+type ProviderId = ProviderIdV1
 
 // Role defines model for role.
 type Role = string

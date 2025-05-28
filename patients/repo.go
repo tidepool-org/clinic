@@ -202,8 +202,11 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	// and the patients from a single query
 	pipeline := []bson.M{
 		{"$match": r.generateListFilterQuery(filter)},
-		{"$sort": generateListSortStage(sorts)},
 	}
+	if filter.ExcludeSummaryExceptFieldsInMergeReports {
+		pipeline = append(pipeline, excludeSummaryExceptFieldsInMergeReports()...)
+	}
+	pipeline = append(pipeline, bson.M{"$sort": generateListSortStage(sorts)})
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
 	hasFullNameSort := false
@@ -239,6 +242,25 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 
 	return &result, nil
+}
+
+// excludeSummaryExceptFieldsInMergeReports from a MongoDB aggregation pipeline.
+//
+// For when you don't want the entire summary to be included in the result, but the last
+// updated date is expected to be used when generating clinic merge reports.
+func excludeSummaryExceptFieldsInMergeReports() []bson.M {
+	out := []bson.M{}
+	out = append(out, bson.M{"$addFields": bson.M{
+		"__tmp_cgm__": "$summary.cgmStats.dates",
+		"__tmp_bgm__": "$summary.bgmStats.dates",
+	}})
+	out = append(out, bson.M{"$unset": "summary"})
+	out = append(out, bson.M{"$addFields": bson.M{
+		"summary.cgmStats.dates": "$__tmp_cgm__",
+		"summary.bgmStats.dates": "$__tmp_bgm__",
+	}})
+	out = append(out, bson.M{"$unset": []string{"__tmp_bgm__", "__tmp_cgm__"}})
+	return out
 }
 
 func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
@@ -592,64 +614,71 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
-func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
-	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
+func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	currentTime := time.Now()
 
 	// We fetch the current dexcom data source to determine if we are requesting an initial connection
 	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
-	patient, err := r.Get(ctx, update.ClinicId, update.UserId)
+	patient, err := r.Get(ctx, clinicId, userId)
 	if err != nil {
-		return nil, fmt.Errorf("error finding patient: %w", err)
+		return fmt.Errorf("error finding patient: %w", err)
 	}
 
-	var patientDexcomDataSource DataSource
+	var providerDataSource DataSource
 	if patient.DataSources != nil {
 		for _, source := range *patient.DataSources {
-			if source.ProviderName == DexcomDataSourceProviderName {
-				patientDexcomDataSource = source
+			if source.ProviderName == request.ProviderName {
+				providerDataSource = source
 			}
 		}
 	}
 
 	selector := bson.M{
 		"clinicId":                 clinicObjId,
-		"userId":                   update.UserId,
-		"dataSources.providerName": DexcomDataSourceProviderName,
+		"userId":                   userId,
+		"dataSources.providerName": request.ProviderName,
 	}
 
 	// Default update for initial connection requests
 	mongoUpdate := bson.M{
 		"$set": bson.M{
-			"lastRequestedDexcomConnectTime": update.Time,
-			"updatedTime":                    currentTime,
-			"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
-			"dataSources.$.state":            DataSourceStatePending,
+			"updatedTime":                  currentTime,
+			"dataSources.$.expirationTime": currentTime.Add(PendingDataSourceExpirationDuration),
+			"dataSources.$.state":          DataSourceStatePending,
 		},
 	}
 
 	// Update for previously connected requests
-	if patientDexcomDataSource.ModifiedTime != nil {
+	if providerDataSource.ModifiedTime != nil {
 		mongoUpdate = bson.M{
 			"$set": bson.M{
-				"lastRequestedDexcomConnectTime": update.Time,
-				"updatedTime":                    currentTime,
-				"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
-				"dataSources.$.modifiedTime":     currentTime,
-				"dataSources.$.state":            DataSourceStatePendingReconnect,
+				"updatedTime":                  currentTime,
+				"dataSources.$.expirationTime": currentTime.Add(PendingDataSourceExpirationDuration),
+				"dataSources.$.modifiedTime":   currentTime,
+				"dataSources.$.state":          DataSourceStatePendingReconnect,
 			},
 		}
+	}
+
+	key := "providerConnectionRequests." + request.ProviderName
+	mongoUpdate["$push"] = bson.M{
+		key: bson.M{
+			"$each": bson.A{request},
+			// Prepend, so the most recent request is stored first
+			"$position": 0,
+		},
 	}
 
 	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return ErrNotFound
 		}
-		return nil, fmt.Errorf("error updating patient: %w", err)
+		return fmt.Errorf("error updating patient: %w", err)
 	}
 
-	return r.Get(ctx, update.ClinicId, update.UserId)
+	return nil
 }
 
 func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
