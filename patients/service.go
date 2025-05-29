@@ -18,7 +18,7 @@ type service struct {
 	dbClient *mongo.Client
 	logger   *zap.SugaredLogger
 
-	clinics             clinics.Service
+	clinics          clinics.Service
 	custodialService CustodialService
 	deletionsRepo    DeletionsRepository
 	patientsRepo     Repository
@@ -141,8 +141,8 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, de
 		}
 
 		deletion := Deletion{
-			Patient:     *patient,
-			DeletedTime: time.Now(),
+			Patient:         *patient,
+			DeletedTime:     time.Now(),
 			DeletedByUserId: deletedByUserId,
 		}
 

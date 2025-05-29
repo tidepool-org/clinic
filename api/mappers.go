@@ -227,7 +227,6 @@ func NewPatient(dto Patient) patients.Patient {
 		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
-		Summary:       NewSummary(dto.Summary),
 		Reviews:       NewReviews(dto.Reviews),
 	}
 
