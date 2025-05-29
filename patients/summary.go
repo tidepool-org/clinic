@@ -28,6 +28,8 @@ type PatientBGMPeriod struct {
 	HasTimeInVeryLowPercent       bool     `bson:"hasTimeInVeryLowPercent"`
 	HasTimeInVeryLowRecords       bool     `bson:"hasTimeInVeryLowRecords"`
 	HasTotalRecords               bool     `bson:"hasTotalRecords"`
+	Max                           float64  `bson:"max"`
+	Min                           float64  `bson:"min"`
 	TimeInAnyHighPercent          *float64 `bson:"timeInAnyHighPercent,omitempty"`
 	TimeInAnyHighPercentDelta     *float64 `bson:"timeInAnyHighPercentDelta,omitempty"`
 	TimeInAnyHighRecords          *int     `bson:"timeInAnyHighRecords,omitempty"`
@@ -134,6 +136,8 @@ type PatientCGMPeriod struct {
 	HasTotalRecords                 bool     `bson:"hasTotalRecords"`
 	HoursWithData                   int      `bson:"hoursWithData"`
 	HoursWithDataDelta              int      `bson:"hoursWithDataDelta"`
+	Max                             float64  `bson:"max"`
+	Min                             float64  `bson:"min"`
 	StandardDeviation               float64  `bson:"standardDeviation"`
 	StandardDeviationDelta          float64  `bson:"standardDeviationDelta"`
 	TimeCGMUseMinutes               *int     `bson:"timeCGMUseMinutes,omitempty"`
