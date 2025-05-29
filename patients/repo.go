@@ -566,12 +566,12 @@ func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId st
 	selectorCgm := bson.M{
 		"summary.cgmStats.id": summaryId,
 	}
-	updateCgm := bson.M{"$unset": "summary.cgmStats"}
+	updateCgm := bson.M{"$unset": bson.M{"summary.cgmStats": ""}}
 
 	selectorBgm := bson.M{
 		"summary.bgmStats.id": summaryId,
 	}
-	updateBgm := bson.M{"$unset": "summary.bgmStats"}
+	updateBgm := bson.M{"$unset": bson.M{"summary.bgmStats": ""}}
 
 	resCgm, err := r.collection.UpdateMany(ctx, selectorCgm, updateCgm)
 	if err != nil {
