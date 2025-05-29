@@ -555,7 +555,7 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
-		return ErrNotFound
+		return SummaryNotFound
 	}
 
 	return nil
