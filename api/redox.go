@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
@@ -9,8 +12,6 @@ import (
 	"github.com/tidepool-org/clinic/redox"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"io"
-	"net/http"
 )
 
 func (h *Handler) VerifyEndpoint(ec echo.Context) error {
@@ -46,7 +47,7 @@ func (h *Handler) ProcessEHRMessage(ec echo.Context) error {
 func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	ctx := ec.Request().Context()
 
-	request := EHRMatchRequest{}
+	request := EhrMatchRequestV1{}
 	if err := ec.Bind(&request); err != nil {
 		return err
 	}
@@ -60,7 +61,7 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	}
 
 	// We only support new order messages for now
-	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != EHRMatchMessageRefEventTypeNew {
+	if request.MessageRef.DataModel != Order || request.MessageRef.EventType != EhrMatchMessageRefV1EventTypeNew {
 		return fmt.Errorf("%w: only new order messages are supported", errors.BadRequest)
 	}
 	msg, err := h.Redox.FindMessage(
@@ -79,8 +80,8 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 	}
 
 	matchOrder := redox.MatchOrder{
-		DocumentId:        documentId,
-		Order:             *order,
+		DocumentId: documentId,
+		Order:      *order,
 	}
 	if request.Patients != nil {
 		criteria, err := NewMatchOrderCriteria(request.Patients.Criteria)
@@ -119,7 +120,7 @@ func (h *Handler) MatchClinicAndPatient(ec echo.Context) error {
 		return err
 	}
 
-	response := EHRMatchResponse{
+	response := EhrMatchResponseV1{
 		Clinic:   NewClinicDto(&result.Clinic),
 		Settings: *NewEHRSettingsDto(result.Clinic.EHRSettings),
 	}

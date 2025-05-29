@@ -65,7 +65,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 
 func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := Patient{}
+	dto := PatientV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId Patie
 
 func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := CreatePatient{}
+	dto := CreatePatientV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 
 func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := Patient{}
+	dto := PatientV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 
 func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := PatientPermissions{}
+	dto := PatientPermissionsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -259,9 +259,9 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 
 func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	var dto *PatientSummary
+	var dto *PatientSummaryV1
 	if ec.Request().ContentLength != 0 {
-		dto = &PatientSummary{}
+		dto = &PatientSummaryV1{}
 		if err := ec.Bind(dto); err != nil {
 			return err
 		}
@@ -298,7 +298,7 @@ func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideRepo
 func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	dto := TidepoolUserIds{}
+	dto := TidepoolUserIdsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -320,7 +320,7 @@ func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId C
 func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	dto := TidepoolUserIds{}
+	dto := TidepoolUserIdsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}

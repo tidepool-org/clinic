@@ -5,6 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -14,15 +19,11 @@ import (
 	"github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"time"
 )
 
 var _ = Describe("Redox Integration Test", Ordered, func() {
-	var clinic client.Clinic
-	var patient client.Patient
+	var clinic client.ClinicV1
+	var patient client.PatientV1
 	var documentId string
 
 	Describe("Create a clinic", func() {
@@ -81,7 +82,7 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 			body, err := io.ReadAll(rec.Result().Body)
 			Expect(err).ToNot(HaveOccurred())
 
-			response := client.PatientsResponse{}
+			response := client.PatientsResponseV1{}
 			Expect(json.Unmarshal(body, &response)).To(Succeed())
 			Expect(response.Data).ToNot(BeNil())
 			Expect(response.Meta).ToNot(BeNil())
@@ -123,8 +124,8 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 		It("Matches the order by DOB and Full Name", func() {
 			body := fmt.Sprintf(`{
 				"messageRef": {
-					"dataModel": "Order", 
-					"eventType": "New", 
+					"dataModel": "Order",
+					"eventType": "New",
 					"documentId": "%s"
 				},
                 "patients": {
@@ -139,7 +140,7 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 
-			var response client.EHRMatchResponse
+			var response client.EhrMatchResponseV1
 			Expect(json.NewDecoder(rec.Result().Body).Decode(&response)).To(Succeed())
 			Expect(response.Patients).ToNot(BeNil())
 			Expect(response.Patients).To(PointTo(HaveLen(1)))
@@ -171,8 +172,8 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 		It("Matches the order by MRN and DOB successfully", func() {
 			body := fmt.Sprintf(`{
 				"messageRef": {
-					"dataModel": "Order", 
-					"eventType": "New", 
+					"dataModel": "Order",
+					"eventType": "New",
 					"documentId": "%s"
 				},
                 "patients": {
@@ -188,7 +189,7 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 
-			var response client.EHRMatchResponse
+			var response client.EhrMatchResponseV1
 			Expect(json.NewDecoder(rec.Result().Body).Decode(&response)).To(Succeed())
 			Expect(response.Patients).ToNot(BeNil())
 			Expect(response.Patients).To(PointTo(HaveLen(1)))
