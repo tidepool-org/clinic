@@ -584,7 +584,7 @@ func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId st
 	}
 
 	if resCgm.ModifiedCount == 0 && resBgm.ModifiedCount == 0 {
-		return ErrNotFound
+		return SummaryNotFound
 	}
 
 	return nil
