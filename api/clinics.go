@@ -87,7 +87,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 
 func (h *Handler) GetClinic(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	clinic, err := h.Clinics.Get(ctx, string(clinicId))
+	clinic, err := h.ClinicsManager.GetWithPatientCounts(ctx, string(clinicId))
 	if err != nil {
 		return err
 	}
@@ -519,9 +519,20 @@ func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
 	return ec.JSON(http.StatusOK, site)
 }
 
+func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
+	ctx := ec.Request().Context()
+	if err := h.ClinicsManager.DeleteSite(ctx, clinicId, siteId); err != nil {
+		if stderrors.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound
+		}
+		return err
+	}
+	return nil
+}
+
 func (h *Handler) ListSites(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	sites, err := h.Clinics.ListSites(ctx, clinicId)
+	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
 	if err != nil {
 		return err
 	}
@@ -535,17 +546,6 @@ func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 		return errors.BadRequest
 	}
 	if err := h.ClinicsManager.UpdateSite(ctx, clinicId, siteId, site); err != nil {
-		if stderrors.Is(err, mongo.ErrNoDocuments) {
-			return errors.NotFound
-		}
-		return err
-	}
-	return nil
-}
-
-func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
-	ctx := ec.Request().Context()
-	if err := h.ClinicsManager.DeleteSite(ctx, clinicId, siteId); err != nil {
 		if stderrors.Is(err, mongo.ErrNoDocuments) {
 			return errors.NotFound
 		}

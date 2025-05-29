@@ -83,7 +83,10 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 		}
 		for _, pSite := range patient.Sites {
 			if !slices.ContainsFunc(clinicSites, hasMatchingSite(pSite)) {
-				// TODO: log the non-existent site name for debugging
+				s.logger.Infow("unable to assign site to patient",
+					"reason", "not found in clinic",
+					"siteId", pSite.Id.Hex(),
+					"clinicId", clinicId)
 				return nil, clinics.ErrSiteNotFound
 			}
 		}
@@ -131,7 +134,10 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		}
 		for _, pSite := range update.Patient.Sites {
 			if !slices.ContainsFunc(clinicSites, hasMatchingSite(pSite)) {
-				// TODO: log the non-existent site name for debugging
+				s.logger.Infow("unable to assign site to patient",
+					"reason", "not found in clinic",
+					"siteId", pSite.Id.Hex(),
+					"clinicId", update.ClinicId)
 				return nil, clinics.ErrSiteNotFound
 			}
 		}

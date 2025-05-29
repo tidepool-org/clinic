@@ -759,7 +759,8 @@ type Clinic struct {
 	PreferredBgUnits ClinicPreferredBgUnits `json:"preferredBgUnits"`
 
 	// ShareCode Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
-	ShareCode *string `json:"shareCode,omitempty"`
+	ShareCode *string       `json:"shareCode,omitempty"`
+	Sites     *[]ClinicSite `json:"sites,omitempty"`
 
 	// State State or province. In the U.S., typically something like `CA` or `California`.
 	State                   *string                  `json:"state,omitempty"`
@@ -782,6 +783,21 @@ type ClinicPreferredBgUnits string
 
 // ClinicTimezone defines model for Clinic.Timezone.
 type ClinicTimezone string
+
+// ClinicSite defines model for ClinicSite.
+type ClinicSite struct {
+	// Id String representation of a resource id
+	Id string `json:"id,omitempty"`
+
+	// Name The site description.
+	Name string `json:"name"`
+
+	// Patients The number of patients associated with the site.
+	Patients int `json:"patients,omitempty"`
+}
+
+// ClinicSites defines model for ClinicSites.
+type ClinicSites = []ClinicSite
 
 // Clinician The `id` may be empty if the clinician invite has not been accepted.
 type Clinician struct {
@@ -836,6 +852,7 @@ type CreatePatient struct {
 	// Mrn The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`
 	Permissions *PatientPermissions `json:"permissions,omitempty"`
+	SiteIds     *SiteIds            `json:"siteIds"`
 	Tags        *PatientTagIds      `json:"tags"`
 }
 
@@ -1656,14 +1673,14 @@ type ScheduledReportsOnUploadNoteEventType string
 // Site A clinic's phyical or logical location.
 type Site struct {
 	// Id String representation of a resource id
-	Id *string `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 
 	// Name The site description.
 	Name string `json:"name"`
 }
 
-// Sites defines model for Sites.
-type Sites = []Site
+// SiteIds defines model for SiteIds.
+type SiteIds = []string
 
 // SuppressedNotifications defines model for SuppressedNotifications.
 type SuppressedNotifications struct {
@@ -2290,9 +2307,6 @@ type ViewPDFReportParams struct {
 	RestrictedToken string `form:"restricted_token" json:"restricted_token"`
 }
 
-// UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
-type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetails
-
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
 type CreateClinicJSONRequestBody = Clinic
 
@@ -2385,3 +2399,6 @@ type ProcessEHRMessageJSONRequestBody = ProcessEHRMessageJSONBody
 
 // MatchClinicAndPatientJSONRequestBody defines body for MatchClinicAndPatient for application/json ContentType.
 type MatchClinicAndPatientJSONRequestBody = EHRMatchRequest
+
+// UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
+type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetails

@@ -69,13 +69,7 @@ func (s SitePlans) Errors() []ReportError {
 // GetResultingSitesCount is the number of sites expected to be present in the target clinic
 // after a merge.
 func (s SitePlans) GetResultingSitesCount() int {
-	count := 0
-	for _, p := range s {
-		if p.SiteAction == SiteActionCreate || p.SiteAction == SiteActionRetain {
-			count++
-		}
-	}
-	return count
+	return len(s)
 }
 
 // GetRenamedSitesCount is the number of sites from the source clinic that will be renamed
@@ -159,7 +153,6 @@ func NewSitePlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Servi
 }
 
 func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
-	//logger := t.logger.With("plan", plan, "site", plan.Site)
 	logger := t.logger.With("site", plan.Site)
 	switch plan.SiteAction {
 	case SiteActionRetain:
@@ -201,21 +194,6 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 }
 
 var siteNameSuffix = regexp.MustCompile(` \((\d+)\)$`)
-
-// func incNumericSuffix(s sites.Site) (string, error) {
-// 	matches := siteNameSuffix.FindStringSubmatch(s.Name)
-// 	if len(matches) != 2 {
-// 		// It has no numeric suffix, so add " (2)".
-// 		return s.Name + " (2)", nil
-// 	}
-// 	n, err := strconv.Atoi(matches[1])
-// 	if err != nil {
-// 		// This can only happen if siteNameSuffix is faulty.
-// 		return "", fmt.Errorf("highly strange error in incNumericSuffix")
-// 	}
-// 	base := s.Name[:len(s.Name)-len(matches[1])]
-// 	return fmt.Sprintf("%s (%d)", base, n+1), nil
-// }
 
 func incNumericSuffix(name string) (string, error) {
 	matches := siteNameSuffix.FindStringSubmatch(name)

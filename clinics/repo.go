@@ -591,15 +591,13 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 		return err
 	}
 	selector := bson.M{
-		"_id":   clinicOID,
-		"sites": bson.M{"$elemMatch": bson.M{"id": siteOID}},
+		"_id":      clinicOID,
+		"sites.id": siteOID,
 	}
-
 	update := bson.M{
 		"$pull":        bson.M{"sites": bson.M{"id": siteOID}},
 		"$currentDate": bson.M{"updatedTime": true},
 	}
-
 	res, err := c.collection.UpdateOne(ctx, selector, update)
 	if err != nil {
 		return err
@@ -628,12 +626,12 @@ func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, si
 		return err
 	}
 	selector := bson.M{
-		"_id":   clinicOID,
-		"sites": bson.M{"$elemMatch": bson.M{"id": siteOID}},
+		"_id":      clinicOID,
+		"sites.id": siteOID,
 	}
-	update := bson.D{
-		{Key: "$set", Value: bson.M{"sites.$": site}},
-		{Key: "$currentDate", Value: bson.M{"updatedTime": true}},
+	update := bson.M{
+		"$set":         bson.M{"sites.$.name": site.Name},
+		"$currentDate": bson.M{"updatedTime": true},
 	}
 	res, err := c.collection.UpdateOne(ctx, selector, update)
 	if err != nil {
