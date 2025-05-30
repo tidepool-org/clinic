@@ -337,6 +337,9 @@ type ClientInterface interface {
 	// VerifyEndpoint request
 	VerifyEndpoint(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeletePatientSummary request
+	DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteUserFromClinics request
 	DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1455,6 +1458,18 @@ func (c *Client) MatchClinicAndPatient(ctx context.Context, body MatchClinicAndP
 
 func (c *Client) VerifyEndpoint(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewVerifyEndpointRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientSummaryRequest(c.Server, summaryId)
 	if err != nil {
 		return nil, err
 	}
@@ -6567,6 +6582,40 @@ func NewVerifyEndpointRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewDeletePatientSummaryRequest generates requests for DeletePatientSummary
+func NewDeletePatientSummaryRequest(server string, summaryId SummaryId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "summaryId", runtime.ParamLocationPath, summaryId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/summaries/%s/clinics", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDeleteUserFromClinicsRequest generates requests for DeleteUserFromClinics
 func NewDeleteUserFromClinicsRequest(server string, userId UserId) (*http.Request, error) {
 	var err error
@@ -7114,6 +7163,9 @@ type ClientWithResponsesInterface interface {
 
 	// VerifyEndpointWithResponse request
 	VerifyEndpointWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*VerifyEndpointResponse, error)
+
+	// DeletePatientSummaryWithResponse request
+	DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error)
 
 	// DeleteUserFromClinicsWithResponse request
 	DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*DeleteUserFromClinicsResponse, error)
@@ -8501,6 +8553,27 @@ func (r VerifyEndpointResponse) StatusCode() int {
 	return 0
 }
 
+type DeletePatientSummaryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePatientSummaryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePatientSummaryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type DeleteUserFromClinicsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -9445,6 +9518,15 @@ func (c *ClientWithResponses) VerifyEndpointWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseVerifyEndpointResponse(rsp)
+}
+
+// DeletePatientSummaryWithResponse request returning *DeletePatientSummaryResponse
+func (c *ClientWithResponses) DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error) {
+	rsp, err := c.DeletePatientSummary(ctx, summaryId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePatientSummaryResponse(rsp)
 }
 
 // DeleteUserFromClinicsWithResponse request returning *DeleteUserFromClinicsResponse
@@ -10897,6 +10979,22 @@ func ParseVerifyEndpointResponse(rsp *http.Response) (*VerifyEndpointResponse, e
 	}
 
 	response := &VerifyEndpointResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseDeletePatientSummaryResponse parses an HTTP response from a DeletePatientSummaryWithResponse call
+func ParseDeletePatientSummaryResponse(rsp *http.Response) (*DeletePatientSummaryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePatientSummaryResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
