@@ -14,6 +14,8 @@ NPM_PKG_SPECS = \
 
 PATH:=$(shell pwd)/$(TOOLS_BIN):$(PATH)
 
+OSTYPE:=$(shell echo $${OSTYPE})
+
 # this can also be removed once sed usage is removed from generate
 # switch to bsd-friendly sed for macos/darwin
 ifneq (,$(findstring darwin,$(OSTYPE)))

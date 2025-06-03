@@ -67,7 +67,7 @@ func enrollPatients(clinicsService clinics.Service, patientsService patients.Ser
 		return fmt.Errorf("cannot enroll patient because program id is not set in ehr settings")
 	}
 
-	fmt.Printf("Enrolling %v patients out of %v total\n", len(result.Patients), result.TotalCount)
+	fmt.Printf("Enrolling %v patients out of %v total\n", len(result.Patients), result.MatchingCount)
 
 	for _, patient := range result.Patients {
 		if patient.Mrn == nil || *patient.Mrn == "" {

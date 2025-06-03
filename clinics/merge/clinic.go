@@ -230,7 +230,7 @@ func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics
 		for _, p := range result.Patients {
 			list = append(list, *p)
 		}
-		if len(list) == result.TotalCount || len(result.Patients) == 0 {
+		if len(list) == result.MatchingCount || len(result.Patients) == 0 {
 			break
 		}
 		page.Offset += len(result.Patients)

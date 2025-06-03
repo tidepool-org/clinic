@@ -208,8 +208,8 @@ func (p *Permissions) Empty() bool {
 }
 
 type ListResult struct {
-	Patients   []*Patient `bson:"data"`
-	TotalCount int        `bson:"count"`
+	Patients      []*Patient `bson:"data"`
+	MatchingCount int        `bson:"count"`
 }
 
 type PatientUpdate struct {

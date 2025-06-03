@@ -309,7 +309,7 @@ func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, exist
 			}
 
 			// The same MRN shouldn't exist already, or it should belong to the same user
-			if !(res.TotalCount == 0 || (res.TotalCount == 1 && existingUserId != nil && *existingUserId == *res.Patients[0].UserId)) {
+			if !(res.MatchingCount == 0 || (res.MatchingCount == 1 && existingUserId != nil && *existingUserId == *res.Patients[0].UserId)) {
 				return fmt.Errorf("%w: mrn must be unique", errors2.BadRequest)
 			}
 		}

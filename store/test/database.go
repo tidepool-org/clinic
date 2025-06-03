@@ -3,12 +3,11 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/jaswdr/faker"
 	"github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/store"
+	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/mongo"
-	"math/rand"
 	"os"
 
 	"time"
@@ -19,7 +18,6 @@ const (
 )
 
 var (
-	Faker    = faker.NewWithSeed(rand.NewSource(ginkgo.GinkgoRandomSeed()))
 	database *mongo.Database
 )
 
@@ -27,7 +25,7 @@ func SetupDatabase() {
 	ctx, cancel := context.WithTimeout(context.Background(), mongoTimeout)
 	defer cancel()
 
-	databaseName := fmt.Sprintf("clinic_test_%s_%d", Faker.Letter(), ginkgo.GinkgoParallelProcess())
+	databaseName := fmt.Sprintf("clinic_test_%s_%d", test.Faker.RandomStringWithLength(10), ginkgo.GinkgoParallelProcess())
 	Expect(os.Setenv("TIDEPOOL_CLINIC_DATABASE_NAME", databaseName)).To(Succeed())
 
 	config, err := store.NewConfig()
