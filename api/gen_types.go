@@ -1022,7 +1022,11 @@ type MergeClinic struct {
 
 // Meta defines model for Meta.
 type Meta struct {
+	// Count The number of items matching the filter
 	Count *int `json:"count,omitempty"`
+
+	// TotalCount The total number of items
+	TotalCount *int `json:"totalCount,omitempty"`
 }
 
 // Migration defines model for Migration.

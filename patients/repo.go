@@ -237,7 +237,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
 
-	if result.TotalCount == 0 {
+	if result.MatchingCount == 0 {
 		result.Patients = make([]*Patient, 0)
 	}
 
@@ -281,7 +281,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 
-	if patients.TotalCount > 0 {
+	if patients.MatchingCount > 0 {
 		if len(patient.LegacyClinicianIds) == 0 {
 			return nil, ErrDuplicatePatient
 		}
@@ -1041,8 +1041,13 @@ func ApplyDateFilter(selector bson.M, typ string, field string, pair FilterDateP
 
 func generateListSortStage(sorts []*store.Sort) bson.D {
 	var s bson.D
+	idSortExists := false
+
 	for _, sort := range sorts {
 		if sort != nil {
+			if sort.Attribute == "_id" {
+				idSortExists = true
+			}
 			s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
 		}
 	}
@@ -1054,8 +1059,9 @@ func generateListSortStage(sorts []*store.Sort) bson.D {
 	// Including _id in the sort query ensures that $skip aggregation works correctly
 	// See https://docs.mongodb.com/manual/reference/operator/aggregation/skip/
 	// for more details
-	s = append(s, bson.E{Key: "_id", Value: 1})
-
+	if !idSortExists {
+		s = append(s, bson.E{Key: "_id", Value: 1})
+	}
 	return s
 }
 

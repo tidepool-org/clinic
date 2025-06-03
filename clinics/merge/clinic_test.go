@@ -120,11 +120,11 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 	t.source = createClinic(t.userService, t.clinicManager, data.Source, data.SourceAdmin)
 	t.target = createClinic(t.userService, t.clinicManager, data.Target, data.TargetAdmin)
 
-	if params.PatientCount > clinics.PatientCountSettingsHardLimitPatientCountDefault {
+	if params.UniquePatientCount > clinics.PatientCountSettingsHardLimitPatientCountDefault {
 		ctx := context.Background()
 		pcs := &clinics.PatientCountSettings{
-			HardLimit: &clinics.PatientCountLimit{PatientCount: params.PatientCount * 2},
-			SoftLimit: &clinics.PatientCountLimit{PatientCount: params.PatientCount * 2},
+			HardLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
+			SoftLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
 		}
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.source.Id.Hex(), pcs)).To(Succeed())
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.target.Id.Hex(), pcs)).To(Succeed())
@@ -148,7 +148,7 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	var t *ClinicMergeTest
 	var params = mergeTest.Params{
-		PatientCount:                 patientCount,
+		UniquePatientCount:           patientCount,
 		DuplicateAccountsCount:       duplicateAccountsCount,
 		LikelyDuplicateAccountsCount: likelyDuplicateAccountsCount,
 		NameOnlyMatchAccountsCount:   nameOnlyMatchAccountsCount,
@@ -351,7 +351,7 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 
 var _ = Describe("New Clinic Merge Planner (w/ Large patient populations)", Ordered, func() {
 	var t *ClinicMergeTest
-	var params = mergeTest.Params{PatientCount: 1025}
+	var params = mergeTest.Params{UniquePatientCount: 1025}
 
 	BeforeAll(func() {
 		t = NewClinicMergeTest()

@@ -555,11 +555,14 @@ func NewPatientsDto(patients []*patients.Patient) []Patient {
 	return dtos
 }
 
-func NewPatientsResponseDto(list *patients.ListResult) PatientsResponse {
-	data := Patients(NewPatientsDto(list.Patients))
+func NewPatientsResponseDto(list *patients.ListResult, totalCount int) PatientsResponse {
+	data := NewPatientsDto(list.Patients)
 	return PatientsResponse{
 		Data: &data,
-		Meta: &Meta{Count: &list.TotalCount},
+		Meta: &Meta{
+			Count:      &list.MatchingCount,
+			TotalCount: &totalCount,
+		},
 	}
 }
 

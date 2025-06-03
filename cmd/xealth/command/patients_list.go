@@ -94,7 +94,7 @@ func listPatients(clinicsService clinics.Service, patientsService patients.Servi
 		fmt.Printf("MRN %s - %s [%s] - Subscriptions [%s]\n", mrn, name, userId, strings.Join(subscriptions, ", "))
 	}
 
-	fmt.Printf("Found %v patients\n", result.TotalCount)
+	fmt.Printf("Found %v patients\n", result.MatchingCount)
 
 	return nil
 }
