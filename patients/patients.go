@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -94,7 +95,7 @@ type Patient struct {
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
-	LastRequestedDexcomConnectTime time.Time             `bson:"lastRequestedDexcomConnectTime,omitempty"`
+	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
 }
 
 func (p Patient) IsCustodial() bool {
@@ -184,6 +185,11 @@ type Filter struct {
 	BGMTime SummaryDateFilters
 
 	ExcludeDemo bool
+	// ExcludeSummaryExceptFieldsInMergeReports along with its helper function
+	// excludeSummaryExceptFieldsInMergeReports are used to reduce a patient's [Summary] to
+	// the minimum content needed to generate clinic merge reports and perform clinic
+	// merges.
+	ExcludeSummaryExceptFieldsInMergeReports bool
 }
 
 type Permission = map[string]interface{}
@@ -207,9 +213,9 @@ type ListResult struct {
 }
 
 type PatientUpdate struct {
-	ClinicId  string
-	UserId    string
-	Patient   Patient
+	ClinicId string
+	UserId   string
+	Patient  Patient
 }
 
 type UploadReminderUpdate struct {

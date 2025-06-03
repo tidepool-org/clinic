@@ -5,6 +5,7 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"github.com/tidepool-org/clinic/clinics/merge"
 	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
 )
@@ -40,7 +41,7 @@ var _ = Describe("Patient Cluster Reporter", func() {
 			Expect(clusters).To(HaveLen(expectedClusters))
 		})
 
-		It("have the expected number of duplicates withing the cluster", func() {
+		It("have the expected number of duplicates within the cluster", func() {
 			expectedClusterSize := 1 + inClusterLikelyDuplicateAccountsCount + inClusterMRNOnlyMatchAccountsCount + inClusterNameOnlyMatchAccountsCount
 			for i, cluster := range clusters {
 				if len(cluster.Patients) != expectedClusterSize {
