@@ -3,6 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -10,8 +13,6 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/http"
-	"time"
 )
 
 func (h *Handler) ListAllClinicians(ec echo.Context, params ListAllCliniciansParams) error {
@@ -77,7 +78,7 @@ func (h *Handler) GetClinician(ec echo.Context, clinicId ClinicId, clinicianId C
 
 func (h *Handler) CreateClinician(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := Clinician{}
+	dto := ClinicianV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -103,7 +104,7 @@ func (h *Handler) CreateClinician(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) UpdateClinician(ec echo.Context, clinicId ClinicId, clinicianId ClinicianId) error {
 	ctx := ec.Request().Context()
-	dto := Clinician{}
+	dto := ClinicianV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -170,7 +171,7 @@ func (h *Handler) DeleteInvitedClinician(ec echo.Context, clinicId ClinicId, inv
 
 func (h *Handler) AssociateClinicianToUser(ec echo.Context, clinicId ClinicId, inviteId InviteId) error {
 	ctx := ec.Request().Context()
-	dto := AssociateClinicianToUser{}
+	dto := AssociateClinicianToUserV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -205,7 +206,7 @@ func (h *Handler) EnableNewClinicExperience(ec echo.Context, userId string) erro
 
 func (h *Handler) AddServiceAccount(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := AddServiceAccount{}
+	dto := AddServiceAccountV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}

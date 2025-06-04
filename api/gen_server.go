@@ -87,10 +87,10 @@ type ServerInterface interface {
 	MigrateLegacyClinicianPatients(ctx echo.Context, clinicId string) error
 	// Get Migration
 	// (GET /v1/clinics/{clinicId}/migrations/{userId})
-	GetMigration(ctx echo.Context, clinicId Id, userId UserId) error
+	GetMigration(ctx echo.Context, clinicId ClinicIdV1, userId UserId) error
 	// Update Migration
 	// (PATCH /v1/clinics/{clinicId}/migrations/{userId})
-	UpdateMigration(ctx echo.Context, clinicId Id, userId UserId) error
+	UpdateMigration(ctx echo.Context, clinicId ClinicIdV1, userId UserId) error
 	// Get Patient Count
 	// (GET /v1/clinics/{clinicId}/patient_count)
 	GetPatientCount(ctx echo.Context, clinicId ClinicId) error
@@ -823,7 +823,7 @@ func (w *ServerInterfaceWrapper) MigrateLegacyClinicianPatients(ctx echo.Context
 func (w *ServerInterfaceWrapper) GetMigration(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId Id
+	var clinicId ClinicIdV1
 
 	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -849,7 +849,7 @@ func (w *ServerInterfaceWrapper) GetMigration(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateMigration(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId Id
+	var clinicId ClinicIdV1
 
 	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {

@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
@@ -16,9 +20,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const (

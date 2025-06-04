@@ -5,12 +5,12 @@ NPM_BIN = node_modules/.bin
 
 OAPI_CODEGEN = $(TOOLS_BIN)/oapi-codegen
 MOCKGEN = $(TOOLS_BIN)/mockgen
-SWAGGER_CLI = $(NPM_BIN)/swagger-cli
+REDOCLY_CLI = $(NPM_BIN)/redocly
 OPENAPI_FILTER = $(NPM_BIN)/openapi-filter
 
 NPM_PKG_SPECS = \
-	@apidevtools/swagger-cli@^4.0.4 \
-	openapi-filter@^3.2.3
+    @redocly/cli@1.34.2 \
+    openapi-filter@^3.2.3
 
 PATH:=$(shell pwd)/$(TOOLS_BIN):$(PATH)
 
@@ -26,14 +26,14 @@ endif
 
 # Generates server files
 .PHONY: generate
-generate: $(SWAGGER_CLI) $(OAPI_CODEGEN) $(MOCKGEN)
-	$(SWAGGER_CLI) bundle ../TidepoolApi/reference/clinic.v1.yaml -o ./spec/clinic.v1.yaml -t yaml
+generate: $(REDOCLY_CLI) $(OAPI_CODEGEN) $(MOCKGEN)
+	$(REDOCLY_CLI) bundle ../TidepoolApi/reference/clinic.v1.yaml -o ./spec/clinic.v1.yaml
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=server spec/clinic.v1.yaml > api/gen_server.go
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=spec spec/clinic.v1.yaml > api/gen_spec.go
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > api/gen_types.go
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=types spec/clinic.v1.yaml > client/types.go
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=client spec/clinic.v1.yaml > client/client.go
-	$(SWAGGER_CLI) bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml -t yaml
+	$(REDOCLY_CLI) bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml
 	$(OAPI_CODEGEN) -package=redox_models -generate=types spec/redox.v1.yaml > redox_models/gen_types.go
 	$(OAPI_CODEGEN) -include-tags="Orders (Partner)",Webhooks -package=xealth_client -generate=types,skip-prune ../TidepoolApi/reference/xealth.v2.yaml > xealth_client/gen_types.go
 	$(OAPI_CODEGEN) -include-tags="Orders (Partner)" -package=xealth_client -generate=client ../TidepoolApi/reference/xealth.v2.yaml > xealth_client/gen_client.go
@@ -52,22 +52,17 @@ service-profile/clinic.v1.yaml: $(OPENAPI_FILTER) generate service-profile
 service-profile:
 	mkdir -p service-profile
 
-# Set flags
-.PHONY: go-flags
-go-flags:
-	go env -w GOFLAGS=-mod=mod
-
 tools/bin/ginkgo:
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.22.0
 
 # Runs tests
 .PHONY: test
-test: go-flags $(TOOLS_BIN)/ginkgo
+test: $(TOOLS_BIN)/ginkgo
 	$(TOOLS_BIN)/ginkgo --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
 
 # Builds package
 .PHONY: build
-build: go-flags
+build:
 	./build.sh
 
 $(OAPI_CODEGEN):
@@ -76,7 +71,7 @@ $(OAPI_CODEGEN):
 $(MOCKGEN):
 	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install go.uber.org/mock/mockgen@v0.5.0
 
-$(SWAGGER_CLI): npm-tools
+$(REDOCLY_CLI): npm-tools
 
 $(OPENAPI_FILTER): npm-tools
 

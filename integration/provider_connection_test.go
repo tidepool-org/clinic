@@ -3,19 +3,20 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/client"
-	"io"
-	"net/http"
-	"net/http/httptest"
 )
 
 var _ = Describe("Provider Connection Integration Test", Ordered, func() {
-	var clinic client.Clinic
-	var patient api.Patient
+	var clinic client.ClinicV1
+	var patient api.PatientV1
 
 	Describe("Create a clinic", func() {
 		It("Succeeds", func() {
@@ -62,7 +63,6 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 		})
 	})
 
-
 	Describe("Send Dexcom Connection Request", func() {
 		It("Succeeds", func() {
 			rec := httptest.NewRecorder()
@@ -83,7 +83,6 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-
 
 			dec := json.NewDecoder(rec.Result().Body)
 			Expect(dec.Decode(&patient)).To(Succeed())
@@ -117,7 +116,6 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 
-
 			dec := json.NewDecoder(rec.Result().Body)
 			Expect(dec.Decode(&patient)).To(Succeed())
 			Expect(patient.Id).To(PointTo(Not(BeEmpty())))
@@ -149,7 +147,6 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-
 
 			dec := json.NewDecoder(rec.Result().Body)
 			Expect(dec.Decode(&patient)).To(Succeed())
