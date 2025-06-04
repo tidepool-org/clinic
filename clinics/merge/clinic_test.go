@@ -109,11 +109,9 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 
 	summaryPlaceholder := &patients.Summary{
 		CGM: &patients.PatientCGMStats{
-			Config:        patients.PatientSummaryConfig{},
-			Dates:         patients.PatientSummaryDates{},
-			OffsetPeriods: patients.PatientCGMPeriods{},
-			Periods:       patients.PatientCGMPeriods{},
-			TotalHours:    0,
+			Config:  patients.PatientSummaryConfig{},
+			Dates:   patients.PatientSummaryDates{},
+			Periods: patients.PatientCGMPeriods{},
 		},
 	}
 	t.sourcePatients[0].Summary = summaryPlaceholder

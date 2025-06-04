@@ -14,6 +14,7 @@ var (
 	PaymentRequired     = HttpError{http.StatusPaymentRequired, errors.New("payment required")}
 	InternalServerError = HttpError{http.StatusInternalServerError, errors.New("internal server error")}
 	Conflict            = HttpError{http.StatusConflict, errors.New("conflict")}
+	NoChange            = HttpError{http.StatusNoContent, errors.New("no change")}
 )
 
 type HttpError struct {
