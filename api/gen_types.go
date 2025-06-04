@@ -13,701 +13,701 @@ const (
 	SessionTokenScopes = "sessionToken.Scopes"
 )
 
-// Defines values for ClinicClinicSize.
+// Defines values for ClinicV1ClinicSize.
 const (
-	N0249   ClinicClinicSize = "0-249"
-	N1000   ClinicClinicSize = "1000+"
-	N250499 ClinicClinicSize = "250-499"
-	N500999 ClinicClinicSize = "500-999"
+	N0249   ClinicV1ClinicSize = "0-249"
+	N1000   ClinicV1ClinicSize = "1000+"
+	N250499 ClinicV1ClinicSize = "250-499"
+	N500999 ClinicV1ClinicSize = "500-999"
 )
 
-// Defines values for ClinicClinicType.
+// Defines values for ClinicV1ClinicType.
 const (
-	HealthcareSystem ClinicClinicType = "healthcare_system"
-	Other            ClinicClinicType = "other"
-	ProviderPractice ClinicClinicType = "provider_practice"
-	Researcher       ClinicClinicType = "researcher"
-	VeterinaryClinic ClinicClinicType = "veterinary_clinic"
+	HealthcareSystem ClinicV1ClinicType = "healthcare_system"
+	Other            ClinicV1ClinicType = "other"
+	ProviderPractice ClinicV1ClinicType = "provider_practice"
+	Researcher       ClinicV1ClinicType = "researcher"
+	VeterinaryClinic ClinicV1ClinicType = "veterinary_clinic"
 )
 
-// Defines values for ClinicPreferredBgUnits.
+// Defines values for ClinicV1PreferredBgUnits.
 const (
-	MgdL  ClinicPreferredBgUnits = "mg/dL"
-	MmolL ClinicPreferredBgUnits = "mmol/L"
+	MgdL  ClinicV1PreferredBgUnits = "mg/dL"
+	MmolL ClinicV1PreferredBgUnits = "mmol/L"
 )
 
-// Defines values for ClinicTimezone.
+// Defines values for ClinicTimezoneV1.
 const (
-	AfricaAbidjan                  ClinicTimezone = "Africa/Abidjan"
-	AfricaAccra                    ClinicTimezone = "Africa/Accra"
-	AfricaAddisAbaba               ClinicTimezone = "Africa/Addis_Ababa"
-	AfricaAlgiers                  ClinicTimezone = "Africa/Algiers"
-	AfricaAsmara                   ClinicTimezone = "Africa/Asmara"
-	AfricaAsmera                   ClinicTimezone = "Africa/Asmera"
-	AfricaBamako                   ClinicTimezone = "Africa/Bamako"
-	AfricaBangui                   ClinicTimezone = "Africa/Bangui"
-	AfricaBanjul                   ClinicTimezone = "Africa/Banjul"
-	AfricaBissau                   ClinicTimezone = "Africa/Bissau"
-	AfricaBlantyre                 ClinicTimezone = "Africa/Blantyre"
-	AfricaBrazzaville              ClinicTimezone = "Africa/Brazzaville"
-	AfricaBujumbura                ClinicTimezone = "Africa/Bujumbura"
-	AfricaCairo                    ClinicTimezone = "Africa/Cairo"
-	AfricaCasablanca               ClinicTimezone = "Africa/Casablanca"
-	AfricaCeuta                    ClinicTimezone = "Africa/Ceuta"
-	AfricaConakry                  ClinicTimezone = "Africa/Conakry"
-	AfricaDakar                    ClinicTimezone = "Africa/Dakar"
-	AfricaDarEsSalaam              ClinicTimezone = "Africa/Dar_es_Salaam"
-	AfricaDjibouti                 ClinicTimezone = "Africa/Djibouti"
-	AfricaDouala                   ClinicTimezone = "Africa/Douala"
-	AfricaElAaiun                  ClinicTimezone = "Africa/El_Aaiun"
-	AfricaFreetown                 ClinicTimezone = "Africa/Freetown"
-	AfricaGaborone                 ClinicTimezone = "Africa/Gaborone"
-	AfricaHarare                   ClinicTimezone = "Africa/Harare"
-	AfricaJohannesburg             ClinicTimezone = "Africa/Johannesburg"
-	AfricaJuba                     ClinicTimezone = "Africa/Juba"
-	AfricaKampala                  ClinicTimezone = "Africa/Kampala"
-	AfricaKhartoum                 ClinicTimezone = "Africa/Khartoum"
-	AfricaKigali                   ClinicTimezone = "Africa/Kigali"
-	AfricaKinshasa                 ClinicTimezone = "Africa/Kinshasa"
-	AfricaLagos                    ClinicTimezone = "Africa/Lagos"
-	AfricaLibreville               ClinicTimezone = "Africa/Libreville"
-	AfricaLome                     ClinicTimezone = "Africa/Lome"
-	AfricaLuanda                   ClinicTimezone = "Africa/Luanda"
-	AfricaLubumbashi               ClinicTimezone = "Africa/Lubumbashi"
-	AfricaLusaka                   ClinicTimezone = "Africa/Lusaka"
-	AfricaMalabo                   ClinicTimezone = "Africa/Malabo"
-	AfricaMaputo                   ClinicTimezone = "Africa/Maputo"
-	AfricaMaseru                   ClinicTimezone = "Africa/Maseru"
-	AfricaMbabane                  ClinicTimezone = "Africa/Mbabane"
-	AfricaMogadishu                ClinicTimezone = "Africa/Mogadishu"
-	AfricaMonrovia                 ClinicTimezone = "Africa/Monrovia"
-	AfricaNairobi                  ClinicTimezone = "Africa/Nairobi"
-	AfricaNdjamena                 ClinicTimezone = "Africa/Ndjamena"
-	AfricaNiamey                   ClinicTimezone = "Africa/Niamey"
-	AfricaNouakchott               ClinicTimezone = "Africa/Nouakchott"
-	AfricaOuagadougou              ClinicTimezone = "Africa/Ouagadougou"
-	AfricaPortoNovo                ClinicTimezone = "Africa/Porto-Novo"
-	AfricaSaoTome                  ClinicTimezone = "Africa/Sao_Tome"
-	AfricaTimbuktu                 ClinicTimezone = "Africa/Timbuktu"
-	AfricaTripoli                  ClinicTimezone = "Africa/Tripoli"
-	AfricaTunis                    ClinicTimezone = "Africa/Tunis"
-	AfricaWindhoek                 ClinicTimezone = "Africa/Windhoek"
-	AmericaAdak                    ClinicTimezone = "America/Adak"
-	AmericaAnchorage               ClinicTimezone = "America/Anchorage"
-	AmericaAnguilla                ClinicTimezone = "America/Anguilla"
-	AmericaAntigua                 ClinicTimezone = "America/Antigua"
-	AmericaAraguaina               ClinicTimezone = "America/Araguaina"
-	AmericaArgentinaBuenosAires    ClinicTimezone = "America/Argentina/Buenos_Aires"
-	AmericaArgentinaCatamarca      ClinicTimezone = "America/Argentina/Catamarca"
-	AmericaArgentinaComodRivadavia ClinicTimezone = "America/Argentina/ComodRivadavia"
-	AmericaArgentinaCordoba        ClinicTimezone = "America/Argentina/Cordoba"
-	AmericaArgentinaJujuy          ClinicTimezone = "America/Argentina/Jujuy"
-	AmericaArgentinaLaRioja        ClinicTimezone = "America/Argentina/La_Rioja"
-	AmericaArgentinaMendoza        ClinicTimezone = "America/Argentina/Mendoza"
-	AmericaArgentinaRioGallegos    ClinicTimezone = "America/Argentina/Rio_Gallegos"
-	AmericaArgentinaSalta          ClinicTimezone = "America/Argentina/Salta"
-	AmericaArgentinaSanJuan        ClinicTimezone = "America/Argentina/San_Juan"
-	AmericaArgentinaSanLuis        ClinicTimezone = "America/Argentina/San_Luis"
-	AmericaArgentinaTucuman        ClinicTimezone = "America/Argentina/Tucuman"
-	AmericaArgentinaUshuaia        ClinicTimezone = "America/Argentina/Ushuaia"
-	AmericaAruba                   ClinicTimezone = "America/Aruba"
-	AmericaAsuncion                ClinicTimezone = "America/Asuncion"
-	AmericaAtikokan                ClinicTimezone = "America/Atikokan"
-	AmericaAtka                    ClinicTimezone = "America/Atka"
-	AmericaBahia                   ClinicTimezone = "America/Bahia"
-	AmericaBahiaBanderas           ClinicTimezone = "America/Bahia_Banderas"
-	AmericaBarbados                ClinicTimezone = "America/Barbados"
-	AmericaBelem                   ClinicTimezone = "America/Belem"
-	AmericaBelize                  ClinicTimezone = "America/Belize"
-	AmericaBlancSablon             ClinicTimezone = "America/Blanc-Sablon"
-	AmericaBoaVista                ClinicTimezone = "America/Boa_Vista"
-	AmericaBogota                  ClinicTimezone = "America/Bogota"
-	AmericaBoise                   ClinicTimezone = "America/Boise"
-	AmericaBuenosAires             ClinicTimezone = "America/Buenos_Aires"
-	AmericaCambridgeBay            ClinicTimezone = "America/Cambridge_Bay"
-	AmericaCampoGrande             ClinicTimezone = "America/Campo_Grande"
-	AmericaCancun                  ClinicTimezone = "America/Cancun"
-	AmericaCaracas                 ClinicTimezone = "America/Caracas"
-	AmericaCatamarca               ClinicTimezone = "America/Catamarca"
-	AmericaCayenne                 ClinicTimezone = "America/Cayenne"
-	AmericaCayman                  ClinicTimezone = "America/Cayman"
-	AmericaChicago                 ClinicTimezone = "America/Chicago"
-	AmericaChihuahua               ClinicTimezone = "America/Chihuahua"
-	AmericaCiudadJuarez            ClinicTimezone = "America/Ciudad_Juarez"
-	AmericaCoralHarbour            ClinicTimezone = "America/Coral_Harbour"
-	AmericaCordoba                 ClinicTimezone = "America/Cordoba"
-	AmericaCostaRica               ClinicTimezone = "America/Costa_Rica"
-	AmericaCreston                 ClinicTimezone = "America/Creston"
-	AmericaCuiaba                  ClinicTimezone = "America/Cuiaba"
-	AmericaCuracao                 ClinicTimezone = "America/Curacao"
-	AmericaDanmarkshavn            ClinicTimezone = "America/Danmarkshavn"
-	AmericaDawson                  ClinicTimezone = "America/Dawson"
-	AmericaDawsonCreek             ClinicTimezone = "America/Dawson_Creek"
-	AmericaDenver                  ClinicTimezone = "America/Denver"
-	AmericaDetroit                 ClinicTimezone = "America/Detroit"
-	AmericaDominica                ClinicTimezone = "America/Dominica"
-	AmericaEdmonton                ClinicTimezone = "America/Edmonton"
-	AmericaEirunepe                ClinicTimezone = "America/Eirunepe"
-	AmericaElSalvador              ClinicTimezone = "America/El_Salvador"
-	AmericaEnsenada                ClinicTimezone = "America/Ensenada"
-	AmericaFortNelson              ClinicTimezone = "America/Fort_Nelson"
-	AmericaFortWayne               ClinicTimezone = "America/Fort_Wayne"
-	AmericaFortaleza               ClinicTimezone = "America/Fortaleza"
-	AmericaGlaceBay                ClinicTimezone = "America/Glace_Bay"
-	AmericaGodthab                 ClinicTimezone = "America/Godthab"
-	AmericaGooseBay                ClinicTimezone = "America/Goose_Bay"
-	AmericaGrandTurk               ClinicTimezone = "America/Grand_Turk"
-	AmericaGrenada                 ClinicTimezone = "America/Grenada"
-	AmericaGuadeloupe              ClinicTimezone = "America/Guadeloupe"
-	AmericaGuatemala               ClinicTimezone = "America/Guatemala"
-	AmericaGuayaquil               ClinicTimezone = "America/Guayaquil"
-	AmericaGuyana                  ClinicTimezone = "America/Guyana"
-	AmericaHalifax                 ClinicTimezone = "America/Halifax"
-	AmericaHavana                  ClinicTimezone = "America/Havana"
-	AmericaHermosillo              ClinicTimezone = "America/Hermosillo"
-	AmericaIndianaIndianapolis     ClinicTimezone = "America/Indiana/Indianapolis"
-	AmericaIndianaKnox             ClinicTimezone = "America/Indiana/Knox"
-	AmericaIndianaMarengo          ClinicTimezone = "America/Indiana/Marengo"
-	AmericaIndianaPetersburg       ClinicTimezone = "America/Indiana/Petersburg"
-	AmericaIndianaTellCity         ClinicTimezone = "America/Indiana/Tell_City"
-	AmericaIndianaVevay            ClinicTimezone = "America/Indiana/Vevay"
-	AmericaIndianaVincennes        ClinicTimezone = "America/Indiana/Vincennes"
-	AmericaIndianaWinamac          ClinicTimezone = "America/Indiana/Winamac"
-	AmericaIndianapolis            ClinicTimezone = "America/Indianapolis"
-	AmericaInuvik                  ClinicTimezone = "America/Inuvik"
-	AmericaIqaluit                 ClinicTimezone = "America/Iqaluit"
-	AmericaJamaica                 ClinicTimezone = "America/Jamaica"
-	AmericaJujuy                   ClinicTimezone = "America/Jujuy"
-	AmericaJuneau                  ClinicTimezone = "America/Juneau"
-	AmericaKentuckyLouisville      ClinicTimezone = "America/Kentucky/Louisville"
-	AmericaKentuckyMonticello      ClinicTimezone = "America/Kentucky/Monticello"
-	AmericaKnoxIN                  ClinicTimezone = "America/Knox_IN"
-	AmericaKralendijk              ClinicTimezone = "America/Kralendijk"
-	AmericaLaPaz                   ClinicTimezone = "America/La_Paz"
-	AmericaLima                    ClinicTimezone = "America/Lima"
-	AmericaLosAngeles              ClinicTimezone = "America/Los_Angeles"
-	AmericaLouisville              ClinicTimezone = "America/Louisville"
-	AmericaLowerPrinces            ClinicTimezone = "America/Lower_Princes"
-	AmericaMaceio                  ClinicTimezone = "America/Maceio"
-	AmericaManagua                 ClinicTimezone = "America/Managua"
-	AmericaManaus                  ClinicTimezone = "America/Manaus"
-	AmericaMarigot                 ClinicTimezone = "America/Marigot"
-	AmericaMartinique              ClinicTimezone = "America/Martinique"
-	AmericaMatamoros               ClinicTimezone = "America/Matamoros"
-	AmericaMazatlan                ClinicTimezone = "America/Mazatlan"
-	AmericaMendoza                 ClinicTimezone = "America/Mendoza"
-	AmericaMenominee               ClinicTimezone = "America/Menominee"
-	AmericaMerida                  ClinicTimezone = "America/Merida"
-	AmericaMetlakatla              ClinicTimezone = "America/Metlakatla"
-	AmericaMexicoCity              ClinicTimezone = "America/Mexico_City"
-	AmericaMiquelon                ClinicTimezone = "America/Miquelon"
-	AmericaMoncton                 ClinicTimezone = "America/Moncton"
-	AmericaMonterrey               ClinicTimezone = "America/Monterrey"
-	AmericaMontevideo              ClinicTimezone = "America/Montevideo"
-	AmericaMontreal                ClinicTimezone = "America/Montreal"
-	AmericaMontserrat              ClinicTimezone = "America/Montserrat"
-	AmericaNassau                  ClinicTimezone = "America/Nassau"
-	AmericaNewYork                 ClinicTimezone = "America/New_York"
-	AmericaNipigon                 ClinicTimezone = "America/Nipigon"
-	AmericaNome                    ClinicTimezone = "America/Nome"
-	AmericaNoronha                 ClinicTimezone = "America/Noronha"
-	AmericaNorthDakotaBeulah       ClinicTimezone = "America/North_Dakota/Beulah"
-	AmericaNorthDakotaCenter       ClinicTimezone = "America/North_Dakota/Center"
-	AmericaNorthDakotaNewSalem     ClinicTimezone = "America/North_Dakota/New_Salem"
-	AmericaNuuk                    ClinicTimezone = "America/Nuuk"
-	AmericaOjinaga                 ClinicTimezone = "America/Ojinaga"
-	AmericaPanama                  ClinicTimezone = "America/Panama"
-	AmericaPangnirtung             ClinicTimezone = "America/Pangnirtung"
-	AmericaParamaribo              ClinicTimezone = "America/Paramaribo"
-	AmericaPhoenix                 ClinicTimezone = "America/Phoenix"
-	AmericaPortAuPrince            ClinicTimezone = "America/Port-au-Prince"
-	AmericaPortOfSpain             ClinicTimezone = "America/Port_of_Spain"
-	AmericaPortoAcre               ClinicTimezone = "America/Porto_Acre"
-	AmericaPortoVelho              ClinicTimezone = "America/Porto_Velho"
-	AmericaPuertoRico              ClinicTimezone = "America/Puerto_Rico"
-	AmericaPuntaArenas             ClinicTimezone = "America/Punta_Arenas"
-	AmericaRainyRiver              ClinicTimezone = "America/Rainy_River"
-	AmericaRankinInlet             ClinicTimezone = "America/Rankin_Inlet"
-	AmericaRecife                  ClinicTimezone = "America/Recife"
-	AmericaRegina                  ClinicTimezone = "America/Regina"
-	AmericaResolute                ClinicTimezone = "America/Resolute"
-	AmericaRioBranco               ClinicTimezone = "America/Rio_Branco"
-	AmericaRosario                 ClinicTimezone = "America/Rosario"
-	AmericaSantaIsabel             ClinicTimezone = "America/Santa_Isabel"
-	AmericaSantarem                ClinicTimezone = "America/Santarem"
-	AmericaSantiago                ClinicTimezone = "America/Santiago"
-	AmericaSantoDomingo            ClinicTimezone = "America/Santo_Domingo"
-	AmericaSaoPaulo                ClinicTimezone = "America/Sao_Paulo"
-	AmericaScoresbysund            ClinicTimezone = "America/Scoresbysund"
-	AmericaShiprock                ClinicTimezone = "America/Shiprock"
-	AmericaSitka                   ClinicTimezone = "America/Sitka"
-	AmericaStBarthelemy            ClinicTimezone = "America/St_Barthelemy"
-	AmericaStJohns                 ClinicTimezone = "America/St_Johns"
-	AmericaStKitts                 ClinicTimezone = "America/St_Kitts"
-	AmericaStLucia                 ClinicTimezone = "America/St_Lucia"
-	AmericaStThomas                ClinicTimezone = "America/St_Thomas"
-	AmericaStVincent               ClinicTimezone = "America/St_Vincent"
-	AmericaSwiftCurrent            ClinicTimezone = "America/Swift_Current"
-	AmericaTegucigalpa             ClinicTimezone = "America/Tegucigalpa"
-	AmericaThule                   ClinicTimezone = "America/Thule"
-	AmericaThunderBay              ClinicTimezone = "America/Thunder_Bay"
-	AmericaTijuana                 ClinicTimezone = "America/Tijuana"
-	AmericaToronto                 ClinicTimezone = "America/Toronto"
-	AmericaTortola                 ClinicTimezone = "America/Tortola"
-	AmericaVancouver               ClinicTimezone = "America/Vancouver"
-	AmericaVirgin                  ClinicTimezone = "America/Virgin"
-	AmericaWhitehorse              ClinicTimezone = "America/Whitehorse"
-	AmericaWinnipeg                ClinicTimezone = "America/Winnipeg"
-	AmericaYakutat                 ClinicTimezone = "America/Yakutat"
-	AmericaYellowknife             ClinicTimezone = "America/Yellowknife"
-	AntarcticaCasey                ClinicTimezone = "Antarctica/Casey"
-	AntarcticaDavis                ClinicTimezone = "Antarctica/Davis"
-	AntarcticaDumontDUrville       ClinicTimezone = "Antarctica/DumontDUrville"
-	AntarcticaMacquarie            ClinicTimezone = "Antarctica/Macquarie"
-	AntarcticaMawson               ClinicTimezone = "Antarctica/Mawson"
-	AntarcticaMcMurdo              ClinicTimezone = "Antarctica/McMurdo"
-	AntarcticaPalmer               ClinicTimezone = "Antarctica/Palmer"
-	AntarcticaRothera              ClinicTimezone = "Antarctica/Rothera"
-	AntarcticaSouthPole            ClinicTimezone = "Antarctica/South_Pole"
-	AntarcticaSyowa                ClinicTimezone = "Antarctica/Syowa"
-	AntarcticaTroll                ClinicTimezone = "Antarctica/Troll"
-	AntarcticaVostok               ClinicTimezone = "Antarctica/Vostok"
-	ArcticLongyearbyen             ClinicTimezone = "Arctic/Longyearbyen"
-	AsiaAden                       ClinicTimezone = "Asia/Aden"
-	AsiaAlmaty                     ClinicTimezone = "Asia/Almaty"
-	AsiaAmman                      ClinicTimezone = "Asia/Amman"
-	AsiaAnadyr                     ClinicTimezone = "Asia/Anadyr"
-	AsiaAqtau                      ClinicTimezone = "Asia/Aqtau"
-	AsiaAqtobe                     ClinicTimezone = "Asia/Aqtobe"
-	AsiaAshgabat                   ClinicTimezone = "Asia/Ashgabat"
-	AsiaAshkhabad                  ClinicTimezone = "Asia/Ashkhabad"
-	AsiaAtyrau                     ClinicTimezone = "Asia/Atyrau"
-	AsiaBaghdad                    ClinicTimezone = "Asia/Baghdad"
-	AsiaBahrain                    ClinicTimezone = "Asia/Bahrain"
-	AsiaBaku                       ClinicTimezone = "Asia/Baku"
-	AsiaBangkok                    ClinicTimezone = "Asia/Bangkok"
-	AsiaBarnaul                    ClinicTimezone = "Asia/Barnaul"
-	AsiaBeirut                     ClinicTimezone = "Asia/Beirut"
-	AsiaBishkek                    ClinicTimezone = "Asia/Bishkek"
-	AsiaBrunei                     ClinicTimezone = "Asia/Brunei"
-	AsiaCalcutta                   ClinicTimezone = "Asia/Calcutta"
-	AsiaChita                      ClinicTimezone = "Asia/Chita"
-	AsiaChoibalsan                 ClinicTimezone = "Asia/Choibalsan"
-	AsiaChongqing                  ClinicTimezone = "Asia/Chongqing"
-	AsiaChungking                  ClinicTimezone = "Asia/Chungking"
-	AsiaColombo                    ClinicTimezone = "Asia/Colombo"
-	AsiaDacca                      ClinicTimezone = "Asia/Dacca"
-	AsiaDamascus                   ClinicTimezone = "Asia/Damascus"
-	AsiaDhaka                      ClinicTimezone = "Asia/Dhaka"
-	AsiaDili                       ClinicTimezone = "Asia/Dili"
-	AsiaDubai                      ClinicTimezone = "Asia/Dubai"
-	AsiaDushanbe                   ClinicTimezone = "Asia/Dushanbe"
-	AsiaFamagusta                  ClinicTimezone = "Asia/Famagusta"
-	AsiaGaza                       ClinicTimezone = "Asia/Gaza"
-	AsiaHarbin                     ClinicTimezone = "Asia/Harbin"
-	AsiaHebron                     ClinicTimezone = "Asia/Hebron"
-	AsiaHoChiMinh                  ClinicTimezone = "Asia/Ho_Chi_Minh"
-	AsiaHongKong                   ClinicTimezone = "Asia/Hong_Kong"
-	AsiaHovd                       ClinicTimezone = "Asia/Hovd"
-	AsiaIrkutsk                    ClinicTimezone = "Asia/Irkutsk"
-	AsiaIstanbul                   ClinicTimezone = "Asia/Istanbul"
-	AsiaJakarta                    ClinicTimezone = "Asia/Jakarta"
-	AsiaJayapura                   ClinicTimezone = "Asia/Jayapura"
-	AsiaJerusalem                  ClinicTimezone = "Asia/Jerusalem"
-	AsiaKabul                      ClinicTimezone = "Asia/Kabul"
-	AsiaKamchatka                  ClinicTimezone = "Asia/Kamchatka"
-	AsiaKarachi                    ClinicTimezone = "Asia/Karachi"
-	AsiaKashgar                    ClinicTimezone = "Asia/Kashgar"
-	AsiaKathmandu                  ClinicTimezone = "Asia/Kathmandu"
-	AsiaKatmandu                   ClinicTimezone = "Asia/Katmandu"
-	AsiaKhandyga                   ClinicTimezone = "Asia/Khandyga"
-	AsiaKolkata                    ClinicTimezone = "Asia/Kolkata"
-	AsiaKrasnoyarsk                ClinicTimezone = "Asia/Krasnoyarsk"
-	AsiaKualaLumpur                ClinicTimezone = "Asia/Kuala_Lumpur"
-	AsiaKuching                    ClinicTimezone = "Asia/Kuching"
-	AsiaKuwait                     ClinicTimezone = "Asia/Kuwait"
-	AsiaMacao                      ClinicTimezone = "Asia/Macao"
-	AsiaMacau                      ClinicTimezone = "Asia/Macau"
-	AsiaMagadan                    ClinicTimezone = "Asia/Magadan"
-	AsiaMakassar                   ClinicTimezone = "Asia/Makassar"
-	AsiaManila                     ClinicTimezone = "Asia/Manila"
-	AsiaMuscat                     ClinicTimezone = "Asia/Muscat"
-	AsiaNicosia                    ClinicTimezone = "Asia/Nicosia"
-	AsiaNovokuznetsk               ClinicTimezone = "Asia/Novokuznetsk"
-	AsiaNovosibirsk                ClinicTimezone = "Asia/Novosibirsk"
-	AsiaOmsk                       ClinicTimezone = "Asia/Omsk"
-	AsiaOral                       ClinicTimezone = "Asia/Oral"
-	AsiaPhnomPenh                  ClinicTimezone = "Asia/Phnom_Penh"
-	AsiaPontianak                  ClinicTimezone = "Asia/Pontianak"
-	AsiaPyongyang                  ClinicTimezone = "Asia/Pyongyang"
-	AsiaQatar                      ClinicTimezone = "Asia/Qatar"
-	AsiaQostanay                   ClinicTimezone = "Asia/Qostanay"
-	AsiaQyzylorda                  ClinicTimezone = "Asia/Qyzylorda"
-	AsiaRangoon                    ClinicTimezone = "Asia/Rangoon"
-	AsiaRiyadh                     ClinicTimezone = "Asia/Riyadh"
-	AsiaSaigon                     ClinicTimezone = "Asia/Saigon"
-	AsiaSakhalin                   ClinicTimezone = "Asia/Sakhalin"
-	AsiaSamarkand                  ClinicTimezone = "Asia/Samarkand"
-	AsiaSeoul                      ClinicTimezone = "Asia/Seoul"
-	AsiaShanghai                   ClinicTimezone = "Asia/Shanghai"
-	AsiaSingapore                  ClinicTimezone = "Asia/Singapore"
-	AsiaSrednekolymsk              ClinicTimezone = "Asia/Srednekolymsk"
-	AsiaTaipei                     ClinicTimezone = "Asia/Taipei"
-	AsiaTashkent                   ClinicTimezone = "Asia/Tashkent"
-	AsiaTbilisi                    ClinicTimezone = "Asia/Tbilisi"
-	AsiaTehran                     ClinicTimezone = "Asia/Tehran"
-	AsiaTelAviv                    ClinicTimezone = "Asia/Tel_Aviv"
-	AsiaThimbu                     ClinicTimezone = "Asia/Thimbu"
-	AsiaThimphu                    ClinicTimezone = "Asia/Thimphu"
-	AsiaTokyo                      ClinicTimezone = "Asia/Tokyo"
-	AsiaTomsk                      ClinicTimezone = "Asia/Tomsk"
-	AsiaUjungPandang               ClinicTimezone = "Asia/Ujung_Pandang"
-	AsiaUlaanbaatar                ClinicTimezone = "Asia/Ulaanbaatar"
-	AsiaUlanBator                  ClinicTimezone = "Asia/Ulan_Bator"
-	AsiaUrumqi                     ClinicTimezone = "Asia/Urumqi"
-	AsiaUstNera                    ClinicTimezone = "Asia/Ust-Nera"
-	AsiaVientiane                  ClinicTimezone = "Asia/Vientiane"
-	AsiaVladivostok                ClinicTimezone = "Asia/Vladivostok"
-	AsiaYakutsk                    ClinicTimezone = "Asia/Yakutsk"
-	AsiaYangon                     ClinicTimezone = "Asia/Yangon"
-	AsiaYekaterinburg              ClinicTimezone = "Asia/Yekaterinburg"
-	AsiaYerevan                    ClinicTimezone = "Asia/Yerevan"
-	AtlanticAzores                 ClinicTimezone = "Atlantic/Azores"
-	AtlanticBermuda                ClinicTimezone = "Atlantic/Bermuda"
-	AtlanticCanary                 ClinicTimezone = "Atlantic/Canary"
-	AtlanticCapeVerde              ClinicTimezone = "Atlantic/Cape_Verde"
-	AtlanticFaeroe                 ClinicTimezone = "Atlantic/Faeroe"
-	AtlanticFaroe                  ClinicTimezone = "Atlantic/Faroe"
-	AtlanticJanMayen               ClinicTimezone = "Atlantic/Jan_Mayen"
-	AtlanticMadeira                ClinicTimezone = "Atlantic/Madeira"
-	AtlanticReykjavik              ClinicTimezone = "Atlantic/Reykjavik"
-	AtlanticSouthGeorgia           ClinicTimezone = "Atlantic/South_Georgia"
-	AtlanticStHelena               ClinicTimezone = "Atlantic/St_Helena"
-	AtlanticStanley                ClinicTimezone = "Atlantic/Stanley"
-	AustraliaACT                   ClinicTimezone = "Australia/ACT"
-	AustraliaAdelaide              ClinicTimezone = "Australia/Adelaide"
-	AustraliaBrisbane              ClinicTimezone = "Australia/Brisbane"
-	AustraliaBrokenHill            ClinicTimezone = "Australia/Broken_Hill"
-	AustraliaCanberra              ClinicTimezone = "Australia/Canberra"
-	AustraliaCurrie                ClinicTimezone = "Australia/Currie"
-	AustraliaDarwin                ClinicTimezone = "Australia/Darwin"
-	AustraliaEucla                 ClinicTimezone = "Australia/Eucla"
-	AustraliaHobart                ClinicTimezone = "Australia/Hobart"
-	AustraliaLHI                   ClinicTimezone = "Australia/LHI"
-	AustraliaLindeman              ClinicTimezone = "Australia/Lindeman"
-	AustraliaLordHowe              ClinicTimezone = "Australia/Lord_Howe"
-	AustraliaMelbourne             ClinicTimezone = "Australia/Melbourne"
-	AustraliaNSW                   ClinicTimezone = "Australia/NSW"
-	AustraliaNorth                 ClinicTimezone = "Australia/North"
-	AustraliaPerth                 ClinicTimezone = "Australia/Perth"
-	AustraliaQueensland            ClinicTimezone = "Australia/Queensland"
-	AustraliaSouth                 ClinicTimezone = "Australia/South"
-	AustraliaSydney                ClinicTimezone = "Australia/Sydney"
-	AustraliaTasmania              ClinicTimezone = "Australia/Tasmania"
-	AustraliaVictoria              ClinicTimezone = "Australia/Victoria"
-	AustraliaWest                  ClinicTimezone = "Australia/West"
-	AustraliaYancowinna            ClinicTimezone = "Australia/Yancowinna"
-	BrazilAcre                     ClinicTimezone = "Brazil/Acre"
-	BrazilDeNoronha                ClinicTimezone = "Brazil/DeNoronha"
-	BrazilEast                     ClinicTimezone = "Brazil/East"
-	BrazilWest                     ClinicTimezone = "Brazil/West"
-	CET                            ClinicTimezone = "CET"
-	CST6CDT                        ClinicTimezone = "CST6CDT"
-	CanadaAtlantic                 ClinicTimezone = "Canada/Atlantic"
-	CanadaCentral                  ClinicTimezone = "Canada/Central"
-	CanadaEastern                  ClinicTimezone = "Canada/Eastern"
-	CanadaMountain                 ClinicTimezone = "Canada/Mountain"
-	CanadaNewfoundland             ClinicTimezone = "Canada/Newfoundland"
-	CanadaPacific                  ClinicTimezone = "Canada/Pacific"
-	CanadaSaskatchewan             ClinicTimezone = "Canada/Saskatchewan"
-	CanadaYukon                    ClinicTimezone = "Canada/Yukon"
-	ChileContinental               ClinicTimezone = "Chile/Continental"
-	ChileEasterIsland              ClinicTimezone = "Chile/EasterIsland"
-	Cuba                           ClinicTimezone = "Cuba"
-	EET                            ClinicTimezone = "EET"
-	EST                            ClinicTimezone = "EST"
-	EST5EDT                        ClinicTimezone = "EST5EDT"
-	Egypt                          ClinicTimezone = "Egypt"
-	Eire                           ClinicTimezone = "Eire"
-	EtcGMT                         ClinicTimezone = "Etc/GMT"
-	EtcGMT0                        ClinicTimezone = "Etc/GMT+0"
-	EtcGMT01                       ClinicTimezone = "Etc/GMT-0"
-	EtcGMT02                       ClinicTimezone = "Etc/GMT0"
-	EtcGMT1                        ClinicTimezone = "Etc/GMT+1"
-	EtcGMT10                       ClinicTimezone = "Etc/GMT+10"
-	EtcGMT101                      ClinicTimezone = "Etc/GMT-10"
-	EtcGMT11                       ClinicTimezone = "Etc/GMT-1"
-	EtcGMT111                      ClinicTimezone = "Etc/GMT-11"
-	EtcGMT12                       ClinicTimezone = "Etc/GMT+12"
-	EtcGMT121                      ClinicTimezone = "Etc/GMT-12"
-	EtcGMT13                       ClinicTimezone = "Etc/GMT-13"
-	EtcGMT14                       ClinicTimezone = "Etc/GMT-14"
-	EtcGMT2                        ClinicTimezone = "Etc/GMT+2"
-	EtcGMT21                       ClinicTimezone = "Etc/GMT-2"
-	EtcGMT3                        ClinicTimezone = "Etc/GMT+3"
-	EtcGMT31                       ClinicTimezone = "Etc/GMT-3"
-	EtcGMT4                        ClinicTimezone = "Etc/GMT+4"
-	EtcGMT41                       ClinicTimezone = "Etc/GMT-4"
-	EtcGMT5                        ClinicTimezone = "Etc/GMT+5"
-	EtcGMT51                       ClinicTimezone = "Etc/GMT-5"
-	EtcGMT6                        ClinicTimezone = "Etc/GMT+6"
-	EtcGMT61                       ClinicTimezone = "Etc/GMT-6"
-	EtcGMT7                        ClinicTimezone = "Etc/GMT+7"
-	EtcGMT71                       ClinicTimezone = "Etc/GMT-7"
-	EtcGMT8                        ClinicTimezone = "Etc/GMT+8"
-	EtcGMT81                       ClinicTimezone = "Etc/GMT-8"
-	EtcGMT9                        ClinicTimezone = "Etc/GMT+9"
-	EtcGMT91                       ClinicTimezone = "Etc/GMT-9"
-	EtcGreenwich                   ClinicTimezone = "Etc/Greenwich"
-	EtcUCT                         ClinicTimezone = "Etc/UCT"
-	EtcUTC                         ClinicTimezone = "Etc/UTC"
-	EtcUniversal                   ClinicTimezone = "Etc/Universal"
-	EtcZulu                        ClinicTimezone = "Etc/Zulu"
-	EuropeAmsterdam                ClinicTimezone = "Europe/Amsterdam"
-	EuropeAndorra                  ClinicTimezone = "Europe/Andorra"
-	EuropeAstrakhan                ClinicTimezone = "Europe/Astrakhan"
-	EuropeAthens                   ClinicTimezone = "Europe/Athens"
-	EuropeBelfast                  ClinicTimezone = "Europe/Belfast"
-	EuropeBelgrade                 ClinicTimezone = "Europe/Belgrade"
-	EuropeBerlin                   ClinicTimezone = "Europe/Berlin"
-	EuropeBratislava               ClinicTimezone = "Europe/Bratislava"
-	EuropeBrussels                 ClinicTimezone = "Europe/Brussels"
-	EuropeBucharest                ClinicTimezone = "Europe/Bucharest"
-	EuropeBudapest                 ClinicTimezone = "Europe/Budapest"
-	EuropeBusingen                 ClinicTimezone = "Europe/Busingen"
-	EuropeChisinau                 ClinicTimezone = "Europe/Chisinau"
-	EuropeCopenhagen               ClinicTimezone = "Europe/Copenhagen"
-	EuropeDublin                   ClinicTimezone = "Europe/Dublin"
-	EuropeGibraltar                ClinicTimezone = "Europe/Gibraltar"
-	EuropeGuernsey                 ClinicTimezone = "Europe/Guernsey"
-	EuropeHelsinki                 ClinicTimezone = "Europe/Helsinki"
-	EuropeIsleOfMan                ClinicTimezone = "Europe/Isle_of_Man"
-	EuropeIstanbul                 ClinicTimezone = "Europe/Istanbul"
-	EuropeJersey                   ClinicTimezone = "Europe/Jersey"
-	EuropeKaliningrad              ClinicTimezone = "Europe/Kaliningrad"
-	EuropeKiev                     ClinicTimezone = "Europe/Kiev"
-	EuropeKirov                    ClinicTimezone = "Europe/Kirov"
-	EuropeKyiv                     ClinicTimezone = "Europe/Kyiv"
-	EuropeLisbon                   ClinicTimezone = "Europe/Lisbon"
-	EuropeLjubljana                ClinicTimezone = "Europe/Ljubljana"
-	EuropeLondon                   ClinicTimezone = "Europe/London"
-	EuropeLuxembourg               ClinicTimezone = "Europe/Luxembourg"
-	EuropeMadrid                   ClinicTimezone = "Europe/Madrid"
-	EuropeMalta                    ClinicTimezone = "Europe/Malta"
-	EuropeMariehamn                ClinicTimezone = "Europe/Mariehamn"
-	EuropeMinsk                    ClinicTimezone = "Europe/Minsk"
-	EuropeMonaco                   ClinicTimezone = "Europe/Monaco"
-	EuropeMoscow                   ClinicTimezone = "Europe/Moscow"
-	EuropeNicosia                  ClinicTimezone = "Europe/Nicosia"
-	EuropeOslo                     ClinicTimezone = "Europe/Oslo"
-	EuropeParis                    ClinicTimezone = "Europe/Paris"
-	EuropePodgorica                ClinicTimezone = "Europe/Podgorica"
-	EuropePrague                   ClinicTimezone = "Europe/Prague"
-	EuropeRiga                     ClinicTimezone = "Europe/Riga"
-	EuropeRome                     ClinicTimezone = "Europe/Rome"
-	EuropeSamara                   ClinicTimezone = "Europe/Samara"
-	EuropeSanMarino                ClinicTimezone = "Europe/San_Marino"
-	EuropeSarajevo                 ClinicTimezone = "Europe/Sarajevo"
-	EuropeSaratov                  ClinicTimezone = "Europe/Saratov"
-	EuropeSimferopol               ClinicTimezone = "Europe/Simferopol"
-	EuropeSkopje                   ClinicTimezone = "Europe/Skopje"
-	EuropeSofia                    ClinicTimezone = "Europe/Sofia"
-	EuropeStockholm                ClinicTimezone = "Europe/Stockholm"
-	EuropeTallinn                  ClinicTimezone = "Europe/Tallinn"
-	EuropeTirane                   ClinicTimezone = "Europe/Tirane"
-	EuropeTiraspol                 ClinicTimezone = "Europe/Tiraspol"
-	EuropeUlyanovsk                ClinicTimezone = "Europe/Ulyanovsk"
-	EuropeUzhgorod                 ClinicTimezone = "Europe/Uzhgorod"
-	EuropeVaduz                    ClinicTimezone = "Europe/Vaduz"
-	EuropeVatican                  ClinicTimezone = "Europe/Vatican"
-	EuropeVienna                   ClinicTimezone = "Europe/Vienna"
-	EuropeVilnius                  ClinicTimezone = "Europe/Vilnius"
-	EuropeVolgograd                ClinicTimezone = "Europe/Volgograd"
-	EuropeWarsaw                   ClinicTimezone = "Europe/Warsaw"
-	EuropeZagreb                   ClinicTimezone = "Europe/Zagreb"
-	EuropeZaporozhye               ClinicTimezone = "Europe/Zaporozhye"
-	EuropeZurich                   ClinicTimezone = "Europe/Zurich"
-	GB                             ClinicTimezone = "GB"
-	GBEire                         ClinicTimezone = "GB-Eire"
-	GMT                            ClinicTimezone = "GMT"
-	GMT0                           ClinicTimezone = "GMT+0"
-	GMT01                          ClinicTimezone = "GMT-0"
-	GMT02                          ClinicTimezone = "GMT0"
-	Greenwich                      ClinicTimezone = "Greenwich"
-	HST                            ClinicTimezone = "HST"
-	Hongkong                       ClinicTimezone = "Hongkong"
-	Iceland                        ClinicTimezone = "Iceland"
-	IndianAntananarivo             ClinicTimezone = "Indian/Antananarivo"
-	IndianChagos                   ClinicTimezone = "Indian/Chagos"
-	IndianChristmas                ClinicTimezone = "Indian/Christmas"
-	IndianCocos                    ClinicTimezone = "Indian/Cocos"
-	IndianComoro                   ClinicTimezone = "Indian/Comoro"
-	IndianKerguelen                ClinicTimezone = "Indian/Kerguelen"
-	IndianMahe                     ClinicTimezone = "Indian/Mahe"
-	IndianMaldives                 ClinicTimezone = "Indian/Maldives"
-	IndianMauritius                ClinicTimezone = "Indian/Mauritius"
-	IndianMayotte                  ClinicTimezone = "Indian/Mayotte"
-	IndianReunion                  ClinicTimezone = "Indian/Reunion"
-	Iran                           ClinicTimezone = "Iran"
-	Israel                         ClinicTimezone = "Israel"
-	Jamaica                        ClinicTimezone = "Jamaica"
-	Japan                          ClinicTimezone = "Japan"
-	Kwajalein                      ClinicTimezone = "Kwajalein"
-	Libya                          ClinicTimezone = "Libya"
-	MET                            ClinicTimezone = "MET"
-	MST                            ClinicTimezone = "MST"
-	MST7MDT                        ClinicTimezone = "MST7MDT"
-	MexicoBajaNorte                ClinicTimezone = "Mexico/BajaNorte"
-	MexicoBajaSur                  ClinicTimezone = "Mexico/BajaSur"
-	MexicoGeneral                  ClinicTimezone = "Mexico/General"
-	NZ                             ClinicTimezone = "NZ"
-	NZCHAT                         ClinicTimezone = "NZ-CHAT"
-	Navajo                         ClinicTimezone = "Navajo"
-	PRC                            ClinicTimezone = "PRC"
-	PST8PDT                        ClinicTimezone = "PST8PDT"
-	PacificApia                    ClinicTimezone = "Pacific/Apia"
-	PacificAuckland                ClinicTimezone = "Pacific/Auckland"
-	PacificBougainville            ClinicTimezone = "Pacific/Bougainville"
-	PacificChatham                 ClinicTimezone = "Pacific/Chatham"
-	PacificChuuk                   ClinicTimezone = "Pacific/Chuuk"
-	PacificEaster                  ClinicTimezone = "Pacific/Easter"
-	PacificEfate                   ClinicTimezone = "Pacific/Efate"
-	PacificEnderbury               ClinicTimezone = "Pacific/Enderbury"
-	PacificFakaofo                 ClinicTimezone = "Pacific/Fakaofo"
-	PacificFiji                    ClinicTimezone = "Pacific/Fiji"
-	PacificFunafuti                ClinicTimezone = "Pacific/Funafuti"
-	PacificGalapagos               ClinicTimezone = "Pacific/Galapagos"
-	PacificGambier                 ClinicTimezone = "Pacific/Gambier"
-	PacificGuadalcanal             ClinicTimezone = "Pacific/Guadalcanal"
-	PacificGuam                    ClinicTimezone = "Pacific/Guam"
-	PacificHonolulu                ClinicTimezone = "Pacific/Honolulu"
-	PacificJohnston                ClinicTimezone = "Pacific/Johnston"
-	PacificKanton                  ClinicTimezone = "Pacific/Kanton"
-	PacificKiritimati              ClinicTimezone = "Pacific/Kiritimati"
-	PacificKosrae                  ClinicTimezone = "Pacific/Kosrae"
-	PacificKwajalein               ClinicTimezone = "Pacific/Kwajalein"
-	PacificMajuro                  ClinicTimezone = "Pacific/Majuro"
-	PacificMarquesas               ClinicTimezone = "Pacific/Marquesas"
-	PacificMidway                  ClinicTimezone = "Pacific/Midway"
-	PacificNauru                   ClinicTimezone = "Pacific/Nauru"
-	PacificNiue                    ClinicTimezone = "Pacific/Niue"
-	PacificNorfolk                 ClinicTimezone = "Pacific/Norfolk"
-	PacificNoumea                  ClinicTimezone = "Pacific/Noumea"
-	PacificPagoPago                ClinicTimezone = "Pacific/Pago_Pago"
-	PacificPalau                   ClinicTimezone = "Pacific/Palau"
-	PacificPitcairn                ClinicTimezone = "Pacific/Pitcairn"
-	PacificPohnpei                 ClinicTimezone = "Pacific/Pohnpei"
-	PacificPonape                  ClinicTimezone = "Pacific/Ponape"
-	PacificPortMoresby             ClinicTimezone = "Pacific/Port_Moresby"
-	PacificRarotonga               ClinicTimezone = "Pacific/Rarotonga"
-	PacificSaipan                  ClinicTimezone = "Pacific/Saipan"
-	PacificSamoa                   ClinicTimezone = "Pacific/Samoa"
-	PacificTahiti                  ClinicTimezone = "Pacific/Tahiti"
-	PacificTarawa                  ClinicTimezone = "Pacific/Tarawa"
-	PacificTongatapu               ClinicTimezone = "Pacific/Tongatapu"
-	PacificTruk                    ClinicTimezone = "Pacific/Truk"
-	PacificWake                    ClinicTimezone = "Pacific/Wake"
-	PacificWallis                  ClinicTimezone = "Pacific/Wallis"
-	PacificYap                     ClinicTimezone = "Pacific/Yap"
-	Poland                         ClinicTimezone = "Poland"
-	Portugal                       ClinicTimezone = "Portugal"
-	ROC                            ClinicTimezone = "ROC"
-	ROK                            ClinicTimezone = "ROK"
-	Singapore                      ClinicTimezone = "Singapore"
-	Turkey                         ClinicTimezone = "Turkey"
-	UCT                            ClinicTimezone = "UCT"
-	USAlaska                       ClinicTimezone = "US/Alaska"
-	USAleutian                     ClinicTimezone = "US/Aleutian"
-	USArizona                      ClinicTimezone = "US/Arizona"
-	USCentral                      ClinicTimezone = "US/Central"
-	USEastIndiana                  ClinicTimezone = "US/East-Indiana"
-	USEastern                      ClinicTimezone = "US/Eastern"
-	USHawaii                       ClinicTimezone = "US/Hawaii"
-	USIndianaStarke                ClinicTimezone = "US/Indiana-Starke"
-	USMichigan                     ClinicTimezone = "US/Michigan"
-	USMountain                     ClinicTimezone = "US/Mountain"
-	USPacific                      ClinicTimezone = "US/Pacific"
-	USSamoa                        ClinicTimezone = "US/Samoa"
-	UTC                            ClinicTimezone = "UTC"
-	Universal                      ClinicTimezone = "Universal"
-	WET                            ClinicTimezone = "WET"
-	WSU                            ClinicTimezone = "W-SU"
-	Zulu                           ClinicTimezone = "Zulu"
+	AfricaAbidjan                  ClinicTimezoneV1 = "Africa/Abidjan"
+	AfricaAccra                    ClinicTimezoneV1 = "Africa/Accra"
+	AfricaAddisAbaba               ClinicTimezoneV1 = "Africa/Addis_Ababa"
+	AfricaAlgiers                  ClinicTimezoneV1 = "Africa/Algiers"
+	AfricaAsmara                   ClinicTimezoneV1 = "Africa/Asmara"
+	AfricaAsmera                   ClinicTimezoneV1 = "Africa/Asmera"
+	AfricaBamako                   ClinicTimezoneV1 = "Africa/Bamako"
+	AfricaBangui                   ClinicTimezoneV1 = "Africa/Bangui"
+	AfricaBanjul                   ClinicTimezoneV1 = "Africa/Banjul"
+	AfricaBissau                   ClinicTimezoneV1 = "Africa/Bissau"
+	AfricaBlantyre                 ClinicTimezoneV1 = "Africa/Blantyre"
+	AfricaBrazzaville              ClinicTimezoneV1 = "Africa/Brazzaville"
+	AfricaBujumbura                ClinicTimezoneV1 = "Africa/Bujumbura"
+	AfricaCairo                    ClinicTimezoneV1 = "Africa/Cairo"
+	AfricaCasablanca               ClinicTimezoneV1 = "Africa/Casablanca"
+	AfricaCeuta                    ClinicTimezoneV1 = "Africa/Ceuta"
+	AfricaConakry                  ClinicTimezoneV1 = "Africa/Conakry"
+	AfricaDakar                    ClinicTimezoneV1 = "Africa/Dakar"
+	AfricaDarEsSalaam              ClinicTimezoneV1 = "Africa/Dar_es_Salaam"
+	AfricaDjibouti                 ClinicTimezoneV1 = "Africa/Djibouti"
+	AfricaDouala                   ClinicTimezoneV1 = "Africa/Douala"
+	AfricaElAaiun                  ClinicTimezoneV1 = "Africa/El_Aaiun"
+	AfricaFreetown                 ClinicTimezoneV1 = "Africa/Freetown"
+	AfricaGaborone                 ClinicTimezoneV1 = "Africa/Gaborone"
+	AfricaHarare                   ClinicTimezoneV1 = "Africa/Harare"
+	AfricaJohannesburg             ClinicTimezoneV1 = "Africa/Johannesburg"
+	AfricaJuba                     ClinicTimezoneV1 = "Africa/Juba"
+	AfricaKampala                  ClinicTimezoneV1 = "Africa/Kampala"
+	AfricaKhartoum                 ClinicTimezoneV1 = "Africa/Khartoum"
+	AfricaKigali                   ClinicTimezoneV1 = "Africa/Kigali"
+	AfricaKinshasa                 ClinicTimezoneV1 = "Africa/Kinshasa"
+	AfricaLagos                    ClinicTimezoneV1 = "Africa/Lagos"
+	AfricaLibreville               ClinicTimezoneV1 = "Africa/Libreville"
+	AfricaLome                     ClinicTimezoneV1 = "Africa/Lome"
+	AfricaLuanda                   ClinicTimezoneV1 = "Africa/Luanda"
+	AfricaLubumbashi               ClinicTimezoneV1 = "Africa/Lubumbashi"
+	AfricaLusaka                   ClinicTimezoneV1 = "Africa/Lusaka"
+	AfricaMalabo                   ClinicTimezoneV1 = "Africa/Malabo"
+	AfricaMaputo                   ClinicTimezoneV1 = "Africa/Maputo"
+	AfricaMaseru                   ClinicTimezoneV1 = "Africa/Maseru"
+	AfricaMbabane                  ClinicTimezoneV1 = "Africa/Mbabane"
+	AfricaMogadishu                ClinicTimezoneV1 = "Africa/Mogadishu"
+	AfricaMonrovia                 ClinicTimezoneV1 = "Africa/Monrovia"
+	AfricaNairobi                  ClinicTimezoneV1 = "Africa/Nairobi"
+	AfricaNdjamena                 ClinicTimezoneV1 = "Africa/Ndjamena"
+	AfricaNiamey                   ClinicTimezoneV1 = "Africa/Niamey"
+	AfricaNouakchott               ClinicTimezoneV1 = "Africa/Nouakchott"
+	AfricaOuagadougou              ClinicTimezoneV1 = "Africa/Ouagadougou"
+	AfricaPortoNovo                ClinicTimezoneV1 = "Africa/Porto-Novo"
+	AfricaSaoTome                  ClinicTimezoneV1 = "Africa/Sao_Tome"
+	AfricaTimbuktu                 ClinicTimezoneV1 = "Africa/Timbuktu"
+	AfricaTripoli                  ClinicTimezoneV1 = "Africa/Tripoli"
+	AfricaTunis                    ClinicTimezoneV1 = "Africa/Tunis"
+	AfricaWindhoek                 ClinicTimezoneV1 = "Africa/Windhoek"
+	AmericaAdak                    ClinicTimezoneV1 = "America/Adak"
+	AmericaAnchorage               ClinicTimezoneV1 = "America/Anchorage"
+	AmericaAnguilla                ClinicTimezoneV1 = "America/Anguilla"
+	AmericaAntigua                 ClinicTimezoneV1 = "America/Antigua"
+	AmericaAraguaina               ClinicTimezoneV1 = "America/Araguaina"
+	AmericaArgentinaBuenosAires    ClinicTimezoneV1 = "America/Argentina/Buenos_Aires"
+	AmericaArgentinaCatamarca      ClinicTimezoneV1 = "America/Argentina/Catamarca"
+	AmericaArgentinaComodRivadavia ClinicTimezoneV1 = "America/Argentina/ComodRivadavia"
+	AmericaArgentinaCordoba        ClinicTimezoneV1 = "America/Argentina/Cordoba"
+	AmericaArgentinaJujuy          ClinicTimezoneV1 = "America/Argentina/Jujuy"
+	AmericaArgentinaLaRioja        ClinicTimezoneV1 = "America/Argentina/La_Rioja"
+	AmericaArgentinaMendoza        ClinicTimezoneV1 = "America/Argentina/Mendoza"
+	AmericaArgentinaRioGallegos    ClinicTimezoneV1 = "America/Argentina/Rio_Gallegos"
+	AmericaArgentinaSalta          ClinicTimezoneV1 = "America/Argentina/Salta"
+	AmericaArgentinaSanJuan        ClinicTimezoneV1 = "America/Argentina/San_Juan"
+	AmericaArgentinaSanLuis        ClinicTimezoneV1 = "America/Argentina/San_Luis"
+	AmericaArgentinaTucuman        ClinicTimezoneV1 = "America/Argentina/Tucuman"
+	AmericaArgentinaUshuaia        ClinicTimezoneV1 = "America/Argentina/Ushuaia"
+	AmericaAruba                   ClinicTimezoneV1 = "America/Aruba"
+	AmericaAsuncion                ClinicTimezoneV1 = "America/Asuncion"
+	AmericaAtikokan                ClinicTimezoneV1 = "America/Atikokan"
+	AmericaAtka                    ClinicTimezoneV1 = "America/Atka"
+	AmericaBahia                   ClinicTimezoneV1 = "America/Bahia"
+	AmericaBahiaBanderas           ClinicTimezoneV1 = "America/Bahia_Banderas"
+	AmericaBarbados                ClinicTimezoneV1 = "America/Barbados"
+	AmericaBelem                   ClinicTimezoneV1 = "America/Belem"
+	AmericaBelize                  ClinicTimezoneV1 = "America/Belize"
+	AmericaBlancSablon             ClinicTimezoneV1 = "America/Blanc-Sablon"
+	AmericaBoaVista                ClinicTimezoneV1 = "America/Boa_Vista"
+	AmericaBogota                  ClinicTimezoneV1 = "America/Bogota"
+	AmericaBoise                   ClinicTimezoneV1 = "America/Boise"
+	AmericaBuenosAires             ClinicTimezoneV1 = "America/Buenos_Aires"
+	AmericaCambridgeBay            ClinicTimezoneV1 = "America/Cambridge_Bay"
+	AmericaCampoGrande             ClinicTimezoneV1 = "America/Campo_Grande"
+	AmericaCancun                  ClinicTimezoneV1 = "America/Cancun"
+	AmericaCaracas                 ClinicTimezoneV1 = "America/Caracas"
+	AmericaCatamarca               ClinicTimezoneV1 = "America/Catamarca"
+	AmericaCayenne                 ClinicTimezoneV1 = "America/Cayenne"
+	AmericaCayman                  ClinicTimezoneV1 = "America/Cayman"
+	AmericaChicago                 ClinicTimezoneV1 = "America/Chicago"
+	AmericaChihuahua               ClinicTimezoneV1 = "America/Chihuahua"
+	AmericaCiudadJuarez            ClinicTimezoneV1 = "America/Ciudad_Juarez"
+	AmericaCoralHarbour            ClinicTimezoneV1 = "America/Coral_Harbour"
+	AmericaCordoba                 ClinicTimezoneV1 = "America/Cordoba"
+	AmericaCostaRica               ClinicTimezoneV1 = "America/Costa_Rica"
+	AmericaCreston                 ClinicTimezoneV1 = "America/Creston"
+	AmericaCuiaba                  ClinicTimezoneV1 = "America/Cuiaba"
+	AmericaCuracao                 ClinicTimezoneV1 = "America/Curacao"
+	AmericaDanmarkshavn            ClinicTimezoneV1 = "America/Danmarkshavn"
+	AmericaDawson                  ClinicTimezoneV1 = "America/Dawson"
+	AmericaDawsonCreek             ClinicTimezoneV1 = "America/Dawson_Creek"
+	AmericaDenver                  ClinicTimezoneV1 = "America/Denver"
+	AmericaDetroit                 ClinicTimezoneV1 = "America/Detroit"
+	AmericaDominica                ClinicTimezoneV1 = "America/Dominica"
+	AmericaEdmonton                ClinicTimezoneV1 = "America/Edmonton"
+	AmericaEirunepe                ClinicTimezoneV1 = "America/Eirunepe"
+	AmericaElSalvador              ClinicTimezoneV1 = "America/El_Salvador"
+	AmericaEnsenada                ClinicTimezoneV1 = "America/Ensenada"
+	AmericaFortNelson              ClinicTimezoneV1 = "America/Fort_Nelson"
+	AmericaFortWayne               ClinicTimezoneV1 = "America/Fort_Wayne"
+	AmericaFortaleza               ClinicTimezoneV1 = "America/Fortaleza"
+	AmericaGlaceBay                ClinicTimezoneV1 = "America/Glace_Bay"
+	AmericaGodthab                 ClinicTimezoneV1 = "America/Godthab"
+	AmericaGooseBay                ClinicTimezoneV1 = "America/Goose_Bay"
+	AmericaGrandTurk               ClinicTimezoneV1 = "America/Grand_Turk"
+	AmericaGrenada                 ClinicTimezoneV1 = "America/Grenada"
+	AmericaGuadeloupe              ClinicTimezoneV1 = "America/Guadeloupe"
+	AmericaGuatemala               ClinicTimezoneV1 = "America/Guatemala"
+	AmericaGuayaquil               ClinicTimezoneV1 = "America/Guayaquil"
+	AmericaGuyana                  ClinicTimezoneV1 = "America/Guyana"
+	AmericaHalifax                 ClinicTimezoneV1 = "America/Halifax"
+	AmericaHavana                  ClinicTimezoneV1 = "America/Havana"
+	AmericaHermosillo              ClinicTimezoneV1 = "America/Hermosillo"
+	AmericaIndianaIndianapolis     ClinicTimezoneV1 = "America/Indiana/Indianapolis"
+	AmericaIndianaKnox             ClinicTimezoneV1 = "America/Indiana/Knox"
+	AmericaIndianaMarengo          ClinicTimezoneV1 = "America/Indiana/Marengo"
+	AmericaIndianaPetersburg       ClinicTimezoneV1 = "America/Indiana/Petersburg"
+	AmericaIndianaTellCity         ClinicTimezoneV1 = "America/Indiana/Tell_City"
+	AmericaIndianaVevay            ClinicTimezoneV1 = "America/Indiana/Vevay"
+	AmericaIndianaVincennes        ClinicTimezoneV1 = "America/Indiana/Vincennes"
+	AmericaIndianaWinamac          ClinicTimezoneV1 = "America/Indiana/Winamac"
+	AmericaIndianapolis            ClinicTimezoneV1 = "America/Indianapolis"
+	AmericaInuvik                  ClinicTimezoneV1 = "America/Inuvik"
+	AmericaIqaluit                 ClinicTimezoneV1 = "America/Iqaluit"
+	AmericaJamaica                 ClinicTimezoneV1 = "America/Jamaica"
+	AmericaJujuy                   ClinicTimezoneV1 = "America/Jujuy"
+	AmericaJuneau                  ClinicTimezoneV1 = "America/Juneau"
+	AmericaKentuckyLouisville      ClinicTimezoneV1 = "America/Kentucky/Louisville"
+	AmericaKentuckyMonticello      ClinicTimezoneV1 = "America/Kentucky/Monticello"
+	AmericaKnoxIN                  ClinicTimezoneV1 = "America/Knox_IN"
+	AmericaKralendijk              ClinicTimezoneV1 = "America/Kralendijk"
+	AmericaLaPaz                   ClinicTimezoneV1 = "America/La_Paz"
+	AmericaLima                    ClinicTimezoneV1 = "America/Lima"
+	AmericaLosAngeles              ClinicTimezoneV1 = "America/Los_Angeles"
+	AmericaLouisville              ClinicTimezoneV1 = "America/Louisville"
+	AmericaLowerPrinces            ClinicTimezoneV1 = "America/Lower_Princes"
+	AmericaMaceio                  ClinicTimezoneV1 = "America/Maceio"
+	AmericaManagua                 ClinicTimezoneV1 = "America/Managua"
+	AmericaManaus                  ClinicTimezoneV1 = "America/Manaus"
+	AmericaMarigot                 ClinicTimezoneV1 = "America/Marigot"
+	AmericaMartinique              ClinicTimezoneV1 = "America/Martinique"
+	AmericaMatamoros               ClinicTimezoneV1 = "America/Matamoros"
+	AmericaMazatlan                ClinicTimezoneV1 = "America/Mazatlan"
+	AmericaMendoza                 ClinicTimezoneV1 = "America/Mendoza"
+	AmericaMenominee               ClinicTimezoneV1 = "America/Menominee"
+	AmericaMerida                  ClinicTimezoneV1 = "America/Merida"
+	AmericaMetlakatla              ClinicTimezoneV1 = "America/Metlakatla"
+	AmericaMexicoCity              ClinicTimezoneV1 = "America/Mexico_City"
+	AmericaMiquelon                ClinicTimezoneV1 = "America/Miquelon"
+	AmericaMoncton                 ClinicTimezoneV1 = "America/Moncton"
+	AmericaMonterrey               ClinicTimezoneV1 = "America/Monterrey"
+	AmericaMontevideo              ClinicTimezoneV1 = "America/Montevideo"
+	AmericaMontreal                ClinicTimezoneV1 = "America/Montreal"
+	AmericaMontserrat              ClinicTimezoneV1 = "America/Montserrat"
+	AmericaNassau                  ClinicTimezoneV1 = "America/Nassau"
+	AmericaNewYork                 ClinicTimezoneV1 = "America/New_York"
+	AmericaNipigon                 ClinicTimezoneV1 = "America/Nipigon"
+	AmericaNome                    ClinicTimezoneV1 = "America/Nome"
+	AmericaNoronha                 ClinicTimezoneV1 = "America/Noronha"
+	AmericaNorthDakotaBeulah       ClinicTimezoneV1 = "America/North_Dakota/Beulah"
+	AmericaNorthDakotaCenter       ClinicTimezoneV1 = "America/North_Dakota/Center"
+	AmericaNorthDakotaNewSalem     ClinicTimezoneV1 = "America/North_Dakota/New_Salem"
+	AmericaNuuk                    ClinicTimezoneV1 = "America/Nuuk"
+	AmericaOjinaga                 ClinicTimezoneV1 = "America/Ojinaga"
+	AmericaPanama                  ClinicTimezoneV1 = "America/Panama"
+	AmericaPangnirtung             ClinicTimezoneV1 = "America/Pangnirtung"
+	AmericaParamaribo              ClinicTimezoneV1 = "America/Paramaribo"
+	AmericaPhoenix                 ClinicTimezoneV1 = "America/Phoenix"
+	AmericaPortAuPrince            ClinicTimezoneV1 = "America/Port-au-Prince"
+	AmericaPortOfSpain             ClinicTimezoneV1 = "America/Port_of_Spain"
+	AmericaPortoAcre               ClinicTimezoneV1 = "America/Porto_Acre"
+	AmericaPortoVelho              ClinicTimezoneV1 = "America/Porto_Velho"
+	AmericaPuertoRico              ClinicTimezoneV1 = "America/Puerto_Rico"
+	AmericaPuntaArenas             ClinicTimezoneV1 = "America/Punta_Arenas"
+	AmericaRainyRiver              ClinicTimezoneV1 = "America/Rainy_River"
+	AmericaRankinInlet             ClinicTimezoneV1 = "America/Rankin_Inlet"
+	AmericaRecife                  ClinicTimezoneV1 = "America/Recife"
+	AmericaRegina                  ClinicTimezoneV1 = "America/Regina"
+	AmericaResolute                ClinicTimezoneV1 = "America/Resolute"
+	AmericaRioBranco               ClinicTimezoneV1 = "America/Rio_Branco"
+	AmericaRosario                 ClinicTimezoneV1 = "America/Rosario"
+	AmericaSantaIsabel             ClinicTimezoneV1 = "America/Santa_Isabel"
+	AmericaSantarem                ClinicTimezoneV1 = "America/Santarem"
+	AmericaSantiago                ClinicTimezoneV1 = "America/Santiago"
+	AmericaSantoDomingo            ClinicTimezoneV1 = "America/Santo_Domingo"
+	AmericaSaoPaulo                ClinicTimezoneV1 = "America/Sao_Paulo"
+	AmericaScoresbysund            ClinicTimezoneV1 = "America/Scoresbysund"
+	AmericaShiprock                ClinicTimezoneV1 = "America/Shiprock"
+	AmericaSitka                   ClinicTimezoneV1 = "America/Sitka"
+	AmericaStBarthelemy            ClinicTimezoneV1 = "America/St_Barthelemy"
+	AmericaStJohns                 ClinicTimezoneV1 = "America/St_Johns"
+	AmericaStKitts                 ClinicTimezoneV1 = "America/St_Kitts"
+	AmericaStLucia                 ClinicTimezoneV1 = "America/St_Lucia"
+	AmericaStThomas                ClinicTimezoneV1 = "America/St_Thomas"
+	AmericaStVincent               ClinicTimezoneV1 = "America/St_Vincent"
+	AmericaSwiftCurrent            ClinicTimezoneV1 = "America/Swift_Current"
+	AmericaTegucigalpa             ClinicTimezoneV1 = "America/Tegucigalpa"
+	AmericaThule                   ClinicTimezoneV1 = "America/Thule"
+	AmericaThunderBay              ClinicTimezoneV1 = "America/Thunder_Bay"
+	AmericaTijuana                 ClinicTimezoneV1 = "America/Tijuana"
+	AmericaToronto                 ClinicTimezoneV1 = "America/Toronto"
+	AmericaTortola                 ClinicTimezoneV1 = "America/Tortola"
+	AmericaVancouver               ClinicTimezoneV1 = "America/Vancouver"
+	AmericaVirgin                  ClinicTimezoneV1 = "America/Virgin"
+	AmericaWhitehorse              ClinicTimezoneV1 = "America/Whitehorse"
+	AmericaWinnipeg                ClinicTimezoneV1 = "America/Winnipeg"
+	AmericaYakutat                 ClinicTimezoneV1 = "America/Yakutat"
+	AmericaYellowknife             ClinicTimezoneV1 = "America/Yellowknife"
+	AntarcticaCasey                ClinicTimezoneV1 = "Antarctica/Casey"
+	AntarcticaDavis                ClinicTimezoneV1 = "Antarctica/Davis"
+	AntarcticaDumontDUrville       ClinicTimezoneV1 = "Antarctica/DumontDUrville"
+	AntarcticaMacquarie            ClinicTimezoneV1 = "Antarctica/Macquarie"
+	AntarcticaMawson               ClinicTimezoneV1 = "Antarctica/Mawson"
+	AntarcticaMcMurdo              ClinicTimezoneV1 = "Antarctica/McMurdo"
+	AntarcticaPalmer               ClinicTimezoneV1 = "Antarctica/Palmer"
+	AntarcticaRothera              ClinicTimezoneV1 = "Antarctica/Rothera"
+	AntarcticaSouthPole            ClinicTimezoneV1 = "Antarctica/South_Pole"
+	AntarcticaSyowa                ClinicTimezoneV1 = "Antarctica/Syowa"
+	AntarcticaTroll                ClinicTimezoneV1 = "Antarctica/Troll"
+	AntarcticaVostok               ClinicTimezoneV1 = "Antarctica/Vostok"
+	ArcticLongyearbyen             ClinicTimezoneV1 = "Arctic/Longyearbyen"
+	AsiaAden                       ClinicTimezoneV1 = "Asia/Aden"
+	AsiaAlmaty                     ClinicTimezoneV1 = "Asia/Almaty"
+	AsiaAmman                      ClinicTimezoneV1 = "Asia/Amman"
+	AsiaAnadyr                     ClinicTimezoneV1 = "Asia/Anadyr"
+	AsiaAqtau                      ClinicTimezoneV1 = "Asia/Aqtau"
+	AsiaAqtobe                     ClinicTimezoneV1 = "Asia/Aqtobe"
+	AsiaAshgabat                   ClinicTimezoneV1 = "Asia/Ashgabat"
+	AsiaAshkhabad                  ClinicTimezoneV1 = "Asia/Ashkhabad"
+	AsiaAtyrau                     ClinicTimezoneV1 = "Asia/Atyrau"
+	AsiaBaghdad                    ClinicTimezoneV1 = "Asia/Baghdad"
+	AsiaBahrain                    ClinicTimezoneV1 = "Asia/Bahrain"
+	AsiaBaku                       ClinicTimezoneV1 = "Asia/Baku"
+	AsiaBangkok                    ClinicTimezoneV1 = "Asia/Bangkok"
+	AsiaBarnaul                    ClinicTimezoneV1 = "Asia/Barnaul"
+	AsiaBeirut                     ClinicTimezoneV1 = "Asia/Beirut"
+	AsiaBishkek                    ClinicTimezoneV1 = "Asia/Bishkek"
+	AsiaBrunei                     ClinicTimezoneV1 = "Asia/Brunei"
+	AsiaCalcutta                   ClinicTimezoneV1 = "Asia/Calcutta"
+	AsiaChita                      ClinicTimezoneV1 = "Asia/Chita"
+	AsiaChoibalsan                 ClinicTimezoneV1 = "Asia/Choibalsan"
+	AsiaChongqing                  ClinicTimezoneV1 = "Asia/Chongqing"
+	AsiaChungking                  ClinicTimezoneV1 = "Asia/Chungking"
+	AsiaColombo                    ClinicTimezoneV1 = "Asia/Colombo"
+	AsiaDacca                      ClinicTimezoneV1 = "Asia/Dacca"
+	AsiaDamascus                   ClinicTimezoneV1 = "Asia/Damascus"
+	AsiaDhaka                      ClinicTimezoneV1 = "Asia/Dhaka"
+	AsiaDili                       ClinicTimezoneV1 = "Asia/Dili"
+	AsiaDubai                      ClinicTimezoneV1 = "Asia/Dubai"
+	AsiaDushanbe                   ClinicTimezoneV1 = "Asia/Dushanbe"
+	AsiaFamagusta                  ClinicTimezoneV1 = "Asia/Famagusta"
+	AsiaGaza                       ClinicTimezoneV1 = "Asia/Gaza"
+	AsiaHarbin                     ClinicTimezoneV1 = "Asia/Harbin"
+	AsiaHebron                     ClinicTimezoneV1 = "Asia/Hebron"
+	AsiaHoChiMinh                  ClinicTimezoneV1 = "Asia/Ho_Chi_Minh"
+	AsiaHongKong                   ClinicTimezoneV1 = "Asia/Hong_Kong"
+	AsiaHovd                       ClinicTimezoneV1 = "Asia/Hovd"
+	AsiaIrkutsk                    ClinicTimezoneV1 = "Asia/Irkutsk"
+	AsiaIstanbul                   ClinicTimezoneV1 = "Asia/Istanbul"
+	AsiaJakarta                    ClinicTimezoneV1 = "Asia/Jakarta"
+	AsiaJayapura                   ClinicTimezoneV1 = "Asia/Jayapura"
+	AsiaJerusalem                  ClinicTimezoneV1 = "Asia/Jerusalem"
+	AsiaKabul                      ClinicTimezoneV1 = "Asia/Kabul"
+	AsiaKamchatka                  ClinicTimezoneV1 = "Asia/Kamchatka"
+	AsiaKarachi                    ClinicTimezoneV1 = "Asia/Karachi"
+	AsiaKashgar                    ClinicTimezoneV1 = "Asia/Kashgar"
+	AsiaKathmandu                  ClinicTimezoneV1 = "Asia/Kathmandu"
+	AsiaKatmandu                   ClinicTimezoneV1 = "Asia/Katmandu"
+	AsiaKhandyga                   ClinicTimezoneV1 = "Asia/Khandyga"
+	AsiaKolkata                    ClinicTimezoneV1 = "Asia/Kolkata"
+	AsiaKrasnoyarsk                ClinicTimezoneV1 = "Asia/Krasnoyarsk"
+	AsiaKualaLumpur                ClinicTimezoneV1 = "Asia/Kuala_Lumpur"
+	AsiaKuching                    ClinicTimezoneV1 = "Asia/Kuching"
+	AsiaKuwait                     ClinicTimezoneV1 = "Asia/Kuwait"
+	AsiaMacao                      ClinicTimezoneV1 = "Asia/Macao"
+	AsiaMacau                      ClinicTimezoneV1 = "Asia/Macau"
+	AsiaMagadan                    ClinicTimezoneV1 = "Asia/Magadan"
+	AsiaMakassar                   ClinicTimezoneV1 = "Asia/Makassar"
+	AsiaManila                     ClinicTimezoneV1 = "Asia/Manila"
+	AsiaMuscat                     ClinicTimezoneV1 = "Asia/Muscat"
+	AsiaNicosia                    ClinicTimezoneV1 = "Asia/Nicosia"
+	AsiaNovokuznetsk               ClinicTimezoneV1 = "Asia/Novokuznetsk"
+	AsiaNovosibirsk                ClinicTimezoneV1 = "Asia/Novosibirsk"
+	AsiaOmsk                       ClinicTimezoneV1 = "Asia/Omsk"
+	AsiaOral                       ClinicTimezoneV1 = "Asia/Oral"
+	AsiaPhnomPenh                  ClinicTimezoneV1 = "Asia/Phnom_Penh"
+	AsiaPontianak                  ClinicTimezoneV1 = "Asia/Pontianak"
+	AsiaPyongyang                  ClinicTimezoneV1 = "Asia/Pyongyang"
+	AsiaQatar                      ClinicTimezoneV1 = "Asia/Qatar"
+	AsiaQostanay                   ClinicTimezoneV1 = "Asia/Qostanay"
+	AsiaQyzylorda                  ClinicTimezoneV1 = "Asia/Qyzylorda"
+	AsiaRangoon                    ClinicTimezoneV1 = "Asia/Rangoon"
+	AsiaRiyadh                     ClinicTimezoneV1 = "Asia/Riyadh"
+	AsiaSaigon                     ClinicTimezoneV1 = "Asia/Saigon"
+	AsiaSakhalin                   ClinicTimezoneV1 = "Asia/Sakhalin"
+	AsiaSamarkand                  ClinicTimezoneV1 = "Asia/Samarkand"
+	AsiaSeoul                      ClinicTimezoneV1 = "Asia/Seoul"
+	AsiaShanghai                   ClinicTimezoneV1 = "Asia/Shanghai"
+	AsiaSingapore                  ClinicTimezoneV1 = "Asia/Singapore"
+	AsiaSrednekolymsk              ClinicTimezoneV1 = "Asia/Srednekolymsk"
+	AsiaTaipei                     ClinicTimezoneV1 = "Asia/Taipei"
+	AsiaTashkent                   ClinicTimezoneV1 = "Asia/Tashkent"
+	AsiaTbilisi                    ClinicTimezoneV1 = "Asia/Tbilisi"
+	AsiaTehran                     ClinicTimezoneV1 = "Asia/Tehran"
+	AsiaTelAviv                    ClinicTimezoneV1 = "Asia/Tel_Aviv"
+	AsiaThimbu                     ClinicTimezoneV1 = "Asia/Thimbu"
+	AsiaThimphu                    ClinicTimezoneV1 = "Asia/Thimphu"
+	AsiaTokyo                      ClinicTimezoneV1 = "Asia/Tokyo"
+	AsiaTomsk                      ClinicTimezoneV1 = "Asia/Tomsk"
+	AsiaUjungPandang               ClinicTimezoneV1 = "Asia/Ujung_Pandang"
+	AsiaUlaanbaatar                ClinicTimezoneV1 = "Asia/Ulaanbaatar"
+	AsiaUlanBator                  ClinicTimezoneV1 = "Asia/Ulan_Bator"
+	AsiaUrumqi                     ClinicTimezoneV1 = "Asia/Urumqi"
+	AsiaUstNera                    ClinicTimezoneV1 = "Asia/Ust-Nera"
+	AsiaVientiane                  ClinicTimezoneV1 = "Asia/Vientiane"
+	AsiaVladivostok                ClinicTimezoneV1 = "Asia/Vladivostok"
+	AsiaYakutsk                    ClinicTimezoneV1 = "Asia/Yakutsk"
+	AsiaYangon                     ClinicTimezoneV1 = "Asia/Yangon"
+	AsiaYekaterinburg              ClinicTimezoneV1 = "Asia/Yekaterinburg"
+	AsiaYerevan                    ClinicTimezoneV1 = "Asia/Yerevan"
+	AtlanticAzores                 ClinicTimezoneV1 = "Atlantic/Azores"
+	AtlanticBermuda                ClinicTimezoneV1 = "Atlantic/Bermuda"
+	AtlanticCanary                 ClinicTimezoneV1 = "Atlantic/Canary"
+	AtlanticCapeVerde              ClinicTimezoneV1 = "Atlantic/Cape_Verde"
+	AtlanticFaeroe                 ClinicTimezoneV1 = "Atlantic/Faeroe"
+	AtlanticFaroe                  ClinicTimezoneV1 = "Atlantic/Faroe"
+	AtlanticJanMayen               ClinicTimezoneV1 = "Atlantic/Jan_Mayen"
+	AtlanticMadeira                ClinicTimezoneV1 = "Atlantic/Madeira"
+	AtlanticReykjavik              ClinicTimezoneV1 = "Atlantic/Reykjavik"
+	AtlanticSouthGeorgia           ClinicTimezoneV1 = "Atlantic/South_Georgia"
+	AtlanticStHelena               ClinicTimezoneV1 = "Atlantic/St_Helena"
+	AtlanticStanley                ClinicTimezoneV1 = "Atlantic/Stanley"
+	AustraliaACT                   ClinicTimezoneV1 = "Australia/ACT"
+	AustraliaAdelaide              ClinicTimezoneV1 = "Australia/Adelaide"
+	AustraliaBrisbane              ClinicTimezoneV1 = "Australia/Brisbane"
+	AustraliaBrokenHill            ClinicTimezoneV1 = "Australia/Broken_Hill"
+	AustraliaCanberra              ClinicTimezoneV1 = "Australia/Canberra"
+	AustraliaCurrie                ClinicTimezoneV1 = "Australia/Currie"
+	AustraliaDarwin                ClinicTimezoneV1 = "Australia/Darwin"
+	AustraliaEucla                 ClinicTimezoneV1 = "Australia/Eucla"
+	AustraliaHobart                ClinicTimezoneV1 = "Australia/Hobart"
+	AustraliaLHI                   ClinicTimezoneV1 = "Australia/LHI"
+	AustraliaLindeman              ClinicTimezoneV1 = "Australia/Lindeman"
+	AustraliaLordHowe              ClinicTimezoneV1 = "Australia/Lord_Howe"
+	AustraliaMelbourne             ClinicTimezoneV1 = "Australia/Melbourne"
+	AustraliaNSW                   ClinicTimezoneV1 = "Australia/NSW"
+	AustraliaNorth                 ClinicTimezoneV1 = "Australia/North"
+	AustraliaPerth                 ClinicTimezoneV1 = "Australia/Perth"
+	AustraliaQueensland            ClinicTimezoneV1 = "Australia/Queensland"
+	AustraliaSouth                 ClinicTimezoneV1 = "Australia/South"
+	AustraliaSydney                ClinicTimezoneV1 = "Australia/Sydney"
+	AustraliaTasmania              ClinicTimezoneV1 = "Australia/Tasmania"
+	AustraliaVictoria              ClinicTimezoneV1 = "Australia/Victoria"
+	AustraliaWest                  ClinicTimezoneV1 = "Australia/West"
+	AustraliaYancowinna            ClinicTimezoneV1 = "Australia/Yancowinna"
+	BrazilAcre                     ClinicTimezoneV1 = "Brazil/Acre"
+	BrazilDeNoronha                ClinicTimezoneV1 = "Brazil/DeNoronha"
+	BrazilEast                     ClinicTimezoneV1 = "Brazil/East"
+	BrazilWest                     ClinicTimezoneV1 = "Brazil/West"
+	CET                            ClinicTimezoneV1 = "CET"
+	CST6CDT                        ClinicTimezoneV1 = "CST6CDT"
+	CanadaAtlantic                 ClinicTimezoneV1 = "Canada/Atlantic"
+	CanadaCentral                  ClinicTimezoneV1 = "Canada/Central"
+	CanadaEastern                  ClinicTimezoneV1 = "Canada/Eastern"
+	CanadaMountain                 ClinicTimezoneV1 = "Canada/Mountain"
+	CanadaNewfoundland             ClinicTimezoneV1 = "Canada/Newfoundland"
+	CanadaPacific                  ClinicTimezoneV1 = "Canada/Pacific"
+	CanadaSaskatchewan             ClinicTimezoneV1 = "Canada/Saskatchewan"
+	CanadaYukon                    ClinicTimezoneV1 = "Canada/Yukon"
+	ChileContinental               ClinicTimezoneV1 = "Chile/Continental"
+	ChileEasterIsland              ClinicTimezoneV1 = "Chile/EasterIsland"
+	Cuba                           ClinicTimezoneV1 = "Cuba"
+	EET                            ClinicTimezoneV1 = "EET"
+	EST                            ClinicTimezoneV1 = "EST"
+	EST5EDT                        ClinicTimezoneV1 = "EST5EDT"
+	Egypt                          ClinicTimezoneV1 = "Egypt"
+	Eire                           ClinicTimezoneV1 = "Eire"
+	EtcGMT                         ClinicTimezoneV1 = "Etc/GMT"
+	EtcGMT0                        ClinicTimezoneV1 = "Etc/GMT+0"
+	EtcGMT01                       ClinicTimezoneV1 = "Etc/GMT-0"
+	EtcGMT02                       ClinicTimezoneV1 = "Etc/GMT0"
+	EtcGMT1                        ClinicTimezoneV1 = "Etc/GMT+1"
+	EtcGMT10                       ClinicTimezoneV1 = "Etc/GMT+10"
+	EtcGMT101                      ClinicTimezoneV1 = "Etc/GMT-10"
+	EtcGMT11                       ClinicTimezoneV1 = "Etc/GMT-1"
+	EtcGMT111                      ClinicTimezoneV1 = "Etc/GMT-11"
+	EtcGMT12                       ClinicTimezoneV1 = "Etc/GMT+12"
+	EtcGMT121                      ClinicTimezoneV1 = "Etc/GMT-12"
+	EtcGMT13                       ClinicTimezoneV1 = "Etc/GMT-13"
+	EtcGMT14                       ClinicTimezoneV1 = "Etc/GMT-14"
+	EtcGMT2                        ClinicTimezoneV1 = "Etc/GMT+2"
+	EtcGMT21                       ClinicTimezoneV1 = "Etc/GMT-2"
+	EtcGMT3                        ClinicTimezoneV1 = "Etc/GMT+3"
+	EtcGMT31                       ClinicTimezoneV1 = "Etc/GMT-3"
+	EtcGMT4                        ClinicTimezoneV1 = "Etc/GMT+4"
+	EtcGMT41                       ClinicTimezoneV1 = "Etc/GMT-4"
+	EtcGMT5                        ClinicTimezoneV1 = "Etc/GMT+5"
+	EtcGMT51                       ClinicTimezoneV1 = "Etc/GMT-5"
+	EtcGMT6                        ClinicTimezoneV1 = "Etc/GMT+6"
+	EtcGMT61                       ClinicTimezoneV1 = "Etc/GMT-6"
+	EtcGMT7                        ClinicTimezoneV1 = "Etc/GMT+7"
+	EtcGMT71                       ClinicTimezoneV1 = "Etc/GMT-7"
+	EtcGMT8                        ClinicTimezoneV1 = "Etc/GMT+8"
+	EtcGMT81                       ClinicTimezoneV1 = "Etc/GMT-8"
+	EtcGMT9                        ClinicTimezoneV1 = "Etc/GMT+9"
+	EtcGMT91                       ClinicTimezoneV1 = "Etc/GMT-9"
+	EtcGreenwich                   ClinicTimezoneV1 = "Etc/Greenwich"
+	EtcUCT                         ClinicTimezoneV1 = "Etc/UCT"
+	EtcUTC                         ClinicTimezoneV1 = "Etc/UTC"
+	EtcUniversal                   ClinicTimezoneV1 = "Etc/Universal"
+	EtcZulu                        ClinicTimezoneV1 = "Etc/Zulu"
+	EuropeAmsterdam                ClinicTimezoneV1 = "Europe/Amsterdam"
+	EuropeAndorra                  ClinicTimezoneV1 = "Europe/Andorra"
+	EuropeAstrakhan                ClinicTimezoneV1 = "Europe/Astrakhan"
+	EuropeAthens                   ClinicTimezoneV1 = "Europe/Athens"
+	EuropeBelfast                  ClinicTimezoneV1 = "Europe/Belfast"
+	EuropeBelgrade                 ClinicTimezoneV1 = "Europe/Belgrade"
+	EuropeBerlin                   ClinicTimezoneV1 = "Europe/Berlin"
+	EuropeBratislava               ClinicTimezoneV1 = "Europe/Bratislava"
+	EuropeBrussels                 ClinicTimezoneV1 = "Europe/Brussels"
+	EuropeBucharest                ClinicTimezoneV1 = "Europe/Bucharest"
+	EuropeBudapest                 ClinicTimezoneV1 = "Europe/Budapest"
+	EuropeBusingen                 ClinicTimezoneV1 = "Europe/Busingen"
+	EuropeChisinau                 ClinicTimezoneV1 = "Europe/Chisinau"
+	EuropeCopenhagen               ClinicTimezoneV1 = "Europe/Copenhagen"
+	EuropeDublin                   ClinicTimezoneV1 = "Europe/Dublin"
+	EuropeGibraltar                ClinicTimezoneV1 = "Europe/Gibraltar"
+	EuropeGuernsey                 ClinicTimezoneV1 = "Europe/Guernsey"
+	EuropeHelsinki                 ClinicTimezoneV1 = "Europe/Helsinki"
+	EuropeIsleOfMan                ClinicTimezoneV1 = "Europe/Isle_of_Man"
+	EuropeIstanbul                 ClinicTimezoneV1 = "Europe/Istanbul"
+	EuropeJersey                   ClinicTimezoneV1 = "Europe/Jersey"
+	EuropeKaliningrad              ClinicTimezoneV1 = "Europe/Kaliningrad"
+	EuropeKiev                     ClinicTimezoneV1 = "Europe/Kiev"
+	EuropeKirov                    ClinicTimezoneV1 = "Europe/Kirov"
+	EuropeKyiv                     ClinicTimezoneV1 = "Europe/Kyiv"
+	EuropeLisbon                   ClinicTimezoneV1 = "Europe/Lisbon"
+	EuropeLjubljana                ClinicTimezoneV1 = "Europe/Ljubljana"
+	EuropeLondon                   ClinicTimezoneV1 = "Europe/London"
+	EuropeLuxembourg               ClinicTimezoneV1 = "Europe/Luxembourg"
+	EuropeMadrid                   ClinicTimezoneV1 = "Europe/Madrid"
+	EuropeMalta                    ClinicTimezoneV1 = "Europe/Malta"
+	EuropeMariehamn                ClinicTimezoneV1 = "Europe/Mariehamn"
+	EuropeMinsk                    ClinicTimezoneV1 = "Europe/Minsk"
+	EuropeMonaco                   ClinicTimezoneV1 = "Europe/Monaco"
+	EuropeMoscow                   ClinicTimezoneV1 = "Europe/Moscow"
+	EuropeNicosia                  ClinicTimezoneV1 = "Europe/Nicosia"
+	EuropeOslo                     ClinicTimezoneV1 = "Europe/Oslo"
+	EuropeParis                    ClinicTimezoneV1 = "Europe/Paris"
+	EuropePodgorica                ClinicTimezoneV1 = "Europe/Podgorica"
+	EuropePrague                   ClinicTimezoneV1 = "Europe/Prague"
+	EuropeRiga                     ClinicTimezoneV1 = "Europe/Riga"
+	EuropeRome                     ClinicTimezoneV1 = "Europe/Rome"
+	EuropeSamara                   ClinicTimezoneV1 = "Europe/Samara"
+	EuropeSanMarino                ClinicTimezoneV1 = "Europe/San_Marino"
+	EuropeSarajevo                 ClinicTimezoneV1 = "Europe/Sarajevo"
+	EuropeSaratov                  ClinicTimezoneV1 = "Europe/Saratov"
+	EuropeSimferopol               ClinicTimezoneV1 = "Europe/Simferopol"
+	EuropeSkopje                   ClinicTimezoneV1 = "Europe/Skopje"
+	EuropeSofia                    ClinicTimezoneV1 = "Europe/Sofia"
+	EuropeStockholm                ClinicTimezoneV1 = "Europe/Stockholm"
+	EuropeTallinn                  ClinicTimezoneV1 = "Europe/Tallinn"
+	EuropeTirane                   ClinicTimezoneV1 = "Europe/Tirane"
+	EuropeTiraspol                 ClinicTimezoneV1 = "Europe/Tiraspol"
+	EuropeUlyanovsk                ClinicTimezoneV1 = "Europe/Ulyanovsk"
+	EuropeUzhgorod                 ClinicTimezoneV1 = "Europe/Uzhgorod"
+	EuropeVaduz                    ClinicTimezoneV1 = "Europe/Vaduz"
+	EuropeVatican                  ClinicTimezoneV1 = "Europe/Vatican"
+	EuropeVienna                   ClinicTimezoneV1 = "Europe/Vienna"
+	EuropeVilnius                  ClinicTimezoneV1 = "Europe/Vilnius"
+	EuropeVolgograd                ClinicTimezoneV1 = "Europe/Volgograd"
+	EuropeWarsaw                   ClinicTimezoneV1 = "Europe/Warsaw"
+	EuropeZagreb                   ClinicTimezoneV1 = "Europe/Zagreb"
+	EuropeZaporozhye               ClinicTimezoneV1 = "Europe/Zaporozhye"
+	EuropeZurich                   ClinicTimezoneV1 = "Europe/Zurich"
+	GB                             ClinicTimezoneV1 = "GB"
+	GBEire                         ClinicTimezoneV1 = "GB-Eire"
+	GMT                            ClinicTimezoneV1 = "GMT"
+	GMT0                           ClinicTimezoneV1 = "GMT+0"
+	GMT01                          ClinicTimezoneV1 = "GMT-0"
+	GMT02                          ClinicTimezoneV1 = "GMT0"
+	Greenwich                      ClinicTimezoneV1 = "Greenwich"
+	HST                            ClinicTimezoneV1 = "HST"
+	Hongkong                       ClinicTimezoneV1 = "Hongkong"
+	Iceland                        ClinicTimezoneV1 = "Iceland"
+	IndianAntananarivo             ClinicTimezoneV1 = "Indian/Antananarivo"
+	IndianChagos                   ClinicTimezoneV1 = "Indian/Chagos"
+	IndianChristmas                ClinicTimezoneV1 = "Indian/Christmas"
+	IndianCocos                    ClinicTimezoneV1 = "Indian/Cocos"
+	IndianComoro                   ClinicTimezoneV1 = "Indian/Comoro"
+	IndianKerguelen                ClinicTimezoneV1 = "Indian/Kerguelen"
+	IndianMahe                     ClinicTimezoneV1 = "Indian/Mahe"
+	IndianMaldives                 ClinicTimezoneV1 = "Indian/Maldives"
+	IndianMauritius                ClinicTimezoneV1 = "Indian/Mauritius"
+	IndianMayotte                  ClinicTimezoneV1 = "Indian/Mayotte"
+	IndianReunion                  ClinicTimezoneV1 = "Indian/Reunion"
+	Iran                           ClinicTimezoneV1 = "Iran"
+	Israel                         ClinicTimezoneV1 = "Israel"
+	Jamaica                        ClinicTimezoneV1 = "Jamaica"
+	Japan                          ClinicTimezoneV1 = "Japan"
+	Kwajalein                      ClinicTimezoneV1 = "Kwajalein"
+	Libya                          ClinicTimezoneV1 = "Libya"
+	MET                            ClinicTimezoneV1 = "MET"
+	MST                            ClinicTimezoneV1 = "MST"
+	MST7MDT                        ClinicTimezoneV1 = "MST7MDT"
+	MexicoBajaNorte                ClinicTimezoneV1 = "Mexico/BajaNorte"
+	MexicoBajaSur                  ClinicTimezoneV1 = "Mexico/BajaSur"
+	MexicoGeneral                  ClinicTimezoneV1 = "Mexico/General"
+	NZ                             ClinicTimezoneV1 = "NZ"
+	NZCHAT                         ClinicTimezoneV1 = "NZ-CHAT"
+	Navajo                         ClinicTimezoneV1 = "Navajo"
+	PRC                            ClinicTimezoneV1 = "PRC"
+	PST8PDT                        ClinicTimezoneV1 = "PST8PDT"
+	PacificApia                    ClinicTimezoneV1 = "Pacific/Apia"
+	PacificAuckland                ClinicTimezoneV1 = "Pacific/Auckland"
+	PacificBougainville            ClinicTimezoneV1 = "Pacific/Bougainville"
+	PacificChatham                 ClinicTimezoneV1 = "Pacific/Chatham"
+	PacificChuuk                   ClinicTimezoneV1 = "Pacific/Chuuk"
+	PacificEaster                  ClinicTimezoneV1 = "Pacific/Easter"
+	PacificEfate                   ClinicTimezoneV1 = "Pacific/Efate"
+	PacificEnderbury               ClinicTimezoneV1 = "Pacific/Enderbury"
+	PacificFakaofo                 ClinicTimezoneV1 = "Pacific/Fakaofo"
+	PacificFiji                    ClinicTimezoneV1 = "Pacific/Fiji"
+	PacificFunafuti                ClinicTimezoneV1 = "Pacific/Funafuti"
+	PacificGalapagos               ClinicTimezoneV1 = "Pacific/Galapagos"
+	PacificGambier                 ClinicTimezoneV1 = "Pacific/Gambier"
+	PacificGuadalcanal             ClinicTimezoneV1 = "Pacific/Guadalcanal"
+	PacificGuam                    ClinicTimezoneV1 = "Pacific/Guam"
+	PacificHonolulu                ClinicTimezoneV1 = "Pacific/Honolulu"
+	PacificJohnston                ClinicTimezoneV1 = "Pacific/Johnston"
+	PacificKanton                  ClinicTimezoneV1 = "Pacific/Kanton"
+	PacificKiritimati              ClinicTimezoneV1 = "Pacific/Kiritimati"
+	PacificKosrae                  ClinicTimezoneV1 = "Pacific/Kosrae"
+	PacificKwajalein               ClinicTimezoneV1 = "Pacific/Kwajalein"
+	PacificMajuro                  ClinicTimezoneV1 = "Pacific/Majuro"
+	PacificMarquesas               ClinicTimezoneV1 = "Pacific/Marquesas"
+	PacificMidway                  ClinicTimezoneV1 = "Pacific/Midway"
+	PacificNauru                   ClinicTimezoneV1 = "Pacific/Nauru"
+	PacificNiue                    ClinicTimezoneV1 = "Pacific/Niue"
+	PacificNorfolk                 ClinicTimezoneV1 = "Pacific/Norfolk"
+	PacificNoumea                  ClinicTimezoneV1 = "Pacific/Noumea"
+	PacificPagoPago                ClinicTimezoneV1 = "Pacific/Pago_Pago"
+	PacificPalau                   ClinicTimezoneV1 = "Pacific/Palau"
+	PacificPitcairn                ClinicTimezoneV1 = "Pacific/Pitcairn"
+	PacificPohnpei                 ClinicTimezoneV1 = "Pacific/Pohnpei"
+	PacificPonape                  ClinicTimezoneV1 = "Pacific/Ponape"
+	PacificPortMoresby             ClinicTimezoneV1 = "Pacific/Port_Moresby"
+	PacificRarotonga               ClinicTimezoneV1 = "Pacific/Rarotonga"
+	PacificSaipan                  ClinicTimezoneV1 = "Pacific/Saipan"
+	PacificSamoa                   ClinicTimezoneV1 = "Pacific/Samoa"
+	PacificTahiti                  ClinicTimezoneV1 = "Pacific/Tahiti"
+	PacificTarawa                  ClinicTimezoneV1 = "Pacific/Tarawa"
+	PacificTongatapu               ClinicTimezoneV1 = "Pacific/Tongatapu"
+	PacificTruk                    ClinicTimezoneV1 = "Pacific/Truk"
+	PacificWake                    ClinicTimezoneV1 = "Pacific/Wake"
+	PacificWallis                  ClinicTimezoneV1 = "Pacific/Wallis"
+	PacificYap                     ClinicTimezoneV1 = "Pacific/Yap"
+	Poland                         ClinicTimezoneV1 = "Poland"
+	Portugal                       ClinicTimezoneV1 = "Portugal"
+	ROC                            ClinicTimezoneV1 = "ROC"
+	ROK                            ClinicTimezoneV1 = "ROK"
+	Singapore                      ClinicTimezoneV1 = "Singapore"
+	Turkey                         ClinicTimezoneV1 = "Turkey"
+	UCT                            ClinicTimezoneV1 = "UCT"
+	USAlaska                       ClinicTimezoneV1 = "US/Alaska"
+	USAleutian                     ClinicTimezoneV1 = "US/Aleutian"
+	USArizona                      ClinicTimezoneV1 = "US/Arizona"
+	USCentral                      ClinicTimezoneV1 = "US/Central"
+	USEastIndiana                  ClinicTimezoneV1 = "US/East-Indiana"
+	USEastern                      ClinicTimezoneV1 = "US/Eastern"
+	USHawaii                       ClinicTimezoneV1 = "US/Hawaii"
+	USIndianaStarke                ClinicTimezoneV1 = "US/Indiana-Starke"
+	USMichigan                     ClinicTimezoneV1 = "US/Michigan"
+	USMountain                     ClinicTimezoneV1 = "US/Mountain"
+	USPacific                      ClinicTimezoneV1 = "US/Pacific"
+	USSamoa                        ClinicTimezoneV1 = "US/Samoa"
+	UTC                            ClinicTimezoneV1 = "UTC"
+	Universal                      ClinicTimezoneV1 = "Universal"
+	WET                            ClinicTimezoneV1 = "WET"
+	WSU                            ClinicTimezoneV1 = "W-SU"
+	Zulu                           ClinicTimezoneV1 = "Zulu"
 )
 
-// Defines values for DataSourceState.
+// Defines values for DataSourceV1State.
 const (
-	DataSourceStateConnected        DataSourceState = "connected"
-	DataSourceStateDisconnected     DataSourceState = "disconnected"
-	DataSourceStateError            DataSourceState = "error"
-	DataSourceStatePending          DataSourceState = "pending"
-	DataSourceStatePendingReconnect DataSourceState = "pendingReconnect"
+	Connected        DataSourceV1State = "connected"
+	Disconnected     DataSourceV1State = "disconnected"
+	Error            DataSourceV1State = "error"
+	Pending          DataSourceV1State = "pending"
+	PendingReconnect DataSourceV1State = "pendingReconnect"
 )
 
-// Defines values for EHRMatchMessageRefDataModel.
+// Defines values for EhrMatchMessageRefV1DataModel.
 const (
-	Order EHRMatchMessageRefDataModel = "Order"
+	Order EhrMatchMessageRefV1DataModel = "Order"
 )
 
-// Defines values for EHRMatchMessageRefEventType.
+// Defines values for EhrMatchMessageRefV1EventType.
 const (
-	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
+	EhrMatchMessageRefV1EventTypeNew EhrMatchMessageRefV1EventType = "New"
 )
 
-// Defines values for EHRMatchRequestPatientsOptionsCriteria.
+// Defines values for EhrMatchRequestPatientsOptionsV1Criteria.
 const (
-	DOBFULLNAME EHRMatchRequestPatientsOptionsCriteria = "DOB_FULLNAME"
-	MRN         EHRMatchRequestPatientsOptionsCriteria = "MRN"
-	MRNDOB      EHRMatchRequestPatientsOptionsCriteria = "MRN_DOB"
+	DOBFULLNAME EhrMatchRequestPatientsOptionsV1Criteria = "DOB_FULLNAME"
+	MRN         EhrMatchRequestPatientsOptionsV1Criteria = "MRN"
+	MRNDOB      EhrMatchRequestPatientsOptionsV1Criteria = "MRN_DOB"
 )
 
-// Defines values for EHRMatchRequestPatientsOptionsOnUniqueMatch.
+// Defines values for EhrMatchRequestPatientsOptionsV1OnUniqueMatch.
 const (
-	DISABLEREPORTS EHRMatchRequestPatientsOptionsOnUniqueMatch = "DISABLE_REPORTS"
-	ENABLEREPORTS  EHRMatchRequestPatientsOptionsOnUniqueMatch = "ENABLE_REPORTS"
+	DISABLEREPORTS EhrMatchRequestPatientsOptionsV1OnUniqueMatch = "DISABLE_REPORTS"
+	ENABLEREPORTS  EhrMatchRequestPatientsOptionsV1OnUniqueMatch = "ENABLE_REPORTS"
 )
 
-// Defines values for EHRSettingsProvider.
+// Defines values for EhrSettingsV1Provider.
 const (
-	Redox  EHRSettingsProvider = "redox"
-	Xealth EHRSettingsProvider = "xealth"
+	Redox  EhrSettingsV1Provider = "redox"
+	Xealth EhrSettingsV1Provider = "xealth"
 )
 
-// Defines values for MigrationStatus.
+// Defines values for MigrationStatusV1.
 const (
-	COMPLETED MigrationStatus = "COMPLETED"
-	PENDING   MigrationStatus = "PENDING"
-	RUNNING   MigrationStatus = "RUNNING"
+	COMPLETED MigrationStatusV1 = "COMPLETED"
+	PENDING   MigrationStatusV1 = "PENDING"
+	RUNNING   MigrationStatusV1 = "RUNNING"
 )
 
-// Defines values for ProviderId.
+// Defines values for ProviderIdV1.
 const (
-	Abbott ProviderId = "abbott"
-	Dexcom ProviderId = "dexcom"
-	Twiist ProviderId = "twiist"
+	Abbott ProviderIdV1 = "abbott"
+	Dexcom ProviderIdV1 = "dexcom"
+	Twiist ProviderIdV1 = "twiist"
 )
 
-// Defines values for ScheduledReportsCadence.
+// Defines values for ScheduledReportsV1Cadence.
 const (
-	DISABLED ScheduledReportsCadence = "DISABLED"
-	N14d     ScheduledReportsCadence = "14d"
-	N1d      ScheduledReportsCadence = "1d"
-	N30d     ScheduledReportsCadence = "30d"
-	N7d      ScheduledReportsCadence = "7d"
+	DISABLED ScheduledReportsV1Cadence = "DISABLED"
+	N14d     ScheduledReportsV1Cadence = "14d"
+	N1d      ScheduledReportsV1Cadence = "1d"
+	N30d     ScheduledReportsV1Cadence = "30d"
+	N7d      ScheduledReportsV1Cadence = "7d"
 )
 
-// Defines values for ScheduledReportsOnUploadNoteEventType.
+// Defines values for ScheduledReportsV1OnUploadNoteEventType.
 const (
-	ScheduledReportsOnUploadNoteEventTypeNew     ScheduledReportsOnUploadNoteEventType = "New"
-	ScheduledReportsOnUploadNoteEventTypeReplace ScheduledReportsOnUploadNoteEventType = "Replace"
+	ScheduledReportsV1OnUploadNoteEventTypeNew     ScheduledReportsV1OnUploadNoteEventType = "New"
+	ScheduledReportsV1OnUploadNoteEventTypeReplace ScheduledReportsV1OnUploadNoteEventType = "Replace"
 )
 
-// Defines values for Tier.
+// Defines values for TierV1.
 const (
-	Tier0100 Tier = "tier0100"
-	Tier0200 Tier = "tier0200"
-	Tier0300 Tier = "tier0300"
-	Tier0400 Tier = "tier0400"
+	Tier0100 TierV1 = "tier0100"
+	Tier0200 TierV1 = "tier0200"
+	Tier0300 TierV1 = "tier0300"
+	Tier0400 TierV1 = "tier0400"
 )
 
 // Defines values for FindPatientsParamsWorkspaceIdType.
@@ -716,374 +716,36 @@ const (
 	FindPatientsParamsWorkspaceIdTypeEhrSourceId FindPatientsParamsWorkspaceIdType = "ehrSourceId"
 )
 
-// AddServiceAccount defines model for AddServiceAccount.
-type AddServiceAccount struct {
+// FloatFilter defines model for FloatFilter.
+type FloatFilter = string
+
+// IntFilter defines model for IntFilter.
+type IntFilter = string
+
+// UpdateSuppressedNotifications defines model for UpdateSuppressedNotifications.
+type UpdateSuppressedNotifications struct {
+	SuppressedNotifications SuppressedNotificationsV1 `json:"suppressedNotifications"`
+}
+
+// UpdateTier defines model for UpdateTier.
+type UpdateTier struct {
+	Tier TierV1 `json:"tier"`
+}
+
+// AddServiceAccountV1 defines model for addServiceAccount.v1.
+type AddServiceAccountV1 struct {
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	Name         string `json:"name"`
 }
 
-// AssociateClinicianToUser defines model for AssociateClinicianToUser.
-type AssociateClinicianToUser struct {
+// AssociateClinicianToUserV1 defines model for associateClinicianToUser.v1.
+type AssociateClinicianToUserV1 struct {
 	UserId string `json:"userId"`
 }
 
-// Clinic Clinic
-type Clinic struct {
-	// Address Street address.
-	Address    *string `json:"address,omitempty"`
-	CanMigrate *bool   `json:"canMigrate,omitempty"`
-
-	// City City name.
-	City       *string           `json:"city,omitempty"`
-	ClinicSize *ClinicClinicSize `json:"clinicSize,omitempty"`
-	ClinicType *ClinicClinicType `json:"clinicType,omitempty"`
-
-	// Country Country name.
-	Country     *string    `json:"country,omitempty"`
-	CreatedTime *time.Time `json:"createdTime,omitempty"`
-
-	// Id Clinic identifier.
-	Id                    *Id         `json:"id,omitempty"`
-	LastDeletedPatientTag *PatientTag `json:"lastDeletedPatientTag,omitempty"`
-
-	// Name Name of the clinic.
-	Name        string        `json:"name"`
-	PatientTags *[]PatientTag `json:"patientTags,omitempty"`
-
-	// PhoneNumbers An array of phone numbers.
-	PhoneNumbers *[]PhoneNumber `json:"phoneNumbers,omitempty"`
-
-	// PostalCode Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
-	PostalCode       *string                `json:"postalCode,omitempty"`
-	PreferredBgUnits ClinicPreferredBgUnits `json:"preferredBgUnits"`
-
-	// ShareCode Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
-	ShareCode *string `json:"shareCode,omitempty"`
-
-	// State State or province. In the U.S., typically something like `CA` or `California`.
-	State                   *string                  `json:"state,omitempty"`
-	SuppressedNotifications *SuppressedNotifications `json:"suppressedNotifications,omitempty"`
-	Tier                    *string                  `json:"tier,omitempty"`
-	TierDescription         *string                  `json:"tierDescription,omitempty"`
-	Timezone                *ClinicTimezone          `json:"timezone,omitempty"`
-	UpdatedTime             *time.Time               `json:"updatedTime,omitempty"`
-	Website                 *string                  `json:"website,omitempty"`
-}
-
-// ClinicClinicSize defines model for Clinic.ClinicSize.
-type ClinicClinicSize string
-
-// ClinicClinicType defines model for Clinic.ClinicType.
-type ClinicClinicType string
-
-// ClinicPreferredBgUnits defines model for Clinic.PreferredBgUnits.
-type ClinicPreferredBgUnits string
-
-// ClinicTimezone defines model for Clinic.Timezone.
-type ClinicTimezone string
-
-// Clinician The `id` may be empty if the clinician invite has not been accepted.
-type Clinician struct {
-	CreatedTime *time.Time `json:"createdTime,omitempty"`
-	Email       string     `json:"email"`
-
-	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id *TidepoolUserId `json:"id,omitempty"`
-
-	// InviteId The id of the invite if it hasn't been accepted
-	InviteId *string `json:"inviteId,omitempty"`
-
-	// Name The name of the clinician
-	Name        *string        `json:"name,omitempty"`
-	Roles       ClinicianRoles `json:"roles"`
-	UpdatedTime *time.Time     `json:"updatedTime,omitempty"`
-}
-
-// ClinicianClinicRelationship defines model for ClinicianClinicRelationship.
-type ClinicianClinicRelationship struct {
-	// Clinic Clinic
-	Clinic Clinic `json:"clinic"`
-
-	// Clinician The `id` may be empty if the clinician invite has not been accepted.
-	Clinician Clinician `json:"clinician"`
-}
-
-// ClinicianClinicRelationships defines model for ClinicianClinicRelationships.
-type ClinicianClinicRelationships = []ClinicianClinicRelationship
-
-// ClinicianRoles defines model for ClinicianRoles.
-type ClinicianRoles = []string
-
-// Clinicians defines model for Clinicians.
-type Clinicians = []Clinician
-
-// Clinics defines model for Clinics.
-type Clinics = []Clinic
-
-// CreatePatient defines model for CreatePatient.
-type CreatePatient struct {
-	AttestationSubmitted *bool               `json:"attestationSubmitted,omitempty"`
-	BirthDate            *openapi_types.Date `json:"birthDate,omitempty"`
-
-	// FullName The full name of the patient
-	FullName   *string `json:"fullName,omitempty"`
-	IsMigrated *bool   `json:"isMigrated,omitempty"`
-
-	// LegacyClinicianId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	LegacyClinicianId *TidepoolUserId `json:"legacyClinicianId,omitempty"`
-
-	// Mrn The medical record number of the patient
-	Mrn         *string             `json:"mrn,omitempty"`
-	Permissions *PatientPermissions `json:"permissions,omitempty"`
-	Tags        *PatientTagIds      `json:"tags"`
-}
-
-// DataSource defines model for DataSource.
-type DataSource struct {
-	// DataSourceId String representation of a resource id
-	DataSourceId *string `json:"dataSourceId,omitempty"`
-
-	// ExpirationTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	ExpirationTime *DateTime `json:"expirationTime,omitempty"`
-
-	// ModifiedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	ModifiedTime *DateTime       `json:"modifiedTime,omitempty"`
-	ProviderName string          `json:"providerName"`
-	State        DataSourceState `json:"state"`
-}
-
-// DataSourceState defines model for DataSource.State.
-type DataSourceState string
-
-// DataSources defines model for DataSources.
-type DataSources = []DataSource
-
-// DateTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-type DateTime = string
-
-// EHRDestinationIds defines model for EHRDestinationIds.
-type EHRDestinationIds struct {
-	// Flowsheet Destination ID override for Flowsheets
-	Flowsheet string `json:"flowsheet"`
-
-	// Notes Destination ID override for Notes
-	Notes string `json:"notes"`
-
-	// Results Destination ID override for Results
-	Results string `json:"results"`
-}
-
-// EHRFacility defines model for EHRFacility.
-type EHRFacility struct {
-	// Name Ordering Facility Name
-	Name string `json:"name"`
-}
-
-// EHRFlowsheetSettings defines model for EHRFlowsheetSettings.
-type EHRFlowsheetSettings struct {
-	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
-	Icode bool `json:"icode"`
-}
-
-// EHRMatchMessageRef defines model for EHRMatchMessageRef.
-type EHRMatchMessageRef struct {
-	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
-	DocumentId string                      `json:"documentId"`
-	EventType  EHRMatchMessageRefEventType `json:"eventType"`
-}
-
-// EHRMatchMessageRefDataModel defines model for EHRMatchMessageRef.DataModel.
-type EHRMatchMessageRefDataModel string
-
-// EHRMatchMessageRefEventType defines model for EHRMatchMessageRef.EventType.
-type EHRMatchMessageRefEventType string
-
-// EHRMatchRequest defines model for EHRMatchRequest.
-type EHRMatchRequest struct {
-	MessageRef *EHRMatchMessageRef             `json:"messageRef,omitempty"`
-	Patients   *EHRMatchRequestPatientsOptions `json:"patients,omitempty"`
-}
-
-// EHRMatchRequestPatientsOptions defines model for EHRMatchRequestPatientsOptions.
-type EHRMatchRequestPatientsOptions struct {
-	// Criteria Performs an "OR" match for each item in the array
-	Criteria []EHRMatchRequestPatientsOptionsCriteria `json:"criteria"`
-
-	// OnUniqueMatch Optional action to be performed when a unique match has been found
-	OnUniqueMatch *EHRMatchRequestPatientsOptionsOnUniqueMatch `json:"onUniqueMatch,omitempty"`
-}
-
-// EHRMatchRequestPatientsOptionsCriteria defines model for EHRMatchRequestPatientsOptions.Criteria.
-type EHRMatchRequestPatientsOptionsCriteria string
-
-// EHRMatchRequestPatientsOptionsOnUniqueMatch Optional action to be performed when a unique match has been found
-type EHRMatchRequestPatientsOptionsOnUniqueMatch string
-
-// EHRMatchResponse defines model for EHRMatchResponse.
-type EHRMatchResponse struct {
-	// Clinic Clinic
-	Clinic   Clinic      `json:"clinic"`
-	Patients *Patients   `json:"patients,omitempty"`
-	Settings EHRSettings `json:"settings"`
-}
-
-// EHRProcedureCodes defines model for EHRProcedureCodes.
-type EHRProcedureCodes struct {
-	CreateAccount                 *string `json:"createAccount,omitempty"`
-	CreateAccountAndEnableReports *string `json:"createAccountAndEnableReports,omitempty"`
-	DisableSummaryReports         *string `json:"disableSummaryReports,omitempty"`
-
-	// EnableSummaryReports Procedure Code for Summary Statistics and PDF Reports subscription
-	EnableSummaryReports *string `json:"enableSummaryReports,omitempty"`
-}
-
-// EHRSettings defines model for EHRSettings.
-type EHRSettings struct {
-	DestinationIds *EHRDestinationIds `json:"destinationIds,omitempty"`
-
-	// Enabled Enable or disable the EHR integration
-	Enabled        bool                 `json:"enabled"`
-	Facility       *EHRFacility         `json:"facility,omitempty"`
-	Flowsheets     EHRFlowsheetSettings `json:"flowsheets"`
-	MrnIdType      string               `json:"mrnIdType"`
-	ProcedureCodes EHRProcedureCodes    `json:"procedureCodes"`
-	Provider       EHRSettingsProvider  `json:"provider"`
-
-	// ScheduledReports Scheduled Report Settings
-	ScheduledReports ScheduledReports `json:"scheduledReports"`
-	SourceId         string           `json:"sourceId"`
-
-	// Tags This configuration only applies to integrations using Redox Data Model
-	Tags EHRTagsSettings `json:"tags"`
-}
-
-// EHRSettingsProvider defines model for EHRSettings.Provider.
-type EHRSettingsProvider string
-
-// EHRTagsSettings This configuration only applies to integrations using Redox Data Model
-type EHRTagsSettings struct {
-	// Codes Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
-	Codes *[]string `json:"codes,omitempty"`
-
-	// Separator If set to a non-empty string, the tag values will be split using this separator
-	Separator *string `json:"separator,omitempty"`
-}
-
-// Error defines model for Error.
-type Error struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-// FloatFilter defines model for FloatFilter.
-type FloatFilter = string
-
-// GenerateMergeReport defines model for GenerateMergeReport.
-type GenerateMergeReport struct {
-	// SourceId Clinic identifier.
-	SourceId *Id `json:"sourceId,omitempty"`
-}
-
-// Id Clinic identifier.
-type Id = string
-
-// IntFilter defines model for IntFilter.
-type IntFilter = string
-
-// MRNSettings defines model for MRNSettings.
-type MRNSettings struct {
-	// Required Require MRN when creating or updating patients
-	Required bool `json:"required"`
-
-	// Unique Enforce MRN uniqueness constraint
-	Unique bool `json:"unique"`
-}
-
-// MembershipRestriction A user joining a clinic must match all of the defined restrictions
-type MembershipRestriction struct {
-	// EmailDomain The restriction applies only if the user has an email address with a matching domain
-	EmailDomain string `json:"emailDomain"`
-
-	// RequiredIdp If this attribute is set, at the time of joining the clinic the user must be authenticated against this identity provider
-	RequiredIdp *string `json:"requiredIdp,omitempty"`
-}
-
-// MembershipRestrictions A user joining a clinic must match at least one of the specified membership restrictions
-type MembershipRestrictions struct {
-	Restrictions *[]MembershipRestriction `json:"restrictions,omitempty"`
-}
-
-// MergeClinic defines model for MergeClinic.
-type MergeClinic struct {
-	// SourceId Clinic identifier.
-	SourceId *Id `json:"sourceId,omitempty"`
-}
-
-// Meta defines model for Meta.
-type Meta struct {
-	// Count The number of items matching the filter
-	Count *int `json:"count,omitempty"`
-
-	// TotalCount The total number of items
-	TotalCount *int `json:"totalCount,omitempty"`
-}
-
-// Migration defines model for Migration.
-type Migration struct {
-	AttestationTime *time.Time `json:"attestationTime,omitempty"`
-	CreatedTime     *time.Time `json:"createdTime,omitempty"`
-
-	// Status The current status of the migration
-	Status      *MigrationStatus `json:"status,omitempty"`
-	UpdatedTime *time.Time       `json:"updatedTime,omitempty"`
-
-	// UserId The user id of the legacy clinician account that needs to be migrated.
-	UserId string `json:"userId"`
-}
-
-// MigrationStatus The current status of the migration
-type MigrationStatus string
-
-// MigrationUpdate defines model for MigrationUpdate.
-type MigrationUpdate struct {
-	// Status The current status of the migration
-	Status MigrationStatus `json:"status"`
-}
-
-// Migrations defines model for Migrations.
-type Migrations = []Migration
-
-// Patient defines model for Patient.
-type Patient struct {
-	AttestationSubmitted *bool                       `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date          `json:"birthDate"`
-	ConnectionRequests   *ProviderConnectionRequests `json:"connectionRequests,omitempty"`
-	CreatedTime          *time.Time                  `json:"createdTime,omitempty"`
-	DataSources          *[]DataSource               `json:"dataSources"`
-	Email                *string                     `json:"email,omitempty"`
-
-	// FullName The full name of the patient
-	FullName string `json:"fullName"`
-
-	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id                     *TidepoolUserId `json:"id,omitempty"`
-	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
-
-	// Mrn The medical record number of the patient
-	Mrn         *string             `json:"mrn,omitempty"`
-	Permissions *PatientPermissions `json:"permissions,omitempty"`
-	Reviews     []PatientReview     `json:"reviews"`
-
-	// Summary A summary of a patients recent data
-	Summary       *PatientSummary `json:"summary,omitempty"`
-	Tags          *PatientTagIds  `json:"tags"`
-	TargetDevices *[]string       `json:"targetDevices,omitempty"`
-	UpdatedTime   *time.Time      `json:"updatedTime,omitempty"`
-}
-
-// PatientBGMPeriod Summary of a specific BGM time period (currently: 1d, 7d, 14d, 30d)
-type PatientBGMPeriod struct {
+// BgmPeriodV1 Summary of a specific BGM time period (currently: 1d, 7d, 14d, 30d)
+type BgmPeriodV1 struct {
 	// AverageDailyRecords Average daily readings
 	AverageDailyRecords *float64 `json:"averageDailyRecords,omitempty"`
 
@@ -1218,32 +880,26 @@ type PatientBGMPeriod struct {
 	TotalRecordsDelta *int `json:"totalRecordsDelta,omitempty"`
 }
 
-// PatientBGMPeriods A map to each supported BGM summary period
-type PatientBGMPeriods map[string]PatientBGMPeriod
+// BgmPeriodsV1 A map to each supported BGM summary period
+type BgmPeriodsV1 map[string]BgmPeriodV1
 
-// PatientBGMStats A summary of a users recent BGM glucose values
-type PatientBGMStats struct {
+// BgmStatsV1 A summary of a users recent BGM glucose values
+type BgmStatsV1 struct {
 	// Config Summary schema version and calculation configuration
-	Config PatientSummaryConfig `json:"config,omitempty"`
+	Config SummaryConfigV1 `json:"config,omitempty"`
 
 	// Dates dates tracked for summary calculation
-	Dates PatientSummaryDates `json:"dates,omitempty"`
+	Dates SummaryDatesV1 `json:"dates,omitempty"`
 
 	// Id Summary Unique Identifier
 	Id *SummaryIdV1 `json:"id,omitempty"`
 
-	// OffsetPeriods A map to each supported BGM summary period
-	OffsetPeriods PatientBGMPeriods `json:"offsetPeriods,omitempty"`
-
 	// Periods A map to each supported BGM summary period
-	Periods PatientBGMPeriods `json:"periods,omitempty"`
-
-	// TotalHours Total hours represented in the hourly stats
-	TotalHours int `json:"totalHours"`
+	Periods BgmPeriodsV1 `json:"periods,omitempty"`
 }
 
-// PatientCGMPeriod Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)
-type PatientCGMPeriod struct {
+// CgmPeriodV1 Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)
+type CgmPeriodV1 struct {
 	// AverageDailyRecords Average daily readings
 	AverageDailyRecords *float64 `json:"averageDailyRecords,omitempty"`
 
@@ -1470,92 +1126,523 @@ type PatientCGMPeriod struct {
 	TotalRecordsDelta *int `json:"totalRecordsDelta,omitempty"`
 }
 
-// PatientCGMPeriods A map to each supported CGM summary period
-type PatientCGMPeriods map[string]PatientCGMPeriod
+// CgmPeriodsV1 A map to each supported CGM summary period
+type CgmPeriodsV1 map[string]CgmPeriodV1
 
-// PatientCGMStats A summary of a users recent CGM glucose values
-type PatientCGMStats struct {
+// CgmStatsV1 A summary of a users recent CGM glucose values
+type CgmStatsV1 struct {
 	// Config Summary schema version and calculation configuration
-	Config PatientSummaryConfig `json:"config,omitempty"`
+	Config SummaryConfigV1 `json:"config,omitempty"`
 
 	// Dates dates tracked for summary calculation
-	Dates PatientSummaryDates `json:"dates,omitempty"`
+	Dates SummaryDatesV1 `json:"dates,omitempty"`
 
 	// Id Summary Unique Identifier
 	Id *SummaryIdV1 `json:"id,omitempty"`
 
-	// OffsetPeriods A map to each supported CGM summary period
-	OffsetPeriods PatientCGMPeriods `json:"offsetPeriods,omitempty"`
-
 	// Periods A map to each supported CGM summary period
-	Periods PatientCGMPeriods `json:"periods,omitempty"`
-
-	// TotalHours Total hours represented in the hourly stats
-	TotalHours int `json:"totalHours"`
+	Periods CgmPeriodsV1 `json:"periods,omitempty"`
 }
 
-// PatientClinicRelationship defines model for PatientClinicRelationship.
-type PatientClinicRelationship struct {
+// CityV1 City name.
+type CityV1 = string
+
+// ClinicV1 Clinic
+type ClinicV1 struct {
+	// Address Street address.
+	Address    *StreetAddressV1 `json:"address,omitempty"`
+	CanMigrate *bool            `json:"canMigrate,omitempty"`
+
+	// City City name.
+	City       *CityV1             `json:"city,omitempty"`
+	ClinicSize *ClinicV1ClinicSize `json:"clinicSize,omitempty"`
+	ClinicType *ClinicV1ClinicType `json:"clinicType,omitempty"`
+
+	// Country Country name.
+	Country     *CountryV1 `json:"country,omitempty"`
+	CreatedTime *time.Time `json:"createdTime,omitempty"`
+
+	// Id Clinic identifier.
+	Id                    *ClinicIdV1   `json:"id,omitempty"`
+	LastDeletedPatientTag *PatientTagV1 `json:"lastDeletedPatientTag,omitempty"`
+
+	// Name Name of the clinic.
+	Name        NameV1          `json:"name"`
+	PatientTags *[]PatientTagV1 `json:"patientTags,omitempty"`
+
+	// PhoneNumbers An array of phone numbers.
+	PhoneNumbers *PhoneNumbersV1 `json:"phoneNumbers,omitempty"`
+
+	// PostalCode Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
+	PostalCode       *PostalCodeV1            `json:"postalCode,omitempty"`
+	PreferredBgUnits ClinicV1PreferredBgUnits `json:"preferredBgUnits"`
+
+	// ShareCode Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
+	ShareCode *ShareCodeV1 `json:"shareCode,omitempty"`
+
+	// State State or province. In the U.S., typically something like `CA` or `California`.
+	State                   *StateV1                   `json:"state,omitempty"`
+	SuppressedNotifications *SuppressedNotificationsV1 `json:"suppressedNotifications,omitempty"`
+	Tier                    *string                    `json:"tier,omitempty"`
+	TierDescription         *string                    `json:"tierDescription,omitempty"`
+	Timezone                *ClinicTimezoneV1          `json:"timezone,omitempty"`
+	UpdatedTime             *time.Time                 `json:"updatedTime,omitempty"`
+	Website                 *string                    `json:"website,omitempty"`
+}
+
+// ClinicV1ClinicSize defines model for ClinicV1.ClinicSize.
+type ClinicV1ClinicSize string
+
+// ClinicV1ClinicType defines model for ClinicV1.ClinicType.
+type ClinicV1ClinicType string
+
+// ClinicV1PreferredBgUnits defines model for ClinicV1.PreferredBgUnits.
+type ClinicV1PreferredBgUnits string
+
+// ClinicIdV1 Clinic identifier.
+type ClinicIdV1 = string
+
+// ClinicTimezoneV1 defines model for clinicTimezone.v1.
+type ClinicTimezoneV1 string
+
+// ClinicianV1 The `id` may be empty if the clinician invite has not been accepted.
+type ClinicianV1 struct {
+	CreatedTime *time.Time `json:"createdTime,omitempty"`
+	Email       string     `json:"email"`
+
+	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
+	Id *Tidepooluserid `json:"id,omitempty"`
+
+	// InviteId The id of the invite if it hasn't been accepted
+	InviteId *string `json:"inviteId,omitempty"`
+
+	// Name The name of the clinician
+	Name        *string          `json:"name,omitempty"`
+	Roles       ClinicianRolesV1 `json:"roles"`
+	UpdatedTime *time.Time       `json:"updatedTime,omitempty"`
+}
+
+// ClinicianClinicRelationshipV1 defines model for clinicianClinicRelationship.v1.
+type ClinicianClinicRelationshipV1 struct {
 	// Clinic Clinic
-	Clinic  Clinic  `json:"clinic"`
-	Patient Patient `json:"patient"`
+	Clinic ClinicV1 `json:"clinic"`
+
+	// Clinician The `id` may be empty if the clinician invite has not been accepted.
+	Clinician ClinicianV1 `json:"clinician"`
 }
 
-// PatientClinicRelationships defines model for PatientClinicRelationships.
-type PatientClinicRelationships = []PatientClinicRelationship
+// ClinicianClinicRelationshipsV1 defines model for clinicianClinicRelationships.v1.
+type ClinicianClinicRelationshipsV1 = []ClinicianClinicRelationshipV1
 
-// PatientCount defines model for PatientCount.
-type PatientCount struct {
+// ClinicianRolesV1 defines model for clinicianRoles.v1.
+type ClinicianRolesV1 = []string
+
+// CliniciansV1 defines model for clinicians.v1.
+type CliniciansV1 = []ClinicianV1
+
+// ClinicsV1 defines model for clinics.v1.
+type ClinicsV1 = []ClinicV1
+
+// CountryV1 Country name.
+type CountryV1 = string
+
+// CreatePatientV1 defines model for createPatient.v1.
+type CreatePatientV1 struct {
+	AttestationSubmitted *bool               `json:"attestationSubmitted,omitempty"`
+	BirthDate            *openapi_types.Date `json:"birthDate,omitempty"`
+
+	// FullName The full name of the patient
+	FullName   *string `json:"fullName,omitempty"`
+	IsMigrated *bool   `json:"isMigrated,omitempty"`
+
+	// LegacyClinicianId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
+	LegacyClinicianId *Tidepooluserid `json:"legacyClinicianId,omitempty"`
+
+	// Mrn The medical record number of the patient
+	Mrn         *string               `json:"mrn,omitempty"`
+	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
+	Tags        *PatientTagIdsV1      `json:"tags"`
+}
+
+// DataSourceV1 defines model for dataSource.v1.
+type DataSourceV1 struct {
+	// DataSourceId String representation of a resource id
+	DataSourceId *string `json:"dataSourceId,omitempty"`
+
+	// ExpirationTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	ExpirationTime *DatetimeV1 `json:"expirationTime,omitempty"`
+
+	// ModifiedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	ModifiedTime *DatetimeV1       `json:"modifiedTime,omitempty"`
+	ProviderName ProviderNameV1    `json:"providerName"`
+	State        DataSourceV1State `json:"state"`
+}
+
+// DataSourceV1State defines model for DataSourceV1.State.
+type DataSourceV1State string
+
+// DataSourcesV1 defines model for dataSources.v1.
+type DataSourcesV1 = []DataSourceV1
+
+// DatetimeV1 [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+type DatetimeV1 = string
+
+// EhrDestinationsV1 defines model for ehrDestinations.v1.
+type EhrDestinationsV1 struct {
+	// Flowsheet Destination ID override for Flowsheets
+	Flowsheet string `json:"flowsheet"`
+
+	// Notes Destination ID override for Notes
+	Notes string `json:"notes"`
+
+	// Results Destination ID override for Results
+	Results string `json:"results"`
+}
+
+// EhrFacilityV1 defines model for ehrFacility.v1.
+type EhrFacilityV1 struct {
+	// Name Ordering Facility Name
+	Name string `json:"name"`
+}
+
+// EhrFlowsheetSettingsV1 defines model for ehrFlowsheetSettings.v1.
+type EhrFlowsheetSettingsV1 struct {
+	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
+	Icode bool `json:"icode"`
+}
+
+// EhrMatchMessageRefV1 defines model for ehrMatchMessageRef.v1.
+type EhrMatchMessageRefV1 struct {
+	DataModel  EhrMatchMessageRefV1DataModel `json:"dataModel"`
+	DocumentId string                        `json:"documentId"`
+	EventType  EhrMatchMessageRefV1EventType `json:"eventType"`
+}
+
+// EhrMatchMessageRefV1DataModel defines model for EhrMatchMessageRefV1.DataModel.
+type EhrMatchMessageRefV1DataModel string
+
+// EhrMatchMessageRefV1EventType defines model for EhrMatchMessageRefV1.EventType.
+type EhrMatchMessageRefV1EventType string
+
+// EhrMatchRequestV1 defines model for ehrMatchRequest.v1.
+type EhrMatchRequestV1 struct {
+	MessageRef *EhrMatchMessageRefV1             `json:"messageRef,omitempty"`
+	Patients   *EhrMatchRequestPatientsOptionsV1 `json:"patients,omitempty"`
+}
+
+// EhrMatchRequestPatientsOptionsV1 defines model for ehrMatchRequestPatientsOptions.v1.
+type EhrMatchRequestPatientsOptionsV1 struct {
+	// Criteria Performs an "OR" match for each item in the array
+	Criteria []EhrMatchRequestPatientsOptionsV1Criteria `json:"criteria"`
+
+	// OnUniqueMatch Optional action to be performed when a unique match has been found
+	OnUniqueMatch *EhrMatchRequestPatientsOptionsV1OnUniqueMatch `json:"onUniqueMatch,omitempty"`
+}
+
+// EhrMatchRequestPatientsOptionsV1Criteria defines model for EhrMatchRequestPatientsOptionsV1.Criteria.
+type EhrMatchRequestPatientsOptionsV1Criteria string
+
+// EhrMatchRequestPatientsOptionsV1OnUniqueMatch Optional action to be performed when a unique match has been found
+type EhrMatchRequestPatientsOptionsV1OnUniqueMatch string
+
+// EhrMatchResponseV1 defines model for ehrMatchResponse.v1.
+type EhrMatchResponseV1 struct {
+	// Clinic Clinic
+	Clinic   ClinicV1      `json:"clinic"`
+	Patients *PatientsV1   `json:"patients,omitempty"`
+	Settings EhrSettingsV1 `json:"settings"`
+}
+
+// EhrProceduresV1 defines model for ehrProcedures.v1.
+type EhrProceduresV1 struct {
+	CreateAccount                 *string `json:"createAccount,omitempty"`
+	CreateAccountAndEnableReports *string `json:"createAccountAndEnableReports,omitempty"`
+	DisableSummaryReports         *string `json:"disableSummaryReports,omitempty"`
+
+	// EnableSummaryReports Procedure Code for Summary Statistics and PDF Reports subscription
+	EnableSummaryReports *string `json:"enableSummaryReports,omitempty"`
+}
+
+// EhrSettingsV1 defines model for ehrSettings.v1.
+type EhrSettingsV1 struct {
+	DestinationIds *EhrDestinationsV1 `json:"destinationIds,omitempty"`
+
+	// Enabled Enable or disable the EHR integration
+	Enabled        bool                   `json:"enabled"`
+	Facility       *EhrFacilityV1         `json:"facility,omitempty"`
+	Flowsheets     EhrFlowsheetSettingsV1 `json:"flowsheets"`
+	MrnIdType      string                 `json:"mrnIdType"`
+	ProcedureCodes EhrProceduresV1        `json:"procedureCodes"`
+	Provider       EhrSettingsV1Provider  `json:"provider"`
+
+	// ScheduledReports Scheduled Report Settings
+	ScheduledReports ScheduledReportsV1 `json:"scheduledReports"`
+	SourceId         string             `json:"sourceId"`
+
+	// Tags This configuration only applies to integrations using Redox Data Model
+	Tags EhrTagsSettingsV1 `json:"tags"`
+}
+
+// EhrSettingsV1Provider defines model for EhrSettingsV1.Provider.
+type EhrSettingsV1Provider string
+
+// EhrTagsSettingsV1 This configuration only applies to integrations using Redox Data Model
+type EhrTagsSettingsV1 struct {
+	// Codes Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
+	Codes *[]string `json:"codes,omitempty"`
+
+	// Separator If set to a non-empty string, the tag values will be split using this separator
+	Separator *string `json:"separator,omitempty"`
+}
+
+// ErrorV1 defines model for error.v1.
+type ErrorV1 struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// GenerateMergeReportV1 defines model for generateMergeReport.v1.
+type GenerateMergeReportV1 struct {
+	// SourceId Clinic identifier.
+	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
+}
+
+// MembershipRestrictionV1 A user joining a clinic must match all of the defined restrictions
+type MembershipRestrictionV1 struct {
+	// EmailDomain The restriction applies only if the user has an email address with a matching domain
+	EmailDomain string `json:"emailDomain"`
+
+	// RequiredIdp If this attribute is set, at the time of joining the clinic the user must be authenticated against this identity provider
+	RequiredIdp *string `json:"requiredIdp,omitempty"`
+}
+
+// MembershipRestrictionsV1 A user joining a clinic must match at least one of the specified membership restrictions
+type MembershipRestrictionsV1 struct {
+	Restrictions *[]MembershipRestrictionV1 `json:"restrictions,omitempty"`
+}
+
+// MergeClinicV1 defines model for mergeClinic.v1.
+type MergeClinicV1 struct {
+	// SourceId Clinic identifier.
+	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
+}
+
+// MetaV1 defines model for meta.v1.
+type MetaV1 struct {
+	// Count The number of items matching the filter
+	Count *int `json:"count,omitempty"`
+
+	// TotalCount The total number of items
+	TotalCount *int `json:"totalCount,omitempty"`
+}
+
+// MigrationV1 defines model for migration.v1.
+type MigrationV1 struct {
+	AttestationTime *time.Time `json:"attestationTime,omitempty"`
+	CreatedTime     *time.Time `json:"createdTime,omitempty"`
+
+	// Status The current status of the migration
+	Status      *MigrationStatusV1 `json:"status,omitempty"`
+	UpdatedTime *time.Time         `json:"updatedTime,omitempty"`
+
+	// UserId The user id of the legacy clinician account that needs to be migrated.
+	UserId string `json:"userId"`
+}
+
+// MigrationStatusV1 The current status of the migration
+type MigrationStatusV1 string
+
+// MigrationUpdateV1 defines model for migrationUpdate.v1.
+type MigrationUpdateV1 struct {
+	// Status The current status of the migration
+	Status MigrationStatusV1 `json:"status"`
+}
+
+// MigrationsV1 defines model for migrations.v1.
+type MigrationsV1 = []MigrationV1
+
+// MrnSettingsV1 defines model for mrnSettings.v1.
+type MrnSettingsV1 struct {
+	// Required Require MRN when creating or updating patients
+	Required bool `json:"required"`
+
+	// Unique Enforce MRN uniqueness constraint
+	Unique bool `json:"unique"`
+}
+
+// NameV1 Name of the clinic.
+type NameV1 = string
+
+// ObjectidV1 String representation of a resource id
+type ObjectidV1 = string
+
+// PatientV1 defines model for patient.v1.
+type PatientV1 struct {
+	AttestationSubmitted *bool                         `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date            `json:"birthDate"`
+	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
+	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
+	DataSources          *[]DataSourceV1               `json:"dataSources"`
+	Email                *string                       `json:"email,omitempty"`
+
+	// FullName The full name of the patient
+	FullName string `json:"fullName"`
+
+	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
+	Id                     *Tidepooluserid `json:"id,omitempty"`
+	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
+
+	// Mrn The medical record number of the patient
+	Mrn         *string               `json:"mrn,omitempty"`
+	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
+	Reviews     []PatientReviewV1     `json:"reviews"`
+
+	// Summary A summary of a patients recent data
+	Summary       *PatientSummaryV1 `json:"summary,omitempty"`
+	Tags          *PatientTagIdsV1  `json:"tags"`
+	TargetDevices *[]string         `json:"targetDevices,omitempty"`
+	UpdatedTime   *time.Time        `json:"updatedTime,omitempty"`
+}
+
+// PatientClinicRelationshipV1 defines model for patientClinicRelationship.v1.
+type PatientClinicRelationshipV1 struct {
+	// Clinic Clinic
+	Clinic  ClinicV1  `json:"clinic"`
+	Patient PatientV1 `json:"patient"`
+}
+
+// PatientClinicRelationshipsV1 defines model for patientClinicRelationships.v1.
+type PatientClinicRelationshipsV1 = []PatientClinicRelationshipV1
+
+// PatientCountV1 defines model for patientCount.v1.
+type PatientCountV1 struct {
 	// PatientCount The patient count for a clinic
 	PatientCount int `json:"patientCount"`
 }
 
-// PatientCountLimit defines model for PatientCountLimit.
-type PatientCountLimit struct {
+// PatientCountLimitV1 defines model for patientCountLimit.v1.
+type PatientCountLimitV1 struct {
 	// EndDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	EndDate *DateTime `json:"endDate,omitempty"`
+	EndDate *DatetimeV1 `json:"endDate,omitempty"`
 
 	// PatientCount The patient count limit
 	PatientCount int `json:"patientCount"`
 
 	// StartDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	StartDate *DateTime `json:"startDate,omitempty"`
+	StartDate *DatetimeV1 `json:"startDate,omitempty"`
 }
 
-// PatientCountSettings defines model for PatientCountSettings.
-type PatientCountSettings struct {
-	HardLimit *PatientCountLimit `json:"hardLimit,omitempty"`
-	SoftLimit *PatientCountLimit `json:"softLimit,omitempty"`
+// PatientCountSettingsV1 defines model for patientCountSettings.v1.
+type PatientCountSettingsV1 struct {
+	HardLimit *PatientCountLimitV1 `json:"hardLimit,omitempty"`
+	SoftLimit *PatientCountLimitV1 `json:"softLimit,omitempty"`
 }
 
-// PatientPermissions defines model for PatientPermissions.
-type PatientPermissions struct {
+// PatientPermissionsV1 defines model for patientPermissions.v1.
+type PatientPermissionsV1 struct {
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
 	Note      *map[string]interface{} `json:"note,omitempty"`
 	Upload    *map[string]interface{} `json:"upload,omitempty"`
 	View      *map[string]interface{} `json:"view,omitempty"`
 }
 
-// PatientReview A summary of a patients recent data
-type PatientReview struct {
+// PatientReviewV1 A summary of a patients recent data
+type PatientReviewV1 struct {
 	ClinicianId string    `json:"clinicianId"`
 	Time        time.Time `json:"time"`
 }
 
-// PatientReviews defines model for PatientReviews.
-type PatientReviews = []PatientReview
+// PatientReviewsV1 defines model for patientReviews.v1.
+type PatientReviewsV1 = []PatientReviewV1
 
-// PatientSummary A summary of a patients recent data
-type PatientSummary struct {
+// PatientSummaryV1 A summary of a patients recent data
+type PatientSummaryV1 struct {
 	// BgmStats A summary of a users recent BGM glucose values
-	BgmStats *PatientBGMStats `json:"bgmStats,omitempty"`
+	BgmStats *BgmStatsV1 `json:"bgmStats,omitempty"`
 
 	// CgmStats A summary of a users recent CGM glucose values
-	CgmStats *PatientCGMStats `json:"cgmStats,omitempty"`
+	CgmStats *CgmStatsV1 `json:"cgmStats,omitempty"`
 }
 
-// PatientSummaryConfig Summary schema version and calculation configuration
-type PatientSummaryConfig struct {
+// PatientTagV1 defines model for patientTag.v1.
+type PatientTagV1 struct {
+	// Id String representation of a resource id
+	Id *ObjectidV1 `json:"id,omitempty"`
+
+	// Name The tag display name
+	Name string `json:"name"`
+}
+
+// PatientTagIdsV1 defines model for patientTagIds.v1.
+type PatientTagIdsV1 = []string
+
+// PatientsV1 defines model for patients.v1.
+type PatientsV1 = []PatientV1
+
+// PatientsResponseV1 defines model for patientsResponse.v1.
+type PatientsResponseV1 struct {
+	Data *PatientsV1 `json:"data,omitempty"`
+	Meta *MetaV1     `json:"meta,omitempty"`
+}
+
+// PhoneNumberV1 defines model for phoneNumber.v1.
+type PhoneNumberV1 struct {
+	Number string  `json:"number"`
+	Type   *string `json:"type,omitempty"`
+}
+
+// PhoneNumbersV1 An array of phone numbers.
+type PhoneNumbersV1 = []PhoneNumberV1
+
+// PostalCodeV1 Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
+type PostalCodeV1 = string
+
+// ProviderConnectionRequestV1 defines model for providerConnectionRequest.v1.
+type ProviderConnectionRequestV1 struct {
+	CreatedTime  time.Time    `json:"createdTime"`
+	ProviderName ProviderIdV1 `json:"providerName"`
+}
+
+// ProviderConnectionRequestsV1 defines model for providerConnectionRequests.v1.
+type ProviderConnectionRequestsV1 struct {
+	Abbott []ProviderConnectionRequestV1 `json:"abbott"`
+	Dexcom []ProviderConnectionRequestV1 `json:"dexcom"`
+	Twiist []ProviderConnectionRequestV1 `json:"twiist"`
+}
+
+// ProviderIdV1 defines model for providerId.v1.
+type ProviderIdV1 string
+
+// ProviderNameV1 defines model for providerName.v1.
+type ProviderNameV1 = string
+
+// ScheduledReportsV1 Scheduled Report Settings
+type ScheduledReportsV1 struct {
+	// Cadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
+	Cadence ScheduledReportsV1Cadence `json:"cadence"`
+
+	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
+	OnUploadEnabled       bool                                     `json:"onUploadEnabled"`
+	OnUploadNoteEventType *ScheduledReportsV1OnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
+}
+
+// ScheduledReportsV1Cadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
+type ScheduledReportsV1Cadence string
+
+// ScheduledReportsV1OnUploadNoteEventType defines model for ScheduledReportsV1.OnUploadNoteEventType.
+type ScheduledReportsV1OnUploadNoteEventType string
+
+// ShareCodeV1 Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
+type ShareCodeV1 = string
+
+// StateV1 State or province. In the U.S., typically something like `CA` or `California`.
+type StateV1 = string
+
+// StreetAddressV1 Street address.
+type StreetAddressV1 = string
+
+// SummaryConfigV1 Summary schema version and calculation configuration
+type SummaryConfigV1 struct {
 	// HighGlucoseThreshold Threshold used for determining if a value is high
 	HighGlucoseThreshold float64 `json:"highGlucoseThreshold"`
 
@@ -1572,8 +1659,8 @@ type PatientSummaryConfig struct {
 	VeryLowGlucoseThreshold float64 `json:"veryLowGlucoseThreshold"`
 }
 
-// PatientSummaryDates dates tracked for summary calculation
-type PatientSummaryDates struct {
+// SummaryDatesV1 dates tracked for summary calculation
+type SummaryDatesV1 struct {
 	// FirstData Date of the first included value
 	FirstData         *time.Time `json:"firstData,omitempty"`
 	HasFirstData      bool       `json:"hasFirstData"`
@@ -1603,81 +1690,19 @@ type PatientSummaryDates struct {
 	OutdatedSinceLimit *time.Time `json:"outdatedSinceLimit,omitempty"`
 }
 
-// PatientTag defines model for PatientTag.
-type PatientTag struct {
-	// Id String representation of a resource id
-	Id *string `json:"id,omitempty"`
+// SummaryIdV1 Summary Unique Identifier
+type SummaryIdV1 = string
 
-	// Name The tag display name
-	Name string `json:"name"`
-}
-
-// PatientTagIds defines model for PatientTagIds.
-type PatientTagIds = []string
-
-// Patients defines model for Patients.
-type Patients = []Patient
-
-// PatientsResponse defines model for PatientsResponse.
-type PatientsResponse struct {
-	Data *Patients `json:"data,omitempty"`
-	Meta *Meta     `json:"meta,omitempty"`
-}
-
-// PhoneNumber defines model for PhoneNumber.
-type PhoneNumber struct {
-	Number string  `json:"number"`
-	Type   *string `json:"type,omitempty"`
-}
-
-// ProviderConnectionRequest defines model for ProviderConnectionRequest.
-type ProviderConnectionRequest struct {
-	CreatedTime  time.Time  `json:"createdTime"`
-	ProviderName ProviderId `json:"providerName"`
-}
-
-// ProviderConnectionRequests defines model for ProviderConnectionRequests.
-type ProviderConnectionRequests struct {
-	Abbott []ProviderConnectionRequest `json:"abbott"`
-	Dexcom []ProviderConnectionRequest `json:"dexcom"`
-	Twiist []ProviderConnectionRequest `json:"twiist"`
-}
-
-// ProviderId defines model for ProviderId.
-type ProviderId string
-
-// ScheduledReports Scheduled Report Settings
-type ScheduledReports struct {
-	// Cadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
-	Cadence ScheduledReportsCadence `json:"cadence"`
-
-	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
-	OnUploadEnabled       bool                                   `json:"onUploadEnabled"`
-	OnUploadNoteEventType *ScheduledReportsOnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
-}
-
-// ScheduledReportsCadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
-type ScheduledReportsCadence string
-
-// ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
-type ScheduledReportsOnUploadNoteEventType string
-
-// SuppressedNotifications defines model for SuppressedNotifications.
-type SuppressedNotifications struct {
+// SuppressedNotificationsV1 defines model for suppressedNotifications.v1.
+type SuppressedNotificationsV1 struct {
 	PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
 }
 
-// Tide Report of at-risk patients based on specific grouping criteria
-type Tide struct {
-	Config  TideConfig  `json:"config"`
-	Results TideResults `json:"results"`
-}
-
-// TideConfig defines model for TideConfig.
-type TideConfig struct {
+// TideConfigV1 defines model for tideConfig.v1.
+type TideConfigV1 struct {
 	// ClinicId Clinic identifier.
-	ClinicId *Id         `json:"clinicId,omitempty"`
-	Filters  TideFilters `json:"filters"`
+	ClinicId *ClinicIdV1   `json:"clinicId,omitempty"`
+	Filters  TideFiltersV1 `json:"filters"`
 
 	// HighGlucoseThreshold Threshold used for determining if a value is high
 	HighGlucoseThreshold float64   `json:"highGlucoseThreshold"`
@@ -1688,8 +1713,8 @@ type TideConfig struct {
 	Period              string  `json:"period"`
 
 	// SchemaVersion TIDE schema version
-	SchemaVersion int            `json:"schemaVersion"`
-	Tags          *PatientTagIds `json:"tags"`
+	SchemaVersion int              `json:"schemaVersion"`
+	Tags          *PatientTagIdsV1 `json:"tags"`
 
 	// VeryHighGlucoseThreshold Threshold used for determining if a value is very high
 	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold"`
@@ -1698,8 +1723,8 @@ type TideConfig struct {
 	VeryLowGlucoseThreshold float64 `json:"veryLowGlucoseThreshold"`
 }
 
-// TideFilters defines model for TideFilters.
-type TideFilters struct {
+// TideFiltersV1 defines model for tideFilters.v1.
+type TideFiltersV1 struct {
 	DropInTimeInTargetPercent string `json:"dropInTimeInTargetPercent"`
 	TimeCGMUsePercent         string `json:"timeCGMUsePercent"`
 	TimeInAnyLowPercent       string `json:"timeInAnyLowPercent"`
@@ -1707,29 +1732,35 @@ type TideFilters struct {
 	TimeInVeryLowPercent      string `json:"timeInVeryLowPercent"`
 }
 
-// TidePatient defines model for TidePatient.
-type TidePatient struct {
-	DataSources *[]DataSource `json:"dataSources"`
-	Email       *string       `json:"email,omitempty"`
+// TidePatientV1 defines model for tidePatient.v1.
+type TidePatientV1 struct {
+	DataSources *[]DataSourceV1 `json:"dataSources"`
+	Email       *string         `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName *string `json:"fullName,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id      *TidepoolUserId `json:"id,omitempty"`
-	Reviews []PatientReview `json:"reviews"`
-	Tags    *PatientTagIds  `json:"tags"`
+	Id      *Tidepooluserid   `json:"id,omitempty"`
+	Reviews []PatientReviewV1 `json:"reviews"`
+	Tags    *PatientTagIdsV1  `json:"tags"`
 }
 
-// TideResultPatient defines model for TideResultPatient.
-type TideResultPatient struct {
+// TideResponseV1 Report of at-risk patients based on specific grouping criteria
+type TideResponseV1 struct {
+	Config  TideConfigV1  `json:"config"`
+	Results TideResultsV1 `json:"results"`
+}
+
+// TideResultPatientV1 defines model for tideResultPatient.v1.
+type TideResultPatientV1 struct {
 	// AverageGlucoseMmol Average Glucose of records in this period
 	AverageGlucoseMmol *float64 `json:"averageGlucoseMmol,omitempty"`
 
 	// GlucoseManagementIndicator A derived value which emulates A1C
-	GlucoseManagementIndicator *float64    `json:"glucoseManagementIndicator,omitempty"`
-	LastData                   *time.Time  `json:"lastData,omitempty"`
-	Patient                    TidePatient `json:"patient"`
+	GlucoseManagementIndicator *float64      `json:"glucoseManagementIndicator,omitempty"`
+	LastData                   *time.Time    `json:"lastData,omitempty"`
+	Patient                    TidePatientV1 `json:"patient"`
 
 	// TimeCGMUseMinutes Counter of minutes spent wearing a cgm
 	TimeCGMUseMinutes *int `json:"timeCGMUseMinutes,omitempty"`
@@ -1762,40 +1793,27 @@ type TideResultPatient struct {
 	TimeInVeryLowPercent *float64 `json:"timeInVeryLowPercent,omitempty"`
 }
 
-// TideResults defines model for TideResults.
-type TideResults map[string][]TideResultPatient
+// TideResultsV1 defines model for tideResults.v1.
+type TideResultsV1 map[string][]TideResultPatientV1
 
-// TidepoolUserId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-type TidepoolUserId = string
+// TidepoolUserIdsV1 Array of Tidepool User IDs
+type TidepoolUserIdsV1 = []Tidepooluserid
 
-// TidepoolUserIds Array of Tidepool User IDs
-type TidepoolUserIds = []TidepoolUserId
+// Tidepooluserid String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
+type Tidepooluserid = string
 
-// Tier defines model for Tier.
-type Tier string
+// TierV1 defines model for tier.v1.
+type TierV1 string
 
-// TriggerMigration defines model for TriggerMigration.
-type TriggerMigration struct {
+// TriggerMigrationV1 defines model for triggerMigration.v1.
+type TriggerMigrationV1 struct {
 	AttestationSubmitted *bool `json:"attestationSubmitted,omitempty"`
 }
 
-// UpdateSuppressedNotifications defines model for UpdateSuppressedNotifications.
-type UpdateSuppressedNotifications struct {
-	SuppressedNotifications SuppressedNotifications `json:"suppressedNotifications"`
-}
-
-// UpdateTier defines model for UpdateTier.
-type UpdateTier struct {
-	Tier Tier `json:"tier"`
-}
-
-// UpdateUserDetails defines model for UpdateUserDetails.
-type UpdateUserDetails struct {
+// UpdateUserDetailsV1 defines model for updateUserDetails.v1.
+type UpdateUserDetailsV1 struct {
 	Email *openapi_types.Email `json:"email,omitempty"`
 }
-
-// SummaryIdV1 Summary Unique Identifier
-type SummaryIdV1 = string
 
 // ClinicId defines model for clinicId.
 type ClinicId = string
@@ -1830,6 +1848,9 @@ type PatientId = string
 // PatientTagId defines model for patientTagId.
 type PatientTagId = string
 
+// ProviderId defines model for providerId.
+type ProviderId = ProviderIdV1
+
 // Role defines model for role.
 type Role = string
 
@@ -1846,7 +1867,7 @@ type Sort = string
 type SummaryId = SummaryIdV1
 
 // UserId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-type UserId = TidepoolUserId
+type UserId = Tidepooluserid
 
 // ListAllCliniciansParams defines parameters for ListAllClinicians.
 type ListAllCliniciansParams struct {
@@ -2288,73 +2309,73 @@ type ViewPDFReportParams struct {
 }
 
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
-type CreateClinicJSONRequestBody = Clinic
+type CreateClinicJSONRequestBody = ClinicV1
 
 // UpdateClinicJSONRequestBody defines body for UpdateClinic for application/json ContentType.
-type UpdateClinicJSONRequestBody = Clinic
+type UpdateClinicJSONRequestBody = ClinicV1
 
 // CreateClinicianJSONRequestBody defines body for CreateClinician for application/json ContentType.
-type CreateClinicianJSONRequestBody = Clinician
+type CreateClinicianJSONRequestBody = ClinicianV1
 
 // UpdateClinicianJSONRequestBody defines body for UpdateClinician for application/json ContentType.
-type UpdateClinicianJSONRequestBody = Clinician
+type UpdateClinicianJSONRequestBody = ClinicianV1
 
 // AssociateClinicianToUserJSONRequestBody defines body for AssociateClinicianToUser for application/json ContentType.
-type AssociateClinicianToUserJSONRequestBody = AssociateClinicianToUser
+type AssociateClinicianToUserJSONRequestBody = AssociateClinicianToUserV1
 
 // UpdateMembershipRestrictionsJSONRequestBody defines body for UpdateMembershipRestrictions for application/json ContentType.
-type UpdateMembershipRestrictionsJSONRequestBody = MembershipRestrictions
+type UpdateMembershipRestrictionsJSONRequestBody = MembershipRestrictionsV1
 
 // MergeClinicJSONRequestBody defines body for MergeClinic for application/json ContentType.
-type MergeClinicJSONRequestBody = MergeClinic
+type MergeClinicJSONRequestBody = MergeClinicV1
 
 // TriggerInitialMigrationJSONRequestBody defines body for TriggerInitialMigration for application/json ContentType.
-type TriggerInitialMigrationJSONRequestBody = TriggerMigration
+type TriggerInitialMigrationJSONRequestBody = TriggerMigrationV1
 
 // MigrateLegacyClinicianPatientsJSONRequestBody defines body for MigrateLegacyClinicianPatients for application/json ContentType.
-type MigrateLegacyClinicianPatientsJSONRequestBody = Migration
+type MigrateLegacyClinicianPatientsJSONRequestBody = MigrationV1
 
 // UpdateMigrationJSONRequestBody defines body for UpdateMigration for application/json ContentType.
-type UpdateMigrationJSONRequestBody = MigrationUpdate
+type UpdateMigrationJSONRequestBody = MigrationUpdateV1
 
 // CreatePatientTagJSONRequestBody defines body for CreatePatientTag for application/json ContentType.
-type CreatePatientTagJSONRequestBody = PatientTag
+type CreatePatientTagJSONRequestBody = PatientTagV1
 
 // UpdatePatientTagJSONRequestBody defines body for UpdatePatientTag for application/json ContentType.
-type UpdatePatientTagJSONRequestBody = PatientTag
+type UpdatePatientTagJSONRequestBody = PatientTagV1
 
 // CreatePatientAccountJSONRequestBody defines body for CreatePatientAccount for application/json ContentType.
-type CreatePatientAccountJSONRequestBody = Patient
+type CreatePatientAccountJSONRequestBody = PatientV1
 
 // AssignPatientTagToClinicPatientsJSONRequestBody defines body for AssignPatientTagToClinicPatients for application/json ContentType.
-type AssignPatientTagToClinicPatientsJSONRequestBody = TidepoolUserIds
+type AssignPatientTagToClinicPatientsJSONRequestBody = TidepoolUserIdsV1
 
 // DeletePatientTagFromClinicPatientsJSONRequestBody defines body for DeletePatientTagFromClinicPatients for application/json ContentType.
-type DeletePatientTagFromClinicPatientsJSONRequestBody = TidepoolUserIds
+type DeletePatientTagFromClinicPatientsJSONRequestBody = TidepoolUserIdsV1
 
 // CreatePatientFromUserJSONRequestBody defines body for CreatePatientFromUser for application/json ContentType.
-type CreatePatientFromUserJSONRequestBody = CreatePatient
+type CreatePatientFromUserJSONRequestBody = CreatePatientV1
 
 // UpdatePatientJSONRequestBody defines body for UpdatePatient for application/json ContentType.
-type UpdatePatientJSONRequestBody = Patient
+type UpdatePatientJSONRequestBody = PatientV1
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
-type UpdatePatientPermissionsJSONRequestBody = PatientPermissions
+type UpdatePatientPermissionsJSONRequestBody = PatientPermissionsV1
 
 // GenerateMergeReportJSONRequestBody defines body for GenerateMergeReport for application/json ContentType.
-type GenerateMergeReportJSONRequestBody = GenerateMergeReport
+type GenerateMergeReportJSONRequestBody = GenerateMergeReportV1
 
 // AddServiceAccountJSONRequestBody defines body for AddServiceAccount for application/json ContentType.
-type AddServiceAccountJSONRequestBody = AddServiceAccount
+type AddServiceAccountJSONRequestBody = AddServiceAccountV1
 
 // UpdateEHRSettingsJSONRequestBody defines body for UpdateEHRSettings for application/json ContentType.
-type UpdateEHRSettingsJSONRequestBody = EHRSettings
+type UpdateEHRSettingsJSONRequestBody = EhrSettingsV1
 
 // UpdateMRNSettingsJSONRequestBody defines body for UpdateMRNSettings for application/json ContentType.
-type UpdateMRNSettingsJSONRequestBody = MRNSettings
+type UpdateMRNSettingsJSONRequestBody = MrnSettingsV1
 
 // UpdatePatientCountSettingsJSONRequestBody defines body for UpdatePatientCountSettings for application/json ContentType.
-type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettings
+type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettingsV1
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications
@@ -2363,16 +2384,16 @@ type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotification
 type UpdateTierJSONRequestBody = UpdateTier
 
 // UpdatePatientSummaryJSONRequestBody defines body for UpdatePatientSummary for application/json ContentType.
-type UpdatePatientSummaryJSONRequestBody = PatientSummary
+type UpdatePatientSummaryJSONRequestBody = PatientSummaryV1
 
 // UpdatePatientDataSourcesJSONRequestBody defines body for UpdatePatientDataSources for application/json ContentType.
-type UpdatePatientDataSourcesJSONRequestBody = DataSources
+type UpdatePatientDataSourcesJSONRequestBody = DataSourcesV1
 
 // ProcessEHRMessageJSONRequestBody defines body for ProcessEHRMessage for application/json ContentType.
 type ProcessEHRMessageJSONRequestBody = ProcessEHRMessageJSONBody
 
 // MatchClinicAndPatientJSONRequestBody defines body for MatchClinicAndPatient for application/json ContentType.
-type MatchClinicAndPatientJSONRequestBody = EHRMatchRequest
+type MatchClinicAndPatientJSONRequestBody = EhrMatchRequestV1
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
-type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetails
+type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetailsV1

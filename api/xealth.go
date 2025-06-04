@@ -3,12 +3,13 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/xealth"
 	"github.com/tidepool-org/clinic/xealth_client"
-	"io"
-	"net/http"
 )
 
 func (h *Handler) XealthPreorder(ec echo.Context) error {

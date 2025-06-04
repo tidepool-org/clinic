@@ -1,6 +1,4 @@
 openapi: 3.0.0
-x-stoplight:
-  id: gpm2ktdetzht7
 info:
   title: Redox
   version: '1.0'
@@ -11,7 +9,9 @@ info:
   contact:
     name: N/A
 servers:
-  - url: 'https://api.redoxengine.com/endpoint'
+  - url: https://api.redoxengine.com/endpoint
+tags:
+  - name: Redox
 paths:
   /endpoint:
     post:
@@ -27,19 +27,20 @@ paths:
           application/json:
             schema:
               anyOf:
-                - $ref: '#/components/schemas/NewOrder'
-                - $ref: '#/components/schemas/NewFlowsheet'
-                - $ref: '#/components/schemas/NewNotes'
-                - $ref: '#/components/schemas/NewResults'
-                - $ref: '#/components/schemas/ReplaceNotes'
+                - $ref: '#/components/schemas/newOrder'
+                - $ref: '#/components/schemas/newFlowsheet'
+                - $ref: '#/components/schemas/newNotes'
+                - $ref: '#/components/schemas/newResults'
+                - $ref: '#/components/schemas/replaceNotes'
       description: |-
         Currently, this endpoint's only purpose is to reference Redox models so we can use them for code generation. The code generation tool emits models only if they are referenced in the API portion of the spec.
 
         In the future we may use this for sending data to Redox as well.
     parameters: []
 components:
+  securitySchemes: {}
   schemas:
-    NewOrder:
+    newOrder:
       type: object
       properties:
         Meta:
@@ -1069,7 +1070,7 @@ components:
         - Meta
         - Patient
         - Order
-    NewFlowsheet:
+    newFlowsheet:
       type: object
       properties:
         Meta:
@@ -1414,7 +1415,7 @@ components:
         - Meta
         - Patient
         - Observations
-    NewNotes:
+    newNotes:
       type: object
       properties:
         Meta:
@@ -2062,7 +2063,7 @@ components:
         - Meta
         - Patient
         - Note
-    NewResults:
+    newResults:
       type: object
       properties:
         Meta:
@@ -3120,7 +3121,7 @@ components:
         - Meta
         - Patient
         - Orders
-    ReplaceNotes:
+    replaceNotes:
       type: object
       properties:
         Meta:
@@ -3771,6 +3772,5 @@ components:
         - Meta
         - Patient
         - Note
-  securitySchemes: {}
-tags:
-  - name: Redox
+x-stoplight:
+  id: gpm2ktdetzht7
