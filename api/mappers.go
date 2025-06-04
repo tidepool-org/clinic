@@ -344,16 +344,9 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummaryV1 {
 	patientSummary := &PatientSummaryV1{}
 
 	if summary.CGM != nil {
-<<<<<<< HEAD
 		patientSummary.CgmStats = &CgmStatsV1{
 			Id:      &summary.CGM.Id,
 			Periods: CgmPeriodsV1{},
-=======
-		patientSummary.CgmStats = &PatientCGMStats{
-			Id:            &summary.CGM.Id,
-			Periods:       PatientCGMPeriods{},
-			OffsetPeriods: PatientCGMPeriods{},
->>>>>>> origin/master
 		}
 
 		patientSummary.CgmStats.Config = SummaryConfigV1(summary.CGM.Config)
@@ -361,26 +354,15 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummaryV1 {
 
 		if summary.CGM.Periods != nil {
 			for k, source := range summary.CGM.Periods {
-<<<<<<< HEAD
 				patientSummary.CgmStats.Periods[k] = CgmPeriodV1(source)
-=======
-				patientSummary.CgmStats.Periods[k] = PatientCGMPeriod(source)
->>>>>>> origin/master
 			}
 		}
 	}
 
 	if summary.BGM != nil {
-<<<<<<< HEAD
 		patientSummary.BgmStats = &BgmStatsV1{
 			Id:      &summary.BGM.Id,
 			Periods: BgmPeriodsV1{},
-=======
-		patientSummary.BgmStats = &PatientBGMStats{
-			Id:            &summary.BGM.Id,
-			Periods:       PatientBGMPeriods{},
-			OffsetPeriods: PatientBGMPeriods{},
->>>>>>> origin/master
 		}
 
 		patientSummary.BgmStats.Config = SummaryConfigV1(summary.BGM.Config)
@@ -388,11 +370,7 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummaryV1 {
 
 		if summary.BGM.Periods != nil {
 			for k, source := range summary.BGM.Periods {
-<<<<<<< HEAD
 				patientSummary.BgmStats.Periods[k] = BgmPeriodV1(source)
-=======
-				patientSummary.BgmStats.Periods[k] = PatientBGMPeriod(source)
->>>>>>> origin/master
 			}
 		}
 	}
@@ -575,22 +553,14 @@ func NewPatientsDto(patients []*patients.Patient) []PatientV1 {
 	return dtos
 }
 
-<<<<<<< HEAD
-func NewPatientsResponseDto(list *patients.ListResult) PatientsResponseV1 {
+func NewPatientsResponseDto(list *patients.ListResult, totalCount int) PatientsResponseV1 {
 	data := PatientsV1(NewPatientsDto(list.Patients))
 	return PatientsResponseV1{
 		Data: &data,
-		Meta: &MetaV1{Count: &list.TotalCount},
-=======
-func NewPatientsResponseDto(list *patients.ListResult, totalCount int) PatientsResponse {
-	data := NewPatientsDto(list.Patients)
-	return PatientsResponse{
-		Data: &data,
-		Meta: &Meta{
+		Meta: &MetaV1{
 			Count:      &list.MatchingCount,
 			TotalCount: &totalCount,
 		},
->>>>>>> origin/master
 	}
 }
 
