@@ -315,17 +315,21 @@ paths:
           name: period
           description: Time Period to display, filter, and sort
         - schema:
-            type: boolean
-          in: query
-          name: offsetPeriods
-          required: false
-          description: If we should display, filter, and sort based on the offset periods or default periods
-        - schema:
             type: string
             format: date-time
           in: query
           name: lastReviewed
           description: Inclusive
+        - schema:
+            $ref: '#/components/schemas/FloatFilter'
+          in: query
+          name: cgm.max
+          description: Max glucose value in Mmol/L
+        - schema:
+            $ref: '#/components/schemas/FloatFilter'
+          in: query
+          name: cgm.min
+          description: Min glucose value in Mmol/L
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
@@ -499,6 +503,16 @@ paths:
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
+          name: bgm.max
+          description: Max glucose value in Mmol/L
+        - schema:
+            $ref: '#/components/schemas/FloatFilter'
+          in: query
+          name: bgm.min
+          description: Min glucose value in Mmol/L
+        - schema:
+            $ref: '#/components/schemas/FloatFilter'
+          in: query
           name: bgm.averageGlucoseMmol
           description: Average glucose value of records in Mmol/L
         - schema:
@@ -586,6 +600,16 @@ paths:
           in: query
           name: bgm.totalRecords
           description: Total records in period
+        - schema:
+            $ref: '#/components/schemas/FloatFilter'
+          in: query
+          name: cgm.maxDelta
+          description: Delta of Max glucose value in Mmol/L
+        - schema:
+            $ref: '#/components/schemas/FloatFilter'
+          in: query
+          name: cgm.minDelta
+          description: Delta of Min glucose value in Mmol/L
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
@@ -768,6 +792,16 @@ paths:
           in: query
           name: cgm.lastDataTo
           description: Exclusive
+        - schema:
+            $ref: '#/components/schemas/FloatFilter'
+          in: query
+          name: bgm.maxDelta
+          description: Delta of Max glucose value in Mmol/L
+        - schema:
+            $ref: '#/components/schemas/FloatFilter'
+          in: query
+          name: bgm.minDelta
+          description: Delta of Min glucose value in Mmol/L
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
@@ -3708,6 +3742,14 @@ components:
       title: cgmperiod.v1
       description: 'Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)'
       properties:
+        min:
+          type: number
+          example: 3
+          x-go-type: float64
+        max:
+          type: number
+          example: 8
+          x-go-type: float64
         hasAverageGlucoseMmol:
           type: boolean
         averageGlucoseMmol:
@@ -4152,6 +4194,8 @@ components:
         - hoursWithDataDelta
         - daysWithData
         - daysWithDataDelta
+        - min
+        - max
     cgmPeriods.v1:
       type: object
       title: cgmperiods.v1
@@ -4177,6 +4221,14 @@ components:
       title: bgmperiod.v1
       description: 'Summary of a specific BGM time period (currently: 1d, 7d, 14d, 30d)'
       properties:
+        min:
+          type: number
+          example: 3
+          x-go-type: float64
+        max:
+          type: number
+          example: 8
+          x-go-type: float64
         hasAverageGlucoseMmol:
           type: boolean
         averageGlucoseMmol:
@@ -4425,6 +4477,8 @@ components:
         - hasTimeInAnyHighRecords
         - hasTotalRecords
         - hasAverageDailyRecords
+        - min
+        - max
     bgmPeriods.v1:
       type: object
       title: bgmperiods.v1
