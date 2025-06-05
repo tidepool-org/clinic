@@ -4,6 +4,10 @@ import (
 	"context"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
@@ -13,13 +17,11 @@ import (
 	"github.com/tidepool-org/clinic/deletions"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	dbTest "github.com/tidepool-org/clinic/store/test"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.uber.org/zap"
 
-	"github.com/tidepool-org/clinic/patients"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
+
+	"github.com/tidepool-org/clinic/patients"
 )
 
 func Ptr[T any](value T) *T {

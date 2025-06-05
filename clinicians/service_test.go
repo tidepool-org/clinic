@@ -2,12 +2,17 @@ package clinicians_test
 
 import (
 	"context"
-
 	"sync"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
@@ -20,11 +25,6 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx"
-	"go.uber.org/fx/fxtest"
-	"go.uber.org/mock/gomock"
-	"go.uber.org/zap"
 )
 
 var _ = Describe("Clinicians Service", func() {
