@@ -757,6 +757,8 @@ type BgmPeriodV1 struct {
 
 	// AverageGlucoseMmolDelta Difference between the averageGlucose in this period and the other offset version
 	AverageGlucoseMmolDelta     *float64 `json:"averageGlucoseMmolDelta,omitempty"`
+	CoefficientOfVariation      float64  `json:"coefficientOfVariation"`
+	CoefficientOfVariationDelta float64  `json:"coefficientOfVariationDelta"`
 	HasAverageDailyRecords      bool     `json:"hasAverageDailyRecords"`
 	HasAverageGlucoseMmol       bool     `json:"hasAverageGlucoseMmol"`
 	HasTimeInAnyHighPercent     bool     `json:"hasTimeInAnyHighPercent"`
@@ -778,6 +780,8 @@ type BgmPeriodV1 struct {
 	HasTotalRecords             bool     `json:"hasTotalRecords"`
 	Max                         float64  `json:"max"`
 	Min                         float64  `json:"min"`
+	StandardDeviation           float64  `json:"standardDeviation"`
+	StandardDeviationDelta      float64  `json:"standardDeviationDelta"`
 
 	// TimeInAnyHighPercent Percentage of time spent in Any high glucose range
 	TimeInAnyHighPercent *float64 `json:"timeInAnyHighPercent,omitempty"`

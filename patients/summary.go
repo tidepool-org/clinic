@@ -9,6 +9,8 @@ type PatientBGMPeriod struct {
 	AverageDailyRecordsDelta      *float64 `bson:"averageDailyRecordsDelta,omitempty"`
 	AverageGlucoseMmol            *float64 `bson:"averageGlucoseMmol,omitempty"`
 	AverageGlucoseMmolDelta       *float64 `bson:"averageGlucoseMmolDelta,omitempty"`
+	CoefficientOfVariation        float64  `bson:"coefficientOfVariation"`
+	CoefficientOfVariationDelta   float64  `bson:"coefficientOfVariationDelta"`
 	HasAverageDailyRecords        bool     `bson:"hasAverageDailyRecords"`
 	HasAverageGlucoseMmol         bool     `bson:"hasAverageGlucoseMmol"`
 	HasTimeInAnyHighPercent       bool     `bson:"hasTimeInAnyHighPercent"`
@@ -30,6 +32,8 @@ type PatientBGMPeriod struct {
 	HasTotalRecords               bool     `bson:"hasTotalRecords"`
 	Max                           float64  `bson:"max"`
 	Min                           float64  `bson:"min"`
+	StandardDeviation             float64  `bson:"standardDeviation"`
+	StandardDeviationDelta        float64  `bson:"standardDeviationDelta"`
 	TimeInAnyHighPercent          *float64 `bson:"timeInAnyHighPercent,omitempty"`
 	TimeInAnyHighPercentDelta     *float64 `bson:"timeInAnyHighPercentDelta,omitempty"`
 	TimeInAnyHighRecords          *int     `bson:"timeInAnyHighRecords,omitempty"`
