@@ -7,13 +7,14 @@ import (
 
 	"github.com/tidepool-org/clinic/errors"
 
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx"
 )
 
 const (
@@ -252,7 +253,7 @@ func (c *manager) deleteClinic(ctx context.Context, clinicId string) error {
 	}
 
 	if err := c.cliniciansRepository.DeleteAll(ctx, clinicId); err != nil {
-		return  err
+		return err
 	}
 
 	return c.clinics.Delete(ctx, clinicId)
