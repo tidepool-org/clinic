@@ -1,5 +1,6 @@
 {
   "cgmStats": {
+    "id": "2fe2488217ee43e1b2e83c2f",
     "config": {
       "highGlucoseThreshold": 10,
       "lowGlucoseThreshold": 3.9,

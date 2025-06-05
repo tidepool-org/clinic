@@ -654,6 +654,19 @@ const (
 	EHRMatchMessageRefEventTypeNew EHRMatchMessageRefEventType = "New"
 )
 
+// Defines values for EHRMatchRequestPatientsOptionsCriteria.
+const (
+	DOBFULLNAME EHRMatchRequestPatientsOptionsCriteria = "DOB_FULLNAME"
+	MRN         EHRMatchRequestPatientsOptionsCriteria = "MRN"
+	MRNDOB      EHRMatchRequestPatientsOptionsCriteria = "MRN_DOB"
+)
+
+// Defines values for EHRMatchRequestPatientsOptionsOnUniqueMatch.
+const (
+	DISABLEREPORTS EHRMatchRequestPatientsOptionsOnUniqueMatch = "DISABLE_REPORTS"
+	ENABLEREPORTS  EHRMatchRequestPatientsOptionsOnUniqueMatch = "ENABLE_REPORTS"
+)
+
 // Defines values for EHRSettingsProvider.
 const (
 	Redox  EHRSettingsProvider = "redox"
@@ -665,6 +678,22 @@ const (
 	COMPLETED MigrationStatus = "COMPLETED"
 	PENDING   MigrationStatus = "PENDING"
 	RUNNING   MigrationStatus = "RUNNING"
+)
+
+// Defines values for ProviderId.
+const (
+	Abbott ProviderId = "abbott"
+	Dexcom ProviderId = "dexcom"
+	Twiist ProviderId = "twiist"
+)
+
+// Defines values for ScheduledReportsCadence.
+const (
+	DISABLED ScheduledReportsCadence = "DISABLED"
+	N14d     ScheduledReportsCadence = "14d"
+	N1d      ScheduledReportsCadence = "1d"
+	N30d     ScheduledReportsCadence = "30d"
+	N7d      ScheduledReportsCadence = "7d"
 )
 
 // Defines values for ScheduledReportsOnUploadNoteEventType.
@@ -851,6 +880,12 @@ type EHRFacility struct {
 	Name string `json:"name"`
 }
 
+// EHRFlowsheetSettings defines model for EHRFlowsheetSettings.
+type EHRFlowsheetSettings struct {
+	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
+	Icode bool `json:"icode"`
+}
+
 // EHRMatchMessageRef defines model for EHRMatchMessageRef.
 type EHRMatchMessageRef struct {
 	DataModel  EHRMatchMessageRefDataModel `json:"dataModel"`
@@ -866,8 +901,24 @@ type EHRMatchMessageRefEventType string
 
 // EHRMatchRequest defines model for EHRMatchRequest.
 type EHRMatchRequest struct {
-	MessageRef *EHRMatchMessageRef `json:"messageRef,omitempty"`
+	MessageRef *EHRMatchMessageRef             `json:"messageRef,omitempty"`
+	Patients   *EHRMatchRequestPatientsOptions `json:"patients,omitempty"`
 }
+
+// EHRMatchRequestPatientsOptions defines model for EHRMatchRequestPatientsOptions.
+type EHRMatchRequestPatientsOptions struct {
+	// Criteria Performs an "OR" match for each item in the array
+	Criteria []EHRMatchRequestPatientsOptionsCriteria `json:"criteria"`
+
+	// OnUniqueMatch Optional action to be performed when a unique match has been found
+	OnUniqueMatch *EHRMatchRequestPatientsOptionsOnUniqueMatch `json:"onUniqueMatch,omitempty"`
+}
+
+// EHRMatchRequestPatientsOptionsCriteria defines model for EHRMatchRequestPatientsOptions.Criteria.
+type EHRMatchRequestPatientsOptionsCriteria string
+
+// EHRMatchRequestPatientsOptionsOnUniqueMatch Optional action to be performed when a unique match has been found
+type EHRMatchRequestPatientsOptionsOnUniqueMatch string
 
 // EHRMatchResponse defines model for EHRMatchResponse.
 type EHRMatchResponse struct {
@@ -892,19 +943,32 @@ type EHRSettings struct {
 	DestinationIds *EHRDestinationIds `json:"destinationIds,omitempty"`
 
 	// Enabled Enable or disable the EHR integration
-	Enabled        bool                `json:"enabled"`
-	Facility       *EHRFacility        `json:"facility,omitempty"`
-	MrnIdType      string              `json:"mrnIdType"`
-	ProcedureCodes EHRProcedureCodes   `json:"procedureCodes"`
-	Provider       EHRSettingsProvider `json:"provider"`
+	Enabled        bool                 `json:"enabled"`
+	Facility       *EHRFacility         `json:"facility,omitempty"`
+	Flowsheets     EHRFlowsheetSettings `json:"flowsheets"`
+	MrnIdType      string               `json:"mrnIdType"`
+	ProcedureCodes EHRProcedureCodes    `json:"procedureCodes"`
+	Provider       EHRSettingsProvider  `json:"provider"`
 
 	// ScheduledReports Scheduled Report Settings
 	ScheduledReports ScheduledReports `json:"scheduledReports"`
 	SourceId         string           `json:"sourceId"`
+
+	// Tags This configuration only applies to integrations using Redox Data Model
+	Tags EHRTagsSettings `json:"tags"`
 }
 
 // EHRSettingsProvider defines model for EHRSettings.Provider.
 type EHRSettingsProvider string
+
+// EHRTagsSettings This configuration only applies to integrations using Redox Data Model
+type EHRTagsSettings struct {
+	// Codes Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
+	Codes *[]string `json:"codes,omitempty"`
+
+	// Separator If set to a non-empty string, the tag values will be split using this separator
+	Separator *string `json:"separator,omitempty"`
+}
 
 // Error defines model for Error.
 type Error struct {
@@ -958,7 +1022,11 @@ type MergeClinic struct {
 
 // Meta defines model for Meta.
 type Meta struct {
+	// Count The number of items matching the filter
 	Count *int `json:"count,omitempty"`
+
+	// TotalCount The total number of items
+	TotalCount *int `json:"totalCount,omitempty"`
 }
 
 // Migration defines model for Migration.
@@ -988,19 +1056,19 @@ type Migrations = []Migration
 
 // Patient defines model for Patient.
 type Patient struct {
-	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date `json:"birthDate"`
-	CreatedTime          *time.Time         `json:"createdTime,omitempty"`
-	DataSources          *[]DataSource      `json:"dataSources"`
-	Email                *string            `json:"email,omitempty"`
+	AttestationSubmitted *bool                       `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date          `json:"birthDate"`
+	ConnectionRequests   *ProviderConnectionRequests `json:"connectionRequests,omitempty"`
+	CreatedTime          *time.Time                  `json:"createdTime,omitempty"`
+	DataSources          *[]DataSource               `json:"dataSources"`
+	Email                *string                     `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id                             *TidepoolUserId `json:"id,omitempty"`
-	LastRequestedDexcomConnectTime *time.Time      `json:"lastRequestedDexcomConnectTime,omitempty"`
-	LastUploadReminderTime         *time.Time      `json:"lastUploadReminderTime,omitempty"`
+	Id                     *TidepoolUserId `json:"id,omitempty"`
+	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
 	Mrn         *string             `json:"mrn,omitempty"`
@@ -1160,6 +1228,9 @@ type PatientBGMStats struct {
 
 	// Dates dates tracked for summary calculation
 	Dates PatientSummaryDates `json:"dates,omitempty"`
+
+	// Id Summary Unique Identifier
+	Id *SummaryIdV1 `json:"id,omitempty"`
 
 	// OffsetPeriods A map to each supported BGM summary period
 	OffsetPeriods PatientBGMPeriods `json:"offsetPeriods,omitempty"`
@@ -1410,6 +1481,9 @@ type PatientCGMStats struct {
 	// Dates dates tracked for summary calculation
 	Dates PatientSummaryDates `json:"dates,omitempty"`
 
+	// Id Summary Unique Identifier
+	Id *SummaryIdV1 `json:"id,omitempty"`
+
 	// OffsetPeriods A map to each supported CGM summary period
 	OffsetPeriods PatientCGMPeriods `json:"offsetPeriods,omitempty"`
 
@@ -1556,12 +1630,34 @@ type PhoneNumber struct {
 	Type   *string `json:"type,omitempty"`
 }
 
+// ProviderConnectionRequest defines model for ProviderConnectionRequest.
+type ProviderConnectionRequest struct {
+	CreatedTime  time.Time  `json:"createdTime"`
+	ProviderName ProviderId `json:"providerName"`
+}
+
+// ProviderConnectionRequests defines model for ProviderConnectionRequests.
+type ProviderConnectionRequests struct {
+	Abbott []ProviderConnectionRequest `json:"abbott"`
+	Dexcom []ProviderConnectionRequest `json:"dexcom"`
+	Twiist []ProviderConnectionRequest `json:"twiist"`
+}
+
+// ProviderId defines model for ProviderId.
+type ProviderId string
+
 // ScheduledReports Scheduled Report Settings
 type ScheduledReports struct {
+	// Cadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
+	Cadence ScheduledReportsCadence `json:"cadence"`
+
 	// OnUploadEnabled Send a PDF Report and a Flowsheet to Redox after a dataset is uploaded.
 	OnUploadEnabled       bool                                   `json:"onUploadEnabled"`
 	OnUploadNoteEventType *ScheduledReportsOnUploadNoteEventType `json:"onUploadNoteEventType,omitempty"`
 }
+
+// ScheduledReportsCadence The cadence of the scheduled reports. Disabling the scheduled reports does not affect reports which are generated after a dataset is uploaded.
+type ScheduledReportsCadence string
 
 // ScheduledReportsOnUploadNoteEventType defines model for ScheduledReports.OnUploadNoteEventType.
 type ScheduledReportsOnUploadNoteEventType string
@@ -1698,6 +1794,9 @@ type UpdateUserDetails struct {
 	Email *openapi_types.Email `json:"email,omitempty"`
 }
 
+// SummaryIdV1 Summary Unique Identifier
+type SummaryIdV1 = string
+
 // ClinicId defines model for clinicId.
 type ClinicId = string
 
@@ -1742,6 +1841,9 @@ type ShareCode = string
 
 // Sort defines model for sort.
 type Sort = string
+
+// SummaryId Summary Unique Identifier
+type SummaryId = SummaryIdV1
 
 // UserId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 type UserId = TidepoolUserId

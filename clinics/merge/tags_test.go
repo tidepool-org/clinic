@@ -2,13 +2,14 @@ package merge_test
 
 import (
 	"context"
-	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	"github.com/tidepool-org/clinic/pointer"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 	"time"
 )
@@ -25,17 +26,27 @@ var _ = Describe("Tags", func() {
 	BeforeEach(func() {
 		source = *clinicsTest.RandomClinic()
 		target = *clinicsTest.RandomClinic()
+		uniqueTags := make(map[string]clinics.PatientTag)
 		duplicateTags = make(map[string]clinics.PatientTag)
-		for _, tag := range clinicsTest.RandomTags(duplicateTagsCount) {
+		for _, tag := range source.PatientTags {
+			uniqueTags[tag.Name] = tag
+		}
+		for _, tag := range target.PatientTags {
+			_, exists := uniqueTags[tag.Name]
+			if exists {
+				duplicateTags[tag.Name] = tag
+			} else {
+				uniqueTags[tag.Name] = tag
+			}
+		}
+		for _, tag := range clinicsTest.RandomTags(duplicateTagsCount - len(duplicateTags)) {
 			duplicateTags[tag.Name] = tag
-			randomTagId := primitive.NewObjectID()
 			source.PatientTags = append(source.PatientTags, clinics.PatientTag{
-				Id:   &randomTagId,
+				Id:   pointer.FromAny(primitive.NewObjectID()),
 				Name: tag.Name,
 			})
-			randomTagId = primitive.NewObjectID()
 			target.PatientTags = append(target.PatientTags, clinics.PatientTag{
-				Id:   &randomTagId,
+				Id:   pointer.FromAny(primitive.NewObjectID()),
 				Name: tag.Name,
 			})
 		}
@@ -99,6 +110,7 @@ var _ = Describe("Tags", func() {
 		var clinicsCtrl *gomock.Controller
 
 		BeforeEach(func() {
+			plans = []merge.TagPlan{}
 			for _, tag := range source.PatientTags {
 				planner := merge.NewSourceTagMergePlanner(tag, source, target)
 				plan, err := planner.Plan(context.Background())
@@ -130,8 +142,11 @@ var _ = Describe("Tags", func() {
 				if _, ok := duplicateTags[tag.Name]; ok {
 					continue
 				}
-				clinicsService.EXPECT().CreatePatientTag(gomock.Any(), target.Id.Hex(), tag.Name)
-				created++
+				clinicsService.EXPECT().
+					CreatePatientTag(gomock.Any(), gomock.Eq(target.Id.Hex()), gomock.Eq(tag.Name)).
+					Do(func(_ context.Context, _ string, _ string) {
+						created++
+					})
 			}
 
 			var errs []error
@@ -142,7 +157,8 @@ var _ = Describe("Tags", func() {
 			}
 			Expect(errs).To(BeEmpty())
 
-
+			expectedCreatedCount := len(source.PatientTags) - duplicateTagsCount
+			Expect(created).To(Equal(expectedCreatedCount))
 			Expect(created).To(BeNumerically(">", 0))
 		})
 	})

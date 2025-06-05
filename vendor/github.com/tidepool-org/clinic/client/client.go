@@ -238,6 +238,9 @@ type ClientInterface interface {
 
 	UpdatePatient(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ConnectProvider request
+	ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdatePatientPermissionsWithBody request with any body
 	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -251,9 +254,6 @@ type ClientInterface interface {
 
 	// UpdatePatientReviews request
 	UpdatePatientReviews(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SendDexcomConnectRequest request
-	SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -336,6 +336,9 @@ type ClientInterface interface {
 
 	// VerifyEndpoint request
 	VerifyEndpoint(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeletePatientSummary request
+	DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteUserFromClinics request
 	DeleteUserFromClinics(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1021,6 +1024,18 @@ func (c *Client) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId
 	return c.Client.Do(req)
 }
 
+func (c *Client) ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectProviderRequest(c.Server, clinicId, patientId, providerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientPermissionsRequestWithBody(c.Server, clinicId, patientId, contentType, body)
 	if err != nil {
@@ -1071,18 +1086,6 @@ func (c *Client) DeletePatientReviews(ctx context.Context, clinicId ClinicId, pa
 
 func (c *Client) UpdatePatientReviews(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientReviewsRequest(c.Server, clinicId, patientId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) SendDexcomConnectRequest(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSendDexcomConnectRequestRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -1455,6 +1458,18 @@ func (c *Client) MatchClinicAndPatient(ctx context.Context, body MatchClinicAndP
 
 func (c *Client) VerifyEndpoint(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewVerifyEndpointRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientSummaryRequest(c.Server, summaryId)
 	if err != nil {
 		return nil, err
 	}
@@ -5339,6 +5354,54 @@ func NewUpdatePatientRequestWithBody(server string, clinicId ClinicId, patientId
 	return req, nil
 }
 
+// NewConnectProviderRequest generates requests for ConnectProvider
+func NewConnectProviderRequest(server string, clinicId ClinicId, patientId PatientId, providerId ProviderId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "providerId", runtime.ParamLocationPath, providerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/connect/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdatePatientPermissionsRequest calls the generic UpdatePatientPermissions builder with application/json body
 func NewUpdatePatientPermissionsRequest(server string, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -5516,47 +5579,6 @@ func NewUpdatePatientReviewsRequest(server string, clinicId ClinicId, patientId 
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewSendDexcomConnectRequestRequest generates requests for SendDexcomConnectRequest
-func NewSendDexcomConnectRequestRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/send_dexcom_connect_request", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -6560,6 +6582,40 @@ func NewVerifyEndpointRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewDeletePatientSummaryRequest generates requests for DeletePatientSummary
+func NewDeletePatientSummaryRequest(server string, summaryId SummaryId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "summaryId", runtime.ParamLocationPath, summaryId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/summaries/%s/clinics", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDeleteUserFromClinicsRequest generates requests for DeleteUserFromClinics
 func NewDeleteUserFromClinicsRequest(server string, userId UserId) (*http.Request, error) {
 	var err error
@@ -7009,6 +7065,9 @@ type ClientWithResponsesInterface interface {
 
 	UpdatePatientWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body UpdatePatientJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientResponse, error)
 
+	// ConnectProviderWithResponse request
+	ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error)
+
 	// UpdatePatientPermissionsWithBodyWithResponse request with any body
 	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientPermissionsResponse, error)
 
@@ -7022,9 +7081,6 @@ type ClientWithResponsesInterface interface {
 
 	// UpdatePatientReviewsWithResponse request
 	UpdatePatientReviewsWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*UpdatePatientReviewsResponse, error)
-
-	// SendDexcomConnectRequestWithResponse request
-	SendDexcomConnectRequestWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectRequestResponse, error)
 
 	// SendUploadReminderWithResponse request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
@@ -7107,6 +7163,9 @@ type ClientWithResponsesInterface interface {
 
 	// VerifyEndpointWithResponse request
 	VerifyEndpointWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*VerifyEndpointResponse, error)
+
+	// DeletePatientSummaryWithResponse request
+	DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error)
 
 	// DeleteUserFromClinicsWithResponse request
 	DeleteUserFromClinicsWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*DeleteUserFromClinicsResponse, error)
@@ -7959,6 +8018,27 @@ func (r UpdatePatientResponse) StatusCode() int {
 	return 0
 }
 
+type ConnectProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdatePatientPermissionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8040,28 +8120,6 @@ func (r UpdatePatientReviewsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdatePatientReviewsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type SendDexcomConnectRequestResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *Patient
-}
-
-// Status returns HTTPResponse.Status
-func (r SendDexcomConnectRequestResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r SendDexcomConnectRequestResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -8489,6 +8547,27 @@ func (r VerifyEndpointResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r VerifyEndpointResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeletePatientSummaryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePatientSummaryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePatientSummaryResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9120,6 +9199,15 @@ func (c *ClientWithResponses) UpdatePatientWithResponse(ctx context.Context, cli
 	return ParseUpdatePatientResponse(rsp)
 }
 
+// ConnectProviderWithResponse request returning *ConnectProviderResponse
+func (c *ClientWithResponses) ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error) {
+	rsp, err := c.ConnectProvider(ctx, clinicId, patientId, providerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectProviderResponse(rsp)
+}
+
 // UpdatePatientPermissionsWithBodyWithResponse request with arbitrary body returning *UpdatePatientPermissionsResponse
 func (c *ClientWithResponses) UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientPermissionsResponse, error) {
 	rsp, err := c.UpdatePatientPermissionsWithBody(ctx, clinicId, patientId, contentType, body, reqEditors...)
@@ -9162,15 +9250,6 @@ func (c *ClientWithResponses) UpdatePatientReviewsWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseUpdatePatientReviewsResponse(rsp)
-}
-
-// SendDexcomConnectRequestWithResponse request returning *SendDexcomConnectRequestResponse
-func (c *ClientWithResponses) SendDexcomConnectRequestWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendDexcomConnectRequestResponse, error) {
-	rsp, err := c.SendDexcomConnectRequest(ctx, clinicId, patientId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSendDexcomConnectRequestResponse(rsp)
 }
 
 // SendUploadReminderWithResponse request returning *SendUploadReminderResponse
@@ -9439,6 +9518,15 @@ func (c *ClientWithResponses) VerifyEndpointWithResponse(ctx context.Context, re
 		return nil, err
 	}
 	return ParseVerifyEndpointResponse(rsp)
+}
+
+// DeletePatientSummaryWithResponse request returning *DeletePatientSummaryResponse
+func (c *ClientWithResponses) DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error) {
+	rsp, err := c.DeletePatientSummary(ctx, summaryId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePatientSummaryResponse(rsp)
 }
 
 // DeleteUserFromClinicsWithResponse request returning *DeleteUserFromClinicsResponse
@@ -10398,6 +10486,22 @@ func ParseUpdatePatientResponse(rsp *http.Response) (*UpdatePatientResponse, err
 	return response, nil
 }
 
+// ParseConnectProviderResponse parses an HTTP response from a ConnectProviderWithResponse call
+func ParseConnectProviderResponse(rsp *http.Response) (*ConnectProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ParseUpdatePatientPermissionsResponse parses an HTTP response from a UpdatePatientPermissionsWithResponse call
 func ParseUpdatePatientPermissionsResponse(rsp *http.Response) (*UpdatePatientPermissionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -10482,32 +10586,6 @@ func ParseUpdatePatientReviewsResponse(rsp *http.Response) (*UpdatePatientReview
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest PatientReviews
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseSendDexcomConnectRequestResponse parses an HTTP response from a SendDexcomConnectRequestWithResponse call
-func ParseSendDexcomConnectRequestResponse(rsp *http.Response) (*SendDexcomConnectRequestResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &SendDexcomConnectRequestResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Patient
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -10901,6 +10979,22 @@ func ParseVerifyEndpointResponse(rsp *http.Response) (*VerifyEndpointResponse, e
 	}
 
 	response := &VerifyEndpointResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseDeletePatientSummaryResponse parses an HTTP response from a DeletePatientSummaryWithResponse call
+func ParseDeletePatientSummaryResponse(rsp *http.Response) (*DeletePatientSummaryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePatientSummaryResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

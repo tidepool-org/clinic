@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/tidepool-org/clinic/clinics"
 	errors2 "github.com/tidepool-org/clinic/errors"
@@ -225,14 +226,19 @@ func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, 
 	return s.patientsRepo.UpdateSummaryInAllClinics(ctx, userId, summary)
 }
 
+func (s *service) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
+	s.logger.Infow("deleting summaries matching object id", "objectId", summaryId)
+	return s.patientsRepo.DeleteSummaryInAllClinics(ctx, summaryId)
+}
+
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error) {
 	s.logger.Infow("updating last upload reminder time for user", "clinicId", update.ClinicId, "userId", update.UserId)
 	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)
 }
 
-func (s *service) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
-	s.logger.Infow("updating last requested dexcom connect time for user", "clinicId", update.ClinicId, "userId", update.UserId)
-	return s.patientsRepo.UpdateLastRequestedDexcomConnectTime(ctx, update)
+func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error {
+	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "provider", request.ProviderName)
+	return s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request)
 }
 
 func (s *service) AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
@@ -309,7 +315,7 @@ func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, exist
 			}
 
 			// The same MRN shouldn't exist already, or it should belong to the same user
-			if !(res.TotalCount == 0 || (res.TotalCount == 1 && existingUserId != nil && *existingUserId == *res.Patients[0].UserId)) {
+			if !(res.MatchingCount == 0 || (res.MatchingCount == 1 && existingUserId != nil && *existingUserId == *res.Patients[0].UserId)) {
 				return fmt.Errorf("%w: mrn must be unique", errors2.BadRequest)
 			}
 		}

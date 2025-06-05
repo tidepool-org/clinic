@@ -1,5 +1,5 @@
 # Development
-FROM golang:1.23-alpine AS development
+FROM golang:1.24.3-alpine AS development
 WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
@@ -7,13 +7,13 @@ RUN apk --no-cache update && \
     adduser -D tidepool && \
     chown -R tidepool /go/src/github.com/tidepool-org/clinic
 USER tidepool
-RUN go install github.com/air-verse/air@v1.52.2
+RUN go install github.com/air-verse/air@v1.61.7
 COPY --chown=tidepool . .
 RUN ./build.sh
 CMD ["air"]
 
 # Production
-FROM golang:1.23-alpine AS production
+FROM golang:1.24.3-alpine AS production
 WORKDIR /go/src/github.com/tidepool-org/clinic
 RUN apk --no-cache update && \
     apk --no-cache upgrade && \
@@ -25,4 +25,3 @@ COPY --chown=tidepool . .
 RUN ./build.sh
 WORKDIR /go/src/github.com/tidepool-org/clinic/dist
 CMD ["./clinic"]
-

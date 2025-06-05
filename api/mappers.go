@@ -181,6 +181,11 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		UpdatedTime:   &patient.UpdatedTime,
 		Summary:       NewSummaryDto(patient.Summary),
 		Reviews:       NewReviewsDto(patient.Reviews),
+		ConnectionRequests: &ProviderConnectionRequests{
+			Abbott: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Abbott),
+			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
+			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
+		},
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -188,10 +193,31 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	if !patient.LastUploadReminderTime.IsZero() {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
 	}
-	if !patient.LastRequestedDexcomConnectTime.IsZero() {
-		dto.LastRequestedDexcomConnectTime = &patient.LastRequestedDexcomConnectTime
+
+	// Populate the new connection requests structure from the now deprecated lastRequestedDexcomConnectTime
+	if len(dto.ConnectionRequests.Dexcom) == 0 && !patient.LastRequestedDexcomConnectTime.IsZero() {
+		dto.ConnectionRequests.Dexcom = []ProviderConnectionRequest{{
+			ProviderName: Dexcom,
+			CreatedTime: patient.LastRequestedDexcomConnectTime,
+		}}
 	}
+
 	return dto
+}
+
+func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequest {
+	var requestsForProvider patients.ConnectionRequests
+	if requests != nil {
+		requestsForProvider = requests[string(provider)]
+	}
+	result := make([]ProviderConnectionRequest, len(requestsForProvider))
+	for i, request := range requestsForProvider {
+		result[i] = ProviderConnectionRequest{
+			CreatedTime:  request.CreatedTime,
+			ProviderName: ProviderId(request.ProviderName),
+		}
+	}
+	return result
 }
 
 func NewPatient(dto Patient) patients.Patient {
@@ -276,9 +302,8 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 
 	if dto.CgmStats != nil {
 		patientSummary.CGM = &patients.PatientCGMStats{
-			Periods:       patients.PatientCGMPeriods{},
-			OffsetPeriods: patients.PatientCGMPeriods{},
-			TotalHours:    dto.CgmStats.TotalHours,
+			Id:      *dto.CgmStats.Id,
+			Periods: patients.PatientCGMPeriods{},
 		}
 
 		patientSummary.CGM.Config = patients.PatientSummaryConfig(dto.CgmStats.Config)
@@ -289,19 +314,12 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				patientSummary.CGM.Periods[k] = patients.PatientCGMPeriod(source)
 			}
 		}
-
-		if dto.CgmStats.OffsetPeriods != nil {
-			for k, source := range dto.CgmStats.OffsetPeriods {
-				patientSummary.CGM.OffsetPeriods[k] = patients.PatientCGMPeriod(source)
-			}
-		}
 	}
 
 	if dto.BgmStats != nil {
 		patientSummary.BGM = &patients.PatientBGMStats{
-			Periods:       patients.PatientBGMPeriods{},
-			OffsetPeriods: patients.PatientBGMPeriods{},
-			TotalHours:    dto.BgmStats.TotalHours,
+			Id:      *dto.BgmStats.Id,
+			Periods: patients.PatientBGMPeriods{},
 		}
 
 		patientSummary.BGM.Config = patients.PatientSummaryConfig(dto.BgmStats.Config)
@@ -310,12 +328,6 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 		if dto.BgmStats.Periods != nil {
 			for k, source := range dto.BgmStats.Periods {
 				patientSummary.BGM.Periods[k] = patients.PatientBGMPeriod(source)
-			}
-		}
-
-		if dto.BgmStats.OffsetPeriods != nil {
-			for k, source := range dto.BgmStats.OffsetPeriods {
-				patientSummary.BGM.OffsetPeriods[k] = patients.PatientBGMPeriod(source)
 			}
 		}
 	}
@@ -332,9 +344,9 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 
 	if summary.CGM != nil {
 		patientSummary.CgmStats = &PatientCGMStats{
+			Id:            &summary.CGM.Id,
 			Periods:       PatientCGMPeriods{},
 			OffsetPeriods: PatientCGMPeriods{},
-			TotalHours:    summary.CGM.TotalHours,
 		}
 
 		patientSummary.CgmStats.Config = PatientSummaryConfig(summary.CGM.Config)
@@ -345,19 +357,13 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 				patientSummary.CgmStats.Periods[k] = PatientCGMPeriod(source)
 			}
 		}
-
-		if summary.CGM.OffsetPeriods != nil {
-			for k, source := range summary.CGM.OffsetPeriods {
-				patientSummary.CgmStats.OffsetPeriods[k] = PatientCGMPeriod(source)
-			}
-		}
 	}
 
 	if summary.BGM != nil {
 		patientSummary.BgmStats = &PatientBGMStats{
+			Id:            &summary.BGM.Id,
 			Periods:       PatientBGMPeriods{},
 			OffsetPeriods: PatientBGMPeriods{},
-			TotalHours:    summary.BGM.TotalHours,
 		}
 
 		patientSummary.BgmStats.Config = PatientSummaryConfig(summary.BGM.Config)
@@ -366,12 +372,6 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 		if summary.BGM.Periods != nil {
 			for k, source := range summary.BGM.Periods {
 				patientSummary.BgmStats.Periods[k] = PatientBGMPeriod(source)
-			}
-		}
-
-		if summary.BGM.OffsetPeriods != nil {
-			for k, source := range summary.BGM.OffsetPeriods {
-				patientSummary.BgmStats.OffsetPeriods[k] = PatientBGMPeriod(source)
 			}
 		}
 	}
@@ -438,6 +438,8 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
 				TimeInVeryHighPercent:      patient.TimeInVeryHighPercent,
 				TimeInVeryLowPercent:       patient.TimeInVeryLowPercent,
+				TimeInAnyLowPercent:        patient.TimeInAnyLowPercent,
+				TimeInAnyHighPercent:       patient.TimeInAnyHighPercent,
 				LastData:                   patient.LastData,
 				Patient: TidePatient{
 					Email:       patient.Patient.Email,
@@ -552,11 +554,14 @@ func NewPatientsDto(patients []*patients.Patient) []Patient {
 	return dtos
 }
 
-func NewPatientsResponseDto(list *patients.ListResult) PatientsResponse {
-	data := Patients(NewPatientsDto(list.Patients))
+func NewPatientsResponseDto(list *patients.ListResult, totalCount int) PatientsResponse {
+	data := NewPatientsDto(list.Patients)
 	return PatientsResponse{
 		Data: &data,
-		Meta: &Meta{Count: &list.TotalCount},
+		Meta: &Meta{
+			Count:      &list.MatchingCount,
+			TotalCount: &totalCount,
+		},
 	}
 }
 
@@ -683,6 +688,9 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 		Tags: clinics.TagsSettings{
 			Separator: dto.Tags.Separator,
 		},
+		Flowsheets: clinics.FlowsheetSettings{
+			Icode: dto.Flowsheets.Icode,
+		},
 	}
 	if settings.ScheduledReports.OnUploadEnabled && dto.ScheduledReports.OnUploadNoteEventType != nil {
 		settings.ScheduledReports.OnUploadNoteEventType = strp(string(*dto.ScheduledReports.OnUploadNoteEventType))
@@ -728,6 +736,9 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 		Tags: EHRTagsSettings{
 			Codes:     &settings.Tags.Codes,
 			Separator: settings.Tags.Separator,
+		},
+		Flowsheets: EHRFlowsheetSettings{
+			Icode: settings.Flowsheets.Icode,
 		},
 	}
 	if settings.ScheduledReports.OnUploadNoteEventType != nil {
@@ -1615,6 +1626,19 @@ func ParseBGMSummaryDateFilters(params ListPatientsParams) (filters patients.Sum
 
 	parseDateRangeFilter(filters, "lastData", params.BgmLastDataFrom, params.BgmLastDataTo)
 	return
+}
+
+func NewDataProvider(providerId ProviderId) (string, error) {
+	switch providerId {
+	case Dexcom:
+		return patients.DexcomDataSourceProviderName, nil
+	case Twiist:
+		return patients.TwiistDataSourceProviderName, nil
+	case Abbott:
+		return patients.AbbottDataSourceProviderName, nil
+	default:
+		return "", fmt.Errorf("%w: invalid provider id: %s", errors.BadRequest, string(providerId))
+	}
 }
 
 func NewMatchOrderCriteria(criteria []EHRMatchRequestPatientsOptionsCriteria) ([]string, error) {

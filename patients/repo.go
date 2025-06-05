@@ -4,20 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	errors2 "github.com/tidepool-org/clinic/errors"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/tidepool-org/clinic/config"
+	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-
-	"github.com/tidepool-org/clinic/config"
-	"github.com/tidepool-org/clinic/store"
 )
 
 const (
@@ -203,8 +202,11 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	// and the patients from a single query
 	pipeline := []bson.M{
 		{"$match": r.generateListFilterQuery(filter)},
-		{"$sort": generateListSortStage(sorts)},
 	}
+	if filter.ExcludeSummaryExceptFieldsInMergeReports {
+		pipeline = append(pipeline, excludeSummaryExceptFieldsInMergeReports()...)
+	}
+	pipeline = append(pipeline, bson.M{"$sort": generateListSortStage(sorts)})
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
 	hasFullNameSort := false
@@ -235,11 +237,30 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
 
-	if result.TotalCount == 0 {
+	if result.MatchingCount == 0 {
 		result.Patients = make([]*Patient, 0)
 	}
 
 	return &result, nil
+}
+
+// excludeSummaryExceptFieldsInMergeReports from a MongoDB aggregation pipeline.
+//
+// For when you don't want the entire summary to be included in the result, but the last
+// updated date is expected to be used when generating clinic merge reports.
+func excludeSummaryExceptFieldsInMergeReports() []bson.M {
+	out := []bson.M{}
+	out = append(out, bson.M{"$addFields": bson.M{
+		"__tmp_cgm__": "$summary.cgmStats.dates",
+		"__tmp_bgm__": "$summary.bgmStats.dates",
+	}})
+	out = append(out, bson.M{"$unset": "summary"})
+	out = append(out, bson.M{"$addFields": bson.M{
+		"summary.cgmStats.dates": "$__tmp_cgm__",
+		"summary.bgmStats.dates": "$__tmp_bgm__",
+	}})
+	out = append(out, bson.M{"$unset": []string{"__tmp_bgm__", "__tmp_cgm__"}})
+	return out
 }
 
 func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
@@ -260,7 +281,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 
-	if patients.TotalCount > 0 {
+	if patients.MatchingCount > 0 {
 		if len(patient.LegacyClinicianIds) == 0 {
 			return nil, ErrDuplicatePatient
 		}
@@ -534,7 +555,36 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
-		return ErrNotFound
+		return SummaryNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
+	// we dont know which type the summary Id is from, so we must try deleting both.
+	selectorCgm := bson.M{
+		"summary.cgmStats.id": summaryId,
+	}
+	updateCgm := bson.M{"$unset": bson.M{"summary.cgmStats": ""}}
+
+	selectorBgm := bson.M{
+		"summary.bgmStats.id": summaryId,
+	}
+	updateBgm := bson.M{"$unset": bson.M{"summary.bgmStats": ""}}
+
+	resCgm, err := r.collection.UpdateMany(ctx, selectorCgm, updateCgm)
+	if err != nil {
+		return fmt.Errorf("error removing cgmStats from patient: %w", err)
+	}
+
+	resBgm, err := r.collection.UpdateMany(ctx, selectorBgm, updateBgm)
+	if err != nil {
+		return fmt.Errorf("error removing bgmStats from patient: %w", err)
+	}
+
+	if resCgm.ModifiedCount == 0 && resBgm.ModifiedCount == 0 {
+		return SummaryNotFound
 	}
 
 	return nil
@@ -564,64 +614,71 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
-func (r *repository) UpdateLastRequestedDexcomConnectTime(ctx context.Context, update *LastRequestedDexcomConnectUpdate) (*Patient, error) {
-	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
+func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error {
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	currentTime := time.Now()
 
 	// We fetch the current dexcom data source to determine if we are requesting an initial connection
 	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
-	patient, err := r.Get(ctx, update.ClinicId, update.UserId)
+	patient, err := r.Get(ctx, clinicId, userId)
 	if err != nil {
-		return nil, fmt.Errorf("error finding patient: %w", err)
+		return fmt.Errorf("error finding patient: %w", err)
 	}
 
-	var patientDexcomDataSource DataSource
+	var providerDataSource DataSource
 	if patient.DataSources != nil {
 		for _, source := range *patient.DataSources {
-			if source.ProviderName == DexcomDataSourceProviderName {
-				patientDexcomDataSource = source
+			if source.ProviderName == request.ProviderName {
+				providerDataSource = source
 			}
 		}
 	}
 
 	selector := bson.M{
 		"clinicId":                 clinicObjId,
-		"userId":                   update.UserId,
-		"dataSources.providerName": DexcomDataSourceProviderName,
+		"userId":                   userId,
+		"dataSources.providerName": request.ProviderName,
 	}
 
 	// Default update for initial connection requests
 	mongoUpdate := bson.M{
 		"$set": bson.M{
-			"lastRequestedDexcomConnectTime": update.Time,
-			"updatedTime":                    currentTime,
-			"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
-			"dataSources.$.state":            DataSourceStatePending,
+			"updatedTime":                  currentTime,
+			"dataSources.$.expirationTime": currentTime.Add(PendingDataSourceExpirationDuration),
+			"dataSources.$.state":          DataSourceStatePending,
 		},
 	}
 
 	// Update for previously connected requests
-	if patientDexcomDataSource.ModifiedTime != nil {
+	if providerDataSource.ModifiedTime != nil {
 		mongoUpdate = bson.M{
 			"$set": bson.M{
-				"lastRequestedDexcomConnectTime": update.Time,
-				"updatedTime":                    currentTime,
-				"dataSources.$.expirationTime":   currentTime.Add(PendingDexcomDataSourceExpirationDuration),
-				"dataSources.$.modifiedTime":     currentTime,
-				"dataSources.$.state":            DataSourceStatePendingReconnect,
+				"updatedTime":                  currentTime,
+				"dataSources.$.expirationTime": currentTime.Add(PendingDataSourceExpirationDuration),
+				"dataSources.$.modifiedTime":   currentTime,
+				"dataSources.$.state":          DataSourceStatePendingReconnect,
 			},
 		}
+	}
+
+	key := "providerConnectionRequests." + request.ProviderName
+	mongoUpdate["$push"] = bson.M{
+		key: bson.M{
+			"$each": bson.A{request},
+			// Prepend, so the most recent request is stored first
+			"$position": 0,
+		},
 	}
 
 	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return ErrNotFound
 		}
-		return nil, fmt.Errorf("error updating patient: %w", err)
+		return fmt.Errorf("error updating patient: %w", err)
 	}
 
-	return r.Get(ctx, update.ClinicId, update.UserId)
+	return nil
 }
 
 func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
@@ -984,8 +1041,13 @@ func ApplyDateFilter(selector bson.M, typ string, field string, pair FilterDateP
 
 func generateListSortStage(sorts []*store.Sort) bson.D {
 	var s bson.D
+	idSortExists := false
+
 	for _, sort := range sorts {
 		if sort != nil {
+			if sort.Attribute == "_id" {
+				idSortExists = true
+			}
 			s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
 		}
 	}
@@ -997,8 +1059,9 @@ func generateListSortStage(sorts []*store.Sort) bson.D {
 	// Including _id in the sort query ensures that $skip aggregation works correctly
 	// See https://docs.mongodb.com/manual/reference/operator/aggregation/skip/
 	// for more details
-	s = append(s, bson.E{Key: "_id", Value: 1})
-
+	if !idSortExists {
+		s = append(s, bson.E{Key: "_id", Value: 1})
+	}
 	return s
 }
 
