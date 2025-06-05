@@ -10,10 +10,11 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinics"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"go.uber.org/zap"
 )
 
 type service struct {

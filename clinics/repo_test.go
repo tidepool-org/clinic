@@ -7,12 +7,13 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/tidepool-org/clinic/clinics"
-	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
-	dbTest "github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
+
+	"github.com/tidepool-org/clinic/clinics"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	dbTest "github.com/tidepool-org/clinic/store/test"
 )
 
 func Ptr[T any](value T) *T {

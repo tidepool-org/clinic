@@ -2,22 +2,24 @@ package merge_test
 
 import (
 	"context"
+	"time"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store/test"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/mock/gomock"
-	"go.uber.org/zap"
-	"time"
 )
 
 const (
@@ -77,7 +79,7 @@ var _ = Describe("New Merge Planner", func() {
 
 		It("produces correct plans", func() {
 			for _, plan := range plans {
-				switch plan.PatientAction{
+				switch plan.PatientAction {
 				case merge.PatientActionRetain:
 					// Retain target account - this action is produced for each target patient which doesn't have conflicts
 					Expect(plan.SourcePatient).To(BeNil())
@@ -112,7 +114,7 @@ var _ = Describe("New Merge Planner", func() {
 		It("can be executed", func() {
 			for _, plan := range plans {
 				Expect(plan.PreventsMerge()).To(BeFalse())
-				switch plan.PatientAction{
+				switch plan.PatientAction {
 				case merge.PatientActionRetain:
 					// Retain target account - this action is produced for each target patient which doesn't have conflicts
 					Expect(plan.SourcePatient).To(BeNil())
@@ -140,7 +142,7 @@ var _ = Describe("New Merge Planner", func() {
 
 		It("fails for merge plans with MRN conflicts when the target workspace requires unique MRNs", func() {
 			target.MRNSettings = &clinics.MRNSettings{
-				Unique:   true,
+				Unique: true,
 			}
 			planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 			Expect(err).ToNot(HaveOccurred())
@@ -178,10 +180,10 @@ var _ = Describe("New Merge Planner", func() {
 
 			executor = merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), clinicsService, db)
 			collection = db.Collection("patients")
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 			defer cancel()
 
-			documents := make([]interface{}, 0, len(sourcePatients) + len(targetPatients))
+			documents := make([]interface{}, 0, len(sourcePatients)+len(targetPatients))
 			for _, p := range sourcePatients {
 				documents = append(documents, p)
 			}
@@ -233,7 +235,7 @@ var _ = Describe("New Merge Planner", func() {
 					continue
 				}
 				count, err := collection.CountDocuments(context.Background(), bson.M{
-					"userId": *patient.UserId,
+					"userId":   *patient.UserId,
 					"clinicId": *target.Id,
 				})
 				Expect(err).ToNot(HaveOccurred())
@@ -264,7 +266,7 @@ var _ = Describe("New Merge Planner", func() {
 
 				var result patients.Patient
 				err := collection.FindOne(context.Background(), bson.M{
-					"userId": *patient.UserId,
+					"userId":   *patient.UserId,
 					"clinicId": *target.Id,
 				}).Decode(&result)
 				Expect(err).ToNot(HaveOccurred())
@@ -294,7 +296,7 @@ var _ = Describe("New Merge Planner", func() {
 					continue
 				}
 				count, err := collection.CountDocuments(context.Background(), bson.M{
-					"userId": *patient.UserId,
+					"userId":   *patient.UserId,
 					"clinicId": *source.Id,
 				})
 				Expect(err).ToNot(HaveOccurred())

@@ -3,10 +3,12 @@ package merge
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/clinics"
+	"sort"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-	"sort"
+
+	"github.com/tidepool-org/clinic/clinics"
 )
 
 const (
@@ -16,10 +18,10 @@ const (
 )
 
 type TagPlan struct {
-	Name       string `bson:"name"`
-	TagAction  string `bson:"tagAction"`
+	Name       string   `bson:"name"`
+	TagAction  string   `bson:"tagAction"`
 	Workspaces []string `bson:"workspaces"`
-	Merge      bool `bson:"merge"`
+	Merge      bool     `bson:"merge"`
 
 	SourceClinicId *primitive.ObjectID `bson:"sourceClinicId"`
 	TargetClinicId *primitive.ObjectID `bson:"targetClinicId"`
@@ -145,7 +147,7 @@ type TagPlanExecutor struct {
 
 func NewTagPlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Service) *TagPlanExecutor {
 	return &TagPlanExecutor{
-		logger: logger,
+		logger:         logger,
 		clinicsService: clinicsService,
 	}
 }

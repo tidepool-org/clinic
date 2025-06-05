@@ -17,7 +17,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
-
 	"go.uber.org/zap/zapcore"
 
 	"github.com/tidepool-org/clinic/config"
