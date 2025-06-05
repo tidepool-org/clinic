@@ -2,15 +2,17 @@ package merge
 
 import (
 	"fmt"
-	"github.com/tealeg/xlsx/v3"
-	"github.com/tidepool-org/clinic/clinicians"
-	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/pointer"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/tealeg/xlsx/v3"
+
+	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/pointer"
 )
 
 const (

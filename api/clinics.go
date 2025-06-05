@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -488,7 +489,6 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
-
 
 	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
 	plan, err := planner.Plan(ctx)

@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tidepool-org/clinic/clinicians"
-	"github.com/tidepool-org/clinic/clinics"
+	"sort"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
-	"sort"
-	"time"
+
+	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/clinics"
 )
 
 const (
@@ -114,10 +116,10 @@ func NewSourceClinicianMergePlanner(clinician clinicians.Clinician, source, targ
 
 func (s *SourceClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, error) {
 	plan := ClinicianPlan{
-		Clinician:       s.clinician,
-		ClinicianAction: ClinicianActionMove,
-		ResultingRoles:  s.clinician.Roles,
-		Workspaces:      []string{*s.source.Name},
+		Clinician:        s.clinician,
+		ClinicianAction:  ClinicianActionMove,
+		ResultingRoles:   s.clinician.Roles,
+		Workspaces:       []string{*s.source.Name},
 		SourceClinicName: *s.source.Name,
 		TargetClinicName: *s.target.Name,
 	}
@@ -161,10 +163,10 @@ func NewTargetClinicianMergePlanner(clinician clinicians.Clinician, source, targ
 
 func (s *TargetClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, error) {
 	plan := ClinicianPlan{
-		Clinician:       s.clinician,
-		ClinicianAction: ClinicianActionRetain,
-		ResultingRoles:  s.clinician.Roles,
-		Workspaces:      []string{*s.target.Name},
+		Clinician:        s.clinician,
+		ClinicianAction:  ClinicianActionRetain,
+		ResultingRoles:   s.clinician.Roles,
+		Workspaces:       []string{*s.target.Name},
 		SourceClinicName: *s.source.Name,
 		TargetClinicName: *s.target.Name,
 	}

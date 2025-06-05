@@ -1,10 +1,12 @@
 package merge_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
+
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
-	"testing"
 )
 
 func TestSuite(t *testing.T) {

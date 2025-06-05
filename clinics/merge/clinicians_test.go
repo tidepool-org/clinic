@@ -2,20 +2,22 @@ package merge_test
 
 import (
 	"context"
-	"go.uber.org/mock/gomock"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/store/test"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/zap"
-	"time"
 )
 
 var _ = Describe("Clinicians", func() {
@@ -166,7 +168,7 @@ var _ = Describe("Clinicians", func() {
 
 		BeforeEach(func() {
 			collection = test.GetTestDatabase().Collection("clinicians")
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 			defer cancel()
 
 			executor = merge.NewClinicianPlanExecutor(zap.NewNop().Sugar(), test.GetTestDatabase())
@@ -188,7 +190,7 @@ var _ = Describe("Clinicians", func() {
 
 		It("moves clinician from source to target clinics", func() {
 			plan := merge.ClinicianPlan{
-				Clinician: sourceClinician,
+				Clinician:       sourceClinician,
 				ClinicianAction: merge.ClinicianActionMove,
 			}
 			err := executor.Execute(context.Background(), plan, target)
@@ -200,7 +202,7 @@ var _ = Describe("Clinicians", func() {
 
 		It("retains target clinician when action is retain", func() {
 			plan := merge.ClinicianPlan{
-				Clinician: targetClinician,
+				Clinician:       targetClinician,
 				ClinicianAction: merge.ClinicianActionRetain,
 			}
 			err := executor.Execute(context.Background(), plan, target)
@@ -211,7 +213,7 @@ var _ = Describe("Clinicians", func() {
 
 		It("retains target clinician when action is 'merge into'", func() {
 			plan := merge.ClinicianPlan{
-				Clinician: targetClinician,
+				Clinician:       targetClinician,
 				ClinicianAction: merge.ClinicianActionMergeInto,
 			}
 			err := executor.Execute(context.Background(), plan, target)
@@ -222,12 +224,12 @@ var _ = Describe("Clinicians", func() {
 
 		When("there is a duplicate", func() {
 			BeforeEach(func() {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 				defer cancel()
 
 				selector := bson.M{
 					"clinicId": *targetClinician.ClinicId,
-					"userId": *targetClinician.UserId,
+					"userId":   *targetClinician.UserId,
 				}
 				update := bson.M{
 					"$set": bson.M{
@@ -241,7 +243,7 @@ var _ = Describe("Clinicians", func() {
 
 			It("removes clinician from the source clinic", func() {
 				plan := merge.ClinicianPlan{
-					Clinician: sourceClinician,
+					Clinician:       sourceClinician,
 					ClinicianAction: merge.ClinicianActionMerge,
 				}
 				err := executor.Execute(context.Background(), plan, target)
@@ -252,7 +254,7 @@ var _ = Describe("Clinicians", func() {
 
 			It("retains the clinician from the target clinic", func() {
 				plan := merge.ClinicianPlan{
-					Clinician: sourceClinician,
+					Clinician:       sourceClinician,
 					ClinicianAction: merge.ClinicianActionMerge,
 				}
 				err := executor.Execute(context.Background(), plan, target)
@@ -267,7 +269,7 @@ var _ = Describe("Clinicians", func() {
 func clinicianExists(collection *mongo.Collection, clinicId primitive.ObjectID, userId string) bool {
 	count, err := collection.CountDocuments(context.Background(), bson.M{
 		"clinicId": clinicId,
-		"userId": userId,
+		"userId":   userId,
 	})
 	Expect(err).ToNot(HaveOccurred())
 	return count > 0

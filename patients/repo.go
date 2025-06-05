@@ -8,15 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tidepool-org/clinic/config"
-	errors2 "github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic/config"
+	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/store"
 )
 
 const (

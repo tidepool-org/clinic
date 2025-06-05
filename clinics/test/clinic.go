@@ -2,16 +2,17 @@ package test
 
 import (
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/tidepool-org/clinic/test"
 	"time"
+
+	mapset "github.com/deckarep/golang-set/v2"
+
+	"github.com/tidepool-org/clinic/test"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-
 
 func strp(val string) *string {
 	return &val
