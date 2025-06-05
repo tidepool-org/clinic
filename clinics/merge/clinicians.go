@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tidepool-org/clinic/clinicians"
-	"github.com/tidepool-org/clinic/clinics"
+	"sort"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
-	"sort"
-	"time"
+
+	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/clinics"
 )
 
 const (
