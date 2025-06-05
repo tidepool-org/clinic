@@ -16,6 +16,8 @@ import (
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 
+	"github.com/tidepool-org/go-common/clients/shoreline"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
@@ -28,7 +30,6 @@ import (
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 type ClinicMergeTest struct {
