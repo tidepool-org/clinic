@@ -9,13 +9,14 @@ import (
 
 	"github.com/oapi-codegen/runtime/types"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func NewClinicWithDefaults(c Clinic) *clinics.Clinic {
@@ -198,7 +199,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 	if len(dto.ConnectionRequests.Dexcom) == 0 && !patient.LastRequestedDexcomConnectTime.IsZero() {
 		dto.ConnectionRequests.Dexcom = []ProviderConnectionRequest{{
 			ProviderName: Dexcom,
-			CreatedTime: patient.LastRequestedDexcomConnectTime,
+			CreatedTime:  patient.LastRequestedDexcomConnectTime,
 		}}
 	}
 

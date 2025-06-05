@@ -4,23 +4,25 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx/fxtest"
-	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 var DemoPatientId = "demo"
@@ -200,9 +202,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patient.Mrn
 				updated, err := repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).To(HaveOccurred())
 				Expect(updated).To(BeNil())
@@ -229,9 +231,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patientsTest.RandomPatient().Mrn
 				result, err = repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())

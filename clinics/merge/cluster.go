@@ -3,11 +3,13 @@ package merge
 import (
 	"context"
 	"errors"
-	"github.com/dominikbraun/graph"
-	"github.com/eapache/queue"
-	"github.com/tidepool-org/clinic/patients"
 	"slices"
 	"strings"
+
+	"github.com/dominikbraun/graph"
+	"github.com/eapache/queue"
+
+	"github.com/tidepool-org/clinic/patients"
 )
 
 const (
