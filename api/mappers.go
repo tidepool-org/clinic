@@ -876,8 +876,11 @@ func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 		"hasOutdatedSince": "summary." + *typ + "Stats.dates.hasOutdatedSince",
 		"outdatedSince":    "summary." + *typ + "Stats.dates.outdatedSince",
 
-		"max": "summary." + *typ + "Stats.periods." + *period + ".max",
 		"min": "summary." + *typ + "Stats.periods." + *period + ".min",
+		"max": "summary." + *typ + "Stats.periods." + *period + ".max",
+
+		"minDelta": "summary." + *typ + "Stats.periods." + *period + ".minDelta",
+		"maxDelta": "summary." + *typ + "Stats.periods." + *period + ".maxDelta",
 
 		"hasAverageGlucoseMmol":   "summary." + *typ + "Stats.periods." + *period + ".hasAverageGlucoseMmol",
 		"averageGlucoseMmol":      "summary." + *typ + "Stats.periods." + *period + ".averageGlucoseMmol",
@@ -1220,6 +1223,12 @@ var validSortAttributes = map[string]map[string]struct{}{
 
 		"averageDailyRecords":      {},
 		"averageDailyRecordsDelta": {},
+
+		"min":      {},
+		"minDelta": {},
+
+		"max":      {},
+		"maxDelta": {},
 	},
 	"bgm": {
 		"fullName":       {},
@@ -1276,8 +1285,20 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"totalRecords":      {},
 		"totalRecordsDelta": {},
 
+		"standardDeviation":      {},
+		"standardDeviationDelta": {},
+
+		"coefficientOfVariation":      {},
+		"coefficientOfVariationDelta": {},
+
 		"averageDailyRecords":      {},
 		"averageDailyRecordsDelta": {},
+
+		"min":      {},
+		"minDelta": {},
+
+		"max":      {},
+		"maxDelta": {},
 	},
 }
 
@@ -1459,8 +1480,11 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	filters = patients.SummaryFilters{}
 
 	fieldsMap := map[string]*string{
-		"max": params.CgmMax,
-		"min": params.CgmMin,
+		"min":      params.CgmMin,
+		"minDelta": params.CgmMinDelta,
+
+		"max":      params.CgmMax,
+		"maxDelta": params.CgmMaxDelta,
 
 		"averageGlucoseMmol":         params.CgmAverageGlucoseMmol,
 		"glucoseManagementIndicator": params.CgmGlucoseManagementIndicator,

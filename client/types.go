@@ -779,7 +779,9 @@ type BgmPeriodV1 struct {
 	HasTimeInVeryLowRecords     bool     `json:"hasTimeInVeryLowRecords"`
 	HasTotalRecords             bool     `json:"hasTotalRecords"`
 	Max                         float64  `json:"max"`
+	MaxDelta                    float64  `json:"maxDelta"`
 	Min                         float64  `json:"min"`
+	MinDelta                    float64  `json:"minDelta"`
 	StandardDeviation           float64  `json:"standardDeviation"`
 	StandardDeviationDelta      float64  `json:"standardDeviationDelta"`
 
@@ -961,7 +963,9 @@ type CgmPeriodV1 struct {
 	HoursWithData                   int      `json:"hoursWithData"`
 	HoursWithDataDelta              int      `json:"hoursWithDataDelta"`
 	Max                             float64  `json:"max"`
+	MaxDelta                        float64  `json:"maxDelta"`
 	Min                             float64  `json:"min"`
+	MinDelta                        float64  `json:"minDelta"`
 	StandardDeviation               float64  `json:"standardDeviation"`
 	StandardDeviationDelta          float64  `json:"standardDeviationDelta"`
 
