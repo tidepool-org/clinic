@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
 	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
-	"go.uber.org/zap"
 )
 
 type service struct {
@@ -74,6 +76,22 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 		return nil, errors.New("user id is missing")
 	}
 
+	if len(patient.Sites) > 0 {
+		clinicSites, err := s.clinics.ListSites(ctx, clinicId)
+		if err != nil {
+			return nil, err
+		}
+		for _, pSite := range patient.Sites {
+			if !slices.ContainsFunc(clinicSites, hasMatchingSite(pSite)) {
+				s.logger.Infow("unable to assign site to patient",
+					"reason", "not found in clinic",
+					"siteId", pSite.Id.Hex(),
+					"clinicId", clinicId)
+				return nil, clinics.ErrSiteNotFound
+			}
+		}
+	}
+
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
 
 	result, err := s.patientsRepo.Create(ctx, patient)
@@ -106,6 +124,22 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		}
 		if err = s.custodialService.UpdateAccount(ctx, update.Patient); err != nil {
 			return nil, err
+		}
+	}
+
+	if len(update.Patient.Sites) > 0 {
+		clinicSites, err := s.clinics.ListSites(ctx, update.ClinicId)
+		if err != nil {
+			return nil, err
+		}
+		for _, pSite := range update.Patient.Sites {
+			if !slices.ContainsFunc(clinicSites, hasMatchingSite(pSite)) {
+				s.logger.Infow("unable to assign site to patient",
+					"reason", "not found in clinic",
+					"siteId", pSite.Id.Hex(),
+					"clinicId", update.ClinicId)
+				return nil, clinics.ErrSiteNotFound
+			}
 		}
 	}
 
@@ -293,6 +327,16 @@ func (s *service) RescheduleLastSubscriptionOrderForPatient(ctx context.Context,
 	return s.patientsRepo.RescheduleLastSubscriptionOrderForPatient(ctx, clinicIds, userId, subscription, ordersCollection, targetCollection)
 }
 
+func (s *service) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	s.logger.Infow("deleting sites", "clinicId", clinicId, "siteId", siteId)
+	return s.patientsRepo.DeleteSites(ctx, clinicId, siteId)
+}
+
+func (s *service) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	s.logger.Infow("updating sites", "clinicId", clinicId, "siteId", siteId, "site", site)
+	return s.patientsRepo.UpdateSites(ctx, clinicId, siteId, site)
+}
+
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, existingUserId *string, patient *Patient) error {
 	mrnSettings, err := s.clinics.GetMRNSettings(ctx, clinicId)
 	if err != nil || mrnSettings == nil {
@@ -416,4 +460,8 @@ func deactiveAllSubscriptions(subscriptions EHRSubscriptions) EHRSubscriptions {
 		subscriptions[name] = sub
 	}
 	return subscriptions
+}
+
+func hasMatchingSite(pSite sites.Site) func(sites.Site) bool {
+	return func(cSite sites.Site) bool { return pSite.Name == cSite.Name }
 }

@@ -4,23 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
-	"github.com/tidepool-org/clinic/config"
-	"github.com/tidepool-org/clinic/patients"
-	patientsTest "github.com/tidepool-org/clinic/patients/test"
-	"github.com/tidepool-org/clinic/store"
-	dbTest "github.com/tidepool-org/clinic/store/test"
-	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
-	"strings"
-	"time"
+
+	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/patients"
+	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/sites"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
+	"github.com/tidepool-org/clinic/store"
+	dbTest "github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/clinic/test"
 )
 
 var DemoPatientId = "demo"
@@ -200,9 +204,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patient.Mrn
 				updated, err := repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).To(HaveOccurred())
 				Expect(updated).To(BeNil())
@@ -229,9 +233,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patientsTest.RandomPatient().Mrn
 				result, err = repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -316,6 +320,22 @@ var _ = Describe("Patients Repository", func() {
 				err = collection.FindOne(context.Background(), primitive.M{"_id": result.Id}).Decode(&updated)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(updated).To(matchPatientFields)
+			})
+
+			It("updates the patient's sites", func() {
+				update.Patient = randomPatient
+				update.Patient.Sites = []sites.Site{{Name: "New York", Id: primitive.NewObjectID()}}
+				update.ClinicId = randomPatient.ClinicId.Hex()
+				update.UserId = *randomPatient.UserId
+				result, err := repo.Update(context.Background(), update)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+
+				var updated patients.Patient
+				err = collection.FindOne(context.Background(), primitive.M{"_id": result.Id}).Decode(&updated)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(updated.Sites)).To(Equal(1))
+				Expect(updated.Sites[0].Name).To(Equal("New York"))
 			})
 
 			It("returns the updated patient", func() {
@@ -1251,6 +1271,58 @@ var _ = Describe("Patients Repository", func() {
 				}
 			})
 
+			It("filters by patient site correctly", func() {
+				// non-existent sites match no patients
+				ctx := context.Background()
+				nonExistentSiteID := primitive.NewObjectID().Hex()
+				nonSites := []string{nonExistentSiteID}
+				filter := patients.Filter{
+					Sites: &nonSites,
+				}
+				result, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(result.Patients)).To(Equal(0))
+
+				// existing sites match no patients
+				p := allPatients[0]
+				existingSite := sitesTest.Random()
+				p.Sites = []sites.Site{existingSite}
+				update := patients.PatientUpdate{
+					ClinicId: p.ClinicId.Hex(),
+					UserId:   *p.UserId,
+					Patient:  p,
+				}
+				got, err := repo.Update(ctx, update)
+				Expect(err).To(Succeed())
+				Expect(len(got.Sites)).To(Equal(1))
+
+				(*filter.Sites)[0] = existingSite.Id.Hex()
+				result2, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
+				Expect(err).To(Succeed())
+				Expect(len(result2.Patients)).To(Equal(1))
+				Expect(*result2.Patients[0].UserId).To(Equal(*got.UserId))
+
+				// multiple sites are OR-ed
+				newSites := []string{(*filter.Sites)[0], sitesTest.Random().Id.Hex()}
+				filter.Sites = &newSites
+				result3, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
+				Expect(err).To(Succeed())
+				Expect(len(result3.Patients)).To(Equal(1))
+				Expect(*result3.Patients[0].UserId).To(Equal(*got.UserId))
+
+				// an empty site returns patients without sites
+				noSites := []string{""}
+				filter.Sites = &noSites
+				result4, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
+				Expect(err).To(Succeed())
+				Expect(len(result4.Patients)).To(Equal(len(allPatients) - 1))
+				result4PatientUserIDs := []string{}
+				for _, patient := range result4.Patients {
+					result4PatientUserIDs = append(result4PatientUserIDs, *patient.UserId)
+				}
+				Expect(result4PatientUserIDs).ToNot(ContainElement(*got.UserId))
+			})
+
 			It("supports searching by mrn", func() {
 				clinicId := randomPatient.ClinicId.Hex()
 				filter := patients.Filter{
@@ -1533,8 +1605,72 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
-	})
+		Describe("DeleteSites", func() {
+			var patientWithSites patients.Patient
 
+			BeforeEach(func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *randomPatient.UserId
+				patientWithSites = randomPatient
+				patientWithSites.Sites = sitesTest.RandomSlice(1)
+				update := patients.PatientUpdate{
+					ClinicId: clinicId,
+					UserId:   userId,
+					Patient:  patientWithSites,
+				}
+				_, err := repo.Update(ctx, update)
+				Expect(err).To(Succeed())
+			})
+
+			It("deletes patients' denormalized sites", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *patientWithSites.UserId
+				site := patientWithSites.Sites[0]
+				siteId := site.Id.Hex()
+
+				Expect(repo.DeleteSites(ctx, clinicId, siteId)).To(Succeed())
+				got, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).To(Succeed())
+				Expect(len(got.Sites)).To(Equal(0))
+			})
+		})
+
+		Describe("UpdateSites", func() {
+			var patientWithSites patients.Patient
+
+			BeforeEach(func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *randomPatient.UserId
+				patientWithSites = randomPatient
+				patientWithSites.Sites = sitesTest.RandomSlice(1)
+				update := patients.PatientUpdate{
+					ClinicId: clinicId,
+					UserId:   userId,
+					Patient:  patientWithSites,
+				}
+				_, err := repo.Update(ctx, update)
+				Expect(err).To(Succeed())
+			})
+
+			It("updates patients' denormalized sites", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *patientWithSites.UserId
+				site := patientWithSites.Sites[0]
+				siteId := site.Id.Hex()
+				site.Name = site.Name + " test"
+
+				Expect(repo.UpdateSites(ctx, clinicId, siteId, &site)).To(Succeed())
+				got, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).To(Succeed())
+				Expect(len(got.Sites)).To(Equal(1))
+				Expect(got.Sites[0].Name).To(Equal(site.Name))
+			})
+		})
+	})
 })
 
 func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
@@ -1562,5 +1698,6 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
 		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
+		"Sites":                          Equal(patient.Sites),
 	})
 }
