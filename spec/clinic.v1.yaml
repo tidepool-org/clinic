@@ -4491,6 +4491,14 @@ components:
           type: number
           example: 2.5
           x-go-type: float64
+        daysWithData:
+          type: number
+          example: 2
+          x-go-type: int
+        daysWithDataDelta:
+          type: number
+          example: 2
+          x-go-type: int
       required:
         - hasAverageGlucoseMmol
         - hasTimeInTargetPercent
@@ -4519,6 +4527,8 @@ components:
         - standardDeviationDelta
         - coefficientOfVariation
         - coefficientOfVariationDelta
+        - daysWithData
+        - daysWithDataDelta
     bgmPeriods.v1:
       type: object
       title: bgmperiods.v1

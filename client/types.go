@@ -759,6 +759,8 @@ type BgmPeriodV1 struct {
 	AverageGlucoseMmolDelta     *float64 `json:"averageGlucoseMmolDelta,omitempty"`
 	CoefficientOfVariation      float64  `json:"coefficientOfVariation"`
 	CoefficientOfVariationDelta float64  `json:"coefficientOfVariationDelta"`
+	DaysWithData                int      `json:"daysWithData"`
+	DaysWithDataDelta           int      `json:"daysWithDataDelta"`
 	HasAverageDailyRecords      bool     `json:"hasAverageDailyRecords"`
 	HasAverageGlucoseMmol       bool     `json:"hasAverageGlucoseMmol"`
 	HasTimeInAnyHighPercent     bool     `json:"hasTimeInAnyHighPercent"`
