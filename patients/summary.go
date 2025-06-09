@@ -11,6 +11,8 @@ type PatientBGMPeriod struct {
 	AverageGlucoseMmolDelta       *float64 `bson:"averageGlucoseMmolDelta,omitempty"`
 	CoefficientOfVariation        float64  `bson:"coefficientOfVariation"`
 	CoefficientOfVariationDelta   float64  `bson:"coefficientOfVariationDelta"`
+	DaysWithData                  int      `bson:"daysWithData"`
+	DaysWithDataDelta             int      `bson:"daysWithDataDelta"`
 	HasAverageDailyRecords        bool     `bson:"hasAverageDailyRecords"`
 	HasAverageGlucoseMmol         bool     `bson:"hasAverageGlucoseMmol"`
 	HasTimeInAnyHighPercent       bool     `bson:"hasTimeInAnyHighPercent"`
