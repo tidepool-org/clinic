@@ -3222,9 +3222,9 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.OffsetPeriods != nil {
+		if params.LastReviewed != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offsetPeriods", runtime.ParamLocationQuery, *params.OffsetPeriods); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "lastReviewed", runtime.ParamLocationQuery, *params.LastReviewed); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -3238,9 +3238,25 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.LastReviewed != nil {
+		if params.CgmMax != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "lastReviewed", runtime.ParamLocationQuery, *params.LastReviewed); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.max", runtime.ParamLocationQuery, *params.CgmMax); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmMin != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.min", runtime.ParamLocationQuery, *params.CgmMin); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -3798,6 +3814,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
+		if params.BgmMax != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.max", runtime.ParamLocationQuery, *params.BgmMax); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BgmMin != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.min", runtime.ParamLocationQuery, *params.BgmMin); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.BgmAverageGlucoseMmol != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.averageGlucoseMmol", runtime.ParamLocationQuery, *params.BgmAverageGlucoseMmol); err != nil {
@@ -4073,6 +4121,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.BgmTotalRecords != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.totalRecords", runtime.ParamLocationQuery, *params.BgmTotalRecords); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmMaxDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.maxDelta", runtime.ParamLocationQuery, *params.CgmMaxDelta); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.CgmMinDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.minDelta", runtime.ParamLocationQuery, *params.CgmMinDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -4649,6 +4729,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.CgmLastDataTo != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.lastDataTo", runtime.ParamLocationQuery, *params.CgmLastDataTo); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BgmMaxDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.maxDelta", runtime.ParamLocationQuery, *params.BgmMaxDelta); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BgmMinDelta != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.minDelta", runtime.ParamLocationQuery, *params.BgmMinDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
