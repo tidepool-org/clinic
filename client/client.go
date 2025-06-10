@@ -8639,6 +8639,7 @@ func (r ListSitesResponse) StatusCode() int {
 type CreateSiteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ClinicSites
 }
 
 // Status returns HTTPResponse.Status
@@ -8660,6 +8661,7 @@ func (r CreateSiteResponse) StatusCode() int {
 type DeleteSiteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ClinicSites
 }
 
 // Status returns HTTPResponse.Status
@@ -8681,6 +8683,7 @@ func (r DeleteSiteResponse) StatusCode() int {
 type UpdateSiteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ClinicSites
 }
 
 // Status returns HTTPResponse.Status
@@ -11242,6 +11245,16 @@ func ParseCreateSiteResponse(rsp *http.Response) (*CreateSiteResponse, error) {
 		HTTPResponse: rsp,
 	}
 
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClinicSites
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
 	return response, nil
 }
 
@@ -11258,6 +11271,16 @@ func ParseDeleteSiteResponse(rsp *http.Response) (*DeleteSiteResponse, error) {
 		HTTPResponse: rsp,
 	}
 
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClinicSites
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
 	return response, nil
 }
 
@@ -11272,6 +11295,16 @@ func ParseUpdateSiteResponse(rsp *http.Response) (*UpdateSiteResponse, error) {
 	response := &UpdateSiteResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClinicSites
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

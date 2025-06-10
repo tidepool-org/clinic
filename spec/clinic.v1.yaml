@@ -923,7 +923,7 @@ paths:
       operationId: ListSites
       responses:
         '200':
-          description: OK
+          description: List of clinic sites
           content:
             application/json:
               schema:
@@ -936,7 +936,12 @@ paths:
       operationId: CreateSite
       responses:
         '200':
-          description: OK
+          description: List of clinic sites
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicSites'
+      description: Create a Site
       requestBody:
         content:
           application/json:
@@ -952,8 +957,12 @@ paths:
       summary: Update a Site
       operationId: UpdateSite
       responses:
-        '204':
-          description: No Content
+        '200':
+          description: List of clinic sites
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicSites'
       description: Update a Site
       requestBody:
         content:
@@ -966,8 +975,12 @@ paths:
       summary: Delete a Site
       operationId: DeleteSite
       responses:
-        '204':
-          description: No Content
+        '200':
+          description: List of clinic sites
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicSites'
       description: Delete a Site
       tags:
         - Clinics
