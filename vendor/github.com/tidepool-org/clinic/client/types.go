@@ -1192,8 +1192,8 @@ type ClinicV1 struct {
 	PreferredBgUnits ClinicV1PreferredBgUnits `json:"preferredBgUnits"`
 
 	// ShareCode Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
-	ShareCode *ShareCodeV1    `json:"shareCode,omitempty"`
-	Sites     *[]ClinicSiteV1 `json:"sites,omitempty"`
+	ShareCode *ShareCodeV1   `json:"shareCode,omitempty"`
+	Sites     []ClinicSiteV1 `json:"sites,omitempty"`
 
 	// State State or province. In the U.S., typically something like `CA` or `California`.
 	State                   *StateV1                   `json:"state,omitempty"`
@@ -1228,9 +1228,6 @@ type ClinicSiteV1 struct {
 	// Patients The number of patients associated with the site.
 	Patients int `json:"patients,omitempty"`
 }
-
-// ClinicSitesV1 defines model for clinicSites.v1.
-type ClinicSitesV1 = []ClinicSiteV1
 
 // ClinicTimezoneV1 defines model for clinicTimezone.v1.
 type ClinicTimezoneV1 string
@@ -1291,7 +1288,7 @@ type CreatePatientV1 struct {
 	// Mrn The medical record number of the patient
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
-	SiteIds     *SiteIdsV1            `json:"siteIds"`
+	Sites       []SiteV1              `json:"sites,omitempty"`
 	Tags        *PatientTagIdsV1      `json:"tags"`
 }
 
@@ -1520,7 +1517,7 @@ type PatientV1 struct {
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
 	Reviews     []PatientReviewV1     `json:"reviews"`
-	Sites       []SiteV1              `json:"sites"`
+	Sites       []SiteV1              `json:"sites,omitempty"`
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummaryV1 `json:"summary,omitempty"`
@@ -1669,8 +1666,11 @@ type SiteV1 struct {
 	Name string `json:"name"`
 }
 
-// SiteIdsV1 defines model for siteIds.v1.
-type SiteIdsV1 = []string
+// SiteCreationV1 A clinic's physical or logical location.
+type SiteCreationV1 struct {
+	// Name The site description.
+	Name string `json:"name"`
+}
 
 // SitePatientsV1 Site properties specific to a clinic.
 type SitePatientsV1 struct {
@@ -2460,7 +2460,7 @@ type UpdateMRNSettingsJSONRequestBody = MrnSettingsV1
 type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettingsV1
 
 // CreateSiteJSONRequestBody defines body for CreateSite for application/json ContentType.
-type CreateSiteJSONRequestBody = SiteV1
+type CreateSiteJSONRequestBody = SiteCreationV1
 
 // UpdateSiteJSONRequestBody defines body for UpdateSite for application/json ContentType.
 type UpdateSiteJSONRequestBody = SiteV1

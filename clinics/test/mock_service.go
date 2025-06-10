@@ -74,10 +74,10 @@ func (mr *MockServiceMockRecorder) Create(ctx, clinic any) *gomock.Call {
 }
 
 // CreatePatientTag mocks base method.
-func (m *MockService) CreatePatientTag(ctx context.Context, clinicId, tagName string) (*clinics.Clinic, error) {
+func (m *MockService) CreatePatientTag(ctx context.Context, clinicId, tagName string) (*clinics.PatientTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePatientTag", ctx, clinicId, tagName)
-	ret0, _ := ret[0].(*clinics.Clinic)
+	ret0, _ := ret[0].(*clinics.PatientTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -89,11 +89,12 @@ func (mr *MockServiceMockRecorder) CreatePatientTag(ctx, clinicId, tagName any) 
 }
 
 // CreateSite mocks base method.
-func (m *MockService) CreateSite(ctx context.Context, clinicId string, site *sites.Site) error {
+func (m *MockService) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSite", ctx, clinicId, site)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateSite indicates an expected call of CreateSite.
@@ -117,12 +118,11 @@ func (mr *MockServiceMockRecorder) Delete(ctx, id, metadata any) *gomock.Call {
 }
 
 // DeletePatientTag mocks base method.
-func (m *MockService) DeletePatientTag(ctx context.Context, clinicId, tagId string) (*clinics.Clinic, error) {
+func (m *MockService) DeletePatientTag(ctx context.Context, clinicId, tagId string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeletePatientTag", ctx, clinicId, tagId)
-	ret0, _ := ret[0].(*clinics.Clinic)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeletePatientTag indicates an expected call of DeletePatientTag.
@@ -250,21 +250,6 @@ func (mr *MockServiceMockRecorder) ListMembershipRestrictions(ctx, clinicId any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembershipRestrictions", reflect.TypeOf((*MockService)(nil).ListMembershipRestrictions), ctx, clinicId)
 }
 
-// ListSites mocks base method.
-func (m *MockService) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListSites", ctx, clinicId)
-	ret0, _ := ret[0].([]sites.Site)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListSites indicates an expected call of ListSites.
-func (mr *MockServiceMockRecorder) ListSites(ctx, clinicId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSites", reflect.TypeOf((*MockService)(nil).ListSites), ctx, clinicId)
-}
-
 // RemoveAdmin mocks base method.
 func (m *MockService) RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error {
 	m.ctrl.T.Helper()
@@ -365,10 +350,10 @@ func (mr *MockServiceMockRecorder) UpdatePatientCountSettings(ctx, clinicId, set
 }
 
 // UpdatePatientTag mocks base method.
-func (m *MockService) UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*clinics.Clinic, error) {
+func (m *MockService) UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*clinics.PatientTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePatientTag", ctx, clinicId, tagId, tagName)
-	ret0, _ := ret[0].(*clinics.Clinic)
+	ret0, _ := ret[0].(*clinics.PatientTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -380,11 +365,12 @@ func (mr *MockServiceMockRecorder) UpdatePatientTag(ctx, clinicId, tagId, tagNam
 }
 
 // UpdateSite mocks base method.
-func (m *MockService) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+func (m *MockService) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateSite", ctx, clinicId, siteId, site)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpdateSite indicates an expected call of UpdateSite.

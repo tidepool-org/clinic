@@ -121,7 +121,7 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 				Patients: site.Patients,
 			})
 		}
-		dto.Sites = &clinicSites
+		dto.Sites = clinicSites
 	}
 	if c.Timezone != nil {
 		tz := ClinicTimezoneV1(*c.Timezone)
@@ -304,12 +304,10 @@ func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patient
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
 	}
-	if dto.SiteIds != nil {
-		for _, siteID := range *dto.SiteIds {
-			for _, clinicSite := range clinicSites {
-				if clinicSite.Id.Hex() == siteID {
-					patient.Sites = append(patient.Sites, clinicSite)
-				}
+	for _, site := range dto.Sites {
+		for _, clinicSite := range clinicSites {
+			if clinicSite.Id.Hex() == site.Id {
+				patient.Sites = append(patient.Sites, clinicSite)
 			}
 		}
 	}
@@ -517,6 +515,15 @@ func NewPermissionsDto(dto *patients.Permissions) *PatientPermissionsV1 {
 		}
 	}
 	return permissions
+}
+
+func NewPatientTagDto(tag *clinics.PatientTag) *PatientTagV1 {
+	hexID := tag.Id.Hex()
+	dto := &PatientTagV1{
+		Id:   &hexID,
+		Name: tag.Name,
+	}
+	return dto
 }
 
 func NewPatientTagsDto(tags *[]primitive.ObjectID) *[]string {

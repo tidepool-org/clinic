@@ -1141,26 +1141,6 @@ func (mr *MockClientInterfaceMockRecorder) ListPatients(ctx, clinicId, params an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPatients", reflect.TypeOf((*MockClientInterface)(nil).ListPatients), varargs...)
 }
 
-// ListSites mocks base method.
-func (m *MockClientInterface) ListSites(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, clinicId}
-	for _, a := range reqEditors {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListSites", varargs...)
-	ret0, _ := ret[0].(*http.Response)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListSites indicates an expected call of ListSites.
-func (mr *MockClientInterfaceMockRecorder) ListSites(ctx, clinicId any, reqEditors ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, clinicId}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSites", reflect.TypeOf((*MockClientInterface)(nil).ListSites), varargs...)
-}
-
 // MatchClinicAndPatient mocks base method.
 func (m *MockClientInterface) MatchClinicAndPatient(ctx context.Context, body MatchClinicAndPatientJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3303,26 +3283,6 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ListPatientsWithResponse
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, params}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPatientsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ListPatientsWithResponse), varargs...)
-}
-
-// ListSitesWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) ListSitesWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListSitesResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, clinicId}
-	for _, a := range reqEditors {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListSitesWithResponse", varargs...)
-	ret0, _ := ret[0].(*ListSitesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListSitesWithResponse indicates an expected call of ListSitesWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) ListSitesWithResponse(ctx, clinicId any, reqEditors ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, clinicId}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSitesWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ListSitesWithResponse), varargs...)
 }
 
 // MatchClinicAndPatientWithBodyWithResponse mocks base method.

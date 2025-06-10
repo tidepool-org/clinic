@@ -547,7 +547,7 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clini
 			currentRow = sh.AddRow()
 			currentRow.AddCell()
 
-			addPatientDetails(currentRow, p.Patient, getUniquePatientTagNames(p.Patient, tags), clinic.Sites) // TODO(EAW): not sure clinic.Sitesxo is correct
+			addPatientDetails(currentRow, p.Patient, getUniquePatientTagNames(p.Patient, tags), clinic.Sites)
 
 			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryLikelyDuplicateAccounts], ", "))
 			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryNameOnlyMatch], ", "))

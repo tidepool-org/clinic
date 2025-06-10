@@ -13,8 +13,8 @@ import (
 
 // Site of a clinic, to which patients can be associated.
 type Site struct {
-	Id       primitive.ObjectID `bson:"id,omitempty" json:"id"`
-	Name     string             `bson:"name,omitempty" json:"name"`
+	Id       primitive.ObjectID `bson:"id" json:"id"`
+	Name     string             `bson:"name" json:"name"`
 	Patients int                `bson:"-" json:"patients,omitzero"`
 }
 

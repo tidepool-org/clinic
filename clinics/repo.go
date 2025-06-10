@@ -4,14 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"strings"
 	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
@@ -28,7 +30,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 	}
 
 	repo := &repository{
-		collection: db.Collection(CollectionName),
+		collection:    db.Collection(CollectionName),
 		deletionsRepo: deletionsRepo,
 	}
 
@@ -48,7 +50,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 }
 
 type repository struct {
-	collection *mongo.Collection
+	collection    *mongo.Collection
 	deletionsRepo deletions.Repository[Clinic]
 }
 
@@ -69,15 +71,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetUnique(true).
 				SetName("UniqueCanonicalShareCode"),
-		},
-		{
-			Keys: bson.D{
-				{Key: "_id", Value: 1},
-				{Key: "sites.*.name", Value: 1},
-			},
-			Options: options.Index().
-				SetUnique(true).
-				SetName("UniqueSiteNamesPerClinic"),
 		},
 	})
 	return err
@@ -300,7 +293,7 @@ func (r *repository) UpdateSuppressedNotifications(ctx context.Context, id strin
 	return err
 }
 
-func (r *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*Clinic, error) {
+func (r *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*PatientTag, error) {
 	clinic, err := r.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -336,10 +329,10 @@ func (r *repository) CreatePatientTag(ctx context.Context, id, tagName string) (
 		return nil, updateErr
 	}
 
-	return r.Get(ctx, id)
+	return &tag, nil
 }
 
-func (r *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*Clinic, error) {
+func (r *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*PatientTag, error) {
 	clinic, err := r.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -374,10 +367,10 @@ func (r *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 		return nil, updateErr
 	}
 
-	return r.Get(ctx, id)
+	return &tag, nil
 }
 
-func (r *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*Clinic, error) {
+func (r *repository) DeletePatientTag(ctx context.Context, id, tagId string) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
 	selector := bson.M{"_id": clinicId}
@@ -395,12 +388,12 @@ func (r *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*C
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return ErrNotFound
 		}
-		return nil, err
+		return err
 	}
 
-	return r.Get(ctx, id)
+	return nil
 }
 
 func (r *repository) ListMembershipRestrictions(ctx context.Context, id string) ([]MembershipRestrictions, error) {
@@ -566,27 +559,43 @@ func (r *repository) UpdatePatientCount(ctx context.Context, id string, patientC
 	return err
 }
 
-func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) error {
+// CreateSite while checking constraints.
+func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+
+	if err := c.maintainSitesConstraintsOnCreate(ctx, clinicId, site.Name); err != nil {
+		return nil, err
+	}
 	id, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if site.Id.IsZero() {
 		site.Id = primitive.NewObjectID()
 	}
-	selector := bson.M{"_id": id}
+	filter := bson.M{"_id": id}
 	update := bson.M{
 		"$push":        bson.M{"sites": site},
-		"$currentDate": bson.M{"updatedTime": true},
+		"$currentDate": bson.M{"updatedTime": bson.M{"$type": "timestamp"}},
 	}
-	res := c.collection.FindOneAndUpdate(ctx, selector, update)
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	res := c.collection.FindOneAndUpdate(ctx, filter, update, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return ErrNotFound
+			return nil, ErrNotFound
 		}
-		return err
+		return nil, err
 	}
-	return nil
+	clinic := &Clinic{}
+	if err := res.Decode(clinic); err != nil {
+		return nil, err
+	}
+	for _, candidate := range clinic.Sites {
+		if candidate.Name == site.Name {
+			return &candidate, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unable to find newly created site %+v %s %+v", clinic.Sites, site.Name, clinic)
 }
 
 func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) error {
@@ -604,7 +613,7 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 	}
 	update := bson.M{
 		"$pull":        bson.M{"sites": bson.M{"id": siteOID}},
-		"$currentDate": bson.M{"updatedTime": true},
+		"$currentDate": bson.M{"updatedTime": bson.M{"$type": "timestamp"}},
 	}
 	res, err := c.collection.UpdateOne(ctx, selector, update)
 	if err != nil {
@@ -616,22 +625,19 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 	return nil
 }
 
-func (c *repository) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
-	clinic, err := c.Get(ctx, clinicId)
+func (c *repository) UpdateSite(ctx context.Context,
+	clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
+
+	if err := c.maintainSitesConstraintsOnUpdate(ctx, clinicId, site.Name); err != nil {
+		return nil, err
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
 		return nil, err
 	}
-	return clinic.Sites, nil
-}
-
-func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
-	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
-	if err != nil {
-		return err
-	}
 	siteOID, err := primitive.ObjectIDFromHex(siteId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	selector := bson.M{
 		"_id":      clinicOID,
@@ -639,14 +645,54 @@ func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, si
 	}
 	update := bson.M{
 		"$set":         bson.M{"sites.$.name": site.Name},
-		"$currentDate": bson.M{"updatedTime": true},
+		"$currentDate": bson.M{"updatedTime": bson.M{"$type": "timestamp"}},
 	}
-	res, err := c.collection.UpdateOne(ctx, selector, update)
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	res := c.collection.FindOneAndUpdate(ctx, selector, update, opts)
+	if err := res.Err(); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	clinic := &Clinic{}
+	if err := res.Decode(&clinic); err != nil {
+		return nil, err
+	}
+	for _, clinicSite := range clinic.Sites {
+		if clinicSite.Name == site.Name {
+			return &clinicSite, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unable to find newly updated site %+v %s %+v", clinic.Sites, site.Name, clinic)
+}
+
+func (c *repository) maintainSitesConstraintsOnCreate(ctx context.Context,
+	clinicId, name string) error {
+
+	clinic, err := c.Get(ctx, clinicId)
 	if err != nil {
 		return err
 	}
-	if res.ModifiedCount != 1 {
-		return ErrNotFound
+	if sites.SiteExistsWithName(clinic.Sites, name) {
+		return ErrDuplicateSiteName
+	}
+	if len(clinic.Sites) >= sites.MaxSitesPerClinic {
+		return ErrMaximumSitesExceeded
+	}
+	return nil
+}
+
+func (c *repository) maintainSitesConstraintsOnUpdate(ctx context.Context,
+	clinicId, name string) error {
+
+	clinic, err := c.Get(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	if sites.SiteExistsWithName(clinic.Sites, name) {
+		return ErrDuplicateSiteName
 	}
 	return nil
 }
