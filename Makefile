@@ -7,6 +7,7 @@ OAPI_CODEGEN = $(TOOLS_BIN)/oapi-codegen
 MOCKGEN = $(TOOLS_BIN)/mockgen
 SWAGGER_CLI = $(NPM_BIN)/swagger-cli
 OPENAPI_FILTER = $(NPM_BIN)/openapi-filter
+GINKGO = go run -mod=mod github.com/onsi/ginkgo/v2/ginkgo
 
 NPM_PKG_SPECS = \
 	@apidevtools/swagger-cli@^4.0.4 \
@@ -57,13 +58,10 @@ service-profile:
 go-flags:
 	go env -w GOFLAGS=-mod=mod
 
-tools/bin/ginkgo:
-	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.22.0
-
 # Runs tests
 .PHONY: test
-test: go-flags $(TOOLS_BIN)/ginkgo
-	$(TOOLS_BIN)/ginkgo --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
+test:
+	$(GINKGO) run --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
 
 # Builds package
 .PHONY: build
