@@ -7,6 +7,7 @@ OAPI_CODEGEN = $(TOOLS_BIN)/oapi-codegen
 MOCKGEN = $(TOOLS_BIN)/mockgen
 REDOCLY_CLI = $(NPM_BIN)/redocly
 OPENAPI_FILTER = $(NPM_BIN)/openapi-filter
+GINKGO = go run -mod=mod github.com/onsi/ginkgo/v2/ginkgo
 
 NPM_PKG_SPECS = \
     @redocly/cli@1.34.2 \
@@ -52,13 +53,10 @@ service-profile/clinic.v1.yaml: $(OPENAPI_FILTER) generate service-profile
 service-profile:
 	mkdir -p service-profile
 
-tools/bin/ginkgo:
-	GOBIN=$(shell pwd)/$(TOOLS_BIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.22.0
-
 # Runs tests
 .PHONY: test
-test: $(TOOLS_BIN)/ginkgo
-	$(TOOLS_BIN)/ginkgo --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
+test:
+	$(GINKGO) run --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
 
 # Builds package
 .PHONY: build
