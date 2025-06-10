@@ -164,6 +164,14 @@ func (r *repository) Initialize(ctx context.Context) error {
 					{"requireUniqueMrn", bson.M{"$eq": true}},
 				}),
 		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "sites.id", Value: 1},
+			},
+			Options: options.Index().
+				SetName("Sites"),
+		},
 	})
 	return err
 }

@@ -313,6 +313,7 @@ var _ = Describe("Patients Repository", func() {
 					IsMigrated:       randomPatient.IsMigrated,
 					DataSources:      update.Patient.DataSources,
 					EHRSubscriptions: update.Patient.EHRSubscriptions,
+					Sites:            update.Patient.Sites,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -375,6 +376,7 @@ var _ = Describe("Patients Repository", func() {
 					IsMigrated:       randomPatient.IsMigrated,
 					DataSources:      randomPatient.DataSources,
 					EHRSubscriptions: randomPatient.EHRSubscriptions,
+					Sites:            randomPatient.Sites,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -1750,6 +1752,7 @@ var _ = Describe("TideReport", func() {
 })
 
 func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
+	GinkgoHelper()
 	return MatchAllFields(Fields{
 		"Id":                             PointTo(Not(BeEmpty())),
 		"UserId":                         PointTo(Equal(*patient.UserId)),

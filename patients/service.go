@@ -51,20 +51,6 @@ func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pag
 }
 
 func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error) {
-	tx := func(sCtx mongo.SessionContext) (any, error) {
-		return s.create(ctx, patient)
-	}
-	result, err := store.WithTransaction(ctx, s.dbClient, tx)
-	if err != nil {
-		return nil, err
-	}
-	return result.(*Patient), nil
-}
-
-// create a patient
-//
-// Should be run within a transaction.
-func (s *service) create(ctx context.Context, patient Patient) (*Patient, error) {
 	clinicId := patient.ClinicId.Hex()
 
 	if err := s.enforceMrnSettings(ctx, clinicId, patient.UserId, &patient); err != nil {
@@ -106,20 +92,6 @@ func (s *service) create(ctx context.Context, patient Patient) (*Patient, error)
 }
 
 func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, error) {
-	tx := func(sCtx mongo.SessionContext) (any, error) {
-		return s.update(ctx, update)
-	}
-	result, err := store.WithTransaction(ctx, s.dbClient, tx)
-	if err != nil {
-		return nil, err
-	}
-	return result.(*Patient), nil
-}
-
-// update a patient
-//
-// Should be run within a transaction.
-func (s *service) update(ctx context.Context, update PatientUpdate) (*Patient, error) {
 	existing, err := s.Get(ctx, update.ClinicId, update.UserId)
 	if err != nil {
 		return nil, err
@@ -163,13 +135,13 @@ func (s *service) update(ctx context.Context, update PatientUpdate) (*Patient, e
 func (s *service) resolveSites(ctx context.Context,
 	clinicId string, patientSites []sites.Site) ([]sites.Site, error) {
 
-	clinicSites, err := s.clinics.ListSites(ctx, clinicId)
+	clinic, err := s.clinics.Get(ctx, clinicId)
 	if err != nil {
 		return nil, err
 	}
 	fromClinic := []sites.Site{}
 	for _, pSite := range patientSites {
-		clinicSite, found := findMatchingSite(clinicSites, pSite)
+		clinicSite, found := findMatchingSite(clinic.Sites, pSite)
 		if !found {
 			s.logger.Infow("unable to assign site to patient",
 				"reason", "not found in clinic",

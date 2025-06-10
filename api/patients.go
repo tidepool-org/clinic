@@ -131,12 +131,12 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 		return err
 	}
 
-	clinicSites, err := h.Clinics.ListSites(ctx, clinicId)
+	clinic, err := h.Clinics.Get(ctx, clinicId)
 	if err != nil {
 		return err
 	}
 
-	patient := NewPatientFromCreate(dto, clinicSites)
+	patient := NewPatientFromCreate(dto, clinic.Sites)
 	patient.UserId = strp(patientId)
 	patient.ClinicId = &clinicObjId
 

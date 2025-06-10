@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/test"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 )
@@ -39,6 +40,7 @@ func RandomPatient() patients.Patient {
 		IsMigrated:       test.Faker.Bool(),
 		DataSources:      (*[]patients.DataSource)(&dataSources),
 		EHRSubscriptions: RandomSubscriptions(),
+		Sites:            []sites.Site{},
 	}
 }
 
@@ -76,6 +78,7 @@ func RandomPatientUpdate() patients.PatientUpdate {
 			Permissions:      patient.Permissions,
 			DataSources:      patient.DataSources,
 			EHRSubscriptions: RandomSubscriptions(),
+			Sites:            patient.Sites,
 		},
 	}
 }

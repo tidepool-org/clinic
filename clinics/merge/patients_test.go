@@ -186,7 +186,7 @@ var _ = Describe("New Merge Planner", func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 			defer cancel()
 
-			documents := make([]interface{}, 0, len(sourcePatients)+len(targetPatients))
+			documents := make([]any, 0, len(sourcePatients)+len(targetPatients))
 			for _, p := range sourcePatients {
 				documents = append(documents, p)
 			}
@@ -200,12 +200,8 @@ var _ = Describe("New Merge Planner", func() {
 
 			// The executor expects tags to be migrated before the patients
 			updated = target
-			updated.PatientTags = nil
-
 			// Retain target tag ids
-			for _, tag := range target.PatientTags {
-				updated.PatientTags = append(updated.PatientTags, tag)
-			}
+			updated.PatientTags = target.PatientTags
 
 			// Recreate source tags in target clinic as if they were migrated
 			for _, tag := range source.PatientTags {

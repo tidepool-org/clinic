@@ -771,19 +771,6 @@ allow {
   clinician_has_write_access
 }
 
-# Allow backend services or currently authenticated clinician to list a clinic's sites
-# GET /v1/clinics/:clinicId/sites
-allow {
-  input.method == "GET"
-  input.path = ["v1", "clinics", _, "sites"]
-  is_backend_service
-}
-allow {
-  input.method == "GET"
-  input.path = ["v1", "clinics", _, "sites"]
-  clinician_has_read_access
-}
-
 # Allow backend services or clinic admins to update a site
 # PUT /v1/clinics/:clinicId/sites/:siteId
 allow {

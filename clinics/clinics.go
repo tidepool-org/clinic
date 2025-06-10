@@ -51,9 +51,9 @@ type Service interface {
 	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
 	UpdateTier(ctx context.Context, clinicId, tier string) error
 	UpdateSuppressedNotifications(ctx context.Context, clinicId string, suppressedNotifications SuppressedNotifications) error
-	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*Clinic, error)
-	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*Clinic, error)
-	DeletePatientTag(ctx context.Context, clinicId, tagId string) (*Clinic, error)
+	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*PatientTag, error)
+	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*PatientTag, error)
+	DeletePatientTag(ctx context.Context, clinicId, tagId string) error
 	ListMembershipRestrictions(ctx context.Context, clinicId string) ([]MembershipRestrictions, error)
 	UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error
 	GetEHRSettings(ctx context.Context, clinicId string) (*EHRSettings, error)
@@ -65,10 +65,9 @@ type Service interface {
 	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
 	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
-	CreateSite(ctx context.Context, clinicId string, site *sites.Site) error
+	CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
 	DeleteSite(ctx context.Context, clinicId, siteId string) error
-	ListSites(ctx context.Context, clinicId string) ([]sites.Site, error)
-	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error
+	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error)
 }
 
 type Filter struct {
