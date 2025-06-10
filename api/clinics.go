@@ -519,7 +519,11 @@ func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
 	if err := h.ClinicsManager.CreateSite(ctx, clinicId, site.Name); err != nil {
 		return err
 	}
-	return ec.JSON(http.StatusOK, site)
+	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, sites)
 }
 
 func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
@@ -530,7 +534,11 @@ func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 		}
 		return err
 	}
-	return nil
+	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, sites)
 }
 
 func (h *Handler) ListSites(ec echo.Context, clinicId ClinicId) error {
@@ -554,5 +562,9 @@ func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 		}
 		return err
 	}
-	return nil
+	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, sites)
 }
