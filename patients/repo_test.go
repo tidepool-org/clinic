@@ -1296,7 +1296,46 @@ var _ = Describe("Patients Repository", func() {
 				}
 			})
 
+			It("filters multiple tags via AND", func() {
+				var err error
+
+				secondPatient := allPatients[len(allPatients)-1]
+				secondTag := (*secondPatient.Tags)[0]
+				newTags := append(*randomPatient.Tags, secondTag)
+				updateFilter := bson.M{
+					"clinicId": randomPatient.ClinicId,
+					"userId":   randomPatient.UserId,
+				}
+				update := bson.M{
+					"$set": bson.M{
+						"tags":     newTags,
+						"clinicId": randomPatient.ClinicId,
+					},
+				}
+				_, err = collection.UpdateOne(context.Background(), updateFilter, update)
+				Expect(err).ToNot(HaveOccurred())
+
+				ctx := context.Background()
+				tags := []string{
+					newTags[0].Hex(),
+					newTags[1].Hex(),
+				}
+				filter := patients.Filter{
+					Tags: &tags,
+				}
+				pagination := store.Pagination{Offset: 0, Limit: 100}
+				result, err := repo.List(ctx, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					patientTags := *patient.Tags
+					Expect(patientTags).To(ConsistOf(newTags[0], newTags[1]))
+				}
+			})
+
 			It("filters by patient tag correctly", func() {
+				ctx := context.Background()
 				randomPatientTags := *randomPatient.Tags
 				tags := []string{randomPatientTags[0].Hex()}
 				filter := patients.Filter{
@@ -1306,7 +1345,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(context.Background(), &filter, pagination, nil)
+				result, err := repo.List(ctx, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1314,6 +1353,27 @@ var _ = Describe("Patients Repository", func() {
 					patientTags := *patient.Tags
 					Expect(patientTags).To(ContainElement(randomPatientTags[0]))
 				}
+
+				// an empty tag returns patients without tags
+				noPatientTags := []primitive.ObjectID{}
+				randomPatient.Tags = &noPatientTags
+				update := patients.PatientUpdate{
+					ClinicId: randomPatient.ClinicId.Hex(),
+					UserId:   *randomPatient.UserId,
+					Patient:  randomPatient,
+				}
+				got, err := repo.Update(ctx, update)
+				Expect(err).To(Succeed())
+				noTags := []string{""}
+				filter.Tags = &noTags
+				result2, err := repo.List(ctx, &filter, pagination, nil)
+				Expect(err).To(Succeed())
+				Expect(len(result2.Patients)).To(Equal(1))
+				result2PatientUserIDs := []string{}
+				for _, patient := range result2.Patients {
+					result2PatientUserIDs = append(result2PatientUserIDs, *patient.UserId)
+				}
+				Expect(result2PatientUserIDs).To(ContainElement(*got.UserId))
 			})
 
 			It("filters by patient site correctly", func() {
