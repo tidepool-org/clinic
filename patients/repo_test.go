@@ -1252,6 +1252,7 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("filters by patient tag correctly", func() {
+				ctx := context.Background()
 				randomPatientTags := *randomPatient.Tags
 				tags := []string{randomPatientTags[0].Hex()}
 				filter := patients.Filter{
@@ -1261,7 +1262,7 @@ var _ = Describe("Patients Repository", func() {
 					Offset: 0,
 					Limit:  count,
 				}
-				result, err := repo.List(context.Background(), &filter, pagination, nil)
+				result, err := repo.List(ctx, &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result.Patients).ToNot(HaveLen(0))
 
@@ -1269,6 +1270,27 @@ var _ = Describe("Patients Repository", func() {
 					patientTags := *patient.Tags
 					Expect(patientTags).To(ContainElement(randomPatientTags[0]))
 				}
+
+				// an empty tag returns patients without tags
+				noPatientTags := []primitive.ObjectID{}
+				randomPatient.Tags = &noPatientTags
+				update := patients.PatientUpdate{
+					ClinicId: randomPatient.ClinicId.Hex(),
+					UserId:   *randomPatient.UserId,
+					Patient:  randomPatient,
+				}
+				got, err := repo.Update(ctx, update)
+				Expect(err).To(Succeed())
+				noTags := []string{""}
+				filter.Tags = &noTags
+				result2, err := repo.List(ctx, &filter, pagination, nil)
+				Expect(err).To(Succeed())
+				Expect(len(result2.Patients)).To(Equal(1))
+				result2PatientUserIDs := []string{}
+				for _, patient := range result2.Patients {
+					result2PatientUserIDs = append(result2PatientUserIDs, *patient.UserId)
+				}
+				Expect(result2PatientUserIDs).To(ContainElement(*got.UserId))
 			})
 
 			It("filters by patient site correctly", func() {
