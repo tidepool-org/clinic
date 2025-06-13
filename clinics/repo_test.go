@@ -196,6 +196,23 @@ var _ = Describe("Clinics", func() {
 
 			Expect(th.Repo.CreateSite(ctx, th.Clinic.Id.Hex(), site)).To(Succeed())
 		})
+
+		It("fails when creating the site would exceed sites.MaxSitesPerClinic", func() {
+			ctx, th := newRepoTestHelper(GinkgoT())
+			for i := range sites.MaxSitesPerClinic - 1 {
+				th.createTestSite(fmt.Sprintf("Test Site %d", i))
+			}
+			site := th.newTestSite("Test Site over limit")
+			Expect(th.Repo.CreateSite(ctx, th.Clinic.Id.Hex(), site)).
+				To(MatchError(ContainSubstring("maximum")))
+		})
+
+		It("fails when the site's name is a duplicate within the clinic", func() {
+			ctx, th := newRepoTestHelper(GinkgoT())
+			site := th.newTestSite(th.Site.Name)
+			Expect(th.Repo.CreateSite(ctx, th.Clinic.Id.Hex(), site)).
+				To(MatchError(ContainSubstring("duplicate")))
+		})
 	})
 
 	Describe("DeleteSite", func() {
@@ -230,6 +247,14 @@ var _ = Describe("Clinics", func() {
 			Expect(err).To(Succeed())
 			Expect(len(sites)).To(Equal(1))
 			Expect(sites[0].Name).To(Equal(updatedSite.Name))
+		})
+
+		It("fails when the site's name is a duplicate within the clinic", func() {
+			ctx, th := newRepoTestHelper(GinkgoT())
+			secondSite := th.createTestSite(th.Site.Name + " (second)")
+			secondSite.Name = th.Site.Name
+			Expect(th.Repo.UpdateSite(ctx, th.Clinic.Id.Hex(), secondSite.Id.Hex(), secondSite)).
+				To(MatchError(ContainSubstring("duplicate")))
 		})
 	})
 })
@@ -300,4 +325,24 @@ func (r *repoTestHelper) newTestSite(name string) *sites.Site {
 		Name: name,
 		Id:   primitive.NewObjectID(),
 	}
+}
+
+// createTestSite creates the new site and returns it, making its Id available.
+func (r *repoTestHelper) createTestSite(name string) *sites.Site {
+	ctx := context.Background()
+	site := r.newTestSite(name)
+	if err := r.Repo.CreateSite(ctx, r.Clinic.Id.Hex(), site); err != nil {
+		r.t.Fatalf("failed to create new test site: %s\n%+v", err, site)
+	}
+	sites, err := r.Repo.ListSites(ctx, r.Clinic.Id.Hex())
+	if err != nil {
+		r.t.Fatalf("failed to list sites after creating test site: %s", err)
+	}
+	for _, site := range sites {
+		if site.Name == name {
+			return &site
+		}
+	}
+	r.t.Fatalf("failed to find newly created test site: %s", name)
+	return nil
 }
