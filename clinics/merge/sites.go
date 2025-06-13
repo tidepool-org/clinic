@@ -236,8 +236,8 @@ func incNumericSuffix(name string) (string, error) {
 	}
 	n, err := strconv.Atoi(matches[1])
 	if err != nil {
-		// This can only happen if siteNameSuffix is faulty.
-		return "", fmt.Errorf("highly strange error in incNumericSuffix")
+		// This can only happen if siteNameSuffix, the regular expression itself, is faulty.
+		return "", fmt.Errorf("unable to parse site name suffix: %s", name)
 	}
 	base := name[:len(name)-len(matches[0])]
 	return fmt.Sprintf("%s (%d)", base, n+1), nil

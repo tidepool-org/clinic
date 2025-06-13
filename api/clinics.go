@@ -1,13 +1,11 @@
 package api
 
 import (
-	stderrors "errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -529,9 +527,6 @@ func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
 func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
 	ctx := ec.Request().Context()
 	if err := h.ClinicsManager.DeleteSite(ctx, clinicId, siteId); err != nil {
-		if stderrors.Is(err, mongo.ErrNoDocuments) {
-			return errors.NotFound
-		}
 		return err
 	}
 	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
@@ -557,9 +552,6 @@ func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 		return errors.BadRequest
 	}
 	if err := h.ClinicsManager.UpdateSite(ctx, clinicId, siteId, site); err != nil {
-		if stderrors.Is(err, mongo.ErrNoDocuments) {
-			return errors.NotFound
-		}
 		return err
 	}
 	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)

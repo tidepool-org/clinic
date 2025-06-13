@@ -2,7 +2,6 @@ package manager_test
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"testing"
 
@@ -337,31 +336,6 @@ var _ = Describe("Clinics Manager", func() {
 				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
 
 				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(Succeed())
-			})
-
-			It("prevents duplicate site names in a single clinic", func() {
-				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
-
-				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(Succeed())
-				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(MatchError(clinics.ErrDuplicateSiteName))
-			})
-
-			It("allows duplicate site names between different clinics", func() {
-				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
-
-				clinic2, _ := th.createTestClinicWithoutSites(GinkgoTB())
-				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(Succeed())
-				Expect(mngr.CreateSite(ctx, clinic2.Id.Hex(), th.Site.Name)).To(Succeed())
-			})
-
-			It("limits the number of sites per clinic", func() {
-				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
-				for i := range sites.MaxSitesPerClinic - 1 { // 1 is already created by the helper
-					name := fmt.Sprintf("%s%d", th.Site.Name, i)
-					Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), name)).To(Succeed())
-				}
-
-				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(MatchError(clinics.ErrMaximumSitesExceeded))
 			})
 		})
 

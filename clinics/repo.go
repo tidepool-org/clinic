@@ -66,14 +66,6 @@ func (c *repository) Initialize(ctx context.Context) error {
 				SetUnique(true).
 				SetName("UniqueEHRSourceFacility").
 				SetPartialFilterExpression(bson.D{{Key: "ehrSettings.sourceId", Value: bson.M{"$exists": true}}}),
-		}, {
-			Keys: bson.D{
-				{Key: "_id", Value: 1},
-				{Key: "sites.*.name", Value: 1},
-			},
-			Options: options.Index().
-				SetUnique(true).
-				SetName("UniqueSiteNamesPerClinic"),
 		},
 	})
 	return err
@@ -560,7 +552,13 @@ func (c *repository) UpdatePatientCount(ctx context.Context, id string, patientC
 	return err
 }
 
+// CreateSite while checking constraints.
+//
+// This method is expected to be run in a transaction.
 func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) error {
+	if err := c.maintainSitesConstraints(ctx, clinicId, site.Name); err != nil {
+		return err
+	}
 	id, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
 		return err
@@ -619,6 +617,9 @@ func (c *repository) ListSites(ctx context.Context, clinicId string) ([]sites.Si
 }
 
 func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	if err := c.maintainSitesConstraints(ctx, clinicId, site.Name); err != nil {
+		return err
+	}
 	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
 		return err
@@ -641,6 +642,20 @@ func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, si
 	}
 	if res.ModifiedCount != 1 {
 		return ErrNotFound
+	}
+	return nil
+}
+
+func (c *repository) maintainSitesConstraints(ctx context.Context, clinicId, name string) error {
+	existingSites, err := c.ListSites(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	if sites.SiteExistsWithName(existingSites, name) {
+		return ErrDuplicateSiteName
+	}
+	if len(existingSites) >= sites.MaxSitesPerClinic {
+		return ErrMaximumSitesExceeded
 	}
 	return nil
 }
