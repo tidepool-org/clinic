@@ -302,22 +302,12 @@ func (c *manager) CreateSite(ctx context.Context, clinicId, name string) error {
 	return nil
 }
 
-// createSite after checking containts.
+// createSite after checking constraints.
 //
-// This should be run in a transaction to prevent races.
+// This should be run in a transaction, because clinics.Service.CreateSite needs it to
+// prevent races.
 func (c *manager) createSite(ctx context.Context, clinicId, name string) error {
-	clinic, err := c.clinics.Get(ctx, clinicId)
-	if err != nil {
-		return err
-	}
-	if exists := sites.SiteExistsWithName(clinic.Sites, name); exists {
-		return clinics.ErrDuplicateSiteName
-	}
-	if len(clinic.Sites) >= sites.MaxSitesPerClinic {
-		return clinics.ErrMaximumSitesExceeded
-	}
-	site := sites.New(name)
-	if err := c.clinics.CreateSite(ctx, clinicId, site); err != nil {
+	if err := c.clinics.CreateSite(ctx, clinicId, sites.New(name)); err != nil {
 		return err
 	}
 	return nil
