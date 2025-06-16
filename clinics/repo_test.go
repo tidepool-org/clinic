@@ -199,7 +199,7 @@ var _ = Describe("Clinics", func() {
 
 		It("fails when creating the site would exceed sites.MaxSitesPerClinic", func() {
 			ctx, th := newRepoTestHelper(GinkgoT())
-			for i := range sites.MaxSitesPerClinic - 1 {
+			for i := len(th.Clinic.Sites); i < sites.MaxSitesPerClinic; i++ {
 				th.createTestSite(fmt.Sprintf("Test Site %d", i))
 			}
 			site := th.newTestSite("Test Site over limit")
@@ -249,6 +249,17 @@ var _ = Describe("Clinics", func() {
 			Expect(sites[0].Name).To(Equal(updatedSite.Name))
 		})
 
+		It("succeeds when renaming a site while at max number of sites", func() {
+			ctx, th := newRepoTestHelper(GinkgoT())
+			for i := len(th.Clinic.Sites); i < sites.MaxSitesPerClinic; i++ {
+				th.createTestSite(fmt.Sprintf("Test Site %d", i))
+			}
+			renamedSite := th.Site
+			renamedSite.Name += " (renamed)"
+			Expect(th.Repo.UpdateSite(ctx, th.Clinic.Id.Hex(), renamedSite.Id.Hex(), renamedSite)).
+				To(Succeed())
+		})
+
 		It("fails when the site's name is a duplicate within the clinic", func() {
 			ctx, th := newRepoTestHelper(GinkgoT())
 			secondSite := th.createTestSite(th.Site.Name + " (second)")
@@ -261,7 +272,7 @@ var _ = Describe("Clinics", func() {
 
 func genRandomTags(n int) []clinics.PatientTag {
 	tags := make([]clinics.PatientTag, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		tags[i] = clinics.PatientTag{
 			Name: fmt.Sprintf("tag%d", i),
 		}
@@ -300,7 +311,17 @@ func newRepoTestHelper(t FullGinkgoTInterface) (context.Context, *repoTestHelper
 	if err := repo.CreateSite(ctx, clinic.Id.Hex(), site); err != nil {
 		t.Fatalf("failed to create initial site: %s", err)
 	}
-	th.Site = site
+	clinic, err = th.Repo.Get(ctx, clinic.Id.Hex()) // refresh to grab the newly-created site.
+	if err != nil {
+		t.Fatalf("failed to re-fetch clinic: %s", err)
+	}
+	th.Clinic = clinic
+	for _, clinicSite := range th.Clinic.Sites { // refresh the site too, to get its id.
+		if clinicSite.Name == site.Name {
+			th.Site = &clinicSite
+			break
+		}
+	}
 	return ctx, th
 }
 
