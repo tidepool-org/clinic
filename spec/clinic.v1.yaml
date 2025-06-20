@@ -3613,10 +3613,9 @@ components:
       title: Summary ID
       description: Summary Unique Identifier
       type: string
-      minLength: 24
+      minLength: 0
       maxLength: 24
-      pattern: ^[a-f0-9]{24}$
-      readOnly: true
+      pattern: ^[a-f0-9]{0,24}$
       example: 2fe2488217ee43e1b2e83c2f
     summaryConfig.v1:
       type: object
@@ -4567,6 +4566,7 @@ components:
           readOnly: true
         summary:
           $ref: '#/components/schemas/patientSummary.v1'
+          readOnly: true
         reviews:
           type: array
           nullable: true
@@ -4612,7 +4612,7 @@ components:
       minLength: 32
       maxLength: 32
       example: Sds2PHMALZrmt++JyD5mIjLkZruJldiM
-    type.v1:
+    confirmation-type.v1:
       title: Confirmation Type
       type: string
       enum:
@@ -4703,7 +4703,7 @@ components:
         key:
           $ref: '#/components/schemas/key.v1'
         type:
-          $ref: '#/components/schemas/type.v1'
+          $ref: '#/components/schemas/confirmation-type.v1'
         status:
           $ref: '#/components/schemas/status.v1'
         email:

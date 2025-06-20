@@ -157,6 +157,7 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		UserId:   patientId,
 		Patient:  NewPatient(dto),
 	}
+
 	patient, err := h.Patients.Update(ctx, update)
 	if err != nil {
 		return err
