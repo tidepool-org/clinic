@@ -842,7 +842,7 @@ func (mr *MockClientInterfaceMockRecorder) GetMRNSettings(ctx, clinicId any, req
 }
 
 // GetMigration mocks base method.
-func (m *MockClientInterface) GetMigration(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) GetMigration(ctx context.Context, clinicId ClinicIdV1, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId}
 	for _, a := range reqEditors {
@@ -1602,7 +1602,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdateMembershipRestrictionsWithBody(
 }
 
 // UpdateMigration mocks base method.
-func (m *MockClientInterface) UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdateMigration(ctx context.Context, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId, body}
 	for _, a := range reqEditors {
@@ -1622,7 +1622,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdateMigration(ctx, clinicId, userId
 }
 
 // UpdateMigrationWithBody mocks base method.
-func (m *MockClientInterface) UpdateMigrationWithBody(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdateMigrationWithBody(ctx context.Context, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId, contentType, body}
 	for _, a := range reqEditors {
@@ -2886,7 +2886,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetMRNSettingsWithRespon
 }
 
 // GetMigrationWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) GetMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*GetMigrationResponse, error) {
+func (m *MockClientWithResponsesInterface) GetMigrationWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, reqEditors ...RequestEditorFn) (*GetMigrationResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId}
 	for _, a := range reqEditors {
@@ -3646,7 +3646,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateMembershipRestrict
 }
 
 // UpdateMigrationWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId, contentType, body}
 	for _, a := range reqEditors {
@@ -3666,7 +3666,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateMigrationWithBodyW
 }
 
 // UpdateMigrationWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdateMigrationWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId, body}
 	for _, a := range reqEditors {

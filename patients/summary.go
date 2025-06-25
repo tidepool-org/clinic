@@ -1,6 +1,8 @@
 package patients
 
-import "time"
+import (
+	"time"
+)
 
 type PatientBGMPeriod struct {
 	AverageDailyRecords           *float64 `bson:"averageDailyRecords,omitempty"`
