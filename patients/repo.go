@@ -703,12 +703,11 @@ func (r *repository) RescheduleLastSubscriptionOrderForPatient(ctx context.Conte
 	}
 
 	params := RescheduleOrderPipelineParams{
-		clinicIds:                clinicIds,
-		userId:                   &userId,
-		subscription:             subscription,
-		ordersCollection:         ordersCollection,
-		targetCollection:         targetCollection,
-		includePrecedingDocument: true,
+		clinicIds:        clinicIds,
+		userId:           &userId,
+		subscription:     subscription,
+		ordersCollection: ordersCollection,
+		targetCollection: targetCollection,
 	}
 
 	pipeline := reschedulePipeline(params)
@@ -1359,12 +1358,11 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 }
 
 type RescheduleOrderPipelineParams struct {
-	clinicIds                []string
-	userId                   *string
-	subscription             string
-	ordersCollection         string
-	targetCollection         string
-	includePrecedingDocument bool
+	clinicIds        []string
+	userId           *string
+	subscription     string
+	ordersCollection string
+	targetCollection string
 }
 
 func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
@@ -1411,33 +1409,31 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 		},
 	}
 
-	if params.includePrecedingDocument {
-		pipeline = append(pipeline, bson.M{
-			// Get the preceding scheduled order if it is within the configured period
-			"$lookup": bson.M{
-				"from":         params.targetCollection,
-				"as":           "precedingDocument",
-				"localField":   "lastMatchedOrderRef.id",
-				"foreignField": "lastMatchedOrder._id",
-				"pipeline": []bson.M{
-					{
-						"$sort": bson.M{
-							"createdTime": -1,
-						},
+	pipeline = append(pipeline, bson.M{
+		// Get the preceding scheduled order
+		"$lookup": bson.M{
+			"from":         params.targetCollection,
+			"as":           "precedingDocument",
+			"localField":   "lastMatchedOrderRef.id",
+			"foreignField": "lastMatchedOrder._id",
+			"pipeline": []bson.M{
+				{
+					"$sort": bson.M{
+						"createdTime": -1,
 					},
-					{
-						"$limit": 1,
-					},
-					{
-						"$project": bson.M{
-							"_id":         1,
-							"createdTime": 1,
-						},
+				},
+				{
+					"$limit": 1,
+				},
+				{
+					"$project": bson.M{
+						"_id":         1,
+						"createdTime": 1,
 					},
 				},
 			},
-		})
-	}
+		},
+	})
 
 	pipeline = append(pipeline,
 		bson.M{
