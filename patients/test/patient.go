@@ -2,13 +2,14 @@ package test
 
 import (
 	"fmt"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/test"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 var permissions = []string{"view", "upload", "note", "custodian"}

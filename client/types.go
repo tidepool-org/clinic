@@ -1178,7 +1178,8 @@ type ClinicV1 struct {
 	PreferredBgUnits ClinicV1PreferredBgUnits `json:"preferredBgUnits"`
 
 	// ShareCode Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
-	ShareCode *ShareCodeV1 `json:"shareCode,omitempty"`
+	ShareCode *ShareCodeV1    `json:"shareCode,omitempty"`
+	Sites     *[]ClinicSiteV1 `json:"sites,omitempty"`
 
 	// State State or province. In the U.S., typically something like `CA` or `California`.
 	State                   *StateV1                   `json:"state,omitempty"`
@@ -1201,6 +1202,21 @@ type ClinicV1PreferredBgUnits string
 
 // ClinicIdV1 Clinic identifier.
 type ClinicIdV1 = string
+
+// ClinicSiteV1 defines model for clinicSite.v1.
+type ClinicSiteV1 struct {
+	// Id String representation of a resource id
+	Id string `json:"id"`
+
+	// Name The site description.
+	Name string `json:"name"`
+
+	// Patients The number of patients associated with the site.
+	Patients int `json:"patients,omitempty"`
+}
+
+// ClinicSitesV1 defines model for clinicSites.v1.
+type ClinicSitesV1 = []ClinicSiteV1
 
 // ClinicTimezoneV1 defines model for clinicTimezone.v1.
 type ClinicTimezoneV1 string
@@ -1261,6 +1277,7 @@ type CreatePatientV1 struct {
 	// Mrn The medical record number of the patient
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
+	SiteIds     *SiteIdsV1            `json:"siteIds"`
 	Tags        *PatientTagIdsV1      `json:"tags"`
 }
 
@@ -1496,6 +1513,7 @@ type PatientV1 struct {
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
 	Reviews     []PatientReviewV1     `json:"reviews"`
+	Sites       []SiteV1              `json:"sites"`
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummaryV1 `json:"summary,omitempty"`
@@ -1634,6 +1652,24 @@ type ScheduledReportsV1OnUploadNoteEventType string
 
 // ShareCodeV1 Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
 type ShareCodeV1 = string
+
+// SiteV1 A clinic's physical or logical location.
+type SiteV1 struct {
+	// Id String representation of a resource id
+	Id string `json:"id"`
+
+	// Name The site description.
+	Name string `json:"name"`
+}
+
+// SiteIdsV1 defines model for siteIds.v1.
+type SiteIdsV1 = []string
+
+// SitePatientsV1 Site properties specific to a clinic.
+type SitePatientsV1 struct {
+	// Patients The number of patients associated with the site.
+	Patients int `json:"patients,omitempty"`
+}
 
 // StateV1 State or province. In the U.S., typically something like `CA` or `California`.
 type StateV1 = string
@@ -1859,6 +1895,9 @@ type Search = string
 
 // ShareCode defines model for shareCode.
 type ShareCode = string
+
+// SiteId defines model for siteId.
+type SiteId = string
 
 // Sort defines model for sort.
 type Sort = string
@@ -2261,6 +2300,9 @@ type ListPatientsParams struct {
 
 	// Tags Comma-separated list of patient tag IDs
 	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+
+	// Sites Comma-separated list of clinic site IDs
+	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.
@@ -2376,6 +2418,12 @@ type UpdateMRNSettingsJSONRequestBody = MrnSettingsV1
 
 // UpdatePatientCountSettingsJSONRequestBody defines body for UpdatePatientCountSettings for application/json ContentType.
 type UpdatePatientCountSettingsJSONRequestBody = PatientCountSettingsV1
+
+// CreateSiteJSONRequestBody defines body for CreateSite for application/json ContentType.
+type CreateSiteJSONRequestBody = SiteV1
+
+// UpdateSiteJSONRequestBody defines body for UpdateSite for application/json ContentType.
+type UpdateSiteJSONRequestBody = SiteV1
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications

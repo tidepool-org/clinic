@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -64,7 +65,7 @@ func (c *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetUnique(true).
 				SetName("UniqueEHRSourceFacility").
-				SetPartialFilterExpression(bson.D{{"ehrSettings.sourceId", bson.M{"$exists": true}}}),
+				SetPartialFilterExpression(bson.D{{Key: "ehrSettings.sourceId", Value: bson.M{"$exists": true}}}),
 		},
 	})
 	return err
@@ -511,7 +512,7 @@ func (c *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 			},
 		},
 		"$set": bson.M{
-			"updatedTime":          time.Now(),
+			"updatedTime": time.Now(),
 		},
 	}
 
@@ -522,7 +523,6 @@ func (c *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 
 	return err
 }
-
 
 func (c *repository) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
 	clinic, err := c.Get(ctx, clinicId)
@@ -550,6 +550,125 @@ func (c *repository) UpdatePatientCount(ctx context.Context, id string, patientC
 	}
 
 	return err
+}
+
+// CreateSite while checking constraints.
+//
+// This method is expected to be run in a transaction.
+func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) error {
+	if err := c.maintainSitesConstraintsOnCreate(ctx, clinicId, site.Name); err != nil {
+		return err
+	}
+	id, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	if site.Id.IsZero() {
+		site.Id = primitive.NewObjectID()
+	}
+	selector := bson.M{"_id": id}
+	update := bson.M{
+		"$push":        bson.M{"sites": site},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	res := c.collection.FindOneAndUpdate(ctx, selector, update)
+	if err := res.Err(); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ErrNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) error {
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return err
+	}
+	selector := bson.M{
+		"_id":      clinicOID,
+		"sites.id": siteOID,
+	}
+	update := bson.M{
+		"$pull":        bson.M{"sites": bson.M{"id": siteOID}},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	res, err := c.collection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount != 1 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (c *repository) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
+	clinic, err := c.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	return clinic.Sites, nil
+}
+
+func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	if err := c.maintainSitesConstraintsOnUpdate(ctx, clinicId, site.Name); err != nil {
+		return err
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return err
+	}
+	selector := bson.M{
+		"_id":      clinicOID,
+		"sites.id": siteOID,
+	}
+	update := bson.M{
+		"$set":         bson.M{"sites.$.name": site.Name},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	res, err := c.collection.UpdateOne(ctx, selector, update)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount != 1 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (c *repository) maintainSitesConstraintsOnCreate(ctx context.Context, clinicId, name string) error {
+	existingSites, err := c.ListSites(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	if sites.SiteExistsWithName(existingSites, name) {
+		return ErrDuplicateSiteName
+	}
+	if len(existingSites) >= sites.MaxSitesPerClinic {
+		return ErrMaximumSitesExceeded
+	}
+	return nil
+}
+
+func (c *repository) maintainSitesConstraintsOnUpdate(ctx context.Context, clinicId, name string) error {
+	existingSites, err := c.ListSites(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	if sites.SiteExistsWithName(existingSites, name) {
+		return ErrDuplicateSiteName
+	}
+	return nil
 }
 
 func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
