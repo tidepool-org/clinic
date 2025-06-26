@@ -1299,12 +1299,6 @@ type EhrDestinationsV1 struct {
 	Results string `json:"results"`
 }
 
-// EhrFacilityV1 defines model for ehrFacility.v1.
-type EhrFacilityV1 struct {
-	// Name Ordering Facility Name
-	Name string `json:"name"`
-}
-
 // EhrFlowsheetSettingsV1 defines model for ehrFlowsheetSettings.v1.
 type EhrFlowsheetSettingsV1 struct {
 	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
@@ -1369,7 +1363,6 @@ type EhrSettingsV1 struct {
 
 	// Enabled Enable or disable the EHR integration
 	Enabled        bool                   `json:"enabled"`
-	Facility       *EhrFacilityV1         `json:"facility,omitempty"`
 	Flowsheets     EhrFlowsheetSettingsV1 `json:"flowsheets"`
 	MrnIdType      string                 `json:"mrnIdType"`
 	ProcedureCodes EhrProceduresV1        `json:"procedureCodes"`

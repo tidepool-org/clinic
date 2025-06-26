@@ -703,11 +703,6 @@ func NewEHRSettings(dto EhrSettingsV1) *clinics.EHRSettings {
 			Results:   dto.DestinationIds.Results,
 		}
 	}
-	if dto.Facility != nil {
-		settings.Facility = &clinics.EHRFacility{
-			Name: dto.Facility.Name,
-		}
-	}
 
 	return settings
 }
@@ -748,11 +743,6 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EhrSettingsV1 {
 			Flowsheet: settings.DestinationIds.Flowsheet,
 			Notes:     settings.DestinationIds.Notes,
 			Results:   settings.DestinationIds.Results,
-		}
-	}
-	if settings.Facility != nil {
-		dto.Facility = &EhrFacilityV1{
-			Name: settings.Facility.Name,
 		}
 	}
 	if settings.ScheduledReports.Cadence != "" {

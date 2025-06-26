@@ -4760,17 +4760,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/membershipRestriction.v1'
-    ehrFacility.v1:
-      title: Facility
-      x-stoplight:
-        id: 0lyqf8tfdtnu0
-      type: object
-      properties:
-        name:
-          type: string
-          description: 'Ordering Facility Name '
-      required:
-        - name
     ehrDestinations.v1:
       title: Default Redox destination ID and per-model overrides
       x-stoplight:
@@ -4888,8 +4877,6 @@ components:
         enabled:
           type: boolean
           description: Enable or disable the EHR integration
-        facility:
-          $ref: '#/components/schemas/ehrFacility.v1'
         sourceId:
           type: string
         destinationIds:
