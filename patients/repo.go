@@ -1322,14 +1322,25 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	}
 
 	{
+		// This specifically catches users who:
+		// -  Have never had cgm data, resulting in a missing lastData field
+		// OR
+		// - Have no data within the last 8h
+		//    AND either of the following:
+		//    - Have no data within the cutoff, typically the period length being looked at, subtracted from now
+		//    - Have a dexcom session, and it is not successfully connected
 		selector := bson.M{
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
 			"$or": bson.A{
-				bson.M{"summary.cgmStats.dates.lastData": bson.M{"$not": bson.M{"$gte": params.LastDataCutoff}}},
-				bson.M{"dataSources": bson.M{
-					"$elemMatch": bson.M{"providerName": "dexcom", "state": bson.M{"$ne": "connected"}}},
-				},
+				bson.M{"summary.cgmStats.dates.lastData": nil},
+				bson.M{"$and": bson.A{
+					bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": time.Now().UTC().Add(-8 * time.Hour)}},
+					bson.M{"$or": bson.A{
+						bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": params.LastDataCutoff}},
+						bson.M{"dataSources": bson.M{"$elemMatch": bson.M{"providerName": "dexcom", "state": bson.M{"$ne": "connected"}}}},
+					}},
+				}},
 			},
 		}
 
