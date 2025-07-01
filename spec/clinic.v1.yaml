@@ -2,26 +2,37 @@ openapi: 3.0.0
 info:
   title: Clinics API
   version: '1.0'
-  description: 'Web service that stores information about clinics, clinicians and their patients'
+  description: Web service that stores information about clinics, clinicians and their patients
   contact:
     name: Tidepool
-    url: 'https://www.tidepool.org'
+    url: https://www.tidepool.org
     email: support@tidepool.org
   license:
     name: BSD-2-Clause
-    url: 'https://github.com/tidepool-org/clinic/blob/master/LICENSE'
-  x-tidepool-service: 'https://github.com/tidepool-org/clinic/'
+    url: https://github.com/tidepool-org/clinic/blob/master/LICENSE
+  x-tidepool-service: https://github.com/tidepool-org/clinic/
 servers:
-  - url: 'https://external.integration.tidepool.org'
+  - url: https://external.integration.tidepool.org
     description: integration
-  - url: 'https://api.tidepool.org'
+  - url: https://api.tidepool.org
     description: production
-  - url: 'https://dev1.dev.tidepool.org'
+  - url: https://dev1.dev.tidepool.org
     description: dev1
-  - url: 'https://qa1.development.tidepool.org'
+  - url: https://qa1.development.tidepool.org
     description: qa1
-  - url: 'https://qa2.development.tidepool.org'
+  - url: https://qa2.development.tidepool.org
     description: qa2
+security:
+  - sessionToken: []
+tags:
+  - name: Clinics
+    description: Manage clinics, clinians and patients.
+  - name: Confirmations
+    description: Manage confirmations for account creation, sharing invites, etc.
+  - name: Internal
+    description: APIs intended for internal use by Tidepool.
+  - name: Redox
+    description: Public endpoints invoked by Redox.
 paths:
   /v1/clinics:
     get:
@@ -34,25 +45,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinics'
+                $ref: '#/components/schemas/clinics.v1'
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/error.v1'
         '403':
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/error.v1'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/error.v1'
       operationId: ListClinics
       description: Retrieve the list of clinics
       parameters:
@@ -76,7 +87,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinic'
+                $ref: '#/components/schemas/clinic.v1'
             application/xml:
               schema:
                 type: object
@@ -91,13 +102,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Clinic'
+              $ref: '#/components/schemas/clinic.v1'
       description: Create a new clinic
       x-roles: []
       tags:
         - Clinics
       parameters: []
-  '/v1/clinics/share_code/{shareCode}':
+  /v1/clinics/share_code/{shareCode}:
     parameters:
       - schema:
           type: string
@@ -115,10 +126,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinic'
+                $ref: '#/components/schemas/clinic.v1'
       operationId: GetClinicByShareCode
       description: Retrieve a clinic object with a share code
-  '/v1/clinics/{clinicId}':
+  /v1/clinics/{clinicId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -131,7 +142,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinic'
+                $ref: '#/components/schemas/clinic.v1'
           links:
             get-clinicians:
               operationId: get-clinics-clinicid-clinicians
@@ -159,7 +170,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinic'
+                $ref: '#/components/schemas/clinic.v1'
         '400':
           description: Bad Request
         '403':
@@ -171,7 +182,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Clinic'
+              $ref: '#/components/schemas/clinic.v1'
           application/xml:
             schema:
               type: object
@@ -193,7 +204,7 @@ paths:
       description: Deletes a clinic if there are no connected patient accounts (besides demo accounts).
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/clinicians':
+  /v1/clinics/{clinicId}/clinicians:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -206,7 +217,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinicians'
+                $ref: '#/components/schemas/clinicians.v1'
       operationId: ListClinicians
       description: 'Retrieve the list of clinic members. '
       parameters:
@@ -226,10 +237,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Clinician'
+              $ref: '#/components/schemas/clinician.v1'
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/tide_report':
+  /v1/clinics/{clinicId}/tide_report:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -243,7 +254,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tide'
+                $ref: '#/components/schemas/tideResponse.v1'
       operationId: TideReport
       parameters:
         - schema:
@@ -257,7 +268,7 @@ paths:
             type: array
             items:
               type: string
-              format: '^[a-f0-9]{24}$'
+              format: ^[a-f0-9]{24}$
           in: query
           name: tags
           description: Comma-separated list of patient tag IDs
@@ -269,7 +280,7 @@ paths:
           in: query
           name: lastDataCutoff
           description: Inclusive
-  '/v1/clinics/{clinicId}/patients':
+  /v1/clinics/{clinicId}/patients:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -282,7 +293,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientsResponse'
+                $ref: '#/components/schemas/patientsResponse.v1'
       operationId: ListPatients
       parameters:
         - $ref: '#/components/parameters/search'
@@ -302,13 +313,13 @@ paths:
             example: 7d
           in: query
           name: period
-          description: 'Time Period to display, filter, and sort'
+          description: Time Period to display, filter, and sort
         - schema:
             type: boolean
           in: query
           name: offsetPeriods
           required: false
-          description: 'If we should display, filter, and sort based on the offset periods or default periods'
+          description: If we should display, filter, and sort based on the offset periods or default periods
         - schema:
             type: string
             format: date-time
@@ -329,47 +340,47 @@ paths:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeCGMUsePercent
-          description: 'Percentage of time [0.0-1.0]  of CGM use'
+          description: Percentage of time [0.0-1.0]  of CGM use
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInVeryLowPercent
-          description: 'Percentage of time [0.0-1.0]  below 54 mg/dL'
+          description: Percentage of time [0.0-1.0]  below 54 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInAnyLowPercent
-          description: 'Percentage of time [0.0-1.0]  below 70 mg/dL'
+          description: Percentage of time [0.0-1.0]  below 70 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInLowPercent
-          description: 'Percentage of time [0.0-1.0]  in range 54-70 mg/dL'
+          description: Percentage of time [0.0-1.0]  in range 54-70 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInTargetPercent
-          description: 'Percentage of time [0.0-1.0]  in range 70-180 mg/dL'
+          description: Percentage of time [0.0-1.0]  in range 70-180 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInHighPercent
-          description: 'Percentage of time [0.0-1.0]  in range 180-250 mg/dL'
+          description: Percentage of time [0.0-1.0]  in range 180-250 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInVeryHighPercent
-          description: 'Percentage of time [0.0-1.0]  above 250 mg/dL'
+          description: Percentage of time [0.0-1.0]  above 250 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInExtremeHighPercent
-          description: 'Percentage of time [0.0-1.0]  above 350 mg/dL'
+          description: Percentage of time [0.0-1.0]  above 350 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: cgm.timeInAnyHighPercent
-          description: 'Percentage of time [0.0-1.0]  above 180 mg/dL'
+          description: Percentage of time [0.0-1.0]  above 180 mg/dL
         - schema:
             $ref: '#/components/schemas/IntFilter'
           in: query
@@ -494,42 +505,42 @@ paths:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInVeryLowPercent
-          description: 'Percentage of time [0.0-1.0]  below 54 mg/dL'
+          description: Percentage of time [0.0-1.0]  below 54 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInAnyLowPercent
-          description: 'Percentage of time [0.0-1.0]  below 70 mg/dL'
+          description: Percentage of time [0.0-1.0]  below 70 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInLowPercent
-          description: 'Percentage of time [0.0-1.0]  in range 54-70 mg/dL'
+          description: Percentage of time [0.0-1.0]  in range 54-70 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInTargetPercent
-          description: 'Percentage of time [0.0-1.0]  in range 70-180 mg/dL'
+          description: Percentage of time [0.0-1.0]  in range 70-180 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInHighPercent
-          description: 'Percentage of time [0.0-1.0]  in range 180-250 mg/dL'
+          description: Percentage of time [0.0-1.0]  in range 180-250 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInVeryHighPercent
-          description: 'Percentage of time [0.0-1.0]  above 250 mg/dL'
+          description: Percentage of time [0.0-1.0]  above 250 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInExtremeHighPercent
-          description: 'Percentage of time [0.0-1.0]  above 350 mg/dL'
+          description: Percentage of time [0.0-1.0]  above 350 mg/dL
         - schema:
             $ref: '#/components/schemas/FloatFilter'
           in: query
           name: bgm.timeInAnyHighPercent
-          description: 'Percentage of time [0.0-1.0]  above 180 mg/dL'
+          description: Percentage of time [0.0-1.0]  above 180 mg/dL
         - schema:
             $ref: '#/components/schemas/IntFilter'
           in: query
@@ -863,7 +874,7 @@ paths:
             type: array
             items:
               type: string
-              format: '^[a-f0-9]{24}$'
+              format: ^[a-f0-9]{24}$
           in: query
           name: tags
           description: Comma-separated list of patient tag IDs
@@ -879,16 +890,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Patient'
+                $ref: '#/components/schemas/patient.v1'
       description: Create a custodial account for a patient
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Patient'
+              $ref: '#/components/schemas/patient.v1'
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/patient_tags':
+  /v1/clinics/{clinicId}/patient_tags:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     post:
@@ -902,10 +913,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatientTag'
+              $ref: '#/components/schemas/patientTag.v1'
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/clinicians/{clinicianId}':
+  /v1/clinics/{clinicId}/clinicians/{clinicianId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/clinicianId'
@@ -919,7 +930,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinician'
+                $ref: '#/components/schemas/clinician.v1'
       operationId: GetClinician
       description: Retrieve a member of clinic given their user id
     put:
@@ -935,7 +946,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Clinician'
+              $ref: '#/components/schemas/clinician.v1'
     delete:
       summary: Delete Clinician
       operationId: DeleteClinician
@@ -945,7 +956,7 @@ paths:
       description: Removes a clinician from a clinic
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/patients/{patientId}':
+  /v1/clinics/{clinicId}/patients/{patientId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientId'
@@ -959,7 +970,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Patient'
+                $ref: '#/components/schemas/patient.v1'
       operationId: GetPatient
       description: Retrieve a patient of clinic given their user id
     post:
@@ -971,7 +982,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Patient'
+                $ref: '#/components/schemas/patient.v1'
       description: Internal endpoint for creating a patient from an existing user
       tags:
         - Clinics
@@ -979,7 +990,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreatePatient'
+              $ref: '#/components/schemas/createPatient.v1'
     put:
       summary: Update Patient
       operationId: UpdatePatient
@@ -989,13 +1000,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Patient'
+                $ref: '#/components/schemas/patient.v1'
       description: Update existing patient of a clinic
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Patient'
+              $ref: '#/components/schemas/patient.v1'
       tags:
         - Clinics
     delete:
@@ -1007,7 +1018,7 @@ paths:
       description: Deletes patient from a clinic. Requires the request to be made by a clinic admin or the currently authenticated user id to match the patient id.
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/patient_tags/{patientTagId}':
+  /v1/clinics/{clinicId}/patient_tags/{patientTagId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientTagId'
@@ -1024,7 +1035,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatientTag'
+              $ref: '#/components/schemas/patientTag.v1'
     delete:
       summary: Delete Patient Tag
       operationId: DeletePatientTag
@@ -1034,7 +1045,7 @@ paths:
       description: Removes a patient tag from a clinic and tagged patients
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/invites/clinicians':
+  /v1/clinics/{clinicId}/invites/clinicians:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     post:
@@ -1046,17 +1057,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinician'
+                $ref: '#/components/schemas/clinician.v1'
       description: Send an invite to clinician's email address to join a clinic.
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InviteClinician'
+              $ref: '#/components/schemas/inviteClinician.v1'
       tags:
         - Clinics
         - Confirmations
-  '/v1/clinics/{clinicId}/invites/clinicians/{inviteId}':
+  /v1/clinics/{clinicId}/invites/clinicians/{inviteId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/inviteId'
@@ -1069,7 +1080,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1v1~1clinics~1%7BclinicId%7D~1invites~1clinicians~1%7BinviteId%7D/get/responses/200/content/application~1json/schema'
+                $ref: '#/components/schemas/confirmation.v1'
       description: Resend invite to the email address of the clinician.
       tags:
         - Clinics
@@ -1093,112 +1104,11 @@ paths:
           content:
             application/json:
               schema:
-                title: Confirmation
-                type: object
-                properties:
-                  key:
-                    title: Confirmation key that uniquely identifies each confirmation
-                    type: string
-                    minLength: 32
-                    maxLength: 32
-                    example: Sds2PHMALZrmt++JyD5mIjLkZruJldiM
-                  type:
-                    title: Confirmation Type
-                    type: string
-                    enum:
-                      - password_reset
-                      - careteam_invitation
-                      - clinician_invitation
-                      - signup_confirmation
-                      - no_account
-                  status:
-                    title: Confirmation Status
-                    type: string
-                    enum:
-                      - pending
-                      - completed
-                      - canceled
-                      - declined
-                  email:
-                    $ref: '#/components/schemas/InviteClinician/properties/email'
-                  creatorId:
-                    $ref: '#/components/schemas/TidepoolUserId'
-                  created:
-                    $ref: '#/components/schemas/DateTime'
-                  modified:
-                    $ref: '#/components/schemas/DateTime'
-                  creator:
-                    title: Creator
-                    type: object
-                    properties:
-                      userid:
-                        $ref: '#/components/schemas/TidepoolUserId'
-                      profile:
-                        title: Creator user profile
-                        type: object
-                        properties:
-                          fullName:
-                            type: string
-                          patient:
-                            title: Patient User Profile
-                            type: object
-                            properties:
-                              birthday:
-                                title: Birthday
-                                type: string
-                                format: date
-                                example: '2012-08-30'
-                                x-go-type: string
-                              diagnosisDate:
-                                title: Diagnosis Date
-                                type: string
-                                format: date
-                                pattern: '^\d{4}-\d{2}-\d{2}$'
-                                example: '2013-05-09'
-                                x-go-type: string
-                              isOtherPerson:
-                                type: boolean
-                                example: false
-                              fullName:
-                                type: string
-                                example: James Jellyfish
-                        required:
-                          - fullName
-                          - patient
-                    required:
-                      - userid
-                      - profile
-                  context:
-                    type: string
-                  restrictions:
-                    title: Acceptance restrictions
-                    type: object
-                    properties:
-                      canAccept:
-                        type: boolean
-                        description: Whether the invite can be accepted by the current user
-                      requiredIdp:
-                        type: string
-                        description: Set if the user must be authenticated against a specific identity provider before they are able to accept the invite
-                    required:
-                      - canAccept
-                  expiresAt:
-                    title: Expiration Time
-                    type: string
-                    format: date-time
-                    description: 'If specified, the invitation will expire at the given date and time.'
-                    example: '2024-01-30T08:11:00Z'
-                required:
-                  - key
-                  - type
-                  - status
-                  - email
-                  - creatorId
-                  - created
+                $ref: '#/components/schemas/confirmation.v1'
       description: Retrieve an invitation sent to clinician to join the clinic
       tags:
         - Confirmations
-  '/v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician':
+  /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/inviteId'
@@ -1211,13 +1121,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinician'
+                $ref: '#/components/schemas/clinician.v1'
       description: Internal endpoint to associate a clinician to a user.
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssociateClinicianToUser'
+              $ref: '#/components/schemas/associateClinicianToUser.v1'
       tags:
         - Clinics
     delete:
@@ -1238,11 +1148,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinician'
+                $ref: '#/components/schemas/clinician.v1'
       description: Internal endpoint to retrieve invited clinician.
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/invites/patients':
+  /v1/clinics/{clinicId}/invites/patients:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -1255,7 +1165,7 @@ paths:
           description: OK
       operationId: GetPatientInvites
       description: Retrieve the list of all pending invites from users who would like to share their accounts with the clinic and become patients.
-  '/v1/clinics/{clinicId}/invites/patients/{inviteId}':
+  /v1/clinics/{clinicId}/invites/patients/{inviteId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/inviteId'
@@ -1274,7 +1184,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AcceptPatientInvitation'
-  '/v1/clinics/{clinicId}/patients/{patientId}/reviews':
+  /v1/clinics/{clinicId}/patients/{patientId}/reviews:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientId'
@@ -1287,7 +1197,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientReviews'
+                $ref: '#/components/schemas/patientReviews.v1'
       description: Update the patient's last reviewed date and clinician ID
       tags:
         - Clinics
@@ -1300,7 +1210,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientReviews'
+                $ref: '#/components/schemas/patientReviews.v1'
         '404':
           description: No review to delete
         '409':
@@ -1308,7 +1218,7 @@ paths:
       description: Revert the patient's last reviewed date to the previous set
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/patients/{patientId}/permissions':
+  /v1/clinics/{clinicId}/patients/{patientId}/permissions:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientId'
@@ -1321,7 +1231,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientReviews'
+                $ref: '#/components/schemas/patientPermissions.v1'
       description: |-
         Update permissions that a clinic has over a patient account. If all permissions are revoked as a result of the update, the patient profile will be removed from the clinic.
 
@@ -1332,9 +1242,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatientPermissions'
+              $ref: '#/components/schemas/patientPermissions.v1'
       parameters: []
-  '/v1/clinics/{clinicId}/patients/{patientId}/permissions/{permission}':
+  /v1/clinics/{clinicId}/patients/{patientId}/permissions/{permission}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientId'
@@ -1361,7 +1271,7 @@ paths:
       responses:
         '204':
           description: No Content
-  '/v1/patients/{userId}/clinics':
+  /v1/patients/{userId}/clinics:
     parameters:
       - $ref: '#/components/parameters/userId'
     get:
@@ -1374,13 +1284,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientClinicRelationships'
+                $ref: '#/components/schemas/patientClinicRelationships.v1'
       operationId: ListClinicsForPatient
       description: Get all clinics a user is a patient of
       parameters:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
-  '/v1/clinicians/{userId}/invites':
+  /v1/clinicians/{userId}/invites:
     parameters:
       - $ref: '#/components/parameters/userId'
     get:
@@ -1393,7 +1303,7 @@ paths:
           description: OK
       operationId: ListClinicianInvites
       description: Retrieve a list of the outstanding invites to join a clinic
-  '/v1/clinicians/{userId}/invites/{inviteId}':
+  /v1/clinicians/{userId}/invites/{inviteId}:
     parameters:
       - $ref: '#/components/parameters/userId'
       - $ref: '#/components/parameters/inviteId'
@@ -1416,12 +1326,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinician'
+                $ref: '#/components/schemas/clinician.v1'
       description: Accept an invite to join a clinic as clinician. The clinician will be associated to the currently authenticated user if the email in their profile matches the email of the invite.
       tags:
         - Clinics
         - Confirmations
-  '/v1/clinicians/{userId}/clinics':
+  /v1/clinicians/{userId}/clinics:
     parameters:
       - $ref: '#/components/parameters/userId'
     get:
@@ -1434,13 +1344,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClinicianClinicRelationships'
+                $ref: '#/components/schemas/clinicianClinicRelationships.v1'
       operationId: ListClinicsForClinician
       description: Returns a list of all clinics a clinician is a member of
       parameters:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
-  '/v1/clinics/{clinicId}/migrations':
+  /v1/clinics/{clinicId}/migrations:
     parameters:
       - schema:
           type: string
@@ -1455,7 +1365,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Migration'
+                $ref: '#/components/schemas/migration.v1'
       operationId: MigrateLegacyClinicianPatients
       tags:
         - Clinics
@@ -1465,7 +1375,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Migration'
+              $ref: '#/components/schemas/migration.v1'
     get:
       summary: Retrieve Migration Status
       operationId: ListMigrations
@@ -1475,12 +1385,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Migrations'
+                $ref: '#/components/schemas/migrations.v1'
       description: ListMigrations
       tags:
         - Clinics
         - Internal
-  '/v1/clinicians/{userId}/migrate':
+  /v1/clinicians/{userId}/migrate:
     parameters:
       - schema:
           type: string
@@ -1498,10 +1408,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Clinic'
+                $ref: '#/components/schemas/clinic.v1'
       operationId: EnableNewClinicExperience
       description: Internal only endpoint to enable new clinic experience for a legacy clinician account. Patients won't be migrated until the clinic details are populated and migration is explicitly kicked-off by blip.
-  '/v1/clinics/{clinicId}/migrate':
+  /v1/clinics/{clinicId}/migrate:
     parameters:
       - schema:
           type: string
@@ -1519,22 +1429,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Migration'
+                $ref: '#/components/schemas/migration.v1'
       operationId: TriggerInitialMigration
       description: Trigger the initial migration
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TriggerMigration'
-  '/v1/clinics/{clinicId}/migrations/{userId}':
+              $ref: '#/components/schemas/triggerMigration.v1'
+  /v1/clinics/{clinicId}/migrations/{userId}:
     parameters:
-      - description: Clinic ID
-        name: clinicId
-        in: path
-        required: true
-        schema:
-          $ref: '#/components/schemas/Id'
+      - $ref: '#/components/parameters/clinicId.v1'
       - $ref: '#/components/parameters/userId'
     get:
       summary: Get Migration
@@ -1547,7 +1452,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Migration'
+                $ref: '#/components/schemas/migration.v1'
       operationId: GetMigration
       description: Get a migration by user id
     patch:
@@ -1559,17 +1464,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Migration'
+                $ref: '#/components/schemas/migration.v1'
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MigrationUpdate'
+              $ref: '#/components/schemas/migrationUpdate.v1'
       description: Internal endpoint to update the status of a migration
       tags:
         - Clinics
         - Internal
-  '/v1/users/{userId}/clinics':
+  /v1/users/{userId}/clinics:
     parameters:
       - $ref: '#/components/parameters/userId'
     delete:
@@ -1604,7 +1509,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateUserDetails'
+              $ref: '#/components/schemas/updateUserDetails.v1'
       tags:
         - Clinics
         - Internal
@@ -1622,7 +1527,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ClinicianClinicRelationship'
+                  $ref: '#/components/schemas/clinicianClinicRelationship.v1'
       operationId: ListAllClinicians
       parameters:
         - $ref: '#/components/parameters/offset'
@@ -1630,7 +1535,7 @@ paths:
         - $ref: '#/components/parameters/createdTimeStart'
         - $ref: '#/components/parameters/createdTimeEnd'
       description: Returns list of all clinician/clinic relationships in the system. Internal endpoint used for reporting purposes.
-  '/v1/patients/{patientId}/summary':
+  /v1/patients/{patientId}/summary:
     parameters:
       - $ref: '#/components/parameters/patientId'
     post:
@@ -1649,9 +1554,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatientSummary'
+              $ref: '#/components/schemas/patientSummary.v1'
         description: ''
-  '/v1/patients/{userId}/data_sources':
+  /v1/summaries/{summaryId}/clinics:
+    parameters:
+      - $ref: '#/components/parameters/summaryId'
+    delete:
+      summary: DeletePatientSummary
+      operationId: DeletePatientSummary
+      responses:
+        '200':
+          description: OK
+        '204':
+          description: No Change
+      description: Internal endpoint which deletes the summary in all patient records which match the summary id.
+      tags:
+        - Clinics
+        - Internal
+  /v1/patients/{userId}/data_sources:
     parameters:
       - $ref: '#/components/parameters/userId'
     put:
@@ -1670,8 +1590,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DataSources'
-  '/v1/clinics/{clinicId}/tier':
+              $ref: '#/components/schemas/dataSources.v1'
+  /v1/clinics/{clinicId}/tier:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     post:
@@ -1689,7 +1609,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateTier'
-  '/v1/clinics/{clinicId}/suppressed_notifications':
+  /v1/clinics/{clinicId}/suppressed_notifications:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     post:
@@ -1706,7 +1626,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateSuppressedNotifications'
-  '/v1/clinics/{clinicId}/patients/{patientId}/upload_reminder':
+  /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientId'
@@ -1719,7 +1639,7 @@ paths:
       description: Sends upload reminder to the patient
       tags:
         - Clinics
-  '/v1/clinics/{clinicId}/patients/assign_tag/{patientTagId}':
+  /v1/clinics/{clinicId}/patients/assign_tag/{patientTagId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientTagId'
@@ -1731,7 +1651,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TidepoolUserIds'
+              $ref: '#/components/schemas/tidepoolUserIds.v1'
       responses:
         '200':
           description: OK
@@ -1739,7 +1659,7 @@ paths:
       tags:
         - Clinics
         - Internal
-  '/v1/clinics/{clinicId}/patients/delete_tag/{patientTagId}':
+  /v1/clinics/{clinicId}/patients/delete_tag/{patientTagId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientTagId'
@@ -1751,7 +1671,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TidepoolUserIds'
+              $ref: '#/components/schemas/tidepoolUserIds.v1'
       responses:
         '200':
           description: OK
@@ -1759,7 +1679,7 @@ paths:
       tags:
         - Clinics
         - Internal
-  '/v1/clinics/{clinicId}/membership_restrictions':
+  /v1/clinics/{clinicId}/membership_restrictions:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -1772,7 +1692,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MembershipRestrictions'
+                $ref: '#/components/schemas/membershipRestrictions.v1'
       operationId: ListMembershipRestrictions
       description: |-
         Returns a list of the membership restrictions that will be evaluated when a user joins a clinic.
@@ -1787,13 +1707,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MembershipRestrictions'
+                $ref: '#/components/schemas/membershipRestrictions.v1'
       description: An internal endpoint to update clinic membership restrictions
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MembershipRestrictions'
+              $ref: '#/components/schemas/membershipRestrictions.v1'
       x-internal: true
       tags:
         - Clinics
@@ -1830,7 +1750,7 @@ paths:
         - Clinics
       x-internal: true
       description: Internal endpoint for Redox challenge verification
-  '/v1/clinics/{clinicId}/settings/ehr':
+  /v1/clinics/{clinicId}/settings/ehr:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -1844,7 +1764,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EHRSettings'
+                $ref: '#/components/schemas/ehrSettings.v1'
       operationId: GetEHRSettings
       description: Returns EHR related settings
       x-internal: true
@@ -1863,7 +1783,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EHRSettings'
+              $ref: '#/components/schemas/ehrSettings.v1'
   /v1/redox/match:
     post:
       summary: Match Clinic and Patient
@@ -1874,7 +1794,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EHRMatchResponse'
+                $ref: '#/components/schemas/ehrMatchResponse.v1'
         '404':
           description: Not Found
       tags:
@@ -1892,9 +1812,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EHRMatchRequest'
+              $ref: '#/components/schemas/ehrMatchRequest.v1'
       x-internal: true
-  '/v1/clinics/{clinicId}/settings/mrn':
+  /v1/clinics/{clinicId}/settings/mrn:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -1908,7 +1828,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MRNSettings'
+                $ref: '#/components/schemas/mrnSettings.v1'
       operationId: GetMRNSettings
       x-internal: true
       description: Retrieve MRN settings
@@ -1926,8 +1846,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MRNSettings'
-  '/v1/clinics/{clinicId}/settings/patient_count':
+              $ref: '#/components/schemas/mrnSettings.v1'
+  /v1/clinics/{clinicId}/settings/patient_count:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -1942,7 +1862,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientCountSettings'
+                $ref: '#/components/schemas/patientCountSettings.v1'
       x-internal: true
     put:
       operationId: UpdatePatientCountSettings
@@ -1955,11 +1875,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatientCountSettings'
+              $ref: '#/components/schemas/patientCountSettings.v1'
       responses:
         '200':
           description: OK
-  '/v1/clinics/{clinicId}/patient_count':
+  /v1/clinics/{clinicId}/patient_count:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     get:
@@ -1974,8 +1894,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientCount'
-  '/v1/clinics/{clinicId}/ehr/sync':
+                $ref: '#/components/schemas/patientCount.v1'
+  /v1/clinics/{clinicId}/ehr/sync:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     post:
@@ -2004,7 +1924,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PatientClinicRelationships'
+                $ref: '#/components/schemas/patientClinicRelationships.v1'
       operationId: FindPatients
       description: Returns all patients to which the clinician has access to
       parameters:
@@ -2111,7 +2031,7 @@ paths:
           required: true
       x-internal: true
     parameters: []
-  '/v1/clinics/{clinicId}/service_accounts':
+  /v1/clinics/{clinicId}/service_accounts:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     post:
@@ -2125,12 +2045,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AddServiceAccount'
+              $ref: '#/components/schemas/addServiceAccount.v1'
       tags:
         - Clinics
         - Internal
       x-internal: true
-  '/v1/patients/{patientId}/ehr/sync':
+  /v1/patients/{patientId}/ehr/sync:
     parameters:
       - $ref: '#/components/parameters/patientId'
     post:
@@ -2147,7 +2067,7 @@ paths:
         - Clinics
         - Internal
       x-internal: true
-  '/v1/clinics/{clinicId}/reports/merge':
+  /v1/clinics/{clinicId}/reports/merge:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     post:
@@ -2163,9 +2083,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerateMergeReport'
+              $ref: '#/components/schemas/generateMergeReport.v1'
         description: ''
-  '/v1/clinics/{clinicId}/merge':
+  /v1/clinics/{clinicId}/merge:
     parameters:
       - $ref: '#/components/parameters/clinicId'
     post:
@@ -2178,19 +2098,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MergeClinic'
+              $ref: '#/components/schemas/mergeClinic.v1'
       tags:
         - Clinics
         - Internal
       x-internal: true
-      description: 'Merges tags, patients, clinicians, invites and share codes of the source clinic'
-  '/v1/clinics/{clinicId}/patients/{patientId}/connect/{providerId}':
+      description: Merges tags, patients, clinicians, invites and share codes of the source clinic
+  /v1/clinics/{clinicId}/patients/{patientId}/connect/{providerId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/patientId'
       - $ref: '#/components/parameters/providerId'
     post:
-      summary: ''
+      summary: Connect Provider
       operationId: ConnectProvider
       responses:
         '204':
@@ -2201,69 +2121,1074 @@ paths:
       description: Send a new request to the patient to connect a data provider
 components:
   schemas:
-    Error:
-      title: Error
+    clinics.v1:
+      type: array
+      items:
+        $ref: '#/components/schemas/clinic.v1'
+    clinicians.v1:
+      type: array
+      items:
+        $ref: '#/components/schemas/clinician.v1'
+    patients.v1:
+      type: array
+      items:
+        $ref: '#/components/schemas/patient.v1'
+    patientTag.v1:
+      type: object
+      title: Patient Tag
+      description: ''
+      properties:
+        id:
+          $ref: '#/components/schemas/objectid.v1'
+        name:
+          type: string
+          description: The tag display name
+          minLength: 1
+          maxLength: 20
+          pattern: ^[\p{L}\p{N}_+><-]{1}[\p{L}\p{N}\s_+><-]*$
+      required:
+        - id
+        - name
+    dataSources.v1:
+      type: array
+      items:
+        $ref: '#/components/schemas/dataSource.v1'
+    tidepoolUserIds.v1:
+      type: array
+      nullable: true
+      description: Array of Tidepool User IDs
+      items:
+        $ref: '#/components/schemas/tidepooluserid'
+      minItems: 1
+      maxItems: 1000
+      uniqueItems: true
+    patientClinicRelationship.v1:
+      title: PatientClinicRelationship
       type: object
       properties:
-        code:
-          type: integer
-          example: 404
-        message:
-          type: string
-          example: Requested resources was not found
+        patient:
+          $ref: '#/components/schemas/patient.v1'
+        clinic:
+          $ref: '#/components/schemas/clinic.v1'
       required:
-        - code
-        - message
-    Clinic:
+        - patient
+        - clinic
+    patientClinicRelationships.v1:
+      title: PatientClinicRelationships
+      type: array
+      items:
+        $ref: '#/components/schemas/patientClinicRelationship.v1'
+    createPatient.v1:
+      title: Create Patient
+      type: object
+      properties:
+        permissions:
+          $ref: '#/components/schemas/patientPermissions.v1'
+        isMigrated:
+          type: boolean
+        legacyClinicianId:
+          $ref: '#/components/schemas/tidepooluserid'
+        attestationSubmitted:
+          type: boolean
+        fullName:
+          type: string
+          description: The full name of the patient
+          minLength: 1
+        birthDate:
+          type: string
+          format: date
+          example: '2012-08-30'
+        mrn:
+          type: string
+          description: The medical record number of the patient
+          minLength: 1
+        tags:
+          $ref: '#/components/schemas/patientTagIds.v1'
+    associateClinicianToUser.v1:
+      title: Associate Clinician
+      type: object
+      properties:
+        userId:
+          type: string
+      required:
+        - userId
+    clinicianClinicRelationship.v1:
+      title: ClinicianClinicRelationship
+      type: object
+      properties:
+        clinician:
+          $ref: '#/components/schemas/clinician.v1'
+        clinic:
+          $ref: '#/components/schemas/clinic.v1'
+      required:
+        - clinician
+        - clinic
+    clinicianClinicRelationships.v1:
+      title: ClinicianClinicRelationships
+      type: array
+      items:
+        $ref: '#/components/schemas/clinicianClinicRelationship.v1'
+    migration.v1:
+      title: Migration
+      type: object
+      properties:
+        userId:
+          type: string
+          description: The user id of the legacy clinician account that needs to be migrated.
+          minLength: 1
+        status:
+          $ref: '#/components/schemas/migrationStatus.v1'
+        createdTime:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedTime:
+          type: string
+          format: date-time
+          readOnly: true
+        attestationTime:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - userId
+        - createdTime
+        - updatedTime
+    migrations.v1:
+      title: Migrations
+      type: array
+      items:
+        $ref: '#/components/schemas/migration.v1'
+    migrationUpdate.v1:
+      title: MigrationUpdate
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/migrationStatus.v1'
+      required:
+        - status
+    meta.v1:
+      title: Meta
+      type: object
+      properties:
+        count:
+          description: The number of items matching the filter
+          type: integer
+        totalCount:
+          description: The total number of items
+          type: integer
+    patientsResponse.v1:
+      title: PatientsResponse
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/patients.v1'
+        meta:
+          $ref: '#/components/schemas/meta.v1'
+    updateUserDetails.v1:
+      title: UpdateUserDetails
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+    triggerMigration.v1:
+      title: TriggerMigration
+      type: object
+      properties:
+        attestationSubmitted:
+          type: boolean
+    patientReviews.v1:
+      type: array
+      items:
+        $ref: '#/components/schemas/patientReview.v1'
+    FloatFilter:
+      type: string
+      pattern: ^(>=|>|<=|<)[+-]?((\d+(\.\d*)?)|(\.\d+))$
+      example: '>=5.5'
+    IntFilter:
+      type: string
+      pattern: ^(>=|>|<=|<)[+-]?\d+$
+      example: '>=7'
+    UpdateTier:
+      title: UpdateTier
+      type: object
+      properties:
+        tier:
+          $ref: '#/components/schemas/tier.v1'
+      required:
+        - tier
+    tier.v1:
+      type: string
+      title: Clinic Service Tier
+      enum:
+        - tier0100
+        - tier0200
+        - tier0300
+        - tier0400
+      example: tier0100
+    UpdateSuppressedNotifications:
+      title: UpdateSuppressedNotifications
+      type: object
+      properties:
+        suppressedNotifications:
+          $ref: '#/components/schemas/suppressedNotifications.v1'
+      required:
+        - suppressedNotifications
+    ehrMatchRequest.v1:
+      title: EHR Match Request
+      x-stoplight:
+        id: nq0mlm5dqdfw0
+      type: object
+      x-examples: {}
+      properties:
+        messageRef:
+          $ref: '#/components/schemas/ehrMatchMessageRef.v1'
+        patients:
+          $ref: '#/components/schemas/ehrMatchRequestPatientsOptions.v1'
+    ehrMatchResponse.v1:
+      title: EHRMatchResponse
+      x-stoplight:
+        id: pekkj09rlany0
+      type: object
+      properties:
+        clinic:
+          $ref: '#/components/schemas/clinic.v1'
+        patients:
+          $ref: '#/components/schemas/patients.v1'
+        settings:
+          $ref: '#/components/schemas/ehrSettings.v1'
+      required:
+        - clinic
+        - settings
+    ehrMatchMessageRef.v1:
+      title: EHRMatchMessageRef
+      x-stoplight:
+        id: a1215t5vip3tr
+      type: object
+      properties:
+        dataModel:
+          type: string
+          enum:
+            - Order
+        eventType:
+          type: string
+          enum:
+            - New
+        documentId:
+          type: string
+      required:
+        - dataModel
+        - eventType
+        - documentId
+    AcceptPatientInvitation:
+      title: AcceptPatientInvitation
+      x-stoplight:
+        id: vo0jck92hztsj
+      type: object
+      properties:
+        fullName:
+          type: string
+          description: The full name of the patient
+          minLength: 1
+        birthDate:
+          type: string
+          format: date
+          example: '2012-08-30'
+        mrn:
+          type: string
+          description: The medical record number of the patient
+          minLength: 1
+        tags:
+          $ref: '#/components/schemas/patientTagIds.v1'
+    addServiceAccount.v1:
+      title: AddServiceAccount
+      x-stoplight:
+        id: 3c7ko800mld31
+      type: object
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 3333gszyq3x79
+          minLength: 1
+        client_id:
+          type: string
+          x-stoplight:
+            id: kgfyaapmfjies
+          minLength: 1
+        client_secret:
+          type: string
+          x-stoplight:
+            id: 8jdosn0tlbqp5
+          minLength: 1
+      required:
+        - name
+        - client_id
+        - client_secret
+    generateMergeReport.v1:
+      title: GenerateMergeReport
+      x-stoplight:
+        id: 3oq18sasrzo0o
+      type: object
+      properties:
+        sourceId:
+          $ref: '#/components/schemas/clinicId.v1'
+      required:
+        - sourceId
+    mergeClinic.v1:
+      title: MergeClinics
+      x-stoplight:
+        id: 6hn01uuhln0wx
+      type: object
+      properties:
+        sourceId:
+          $ref: '#/components/schemas/clinicId.v1'
+    ehrMatchRequestPatientsOptions.v1:
+      title: Patient Matching Options
+      x-stoplight:
+        id: 43n6iid3zghxm
+      type: object
+      properties:
+        criteria:
+          type: array
+          x-stoplight:
+            id: 1odrg3q8zzdil
+          description: Performs an "OR" match for each item in the array
+          minItems: 1
+          items:
+            x-stoplight:
+              id: mgi1k2jyojc4k
+            type: string
+            enum:
+              - MRN
+              - MRN_DOB
+              - DOB_FULLNAME
+        onUniqueMatch:
+          type: string
+          x-stoplight:
+            id: s9ujf5ce4vhc1
+          enum:
+            - ENABLE_REPORTS
+            - DISABLE_REPORTS
+          description: Optional action to be performed when a unique match has been found
+      required:
+        - criteria
+    clinicId.v1:
+      title: Clinic ID
+      description: Clinic identifier.
+      type: string
+      minLength: 24
+      maxLength: 24
+      pattern: ^[a-f0-9]{24}$
+      readOnly: true
+      example: 2fe2488217ee43e1b2e83c2f
+    streetAddress.v1:
+      title: Street Address
+      description: Street address.
+      type: string
+      minLength: 1
+    city.v1:
+      title: City
+      description: City name.
+      type: string
+      minLength: 1
+      example: Palo Alto
+    postalCode.v1:
+      title: Postal Code
+      description: Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
+      type: string
+      minLength: 1
+      example: '94301'
+    state.v1:
+      title: State
+      description: State or province. In the U.S., typically something like `CA` or `California`.
+      type: string
+      minLength: 1
+      example: CA
+    country.v1:
+      title: Country
+      description: Country name.
+      type: string
+      minLength: 1
+      example: USA
+    objectid.v1:
+      title: Object Id
+      type: string
+      description: String representation of a resource id
+      minLength: 24
+      maxLength: 24
+      pattern: ^[a-f0-9]{24}$
+      readOnly: true
+    phoneNumber.v1:
+      title: Phone Number
+      type: object
+      properties:
+        type:
+          type: string
+          minLength: 1
+        number:
+          type: string
+          minLength: 1
+      required:
+        - number
+      example:
+        type: main
+        number: +1 (555) 555-1212
+    phoneNumbers.v1:
+      title: Phone phoneNumbers
+      description: An array of phone numbers.
+      type: array
+      uniqueItems: true
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/phoneNumber.v1'
+    name.v1:
+      title: Clinic Name
+      description: Name of the clinic.
+      type: string
+      minItems: 1
+    shareCode.v1:
+      title: Clinic Share Code
+      description: Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.
+      type: string
+      pattern: ^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$
+      readOnly: true
+    suppressedNotifications.v1:
+      title: Suppressed Notifications
+      type: object
+      properties:
+        patientClinicInvitation:
+          type: boolean
+      additionalProperties: false
+    clinicTimezone.v1:
+      title: Clinic Timezone
+      x-stoplight:
+        id: 7htuwravuo8sn
+      type: string
+      enum:
+        - Africa/Abidjan
+        - Africa/Accra
+        - Africa/Addis_Ababa
+        - Africa/Algiers
+        - Africa/Asmara
+        - Africa/Asmera
+        - Africa/Bamako
+        - Africa/Bangui
+        - Africa/Banjul
+        - Africa/Bissau
+        - Africa/Blantyre
+        - Africa/Brazzaville
+        - Africa/Bujumbura
+        - Africa/Cairo
+        - Africa/Casablanca
+        - Africa/Ceuta
+        - Africa/Conakry
+        - Africa/Dakar
+        - Africa/Dar_es_Salaam
+        - Africa/Djibouti
+        - Africa/Douala
+        - Africa/El_Aaiun
+        - Africa/Freetown
+        - Africa/Gaborone
+        - Africa/Harare
+        - Africa/Johannesburg
+        - Africa/Juba
+        - Africa/Kampala
+        - Africa/Khartoum
+        - Africa/Kigali
+        - Africa/Kinshasa
+        - Africa/Lagos
+        - Africa/Libreville
+        - Africa/Lome
+        - Africa/Luanda
+        - Africa/Lubumbashi
+        - Africa/Lusaka
+        - Africa/Malabo
+        - Africa/Maputo
+        - Africa/Maseru
+        - Africa/Mbabane
+        - Africa/Mogadishu
+        - Africa/Monrovia
+        - Africa/Nairobi
+        - Africa/Ndjamena
+        - Africa/Niamey
+        - Africa/Nouakchott
+        - Africa/Ouagadougou
+        - Africa/Porto-Novo
+        - Africa/Sao_Tome
+        - Africa/Timbuktu
+        - Africa/Tripoli
+        - Africa/Tunis
+        - Africa/Windhoek
+        - America/Adak
+        - America/Anchorage
+        - America/Anguilla
+        - America/Antigua
+        - America/Araguaina
+        - America/Argentina/Buenos_Aires
+        - America/Argentina/Catamarca
+        - America/Argentina/ComodRivadavia
+        - America/Argentina/Cordoba
+        - America/Argentina/Jujuy
+        - America/Argentina/La_Rioja
+        - America/Argentina/Mendoza
+        - America/Argentina/Rio_Gallegos
+        - America/Argentina/Salta
+        - America/Argentina/San_Juan
+        - America/Argentina/San_Luis
+        - America/Argentina/Tucuman
+        - America/Argentina/Ushuaia
+        - America/Aruba
+        - America/Asuncion
+        - America/Atikokan
+        - America/Atka
+        - America/Bahia
+        - America/Bahia_Banderas
+        - America/Barbados
+        - America/Belem
+        - America/Belize
+        - America/Blanc-Sablon
+        - America/Boa_Vista
+        - America/Bogota
+        - America/Boise
+        - America/Buenos_Aires
+        - America/Cambridge_Bay
+        - America/Campo_Grande
+        - America/Cancun
+        - America/Caracas
+        - America/Catamarca
+        - America/Cayenne
+        - America/Cayman
+        - America/Chicago
+        - America/Chihuahua
+        - America/Ciudad_Juarez
+        - America/Coral_Harbour
+        - America/Cordoba
+        - America/Costa_Rica
+        - America/Creston
+        - America/Cuiaba
+        - America/Curacao
+        - America/Danmarkshavn
+        - America/Dawson
+        - America/Dawson_Creek
+        - America/Denver
+        - America/Detroit
+        - America/Dominica
+        - America/Edmonton
+        - America/Eirunepe
+        - America/El_Salvador
+        - America/Ensenada
+        - America/Fort_Nelson
+        - America/Fort_Wayne
+        - America/Fortaleza
+        - America/Glace_Bay
+        - America/Godthab
+        - America/Goose_Bay
+        - America/Grand_Turk
+        - America/Grenada
+        - America/Guadeloupe
+        - America/Guatemala
+        - America/Guayaquil
+        - America/Guyana
+        - America/Halifax
+        - America/Havana
+        - America/Hermosillo
+        - America/Indiana/Indianapolis
+        - America/Indiana/Knox
+        - America/Indiana/Marengo
+        - America/Indiana/Petersburg
+        - America/Indiana/Tell_City
+        - America/Indiana/Vevay
+        - America/Indiana/Vincennes
+        - America/Indiana/Winamac
+        - America/Indianapolis
+        - America/Inuvik
+        - America/Iqaluit
+        - America/Jamaica
+        - America/Jujuy
+        - America/Juneau
+        - America/Kentucky/Louisville
+        - America/Kentucky/Monticello
+        - America/Knox_IN
+        - America/Kralendijk
+        - America/La_Paz
+        - America/Lima
+        - America/Los_Angeles
+        - America/Louisville
+        - America/Lower_Princes
+        - America/Maceio
+        - America/Managua
+        - America/Manaus
+        - America/Marigot
+        - America/Martinique
+        - America/Matamoros
+        - America/Mazatlan
+        - America/Mendoza
+        - America/Menominee
+        - America/Merida
+        - America/Metlakatla
+        - America/Mexico_City
+        - America/Miquelon
+        - America/Moncton
+        - America/Monterrey
+        - America/Montevideo
+        - America/Montreal
+        - America/Montserrat
+        - America/Nassau
+        - America/New_York
+        - America/Nipigon
+        - America/Nome
+        - America/Noronha
+        - America/North_Dakota/Beulah
+        - America/North_Dakota/Center
+        - America/North_Dakota/New_Salem
+        - America/Nuuk
+        - America/Ojinaga
+        - America/Panama
+        - America/Pangnirtung
+        - America/Paramaribo
+        - America/Phoenix
+        - America/Port-au-Prince
+        - America/Port_of_Spain
+        - America/Porto_Acre
+        - America/Porto_Velho
+        - America/Puerto_Rico
+        - America/Punta_Arenas
+        - America/Rainy_River
+        - America/Rankin_Inlet
+        - America/Recife
+        - America/Regina
+        - America/Resolute
+        - America/Rio_Branco
+        - America/Rosario
+        - America/Santa_Isabel
+        - America/Santarem
+        - America/Santiago
+        - America/Santo_Domingo
+        - America/Sao_Paulo
+        - America/Scoresbysund
+        - America/Shiprock
+        - America/Sitka
+        - America/St_Barthelemy
+        - America/St_Johns
+        - America/St_Kitts
+        - America/St_Lucia
+        - America/St_Thomas
+        - America/St_Vincent
+        - America/Swift_Current
+        - America/Tegucigalpa
+        - America/Thule
+        - America/Thunder_Bay
+        - America/Tijuana
+        - America/Toronto
+        - America/Tortola
+        - America/Vancouver
+        - America/Virgin
+        - America/Whitehorse
+        - America/Winnipeg
+        - America/Yakutat
+        - America/Yellowknife
+        - Antarctica/Casey
+        - Antarctica/Davis
+        - Antarctica/DumontDUrville
+        - Antarctica/Macquarie
+        - Antarctica/Mawson
+        - Antarctica/McMurdo
+        - Antarctica/Palmer
+        - Antarctica/Rothera
+        - Antarctica/South_Pole
+        - Antarctica/Syowa
+        - Antarctica/Troll
+        - Antarctica/Vostok
+        - Arctic/Longyearbyen
+        - Asia/Aden
+        - Asia/Almaty
+        - Asia/Amman
+        - Asia/Anadyr
+        - Asia/Aqtau
+        - Asia/Aqtobe
+        - Asia/Ashgabat
+        - Asia/Ashkhabad
+        - Asia/Atyrau
+        - Asia/Baghdad
+        - Asia/Bahrain
+        - Asia/Baku
+        - Asia/Bangkok
+        - Asia/Barnaul
+        - Asia/Beirut
+        - Asia/Bishkek
+        - Asia/Brunei
+        - Asia/Calcutta
+        - Asia/Chita
+        - Asia/Choibalsan
+        - Asia/Chongqing
+        - Asia/Chungking
+        - Asia/Colombo
+        - Asia/Dacca
+        - Asia/Damascus
+        - Asia/Dhaka
+        - Asia/Dili
+        - Asia/Dubai
+        - Asia/Dushanbe
+        - Asia/Famagusta
+        - Asia/Gaza
+        - Asia/Harbin
+        - Asia/Hebron
+        - Asia/Ho_Chi_Minh
+        - Asia/Hong_Kong
+        - Asia/Hovd
+        - Asia/Irkutsk
+        - Asia/Istanbul
+        - Asia/Jakarta
+        - Asia/Jayapura
+        - Asia/Jerusalem
+        - Asia/Kabul
+        - Asia/Kamchatka
+        - Asia/Karachi
+        - Asia/Kashgar
+        - Asia/Kathmandu
+        - Asia/Katmandu
+        - Asia/Khandyga
+        - Asia/Kolkata
+        - Asia/Krasnoyarsk
+        - Asia/Kuala_Lumpur
+        - Asia/Kuching
+        - Asia/Kuwait
+        - Asia/Macao
+        - Asia/Macau
+        - Asia/Magadan
+        - Asia/Makassar
+        - Asia/Manila
+        - Asia/Muscat
+        - Asia/Nicosia
+        - Asia/Novokuznetsk
+        - Asia/Novosibirsk
+        - Asia/Omsk
+        - Asia/Oral
+        - Asia/Phnom_Penh
+        - Asia/Pontianak
+        - Asia/Pyongyang
+        - Asia/Qatar
+        - Asia/Qostanay
+        - Asia/Qyzylorda
+        - Asia/Rangoon
+        - Asia/Riyadh
+        - Asia/Saigon
+        - Asia/Sakhalin
+        - Asia/Samarkand
+        - Asia/Seoul
+        - Asia/Shanghai
+        - Asia/Singapore
+        - Asia/Srednekolymsk
+        - Asia/Taipei
+        - Asia/Tashkent
+        - Asia/Tbilisi
+        - Asia/Tehran
+        - Asia/Tel_Aviv
+        - Asia/Thimbu
+        - Asia/Thimphu
+        - Asia/Tokyo
+        - Asia/Tomsk
+        - Asia/Ujung_Pandang
+        - Asia/Ulaanbaatar
+        - Asia/Ulan_Bator
+        - Asia/Urumqi
+        - Asia/Ust-Nera
+        - Asia/Vientiane
+        - Asia/Vladivostok
+        - Asia/Yakutsk
+        - Asia/Yangon
+        - Asia/Yekaterinburg
+        - Asia/Yerevan
+        - Atlantic/Azores
+        - Atlantic/Bermuda
+        - Atlantic/Canary
+        - Atlantic/Cape_Verde
+        - Atlantic/Faeroe
+        - Atlantic/Faroe
+        - Atlantic/Jan_Mayen
+        - Atlantic/Madeira
+        - Atlantic/Reykjavik
+        - Atlantic/South_Georgia
+        - Atlantic/St_Helena
+        - Atlantic/Stanley
+        - Australia/ACT
+        - Australia/Adelaide
+        - Australia/Brisbane
+        - Australia/Broken_Hill
+        - Australia/Canberra
+        - Australia/Currie
+        - Australia/Darwin
+        - Australia/Eucla
+        - Australia/Hobart
+        - Australia/LHI
+        - Australia/Lindeman
+        - Australia/Lord_Howe
+        - Australia/Melbourne
+        - Australia/NSW
+        - Australia/North
+        - Australia/Perth
+        - Australia/Queensland
+        - Australia/South
+        - Australia/Sydney
+        - Australia/Tasmania
+        - Australia/Victoria
+        - Australia/West
+        - Australia/Yancowinna
+        - Brazil/Acre
+        - Brazil/DeNoronha
+        - Brazil/East
+        - Brazil/West
+        - CET
+        - CST6CDT
+        - Canada/Atlantic
+        - Canada/Central
+        - Canada/Eastern
+        - Canada/Mountain
+        - Canada/Newfoundland
+        - Canada/Pacific
+        - Canada/Saskatchewan
+        - Canada/Yukon
+        - Chile/Continental
+        - Chile/EasterIsland
+        - Cuba
+        - EET
+        - EST
+        - EST5EDT
+        - Egypt
+        - Eire
+        - Etc/GMT
+        - Etc/GMT+0
+        - Etc/GMT+1
+        - Etc/GMT+10
+        - Etc/GMT+11
+        - Etc/GMT+12
+        - Etc/GMT+2
+        - Etc/GMT+3
+        - Etc/GMT+4
+        - Etc/GMT+5
+        - Etc/GMT+6
+        - Etc/GMT+7
+        - Etc/GMT+8
+        - Etc/GMT+9
+        - Etc/GMT-0
+        - Etc/GMT-1
+        - Etc/GMT-10
+        - Etc/GMT-11
+        - Etc/GMT-12
+        - Etc/GMT-13
+        - Etc/GMT-14
+        - Etc/GMT-2
+        - Etc/GMT-3
+        - Etc/GMT-4
+        - Etc/GMT-5
+        - Etc/GMT-6
+        - Etc/GMT-7
+        - Etc/GMT-8
+        - Etc/GMT-9
+        - Etc/GMT0
+        - Etc/Greenwich
+        - Etc/UCT
+        - Etc/UTC
+        - Etc/Universal
+        - Etc/Zulu
+        - Europe/Amsterdam
+        - Europe/Andorra
+        - Europe/Astrakhan
+        - Europe/Athens
+        - Europe/Belfast
+        - Europe/Belgrade
+        - Europe/Berlin
+        - Europe/Bratislava
+        - Europe/Brussels
+        - Europe/Bucharest
+        - Europe/Budapest
+        - Europe/Busingen
+        - Europe/Chisinau
+        - Europe/Copenhagen
+        - Europe/Dublin
+        - Europe/Gibraltar
+        - Europe/Guernsey
+        - Europe/Helsinki
+        - Europe/Isle_of_Man
+        - Europe/Istanbul
+        - Europe/Jersey
+        - Europe/Kaliningrad
+        - Europe/Kiev
+        - Europe/Kirov
+        - Europe/Kyiv
+        - Europe/Lisbon
+        - Europe/Ljubljana
+        - Europe/London
+        - Europe/Luxembourg
+        - Europe/Madrid
+        - Europe/Malta
+        - Europe/Mariehamn
+        - Europe/Minsk
+        - Europe/Monaco
+        - Europe/Moscow
+        - Europe/Nicosia
+        - Europe/Oslo
+        - Europe/Paris
+        - Europe/Podgorica
+        - Europe/Prague
+        - Europe/Riga
+        - Europe/Rome
+        - Europe/Samara
+        - Europe/San_Marino
+        - Europe/Sarajevo
+        - Europe/Saratov
+        - Europe/Simferopol
+        - Europe/Skopje
+        - Europe/Sofia
+        - Europe/Stockholm
+        - Europe/Tallinn
+        - Europe/Tirane
+        - Europe/Tiraspol
+        - Europe/Ulyanovsk
+        - Europe/Uzhgorod
+        - Europe/Vaduz
+        - Europe/Vatican
+        - Europe/Vienna
+        - Europe/Vilnius
+        - Europe/Volgograd
+        - Europe/Warsaw
+        - Europe/Zagreb
+        - Europe/Zaporozhye
+        - Europe/Zurich
+        - GB
+        - GB-Eire
+        - GMT
+        - GMT+0
+        - GMT-0
+        - GMT0
+        - Greenwich
+        - HST
+        - Hongkong
+        - Iceland
+        - Indian/Antananarivo
+        - Indian/Chagos
+        - Indian/Christmas
+        - Indian/Cocos
+        - Indian/Comoro
+        - Indian/Kerguelen
+        - Indian/Mahe
+        - Indian/Maldives
+        - Indian/Mauritius
+        - Indian/Mayotte
+        - Indian/Reunion
+        - Iran
+        - Israel
+        - Jamaica
+        - Japan
+        - Kwajalein
+        - Libya
+        - MET
+        - MST
+        - MST7MDT
+        - Mexico/BajaNorte
+        - Mexico/BajaSur
+        - Mexico/General
+        - NZ
+        - NZ-CHAT
+        - Navajo
+        - PRC
+        - PST8PDT
+        - Pacific/Apia
+        - Pacific/Auckland
+        - Pacific/Bougainville
+        - Pacific/Chatham
+        - Pacific/Chuuk
+        - Pacific/Easter
+        - Pacific/Efate
+        - Pacific/Enderbury
+        - Pacific/Fakaofo
+        - Pacific/Fiji
+        - Pacific/Funafuti
+        - Pacific/Galapagos
+        - Pacific/Gambier
+        - Pacific/Guadalcanal
+        - Pacific/Guam
+        - Pacific/Honolulu
+        - Pacific/Johnston
+        - Pacific/Kanton
+        - Pacific/Kiritimati
+        - Pacific/Kosrae
+        - Pacific/Kwajalein
+        - Pacific/Majuro
+        - Pacific/Marquesas
+        - Pacific/Midway
+        - Pacific/Nauru
+        - Pacific/Niue
+        - Pacific/Norfolk
+        - Pacific/Noumea
+        - Pacific/Pago_Pago
+        - Pacific/Palau
+        - Pacific/Pitcairn
+        - Pacific/Pohnpei
+        - Pacific/Ponape
+        - Pacific/Port_Moresby
+        - Pacific/Rarotonga
+        - Pacific/Saipan
+        - Pacific/Samoa
+        - Pacific/Tahiti
+        - Pacific/Tarawa
+        - Pacific/Tongatapu
+        - Pacific/Truk
+        - Pacific/Wake
+        - Pacific/Wallis
+        - Pacific/Yap
+        - Poland
+        - Portugal
+        - ROC
+        - ROK
+        - Singapore
+        - Turkey
+        - UCT
+        - US/Alaska
+        - US/Aleutian
+        - US/Arizona
+        - US/Central
+        - US/East-Indiana
+        - US/Eastern
+        - US/Hawaii
+        - US/Indiana-Starke
+        - US/Michigan
+        - US/Mountain
+        - US/Pacific
+        - US/Samoa
+        - UTC
+        - Universal
+        - W-SU
+        - WET
+        - Zulu
+    clinic.v1:
       title: Clinic
       description: Clinic
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/Id'
+          $ref: '#/components/schemas/clinicId.v1'
         address:
-          title: Street Address
-          description: Street address.
-          type: string
-          minLength: 1
+          $ref: '#/components/schemas/streetAddress.v1'
         city:
-          title: City
-          description: City name.
-          type: string
-          minLength: 1
-          example: Palo Alto
+          $ref: '#/components/schemas/city.v1'
         postalCode:
-          title: Postal Code
-          description: 'Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.'
-          type: string
-          minLength: 1
-          example: '94301'
+          $ref: '#/components/schemas/postalCode.v1'
         state:
-          title: State
-          description: 'State or province. In the U.S., typically something like `CA` or `California`.'
-          type: string
-          minLength: 1
-          example: CA
+          $ref: '#/components/schemas/state.v1'
         country:
-          title: Country
-          description: Country name.
-          type: string
-          minLength: 1
-          example: USA
+          $ref: '#/components/schemas/country.v1'
         patientTags:
           type: array
           items:
-            $ref: '#/components/schemas/PatientTag'
+            $ref: '#/components/schemas/patientTag.v1'
         lastDeletedPatientTag:
-          $ref: '#/components/schemas/PatientTag'
+          $ref: '#/components/schemas/patientTag.v1'
         phoneNumbers:
-          title: Phone phoneNumbers
-          description: An array of phone numbers.
-          type: array
-          uniqueItems: true
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/PhoneNumber'
+          $ref: '#/components/schemas/phoneNumbers.v1'
         clinicType:
           type: string
           minLength: 1
@@ -2281,16 +3206,9 @@ components:
             - 500-999
             - 1000+
         name:
-          title: Clinic Name
-          description: Name of the clinic.
-          type: string
-          minItems: 1
+          $ref: '#/components/schemas/name.v1'
         shareCode:
-          title: Clinic Share Code
-          description: 'Globally unique share code for a clinic. The share code is 3 groups of 4 uppercase alphanumeric characters in each group. Ambiguous characters such as `I` and `1`, or `O` and `0` are excluded.'
-          type: string
-          pattern: '^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$'
-          readOnly: true
+          $ref: '#/components/schemas/shareCode.v1'
         canMigrate:
           type: boolean
           readOnly: true
@@ -2321,609 +3239,9 @@ components:
             - mg/dL
             - mmol/L
         suppressedNotifications:
-          $ref: '#/components/schemas/SuppressedNotifications'
+          $ref: '#/components/schemas/suppressedNotifications.v1'
         timezone:
-          title: Clinic Timezone
-          x-stoplight:
-            id: 7htuwravuo8sn
-          type: string
-          enum:
-            - Africa/Abidjan
-            - Africa/Accra
-            - Africa/Addis_Ababa
-            - Africa/Algiers
-            - Africa/Asmara
-            - Africa/Asmera
-            - Africa/Bamako
-            - Africa/Bangui
-            - Africa/Banjul
-            - Africa/Bissau
-            - Africa/Blantyre
-            - Africa/Brazzaville
-            - Africa/Bujumbura
-            - Africa/Cairo
-            - Africa/Casablanca
-            - Africa/Ceuta
-            - Africa/Conakry
-            - Africa/Dakar
-            - Africa/Dar_es_Salaam
-            - Africa/Djibouti
-            - Africa/Douala
-            - Africa/El_Aaiun
-            - Africa/Freetown
-            - Africa/Gaborone
-            - Africa/Harare
-            - Africa/Johannesburg
-            - Africa/Juba
-            - Africa/Kampala
-            - Africa/Khartoum
-            - Africa/Kigali
-            - Africa/Kinshasa
-            - Africa/Lagos
-            - Africa/Libreville
-            - Africa/Lome
-            - Africa/Luanda
-            - Africa/Lubumbashi
-            - Africa/Lusaka
-            - Africa/Malabo
-            - Africa/Maputo
-            - Africa/Maseru
-            - Africa/Mbabane
-            - Africa/Mogadishu
-            - Africa/Monrovia
-            - Africa/Nairobi
-            - Africa/Ndjamena
-            - Africa/Niamey
-            - Africa/Nouakchott
-            - Africa/Ouagadougou
-            - Africa/Porto-Novo
-            - Africa/Sao_Tome
-            - Africa/Timbuktu
-            - Africa/Tripoli
-            - Africa/Tunis
-            - Africa/Windhoek
-            - America/Adak
-            - America/Anchorage
-            - America/Anguilla
-            - America/Antigua
-            - America/Araguaina
-            - America/Argentina/Buenos_Aires
-            - America/Argentina/Catamarca
-            - America/Argentina/ComodRivadavia
-            - America/Argentina/Cordoba
-            - America/Argentina/Jujuy
-            - America/Argentina/La_Rioja
-            - America/Argentina/Mendoza
-            - America/Argentina/Rio_Gallegos
-            - America/Argentina/Salta
-            - America/Argentina/San_Juan
-            - America/Argentina/San_Luis
-            - America/Argentina/Tucuman
-            - America/Argentina/Ushuaia
-            - America/Aruba
-            - America/Asuncion
-            - America/Atikokan
-            - America/Atka
-            - America/Bahia
-            - America/Bahia_Banderas
-            - America/Barbados
-            - America/Belem
-            - America/Belize
-            - America/Blanc-Sablon
-            - America/Boa_Vista
-            - America/Bogota
-            - America/Boise
-            - America/Buenos_Aires
-            - America/Cambridge_Bay
-            - America/Campo_Grande
-            - America/Cancun
-            - America/Caracas
-            - America/Catamarca
-            - America/Cayenne
-            - America/Cayman
-            - America/Chicago
-            - America/Chihuahua
-            - America/Ciudad_Juarez
-            - America/Coral_Harbour
-            - America/Cordoba
-            - America/Costa_Rica
-            - America/Creston
-            - America/Cuiaba
-            - America/Curacao
-            - America/Danmarkshavn
-            - America/Dawson
-            - America/Dawson_Creek
-            - America/Denver
-            - America/Detroit
-            - America/Dominica
-            - America/Edmonton
-            - America/Eirunepe
-            - America/El_Salvador
-            - America/Ensenada
-            - America/Fort_Nelson
-            - America/Fort_Wayne
-            - America/Fortaleza
-            - America/Glace_Bay
-            - America/Godthab
-            - America/Goose_Bay
-            - America/Grand_Turk
-            - America/Grenada
-            - America/Guadeloupe
-            - America/Guatemala
-            - America/Guayaquil
-            - America/Guyana
-            - America/Halifax
-            - America/Havana
-            - America/Hermosillo
-            - America/Indiana/Indianapolis
-            - America/Indiana/Knox
-            - America/Indiana/Marengo
-            - America/Indiana/Petersburg
-            - America/Indiana/Tell_City
-            - America/Indiana/Vevay
-            - America/Indiana/Vincennes
-            - America/Indiana/Winamac
-            - America/Indianapolis
-            - America/Inuvik
-            - America/Iqaluit
-            - America/Jamaica
-            - America/Jujuy
-            - America/Juneau
-            - America/Kentucky/Louisville
-            - America/Kentucky/Monticello
-            - America/Knox_IN
-            - America/Kralendijk
-            - America/La_Paz
-            - America/Lima
-            - America/Los_Angeles
-            - America/Louisville
-            - America/Lower_Princes
-            - America/Maceio
-            - America/Managua
-            - America/Manaus
-            - America/Marigot
-            - America/Martinique
-            - America/Matamoros
-            - America/Mazatlan
-            - America/Mendoza
-            - America/Menominee
-            - America/Merida
-            - America/Metlakatla
-            - America/Mexico_City
-            - America/Miquelon
-            - America/Moncton
-            - America/Monterrey
-            - America/Montevideo
-            - America/Montreal
-            - America/Montserrat
-            - America/Nassau
-            - America/New_York
-            - America/Nipigon
-            - America/Nome
-            - America/Noronha
-            - America/North_Dakota/Beulah
-            - America/North_Dakota/Center
-            - America/North_Dakota/New_Salem
-            - America/Nuuk
-            - America/Ojinaga
-            - America/Panama
-            - America/Pangnirtung
-            - America/Paramaribo
-            - America/Phoenix
-            - America/Port-au-Prince
-            - America/Port_of_Spain
-            - America/Porto_Acre
-            - America/Porto_Velho
-            - America/Puerto_Rico
-            - America/Punta_Arenas
-            - America/Rainy_River
-            - America/Rankin_Inlet
-            - America/Recife
-            - America/Regina
-            - America/Resolute
-            - America/Rio_Branco
-            - America/Rosario
-            - America/Santa_Isabel
-            - America/Santarem
-            - America/Santiago
-            - America/Santo_Domingo
-            - America/Sao_Paulo
-            - America/Scoresbysund
-            - America/Shiprock
-            - America/Sitka
-            - America/St_Barthelemy
-            - America/St_Johns
-            - America/St_Kitts
-            - America/St_Lucia
-            - America/St_Thomas
-            - America/St_Vincent
-            - America/Swift_Current
-            - America/Tegucigalpa
-            - America/Thule
-            - America/Thunder_Bay
-            - America/Tijuana
-            - America/Toronto
-            - America/Tortola
-            - America/Vancouver
-            - America/Virgin
-            - America/Whitehorse
-            - America/Winnipeg
-            - America/Yakutat
-            - America/Yellowknife
-            - Antarctica/Casey
-            - Antarctica/Davis
-            - Antarctica/DumontDUrville
-            - Antarctica/Macquarie
-            - Antarctica/Mawson
-            - Antarctica/McMurdo
-            - Antarctica/Palmer
-            - Antarctica/Rothera
-            - Antarctica/South_Pole
-            - Antarctica/Syowa
-            - Antarctica/Troll
-            - Antarctica/Vostok
-            - Arctic/Longyearbyen
-            - Asia/Aden
-            - Asia/Almaty
-            - Asia/Amman
-            - Asia/Anadyr
-            - Asia/Aqtau
-            - Asia/Aqtobe
-            - Asia/Ashgabat
-            - Asia/Ashkhabad
-            - Asia/Atyrau
-            - Asia/Baghdad
-            - Asia/Bahrain
-            - Asia/Baku
-            - Asia/Bangkok
-            - Asia/Barnaul
-            - Asia/Beirut
-            - Asia/Bishkek
-            - Asia/Brunei
-            - Asia/Calcutta
-            - Asia/Chita
-            - Asia/Choibalsan
-            - Asia/Chongqing
-            - Asia/Chungking
-            - Asia/Colombo
-            - Asia/Dacca
-            - Asia/Damascus
-            - Asia/Dhaka
-            - Asia/Dili
-            - Asia/Dubai
-            - Asia/Dushanbe
-            - Asia/Famagusta
-            - Asia/Gaza
-            - Asia/Harbin
-            - Asia/Hebron
-            - Asia/Ho_Chi_Minh
-            - Asia/Hong_Kong
-            - Asia/Hovd
-            - Asia/Irkutsk
-            - Asia/Istanbul
-            - Asia/Jakarta
-            - Asia/Jayapura
-            - Asia/Jerusalem
-            - Asia/Kabul
-            - Asia/Kamchatka
-            - Asia/Karachi
-            - Asia/Kashgar
-            - Asia/Kathmandu
-            - Asia/Katmandu
-            - Asia/Khandyga
-            - Asia/Kolkata
-            - Asia/Krasnoyarsk
-            - Asia/Kuala_Lumpur
-            - Asia/Kuching
-            - Asia/Kuwait
-            - Asia/Macao
-            - Asia/Macau
-            - Asia/Magadan
-            - Asia/Makassar
-            - Asia/Manila
-            - Asia/Muscat
-            - Asia/Nicosia
-            - Asia/Novokuznetsk
-            - Asia/Novosibirsk
-            - Asia/Omsk
-            - Asia/Oral
-            - Asia/Phnom_Penh
-            - Asia/Pontianak
-            - Asia/Pyongyang
-            - Asia/Qatar
-            - Asia/Qostanay
-            - Asia/Qyzylorda
-            - Asia/Rangoon
-            - Asia/Riyadh
-            - Asia/Saigon
-            - Asia/Sakhalin
-            - Asia/Samarkand
-            - Asia/Seoul
-            - Asia/Shanghai
-            - Asia/Singapore
-            - Asia/Srednekolymsk
-            - Asia/Taipei
-            - Asia/Tashkent
-            - Asia/Tbilisi
-            - Asia/Tehran
-            - Asia/Tel_Aviv
-            - Asia/Thimbu
-            - Asia/Thimphu
-            - Asia/Tokyo
-            - Asia/Tomsk
-            - Asia/Ujung_Pandang
-            - Asia/Ulaanbaatar
-            - Asia/Ulan_Bator
-            - Asia/Urumqi
-            - Asia/Ust-Nera
-            - Asia/Vientiane
-            - Asia/Vladivostok
-            - Asia/Yakutsk
-            - Asia/Yangon
-            - Asia/Yekaterinburg
-            - Asia/Yerevan
-            - Atlantic/Azores
-            - Atlantic/Bermuda
-            - Atlantic/Canary
-            - Atlantic/Cape_Verde
-            - Atlantic/Faeroe
-            - Atlantic/Faroe
-            - Atlantic/Jan_Mayen
-            - Atlantic/Madeira
-            - Atlantic/Reykjavik
-            - Atlantic/South_Georgia
-            - Atlantic/St_Helena
-            - Atlantic/Stanley
-            - Australia/ACT
-            - Australia/Adelaide
-            - Australia/Brisbane
-            - Australia/Broken_Hill
-            - Australia/Canberra
-            - Australia/Currie
-            - Australia/Darwin
-            - Australia/Eucla
-            - Australia/Hobart
-            - Australia/LHI
-            - Australia/Lindeman
-            - Australia/Lord_Howe
-            - Australia/Melbourne
-            - Australia/NSW
-            - Australia/North
-            - Australia/Perth
-            - Australia/Queensland
-            - Australia/South
-            - Australia/Sydney
-            - Australia/Tasmania
-            - Australia/Victoria
-            - Australia/West
-            - Australia/Yancowinna
-            - Brazil/Acre
-            - Brazil/DeNoronha
-            - Brazil/East
-            - Brazil/West
-            - CET
-            - CST6CDT
-            - Canada/Atlantic
-            - Canada/Central
-            - Canada/Eastern
-            - Canada/Mountain
-            - Canada/Newfoundland
-            - Canada/Pacific
-            - Canada/Saskatchewan
-            - Canada/Yukon
-            - Chile/Continental
-            - Chile/EasterIsland
-            - Cuba
-            - EET
-            - EST
-            - EST5EDT
-            - Egypt
-            - Eire
-            - Etc/GMT
-            - Etc/GMT+0
-            - Etc/GMT+1
-            - Etc/GMT+10
-            - Etc/GMT+11
-            - Etc/GMT+12
-            - Etc/GMT+2
-            - Etc/GMT+3
-            - Etc/GMT+4
-            - Etc/GMT+5
-            - Etc/GMT+6
-            - Etc/GMT+7
-            - Etc/GMT+8
-            - Etc/GMT+9
-            - Etc/GMT-0
-            - Etc/GMT-1
-            - Etc/GMT-10
-            - Etc/GMT-11
-            - Etc/GMT-12
-            - Etc/GMT-13
-            - Etc/GMT-14
-            - Etc/GMT-2
-            - Etc/GMT-3
-            - Etc/GMT-4
-            - Etc/GMT-5
-            - Etc/GMT-6
-            - Etc/GMT-7
-            - Etc/GMT-8
-            - Etc/GMT-9
-            - Etc/GMT0
-            - Etc/Greenwich
-            - Etc/UCT
-            - Etc/UTC
-            - Etc/Universal
-            - Etc/Zulu
-            - Europe/Amsterdam
-            - Europe/Andorra
-            - Europe/Astrakhan
-            - Europe/Athens
-            - Europe/Belfast
-            - Europe/Belgrade
-            - Europe/Berlin
-            - Europe/Bratislava
-            - Europe/Brussels
-            - Europe/Bucharest
-            - Europe/Budapest
-            - Europe/Busingen
-            - Europe/Chisinau
-            - Europe/Copenhagen
-            - Europe/Dublin
-            - Europe/Gibraltar
-            - Europe/Guernsey
-            - Europe/Helsinki
-            - Europe/Isle_of_Man
-            - Europe/Istanbul
-            - Europe/Jersey
-            - Europe/Kaliningrad
-            - Europe/Kiev
-            - Europe/Kirov
-            - Europe/Kyiv
-            - Europe/Lisbon
-            - Europe/Ljubljana
-            - Europe/London
-            - Europe/Luxembourg
-            - Europe/Madrid
-            - Europe/Malta
-            - Europe/Mariehamn
-            - Europe/Minsk
-            - Europe/Monaco
-            - Europe/Moscow
-            - Europe/Nicosia
-            - Europe/Oslo
-            - Europe/Paris
-            - Europe/Podgorica
-            - Europe/Prague
-            - Europe/Riga
-            - Europe/Rome
-            - Europe/Samara
-            - Europe/San_Marino
-            - Europe/Sarajevo
-            - Europe/Saratov
-            - Europe/Simferopol
-            - Europe/Skopje
-            - Europe/Sofia
-            - Europe/Stockholm
-            - Europe/Tallinn
-            - Europe/Tirane
-            - Europe/Tiraspol
-            - Europe/Ulyanovsk
-            - Europe/Uzhgorod
-            - Europe/Vaduz
-            - Europe/Vatican
-            - Europe/Vienna
-            - Europe/Vilnius
-            - Europe/Volgograd
-            - Europe/Warsaw
-            - Europe/Zagreb
-            - Europe/Zaporozhye
-            - Europe/Zurich
-            - GB
-            - GB-Eire
-            - GMT
-            - GMT+0
-            - GMT-0
-            - GMT0
-            - Greenwich
-            - HST
-            - Hongkong
-            - Iceland
-            - Indian/Antananarivo
-            - Indian/Chagos
-            - Indian/Christmas
-            - Indian/Cocos
-            - Indian/Comoro
-            - Indian/Kerguelen
-            - Indian/Mahe
-            - Indian/Maldives
-            - Indian/Mauritius
-            - Indian/Mayotte
-            - Indian/Reunion
-            - Iran
-            - Israel
-            - Jamaica
-            - Japan
-            - Kwajalein
-            - Libya
-            - MET
-            - MST
-            - MST7MDT
-            - Mexico/BajaNorte
-            - Mexico/BajaSur
-            - Mexico/General
-            - NZ
-            - NZ-CHAT
-            - Navajo
-            - PRC
-            - PST8PDT
-            - Pacific/Apia
-            - Pacific/Auckland
-            - Pacific/Bougainville
-            - Pacific/Chatham
-            - Pacific/Chuuk
-            - Pacific/Easter
-            - Pacific/Efate
-            - Pacific/Enderbury
-            - Pacific/Fakaofo
-            - Pacific/Fiji
-            - Pacific/Funafuti
-            - Pacific/Galapagos
-            - Pacific/Gambier
-            - Pacific/Guadalcanal
-            - Pacific/Guam
-            - Pacific/Honolulu
-            - Pacific/Johnston
-            - Pacific/Kanton
-            - Pacific/Kiritimati
-            - Pacific/Kosrae
-            - Pacific/Kwajalein
-            - Pacific/Majuro
-            - Pacific/Marquesas
-            - Pacific/Midway
-            - Pacific/Nauru
-            - Pacific/Niue
-            - Pacific/Norfolk
-            - Pacific/Noumea
-            - Pacific/Pago_Pago
-            - Pacific/Palau
-            - Pacific/Pitcairn
-            - Pacific/Pohnpei
-            - Pacific/Ponape
-            - Pacific/Port_Moresby
-            - Pacific/Rarotonga
-            - Pacific/Saipan
-            - Pacific/Samoa
-            - Pacific/Tahiti
-            - Pacific/Tarawa
-            - Pacific/Tongatapu
-            - Pacific/Truk
-            - Pacific/Wake
-            - Pacific/Wallis
-            - Pacific/Yap
-            - Poland
-            - Portugal
-            - ROC
-            - ROK
-            - Singapore
-            - Turkey
-            - UCT
-            - US/Alaska
-            - US/Aleutian
-            - US/Arizona
-            - US/Central
-            - US/East-Indiana
-            - US/Eastern
-            - US/Hawaii
-            - US/Indiana-Starke
-            - US/Michigan
-            - US/Mountain
-            - US/Pacific
-            - US/Samoa
-            - UTC
-            - Universal
-            - W-SU
-            - WET
-            - Zulu
+          $ref: '#/components/schemas/clinicTimezone.v1'
       required:
         - id
         - name
@@ -2934,17 +3252,44 @@ components:
         - tierDescription
         - tier
         - preferredBgUnits
-    Clinics:
+    error.v1:
+      title: Error
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: Requested resources was not found
+      required:
+        - code
+        - message
+    tidepooluserid:
+      type: string
+      title: Tidepool User ID
+      pattern: ^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$
+      description: String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
+      readOnly: true
+      x-go-type: string
+    clinicianRoles.v1:
       type: array
+      title: Clinician Permissions
+      minItems: 1
+      uniqueItems: true
       items:
-        $ref: '#/components/schemas/Clinic'
-    Clinician:
+        type: string
+        enum:
+          - CLINIC_ADMIN
+          - CLINIC_MEMBER
+          - PRESCRIBER
+    clinician.v1:
       title: Clinician
       description: The `id` may be empty if the clinician invite has not been accepted.
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/TidepoolUserId'
+          $ref: '#/components/schemas/tidepooluserid'
         inviteId:
           type: string
           description: The id of the invite if it hasn't been accepted
@@ -2957,7 +3302,7 @@ components:
           description: The name of the clinician
           minLength: 1
         roles:
-          $ref: '#/components/schemas/ClinicianRoles'
+          $ref: '#/components/schemas/clinicianRoles.v1'
         createdTime:
           type: string
           format: date-time
@@ -2971,393 +3316,7 @@ components:
         - roles
         - createdTime
         - updatedTime
-    Clinicians:
-      type: array
-      items:
-        $ref: '#/components/schemas/Clinician'
-    Patient:
-      type: object
-      title: Patient
-      properties:
-        id:
-          $ref: '#/components/schemas/TidepoolUserId'
-        email:
-          type: string
-          x-go-type: string
-          format: email
-        fullName:
-          type: string
-          description: The full name of the patient
-          minLength: 1
-        birthDate:
-          type: string
-          format: date
-          example: '2012-08-30'
-        mrn:
-          type: string
-          description: The medical record number of the patient
-          minLength: 1
-        tags:
-          $ref: '#/components/schemas/PatientTagIds'
-        targetDevices:
-          type: array
-          items:
-            type: string
-        permissions:
-          $ref: '#/components/schemas/PatientPermissions'
-        createdTime:
-          type: string
-          format: date-time
-          readOnly: true
-        updatedTime:
-          type: string
-          format: date-time
-          readOnly: true
-        attestationSubmitted:
-          type: boolean
-        dataSources:
-          type: array
-          nullable: true
-          items:
-            $ref: '#/components/schemas/DataSource'
-        lastUploadReminderTime:
-          type: string
-          format: date-time
-          readOnly: true
-        summary:
-          $ref: '#/components/schemas/PatientSummary'
-        reviews:
-          type: array
-          nullable: true
-          x-go-type-skip-optional-pointer: true
-          items:
-            $ref: '#/components/schemas/PatientReview'
-        connectionRequests:
-          $ref: '#/components/schemas/ProviderConnectionRequests'
-          x-stoplight:
-            id: 502rliv0l2tyy
-          description: Requests for each provider are listed in reverse chronological order
-          readOnly: true
-      required:
-        - id
-        - fullName
-        - birthDate
-        - createdTime
-        - updatedTime
-        - connectionRequests
-    Patients:
-      type: array
-      items:
-        $ref: '#/components/schemas/Patient'
-    PatientTag:
-      type: object
-      title: Patient Tag
-      description: ''
-      properties:
-        id:
-          title: Object Id
-          type: string
-          description: String representation of a resource id
-          minLength: 24
-          maxLength: 24
-          pattern: '^[a-f0-9]{24}$'
-          readOnly: true
-        name:
-          type: string
-          description: The tag display name
-          minLength: 1
-          maxLength: 20
-          pattern: '^[\p{L}\p{N}_+><-]{1}[\p{L}\p{N}\s_+><-]*$'
-      required:
-        - id
-        - name
-    PatientTags:
-      type: array
-      items:
-        $ref: '#/components/schemas/PatientTag'
-    DateTime:
-      title: Date/Time
-      description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
-      type: string
-      format: date-time
-      example: '2017-02-06T02:37:46Z'
-      x-go-type: string
-    DataSource:
-      type: object
-      title: Patient data source
-      properties:
-        state:
-          type: string
-          title: Data source connection state
-          enum:
-            - pending
-            - pendingReconnect
-            - connected
-            - disconnected
-            - error
-          example: connected
-        providerName:
-          title: Provider Name
-          type: string
-          minLength: 1
-          maxLength: 100
-          example: dexcom
-        dataSourceId:
-          title: Data Source Object Id
-          type: string
-          description: String representation of a resource id
-          minLength: 24
-          maxLength: 24
-          pattern: '^[a-f0-9]{24}$'
-          readOnly: true
-        modifiedTime:
-          $ref: '#/components/schemas/DateTime'
-        expirationTime:
-          $ref: '#/components/schemas/DateTime'
-      required:
-        - state
-        - providerName
-    DataSources:
-      type: array
-      items:
-        $ref: '#/components/schemas/DataSource'
-    InviteClinician:
-      title: Invite Clinician
-      type: object
-      description: ''
-      properties:
-        email:
-          title: Email Address
-          description: 'An email address, as specified by [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322).'
-          type: string
-          format: email
-          minLength: 6
-          example: example@tidepool.org
-          x-go-type: string
-        roles:
-          $ref: '#/components/schemas/ClinicianRoles'
-      required:
-        - email
-        - roles
-    TidepoolUserId:
-      type: string
-      title: Tidepool User ID
-      pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
-      description: 'String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))'
-      readOnly: true
-      x-go-type: string
-    TidepoolUserIds:
-      type: array
-      nullable: true
-      description: Array of Tidepool User IDs
-      items:
-        $ref: '#/components/schemas/TidepoolUserId'
-      minItems: 1
-      maxItems: 1000
-      uniqueItems: true
-    ClinicianRoles:
-      type: array
-      title: Clinician Permissions
-      minItems: 1
-      uniqueItems: true
-      items:
-        type: string
-        enum:
-          - CLINIC_ADMIN
-          - CLINIC_MEMBER
-          - PRESCRIBER
-    PhoneNumber:
-      title: Phone Number
-      type: object
-      properties:
-        type:
-          type: string
-          minLength: 1
-        number:
-          type: string
-          minLength: 1
-      required:
-        - number
-      example:
-        type: main
-        number: +1 (555) 555-1212
-    PatientPermissions:
-      type: object
-      title: Patient Permissions
-      properties:
-        custodian:
-          type: object
-        view:
-          type: object
-        note:
-          type: object
-        upload:
-          type: object
-    Id:
-      title: Clinic ID
-      description: Clinic identifier.
-      type: string
-      minLength: 24
-      maxLength: 24
-      pattern: '^[a-f0-9]{24}$'
-      readOnly: true
-      example: 2fe2488217ee43e1b2e83c2f
-    PatientClinicRelationship:
-      title: PatientClinicRelationship
-      type: object
-      properties:
-        patient:
-          $ref: '#/components/schemas/Patient'
-        clinic:
-          $ref: '#/components/schemas/Clinic'
-      required:
-        - patient
-        - clinic
-    PatientClinicRelationships:
-      title: PatientClinicRelationships
-      type: array
-      items:
-        $ref: '#/components/schemas/PatientClinicRelationship'
-    CreatePatient:
-      title: Create Patient
-      type: object
-      properties:
-        permissions:
-          $ref: '#/components/schemas/PatientPermissions'
-        isMigrated:
-          type: boolean
-        legacyClinicianId:
-          $ref: '#/components/schemas/TidepoolUserId'
-        attestationSubmitted:
-          type: boolean
-        fullName:
-          type: string
-          description: The full name of the patient
-          minLength: 1
-        birthDate:
-          type: string
-          format: date
-          example: '2012-08-30'
-        mrn:
-          type: string
-          description: The medical record number of the patient
-          minLength: 1
-        tags:
-          $ref: '#/components/schemas/PatientTagIds'
-    AssociateClinicianToUser:
-      title: Associate Clinician
-      type: object
-      properties:
-        userId:
-          type: string
-      required:
-        - userId
-    ClinicianClinicRelationship:
-      title: ClinicianClinicRelationship
-      type: object
-      properties:
-        clinician:
-          $ref: '#/components/schemas/Clinician'
-        clinic:
-          $ref: '#/components/schemas/Clinic'
-      required:
-        - clinician
-        - clinic
-    ClinicianClinicRelationships:
-      title: ClinicianClinicRelationships
-      type: array
-      items:
-        $ref: '#/components/schemas/ClinicianClinicRelationship'
-    Migration:
-      title: Migration
-      type: object
-      properties:
-        userId:
-          type: string
-          description: The user id of the legacy clinician account that needs to be migrated.
-          minLength: 1
-        status:
-          $ref: '#/components/schemas/MigrationStatus'
-        createdTime:
-          type: string
-          format: date-time
-          readOnly: true
-        updatedTime:
-          type: string
-          format: date-time
-          readOnly: true
-        attestationTime:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-        - userId
-        - createdTime
-        - updatedTime
-    Migrations:
-      title: Migrations
-      type: array
-      items:
-        $ref: '#/components/schemas/Migration'
-    MigrationUpdate:
-      title: MigrationUpdate
-      type: object
-      properties:
-        status:
-          $ref: '#/components/schemas/MigrationStatus'
-      required:
-        - status
-    MigrationStatus:
-      type: string
-      title: Migration Status
-      enum:
-        - PENDING
-        - RUNNING
-        - COMPLETED
-      description: The current status of the migration
-    Meta:
-      title: Meta
-      type: object
-      properties:
-        count:
-          type: integer
-    PatientsResponse:
-      title: PatientsResponse
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/Patients'
-        meta:
-          $ref: '#/components/schemas/Meta'
-    Tide:
-      type: object
-      title: tide.v1
-      description: Report of at-risk patients based on specific grouping criteria
-      properties:
-        config:
-          $ref: '#/components/schemas/TideConfig'
-        results:
-          $ref: '#/components/schemas/TideResults'
-      required:
-        - config
-        - results
-    TideResponse:
-      $ref: '#/components/schemas/Tide'
-    UpdateUserDetails:
-      title: UpdateUserDetails
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-          minLength: 1
-    TriggerMigration:
-      title: TriggerMigration
-      type: object
-      properties:
-        attestationSubmitted:
-          type: boolean
-    PatientTagIds:
+    patientTagIds.v1:
       type: array
       title: Patient Tag ID List
       uniqueItems: true
@@ -3368,58 +3327,9 @@ components:
         type: string
         minLength: 24
         maxLength: 24
-        pattern: '^[a-f0-9]{24}$'
+        pattern: ^[a-f0-9]{24}$
         readOnly: true
-    TideConfig:
-      type: object
-      title: tideconfig.v1
-      description: ''
-      properties:
-        schemaVersion:
-          description: TIDE schema version
-          type: number
-          x-go-type: int
-        clinicId:
-          $ref: '#/components/schemas/Id'
-        period:
-          type: string
-          pattern: ^(1d|7d|14d|30d)$
-          example: 7d
-        lastDataCutoff:
-          type: string
-          format: date-time
-        highGlucoseThreshold:
-          description: Threshold used for determining if a value is high
-          type: number
-          x-go-type: float64
-        veryHighGlucoseThreshold:
-          description: Threshold used for determining if a value is very high
-          type: number
-          x-go-type: float64
-        lowGlucoseThreshold:
-          description: Threshold used for determining if a value is low
-          type: number
-          x-go-type: float64
-        veryLowGlucoseThreshold:
-          description: Threshold used for determining if a value is very low
-          type: number
-          x-go-type: float64
-        tags:
-          $ref: '#/components/schemas/PatientTagIds'
-        filters:
-          $ref: '#/components/schemas/TideFilters'
-      required:
-        - schemaVersion
-        - clinicId
-        - period
-        - lastDataCutoff
-        - highGlucoseThreshold
-        - veryHighGlucoseThreshold
-        - lowGlucoseThreshold
-        - veryLowGlucoseThreshold
-        - tags
-        - filters
-    TideFilters:
+    tideFilters.v1:
       type: object
       title: tidefilters.v1
       description: ''
@@ -3450,13 +3360,119 @@ components:
         - dropInTimeInTargetPercent
         - timeInTargetPercent
         - timeCGMUsePercent
-    TidePatient:
+    tideConfig.v1:
+      type: object
+      title: tideconfig.v1
+      description: ''
+      properties:
+        schemaVersion:
+          description: TIDE schema version
+          type: number
+          x-go-type: int
+        clinicId:
+          $ref: '#/components/schemas/clinicId.v1'
+        period:
+          type: string
+          pattern: ^(1d|7d|14d|30d)$
+          example: 7d
+        lastDataCutoff:
+          type: string
+          format: date-time
+        highGlucoseThreshold:
+          description: Threshold used for determining if a value is high
+          type: number
+          x-go-type: float64
+        veryHighGlucoseThreshold:
+          description: Threshold used for determining if a value is very high
+          type: number
+          x-go-type: float64
+        lowGlucoseThreshold:
+          description: Threshold used for determining if a value is low
+          type: number
+          x-go-type: float64
+        veryLowGlucoseThreshold:
+          description: Threshold used for determining if a value is very low
+          type: number
+          x-go-type: float64
+        tags:
+          $ref: '#/components/schemas/patientTagIds.v1'
+        filters:
+          $ref: '#/components/schemas/tideFilters.v1'
+      required:
+        - schemaVersion
+        - clinicId
+        - period
+        - lastDataCutoff
+        - highGlucoseThreshold
+        - veryHighGlucoseThreshold
+        - lowGlucoseThreshold
+        - veryLowGlucoseThreshold
+        - tags
+        - filters
+    patientReview.v1:
+      type: object
+      title: patientreview.v1
+      description: A summary of a patients recent data
+      properties:
+        clinicianId:
+          type: string
+        time:
+          type: string
+          format: date-time
+      required:
+        - clinicianId
+        - time
+    providerName.v1:
+      title: Provider Name
+      type: string
+      minLength: 1
+      maxLength: 100
+      example: dexcom
+    datetime.v1:
+      title: Date/Time
+      description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
+      type: string
+      format: date-time
+      example: '2017-02-06T02:37:46Z'
+      x-go-type: string
+    dataSource.v1:
+      type: object
+      title: Patient data source
+      properties:
+        state:
+          type: string
+          title: Data source connection state
+          enum:
+            - pending
+            - pendingReconnect
+            - connected
+            - disconnected
+            - error
+          example: connected
+        providerName:
+          $ref: '#/components/schemas/providerName.v1'
+        dataSourceId:
+          title: Data Source Object Id
+          type: string
+          description: String representation of a resource id
+          minLength: 24
+          maxLength: 24
+          pattern: ^[a-f0-9]{24}$
+          readOnly: true
+        modifiedTime:
+          $ref: '#/components/schemas/datetime.v1'
+        expirationTime:
+          $ref: '#/components/schemas/datetime.v1'
+      required:
+        - state
+        - providerName
+    tidePatient.v1:
       type: object
       title: tidepatient.v1
       description: ''
       properties:
         id:
-          $ref: '#/components/schemas/TidepoolUserId'
+          $ref: '#/components/schemas/tidepooluserid'
         email:
           type: string
           x-go-type: string
@@ -3466,22 +3482,22 @@ components:
           description: The full name of the patient
           minLength: 1
         tags:
-          $ref: '#/components/schemas/PatientTagIds'
+          $ref: '#/components/schemas/patientTagIds.v1'
         reviews:
           type: array
           nullable: true
           x-go-type-skip-optional-pointer: true
           items:
-            $ref: '#/components/schemas/PatientReview'
+            $ref: '#/components/schemas/patientReview.v1'
         dataSources:
           type: array
           nullable: true
           items:
-            $ref: '#/components/schemas/DataSource'
+            $ref: '#/components/schemas/dataSource.v1'
       required:
         - id
         - tags
-    TideResultPatient:
+    tideResultPatient.v1:
       type: object
       title: tideresultpatient.v1
       description: ''
@@ -3550,10 +3566,10 @@ components:
           type: string
           format: date-time
         patient:
-          $ref: '#/components/schemas/TidePatient'
+          $ref: '#/components/schemas/tidePatient.v1'
       required:
         - patient
-    TideResults:
+    tideResults.v1:
       type: object
       title: tideresults.v1
       description: ''
@@ -3568,287 +3584,125 @@ components:
       additionalProperties:
         type: array
         items:
-          $ref: '#/components/schemas/TideResultPatient'
-    PatientBGMPeriod:
+          $ref: '#/components/schemas/tideResultPatient.v1'
+    tideResponse.v1:
       type: object
-      title: bgmperiod.v1
-      description: 'Summary of a specific BGM time period (currently: 1d, 7d, 14d, 30d)'
-      properties:
-        hasAverageGlucoseMmol:
-          type: boolean
-        averageGlucoseMmol:
-          description: Average Glucose of records in this period
-          type: number
-          example: 5.5
-          x-go-type: float64
-        averageGlucoseMmolDelta:
-          description: Difference between the averageGlucose in this period and the other offset version
-          type: number
-          example: 2.5
-          x-go-type: float64
-        hasTimeInTargetPercent:
-          type: boolean
-        timeInTargetPercent:
-          description: Percentage of time spent in target glucose range
-          type: number
-          example: 0.35
-          x-go-type: float64
-        timeInTargetPercentDelta:
-          description: Difference between the timeInTargetPercent in this period and version in the opposite offset
-          type: number
-          example: 0.2
-          x-go-type: float64
-        hasTimeInTargetRecords:
-          type: boolean
-        timeInTargetRecords:
-          description: Counter of records in target glucose range
-          type: number
-          example: 10
-          x-go-type: int
-        timeInTargetRecordsDelta:
-          description: Difference between the timeInTargetRecords in this period and version in the opposite offset
-          type: number
-          example: 5
-          x-go-type: int
-        hasTimeInHighPercent:
-          type: boolean
-        timeInHighPercent:
-          description: Percentage of time spent in high glucose range
-          type: number
-          example: 0.35
-          x-go-type: float64
-        timeInHighPercentDelta:
-          description: Difference between the timeInHighPercent in this period and version in the opposite offset
-          type: number
-          example: 0.2
-          x-go-type: float64
-        hasTimeInHighRecords:
-          type: boolean
-        timeInHighRecords:
-          description: Counter of records in high glucose range
-          type: number
-          example: 10
-          x-go-type: int
-        timeInHighRecordsDelta:
-          description: Difference between the timeInHighRecords in this period and version in the opposite offset
-          type: number
-          example: 5
-          x-go-type: int
-        hasTimeInVeryHighPercent:
-          type: boolean
-        timeInVeryHighPercent:
-          description: Percentage of time spent in very high glucose range
-          type: number
-          example: 0.35
-          x-go-type: float64
-        timeInVeryHighPercentDelta:
-          description: Difference between the timeInVeryHighPercent in this period and version in the opposite offset
-          type: number
-          example: 0.2
-          x-go-type: float64
-        hasTimeInVeryHighRecords:
-          type: boolean
-        timeInVeryHighRecords:
-          description: Counter of records in very high glucose range
-          type: number
-          example: 10
-          x-go-type: int
-        timeInVeryHighRecordsDelta:
-          description: Difference between the timeInVeryHighRecords in this period and version in the opposite offset
-          type: number
-          example: 5
-          x-go-type: int
-        hasTimeInExtremeHighPercent:
-          type: boolean
-        timeInExtremeHighPercent:
-          description: Percentage of time spent in extreme high glucose range
-          type: number
-          example: 0.35
-          x-go-type: float64
-        timeInExtremeHighPercentDelta:
-          description: Difference between the timeInExtremeHighPercent in this period and version in the opposite offset
-          type: number
-          example: 0.2
-          x-go-type: float64
-        hasTimeInExtremeHighRecords:
-          type: boolean
-        timeInExtremeHighRecords:
-          description: Counter of records in extreme high glucose range
-          type: number
-          example: 10
-          x-go-type: int
-        timeInExtremeHighRecordsDelta:
-          description: Difference between the timeInExtremeHighRecords in this period and version in the opposite offset
-          type: number
-          example: 5
-          x-go-type: int
-        hasTimeInAnyHighPercent:
-          type: boolean
-        timeInAnyHighPercent:
-          description: Percentage of time spent in Any high glucose range
-          type: number
-          example: 0.35
-          x-go-type: float64
-        timeInAnyHighPercentDelta:
-          description: Difference between the timeInAnyHighPercent in this period and version in the opposite offset
-          type: number
-          example: 0.2
-          x-go-type: float64
-        hasTimeInAnyHighRecords:
-          type: boolean
-        timeInAnyHighRecords:
-          description: Counter of records in Any high glucose range
-          type: number
-          example: 10
-          x-go-type: int
-        timeInAnyHighRecordsDelta:
-          description: Difference between the timeInAnyHighRecords in this period and version in the opposite offset
-          type: number
-          example: 5
-          x-go-type: int
-        hasTimeInLowPercent:
-          type: boolean
-        timeInLowPercent:
-          description: Percentage of time spent in low glucose range
-          type: number
-          example: 0.35
-          x-go-type: float64
-        timeInLowPercentDelta:
-          description: Difference between the timeInLowPercent in this period and version in the opposite offset
-          type: number
-          example: 0.2
-          x-go-type: float64
-        hasTimeInLowRecords:
-          type: boolean
-        timeInLowRecords:
-          description: Counter of records in low glucose range
-          type: number
-          example: 10
-          x-go-type: int
-        timeInLowRecordsDelta:
-          description: Difference between the timeInLowRecords in this period and version in the opposite offset
-          type: number
-          example: 5
-          x-go-type: int
-        hasTimeInVeryLowPercent:
-          type: boolean
-        timeInVeryLowPercent:
-          description: Percentage of time spent in very low glucose range
-          type: number
-          example: 0.35
-          x-go-type: float64
-        timeInVeryLowPercentDelta:
-          description: Difference between the timeInVeryLowPercent in this period and version in the opposite offset
-          type: number
-          example: 0.2
-          x-go-type: float64
-        hasTimeInVeryLowRecords:
-          type: boolean
-        timeInVeryLowRecords:
-          description: Counter of records in very low glucose range
-          type: number
-          example: 10
-          x-go-type: int
-        timeInVeryLowRecordsDelta:
-          description: Difference between the timeInVeryLowRecords in this period and version in the opposite offset
-          type: number
-          example: 5
-          x-go-type: int
-        hasTimeInAnyLowPercent:
-          type: boolean
-        timeInAnyLowPercent:
-          description: Percentage of time spent in Any low glucose range
-          type: number
-          example: 0.35
-          x-go-type: float64
-        timeInAnyLowPercentDelta:
-          description: Difference between the timeInAnyLowPercent in this period and version in the opposite offset
-          type: number
-          example: 0.2
-          x-go-type: float64
-        hasTimeInAnyLowRecords:
-          type: boolean
-        timeInAnyLowRecords:
-          description: Counter of records in Any low glucose range
-          type: number
-          example: 10
-          x-go-type: int
-        timeInAnyLowRecordsDelta:
-          description: Difference between the timeInAnyLowRecords in this period and version in the opposite offset
-          type: number
-          example: 5
-          x-go-type: int
-        hasTotalRecords:
-          type: boolean
-        totalRecords:
-          description: Counter of records
-          type: number
-          example: 10
-          x-go-type: int
-        totalRecordsDelta:
-          description: Difference between the totalRecords in this period and version in the opposite offset
-          type: number
-          example: 10
-          x-go-type: int
-        hasAverageDailyRecords:
-          type: boolean
-        averageDailyRecords:
-          description: Average daily readings
-          type: number
-          example: 3.5
-          x-go-type: float64
-        averageDailyRecordsDelta:
-          description: Difference between the averageDailyRecords in this period and version in the opposite offset
-          type: number
-          example: 2.5
-          x-go-type: float64
-      required:
-        - hasAverageGlucoseMmol
-        - hasTimeInTargetPercent
-        - hasTimeInTargetRecords
-        - hasTimeInHighPercent
-        - hasTimeInHighRecords
-        - hasTimeInVeryHighPercent
-        - hasTimeInVeryHighRecords
-        - hasTimeInExtremeHighPercent
-        - hasTimeInExtremeHighRecords
-        - hasTimeInLowPercent
-        - hasTimeInLowRecords
-        - hasTimeInVeryLowPercent
-        - hasTimeInVeryLowRecords
-        - hasTimeInAnyLowPercent
-        - hasTimeInAnyLowRecords
-        - hasTimeInAnyHighPercent
-        - hasTimeInAnyHighRecords
-        - hasTotalRecords
-        - hasAverageDailyRecords
-    PatientBGMPeriods:
-      type: object
-      title: bgmperiods.v1
-      description: A map to each supported BGM summary period
-      x-go-type-skip-optional-pointer: true
-      additionalProperties:
-        $ref: '#/components/schemas/PatientBGMPeriod'
-    PatientBGMStats:
-      type: object
-      title: bgmstats.v1
-      description: A summary of a users recent BGM glucose values
+      title: tide.v1
+      description: Report of at-risk patients based on specific grouping criteria
       properties:
         config:
-          $ref: '#/components/schemas/PatientSummaryConfig'
-        dates:
-          $ref: '#/components/schemas/PatientSummaryDates'
-        totalHours:
-          description: Total hours represented in the hourly stats
+          $ref: '#/components/schemas/tideConfig.v1'
+        results:
+          $ref: '#/components/schemas/tideResults.v1'
+      required:
+        - config
+        - results
+    patientPermissions.v1:
+      type: object
+      title: Patient Permissions
+      properties:
+        custodian:
+          type: object
+        view:
+          type: object
+        note:
+          type: object
+        upload:
+          type: object
+    summaryId.v1:
+      title: Summary ID
+      description: Summary Unique Identifier
+      type: string
+      minLength: 0
+      maxLength: 24
+      pattern: ^[a-f0-9]{0,24}$
+      example: 2fe2488217ee43e1b2e83c2f
+    summaryConfig.v1:
+      type: object
+      title: config.v1
+      x-go-type-skip-optional-pointer: true
+      description: Summary schema version and calculation configuration
+      properties:
+        schemaVersion:
+          description: Summary schema version
           type: number
           x-go-type: int
-        periods:
-          $ref: '#/components/schemas/PatientBGMPeriods'
-        offsetPeriods:
-          $ref: '#/components/schemas/PatientBGMPeriods'
+        highGlucoseThreshold:
+          description: Threshold used for determining if a value is high
+          type: number
+          x-go-type: float64
+        veryHighGlucoseThreshold:
+          description: Threshold used for determining if a value is very high
+          type: number
+          x-go-type: float64
+        lowGlucoseThreshold:
+          description: Threshold used for determining if a value is low
+          type: number
+          x-go-type: float64
+        veryLowGlucoseThreshold:
+          description: Threshold used for determining if a value is very low
+          type: number
+          x-go-type: float64
       required:
-        - totalHours
-    PatientCGMPeriod:
+        - schemaVersion
+        - highGlucoseThreshold
+        - veryHighGlucoseThreshold
+        - lowGlucoseThreshold
+        - veryLowGlucoseThreshold
+    summaryDates.v1:
+      type: object
+      title: dates.v1
+      x-go-type-skip-optional-pointer: true
+      description: dates tracked for summary calculation
+      properties:
+        lastUpdatedDate:
+          description: Date of the last calculation
+          type: string
+          format: date-time
+        lastUpdatedReason:
+          description: List of reasons the summary was updated for
+          type: array
+          items:
+            type: string
+        hasFirstData:
+          type: boolean
+        firstData:
+          description: Date of the first included value
+          type: string
+          format: date-time
+        hasLastData:
+          type: boolean
+        lastData:
+          description: Date of the last calculated value
+          type: string
+          format: date-time
+        hasLastUploadDate:
+          type: boolean
+        lastUploadDate:
+          description: Created date of the last calculated value
+          type: string
+          format: date-time
+        hasOutdatedSince:
+          type: boolean
+        outdatedSince:
+          description: Date of the first user upload after lastData, removed when calculated
+          type: string
+          format: date-time
+        outdatedSinceLimit:
+          description: Upper limit of the OutdatedSince value to prevent infinite queue duration
+          type: string
+          format: date-time
+        outdatedReason:
+          description: List of reasons the summary was marked outdated for
+          type: array
+          items:
+            type: string
+      required:
+        - hasFirstData
+        - hasLastData
+        - hasLastUploadDate
+        - hasOutdatedSince
+    cgmPeriod.v1:
       type: object
       title: cgmperiod.v1
       description: 'Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)'
@@ -4297,184 +4151,593 @@ components:
         - hoursWithDataDelta
         - daysWithData
         - daysWithDataDelta
-    PatientCGMPeriods:
+    cgmPeriods.v1:
       type: object
       title: cgmperiods.v1
       x-go-type-skip-optional-pointer: true
       description: A map to each supported CGM summary period
       additionalProperties:
-        $ref: '#/components/schemas/PatientCGMPeriod'
-    PatientCGMStats:
+        $ref: '#/components/schemas/cgmPeriod.v1'
+    cgmStats.v1:
       type: object
       title: cgmstats.v1
       description: A summary of a users recent CGM glucose values
       properties:
+        id:
+          $ref: '#/components/schemas/summaryId.v1'
         config:
-          $ref: '#/components/schemas/PatientSummaryConfig'
+          $ref: '#/components/schemas/summaryConfig.v1'
         dates:
-          $ref: '#/components/schemas/PatientSummaryDates'
-        totalHours:
-          description: Total hours represented in the hourly stats
-          type: number
-          x-go-type: int
+          $ref: '#/components/schemas/summaryDates.v1'
         periods:
-          $ref: '#/components/schemas/PatientCGMPeriods'
-        offsetPeriods:
-          $ref: '#/components/schemas/PatientCGMPeriods'
-      required:
-        - totalHours
-    PatientSummaryConfig:
+          $ref: '#/components/schemas/cgmPeriods.v1'
+    bgmPeriod.v1:
       type: object
-      title: config.v1
-      x-go-type-skip-optional-pointer: true
-      description: Summary schema version and calculation configuration
+      title: bgmperiod.v1
+      description: 'Summary of a specific BGM time period (currently: 1d, 7d, 14d, 30d)'
       properties:
-        schemaVersion:
-          description: Summary schema version
+        hasAverageGlucoseMmol:
+          type: boolean
+        averageGlucoseMmol:
+          description: Average Glucose of records in this period
           type: number
+          example: 5.5
+          x-go-type: float64
+        averageGlucoseMmolDelta:
+          description: Difference between the averageGlucose in this period and the other offset version
+          type: number
+          example: 2.5
+          x-go-type: float64
+        hasTimeInTargetPercent:
+          type: boolean
+        timeInTargetPercent:
+          description: Percentage of time spent in target glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInTargetPercentDelta:
+          description: Difference between the timeInTargetPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInTargetRecords:
+          type: boolean
+        timeInTargetRecords:
+          description: Counter of records in target glucose range
+          type: number
+          example: 10
           x-go-type: int
-        highGlucoseThreshold:
-          description: Threshold used for determining if a value is high
+        timeInTargetRecordsDelta:
+          description: Difference between the timeInTargetRecords in this period and version in the opposite offset
           type: number
+          example: 5
+          x-go-type: int
+        hasTimeInHighPercent:
+          type: boolean
+        timeInHighPercent:
+          description: Percentage of time spent in high glucose range
+          type: number
+          example: 0.35
           x-go-type: float64
-        veryHighGlucoseThreshold:
-          description: Threshold used for determining if a value is very high
+        timeInHighPercentDelta:
+          description: Difference between the timeInHighPercent in this period and version in the opposite offset
           type: number
+          example: 0.2
           x-go-type: float64
-        lowGlucoseThreshold:
-          description: Threshold used for determining if a value is low
+        hasTimeInHighRecords:
+          type: boolean
+        timeInHighRecords:
+          description: Counter of records in high glucose range
           type: number
+          example: 10
+          x-go-type: int
+        timeInHighRecordsDelta:
+          description: Difference between the timeInHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTimeInVeryHighPercent:
+          type: boolean
+        timeInVeryHighPercent:
+          description: Percentage of time spent in very high glucose range
+          type: number
+          example: 0.35
           x-go-type: float64
-        veryLowGlucoseThreshold:
-          description: Threshold used for determining if a value is very low
+        timeInVeryHighPercentDelta:
+          description: Difference between the timeInVeryHighPercent in this period and version in the opposite offset
           type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInVeryHighRecords:
+          type: boolean
+        timeInVeryHighRecords:
+          description: Counter of records in very high glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInVeryHighRecordsDelta:
+          description: Difference between the timeInVeryHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTimeInExtremeHighPercent:
+          type: boolean
+        timeInExtremeHighPercent:
+          description: Percentage of time spent in extreme high glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInExtremeHighPercentDelta:
+          description: Difference between the timeInExtremeHighPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInExtremeHighRecords:
+          type: boolean
+        timeInExtremeHighRecords:
+          description: Counter of records in extreme high glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInExtremeHighRecordsDelta:
+          description: Difference between the timeInExtremeHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTimeInAnyHighPercent:
+          type: boolean
+        timeInAnyHighPercent:
+          description: Percentage of time spent in Any high glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInAnyHighPercentDelta:
+          description: Difference between the timeInAnyHighPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInAnyHighRecords:
+          type: boolean
+        timeInAnyHighRecords:
+          description: Counter of records in Any high glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInAnyHighRecordsDelta:
+          description: Difference between the timeInAnyHighRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTimeInLowPercent:
+          type: boolean
+        timeInLowPercent:
+          description: Percentage of time spent in low glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInLowPercentDelta:
+          description: Difference between the timeInLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInLowRecords:
+          type: boolean
+        timeInLowRecords:
+          description: Counter of records in low glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInLowRecordsDelta:
+          description: Difference between the timeInLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTimeInVeryLowPercent:
+          type: boolean
+        timeInVeryLowPercent:
+          description: Percentage of time spent in very low glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInVeryLowPercentDelta:
+          description: Difference between the timeInVeryLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInVeryLowRecords:
+          type: boolean
+        timeInVeryLowRecords:
+          description: Counter of records in very low glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInVeryLowRecordsDelta:
+          description: Difference between the timeInVeryLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTimeInAnyLowPercent:
+          type: boolean
+        timeInAnyLowPercent:
+          description: Percentage of time spent in Any low glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
+        timeInAnyLowPercentDelta:
+          description: Difference between the timeInAnyLowPercent in this period and version in the opposite offset
+          type: number
+          example: 0.2
+          x-go-type: float64
+        hasTimeInAnyLowRecords:
+          type: boolean
+        timeInAnyLowRecords:
+          description: Counter of records in Any low glucose range
+          type: number
+          example: 10
+          x-go-type: int
+        timeInAnyLowRecordsDelta:
+          description: Difference between the timeInAnyLowRecords in this period and version in the opposite offset
+          type: number
+          example: 5
+          x-go-type: int
+        hasTotalRecords:
+          type: boolean
+        totalRecords:
+          description: Counter of records
+          type: number
+          example: 10
+          x-go-type: int
+        totalRecordsDelta:
+          description: Difference between the totalRecords in this period and version in the opposite offset
+          type: number
+          example: 10
+          x-go-type: int
+        hasAverageDailyRecords:
+          type: boolean
+        averageDailyRecords:
+          description: Average daily readings
+          type: number
+          example: 3.5
+          x-go-type: float64
+        averageDailyRecordsDelta:
+          description: Difference between the averageDailyRecords in this period and version in the opposite offset
+          type: number
+          example: 2.5
           x-go-type: float64
       required:
-        - schemaVersion
-        - highGlucoseThreshold
-        - veryHighGlucoseThreshold
-        - lowGlucoseThreshold
-        - veryLowGlucoseThreshold
-    PatientSummaryDates:
+        - hasAverageGlucoseMmol
+        - hasTimeInTargetPercent
+        - hasTimeInTargetRecords
+        - hasTimeInHighPercent
+        - hasTimeInHighRecords
+        - hasTimeInVeryHighPercent
+        - hasTimeInVeryHighRecords
+        - hasTimeInExtremeHighPercent
+        - hasTimeInExtremeHighRecords
+        - hasTimeInLowPercent
+        - hasTimeInLowRecords
+        - hasTimeInVeryLowPercent
+        - hasTimeInVeryLowRecords
+        - hasTimeInAnyLowPercent
+        - hasTimeInAnyLowRecords
+        - hasTimeInAnyHighPercent
+        - hasTimeInAnyHighRecords
+        - hasTotalRecords
+        - hasAverageDailyRecords
+    bgmPeriods.v1:
       type: object
-      title: dates.v1
+      title: bgmperiods.v1
+      description: A map to each supported BGM summary period
       x-go-type-skip-optional-pointer: true
-      description: dates tracked for summary calculation
+      additionalProperties:
+        $ref: '#/components/schemas/bgmPeriod.v1'
+    bgmStats.v1:
+      type: object
+      title: bgmstats.v1
+      description: A summary of a users recent BGM glucose values
       properties:
-        lastUpdatedDate:
-          description: Date of the last calculation
-          type: string
-          format: date-time
-        lastUpdatedReason:
-          description: List of reasons the summary was updated for
-          type: array
-          items:
-            type: string
-        hasFirstData:
-          type: boolean
-        firstData:
-          description: Date of the first included value
-          type: string
-          format: date-time
-        hasLastData:
-          type: boolean
-        lastData:
-          description: Date of the last calculated value
-          type: string
-          format: date-time
-        hasLastUploadDate:
-          type: boolean
-        lastUploadDate:
-          description: Created date of the last calculated value
-          type: string
-          format: date-time
-        hasOutdatedSince:
-          type: boolean
-        outdatedSince:
-          description: 'Date of the first user upload after lastData, removed when calculated'
-          type: string
-          format: date-time
-        outdatedSinceLimit:
-          description: Upper limit of the OutdatedSince value to prevent infinite queue duration
-          type: string
-          format: date-time
-        outdatedReason:
-          description: List of reasons the summary was marked outdated for
-          type: array
-          items:
-            type: string
-      required:
-        - hasFirstData
-        - hasLastData
-        - hasLastUploadDate
-        - hasOutdatedSince
-    PatientSummary:
+        id:
+          $ref: '#/components/schemas/summaryId.v1'
+        config:
+          $ref: '#/components/schemas/summaryConfig.v1'
+        dates:
+          $ref: '#/components/schemas/summaryDates.v1'
+        periods:
+          $ref: '#/components/schemas/bgmPeriods.v1'
+    patientSummary.v1:
       type: object
       title: patientsummary.v1
       description: A summary of a patients recent data
       properties:
         cgmStats:
-          $ref: '#/components/schemas/PatientCGMStats'
+          $ref: '#/components/schemas/cgmStats.v1'
         bgmStats:
-          $ref: '#/components/schemas/PatientBGMStats'
-    PatientReview:
+          $ref: '#/components/schemas/bgmStats.v1'
+    providerId.v1:
+      title: Third-Party Data Providers
+      x-stoplight:
+        id: fdmfczqym3ocn
+      type: string
+      enum:
+        - dexcom
+        - twiist
+        - abbott
+    providerConnectionRequest.v1:
+      title: Provider Connection Request
+      x-stoplight:
+        id: nim4cceb0lu0w
       type: object
-      title: patientreview.v1
-      description: A summary of a patients recent data
       properties:
-        clinicianId:
+        createdTime:
           type: string
-        time:
+          x-stoplight:
+            id: efcvyea5slw36
+          format: date-time
+        providerName:
+          $ref: '#/components/schemas/providerId.v1'
+          x-stoplight:
+            id: ej94kmuykpg1k
+      required:
+        - createdTime
+        - providerName
+    providerConnectionRequests.v1:
+      title: providerconnectionrequests.v1
+      x-stoplight:
+        id: c8q7wrz5rtge5
+      type: object
+      readOnly: true
+      properties:
+        twiist:
+          type: array
+          x-stoplight:
+            id: 7ve65jmart7pj
+          items:
+            $ref: '#/components/schemas/providerConnectionRequest.v1'
+            x-stoplight:
+              id: 47ez7wiccxdut
+        dexcom:
+          type: array
+          x-stoplight:
+            id: 7ve65jmart7pj
+          items:
+            $ref: '#/components/schemas/providerConnectionRequest.v1'
+            x-stoplight:
+              id: 913pgkbkz62eq
+        abbott:
+          type: array
+          x-stoplight:
+            id: u9rfvrr2njlcq
+          items:
+            $ref: '#/components/schemas/providerConnectionRequest.v1'
+            x-stoplight:
+              id: 47ez7wiccxdut
+      required:
+        - twiist
+        - dexcom
+        - abbott
+    patient.v1:
+      type: object
+      title: Patient
+      properties:
+        id:
+          $ref: '#/components/schemas/tidepooluserid'
+        email:
+          type: string
+          x-go-type: string
+          format: email
+        fullName:
+          type: string
+          description: The full name of the patient
+          minLength: 1
+        birthDate:
+          type: string
+          format: date
+          example: '2012-08-30'
+        mrn:
+          type: string
+          description: The medical record number of the patient
+          minLength: 1
+        tags:
+          $ref: '#/components/schemas/patientTagIds.v1'
+        targetDevices:
+          type: array
+          items:
+            type: string
+        permissions:
+          $ref: '#/components/schemas/patientPermissions.v1'
+        createdTime:
           type: string
           format: date-time
-      required:
-        - clinicianId
-        - time
-    PatientReviews:
-      type: array
-      items:
-        $ref: '#/components/schemas/PatientReview'
-    FloatFilter:
-      type: string
-      pattern: '^(>=|>|<=|<)[+-]?((\d+(\.\d*)?)|(\.\d+))$'
-      example: '>=5.5'
-    IntFilter:
-      type: string
-      pattern: '^(>=|>|<=|<)[+-]?\d+$'
-      example: '>=7'
-    UpdateTier:
-      title: UpdateTier
-      type: object
-      properties:
-        tier:
-          $ref: '#/components/schemas/Tier'
-      required:
-        - tier
-    Tier:
-      type: string
-      title: Clinic Service Tier
-      enum:
-        - tier0100
-        - tier0200
-        - tier0300
-        - tier0400
-      example: tier0100
-    UpdateSuppressedNotifications:
-      title: UpdateSuppressedNotifications
-      type: object
-      properties:
-        suppressedNotifications:
-          $ref: '#/components/schemas/SuppressedNotifications'
-      required:
-        - suppressedNotifications
-    SuppressedNotifications:
-      title: Suppressed Notifications
-      type: object
-      properties:
-        patientClinicInvitation:
+          readOnly: true
+        updatedTime:
+          type: string
+          format: date-time
+          readOnly: true
+        attestationSubmitted:
           type: boolean
-      additionalProperties: false
-    MembershipRestriction:
+        dataSources:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/dataSource.v1'
+        lastUploadReminderTime:
+          type: string
+          format: date-time
+          readOnly: true
+        summary:
+          $ref: '#/components/schemas/patientSummary.v1'
+          readOnly: true
+        reviews:
+          type: array
+          nullable: true
+          x-go-type-skip-optional-pointer: true
+          items:
+            $ref: '#/components/schemas/patientReview.v1'
+        connectionRequests:
+          $ref: '#/components/schemas/providerConnectionRequests.v1'
+          x-stoplight:
+            id: 502rliv0l2tyy
+          description: Requests for each provider are listed in reverse chronological order
+          readOnly: true
+      required:
+        - id
+        - fullName
+        - birthDate
+        - createdTime
+        - updatedTime
+        - connectionRequests
+    emailaddress.v1:
+      title: Email Address
+      description: An email address, as specified by [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322).
+      type: string
+      format: email
+      minLength: 6
+      example: example@tidepool.org
+      x-go-type: string
+    inviteClinician.v1:
+      title: Invite Clinician
+      type: object
+      description: ''
+      properties:
+        email:
+          $ref: '#/components/schemas/emailaddress.v1'
+        roles:
+          $ref: '#/components/schemas/clinicianRoles.v1'
+      required:
+        - email
+        - roles
+    key.v1:
+      title: Confirmation key that uniquely identifies each confirmation
+      type: string
+      minLength: 32
+      maxLength: 32
+      example: Sds2PHMALZrmt++JyD5mIjLkZruJldiM
+    confirmation-type.v1:
+      title: Confirmation Type
+      type: string
+      enum:
+        - password_reset
+        - careteam_invitation
+        - clinician_invitation
+        - signup_confirmation
+        - no_account
+    status.v1:
+      title: Confirmation Status
+      type: string
+      enum:
+        - pending
+        - completed
+        - canceled
+        - declined
+    birthday.v1:
+      title: Birthday
+      type: string
+      format: date
+      example: '2012-08-30'
+      x-go-type: string
+    diagnosisdate.v1:
+      title: Diagnosis Date
+      type: string
+      format: date
+      pattern: ^\d{4}-\d{2}-\d{2}$
+      example: '2013-05-09'
+      x-go-type: string
+    patientprofile.v1:
+      title: Patient User Profile
+      type: object
+      properties:
+        birthday:
+          $ref: '#/components/schemas/birthday.v1'
+        diagnosisDate:
+          $ref: '#/components/schemas/diagnosisdate.v1'
+        isOtherPerson:
+          type: boolean
+          example: false
+        fullName:
+          type: string
+          example: James Jellyfish
+    creatorprofile.v1:
+      title: Creator user profile
+      type: object
+      properties:
+        fullName:
+          type: string
+        patient:
+          $ref: '#/components/schemas/patientprofile.v1'
+      required:
+        - fullName
+        - patient
+    creator.v1:
+      title: Creator
+      type: object
+      properties:
+        userid:
+          $ref: '#/components/schemas/tidepooluserid'
+        profile:
+          $ref: '#/components/schemas/creatorprofile.v1'
+      required:
+        - userid
+        - profile
+    restrictions.v1:
+      title: Acceptance restrictions
+      type: object
+      properties:
+        canAccept:
+          type: boolean
+          description: Whether the invite can be accepted by the current user
+        requiredIdp:
+          type: string
+          description: Set if the user must be authenticated against a specific identity provider before they are able to accept the invite
+      required:
+        - canAccept
+    expiresAt.v1:
+      title: Expiration Time
+      type: string
+      format: date-time
+      description: If specified, the invitation will expire at the given date and time.
+      example: '2024-01-30T08:11:00Z'
+    confirmation.v1:
+      title: Confirmation
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/key.v1'
+        type:
+          $ref: '#/components/schemas/confirmation-type.v1'
+        status:
+          $ref: '#/components/schemas/status.v1'
+        email:
+          $ref: '#/components/schemas/emailaddress.v1'
+        creatorId:
+          $ref: '#/components/schemas/tidepooluserid'
+        created:
+          $ref: '#/components/schemas/datetime.v1'
+        modified:
+          $ref: '#/components/schemas/datetime.v1'
+        creator:
+          $ref: '#/components/schemas/creator.v1'
+        context:
+          type: string
+        restrictions:
+          $ref: '#/components/schemas/restrictions.v1'
+        expiresAt:
+          $ref: '#/components/schemas/expiresAt.v1'
+      required:
+        - key
+        - type
+        - status
+        - email
+        - creatorId
+        - created
+    migrationStatus.v1:
+      type: string
+      title: Migration Status
+      enum:
+        - PENDING
+        - RUNNING
+        - COMPLETED
+      description: The current status of the migration
+    membershipRestriction.v1:
       title: Membership Restriction
       type: object
       description: A user joining a clinic must match all of the defined restrictions
@@ -4485,10 +4748,10 @@ components:
           description: The restriction applies only if the user has an email address with a matching domain
         requiredIdp:
           type: string
-          description: 'If this attribute is set, at the time of joining the clinic the user must be authenticated against this identity provider'
+          description: If this attribute is set, at the time of joining the clinic the user must be authenticated against this identity provider
       required:
         - emailDomain
-    MembershipRestrictions:
+    membershipRestrictions.v1:
       title: Membership Restrictions
       type: object
       description: A user joining a clinic must match at least one of the specified membership restrictions
@@ -4496,145 +4759,8 @@ components:
         restrictions:
           type: array
           items:
-            $ref: '#/components/schemas/MembershipRestriction'
-    EHRSettings:
-      title: EHR Settings
-      x-stoplight:
-        id: m0iw4p0mf24nb
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          description: Enable or disable the EHR integration
-        facility:
-          $ref: '#/components/schemas/EHRFacility'
-        sourceId:
-          type: string
-        destinationIds:
-          $ref: '#/components/schemas/EHRDestinationIds'
-        procedureCodes:
-          $ref: '#/components/schemas/EHRProcedureCodes'
-        mrnIdType:
-          type: string
-          x-stoplight:
-            id: x74orwp43yu91
-          minLength: 1
-        provider:
-          type: string
-          x-stoplight:
-            id: z31vhe9hbaqrn
-          enum:
-            - xealth
-            - redox
-        scheduledReports:
-          $ref: '#/components/schemas/ScheduledReports'
-          x-stoplight:
-            id: lgfrpsps4x37a
-          description: Scheduled Report Settings
-        tags:
-          $ref: '#/components/schemas/EHRTagsSettings'
-          x-stoplight:
-            id: hp97ilzsssprv
-        flowsheets:
-          $ref: '#/components/schemas/EHRFlowsheetSettings'
-      required:
-        - enabled
-        - sourceId
-        - procedureCodes
-        - mrnIdType
-        - provider
-        - scheduledReports
-        - tags
-        - flowsheets
-    EHRFacility:
-      title: Facility
-      x-stoplight:
-        id: 0lyqf8tfdtnu0
-      type: object
-      properties:
-        name:
-          type: string
-          description: 'Ordering Facility Name '
-      required:
-        - name
-    EHRMatchRequest:
-      title: EHR Match Request
-      x-stoplight:
-        id: nq0mlm5dqdfw0
-      type: object
-      x-examples: {}
-      properties:
-        messageRef:
-          $ref: '#/components/schemas/EHRMatchMessageRef'
-        patients:
-          $ref: '#/components/schemas/EHRMatchRequestPatientsOptions'
-    EHRMatchResponse:
-      title: EHRMatchResponse
-      x-stoplight:
-        id: pekkj09rlany0
-      type: object
-      properties:
-        clinic:
-          $ref: '#/components/schemas/Clinic'
-        patients:
-          $ref: '#/components/schemas/Patients'
-        settings:
-          $ref: '#/components/schemas/EHRSettings'
-      required:
-        - clinic
-        - settings
-    MRNSettings:
-      title: MRN Settings
-      x-stoplight:
-        id: 876c3qkxy3ih9
-      type: object
-      properties:
-        required:
-          type: boolean
-          description: Require MRN when creating or updating patients
-        unique:
-          type: boolean
-          description: Enforce MRN uniqueness constraint
-      required:
-        - required
-        - unique
-    PatientCount:
-      title: Patient Count
-      type: object
-      properties:
-        patientCount:
-          description: The patient count for a clinic
-          type: integer
-          minimum: 0
-      required:
-        - patientCount
-    PatientCountLimit:
-      title: Patient Count Limit
-      type: object
-      properties:
-        patientCount:
-          description: The patient count limit
-          type: integer
-          minimum: 0
-        startDate:
-          description: The start date when the patient count limit should be applied
-          $ref: '#/components/schemas/DateTime'
-        endDate:
-          description: The end date when the patient count limit should no longer be applied
-          $ref: '#/components/schemas/DateTime'
-      required:
-        - patientCount
-    PatientCountSettings:
-      title: Patient Count Settings
-      type: object
-      properties:
-        hardLimit:
-          description: The hard limit for the clinic patient count where new patients cannot be created
-          $ref: '#/components/schemas/PatientCountLimit'
-        softLimit:
-          description: The soft limit for the clinic patient count where new patients may still be created
-          $ref: '#/components/schemas/PatientCountLimit'
-    EHRDestinationIds:
+            $ref: '#/components/schemas/membershipRestriction.v1'
+    ehrDestinations.v1:
       title: Default Redox destination ID and per-model overrides
       x-stoplight:
         id: z6cjrz20e5mvu
@@ -4656,7 +4782,7 @@ components:
         - flowsheet
         - results
         - notes
-    EHRProcedureCodes:
+    ehrProcedures.v1:
       title: EHR Procedure Codes Map
       x-stoplight:
         id: gy7do1thlm3g5
@@ -4676,72 +4802,7 @@ components:
           type: string
           x-stoplight:
             id: nb3o2a7kkebar
-    EHRMatchMessageRef:
-      title: EHRMatchMessageRef
-      x-stoplight:
-        id: a1215t5vip3tr
-      type: object
-      properties:
-        dataModel:
-          type: string
-          enum:
-            - Order
-        eventType:
-          type: string
-          enum:
-            - New
-        documentId:
-          type: string
-      required:
-        - dataModel
-        - eventType
-        - documentId
-    AcceptPatientInvitation:
-      title: AcceptPatientInvitation
-      x-stoplight:
-        id: vo0jck92hztsj
-      type: object
-      properties:
-        fullName:
-          type: string
-          description: The full name of the patient
-          minLength: 1
-        birthDate:
-          type: string
-          format: date
-          example: '2012-08-30'
-        mrn:
-          type: string
-          description: The medical record number of the patient
-          minLength: 1
-        tags:
-          $ref: '#/components/schemas/PatientTagIds'
-    AddServiceAccount:
-      title: AddServiceAccount
-      x-stoplight:
-        id: 3c7ko800mld31
-      type: object
-      properties:
-        name:
-          type: string
-          x-stoplight:
-            id: 3333gszyq3x79
-          minLength: 1
-        client_id:
-          type: string
-          x-stoplight:
-            id: kgfyaapmfjies
-          minLength: 1
-        client_secret:
-          type: string
-          x-stoplight:
-            id: 8jdosn0tlbqp5
-          minLength: 1
-      required:
-        - name
-        - client_id
-        - client_secret
-    ScheduledReports:
+    scheduledReports.v1:
       title: scheduledreports.v1
       x-stoplight:
         id: or3i2vsiyder8
@@ -4776,25 +4837,7 @@ components:
       required:
         - onUploadEnabled
         - cadence
-    GenerateMergeReport:
-      title: GenerateMergeReport
-      x-stoplight:
-        id: 3oq18sasrzo0o
-      type: object
-      properties:
-        sourceId:
-          $ref: '#/components/schemas/Id'
-      required:
-        - sourceId
-    MergeClinic:
-      title: MergeClinics
-      x-stoplight:
-        id: 6hn01uuhln0wx
-      type: object
-      properties:
-        sourceId:
-          $ref: '#/components/schemas/Id'
-    EHRTagsSettings:
+    ehrTagsSettings.v1:
       title: EHR Tags Settings
       x-stoplight:
         id: w3h05rpqc45iv
@@ -4805,7 +4848,7 @@ components:
           type: array
           x-stoplight:
             id: fcr5es83pzi6r
-          description: 'Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.'
+          description: Codes of the clinical info items used to select the tags to associate with the patient. If defined, all tags of a patient will be replaced every time an enrollment order for the patient is processed.
           items:
             x-stoplight:
               id: h40mu6ujxknzf
@@ -4814,109 +4857,115 @@ components:
           type: string
           x-stoplight:
             id: ic7t703igp2rn
-          description: 'If set to a non-empty string, the tag values will be split using this separator'
+          description: If set to a non-empty string, the tag values will be split using this separator
           minLength: 1
-    EHRMatchRequestPatientsOptions:
-      title: Patient Matching Options
-      x-stoplight:
-        id: 43n6iid3zghxm
-      type: object
-      properties:
-        criteria:
-          type: array
-          x-stoplight:
-            id: 1odrg3q8zzdil
-          description: Performs an "OR" match for each item in the array
-          minItems: 1
-          items:
-            x-stoplight:
-              id: mgi1k2jyojc4k
-            type: string
-            enum:
-              - MRN
-              - MRN_DOB
-              - DOB_FULLNAME
-        onUniqueMatch:
-          type: string
-          x-stoplight:
-            id: s9ujf5ce4vhc1
-          enum:
-            - ENABLE_REPORTS
-            - DISABLE_REPORTS
-          description: Optional action to be performed when a unique match has been found
-      required:
-        - criteria
-    EHRFlowsheetSettings:
+    ehrFlowsheetSettings.v1:
       title: Flowsheet Settings
       type: object
       properties:
         icode:
           type: boolean
-          description: 'Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.'
+          description: Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
       required:
         - icode
-    ProviderConnectionRequest:
-      title: Provider Connection Request
+    ehrSettings.v1:
+      title: EHR Settings
       x-stoplight:
-        id: nim4cceb0lu0w
+        id: m0iw4p0mf24nb
       type: object
       properties:
-        createdTime:
+        enabled:
+          type: boolean
+          description: Enable or disable the EHR integration
+        sourceId:
+          type: string
+        destinationIds:
+          $ref: '#/components/schemas/ehrDestinations.v1'
+        procedureCodes:
+          $ref: '#/components/schemas/ehrProcedures.v1'
+        mrnIdType:
           type: string
           x-stoplight:
-            id: efcvyea5slw36
-          format: date-time
-        providerName:
-          $ref: '#/components/schemas/ProviderId'
+            id: x74orwp43yu91
+          minLength: 1
+        provider:
+          type: string
           x-stoplight:
-            id: ej94kmuykpg1k
+            id: z31vhe9hbaqrn
+          enum:
+            - xealth
+            - redox
+        scheduledReports:
+          $ref: '#/components/schemas/scheduledReports.v1'
+          x-stoplight:
+            id: lgfrpsps4x37a
+          description: Scheduled Report Settings
+        tags:
+          $ref: '#/components/schemas/ehrTagsSettings.v1'
+          x-stoplight:
+            id: hp97ilzsssprv
+        flowsheets:
+          $ref: '#/components/schemas/ehrFlowsheetSettings.v1'
       required:
-        - createdTime
-        - providerName
-    ProviderConnectionRequests:
-      title: providerconnectionrequests.v1
+        - enabled
+        - sourceId
+        - procedureCodes
+        - mrnIdType
+        - provider
+        - scheduledReports
+        - tags
+        - flowsheets
+    mrnSettings.v1:
+      title: MRN Settings
       x-stoplight:
-        id: c8q7wrz5rtge5
+        id: 876c3qkxy3ih9
       type: object
-      readOnly: true
       properties:
-        twiist:
-          type: array
-          x-stoplight:
-            id: 7ve65jmart7pj
-          items:
-            $ref: '#/components/schemas/ProviderConnectionRequest'
-            x-stoplight:
-              id: 47ez7wiccxdut
-        dexcom:
-          type: array
-          x-stoplight:
-            id: 7ve65jmart7pj
-          items:
-            $ref: '#/components/schemas/ProviderConnectionRequest'
-            x-stoplight:
-              id: 913pgkbkz62eq
-        abbott:
-          type: array
-          x-stoplight:
-            id: u9rfvrr2njlcq
-          items:
-            $ref: '#/components/schemas/ProviderConnectionRequest'
-            x-stoplight:
-              id: 47ez7wiccxdut
+        required:
+          type: boolean
+          description: Require MRN when creating or updating patients
+        unique:
+          type: boolean
+          description: Enforce MRN uniqueness constraint
       required:
-        - twiist
-        - dexcom
-        - abbott
-    ProviderId:
-      title: Third-Party Data Providers
-      x-stoplight:
-        id: fdmfczqym3ocn
-      type: string
-      enum:
-        - dexcom
-        - twiist
-        - abbott
+        - required
+        - unique
+    patientCountLimit.v1:
+      title: Patient Count Limit
+      type: object
+      properties:
+        patientCount:
+          description: The patient count limit
+          type: integer
+          minimum: 0
+        startDate:
+          description: The start date when the patient count limit should be applied
+          $ref: '#/components/schemas/datetime.v1'
+        endDate:
+          description: The end date when the patient count limit should no longer be applied
+          $ref: '#/components/schemas/datetime.v1'
+      required:
+        - patientCount
+    patientCountSettings.v1:
+      title: Patient Count Settings
+      type: object
+      properties:
+        hardLimit:
+          description: The hard limit for the clinic patient count where new patients cannot be created
+          $ref: '#/components/schemas/patientCountLimit.v1'
+        softLimit:
+          description: The soft limit for the clinic patient count where new patients may still be created
+          $ref: '#/components/schemas/patientCountLimit.v1'
+    patientCount.v1:
+      title: Patient Count
+      type: object
+      properties:
+        patientCount:
+          description: The patient count for a clinic
+          type: integer
+          minimum: 0
+      required:
+        - patientCount
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
@@ -4943,34 +4992,40 @@ components:
       required: true
       schema:
         type: string
-        pattern: '^[a-f0-9]{24}$'
+        pattern: ^[a-f0-9]{24}$
     clinicianId:
       name: clinicianId
       in: path
       required: true
       schema:
         type: string
-        pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
+        pattern: ^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$
     patientId:
       name: patientId
       in: path
       required: true
       schema:
         type: string
-        pattern: '^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$'
+        pattern: ^([0-9a-f]{10}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$
     patientTagId:
       name: patientTagId
       in: path
       required: true
       schema:
         type: string
-        pattern: '^[a-f0-9]{24}$'
+        pattern: ^[a-f0-9]{24}$
     userId:
       name: userId
       in: path
       required: true
       schema:
-        $ref: '#/components/schemas/TidepoolUserId'
+        $ref: '#/components/schemas/tidepooluserid'
+    summaryId:
+      name: summaryId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/summaryId.v1'
     inviteId:
       name: inviteId
       in: path
@@ -5010,7 +5065,7 @@ components:
       required: false
       schema:
         type: string
-        pattern: '(?:-|\+)(?:[a-zA-Z]|_)+'
+        pattern: (?:-|\+)(?:[a-zA-Z]|_)+
       description: Sort order and attribute (e.g. +name or -name)
     createdTimeStart:
       name: createdTimeStart
@@ -5040,16 +5095,12 @@ components:
       in: path
       required: true
       schema:
-        $ref: '#/components/schemas/ProviderId'
+        $ref: '#/components/schemas/providerId.v1'
       description: Provider ID
-tags:
-  - name: Clinics
-    description: 'Manage clinics, clinians and patients.'
-  - name: Confirmations
-    description: 'Manage confirmations for account creation, sharing invites, etc.'
-  - name: Internal
-    description: APIs intended for internal use by Tidepool.
-  - name: Redox
-    description: Public endpoints invoked by Redox.
-security:
-  - sessionToken: []
+    clinicId.v1:
+      description: Clinic ID
+      name: clinicId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/clinicId.v1'

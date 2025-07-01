@@ -541,6 +541,26 @@ func (mr *MockClientInterfaceMockRecorder) DeletePatientReviews(ctx, clinicId, p
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientReviews", reflect.TypeOf((*MockClientInterface)(nil).DeletePatientReviews), varargs...)
 }
 
+// DeletePatientSummary mocks base method.
+func (m *MockClientInterface) DeletePatientSummary(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, summaryId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeletePatientSummary", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePatientSummary indicates an expected call of DeletePatientSummary.
+func (mr *MockClientInterfaceMockRecorder) DeletePatientSummary(ctx, summaryId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, summaryId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientSummary", reflect.TypeOf((*MockClientInterface)(nil).DeletePatientSummary), varargs...)
+}
+
 // DeletePatientTag mocks base method.
 func (m *MockClientInterface) DeletePatientTag(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -822,7 +842,7 @@ func (mr *MockClientInterfaceMockRecorder) GetMRNSettings(ctx, clinicId any, req
 }
 
 // GetMigration mocks base method.
-func (m *MockClientInterface) GetMigration(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) GetMigration(ctx context.Context, clinicId ClinicIdV1, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId}
 	for _, a := range reqEditors {
@@ -1582,7 +1602,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdateMembershipRestrictionsWithBody(
 }
 
 // UpdateMigration mocks base method.
-func (m *MockClientInterface) UpdateMigration(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdateMigration(ctx context.Context, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId, body}
 	for _, a := range reqEditors {
@@ -1602,7 +1622,7 @@ func (mr *MockClientInterfaceMockRecorder) UpdateMigration(ctx, clinicId, userId
 }
 
 // UpdateMigrationWithBody mocks base method.
-func (m *MockClientInterface) UpdateMigrationWithBody(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) UpdateMigrationWithBody(ctx context.Context, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId, contentType, body}
 	for _, a := range reqEditors {
@@ -2545,6 +2565,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientReviewsWith
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientReviewsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeletePatientReviewsWithResponse), varargs...)
 }
 
+// DeletePatientSummaryWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) DeletePatientSummaryWithResponse(ctx context.Context, summaryId SummaryId, reqEditors ...RequestEditorFn) (*DeletePatientSummaryResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, summaryId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeletePatientSummaryWithResponse", varargs...)
+	ret0, _ := ret[0].(*DeletePatientSummaryResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePatientSummaryWithResponse indicates an expected call of DeletePatientSummaryWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) DeletePatientSummaryWithResponse(ctx, summaryId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, summaryId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientSummaryWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).DeletePatientSummaryWithResponse), varargs...)
+}
+
 // DeletePatientTagFromClinicPatientsWithBodyWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) DeletePatientTagFromClinicPatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error) {
 	m.ctrl.T.Helper()
@@ -2846,7 +2886,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetMRNSettingsWithRespon
 }
 
 // GetMigrationWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) GetMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, reqEditors ...RequestEditorFn) (*GetMigrationResponse, error) {
+func (m *MockClientWithResponsesInterface) GetMigrationWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, reqEditors ...RequestEditorFn) (*GetMigrationResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId}
 	for _, a := range reqEditors {
@@ -3606,7 +3646,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateMembershipRestrict
 }
 
 // UpdateMigrationWithBodyWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId Id, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdateMigrationWithBodyWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId, contentType, body}
 	for _, a := range reqEditors {
@@ -3626,7 +3666,7 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateMigrationWithBodyW
 }
 
 // UpdateMigrationWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateMigrationWithResponse(ctx context.Context, clinicId Id, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
+func (m *MockClientWithResponsesInterface) UpdateMigrationWithResponse(ctx context.Context, clinicId ClinicIdV1, userId UserId, body UpdateMigrationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMigrationResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, clinicId, userId, body}
 	for _, a := range reqEditors {

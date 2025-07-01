@@ -72,6 +72,14 @@ allow {
   input.path = ["v1", "patients", _, "summary"]
 }
 
+# Allow backend services delete patient summaries
+# GET /v1/summaries/:summaryId/clinics
+allow {
+  is_backend_service
+  input.method == "DELETE"
+  input.path = ["v1", "summaries", _, "clinics"]
+}
+
 # Allow backend services to remove custodial permission
 # DELETE /v1/clinics/:clinicId/patients/:patientId/permissions/custodian
 allow {

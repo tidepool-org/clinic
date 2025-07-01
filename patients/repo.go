@@ -8,16 +8,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tidepool-org/clinic/config"
+	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-
-	"github.com/tidepool-org/clinic/config"
-	errors2 "github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/store"
 )
 
 const (
@@ -238,7 +237,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
 
-	if result.TotalCount == 0 {
+	if result.MatchingCount == 0 {
 		result.Patients = make([]*Patient, 0)
 	}
 
@@ -282,7 +281,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 
-	if patients.TotalCount > 0 {
+	if patients.MatchingCount > 0 {
 		if len(patient.LegacyClinicianIds) == 0 {
 			return nil, ErrDuplicatePatient
 		}
@@ -556,7 +555,36 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
-		return ErrNotFound
+		return SummaryNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
+	// we dont know which type the summary Id is from, so we must try deleting both.
+	selectorCgm := bson.M{
+		"summary.cgmStats.id": summaryId,
+	}
+	updateCgm := bson.M{"$unset": bson.M{"summary.cgmStats": ""}}
+
+	selectorBgm := bson.M{
+		"summary.bgmStats.id": summaryId,
+	}
+	updateBgm := bson.M{"$unset": bson.M{"summary.bgmStats": ""}}
+
+	resCgm, err := r.collection.UpdateMany(ctx, selectorCgm, updateCgm)
+	if err != nil {
+		return fmt.Errorf("error removing cgmStats from patient: %w", err)
+	}
+
+	resBgm, err := r.collection.UpdateMany(ctx, selectorBgm, updateBgm)
+	if err != nil {
+		return fmt.Errorf("error removing bgmStats from patient: %w", err)
+	}
+
+	if resCgm.ModifiedCount == 0 && resBgm.ModifiedCount == 0 {
+		return SummaryNotFound
 	}
 
 	return nil
@@ -675,12 +703,11 @@ func (r *repository) RescheduleLastSubscriptionOrderForPatient(ctx context.Conte
 	}
 
 	params := RescheduleOrderPipelineParams{
-		clinicIds:                clinicIds,
-		userId:                   &userId,
-		subscription:             subscription,
-		ordersCollection:         ordersCollection,
-		targetCollection:         targetCollection,
-		includePrecedingDocument: true,
+		clinicIds:        clinicIds,
+		userId:           &userId,
+		subscription:     subscription,
+		ordersCollection: ordersCollection,
+		targetCollection: targetCollection,
 	}
 
 	pipeline := reschedulePipeline(params)
@@ -1013,8 +1040,13 @@ func ApplyDateFilter(selector bson.M, typ string, field string, pair FilterDateP
 
 func generateListSortStage(sorts []*store.Sort) bson.D {
 	var s bson.D
+	idSortExists := false
+
 	for _, sort := range sorts {
 		if sort != nil {
+			if sort.Attribute == "_id" {
+				idSortExists = true
+			}
 			s = append(s, bson.E{Key: sort.Attribute, Value: sort.Order()})
 		}
 	}
@@ -1026,8 +1058,9 @@ func generateListSortStage(sorts []*store.Sort) bson.D {
 	// Including _id in the sort query ensures that $skip aggregation works correctly
 	// See https://docs.mongodb.com/manual/reference/operator/aggregation/skip/
 	// for more details
-	s = append(s, bson.E{Key: "_id", Value: 1})
-
+	if !idSortExists {
+		s = append(s, bson.E{Key: "_id", Value: 1})
+	}
 	return s
 }
 
@@ -1336,12 +1369,11 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 }
 
 type RescheduleOrderPipelineParams struct {
-	clinicIds                []string
-	userId                   *string
-	subscription             string
-	ordersCollection         string
-	targetCollection         string
-	includePrecedingDocument bool
+	clinicIds        []string
+	userId           *string
+	subscription     string
+	ordersCollection string
+	targetCollection string
 }
 
 func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
@@ -1388,40 +1420,31 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 		},
 	}
 
-	if params.includePrecedingDocument {
-		pipeline = append(pipeline, bson.M{
-			// Get the preceding scheduled order if it is within the configured period
-			"$lookup": bson.M{
-				"from":         params.targetCollection,
-				"as":           "precedingDocument",
-				"localField":   "lastMatchedOrderRef.id",
-				"foreignField": "lastMatchedOrder._id",
-				"pipeline": []bson.M{
-					{
-						"$match": bson.M{
-							"createdTime": bson.M{
-								"$gt": time.Now().Add(-precedingScheduledOrderPeriod),
-							},
-						},
+	pipeline = append(pipeline, bson.M{
+		// Get the preceding scheduled order
+		"$lookup": bson.M{
+			"from":         params.targetCollection,
+			"as":           "precedingDocument",
+			"localField":   "lastMatchedOrderRef.id",
+			"foreignField": "lastMatchedOrder._id",
+			"pipeline": []bson.M{
+				{
+					"$sort": bson.M{
+						"createdTime": -1,
 					},
-					{
-						"$sort": bson.M{
-							"createdTime": -1,
-						},
-					},
-					{
-						"$limit": 1,
-					},
-					{
-						"$project": bson.M{
-							"_id":         1,
-							"createdTime": 1,
-						},
+				},
+				{
+					"$limit": 1,
+				},
+				{
+					"$project": bson.M{
+						"_id":         1,
+						"createdTime": 1,
 					},
 				},
 			},
-		})
-	}
+		},
+	})
 
 	pipeline = append(pipeline,
 		bson.M{

@@ -30,8 +30,8 @@ const (
 )
 
 var _ = Describe("Xealth Integration Test", Ordered, func() {
-	var clinic client.Clinic
-	var patient client.Patient
+	var clinic client.ClinicV1
+	var patient client.PatientV1
 	var dataTrackingId string
 
 	Describe("Create a clinic", func() {
@@ -108,7 +108,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			body, err := io.ReadAll(rec.Result().Body)
 			Expect(err).ToNot(HaveOccurred())
 
-			response := client.PatientsResponse{}
+			response := client.PatientsResponseV1{}
 			Expect(json.Unmarshal(body, &response)).To(Succeed())
 			Expect(response.Data).ToNot(BeNil())
 			Expect(response.Meta).ToNot(BeNil())
@@ -421,7 +421,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 				body, err := io.ReadAll(rec.Result().Body)
 				Expect(err).ToNot(HaveOccurred())
 
-				response := client.PatientsResponse{}
+				response := client.PatientsResponseV1{}
 				Expect(json.Unmarshal(body, &response)).To(Succeed())
 				Expect(response.Data).ToNot(BeNil())
 				Expect(response.Meta).ToNot(BeNil())

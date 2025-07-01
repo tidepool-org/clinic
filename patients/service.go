@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/tidepool-org/clinic/clinics"
 	errors2 "github.com/tidepool-org/clinic/errors"
@@ -18,7 +19,7 @@ type service struct {
 	dbClient *mongo.Client
 	logger   *zap.SugaredLogger
 
-	clinics             clinics.Service
+	clinics          clinics.Service
 	custodialService CustodialService
 	deletionsRepo    DeletionsRepository
 	patientsRepo     Repository
@@ -141,8 +142,8 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, de
 		}
 
 		deletion := Deletion{
-			Patient:     *patient,
-			DeletedTime: time.Now(),
+			Patient:         *patient,
+			DeletedTime:     time.Now(),
 			DeletedByUserId: deletedByUserId,
 		}
 
@@ -223,6 +224,11 @@ func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinic
 func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
 	s.logger.Infow("updating summaries for user", "userId", userId)
 	return s.patientsRepo.UpdateSummaryInAllClinics(ctx, userId, summary)
+}
+
+func (s *service) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
+	s.logger.Infow("deleting summaries matching object id", "objectId", summaryId)
+	return s.patientsRepo.DeleteSummaryInAllClinics(ctx, summaryId)
 }
 
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error) {
@@ -309,7 +315,7 @@ func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, exist
 			}
 
 			// The same MRN shouldn't exist already, or it should belong to the same user
-			if !(res.TotalCount == 0 || (res.TotalCount == 1 && existingUserId != nil && *existingUserId == *res.Patients[0].UserId)) {
+			if !(res.MatchingCount == 0 || (res.MatchingCount == 1 && existingUserId != nil && *existingUserId == *res.Patients[0].UserId)) {
 				return fmt.Errorf("%w: mrn must be unique", errors2.BadRequest)
 			}
 		}

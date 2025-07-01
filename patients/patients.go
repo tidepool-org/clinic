@@ -18,6 +18,7 @@ const (
 
 var (
 	ErrNotFound           = fmt.Errorf("patient %w", errors.NotFound)
+	SummaryNotFound       = fmt.Errorf("summary %w", errors.NoChange)
 	ErrPermissionNotFound = fmt.Errorf("permission %w", errors.NotFound)
 	ErrDuplicatePatient   = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
@@ -39,8 +40,6 @@ var (
 		Upload:    &permission,
 		Note:      &permission,
 	}
-
-	precedingScheduledOrderPeriod = time.Minute * 5
 )
 
 //go:generate mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
@@ -59,6 +58,7 @@ type Service interface {
 	DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error)
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error)
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
+	DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
@@ -208,8 +208,8 @@ func (p *Permissions) Empty() bool {
 }
 
 type ListResult struct {
-	Patients   []*Patient `bson:"data"`
-	TotalCount int        `bson:"count"`
+	Patients      []*Patient `bson:"data"`
+	MatchingCount int        `bson:"count"`
 }
 
 type PatientUpdate struct {

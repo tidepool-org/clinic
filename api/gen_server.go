@@ -87,10 +87,10 @@ type ServerInterface interface {
 	MigrateLegacyClinicianPatients(ctx echo.Context, clinicId string) error
 	// Get Migration
 	// (GET /v1/clinics/{clinicId}/migrations/{userId})
-	GetMigration(ctx echo.Context, clinicId Id, userId UserId) error
+	GetMigration(ctx echo.Context, clinicId ClinicIdV1, userId UserId) error
 	// Update Migration
 	// (PATCH /v1/clinics/{clinicId}/migrations/{userId})
-	UpdateMigration(ctx echo.Context, clinicId Id, userId UserId) error
+	UpdateMigration(ctx echo.Context, clinicId ClinicIdV1, userId UserId) error
 	// Get Patient Count
 	// (GET /v1/clinics/{clinicId}/patient_count)
 	GetPatientCount(ctx echo.Context, clinicId ClinicId) error
@@ -127,7 +127,7 @@ type ServerInterface interface {
 	// Update Patient
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId})
 	UpdatePatient(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
-
+	// Connect Provider
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/connect/{providerId})
 	ConnectProvider(ctx echo.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId) error
 	// Update Patient Permissions
@@ -202,6 +202,9 @@ type ServerInterface interface {
 	// Redox Verify Endpoint
 	// (POST /v1/redox/verify)
 	VerifyEndpoint(ctx echo.Context) error
+	// DeletePatientSummary
+	// (DELETE /v1/summaries/{summaryId}/clinics)
+	DeletePatientSummary(ctx echo.Context, summaryId SummaryId) error
 	// Remove User from Clinics
 	// (DELETE /v1/users/{userId}/clinics)
 	DeleteUserFromClinics(ctx echo.Context, userId UserId) error
@@ -820,7 +823,7 @@ func (w *ServerInterfaceWrapper) MigrateLegacyClinicianPatients(ctx echo.Context
 func (w *ServerInterfaceWrapper) GetMigration(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId Id
+	var clinicId ClinicIdV1
 
 	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -846,7 +849,7 @@ func (w *ServerInterfaceWrapper) GetMigration(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateMigration(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clinicId" -------------
-	var clinicId Id
+	var clinicId ClinicIdV1
 
 	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -2538,6 +2541,24 @@ func (w *ServerInterfaceWrapper) VerifyEndpoint(ctx echo.Context) error {
 	return err
 }
 
+// DeletePatientSummary converts echo context to params.
+func (w *ServerInterfaceWrapper) DeletePatientSummary(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "summaryId" -------------
+	var summaryId SummaryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "summaryId", ctx.Param("summaryId"), &summaryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summaryId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeletePatientSummary(ctx, summaryId)
+	return err
+}
+
 // DeleteUserFromClinics converts echo context to params.
 func (w *ServerInterfaceWrapper) DeleteUserFromClinics(ctx echo.Context) error {
 	var err error
@@ -2743,6 +2764,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/redox", wrapper.ProcessEHRMessage)
 	router.POST(baseURL+"/v1/redox/match", wrapper.MatchClinicAndPatient)
 	router.POST(baseURL+"/v1/redox/verify", wrapper.VerifyEndpoint)
+	router.DELETE(baseURL+"/v1/summaries/:summaryId/clinics", wrapper.DeletePatientSummary)
 	router.DELETE(baseURL+"/v1/users/:userId/clinics", wrapper.DeleteUserFromClinics)
 	router.POST(baseURL+"/v1/users/:userId/clinics", wrapper.UpdateClinicUserDetails)
 	router.POST(baseURL+"/v1/xealth/notification", wrapper.XealthNotification)

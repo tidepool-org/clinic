@@ -18,17 +18,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func NewClinicWithDefaults(c Clinic) *clinics.Clinic {
+func NewClinicWithDefaults(c ClinicV1) *clinics.Clinic {
 	clinic := mapClinic(c, clinics.NewClinicWithDefaults())
 	clinic.UpdatePatientCountSettingsForCountry()
 	return clinic
 }
 
-func NewClinic(c Clinic) *clinics.Clinic {
+func NewClinic(c ClinicV1) *clinics.Clinic {
 	return mapClinic(c, clinics.NewClinic())
 }
 
-func mapClinic(c Clinic, clinic *clinics.Clinic) *clinics.Clinic {
+func mapClinic(c ClinicV1, clinic *clinics.Clinic) *clinics.Clinic {
 	var phoneNumbers []clinics.PhoneNumber
 	if c.PhoneNumbers != nil {
 		for _, n := range *c.PhoneNumbers {
@@ -58,7 +58,7 @@ func mapClinic(c Clinic, clinic *clinics.Clinic) *clinics.Clinic {
 	return clinic
 }
 
-func NewClinicDto(c *clinics.Clinic) Clinic {
+func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 	tier := clinics.DefaultTier
 	if c.Tier != "" {
 		tier = c.Tier
@@ -66,12 +66,12 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 
 	units := MgdL
 	if c.PreferredBgUnits != "" {
-		units = ClinicPreferredBgUnits(c.PreferredBgUnits)
+		units = ClinicV1PreferredBgUnits(c.PreferredBgUnits)
 	}
-	id := Id(c.Id.Hex())
+	id := ClinicIdV1(c.Id.Hex())
 	canMigrate := c.CanMigrate()
 
-	dto := Clinic{
+	dto := ClinicV1{
 		Id:                      &id,
 		Name:                    pstr(c.Name),
 		ShareCode:               c.CanonicalShareCode,
@@ -89,12 +89,12 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		Tier:                    &tier,
 		TierDescription:         strp(clinics.GetTierDescription(tier)),
 		PreferredBgUnits:        units,
-		SuppressedNotifications: (*SuppressedNotifications)(c.SuppressedNotifications),
+		SuppressedNotifications: (*SuppressedNotificationsV1)(c.SuppressedNotifications),
 	}
 	if c.PhoneNumbers != nil {
-		var phoneNumbers []PhoneNumber
+		var phoneNumbers []PhoneNumberV1
 		for _, n := range *c.PhoneNumbers {
-			phoneNumbers = append(phoneNumbers, PhoneNumber{
+			phoneNumbers = append(phoneNumbers, PhoneNumberV1{
 				Number: n.Number,
 				Type:   n.Type,
 			})
@@ -102,9 +102,9 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		dto.PhoneNumbers = &phoneNumbers
 	}
 	if c.PatientTags != nil {
-		var patientTags []PatientTag
+		var patientTags []PatientTagV1
 		for _, n := range c.PatientTags {
-			patientTags = append(patientTags, PatientTag{
+			patientTags = append(patientTags, PatientTagV1{
 				Id:   strp(n.Id.Hex()),
 				Name: n.Name,
 			})
@@ -112,36 +112,36 @@ func NewClinicDto(c *clinics.Clinic) Clinic {
 		dto.PatientTags = &patientTags
 	}
 	if c.Timezone != nil {
-		tz := ClinicTimezone(*c.Timezone)
+		tz := ClinicTimezoneV1(*c.Timezone)
 		dto.Timezone = &tz
 	}
 
 	return dto
 }
 
-func NewClinicsDto(clinics []*clinics.Clinic) []Clinic {
-	dtos := make([]Clinic, 0)
+func NewClinicsDto(clinics []*clinics.Clinic) []ClinicV1 {
+	dtos := make([]ClinicV1, 0)
 	for _, clinic := range clinics {
 		dtos = append(dtos, NewClinicDto(clinic))
 	}
 	return dtos
 }
 
-func NewClinicianDto(clinician *clinicians.Clinician) Clinician {
-	dto := Clinician{
+func NewClinicianDto(clinician *clinicians.Clinician) ClinicianV1 {
+	dto := ClinicianV1{
 		Id:          clinician.UserId,
 		InviteId:    clinician.InviteId,
 		Name:        clinician.Name,
 		Email:       pstr(clinician.Email),
-		Roles:       ClinicianRoles(clinician.Roles),
+		Roles:       ClinicianRolesV1(clinician.Roles),
 		CreatedTime: &clinician.CreatedTime,
 		UpdatedTime: &clinician.UpdatedTime,
 	}
 	return dto
 }
 
-func NewCliniciansDto(clinicians []*clinicians.Clinician) []Clinician {
-	dtos := make([]Clinician, 0)
+func NewCliniciansDto(clinicians []*clinicians.Clinician) []ClinicianV1 {
+	dtos := make([]ClinicianV1, 0)
 	for _, c := range clinicians {
 		if c != nil {
 			dtos = append(dtos, NewClinicianDto(c))
@@ -150,7 +150,7 @@ func NewCliniciansDto(clinicians []*clinicians.Clinician) []Clinician {
 	return dtos
 }
 
-func NewClinician(clinician Clinician) *clinicians.Clinician {
+func NewClinician(clinician ClinicianV1) *clinicians.Clinician {
 	return &clinicians.Clinician{
 		Name:     clinician.Name,
 		UserId:   clinician.Id,
@@ -160,15 +160,15 @@ func NewClinician(clinician Clinician) *clinicians.Clinician {
 	}
 }
 
-func NewClinicianUpdate(clinician Clinician) clinicians.Clinician {
+func NewClinicianUpdate(clinician ClinicianV1) clinicians.Clinician {
 	return clinicians.Clinician{
 		Name:  clinician.Name,
 		Roles: clinician.Roles,
 	}
 }
 
-func NewPatientDto(patient *patients.Patient) Patient {
-	dto := Patient{
+func NewPatientDto(patient *patients.Patient) PatientV1 {
+	dto := PatientV1{
 		Email:         patient.Email,
 		FullName:      pstr(patient.FullName),
 		Id:            patient.UserId,
@@ -181,7 +181,7 @@ func NewPatientDto(patient *patients.Patient) Patient {
 		UpdatedTime:   &patient.UpdatedTime,
 		Summary:       NewSummaryDto(patient.Summary),
 		Reviews:       NewReviewsDto(patient.Reviews),
-		ConnectionRequests: &ProviderConnectionRequests{
+		ConnectionRequests: &ProviderConnectionRequestsV1{
 			Abbott: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Abbott),
 			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
 			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
@@ -196,23 +196,23 @@ func NewPatientDto(patient *patients.Patient) Patient {
 
 	// Populate the new connection requests structure from the now deprecated lastRequestedDexcomConnectTime
 	if len(dto.ConnectionRequests.Dexcom) == 0 && !patient.LastRequestedDexcomConnectTime.IsZero() {
-		dto.ConnectionRequests.Dexcom = []ProviderConnectionRequest{{
+		dto.ConnectionRequests.Dexcom = []ProviderConnectionRequestV1{{
 			ProviderName: Dexcom,
-			CreatedTime: patient.LastRequestedDexcomConnectTime,
+			CreatedTime:  patient.LastRequestedDexcomConnectTime,
 		}}
 	}
 
 	return dto
 }
 
-func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequest {
+func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {
 	var requestsForProvider patients.ConnectionRequests
 	if requests != nil {
 		requestsForProvider = requests[string(provider)]
 	}
-	result := make([]ProviderConnectionRequest, len(requestsForProvider))
+	result := make([]ProviderConnectionRequestV1, len(requestsForProvider))
 	for i, request := range requestsForProvider {
-		result[i] = ProviderConnectionRequest{
+		result[i] = ProviderConnectionRequestV1{
 			CreatedTime:  request.CreatedTime,
 			ProviderName: ProviderId(request.ProviderName),
 		}
@@ -220,14 +220,13 @@ func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provi
 	return result
 }
 
-func NewPatient(dto Patient) patients.Patient {
+func NewPatient(dto PatientV1) patients.Patient {
 	patient := patients.Patient{
 		Email:         pstrToLower(dto.Email),
 		BirthDate:     strp(dto.BirthDate.Format(dateFormat)),
 		FullName:      &dto.FullName,
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
-		Summary:       NewSummary(dto.Summary),
 		Reviews:       NewReviews(dto.Reviews),
 	}
 
@@ -267,7 +266,7 @@ func NewPatient(dto Patient) patients.Patient {
 	return patient
 }
 
-func NewPatientFromCreate(dto CreatePatient) patients.Patient {
+func NewPatientFromCreate(dto CreatePatientV1) patients.Patient {
 	patient := patients.Patient{
 		Permissions: NewPermissions(dto.Permissions),
 	}
@@ -294,18 +293,17 @@ func NewPatientFromCreate(dto CreatePatient) patients.Patient {
 	return patient
 }
 
-func NewSummary(dto *PatientSummary) *patients.Summary {
+func NewSummary(dto *PatientSummaryV1) *patients.Summary {
 	if dto == nil {
 		return nil
 	}
 
 	patientSummary := &patients.Summary{}
 
-	if dto.CgmStats != nil {
+	if dto.CgmStats != nil && dto.CgmStats.Id != nil {
 		patientSummary.CGM = &patients.PatientCGMStats{
-			Periods:       patients.PatientCGMPeriods{},
-			OffsetPeriods: patients.PatientCGMPeriods{},
-			TotalHours:    dto.CgmStats.TotalHours,
+			Id:      *dto.CgmStats.Id,
+			Periods: patients.PatientCGMPeriods{},
 		}
 
 		patientSummary.CGM.Config = patients.PatientSummaryConfig(dto.CgmStats.Config)
@@ -316,19 +314,12 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				patientSummary.CGM.Periods[k] = patients.PatientCGMPeriod(source)
 			}
 		}
-
-		if dto.CgmStats.OffsetPeriods != nil {
-			for k, source := range dto.CgmStats.OffsetPeriods {
-				patientSummary.CGM.OffsetPeriods[k] = patients.PatientCGMPeriod(source)
-			}
-		}
 	}
 
-	if dto.BgmStats != nil {
+	if dto.BgmStats != nil && dto.BgmStats.Id != nil {
 		patientSummary.BGM = &patients.PatientBGMStats{
-			Periods:       patients.PatientBGMPeriods{},
-			OffsetPeriods: patients.PatientBGMPeriods{},
-			TotalHours:    dto.BgmStats.TotalHours,
+			Id:      *dto.BgmStats.Id,
+			Periods: patients.PatientBGMPeriods{},
 		}
 
 		patientSummary.BGM.Config = patients.PatientSummaryConfig(dto.BgmStats.Config)
@@ -339,66 +330,46 @@ func NewSummary(dto *PatientSummary) *patients.Summary {
 				patientSummary.BGM.Periods[k] = patients.PatientBGMPeriod(source)
 			}
 		}
-
-		if dto.BgmStats.OffsetPeriods != nil {
-			for k, source := range dto.BgmStats.OffsetPeriods {
-				patientSummary.BGM.OffsetPeriods[k] = patients.PatientBGMPeriod(source)
-			}
-		}
 	}
 
 	return patientSummary
 }
 
-func NewSummaryDto(summary *patients.Summary) *PatientSummary {
+func NewSummaryDto(summary *patients.Summary) *PatientSummaryV1 {
 	if summary == nil {
 		return nil
 	}
 
-	patientSummary := &PatientSummary{}
+	patientSummary := &PatientSummaryV1{}
 
 	if summary.CGM != nil {
-		patientSummary.CgmStats = &PatientCGMStats{
-			Periods:       PatientCGMPeriods{},
-			OffsetPeriods: PatientCGMPeriods{},
-			TotalHours:    summary.CGM.TotalHours,
+		patientSummary.CgmStats = &CgmStatsV1{
+			Id:      &summary.CGM.Id,
+			Periods: CgmPeriodsV1{},
 		}
 
-		patientSummary.CgmStats.Config = PatientSummaryConfig(summary.CGM.Config)
-		patientSummary.CgmStats.Dates = PatientSummaryDates(summary.CGM.Dates)
+		patientSummary.CgmStats.Config = SummaryConfigV1(summary.CGM.Config)
+		patientSummary.CgmStats.Dates = SummaryDatesV1(summary.CGM.Dates)
 
 		if summary.CGM.Periods != nil {
 			for k, source := range summary.CGM.Periods {
-				patientSummary.CgmStats.Periods[k] = PatientCGMPeriod(source)
-			}
-		}
-
-		if summary.CGM.OffsetPeriods != nil {
-			for k, source := range summary.CGM.OffsetPeriods {
-				patientSummary.CgmStats.OffsetPeriods[k] = PatientCGMPeriod(source)
+				patientSummary.CgmStats.Periods[k] = CgmPeriodV1(source)
 			}
 		}
 	}
 
 	if summary.BGM != nil {
-		patientSummary.BgmStats = &PatientBGMStats{
-			Periods:       PatientBGMPeriods{},
-			OffsetPeriods: PatientBGMPeriods{},
-			TotalHours:    summary.BGM.TotalHours,
+		patientSummary.BgmStats = &BgmStatsV1{
+			Id:      &summary.BGM.Id,
+			Periods: BgmPeriodsV1{},
 		}
 
-		patientSummary.BgmStats.Config = PatientSummaryConfig(summary.BGM.Config)
-		patientSummary.BgmStats.Dates = PatientSummaryDates(summary.BGM.Dates)
+		patientSummary.BgmStats.Config = SummaryConfigV1(summary.BGM.Config)
+		patientSummary.BgmStats.Dates = SummaryDatesV1(summary.BGM.Dates)
 
 		if summary.BGM.Periods != nil {
 			for k, source := range summary.BGM.Periods {
-				patientSummary.BgmStats.Periods[k] = PatientBGMPeriod(source)
-			}
-		}
-
-		if summary.BGM.OffsetPeriods != nil {
-			for k, source := range summary.BGM.OffsetPeriods {
-				patientSummary.BgmStats.OffsetPeriods[k] = PatientBGMPeriod(source)
+				patientSummary.BgmStats.Periods[k] = BgmPeriodV1(source)
 			}
 		}
 	}
@@ -406,23 +377,23 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummary {
 	return patientSummary
 }
 
-func NewReviewDto(review patients.Review) PatientReview {
-	return PatientReview(review)
+func NewReviewDto(review patients.Review) PatientReviewV1 {
+	return PatientReviewV1(review)
 }
 
-func NewReview(review PatientReview) patients.Review {
+func NewReview(review PatientReviewV1) patients.Review {
 	return patients.Review(review)
 }
 
-func NewReviewsDto(reviews []patients.Review) PatientReviews {
-	result := make(PatientReviews, len(reviews))
+func NewReviewsDto(reviews []patients.Review) PatientReviewsV1 {
+	result := make(PatientReviewsV1, len(reviews))
 	for i := 0; i < len(reviews); i++ {
 		result[i] = NewReviewDto(reviews[i])
 	}
 	return result
 }
 
-func NewReviews(reviews PatientReviews) []patients.Review {
+func NewReviews(reviews PatientReviewsV1) []patients.Review {
 	result := make([]patients.Review, len(reviews))
 	for i := 0; i < len(reviews); i++ {
 		result[i] = NewReview(reviews[i])
@@ -430,15 +401,15 @@ func NewReviews(reviews PatientReviews) []patients.Review {
 	return result
 }
 
-func NewTideDto(tide *patients.Tide) *Tide {
+func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 	if tide == nil {
 		return nil
 	}
 
-	tideResult := &Tide{
-		Config: TideConfig{
+	tideResult := &TideResponseV1{
+		Config: TideConfigV1{
 			ClinicId:                 &tide.Config.ClinicId,
-			Filters:                  TideFilters(tide.Config.Filters),
+			Filters:                  TideFiltersV1(tide.Config.Filters),
 			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
 			LastDataCutoff:           tide.Config.LastDataCutoff,
 			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
@@ -448,13 +419,13 @@ func NewTideDto(tide *patients.Tide) *Tide {
 			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
 		},
-		Results: TideResults{},
+		Results: TideResultsV1{},
 	}
 
 	for category, tidePatients := range tide.Results {
-		c := make([]TideResultPatient, 0, 50)
+		c := make([]TideResultPatientV1, 0, 50)
 		for _, patient := range tidePatients {
-			c = append(c, TideResultPatient{
+			c = append(c, TideResultPatientV1{
 				AverageGlucoseMmol:         patient.AverageGlucoseMmol,
 				GlucoseManagementIndicator: patient.GlucoseManagementIndicator,
 				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
@@ -468,7 +439,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 				TimeInAnyLowPercent:        patient.TimeInAnyLowPercent,
 				TimeInAnyHighPercent:       patient.TimeInAnyHighPercent,
 				LastData:                   patient.LastData,
-				Patient: TidePatient{
+				Patient: TidePatientV1{
 					Email:       patient.Patient.Email,
 					FullName:    patient.Patient.FullName,
 					Id:          patient.Patient.Id,
@@ -484,7 +455,7 @@ func NewTideDto(tide *patients.Tide) *Tide {
 	return tideResult
 }
 
-func NewPermissions(dto *PatientPermissions) *patients.Permissions {
+func NewPermissions(dto *PatientPermissionsV1) *patients.Permissions {
 	var permissions *patients.Permissions
 	if dto != nil {
 		permissions = &patients.Permissions{}
@@ -504,10 +475,10 @@ func NewPermissions(dto *PatientPermissions) *patients.Permissions {
 	return permissions
 }
 
-func NewPermissionsDto(dto *patients.Permissions) *PatientPermissions {
-	var permissions *PatientPermissions
+func NewPermissionsDto(dto *patients.Permissions) *PatientPermissionsV1 {
+	var permissions *PatientPermissionsV1
 	if dto != nil {
-		permissions = &PatientPermissions{}
+		permissions = &PatientPermissionsV1{}
 		permission := make(map[string]interface{})
 		if dto.Custodian != nil {
 			permissions.Custodian = &permission
@@ -535,18 +506,18 @@ func NewPatientTagsDto(tags *[]primitive.ObjectID) *[]string {
 	return &tagIds
 }
 
-func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource {
+func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSourceV1 {
 	if dataSources == nil {
 		return nil
 	}
 
-	dtos := make([]DataSource, 0)
+	dtos := make([]DataSourceV1, 0)
 
 	if dataSources != nil {
 		for _, d := range *dataSources {
-			newDataSource := DataSource{
+			newDataSource := DataSourceV1{
 				ProviderName: d.ProviderName,
-				State:        DataSourceState(d.State),
+				State:        DataSourceV1State(d.State),
 			}
 
 			if d.DataSourceId != nil {
@@ -555,12 +526,12 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 			}
 
 			if d.ModifiedTime != nil {
-				modifiedTime := DateTime(d.ModifiedTime.Format(time.RFC3339Nano))
+				modifiedTime := DatetimeV1(d.ModifiedTime.Format(time.RFC3339Nano))
 				newDataSource.ModifiedTime = &modifiedTime
 			}
 
 			if d.ExpirationTime != nil {
-				expirationTime := DateTime(d.ExpirationTime.Format(time.RFC3339Nano))
+				expirationTime := DatetimeV1(d.ExpirationTime.Format(time.RFC3339Nano))
 				newDataSource.ExpirationTime = &expirationTime
 			}
 
@@ -571,8 +542,8 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSource 
 	return &dtos
 }
 
-func NewPatientsDto(patients []*patients.Patient) []Patient {
-	dtos := make([]Patient, 0, len(patients))
+func NewPatientsDto(patients []*patients.Patient) []PatientV1 {
+	dtos := make([]PatientV1, 0, len(patients))
 	for _, p := range patients {
 		if p != nil {
 			dtos = append(dtos, NewPatientDto(p))
@@ -581,27 +552,30 @@ func NewPatientsDto(patients []*patients.Patient) []Patient {
 	return dtos
 }
 
-func NewPatientsResponseDto(list *patients.ListResult) PatientsResponse {
-	data := Patients(NewPatientsDto(list.Patients))
-	return PatientsResponse{
+func NewPatientsResponseDto(list *patients.ListResult, totalCount int) PatientsResponseV1 {
+	data := PatientsV1(NewPatientsDto(list.Patients))
+	return PatientsResponseV1{
 		Data: &data,
-		Meta: &Meta{Count: &list.TotalCount},
+		Meta: &MetaV1{
+			Count:      &list.MatchingCount,
+			TotalCount: &totalCount,
+		},
 	}
 }
 
-func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList []*clinics.Clinic) (PatientClinicRelationships, error) {
+func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList []*clinics.Clinic) (PatientClinicRelationshipsV1, error) {
 	clinicsMap := make(map[string]*clinics.Clinic, 0)
 	for _, clinic := range clinicList {
 		clinicsMap[clinic.Id.Hex()] = clinic
 	}
-	dtos := make([]PatientClinicRelationship, 0)
+	dtos := make([]PatientClinicRelationshipV1, 0)
 	for _, patient := range patients {
 		clinic, ok := clinicsMap[patient.ClinicId.Hex()]
 		if !ok || clinic == nil {
 			return nil, fmt.Errorf("clinic not found")
 		}
 
-		dtos = append(dtos, PatientClinicRelationship{
+		dtos = append(dtos, PatientClinicRelationshipV1{
 			Clinic:  NewClinicDto(clinic),
 			Patient: NewPatientDto(patient),
 		})
@@ -609,19 +583,19 @@ func NewPatientClinicRelationshipsDto(patients []*patients.Patient, clinicList [
 	return dtos, nil
 }
 
-func NewClinicianClinicRelationshipsDto(clinicians []*clinicians.Clinician, clinicList []*clinics.Clinic) (ClinicianClinicRelationships, error) {
+func NewClinicianClinicRelationshipsDto(clinicians []*clinicians.Clinician, clinicList []*clinics.Clinic) (ClinicianClinicRelationshipsV1, error) {
 	clinicsMap := make(map[string]*clinics.Clinic, 0)
 	for _, clinic := range clinicList {
 		clinicsMap[clinic.Id.Hex()] = clinic
 	}
-	dtos := make([]ClinicianClinicRelationship, 0)
+	dtos := make([]ClinicianClinicRelationshipV1, 0)
 	for _, clinician := range clinicians {
 		clinic, ok := clinicsMap[clinician.ClinicId.Hex()]
 		if !ok || clinic == nil {
 			return nil, fmt.Errorf("clinic not found")
 		}
 
-		dtos = append(dtos, ClinicianClinicRelationship{
+		dtos = append(dtos, ClinicianClinicRelationshipV1{
 			Clinic:    NewClinicDto(clinic),
 			Clinician: NewClinicianDto(clinician),
 		})
@@ -630,25 +604,25 @@ func NewClinicianClinicRelationshipsDto(clinicians []*clinicians.Clinician, clin
 	return dtos, nil
 }
 
-func NewMigrationDto(migration *migration.Migration) *Migration {
+func NewMigrationDto(migration *migration.Migration) *MigrationV1 {
 	if migration == nil {
 		return nil
 	}
 
-	result := &Migration{
+	result := &MigrationV1{
 		CreatedTime: &migration.CreatedTime,
 		UpdatedTime: &migration.UpdatedTime,
 		UserId:      migration.UserId,
 	}
 	if migration.Status != "" {
-		status := MigrationStatus(strings.ToUpper(migration.Status))
+		status := MigrationStatusV1(strings.ToUpper(migration.Status))
 		result.Status = &status
 	}
 	return result
 }
 
-func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
-	var dtos []*Migration
+func NewMigrationDtos(migrations []*migration.Migration) []*MigrationV1 {
+	var dtos []*MigrationV1
 	if len(migrations) == 0 {
 		return dtos
 	}
@@ -660,11 +634,11 @@ func NewMigrationDtos(migrations []*migration.Migration) []*Migration {
 	return dtos
 }
 
-func NewMembershipRestrictionsDto(restrictions []clinics.MembershipRestrictions) MembershipRestrictions {
-	dto := MembershipRestrictions{}
-	var dtos []MembershipRestriction
+func NewMembershipRestrictionsDto(restrictions []clinics.MembershipRestrictions) MembershipRestrictionsV1 {
+	dto := MembershipRestrictionsV1{}
+	var dtos []MembershipRestrictionV1
 	for _, r := range restrictions {
-		restriction := MembershipRestriction{}
+		restriction := MembershipRestrictionV1{}
 		restriction.EmailDomain = r.EmailDomain
 		if r.RequiredIdp != "" {
 			restriction.RequiredIdp = strp(r.RequiredIdp)
@@ -678,7 +652,7 @@ func NewMembershipRestrictionsDto(restrictions []clinics.MembershipRestrictions)
 	return dto
 }
 
-func NewMembershipRestrictions(dto MembershipRestrictions) []clinics.MembershipRestrictions {
+func NewMembershipRestrictions(dto MembershipRestrictionsV1) []clinics.MembershipRestrictions {
 	var restrictions []clinics.MembershipRestrictions
 	if dto.Restrictions != nil {
 		for _, r := range *dto.Restrictions {
@@ -693,7 +667,7 @@ func NewMembershipRestrictions(dto MembershipRestrictions) []clinics.MembershipR
 	return restrictions
 }
 
-func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
+func NewEHRSettings(dto EhrSettingsV1) *clinics.EHRSettings {
 	settings := &clinics.EHRSettings{
 		Enabled:  dto.Enabled,
 		SourceId: dto.SourceId,
@@ -729,60 +703,50 @@ func NewEHRSettings(dto EHRSettings) *clinics.EHRSettings {
 			Results:   dto.DestinationIds.Results,
 		}
 	}
-	if dto.Facility != nil {
-		settings.Facility = &clinics.EHRFacility{
-			Name: dto.Facility.Name,
-		}
-	}
 
 	return settings
 }
 
-func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
+func NewEHRSettingsDto(settings *clinics.EHRSettings) *EhrSettingsV1 {
 	if settings == nil {
 		return nil
 	}
 
-	dto := &EHRSettings{
+	dto := &EhrSettingsV1{
 		Enabled:  settings.Enabled,
 		SourceId: settings.SourceId,
-		ProcedureCodes: EHRProcedureCodes{
+		ProcedureCodes: EhrProceduresV1{
 			EnableSummaryReports:          settings.ProcedureCodes.EnableSummaryReports,
 			DisableSummaryReports:         settings.ProcedureCodes.DisableSummaryReports,
 			CreateAccount:                 settings.ProcedureCodes.CreateAccount,
 			CreateAccountAndEnableReports: settings.ProcedureCodes.CreateAccountAndEnableReports,
 		},
 		MrnIdType: settings.GetMrnIDType(),
-		Provider:  EHRSettingsProvider(settings.Provider),
-		ScheduledReports: ScheduledReports{
+		Provider:  EhrSettingsV1Provider(settings.Provider),
+		ScheduledReports: ScheduledReportsV1{
 			OnUploadEnabled: settings.ScheduledReports.OnUploadEnabled,
 		},
-		Tags: EHRTagsSettings{
+		Tags: EhrTagsSettingsV1{
 			Codes:     &settings.Tags.Codes,
 			Separator: settings.Tags.Separator,
 		},
-		Flowsheets: EHRFlowsheetSettings{
+		Flowsheets: EhrFlowsheetSettingsV1{
 			Icode: settings.Flowsheets.Icode,
 		},
 	}
 	if settings.ScheduledReports.OnUploadNoteEventType != nil {
-		eventType := ScheduledReportsOnUploadNoteEventType(*settings.ScheduledReports.OnUploadNoteEventType)
+		eventType := ScheduledReportsV1OnUploadNoteEventType(*settings.ScheduledReports.OnUploadNoteEventType)
 		dto.ScheduledReports.OnUploadNoteEventType = &eventType
 	}
 	if settings.DestinationIds != nil {
-		dto.DestinationIds = &EHRDestinationIds{
+		dto.DestinationIds = &EhrDestinationsV1{
 			Flowsheet: settings.DestinationIds.Flowsheet,
 			Notes:     settings.DestinationIds.Notes,
 			Results:   settings.DestinationIds.Results,
 		}
 	}
-	if settings.Facility != nil {
-		dto.Facility = &EHRFacility{
-			Name: settings.Facility.Name,
-		}
-	}
 	if settings.ScheduledReports.Cadence != "" {
-		dto.ScheduledReports.Cadence = ScheduledReportsCadence(settings.ScheduledReports.Cadence)
+		dto.ScheduledReports.Cadence = ScheduledReportsV1Cadence(settings.ScheduledReports.Cadence)
 	} else {
 		// Default to 14 days
 		dto.ScheduledReports.Cadence = N14d
@@ -790,25 +754,25 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EHRSettings {
 	return dto
 }
 
-func NewPatientCountSettings(dto PatientCountSettings) *clinics.PatientCountSettings {
+func NewPatientCountSettings(dto PatientCountSettingsV1) *clinics.PatientCountSettings {
 	return &clinics.PatientCountSettings{
 		HardLimit: NewPatientCountLimit(dto.HardLimit),
 		SoftLimit: NewPatientCountLimit(dto.SoftLimit),
 	}
 }
 
-func NewPatientCountSettingsDto(settings *clinics.PatientCountSettings) *PatientCountSettings {
+func NewPatientCountSettingsDto(settings *clinics.PatientCountSettings) *PatientCountSettingsV1 {
 	if settings == nil {
 		return nil
 	}
 
-	return &PatientCountSettings{
+	return &PatientCountSettingsV1{
 		HardLimit: NewPatientCountLimitDto(settings.HardLimit),
 		SoftLimit: NewPatientCountLimitDto(settings.SoftLimit),
 	}
 }
 
-func NewPatientCountLimit(dto *PatientCountLimit) *clinics.PatientCountLimit {
+func NewPatientCountLimit(dto *PatientCountLimitV1) *clinics.PatientCountLimit {
 	if dto == nil {
 		return nil
 	}
@@ -829,12 +793,12 @@ func NewPatientCountLimit(dto *PatientCountLimit) *clinics.PatientCountLimit {
 	return patientCountLimit
 }
 
-func NewPatientCountLimitDto(limit *clinics.PatientCountLimit) *PatientCountLimit {
+func NewPatientCountLimitDto(limit *clinics.PatientCountLimit) *PatientCountLimitV1 {
 	if limit == nil {
 		return nil
 	}
 
-	dto := &PatientCountLimit{
+	dto := &PatientCountLimitV1{
 		PatientCount: limit.PatientCount,
 	}
 
@@ -1338,15 +1302,15 @@ func strp(s string) *string {
 	return &s
 }
 
-func strpuseridp(s *string) *TidepoolUserId {
+func strpuseridp(s *string) *Tidepooluserid {
 	if s == nil {
 		return nil
 	}
-	id := TidepoolUserId(*s)
+	id := Tidepooluserid(*s)
 	return &id
 }
 
-func useridpstrp(u *TidepoolUserId) *string {
+func useridpstrp(u *Tidepooluserid) *string {
 	if u == nil {
 		return nil
 	}
@@ -1383,33 +1347,33 @@ func roleToString(e *Role) *string {
 	return strp(string(*e))
 }
 
-func clinicSizeToString(c *ClinicClinicSize) *string {
+func clinicSizeToString(c *ClinicV1ClinicSize) *string {
 	if c == nil {
 		return nil
 	}
 	return strp(string(*c))
 }
 
-func stringToClinicSize(s *string) *ClinicClinicSize {
+func stringToClinicSize(s *string) *ClinicV1ClinicSize {
 	if s == nil {
 		return nil
 	}
-	size := ClinicClinicSize(*s)
+	size := ClinicV1ClinicSize(*s)
 	return &size
 }
 
-func clinicTypeToString(c *ClinicClinicType) *string {
+func clinicTypeToString(c *ClinicV1ClinicType) *string {
 	if c == nil {
 		return nil
 	}
 	return strp(string(*c))
 }
 
-func stringToClinicType(s *string) *ClinicClinicType {
+func stringToClinicType(s *string) *ClinicV1ClinicType {
 	if s == nil {
 		return nil
 	}
-	size := ClinicClinicType(*s)
+	size := ClinicV1ClinicType(*s)
 	return &size
 }
 
@@ -1665,7 +1629,7 @@ func NewDataProvider(providerId ProviderId) (string, error) {
 	}
 }
 
-func NewMatchOrderCriteria(criteria []EHRMatchRequestPatientsOptionsCriteria) ([]string, error) {
+func NewMatchOrderCriteria(criteria []EhrMatchRequestPatientsOptionsV1Criteria) ([]string, error) {
 	result := make([]string, 0, len(criteria))
 	for _, c := range criteria {
 		val := string(c)

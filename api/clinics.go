@@ -48,7 +48,7 @@ func (h *Handler) ListClinics(ec echo.Context, params ListClinicsParams) error {
 
 func (h *Handler) CreateClinic(ec echo.Context) error {
 	ctx := ec.Request().Context()
-	dto := Clinic{}
+	dto := ClinicV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (h *Handler) GetClinic(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := Clinic{}
+	dto := ClinicV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (h *Handler) ListMigrations(ec echo.Context, clinicId string) error {
 
 func (h *Handler) MigrateLegacyClinicianPatients(ec echo.Context, clinicId string) error {
 	ctx := ec.Request().Context()
-	dto := Migration{}
+	dto := MigrationV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (h *Handler) MigrateLegacyClinicianPatients(ec echo.Context, clinicId strin
 	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
 }
 
-func (h *Handler) GetMigration(ec echo.Context, clinicId Id, userId UserId) error {
+func (h *Handler) GetMigration(ec echo.Context, clinicId ClinicIdV1, userId UserId) error {
 	ctx := ec.Request().Context()
 
 	migration, err := h.ClinicsMigrator.GetMigration(ctx, string(clinicId), string(userId))
@@ -192,9 +192,9 @@ func (h *Handler) GetMigration(ec echo.Context, clinicId Id, userId UserId) erro
 	return ec.JSON(http.StatusOK, NewMigrationDto(migration))
 }
 
-func (h *Handler) UpdateMigration(ec echo.Context, clinicId Id, userId UserId) error {
+func (h *Handler) UpdateMigration(ec echo.Context, clinicId ClinicIdV1, userId UserId) error {
 	ctx := ec.Request().Context()
-	dto := MigrationUpdate{}
+	dto := MigrationUpdateV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func (h *Handler) DeleteUserFromClinics(ec echo.Context, userId UserId) error {
 
 func (h *Handler) UpdateClinicUserDetails(ec echo.Context, userId UserId) error {
 	ctx := ec.Request().Context()
-	dto := UpdateUserDetails{}
+	dto := UpdateUserDetailsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func (h *Handler) ListMembershipRestrictions(ec echo.Context, clinicId ClinicId)
 
 func (h *Handler) UpdateMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := MembershipRestrictions{}
+	dto := MembershipRestrictionsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -358,7 +358,7 @@ func (h *Handler) GetEHRSettings(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) UpdateEHRSettings(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := EHRSettings{}
+	dto := EhrSettingsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -384,7 +384,7 @@ func (h *Handler) GetMRNSettings(ec echo.Context, clinicId ClinicId) error {
 		return errors.NotFound
 	}
 
-	return ec.JSON(http.StatusOK, MRNSettings{
+	return ec.JSON(http.StatusOK, MrnSettingsV1{
 		Required: settings.Required,
 		Unique:   settings.Unique,
 	})
@@ -392,7 +392,7 @@ func (h *Handler) GetMRNSettings(ec echo.Context, clinicId ClinicId) error {
 
 func (h *Handler) UpdateMRNSettings(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := MRNSettings{}
+	dto := MrnSettingsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -424,7 +424,7 @@ func (h *Handler) GetPatientCountSettings(ec echo.Context, clinicId ClinicId) er
 
 func (h *Handler) UpdatePatientCountSettings(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := PatientCountSettings{}
+	dto := PatientCountSettingsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -449,14 +449,14 @@ func (h *Handler) GetPatientCount(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, PatientCount{
+	return ec.JSON(http.StatusOK, PatientCountV1{
 		PatientCount: patientCount.PatientCount,
 	})
 }
 
 func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := GenerateMergeReport{}
+	dto := GenerateMergeReportV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -484,11 +484,10 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 
 func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := MergeClinic{}
+	dto := MergeClinicV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
-
 
 	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
 	plan, err := planner.Plan(ctx)
