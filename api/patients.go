@@ -9,11 +9,12 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var defaultPeriod = "14d"
@@ -25,6 +26,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		ClinicId:     strp(string(clinicId)),
 		Search:       searchToString(params.Search),
 		Tags:         params.Tags,
+		Sites:        params.Sites,
 		LastReviewed: params.LastReviewed,
 	}
 
@@ -61,7 +63,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	}
 
 	clinicPatientsCount, err := h.Patients.Count(ctx, &patients.Filter{
-		ClinicId:     strp(clinicId),
+		ClinicId: strp(clinicId),
 	})
 	if err != nil {
 		return err
@@ -128,7 +130,12 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 		return err
 	}
 
-	patient := NewPatientFromCreate(dto)
+	clinicSites, err := h.Clinics.ListSites(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	patient := NewPatientFromCreate(dto, clinicSites)
 	patient.UserId = strp(patientId)
 	patient.ClinicId = &clinicObjId
 
