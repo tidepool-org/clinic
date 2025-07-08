@@ -235,10 +235,9 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 
 	enabled := true
 	filter := clinics.Filter{
-		EHRProvider:     &clinics.EHRProviderRedox,
-		EHRSourceId:     &criteria.SourceId,
-		EHRFacilityName: criteria.FacilityName,
-		EHREnabled:      &enabled,
+		EHRProvider: &clinics.EHRProviderRedox,
+		EHRSourceId: &criteria.SourceId,
+		EHREnabled:  &enabled,
 	}
 	page := store.Pagination{
 		Offset: 0,
@@ -458,8 +457,7 @@ func (p PatientMatchingValues) GetFilters(clinicId string, criteria []string) ([
 }
 
 type ClinicMatchingCriteria struct {
-	SourceId     string
-	FacilityName *string
+	SourceId string
 }
 
 func GetClinicMatchingCriteriaFromNewOrder(order *models.NewOrder) (ClinicMatchingCriteria, error) {
@@ -468,11 +466,6 @@ func GetClinicMatchingCriteriaFromNewOrder(order *models.NewOrder) (ClinicMatchi
 		return criteria, fmt.Errorf("%w: source id is required", errors.BadRequest)
 	}
 	criteria.SourceId = *order.Meta.Source.ID
-
-	if order.Order.OrderingFacility != nil {
-		criteria.FacilityName = order.Order.OrderingFacility.Name
-	}
-
 	return criteria, nil
 }
 

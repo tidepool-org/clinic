@@ -70,7 +70,6 @@ type Filter struct {
 	CreatedTimeEnd                  *time.Time
 	EHRProvider                     *string
 	EHRSourceId                     *string
-	EHRFacilityName                 *string
 	EHREnabled                      *bool
 	ScheduledReportsOnUploadEnabled *bool
 }
@@ -113,7 +112,6 @@ type EHRSettings struct {
 	Enabled          bool               `bson:"enabled"`
 	Provider         string             `bson:"provider"`
 	DestinationIds   *EHRDestinationIds `bson:"destinationIds"`
-	Facility         *EHRFacility       `bson:"facility"`
 	ProcedureCodes   EHRProcedureCodes  `bson:"procedureCodes"`
 	SourceId         string             `bson:"sourceId"`
 	MrnIdType        string             `bson:"mrnIdType"`
@@ -127,10 +125,6 @@ func (e *EHRSettings) GetMrnIDType() string {
 		return DefaultMrnIdType
 	}
 	return e.MrnIdType
-}
-
-type EHRFacility struct {
-	Name string `bson:"name"`
 }
 
 type EHRDestinationIds struct {
