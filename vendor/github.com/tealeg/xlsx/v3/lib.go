@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -24,12 +23,6 @@ const (
 )
 
 var (
-	tokPool = sync.Pool{
-		New: func() interface{} {
-			return &xml.StartElement{}
-		},
-	}
-
 	xlsxSIPool = sync.Pool{
 		New: func() interface{} {
 			return &xlsxSI{}
@@ -58,24 +51,25 @@ func (e *XLSXReaderError) Error() string {
 // getRangeFromString is an internal helper function that converts
 // XLSX internal range syntax to a pair of integers.  For example,
 // the range string "1:3" yield the upper and lower integers 1 and 3.
-func getRangeFromString(rangeString string) (lower int, upper int, error error) {
-	var parts []string
-	parts = strings.SplitN(rangeString, cellRangeChar, 2)
+func getRangeFromString(rangeString string) (int, int, error) {
+	var lower, upper int
+	var err error
+	parts := strings.SplitN(rangeString, cellRangeChar, 2)
 	if parts[0] == "" {
-		error = fmt.Errorf("Invalid range '%s'\n", rangeString)
+		return 0, 0, fmt.Errorf("invalid range '%s'", rangeString)
 	}
 	if parts[1] == "" {
-		error = fmt.Errorf("Invalid range '%s'\n", rangeString)
+		return 0, 0, fmt.Errorf("invalid range '%s'", rangeString)
 	}
-	lower, error = strconv.Atoi(parts[0])
-	if error != nil {
-		error = fmt.Errorf("Invalid range (not integer in lower bound) %s\n", rangeString)
+	lower, err = strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid range (not integer in lower bound) %s", rangeString)
 	}
-	upper, error = strconv.Atoi(parts[1])
-	if error != nil {
-		error = fmt.Errorf("Invalid range (not integer in upper bound) %s\n", rangeString)
+	upper, err = strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid range (not integer in upper bound) %s", rangeString)
 	}
-	return lower, upper, error
+	return lower, upper, err
 }
 
 // ColLettersToIndex is used to convert a character based column
@@ -286,12 +280,6 @@ func makeRowFromRaw(rawrow xlsxRow, sheet *Sheet) *Row {
 
 	row := sheet.cellStore.MakeRowWithLen(sheet, upper)
 	row.SetOutlineLevel(rawrow.OutlineLevel)
-	return row
-}
-
-func makeEmptyRow(sheet *Sheet) *Row {
-	row := new(Row)
-	row.Sheet = sheet
 	return row
 }
 
@@ -623,7 +611,7 @@ type indexedSheet struct {
 }
 
 func readSheetViews(xSheetViews xlsxSheetViews) []SheetView {
-	if xSheetViews.SheetView == nil || len(xSheetViews.SheetView) == 0 {
+	if len(xSheetViews.SheetView) == 0 {
 		return nil
 	}
 	sheetViews := []SheetView{}
@@ -649,9 +637,34 @@ type coord struct {
 	y int
 }
 
+func makeRelations(fi *File, rsheet *xlsxSheet) (*xlsxRels, error) {
+	rels := new(xlsxRels)
+
+	wrap := func(err error) (*xlsxRels, error) {
+		return nil, fmt.Errorf("makeRelations: %w", err)
+	}
+
+	relsFile, ok := fi.worksheetRels["sheet"+rsheet.SheetId]
+	if ok {
+		rc, err := relsFile.Open()
+		if err != nil {
+			return wrap(fmt.Errorf("file.Open: %w", err))
+		}
+		defer rc.Close()
+
+		decoder := xml.NewDecoder(rc)
+		err = decoder.Decode(rels)
+		if err != nil {
+			return wrap(fmt.Errorf("xml.Decoder.Decode: %w", err))
+		}
+	}
+
+	return rels, nil
+}
+
 type hyperlinkTable map[coord]Hyperlink
 
-func makeHyperlinkTable(worksheet *xlsxWorksheet, fi *File, rsheet *xlsxSheet) (hyperlinkTable, error) {
+func makeHyperlinkTable(worksheet *xlsxWorksheet, rels *xlsxRels) (hyperlinkTable, error) {
 	wrap := func(err error) (hyperlinkTable, error) {
 		return nil, fmt.Errorf("makeHyperlinkTable: %w", err)
 	}
@@ -660,26 +673,10 @@ func makeHyperlinkTable(worksheet *xlsxWorksheet, fi *File, rsheet *xlsxSheet) (
 
 	// Convert xlsxHyperlinks to Hyperlinks
 	if worksheet.Hyperlinks != nil {
-
-		worksheetRelsFile, ok := fi.worksheetRels["sheet"+rsheet.SheetId]
-		worksheetRels := new(xlsxWorksheetRels)
-		if ok {
-			rc, err := worksheetRelsFile.Open()
-			if err != nil {
-				return wrap(fmt.Errorf("file.Open: %w", err))
-			}
-			defer rc.Close()
-
-			decoder := xml.NewDecoder(rc)
-			err = decoder.Decode(worksheetRels)
-			if err != nil {
-				return wrap(fmt.Errorf("xml.Decoder.Decode: %w", err))
-			}
-		}
 		for _, xlsxLink := range worksheet.Hyperlinks.HyperLinks {
 			newHyperLink := Hyperlink{}
 
-			for _, rel := range worksheetRels.Relationships {
+			for _, rel := range rels.Relationships {
 				if rel.Id == xlsxLink.RelationshipId {
 					newHyperLink.Link = rel.Target
 					break
@@ -723,7 +720,7 @@ func makeHyperlinkTable(worksheet *xlsxWorksheet, fi *File, rsheet *xlsxSheet) (
 func readSheetFromFile(rsheet xlsxSheet, fi *File, sheetXMLMap map[string]string, rowLimit, colLimit int, valueOnly bool) (sheet *Sheet, errRes error) {
 	defer func() {
 		if x := recover(); x != nil {
-			errRes = fmt.Errorf("%v\n%s\n", x, debug.Stack())
+			errRes = fmt.Errorf("%v\n%s", x, debug.Stack())
 		}
 	}()
 
@@ -736,12 +733,24 @@ func readSheetFromFile(rsheet xlsxSheet, fi *File, sheetXMLMap map[string]string
 		return wrap(err)
 	}
 
-	linkTable, err := makeHyperlinkTable(worksheet, fi, &rsheet)
+	sheet, err = NewSheetWithCellStore(rsheet.Name, fi.cellStoreConstructor)
 	if err != nil {
 		return wrap(err)
 	}
 
-	sheet, err = NewSheetWithCellStore(rsheet.Name, fi.cellStoreConstructor)
+	rels, err := makeRelations(fi, &rsheet)
+	if err != nil {
+		return wrap(err)
+	}
+	for _, rel := range rels.Relationships {
+		sheet.Relations = append(sheet.Relations, Relation{
+			Type:       rel.Type,
+			Target:     rel.Target,
+			TargetMode: rel.TargetMode,
+		})
+	}
+
+	linkTable, err := makeHyperlinkTable(worksheet, rels)
 	if err != nil {
 		return wrap(err)
 	}
@@ -847,21 +856,22 @@ func readSheetsFromZipFile(f *zip.File, file *File, sheetXMLMap map[string]strin
 			sb.WriteString("{SheetIndex: ")
 			sb.WriteString(strconv.Itoa(j))
 			sb.WriteString("} No sheet returned from readSheetFromFile\n")
+		} else {
+			if sheet.Error != nil {
+				errFound = true
+				sb.WriteString("{SheetIndex: ")
+				sb.WriteString(strconv.Itoa(sheet.Index))
+				sb.WriteString("} ")
+				sb.WriteString(sheet.Error.Error())
+			}
+			sheetName := sheet.Sheet.Name
+			sheetsByName[sheetName] = sheet.Sheet
+			sheets[sheet.Index] = sheet.Sheet
 		}
-		if sheet.Error != nil {
-			errFound = true
-			sb.WriteString("{SheetIndex: ")
-			sb.WriteString(strconv.Itoa(sheet.Index))
-			sb.WriteString("} ")
-			sb.WriteString(sheet.Error.Error())
-		}
-		sheetName := sheet.Sheet.Name
-		sheetsByName[sheetName] = sheet.Sheet
-		sheets[sheet.Index] = sheet.Sheet
 	}
 	close(sheetChan)
 	if errFound {
-		err = fmt.Errorf(sb.String())
+		err = errors.New(sb.String())
 	}
 	return sheetsByName, sheets, err
 }
@@ -884,7 +894,6 @@ func readSharedStrings(rc io.Reader) (*RefTable, error) {
 	decoder = xml.NewDecoder(rc)
 
 	for {
-		tok = tokPool.Get().(xml.Token)
 		tok, err = decoder.Token()
 		if tok == nil {
 			break
@@ -948,7 +957,6 @@ func readSharedStrings(rc io.Reader) (*RefTable, error) {
 		default:
 			// Do nothing
 		}
-		tokPool.Put(tok)
 	}
 
 	if reftable == nil {
@@ -1184,14 +1192,14 @@ func ReadZipReader(r *zip.Reader, options ...FileOption) (*File, error) {
 		}
 	}
 	if workbookRels == nil {
-		return wrap(fmt.Errorf("workbook.xml.rels not found in input xlsx."))
+		return wrap(fmt.Errorf("workbook.xml.rels not found in input xlsx"))
 	}
 	sheetXMLMap, err = readWorkbookRelationsFromZipFile(workbookRels)
 	if err != nil {
 		return wrap(err)
 	}
 	if len(worksheets) == 0 {
-		return wrap(fmt.Errorf("Input xlsx contains no worksheets."))
+		return wrap(fmt.Errorf("input XLSX contains no worksheets"))
 	}
 	file.worksheets = worksheets
 	file.worksheetRels = worksheetRels
@@ -1293,7 +1301,7 @@ func truncateSheetXML(r io.Reader, rowLimit int) (io.Reader, error) {
 // When sheets are truncated, most of formatting present will be not right, but all of this formatting
 // is related to printing and visibility, and is out of scope for most purposes of this library.
 func truncateSheetXMLValueOnly(r io.Reader) (io.Reader, error) {
-	sheetXML, err := ioutil.ReadAll(r)
+	sheetXML, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
