@@ -13,10 +13,11 @@ func NewReportError(message string) ReportError {
 }
 
 var (
-	ErrorDuplicateMRNInTargetWorkspace           = NewReportError("MRN uniqueness error(s) for duplicate accounts. View error(s) on the 'Duplicates in Merged Workspace' tab")
-	ErrorMRNRequiredInTargetWorkspace            = NewReportError("Target workspace requires MRNs")
-	ErrorCannotMergeWorkspaceWithPendingInvites  = NewReportError("Pending invites is source workspace")
-	ErrorWorkspaceSettingsMismatch               = NewReportError("Settings mismatch")
+	ErrorDuplicateMRNInSourceWorkspace          = NewReportError("MRN uniqueness error(s) for duplicate accounts. View error(s) on the 'Duplicates in Source Clinic' tab")
+	ErrorDuplicateMRNInTargetWorkspace          = NewReportError("MRN uniqueness error(s) for duplicate accounts. View error(s) on the 'Duplicates in Merged Workspace' tab")
+	ErrorMRNRequiredInTargetWorkspace           = NewReportError("Target workspace requires MRNs")
+	ErrorCannotMergeWorkspaceWithPendingInvites = NewReportError("Pending invites is source workspace")
+	ErrorWorkspaceSettingsMismatch              = NewReportError("Settings mismatch")
 )
 
 func GetUniqueErrorMessages(errs []ReportError) []string {

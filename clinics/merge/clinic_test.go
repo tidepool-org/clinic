@@ -3,7 +3,6 @@ package merge_test
 import (
 	"context"
 	"errors"
-
 	mapset "github.com/deckarep/golang-set/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -190,6 +189,41 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 		}
 		Expect(sourceFound).To(BeTrue())
 		Expect(targetFound).To(BeTrue())
+	})
+
+	It("reverts the changes on failure", func() {
+		// Force a failure by changing a single clinician plan to fail
+		originalAction := t.plan.ClinicianPlans[0].ClinicianAction
+		t.plan.ClinicianPlans[0].ClinicianAction = "INVALID"
+		targetClinicId := t.target.Id.Hex()
+
+		var err error
+		t.planId, err = t.executor.Execute(context.Background(), t.plan)
+		Expect(err).To(HaveOccurred())
+
+		// Clinician plans are executed after patients plans so any patients that were moved during the merge
+		// should not be part of the target clinic if the merge transaction was rolled back
+		count := 0
+		for _, plan := range t.plan.PatientPlans {
+			if plan.PatientAction != merge.PatientActionMove {
+				continue
+			}
+
+			filter := patients.Filter{
+				UserId:   plan.SourcePatient.UserId,
+				ClinicId: &targetClinicId,
+			}
+			page := store.DefaultPagination().WithLimit(2)
+			result, err := t.patientsService.List(context.Background(), &filter, page, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result.MatchingCount).To(Equal(0))
+
+			count++
+		}
+		Expect(count).To(BeNumerically(">", 0))
+
+		// Restore the value of the clinician action to make sure the plan can be executed successfully
+		t.plan.ClinicianPlans[0].ClinicianAction = originalAction
 	})
 
 	It("successfully executes the plan", func() {
