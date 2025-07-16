@@ -330,10 +330,10 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		tpe := NewTagPlanExecutor(logger, c.ClinicsService)
 		logger.Info("starting tags migration")
 		for _, p := range plan.TagsPlans {
-			if err := tpe.Execute(ctx, p); err != nil {
+			if err := tpe.Execute(sessionContext, p); err != nil {
 				return nil, err
 			}
-			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeTag, p)); err != nil {
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeTag, p)); err != nil {
 				return nil, err
 			}
 		}
@@ -341,7 +341,7 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		logger.Info("starting patients migration")
 		ppe := NewPatientPlanExecutor(logger, c.ClinicsService, c.DB)
 		for _, p := range plan.PatientPlans {
-			if err := ppe.Execute(ctx, p, plan.Source, plan.Target); err != nil {
+			if err := ppe.Execute(sessionContext, p, plan.Source, plan.Target); err != nil {
 				return nil, err
 			}
 			if p.SourcePatient != nil {
@@ -350,7 +350,7 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 			if p.TargetPatient != nil {
 				sanitizePatient(p.TargetPatient)
 			}
-			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypePatient, p)); err != nil {
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypePatient, p)); err != nil {
 				return nil, err
 			}
 		}
@@ -358,19 +358,19 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		logger.Info("starting clinicians migration")
 		cpe := NewClinicianPlanExecutor(logger, c.DB)
 		for _, p := range plan.ClinicianPlans {
-			if err := cpe.Execute(ctx, p, plan.Target); err != nil {
+			if err := cpe.Execute(sessionContext, p, plan.Target); err != nil {
 				return nil, err
 			}
-			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeClinician, p)); err != nil {
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeClinician, p)); err != nil {
 				return nil, err
 			}
 		}
 
 		logger.Info("finalizing clinic merge")
-		if err := c.ClinicManager.FinalizeMerge(ctx, plan.Source.Id.Hex(), plan.Target.Id.Hex()); err != nil {
+		if err := c.ClinicManager.FinalizeMerge(sessionContext, plan.Source.Id.Hex(), plan.Target.Id.Hex()); err != nil {
 			return nil, err
 		}
-		if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeClinic, plan)); err != nil {
+		if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeClinic, plan)); err != nil {
 			return nil, err
 		}
 

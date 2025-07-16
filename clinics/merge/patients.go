@@ -141,33 +141,31 @@ type Conflict struct {
 }
 
 type PatientMergePlanner struct {
-	source         clinics.Clinic
-	target         clinics.Clinic
-	sourcePatients []patients.Patient
-	targetPatients []patients.Patient
-	targetByUserId map[string]*patients.Patient
-	sourceTags     map[string]*clinics.PatientTag
-	targetTags     map[string]*clinics.PatientTag
+	source            clinics.Clinic
+	target            clinics.Clinic
+	sourceByAttribute attributeMap
+	sourcePatients    []patients.Patient
+	sourceTags        map[string]*clinics.PatientTag
+	targetByAttribute attributeMap
+	targetPatients    []patients.Patient
+	targetTags        map[string]*clinics.PatientTag
 }
 
 func NewPatientMergePlanner(source, target clinics.Clinic, sourcePatients, targetPatients []patients.Patient) (*PatientMergePlanner, error) {
 	planner := &PatientMergePlanner{
-		source:         source,
-		sourcePatients: sourcePatients,
-		sourceTags:     buildTagsMap(source.PatientTags),
-		target:         target,
-		targetByUserId: make(map[string]*patients.Patient),
-		targetPatients: targetPatients,
-		targetTags:     buildTagsMap(target.PatientTags),
-	}
-	for _, patient := range targetPatients {
-		planner.targetByUserId[getUserId(patient)] = &patient
+		source:            source,
+		sourceByAttribute: buildAttributeMap(sourcePatients),
+		sourcePatients:    sourcePatients,
+		sourceTags:        buildTagsMap(source.PatientTags),
+		target:            target,
+		targetByAttribute: buildAttributeMap(targetPatients),
+		targetPatients:    targetPatients,
+		targetTags:        buildTagsMap(target.PatientTags),
 	}
 	return planner, nil
 }
 
 func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
-	targetByAttribute := buildAttributeMap(p.targetPatients)
 	mergeTargetPatients := map[string]struct{}{}
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))
 	for _, patient := range p.sourcePatients {
@@ -184,7 +182,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 			CanExecuteAction:      true,
 		}
 
-		duplicates := getDuplicates(patient, targetByAttribute)
+		duplicates := getDuplicates(patient, p.targetByAttribute)
 		for userId, conflictCategory := range duplicates {
 			target, err := p.getTargetPatientById(userId)
 			if err != nil {
@@ -220,9 +218,15 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 						plan.PostMigrationMRNUniqueness = true
 
 						// Do not allow moving patients if there are patients with the same MRN in the target clinic
-						if pts := targetByAttribute.GetPatientsWithMRN(mrn); len(pts) > 0 {
+						if pts := p.targetByAttribute.GetPatientsWithMRN(mrn); len(pts) > 0 {
 							plan.CanExecuteAction = false
 							plan.Error = &ErrorDuplicateMRNInTargetWorkspace
+						}
+
+						// Do not allow moving patients if there are patients with the same MRN in the source clinic
+						if pts := p.sourceByAttribute.GetPatientsWithMRN(mrn); len(pts) > 1 {
+							plan.CanExecuteAction = false
+							plan.Error = &ErrorDuplicateMRNInSourceWorkspace
 						}
 					}
 				}
@@ -254,11 +258,14 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 }
 
 func (p *PatientMergePlanner) getTargetPatientById(userId string) (*patients.Patient, error) {
-	patient, ok := p.targetByUserId[userId]
-	if !ok || patient == nil {
+	pts := p.targetByAttribute[PatientAttributeUserId][userId]
+	if len(pts) == 0 || pts[0] == nil {
 		return nil, fmt.Errorf("target patient with id %s doesn't exist", userId)
 	}
-	return patient, nil
+	if len(pts) > 1 {
+		return nil, fmt.Errorf("found multiple patients with user id %s", userId)
+	}
+	return pts[0], nil
 }
 
 func buildTagsMap(tags []clinics.PatientTag) map[string]*clinics.PatientTag {
