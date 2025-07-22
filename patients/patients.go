@@ -100,6 +100,7 @@ type Patient struct {
 	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
+	GlycemicRanges             string                     `bson:"glycemicRanges,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`

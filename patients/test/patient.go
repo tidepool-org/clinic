@@ -2,11 +2,13 @@ package test
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/test"
@@ -41,7 +43,18 @@ func RandomPatient() patients.Patient {
 		DataSources:      (*[]patients.DataSource)(&dataSources),
 		EHRSubscriptions: RandomSubscriptions(),
 		Sites:            &[]sites.Site{},
+		GlycemicRanges:   RandomGlycemicRanges(),
 	}
+}
+
+func RandomGlycemicRanges() string {
+	all := []api.GlycemicRangesV1{
+		api.ADAStandard,
+		api.ADAPregnancyType1,
+		api.ADAPregnancyGDMOrType2,
+		api.ADAOlderOrHighRisk,
+	}
+	return string(all[rand.IntN(len(all))])
 }
 
 func RandomSubscriptions() patients.EHRSubscriptions {
@@ -79,6 +92,7 @@ func RandomPatientUpdate() patients.PatientUpdate {
 			DataSources:      patient.DataSources,
 			EHRSubscriptions: RandomSubscriptions(),
 			Sites:            patient.Sites,
+			GlycemicRanges:   patient.GlycemicRanges,
 		},
 	}
 }
