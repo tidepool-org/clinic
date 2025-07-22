@@ -44,6 +44,7 @@ func RandomPatient() patients.Patient {
 		EHRSubscriptions: RandomSubscriptions(),
 		Sites:            &[]sites.Site{},
 		GlycemicRanges:   RandomGlycemicRanges(),
+		DiagnosisType:    RandomDiagnosisType(),
 	}
 }
 
@@ -53,6 +54,20 @@ func RandomGlycemicRanges() string {
 		api.ADAPregnancyType1,
 		api.ADAPregnancyGDMOrType2,
 		api.ADAOlderOrHighRisk,
+	}
+	return string(all[rand.IntN(len(all))])
+}
+
+func RandomDiagnosisType() string {
+	all := []api.DiagnosisTypeV1{
+		api.DiagnosisTypeV1Gestational,
+		api.DiagnosisTypeV1Lada,
+		api.DiagnosisTypeV1Mody,
+		api.DiagnosisTypeV1NotApplicable,
+		api.DiagnosisTypeV1Other,
+		api.DiagnosisTypeV1Prediabetes,
+		api.DiagnosisTypeV1Type1,
+		api.DiagnosisTypeV1Type2,
 	}
 	return string(all[rand.IntN(len(all))])
 }
@@ -93,6 +108,7 @@ func RandomPatientUpdate() patients.PatientUpdate {
 			EHRSubscriptions: RandomSubscriptions(),
 			Sites:            patient.Sites,
 			GlycemicRanges:   patient.GlycemicRanges,
+			DiagnosisType:    patient.DiagnosisType,
 		},
 	}
 }
