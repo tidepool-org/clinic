@@ -213,6 +213,10 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 			CreatedTime:  patient.LastRequestedDexcomConnectTime,
 		}}
 	}
+	if patient.GlycemicRanges != "" {
+		glycemicRanges := GlycemicRangesV1(patient.GlycemicRanges)
+		dto.GlycemicRanges = &glycemicRanges
+	}
 
 	return dto
 }
@@ -280,6 +284,11 @@ func NewPatient(dto PatientV1) patients.Patient {
 		}
 		patient.DataSources = &dataSources
 	}
+
+	if dto.GlycemicRanges != nil {
+		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+	}
+
 	return patient
 }
 
@@ -318,7 +327,9 @@ func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patient
 	if sites != nil {
 		patient.Sites = &sites
 	}
-
+	if dto.GlycemicRanges != nil {
+		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+	}
 	return patient
 }
 
