@@ -2206,6 +2206,8 @@ components:
           $ref: '#/components/schemas/patientTagIds.v1'
         glycemicRanges:
           $ref: '#/components/schemas/glycemicRanges.v1'
+        diagnosisType:
+          $ref: '#/components/schemas/diagnosisType.v1'
     associateClinicianToUser.v1:
       title: Associate Clinician
       type: object
@@ -4527,6 +4529,20 @@ components:
         - ADA pregnancy GDM or type 2
         - ADA older or high-risk
       example: ADA standard
+    diagnosisType.v1:
+      title: Diagnosis Type
+      type: string
+      enum:
+        - type1
+        - type2
+        - type3c
+        - gestational
+        - prediabetes
+        - lada
+        - mody
+        - other
+        - notApplicable
+      example: type1
     patient.v1:
       type: object
       title: Patient
@@ -4593,6 +4609,8 @@ components:
           readOnly: true
         glycemicRanges:
           $ref: '#/components/schemas/glycemicRanges.v1'
+        diagnosisType:
+          $ref: '#/components/schemas/diagnosisType.v1'
       required:
         - id
         - fullName

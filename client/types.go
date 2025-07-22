@@ -23,11 +23,11 @@ const (
 
 // Defines values for ClinicV1ClinicType.
 const (
-	HealthcareSystem ClinicV1ClinicType = "healthcare_system"
-	Other            ClinicV1ClinicType = "other"
-	ProviderPractice ClinicV1ClinicType = "provider_practice"
-	Researcher       ClinicV1ClinicType = "researcher"
-	VeterinaryClinic ClinicV1ClinicType = "veterinary_clinic"
+	ClinicV1ClinicTypeHealthcareSystem ClinicV1ClinicType = "healthcare_system"
+	ClinicV1ClinicTypeOther            ClinicV1ClinicType = "other"
+	ClinicV1ClinicTypeProviderPractice ClinicV1ClinicType = "provider_practice"
+	ClinicV1ClinicTypeResearcher       ClinicV1ClinicType = "researcher"
+	ClinicV1ClinicTypeVeterinaryClinic ClinicV1ClinicType = "veterinary_clinic"
 )
 
 // Defines values for ClinicV1PreferredBgUnits.
@@ -644,6 +644,19 @@ const (
 	PendingReconnect DataSourceV1State = "pendingReconnect"
 )
 
+// Defines values for DiagnosisTypeV1.
+const (
+	DiagnosisTypeV1Gestational   DiagnosisTypeV1 = "gestational"
+	DiagnosisTypeV1Lada          DiagnosisTypeV1 = "lada"
+	DiagnosisTypeV1Mody          DiagnosisTypeV1 = "mody"
+	DiagnosisTypeV1NotApplicable DiagnosisTypeV1 = "notApplicable"
+	DiagnosisTypeV1Other         DiagnosisTypeV1 = "other"
+	DiagnosisTypeV1Prediabetes   DiagnosisTypeV1 = "prediabetes"
+	DiagnosisTypeV1Type1         DiagnosisTypeV1 = "type1"
+	DiagnosisTypeV1Type2         DiagnosisTypeV1 = "type2"
+	DiagnosisTypeV1Type3c        DiagnosisTypeV1 = "type3c"
+)
+
 // Defines values for EhrMatchMessageRefV1DataModel.
 const (
 	Order EhrMatchMessageRefV1DataModel = "Order"
@@ -1258,6 +1271,7 @@ type CountryV1 = string
 type CreatePatientV1 struct {
 	AttestationSubmitted *bool               `json:"attestationSubmitted,omitempty"`
 	BirthDate            *openapi_types.Date `json:"birthDate,omitempty"`
+	DiagnosisType        *DiagnosisTypeV1    `json:"diagnosisType,omitempty"`
 
 	// FullName The full name of the patient
 	FullName *string `json:"fullName,omitempty"`
@@ -1297,6 +1311,9 @@ type DataSourcesV1 = []DataSourceV1
 
 // DatetimeV1 [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 type DatetimeV1 = string
+
+// DiagnosisTypeV1 defines model for diagnosisType.v1.
+type DiagnosisTypeV1 string
 
 // EhrDestinationsV1 defines model for ehrDestinations.v1.
 type EhrDestinationsV1 struct {
@@ -1490,6 +1507,7 @@ type PatientV1 struct {
 	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
 	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
 	DataSources          *[]DataSourceV1               `json:"dataSources"`
+	DiagnosisType        *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
 	Email                *string                       `json:"email,omitempty"`
 
 	// FullName The full name of the patient

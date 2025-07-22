@@ -205,6 +205,10 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		glycemicRanges := GlycemicRangesV1(patient.GlycemicRanges)
 		dto.GlycemicRanges = &glycemicRanges
 	}
+	if patient.DiagnosisType != "" {
+		diagnosisType := DiagnosisTypeV1(patient.DiagnosisType)
+		dto.DiagnosisType = &diagnosisType
+	}
 
 	return dto
 }
@@ -271,6 +275,9 @@ func NewPatient(dto PatientV1) patients.Patient {
 	if dto.GlycemicRanges != nil {
 		patient.GlycemicRanges = string(*dto.GlycemicRanges)
 	}
+	if dto.DiagnosisType != nil {
+		patient.DiagnosisType = string(*dto.DiagnosisType)
+	}
 
 	return patient
 }
@@ -301,6 +308,9 @@ func NewPatientFromCreate(dto CreatePatientV1) patients.Patient {
 	}
 	if dto.GlycemicRanges != nil {
 		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+	}
+	if dto.DiagnosisType != nil {
+		patient.DiagnosisType = string(*dto.DiagnosisType)
 	}
 	return patient
 }
