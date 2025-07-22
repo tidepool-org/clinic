@@ -217,8 +217,37 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		glycemicRanges := GlycemicRangesV1(patient.GlycemicRanges)
 		dto.GlycemicRanges = &glycemicRanges
 	}
+	if patient.DiagnosisType != "" {
+		dto.DiagnosisType = NewDiagnosisTypeDto(patient.DiagnosisType)
+	}
 
 	return dto
+}
+
+func NewDiagnosisTypeDto(diagnosisType string) *DiagnosisTypeV1 {
+	dtoDiagnosisType := DiagnosisTypeV1(diagnosisType)
+	switch dtoDiagnosisType {
+	case DiagnosisTypeV1Gestational:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Lada:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Mody:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1NotApplicable:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Other:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Prediabetes:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Type1:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Type2:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Type3c:
+		return &dtoDiagnosisType
+	default:
+		return nil
+	}
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {
@@ -288,6 +317,9 @@ func NewPatient(dto PatientV1) patients.Patient {
 	if dto.GlycemicRanges != nil {
 		patient.GlycemicRanges = string(*dto.GlycemicRanges)
 	}
+	if dto.DiagnosisType != nil {
+		patient.DiagnosisType = string(*dto.DiagnosisType)
+	}
 
 	return patient
 }
@@ -329,6 +361,9 @@ func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patient
 	}
 	if dto.GlycemicRanges != nil {
 		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+	}
+	if dto.DiagnosisType != nil {
+		patient.DiagnosisType = string(*dto.DiagnosisType)
 	}
 	return patient
 }
