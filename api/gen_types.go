@@ -23,11 +23,11 @@ const (
 
 // Defines values for ClinicV1ClinicType.
 const (
-	HealthcareSystem ClinicV1ClinicType = "healthcare_system"
-	Other            ClinicV1ClinicType = "other"
-	ProviderPractice ClinicV1ClinicType = "provider_practice"
-	Researcher       ClinicV1ClinicType = "researcher"
-	VeterinaryClinic ClinicV1ClinicType = "veterinary_clinic"
+	ClinicV1ClinicTypeHealthcareSystem ClinicV1ClinicType = "healthcare_system"
+	ClinicV1ClinicTypeOther            ClinicV1ClinicType = "other"
+	ClinicV1ClinicTypeProviderPractice ClinicV1ClinicType = "provider_practice"
+	ClinicV1ClinicTypeResearcher       ClinicV1ClinicType = "researcher"
+	ClinicV1ClinicTypeVeterinaryClinic ClinicV1ClinicType = "veterinary_clinic"
 )
 
 // Defines values for ClinicV1PreferredBgUnits.
@@ -644,6 +644,19 @@ const (
 	PendingReconnect DataSourceV1State = "pendingReconnect"
 )
 
+// Defines values for DiagnosisTypeV1.
+const (
+	DiagnosisTypeV1Gestational   DiagnosisTypeV1 = "gestational"
+	DiagnosisTypeV1Lada          DiagnosisTypeV1 = "lada"
+	DiagnosisTypeV1Mody          DiagnosisTypeV1 = "mody"
+	DiagnosisTypeV1NotApplicable DiagnosisTypeV1 = "notApplicable"
+	DiagnosisTypeV1Other         DiagnosisTypeV1 = "other"
+	DiagnosisTypeV1Prediabetes   DiagnosisTypeV1 = "prediabetes"
+	DiagnosisTypeV1Type1         DiagnosisTypeV1 = "type1"
+	DiagnosisTypeV1Type2         DiagnosisTypeV1 = "type2"
+	DiagnosisTypeV1Type3c        DiagnosisTypeV1 = "type3c"
+)
+
 // Defines values for EhrMatchMessageRefV1DataModel.
 const (
 	Order EhrMatchMessageRefV1DataModel = "Order"
@@ -671,6 +684,14 @@ const (
 const (
 	Redox  EhrSettingsV1Provider = "redox"
 	Xealth EhrSettingsV1Provider = "xealth"
+)
+
+// Defines values for GlycemicRangesV1.
+const (
+	ADAOlderOrHighRisk     GlycemicRangesV1 = "ADA older or high-risk"
+	ADAPregnancyGDMOrType2 GlycemicRangesV1 = "ADA pregnancy GDM or type 2"
+	ADAPregnancyType1      GlycemicRangesV1 = "ADA pregnancy type 1"
+	ADAStandard            GlycemicRangesV1 = "ADA standard"
 )
 
 // Defines values for MigrationStatusV1.
@@ -1265,10 +1286,14 @@ type CountryV1 = string
 type CreatePatientV1 struct {
 	AttestationSubmitted *bool               `json:"attestationSubmitted,omitempty"`
 	BirthDate            *openapi_types.Date `json:"birthDate,omitempty"`
+	DiagnosisType        *DiagnosisTypeV1    `json:"diagnosisType,omitempty"`
 
 	// FullName The full name of the patient
-	FullName   *string `json:"fullName,omitempty"`
-	IsMigrated *bool   `json:"isMigrated,omitempty"`
+	FullName *string `json:"fullName,omitempty"`
+
+	// GlycemicRanges An identifier for a pre-defined set of thresholds and times in range.
+	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
+	IsMigrated     *bool             `json:"isMigrated,omitempty"`
 
 	// LegacyClinicianId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	LegacyClinicianId *Tidepooluserid `json:"legacyClinicianId,omitempty"`
@@ -1302,6 +1327,9 @@ type DataSourcesV1 = []DataSourceV1
 
 // DatetimeV1 [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 type DatetimeV1 = string
+
+// DiagnosisTypeV1 defines model for diagnosisType.v1.
+type DiagnosisTypeV1 string
 
 // EhrDestinationsV1 defines model for ehrDestinations.v1.
 type EhrDestinationsV1 struct {
@@ -1416,6 +1444,9 @@ type GenerateMergeReportV1 struct {
 	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
 }
 
+// GlycemicRangesV1 An identifier for a pre-defined set of thresholds and times in range.
+type GlycemicRangesV1 string
+
 // MembershipRestrictionV1 A user joining a clinic must match all of the defined restrictions
 type MembershipRestrictionV1 struct {
 	// EmailDomain The restriction applies only if the user has an email address with a matching domain
@@ -1495,10 +1526,14 @@ type PatientV1 struct {
 	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
 	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
 	DataSources          *[]DataSourceV1               `json:"dataSources"`
+	DiagnosisType        *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
 	Email                *string                       `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
+
+	// GlycemicRanges An identifier for a pre-defined set of thresholds and times in range.
+	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id                     *Tidepooluserid `json:"id,omitempty"`

@@ -315,6 +315,7 @@ var _ = Describe("Patients Repository", func() {
 					DataSources:      update.Patient.DataSources,
 					EHRSubscriptions: update.Patient.EHRSubscriptions,
 					Sites:            update.Patient.Sites,
+					GlycemicRanges:   update.Patient.GlycemicRanges,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -379,6 +380,7 @@ var _ = Describe("Patients Repository", func() {
 					DataSources:      randomPatient.DataSources,
 					EHRSubscriptions: randomPatient.EHRSubscriptions,
 					Sites:            randomPatient.Sites,
+					GlycemicRanges:   randomPatient.GlycemicRanges,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -1936,6 +1938,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
 		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
 		"Sites":                          Equal(patient.Sites),
+		"GlycemicRanges":                 Equal(patient.GlycemicRanges),
 	})
 }
 

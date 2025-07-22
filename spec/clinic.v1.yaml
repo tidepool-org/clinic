@@ -2377,6 +2377,10 @@ components:
           x-omitzero: true
           items:
             $ref: '#/components/schemas/site.v1'
+        glycemicRanges:
+          $ref: '#/components/schemas/glycemicRanges.v1'
+        diagnosisType:
+          $ref: '#/components/schemas/diagnosisType.v1'
     associateClinicianToUser.v1:
       title: Associate Clinician
       type: object
@@ -4779,6 +4783,30 @@ components:
         - twiist
         - dexcom
         - abbott
+    glycemicRanges.v1:
+      title: Glycemic Ranges
+      description: An identifier for a pre-defined set of thresholds and times in range.
+      type: string
+      enum:
+        - ADA standard
+        - ADA pregnancy type 1
+        - ADA pregnancy GDM or type 2
+        - ADA older or high-risk
+      example: ADA standard
+    diagnosisType.v1:
+      title: Diagnosis Type
+      type: string
+      enum:
+        - type1
+        - type2
+        - type3c
+        - gestational
+        - prediabetes
+        - lada
+        - mody
+        - other
+        - notApplicable
+      example: type1
     patient.v1:
       type: object
       title: Patient
@@ -4850,6 +4878,10 @@ components:
           x-omitzero: true
           items:
             $ref: '#/components/schemas/site.v1'
+        glycemicRanges:
+          $ref: '#/components/schemas/glycemicRanges.v1'
+        diagnosisType:
+          $ref: '#/components/schemas/diagnosisType.v1'
       required:
         - id
         - fullName
