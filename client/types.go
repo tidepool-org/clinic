@@ -673,6 +673,14 @@ const (
 	Xealth EhrSettingsV1Provider = "xealth"
 )
 
+// Defines values for GlycemicRangesV1.
+const (
+	ADAOlderOrHighRisk     GlycemicRangesV1 = "ADA older or high-risk"
+	ADAPregnancyGDMOrType2 GlycemicRangesV1 = "ADA pregnancy GDM or type 2"
+	ADAPregnancyType1      GlycemicRangesV1 = "ADA pregnancy type 1"
+	ADAStandard            GlycemicRangesV1 = "ADA standard"
+)
+
 // Defines values for MigrationStatusV1.
 const (
 	COMPLETED MigrationStatusV1 = "COMPLETED"
@@ -1252,8 +1260,11 @@ type CreatePatientV1 struct {
 	BirthDate            *openapi_types.Date `json:"birthDate,omitempty"`
 
 	// FullName The full name of the patient
-	FullName   *string `json:"fullName,omitempty"`
-	IsMigrated *bool   `json:"isMigrated,omitempty"`
+	FullName *string `json:"fullName,omitempty"`
+
+	// GlycemicRanges An identifier for a pre-defined set of thresholds and times in range.
+	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
+	IsMigrated     *bool             `json:"isMigrated,omitempty"`
 
 	// LegacyClinicianId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	LegacyClinicianId *Tidepooluserid `json:"legacyClinicianId,omitempty"`
@@ -1400,6 +1411,9 @@ type GenerateMergeReportV1 struct {
 	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
 }
 
+// GlycemicRangesV1 An identifier for a pre-defined set of thresholds and times in range.
+type GlycemicRangesV1 string
+
 // MembershipRestrictionV1 A user joining a clinic must match all of the defined restrictions
 type MembershipRestrictionV1 struct {
 	// EmailDomain The restriction applies only if the user has an email address with a matching domain
@@ -1480,6 +1494,9 @@ type PatientV1 struct {
 
 	// FullName The full name of the patient
 	FullName string `json:"fullName"`
+
+	// GlycemicRanges An identifier for a pre-defined set of thresholds and times in range.
+	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id                     *Tidepooluserid `json:"id,omitempty"`
