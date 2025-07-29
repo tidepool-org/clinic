@@ -533,7 +533,7 @@ func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 	if err != nil {
 		return err
 	}
-	return ec.JSON(http.StatusOK, sites)
+	return ec.JSON(http.StatusNoContent, sites)
 }
 
 func (h *Handler) ListSites(ec echo.Context, clinicId ClinicId) error {
