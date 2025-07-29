@@ -57,15 +57,6 @@ func (c *repository) Initialize(ctx context.Context) error {
 				SetUnique(true).
 				SetName("UniqueCanonicalShareCode"),
 		},
-		{
-			Keys: bson.D{
-				{Key: "_id", Value: 1},
-				{Key: "sites.*.name", Value: 1},
-			},
-			Options: options.Index().
-				SetUnique(true).
-				SetName("UniqueSiteNamesPerClinic"),
-		},
 	})
 	return err
 }
