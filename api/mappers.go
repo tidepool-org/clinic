@@ -519,6 +519,15 @@ func NewPermissionsDto(dto *patients.Permissions) *PatientPermissionsV1 {
 	return permissions
 }
 
+func NewPatientTagDto(tag *clinics.PatientTag) *PatientTagV1 {
+	hexID := tag.Id.Hex()
+	dto := &PatientTagV1{
+		Id:   &hexID,
+		Name: tag.Name,
+	}
+	return dto
+}
+
 func NewPatientTagsDto(tags *[]primitive.ObjectID) *[]string {
 	var tagIds []string
 	if tags != nil {

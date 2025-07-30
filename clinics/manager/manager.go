@@ -36,7 +36,7 @@ type Manager interface {
 	//
 	// CreateSite is expected to return an error if a site with the given name already
 	// exists, or if creating a new site would exceed the maximum number of sites.
-	CreateSite(_ context.Context, clinicId string, name string) error
+	CreateSite(_ context.Context, clinicId string, name string) (*sites.Site, error)
 	// DeleteSite within a clinic.
 	//
 	// The Site should be removed from the clinic and any patient records that include the
@@ -44,13 +44,11 @@ type Manager interface {
 	DeleteSite(_ context.Context, clinicId string, siteId string) error
 	// GetWithPatientCounts enhances a clinic's sites with patient counts per site.
 	GetWithPatientCounts(_ context.Context, clinicId string) (*clinics.Clinic, error)
-	// ListSitesWithPatientCounts enhances a clinic's sites with patient counts per site.
-	ListSitesWithPatientCounts(_ context.Context, clinicId string) ([]sites.Site, error)
 	// UpdateSite within a clinic.
 	//
 	// Sites are denormalized over the clinics and patients collections. This function
 	// should handle maintaining that denormalization.
-	UpdateSite(_ context.Context, clinicId, siteId string, site *sites.Site) error
+	UpdateSite(_ context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error)
 }
 
 type manager struct {
@@ -109,7 +107,7 @@ func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 		}
 	}
 
-	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
+	transaction := func(sessionCtx mongo.SessionContext) (any, error) {
 		// Set initial admins
 		create.Clinic.AddAdmin(create.CreatorUserId)
 
@@ -153,7 +151,7 @@ func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 }
 
 func (c *manager) DeleteClinic(ctx context.Context, clinicId string) error {
-	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
+	transaction := func(sessionCtx mongo.SessionContext) (any, error) {
 		return nil, c.deleteClinic(sessionCtx, clinicId)
 	}
 
@@ -291,26 +289,31 @@ func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool
 }
 
 // CreateSite implements [Manager].
-func (c *manager) CreateSite(ctx context.Context, clinicId, name string) error {
+func (c *manager) CreateSite(ctx context.Context, clinicId, name string) (
+	*sites.Site, error) {
+
 	tx := func(sessionCtx mongo.SessionContext) (any, error) {
-		return nil, c.createSite(sessionCtx, clinicId, name)
+		return c.createSite(sessionCtx, clinicId, name)
 	}
-	_, err := store.WithTransaction(ctx, c.dbClient, tx)
+	created, err := store.WithTransaction(ctx, c.dbClient, tx)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	site, ok := created.(*sites.Site)
+	if !ok {
+		return nil, fmt.Errorf("expected a *sites.Site")
+	}
+	return site, nil
 }
 
 // createSite after checking constraints.
 //
 // This should be run in a transaction, because clinics.Service.CreateSite needs it to
 // prevent races.
-func (c *manager) createSite(ctx context.Context, clinicId, name string) error {
-	if err := c.clinics.CreateSite(ctx, clinicId, sites.New(name)); err != nil {
-		return err
-	}
-	return nil
+func (c *manager) createSite(ctx context.Context, clinicId, name string) (
+	*sites.Site, error) {
+
+	return c.clinics.CreateSite(ctx, clinicId, sites.New(name))
 }
 
 // DeleteSite implements [Manager].
@@ -339,22 +342,10 @@ func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error
 }
 
 // GetWithPatientCounts implements [Manager].
-func (c *manager) GetWithPatientCounts(ctx context.Context, clinicId string) (*clinics.Clinic, error) {
-	clinic, err := c.clinics.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-	clinicSites, err := c.ListSitesWithPatientCounts(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-	clinic.Sites = clinicSites
-	return clinic, nil
-}
+func (c *manager) GetWithPatientCounts(ctx context.Context, clinicId string) (
+	*clinics.Clinic, error) {
 
-// ListSitesWithPatientCounts implements [Manager].
-func (c *manager) ListSitesWithPatientCounts(ctx context.Context, clinicId string) ([]sites.Site, error) {
-	clinicSites, err := c.clinics.ListSites(ctx, clinicId)
+	clinic, err := c.clinics.Get(ctx, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -368,41 +359,50 @@ func (c *manager) ListSitesWithPatientCounts(ctx context.Context, clinicId strin
 		ExcludeDemo:                              true,
 		ExcludeSummaryExceptFieldsInMergeReports: true,
 	}
-	for i, site := range clinicSites {
+	for i, site := range clinic.Sites {
 		filter.Sites = &[]string{site.Id.Hex()}
 		count, err := c.patientsService.Count(ctx, filter)
 		if err != nil {
 			return nil, err
 		}
-		clinicSites[i].Patients = int(count)
+		clinic.Sites[i].Patients = int(count)
 	}
-	return clinicSites, nil
+	return clinic, nil
 }
 
 // UpdateSite implements [Manager].
-func (c *manager) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+func (c *manager) UpdateSite(ctx context.Context,
+	clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
+
 	tx := func(sessionCtx mongo.SessionContext) (any, error) {
-		return nil, c.updateSite(sessionCtx, clinicId, siteId, site)
+		return c.updateSite(sessionCtx, clinicId, siteId, site)
 	}
-	_, err := store.WithTransaction(ctx, c.dbClient, tx)
+	updated, err := store.WithTransaction(ctx, c.dbClient, tx)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	site, ok := updated.(*sites.Site)
+	if !ok {
+		return nil, fmt.Errorf("expected a *sites.Site")
+	}
+	return site, nil
 }
 
 // updateSite and ripple the changes to a clinic's patients.
 //
 // This should be run in a transaction to prevent races.
-func (c *manager) updateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
-	if err := c.clinics.UpdateSite(ctx, clinicId, siteId, site); err != nil {
-		return err
+func (c *manager) updateSite(ctx context.Context,
+	clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
+
+	updated, err := c.clinics.UpdateSite(ctx, clinicId, siteId, site)
+	if err != nil {
+		return nil, err
 	}
 	if err := c.patientsService.UpdateSites(ctx, clinicId, siteId, site); err != nil {
 		if errs.Is(err, mongo.ErrNoDocuments) {
-			return errors.NotFound
+			return nil, errors.NotFound
 		}
-		return err
+		return nil, err
 	}
-	return nil
+	return updated, nil
 }

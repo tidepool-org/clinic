@@ -169,9 +169,6 @@ type ServerInterface interface {
 	// Update Patient Count Settings
 	// (PUT /v1/clinics/{clinicId}/settings/patient_count)
 	UpdatePatientCountSettings(ctx echo.Context, clinicId ClinicId) error
-	// List Sites
-	// (GET /v1/clinics/{clinicId}/sites)
-	ListSites(ctx echo.Context, clinicId ClinicId) error
 	// Create a Site
 	// (POST /v1/clinics/{clinicId}/sites)
 	CreateSite(ctx echo.Context, clinicId ClinicId) error
@@ -2307,24 +2304,6 @@ func (w *ServerInterfaceWrapper) UpdatePatientCountSettings(ctx echo.Context) er
 	return err
 }
 
-// ListSites converts echo context to params.
-func (w *ServerInterfaceWrapper) ListSites(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "clinicId" -------------
-	var clinicId ClinicId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
-	}
-
-	ctx.Set(SessionTokenScopes, []string{})
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ListSites(ctx, clinicId)
-	return err
-}
-
 // CreateSite converts echo context to params.
 func (w *ServerInterfaceWrapper) CreateSite(ctx echo.Context) error {
 	var err error
@@ -2860,7 +2839,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/mrn", wrapper.UpdateMRNSettings)
 	router.GET(baseURL+"/v1/clinics/:clinicId/settings/patient_count", wrapper.GetPatientCountSettings)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/patient_count", wrapper.UpdatePatientCountSettings)
-	router.GET(baseURL+"/v1/clinics/:clinicId/sites", wrapper.ListSites)
 	router.POST(baseURL+"/v1/clinics/:clinicId/sites", wrapper.CreateSite)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/sites/:siteId", wrapper.DeleteSite)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/sites/:siteId", wrapper.UpdateSite)

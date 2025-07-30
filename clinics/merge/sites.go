@@ -173,16 +173,17 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 	case SiteActionRetain:
 		logger.Debug("retaining existing target site")
 	case SiteActionMove:
-		err := t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
+		_, err := t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
 		if err != nil {
 			return err
 		}
 		logger.Debug("creating new target site")
 	case SiteActionRename:
-		targetSites, err := t.clinicsService.ListSites(ctx, plan.TargetClinicId.Hex())
+		targetClinic, err := t.clinicsService.Get(ctx, plan.TargetClinicId.Hex())
 		if err != nil {
-			return fmt.Errorf("unable to list target clinic sites for site %s: %s", plan.Name(), err)
+			return fmt.Errorf("unable to get target clinic for site %s: %s", plan.Name(), err)
 		}
+		targetSites := targetClinic.Sites
 		newName, err := maybeRenameSite(plan.Site, targetSites)
 		if err != nil {
 			return err
@@ -193,7 +194,7 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 		}
 		prevName := plan.Site.Name
 		plan.Site.Name = newName
-		err = t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
+		_, err = t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
 		if err != nil {
 			return err
 		}

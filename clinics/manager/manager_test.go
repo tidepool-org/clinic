@@ -335,7 +335,8 @@ var _ = Describe("Clinics Manager", func() {
 			It("works", func() {
 				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
 
-				Expect(mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)).To(Succeed())
+				_, err := mngr.CreateSite(ctx, th.Clinic.Id.Hex(), th.Site.Name)
+				Expect(err).To(Succeed())
 			})
 		})
 
@@ -379,24 +380,6 @@ var _ = Describe("Clinics Manager", func() {
 			})
 		})
 
-		// While ListSites is a function on the clinics.Service interface (not
-		// manager.Manager), I'm testing it here, because all of the other useful functions
-		// for dealing with clinic sites are already set up here and it makes the testing
-		// much easier.
-		Describe("ListSites", func() {
-			It("works", func() {
-				ctx, _, th := newCreateSiteTestHelper(GinkgoTB())
-
-				clinicId := th.Clinic.Id.Hex()
-
-				sites, err := th.ClinicsRepo.ListSites(ctx, clinicId)
-				Expect(err).To(Succeed())
-
-				Expect(sites).To(HaveLen(1))
-				Expect(sites[0].Name).To(Equal(th.Clinic.Sites[0].Name))
-			})
-		})
-
 		Describe("UpdateSite", func() {
 			It("works", func() {
 				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
@@ -404,7 +387,8 @@ var _ = Describe("Clinics Manager", func() {
 				clinicId := th.Clinic.Id.Hex()
 				newSite := &sites.Site{Name: "fooberry-jones"}
 
-				Expect(mngr.UpdateSite(ctx, clinicId, siteId, newSite)).To(Succeed())
+				_, err := mngr.UpdateSite(ctx, clinicId, siteId, newSite)
+				Expect(err).To(Succeed())
 			})
 
 			It("updates the clinic's sites", func() {
@@ -412,7 +396,8 @@ var _ = Describe("Clinics Manager", func() {
 				siteId := th.Clinic.Sites[0].Id.Hex()
 				clinicId := th.Clinic.Id.Hex()
 				newSite := &sites.Site{Name: "fooberry-jones"}
-				Expect(mngr.UpdateSite(ctx, clinicId, siteId, newSite)).To(Succeed())
+				_, err := mngr.UpdateSite(ctx, clinicId, siteId, newSite)
+				Expect(err).To(Succeed())
 				clinic, err := th.ClinicsRepo.Get(ctx, clinicId)
 				Expect(err).To(Succeed())
 
@@ -426,7 +411,8 @@ var _ = Describe("Clinics Manager", func() {
 				siteId := th.Clinic.Sites[0].Id.Hex()
 				clinicId := th.Clinic.Id.Hex()
 				newSite := &sites.Site{Name: "fooberry-jones"}
-				Expect(mngr.UpdateSite(ctx, clinicId, siteId, newSite)).To(Succeed())
+				_, err := mngr.UpdateSite(ctx, clinicId, siteId, newSite)
+				Expect(err).To(Succeed())
 				patients, err := th.PatientsRepo.List(ctx, &patients.Filter{
 					ClinicId: &clinicId,
 				}, store.DefaultPagination(), nil)
@@ -509,7 +495,8 @@ func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *c
 	}
 
 	preCreatedSite := sitesTest.Random()
-	if err := mngr.CreateSite(ctx, testClinic.Id.Hex(), preCreatedSite.Name); err != nil {
+	_, err = mngr.CreateSite(ctx, testClinic.Id.Hex(), preCreatedSite.Name)
+	if err != nil {
 		t.Fatalf("failed to create pre-existing clinic site: %s", err)
 	}
 	testClinic, err = clinicsRepo.Get(ctx, testClinic.Id.Hex())

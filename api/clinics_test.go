@@ -26,15 +26,11 @@ var _ = ginkgo.Describe("CreateSite", func() {
 			th.Errorf("expected nil error, got %s", err)
 		}
 
-		raw := th.ReadResponseSlice()
-		if got := len(raw); got != 1 {
-			th.Errorf("expected 1 site in response, got: %d", got)
-		}
-		site := raw[0]
-		if name := site["name"]; name != "Foo" {
+		rawSite := th.ReadResponseObject()
+		if name := rawSite["name"]; name != "Foo" {
 			th.Errorf("expected \"Foo\"; got %q", name)
 		}
-		id, found := site["id"]
+		id, found := rawSite["id"]
 		if !found || id == "" {
 			th.Errorf("expected id to be present; got \"\"")
 		}
@@ -104,8 +100,8 @@ func (t *testManager) FinalizeMerge(ctx context.Context, sourceId string, target
 	panic("not implemented") // TODO: Implement
 }
 
-func (t *testManager) CreateSite(_ context.Context, clinicId string, name string) error {
-	return nil
+func (t *testManager) CreateSite(_ context.Context, clinicId string, name string) (*sites.Site, error) {
+	return &sites.Site{Id: primitive.NewObjectID(), Name: name}, nil
 }
 
 func (t *testManager) DeleteSite(_ context.Context, clinicId string, siteId string) error {
@@ -116,13 +112,7 @@ func (t *testManager) GetWithPatientCounts(_ context.Context, clinicId string) (
 	panic("not implemented") // TODO: Implement
 }
 
-func (t *testManager) ListSitesWithPatientCounts(_ context.Context, clinicId string) ([]sites.Site, error) {
-	return []sites.Site{
-		{Name: "Foo", Id: primitive.NewObjectID()},
-	}, nil
-}
-
-func (t *testManager) UpdateSite(_ context.Context, clinicId string, siteId string, site *sites.Site) error {
+func (t *testManager) UpdateSite(_ context.Context, clinicId string, siteId string, site *sites.Site) (*sites.Site, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -166,15 +156,15 @@ func (c *testClinics) UpdateSuppressedNotifications(ctx context.Context, clinicI
 	panic("not implemented") // TODO: Implement
 }
 
-func (c *testClinics) CreatePatientTag(ctx context.Context, clinicId string, tagName string) (*clinics.Clinic, error) {
+func (c *testClinics) CreatePatientTag(ctx context.Context, clinicId string, tagName string) (*clinics.PatientTag, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (c *testClinics) UpdatePatientTag(ctx context.Context, clinicId string, tagId string, tagName string) (*clinics.Clinic, error) {
+func (c *testClinics) UpdatePatientTag(ctx context.Context, clinicId string, tagId string, tagName string) (*clinics.PatientTag, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (c *testClinics) DeletePatientTag(ctx context.Context, clinicId string, tagId string) (*clinics.Clinic, error) {
+func (c *testClinics) DeletePatientTag(ctx context.Context, clinicId string, tagId string) error {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -222,7 +212,7 @@ func (c *testClinics) AppendShareCodes(ctx context.Context, clinicId string, sha
 	panic("not implemented") // TODO: Implement
 }
 
-func (c *testClinics) CreateSite(ctx context.Context, clinicId string, site *sites.Site) error {
+func (c *testClinics) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -230,10 +220,6 @@ func (c *testClinics) DeleteSite(ctx context.Context, clinicId string, siteId st
 	panic("not implemented") // TODO: Implement
 }
 
-func (c *testClinics) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
-	panic("not implemented") // TODO: Implement
-}
-
-func (c *testClinics) UpdateSite(ctx context.Context, clinicId string, siteId string, site *sites.Site) error {
+func (c *testClinics) UpdateSite(ctx context.Context, clinicId string, siteId string, site *sites.Site) (*sites.Site, error) {
 	panic("not implemented") // TODO: Implement
 }

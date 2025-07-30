@@ -273,7 +273,7 @@ func (c *repository) UpdateSuppressedNotifications(ctx context.Context, id strin
 	return err
 }
 
-func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*Clinic, error) {
+func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*PatientTag, error) {
 	clinic, err := c.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -309,10 +309,10 @@ func (c *repository) CreatePatientTag(ctx context.Context, id, tagName string) (
 		return nil, updateErr
 	}
 
-	return c.Get(ctx, id)
+	return &tag, nil
 }
 
-func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*Clinic, error) {
+func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*PatientTag, error) {
 	clinic, err := c.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -347,10 +347,10 @@ func (c *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 		return nil, updateErr
 	}
 
-	return c.Get(ctx, id)
+	return &tag, nil
 }
 
-func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*Clinic, error) {
+func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	patientTagId, _ := primitive.ObjectIDFromHex(tagId)
 	selector := bson.M{"_id": clinicId}
@@ -368,12 +368,12 @@ func (c *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*C
 	err := c.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return ErrNotFound
 		}
-		return nil, err
+		return err
 	}
 
-	return c.Get(ctx, id)
+	return nil
 }
 
 func (c *repository) ListMembershipRestrictions(ctx context.Context, id string) ([]MembershipRestrictions, error) {
@@ -542,30 +542,42 @@ func (c *repository) UpdatePatientCount(ctx context.Context, id string, patientC
 // CreateSite while checking constraints.
 //
 // This method is expected to be run in a transaction.
-func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) error {
+func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+
 	if err := c.maintainSitesConstraintsOnCreate(ctx, clinicId, site.Name); err != nil {
-		return err
+		return nil, err
 	}
 	id, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if site.Id.IsZero() {
 		site.Id = primitive.NewObjectID()
 	}
-	selector := bson.M{"_id": id}
+	filter := bson.M{"_id": id}
 	update := bson.M{
 		"$push":        bson.M{"sites": site},
 		"$currentDate": bson.M{"updatedTime": bson.M{"$type": "timestamp"}},
 	}
-	res := c.collection.FindOneAndUpdate(ctx, selector, update)
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	res := c.collection.FindOneAndUpdate(ctx, filter, update, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return ErrNotFound
+			return nil, ErrNotFound
 		}
-		return err
+		return nil, err
 	}
-	return nil
+	clinic := &Clinic{}
+	if err := res.Decode(clinic); err != nil {
+		return nil, err
+	}
+	for _, candidate := range clinic.Sites {
+		if candidate.Name == site.Name {
+			return &candidate, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unable to find newly created site %+v %s %+v", clinic.Sites, site.Name, clinic)
 }
 
 func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) error {
@@ -595,25 +607,19 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 	return nil
 }
 
-func (c *repository) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
-	clinic, err := c.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-	return clinic.Sites, nil
-}
+func (c *repository) UpdateSite(ctx context.Context,
+	clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
 
-func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
 	if err := c.maintainSitesConstraintsOnUpdate(ctx, clinicId, site.Name); err != nil {
-		return err
+		return nil, err
 	}
 	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	siteOID, err := primitive.ObjectIDFromHex(siteId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	selector := bson.M{
 		"_id":      clinicOID,
@@ -623,36 +629,51 @@ func (c *repository) UpdateSite(ctx context.Context, clinicId, siteId string, si
 		"$set":         bson.M{"sites.$.name": site.Name},
 		"$currentDate": bson.M{"updatedTime": bson.M{"$type": "timestamp"}},
 	}
-	res, err := c.collection.UpdateOne(ctx, selector, update)
-	if err != nil {
-		return err
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	res := c.collection.FindOneAndUpdate(ctx, selector, update, opts)
+	if err := res.Err(); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrNotFound
+		}
+		return nil, err
 	}
-	if res.ModifiedCount != 1 {
-		return ErrNotFound
+	clinic := &Clinic{}
+	if err := res.Decode(&clinic); err != nil {
+		return nil, err
 	}
-	return nil
+	for _, clinicSite := range clinic.Sites {
+		if clinicSite.Name == site.Name {
+			return &clinicSite, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unable to find newly updated site %+v %s %+v", clinic.Sites, site.Name, clinic)
 }
 
-func (c *repository) maintainSitesConstraintsOnCreate(ctx context.Context, clinicId, name string) error {
-	existingSites, err := c.ListSites(ctx, clinicId)
+func (c *repository) maintainSitesConstraintsOnCreate(ctx context.Context,
+	clinicId, name string) error {
+
+	clinic, err := c.Get(ctx, clinicId)
 	if err != nil {
 		return err
 	}
-	if sites.SiteExistsWithName(existingSites, name) {
+	if sites.SiteExistsWithName(clinic.Sites, name) {
 		return ErrDuplicateSiteName
 	}
-	if len(existingSites) >= sites.MaxSitesPerClinic {
+	if len(clinic.Sites) >= sites.MaxSitesPerClinic {
 		return ErrMaximumSitesExceeded
 	}
 	return nil
 }
 
-func (c *repository) maintainSitesConstraintsOnUpdate(ctx context.Context, clinicId, name string) error {
-	existingSites, err := c.ListSites(ctx, clinicId)
+func (c *repository) maintainSitesConstraintsOnUpdate(ctx context.Context,
+	clinicId, name string) error {
+
+	clinic, err := c.Get(ctx, clinicId)
 	if err != nil {
 		return err
 	}
-	if sites.SiteExistsWithName(existingSites, name) {
+	if sites.SiteExistsWithName(clinic.Sites, name) {
 		return ErrDuplicateSiteName
 	}
 	return nil

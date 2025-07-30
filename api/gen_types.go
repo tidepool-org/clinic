@@ -1215,9 +1215,6 @@ type ClinicSiteV1 struct {
 	Patients int `json:"patients,omitempty"`
 }
 
-// ClinicSitesV1 defines model for clinicSites.v1.
-type ClinicSitesV1 = []ClinicSiteV1
-
 // ClinicTimezoneV1 defines model for clinicTimezone.v1.
 type ClinicTimezoneV1 string
 

@@ -290,7 +290,7 @@ func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+	return ec.JSON(http.StatusOK, NewPatientTagDto(updated))
 }
 
 func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
@@ -305,18 +305,18 @@ func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+	return ec.JSON(http.StatusOK, NewPatientTagDto(updated))
 }
 
 func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	updated, err := h.Clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId))
+	err := h.Clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId))
 	if err != nil {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+	return ec.JSON(http.StatusNoContent, nil)
 }
 
 func (h *Handler) ListMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
@@ -514,14 +514,11 @@ func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
 	if err := ec.Bind(site); err != nil {
 		return errors.BadRequest
 	}
-	if err := h.ClinicsManager.CreateSite(ctx, clinicId, site.Name); err != nil {
-		return err
-	}
-	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
+	created, err := h.ClinicsManager.CreateSite(ctx, clinicId, site.Name)
 	if err != nil {
 		return err
 	}
-	return ec.JSON(http.StatusOK, sites)
+	return ec.JSON(http.StatusOK, created)
 }
 
 func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
@@ -529,20 +526,7 @@ func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 	if err := h.ClinicsManager.DeleteSite(ctx, clinicId, siteId); err != nil {
 		return err
 	}
-	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
-	if err != nil {
-		return err
-	}
-	return ec.JSON(http.StatusNoContent, sites)
-}
-
-func (h *Handler) ListSites(ec echo.Context, clinicId ClinicId) error {
-	ctx := ec.Request().Context()
-	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
-	if err != nil {
-		return err
-	}
-	return ec.JSON(http.StatusOK, sites)
+	return ec.JSON(http.StatusNoContent, nil)
 }
 
 func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
@@ -551,12 +535,9 @@ func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 	if err := ec.Bind(site); err != nil {
 		return errors.BadRequest
 	}
-	if err := h.ClinicsManager.UpdateSite(ctx, clinicId, siteId, site); err != nil {
-		return err
-	}
-	sites, err := h.ClinicsManager.ListSitesWithPatientCounts(ctx, clinicId)
+	updated, err := h.ClinicsManager.UpdateSite(ctx, clinicId, siteId, site)
 	if err != nil {
 		return err
 	}
-	return ec.JSON(http.StatusOK, sites)
+	return ec.JSON(http.StatusOK, updated)
 }

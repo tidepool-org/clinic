@@ -164,13 +164,13 @@ func (s *service) update(ctx context.Context, update PatientUpdate) (*Patient, e
 func (s *service) resolveSites(ctx context.Context,
 	clinicId string, patientSites []sites.Site) ([]sites.Site, error) {
 
-	clinicSites, err := s.clinics.ListSites(ctx, clinicId)
+	clinic, err := s.clinics.Get(ctx, clinicId)
 	if err != nil {
 		return nil, err
 	}
 	fromClinic := []sites.Site{}
 	for _, pSite := range patientSites {
-		clinicSite, found := findMatchingSite(clinicSites, pSite)
+		clinicSite, found := findMatchingSite(clinic.Sites, pSite)
 		if !found {
 			s.logger.Infow("unable to assign site to patient",
 				"reason", "not found in clinic",

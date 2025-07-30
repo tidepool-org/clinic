@@ -292,9 +292,6 @@ type ClientInterface interface {
 
 	UpdatePatientCountSettings(ctx context.Context, clinicId ClinicId, body UpdatePatientCountSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListSites request
-	ListSites(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// CreateSiteWithBody request with any body
 	CreateSiteWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1270,18 +1267,6 @@ func (c *Client) UpdatePatientCountSettingsWithBody(ctx context.Context, clinicI
 
 func (c *Client) UpdatePatientCountSettings(ctx context.Context, clinicId ClinicId, body UpdatePatientCountSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientCountSettingsRequest(c.Server, clinicId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ListSites(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListSitesRequest(c.Server, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -6068,40 +6053,6 @@ func NewUpdatePatientCountSettingsRequestWithBody(server string, clinicId Clinic
 	return req, nil
 }
 
-// NewListSitesRequest generates requests for ListSites
-func NewListSitesRequest(server string, clinicId ClinicId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/v1/clinics/%s/sites", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewCreateSiteRequest calls the generic CreateSite builder with application/json body
 func NewCreateSiteRequest(server string, clinicId ClinicId, body CreateSiteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7399,9 +7350,6 @@ type ClientWithResponsesInterface interface {
 
 	UpdatePatientCountSettingsWithResponse(ctx context.Context, clinicId ClinicId, body UpdatePatientCountSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientCountSettingsResponse, error)
 
-	// ListSitesWithResponse request
-	ListSitesWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListSitesResponse, error)
-
 	// CreateSiteWithBodyWithResponse request with any body
 	CreateSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateSiteResponse, error)
 
@@ -8081,6 +8029,7 @@ func (r GetPatientCountResponse) StatusCode() int {
 type CreatePatientTagResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *PatientTagV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8123,6 +8072,7 @@ func (r DeletePatientTagResponse) StatusCode() int {
 type UpdatePatientTagResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *PatientTagV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8614,32 +8564,10 @@ func (r UpdatePatientCountSettingsResponse) StatusCode() int {
 	return 0
 }
 
-type ListSitesResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ClinicSitesV1
-}
-
-// Status returns HTTPResponse.Status
-func (r ListSitesResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListSitesResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type CreateSiteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ClinicSitesV1
+	JSON200      *ClinicSiteV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8661,7 +8589,6 @@ func (r CreateSiteResponse) StatusCode() int {
 type DeleteSiteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ClinicSitesV1
 }
 
 // Status returns HTTPResponse.Status
@@ -8683,7 +8610,7 @@ func (r DeleteSiteResponse) StatusCode() int {
 type UpdateSiteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ClinicSitesV1
+	JSON200      *ClinicSiteV1
 }
 
 // Status returns HTTPResponse.Status
@@ -9757,15 +9684,6 @@ func (c *ClientWithResponses) UpdatePatientCountSettingsWithResponse(ctx context
 	return ParseUpdatePatientCountSettingsResponse(rsp)
 }
 
-// ListSitesWithResponse request returning *ListSitesResponse
-func (c *ClientWithResponses) ListSitesWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListSitesResponse, error) {
-	rsp, err := c.ListSites(ctx, clinicId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListSitesResponse(rsp)
-}
-
 // CreateSiteWithBodyWithResponse request with arbitrary body returning *CreateSiteResponse
 func (c *ClientWithResponses) CreateSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateSiteResponse, error) {
 	rsp, err := c.CreateSiteWithBody(ctx, clinicId, contentType, body, reqEditors...)
@@ -10709,6 +10627,16 @@ func ParseCreatePatientTagResponse(rsp *http.Response) (*CreatePatientTagRespons
 		HTTPResponse: rsp,
 	}
 
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientTagV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
 	return response, nil
 }
 
@@ -10739,6 +10667,16 @@ func ParseUpdatePatientTagResponse(rsp *http.Response) (*UpdatePatientTagRespons
 	response := &UpdatePatientTagResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientTagV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil
@@ -11206,32 +11144,6 @@ func ParseUpdatePatientCountSettingsResponse(rsp *http.Response) (*UpdatePatient
 	return response, nil
 }
 
-// ParseListSitesResponse parses an HTTP response from a ListSitesWithResponse call
-func ParseListSitesResponse(rsp *http.Response) (*ListSitesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListSitesResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ClinicSitesV1
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseCreateSiteResponse parses an HTTP response from a CreateSiteWithResponse call
 func ParseCreateSiteResponse(rsp *http.Response) (*CreateSiteResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -11247,7 +11159,7 @@ func ParseCreateSiteResponse(rsp *http.Response) (*CreateSiteResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ClinicSitesV1
+		var dest ClinicSiteV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -11271,16 +11183,6 @@ func ParseDeleteSiteResponse(rsp *http.Response) (*DeleteSiteResponse, error) {
 		HTTPResponse: rsp,
 	}
 
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ClinicSitesV1
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
 	return response, nil
 }
 
@@ -11299,7 +11201,7 @@ func ParseUpdateSiteResponse(rsp *http.Response) (*UpdateSiteResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ClinicSitesV1
+		var dest ClinicSiteV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
