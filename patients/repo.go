@@ -999,7 +999,7 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 	if filter.Tags != nil {
 		ids := store.ObjectIDSFromStringArray(*filter.Tags)
 		if len(ids) > 0 {
-			selector["tags"] = bson.M{"$in": ids}
+			selector["tags"] = bson.M{"$all": ids}
 		} else {
 			// filter.Tags wasn't nil, but the values provided were not ObjectIDs, which
 			// indicates a search for patients WITHOUT any tags assigned.

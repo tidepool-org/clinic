@@ -1253,6 +1253,44 @@ var _ = Describe("Patients Repository", func() {
 				}
 			})
 
+			It("filters multiple tags via AND", func() {
+				var err error
+
+				secondPatient := allPatients[len(allPatients)-1]
+				secondTag := (*secondPatient.Tags)[0]
+				newTags := append(*randomPatient.Tags, secondTag)
+				updateFilter := bson.M{
+					"clinicId": randomPatient.ClinicId,
+					"userId":   randomPatient.UserId,
+				}
+				update := bson.M{
+					"$set": bson.M{
+						"tags":     newTags,
+						"clinicId": randomPatient.ClinicId,
+					},
+				}
+				_, err = collection.UpdateOne(context.Background(), updateFilter, update)
+				Expect(err).ToNot(HaveOccurred())
+
+				ctx := context.Background()
+				tags := []string{
+					newTags[0].Hex(),
+					newTags[1].Hex(),
+				}
+				filter := patients.Filter{
+					Tags: &tags,
+				}
+				pagination := store.Pagination{Offset: 0, Limit: 100}
+				result, err := repo.List(ctx, &filter, pagination, nil)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.Patients).ToNot(HaveLen(0))
+
+				for _, patient := range result.Patients {
+					patientTags := *patient.Tags
+					Expect(patientTags).To(ConsistOf(newTags[0], newTags[1]))
+				}
+			})
+
 			It("filters by patient tag correctly", func() {
 				ctx := context.Background()
 				randomPatientTags := *randomPatient.Tags
