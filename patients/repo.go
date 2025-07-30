@@ -1167,8 +1167,8 @@ func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]
 	return categoryResult
 }
 
-const TideReportPatientLimit = 50
-const TideReportNoDataPatientLimit = 25
+const TideReportPatientLimit = 250
+const TideReportNoDataPatientLimit = 100
 
 func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
 	if clinicId == "" {
