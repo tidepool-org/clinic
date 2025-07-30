@@ -9,15 +9,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tidepool-org/clinic/config"
-	errors2 "github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic/config"
+	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/store"
 )
 
 const (
@@ -1176,7 +1177,7 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 }
 
 func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]primitive.ObjectID) []TideResultPatient {
-	categoryResult := make([]TideResultPatient, 0, 25)
+	categoryResult := make([]TideResultPatient, 0, TideReportNoDataPatientLimit)
 	for _, patient := range patientsList {
 		*exclusions = append(*exclusions, *patient.Id)
 
@@ -1219,6 +1220,9 @@ func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]
 
 	return categoryResult
 }
+
+const TideReportPatientLimit = 50
+const TideReportNoDataPatientLimit = 25
 
 func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
 	if clinicId == "" {
@@ -1283,8 +1287,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		},
 	}
 
-	limit := 50
-	exclusions := make([]primitive.ObjectID, 0, 50)
+	remaining := TideReportPatientLimit
+	exclusions := make([]primitive.ObjectID, 0, TideReportPatientLimit)
 	tide := Tide{
 		Config: TideConfig{
 			ClinicId: clinicId,
@@ -1317,16 +1321,13 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		opts := options.Find()
-		opts.SetLimit(int64(limit))
+		opts.SetLimit(TideReportPatientLimit)
 
+		sortKey := "summary.cgmStats.periods." + *params.Period + "." + category.Field
 		if category.Comparison == "$gt" {
-			opts.SetSort(bson.D{
-				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, -1},
-			})
+			opts.SetSort(bson.D{{Key: sortKey, Value: -1}})
 		} else {
-			opts.SetSort(bson.D{
-				{"summary.cgmStats.periods." + *params.Period + "." + category.Field, 1},
-			})
+			opts.SetSort(bson.D{{Key: sortKey, Value: 1}})
 		}
 
 		cursor, err := r.collection.Find(ctx, selector, opts)
@@ -1341,13 +1342,13 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 		tide.Results[category.Heading] = PatientsToTideResult(patientsList, *params.Period, &exclusions)
 
-		limit -= len(patientsList)
-		if limit < 1 {
+		remaining -= len(patientsList)
+		if remaining < 1 {
 			break
 		}
 	}
 
-	if limit > 0 {
+	if remaining > 0 {
 		selector := bson.M{
 			"_id":                             bson.M{"$nin": exclusions},
 			"clinicId":                        clinicObjId,
@@ -1356,7 +1357,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		opts := options.Find()
-		opts.SetLimit(int64(limit))
+		opts.SetLimit(int64(remaining))
 
 		opts.SetSort(bson.D{
 			{"summary.cgmStats.periods." + *params.Period + ".timeInTargetPercent", -1},
@@ -1399,10 +1400,10 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		opts := options.Find()
-		opts.SetLimit(int64(25))
+		opts.SetLimit(int64(TideReportNoDataPatientLimit))
 
 		opts.SetSort(bson.D{
-			{"summary.cgmStats.dates.lastData", 1},
+			{Key: "summary.cgmStats.dates.lastData", Value: 1},
 		})
 
 		cursor, err := r.collection.Find(ctx, selector, opts)
