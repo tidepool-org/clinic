@@ -2315,8 +2315,10 @@ components:
           minLength: 1
         tags:
           $ref: '#/components/schemas/patientTagIds.v1'
-        siteIds:
-          $ref: '#/components/schemas/siteIds.v1'
+        sites:
+          type: array
+          items:
+            $ref: '#/components/schemas/site.v1'
     associateClinicianToUser.v1:
       title: Associate Clinician
       type: object
@@ -2515,6 +2517,10 @@ components:
           minLength: 1
         tags:
           $ref: '#/components/schemas/patientTagIds.v1'
+        sites:
+          type: array
+          items:
+            $ref: '#/components/schemas/clinicSite.v1'
     addServiceAccount.v1:
       title: AddServiceAccount
       x-stoplight:
@@ -4726,19 +4732,6 @@ components:
         - createdTime
         - updatedTime
         - connectionRequests
-    siteIds.v1:
-      type: array
-      title: Site ID List
-      uniqueItems: true
-      nullable: true
-      items:
-        title: Site ID
-        description: Site identifier.
-        type: string
-        minLength: 24
-        maxLength: 24
-        pattern: ^[a-f0-9]{24}$
-        readOnly: true
     emailaddress.v1:
       title: Email Address
       description: An email address, as specified by [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322).

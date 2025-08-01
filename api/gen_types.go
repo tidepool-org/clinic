@@ -1274,7 +1274,7 @@ type CreatePatientV1 struct {
 	// Mrn The medical record number of the patient
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
-	SiteIds     *SiteIdsV1            `json:"siteIds"`
+	Sites       *[]SiteV1             `json:"sites,omitempty"`
 	Tags        *PatientTagIdsV1      `json:"tags"`
 }
 
@@ -1657,9 +1657,6 @@ type SiteCreationV1 struct {
 	// Name The site description.
 	Name string `json:"name"`
 }
-
-// SiteIdsV1 defines model for siteIds.v1.
-type SiteIdsV1 = []string
 
 // SitePatientsV1 Site properties specific to a clinic.
 type SitePatientsV1 struct {
