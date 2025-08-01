@@ -304,10 +304,10 @@ func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patient
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
 	}
-	if dto.SiteIds != nil {
-		for _, siteID := range *dto.SiteIds {
+	if dto.Sites != nil {
+		for _, site := range *dto.Sites {
 			for _, clinicSite := range clinicSites {
-				if clinicSite.Id.Hex() == siteID {
+				if clinicSite.Id.Hex() == site.Id {
 					patient.Sites = append(patient.Sites, clinicSite)
 				}
 			}
