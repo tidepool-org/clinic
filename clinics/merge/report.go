@@ -105,8 +105,10 @@ func (r Report) addSourcePatients(report *xlsx.File) error {
 
 	for _, plan := range r.plan.PatientPlans.GetSourcePatientPlans() {
 		sourceSiteNames := []string{}
-		for _, site := range (*plan.SourcePatient).Sites {
-			sourceSiteNames = append(sourceSiteNames, site.Name)
+		if plan.SourcePatient != nil && plan.SourcePatient.Sites != nil {
+			for _, site := range *plan.SourcePatient.Sites {
+				sourceSiteNames = append(sourceSiteNames, site.Name)
+			}
 		}
 		addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames, r.plan.Target.Sites)
 	}
@@ -570,16 +572,18 @@ func addPatientDetails(row *xlsx.Row, patient patients.Patient, tags []string, s
 	row.AddCell().SetValue(pointer.ToString(patient.Mrn))
 	row.AddCell().SetValue(strings.Join(tags, ", "))
 	siteNames := []string{}
-	for _, site := range patient.Sites {
-		renamed, err := maybeRenameSite(site, sites)
-		if err != nil {
-			continue
+	if patient.Sites != nil {
+		for _, site := range *patient.Sites {
+			renamed, err := maybeRenameSite(site, sites)
+			if err != nil {
+				continue
+			}
+			siteNames = append(siteNames, renamed)
 		}
-		siteNames = append(siteNames, renamed)
+		slices.SortFunc(siteNames, func(i, j string) int {
+			return cmp.Compare(strings.ToLower(i), strings.ToLower(j))
+		})
 	}
-	slices.SortFunc(siteNames, func(i, j string) int {
-		return cmp.Compare(strings.ToLower(i), strings.ToLower(j))
-	})
 	row.AddCell().SetValue(strings.Join(siteNames, ", "))
 	if patient.Summary != nil && !patient.Summary.GetLastUploadDate().IsZero() {
 		row.AddCell().SetValue(patient.Summary.GetLastUploadDate().Format(LastUploadTimeFormat))

@@ -44,8 +44,6 @@ type Manager interface {
 	// The Site should be removed from the clinic and any patient records that include the
 	// site.
 	DeleteSite(_ context.Context, clinicId string, siteId string) error
-	// GetWithPatientCounts enhances a clinic's sites with patient counts per site.
-	GetWithPatientCounts(_ context.Context, clinicId string) (*clinics.Clinic, error)
 	// UpdateSite within a clinic.
 	//
 	// Sites are denormalized over the clinics and patients collections. This function
@@ -327,35 +325,6 @@ func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error
 		return err
 	}
 	return nil
-}
-
-// GetWithPatientCounts implements [Manager].
-func (c *manager) GetWithPatientCounts(ctx context.Context, clinicId string) (
-	*clinics.Clinic, error) {
-
-	clinic, err := c.clinics.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-	// It is likely more efficient to de-normalize patient counts and update the clinic's
-	// site's Patients field each time a patient's sites assignments are modified. However,
-	// doing so introduces a high level of coupling between patients.Repository and
-	// clinics.Repository. Therefore, until this solution proves to be non-performant, it's
-	// far simpler.
-	filter := &patients.Filter{
-		ClinicId:                                 &clinicId,
-		ExcludeDemo:                              true,
-		ExcludeSummaryExceptFieldsInMergeReports: true,
-	}
-	for i, site := range clinic.Sites {
-		filter.Sites = &[]string{site.Id.Hex()}
-		count, err := c.patientsService.Count(ctx, filter)
-		if err != nil {
-			return nil, err
-		}
-		clinic.Sites[i].Patients = int(count)
-	}
-	return clinic, nil
 }
 
 // UpdateSite implements [Manager].

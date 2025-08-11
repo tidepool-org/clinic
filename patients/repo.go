@@ -323,7 +323,10 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 			return nil, err
 		}
 	} else {
-		patient.Sites = uniqSites(patient.Sites)
+		if patient.Sites != nil {
+			sites := uniqSites(*patient.Sites)
+			patient.Sites = &sites
+		}
 		patient.CreatedTime = time.Now()
 		patient.UpdatedTime = time.Now()
 		if _, err = r.collection.InsertOne(ctx, patient); err != nil {
@@ -344,7 +347,10 @@ func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*
 
 	patient := patientUpdate.Patient
 	patient.UpdatedTime = time.Now()
-	patient.Sites = uniqSites(patient.Sites)
+	if patient.Sites != nil {
+		sites := uniqSites(*patient.Sites)
+		patient.Sites = &sites
+	}
 
 	update := bson.M{
 		"$set": patient,

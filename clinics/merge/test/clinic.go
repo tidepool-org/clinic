@@ -66,14 +66,14 @@ func RandomData(p Params) Data {
 	for i := range sourcePatients {
 		sourcePatients[i].ClinicId = source.Id
 		sourcePatients[i].Tags = randomTagIds(len(source.PatientTags)-1, source.PatientTags)
-		sourcePatients[i].Sites = []sites.Site{source.Sites[rand.IntN(len(source.Sites))]}
+		sourcePatients[i].Sites = &[]sites.Site{source.Sites[rand.IntN(len(source.Sites))]}
 	}
 
 	unique, targetPatients = removeTailElements(unique, p.UniquePatientCount)
 	for i := range targetPatients {
 		targetPatients[i].ClinicId = target.Id
 		targetPatients[i].Tags = randomTagIds(len(target.PatientTags)-1, target.PatientTags)
-		targetPatients[i].Sites = []sites.Site{target.Sites[rand.IntN(len(target.Sites))]}
+		targetPatients[i].Sites = &[]sites.Site{target.Sites[rand.IntN(len(target.Sites))]}
 	}
 
 	i := 0
@@ -91,8 +91,8 @@ func RandomData(p Params) Data {
 		makeDuplicatePatientAccount(sourcePatient, &targetPatient)
 
 		if j == 0 { // ensure that at least one merging patient has the duplicate site
-			sourcePatients[i].Sites = append(sourcePatients[i].Sites, srcDupSite)
-			targetPatient.Sites = append(targetPatient.Sites, tgtDupSite)
+			*sourcePatients[i].Sites = append(*sourcePatients[i].Sites, srcDupSite)
+			*targetPatient.Sites = append(*targetPatient.Sites, tgtDupSite)
 		}
 		targetPatients = append(targetPatients, targetPatient)
 		targetPatientsWithDuplicates[*sourcePatient.UserId] = targetPatient

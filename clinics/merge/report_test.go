@@ -241,7 +241,7 @@ func newTestPlan(at time.Time) merge.ClinicMergePlan {
 					Mrn:           new(string),
 					TargetDevices: &[]string{},
 					Tags:          &[]primitive.ObjectID{},
-					Sites: []sites.Site{
+					Sites: &[]sites.Site{
 						{
 							Id:   primitive.NewObjectID(),
 							Name: "Some Source Site",
@@ -311,7 +311,7 @@ func newTestPlan(at time.Time) merge.ClinicMergePlan {
 					Mrn:           new(string),
 					TargetDevices: &[]string{},
 					Tags:          &[]primitive.ObjectID{},
-					Sites: []sites.Site{
+					Sites: &[]sites.Site{
 						{
 							Id:   primitive.NewObjectID(),
 							Name: "Some Target Site",

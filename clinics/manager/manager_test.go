@@ -371,7 +371,8 @@ var _ = Describe("Clinics Manager", func() {
 				Expect(err).To(Succeed())
 
 				for _, patient := range patients.Patients {
-					Expect(slices.ContainsFunc(patient.Sites, func(s sites.Site) bool {
+					Expect(patient.Sites).ToNot(BeNil())
+					Expect(slices.ContainsFunc(*patient.Sites, func(s sites.Site) bool {
 						return s.Id.Hex() == siteId
 					})).To(BeFalse())
 				}
@@ -417,28 +418,11 @@ var _ = Describe("Clinics Manager", func() {
 				Expect(err).To(Succeed())
 
 				for _, patient := range patients.Patients {
-					Expect(slices.ContainsFunc(patient.Sites, func(s sites.Site) bool {
+					Expect(patient.Sites).ToNot(BeNil())
+					Expect(slices.ContainsFunc(*patient.Sites, func(s sites.Site) bool {
 						return s.Id.Hex() == siteId
 					})).To(BeFalse())
 				}
-			})
-		})
-
-		Describe("GetWithPatientCounts", func() {
-			It("enhances clinic sites with the count of patients for each site", func() {
-				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
-
-				patient := patientsTest.RandomPatient()
-				patient.ClinicId = th.Clinic.Id
-				patient.Sites = th.Clinic.Sites
-				created, err := th.PatientsRepo.Create(ctx, patient)
-				Expect(err).To(Succeed())
-				Expect(len(created.Sites)).To(Equal(1))
-
-				clinic, err := mngr.GetWithPatientCounts(ctx, th.Clinic.Id.Hex())
-				Expect(err).To(Succeed())
-				Expect(len(clinic.Sites)).To(Equal(1))
-				Expect(clinic.Sites[0].Patients).To(Equal(1))
 			})
 		})
 	})
@@ -529,20 +513,6 @@ func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *c
 		Site:         &site,
 		mngr:         mngr,
 	}
-}
-
-func (c *createSiteTestHelper) createTestClinicWithoutSites(t testing.TB) (*clinics.Clinic, *clinicians.Clinician) {
-	testClinic := clinicsTest.RandomClinic()
-	testClinic.Sites = []sites.Site{}
-	testClinician := cliniciansTest.RandomClinician()
-	_, err := c.mngr.CreateClinic(context.Background(), &manager.CreateClinic{
-		Clinic:        *testClinic,
-		CreatorUserId: *testClinician.UserId,
-	})
-	if err != nil {
-		t.Fatalf("failed to create test clinic: %s", err)
-	}
-	return testClinic, testClinician
 }
 
 type mockUserService struct{}

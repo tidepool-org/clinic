@@ -333,7 +333,7 @@ var _ = Describe("Patients Repository", func() {
 
 			It("updates the patient's sites", func() {
 				update.Patient = randomPatient
-				update.Patient.Sites = []sites.Site{{Name: "New York", Id: primitive.NewObjectID()}}
+				update.Patient.Sites = &[]sites.Site{{Name: "New York", Id: primitive.NewObjectID()}}
 				update.ClinicId = randomPatient.ClinicId.Hex()
 				update.UserId = *randomPatient.UserId
 				result, err := repo.Update(context.Background(), update)
@@ -343,8 +343,9 @@ var _ = Describe("Patients Repository", func() {
 				var updated patients.Patient
 				err = collection.FindOne(context.Background(), primitive.M{"_id": result.Id}).Decode(&updated)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(len(updated.Sites)).To(Equal(1))
-				Expect(updated.Sites[0].Name).To(Equal("New York"))
+				Expect(updated.Sites).ToNot(BeNil())
+				Expect(len(*updated.Sites)).To(Equal(1))
+				Expect((*updated.Sites)[0].Name).To(Equal("New York"))
 			})
 
 			It("returns the updated patient", func() {
@@ -1391,7 +1392,7 @@ var _ = Describe("Patients Repository", func() {
 				// existing sites match no patients
 				p := allPatients[0]
 				existingSite := sitesTest.Random()
-				p.Sites = []sites.Site{existingSite}
+				p.Sites = &[]sites.Site{existingSite}
 				update := patients.PatientUpdate{
 					ClinicId: p.ClinicId.Hex(),
 					UserId:   *p.UserId,
@@ -1399,7 +1400,8 @@ var _ = Describe("Patients Repository", func() {
 				}
 				got, err := repo.Update(ctx, update)
 				Expect(err).To(Succeed())
-				Expect(len(got.Sites)).To(Equal(1))
+				Expect(got.Sites).ToNot(BeNil())
+				Expect(len(*got.Sites)).To(Equal(1))
 
 				(*filter.Sites)[0] = existingSite.Id.Hex()
 				result2, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
@@ -1718,7 +1720,8 @@ var _ = Describe("Patients Repository", func() {
 				clinicId := randomPatient.ClinicId.Hex()
 				userId := *randomPatient.UserId
 				patientWithSites = randomPatient
-				patientWithSites.Sites = sitesTest.RandomSlice(1)
+				sites := sitesTest.RandomSlice(1)
+				patientWithSites.Sites = &sites
 				update := patients.PatientUpdate{
 					ClinicId: clinicId,
 					UserId:   userId,
@@ -1732,13 +1735,14 @@ var _ = Describe("Patients Repository", func() {
 				ctx := context.Background()
 				clinicId := randomPatient.ClinicId.Hex()
 				userId := *patientWithSites.UserId
-				site := patientWithSites.Sites[0]
+				site := (*patientWithSites.Sites)[0]
 				siteId := site.Id.Hex()
 
 				Expect(repo.DeleteSites(ctx, clinicId, siteId)).To(Succeed())
 				got, err := repo.Get(ctx, clinicId, userId)
 				Expect(err).To(Succeed())
-				Expect(len(got.Sites)).To(Equal(0))
+				Expect(got.Sites).ToNot(BeNil())
+				Expect(len(*got.Sites)).To(Equal(0))
 			})
 		})
 
@@ -1750,7 +1754,8 @@ var _ = Describe("Patients Repository", func() {
 				clinicId := randomPatient.ClinicId.Hex()
 				userId := *randomPatient.UserId
 				patientWithSites = randomPatient
-				patientWithSites.Sites = sitesTest.RandomSlice(1)
+				sites := sitesTest.RandomSlice(1)
+				patientWithSites.Sites = &sites
 				update := patients.PatientUpdate{
 					ClinicId: clinicId,
 					UserId:   userId,
@@ -1764,15 +1769,16 @@ var _ = Describe("Patients Repository", func() {
 				ctx := context.Background()
 				clinicId := randomPatient.ClinicId.Hex()
 				userId := *patientWithSites.UserId
-				site := patientWithSites.Sites[0]
+				site := (*patientWithSites.Sites)[0]
 				siteId := site.Id.Hex()
 				site.Name = site.Name + " test"
 
 				Expect(repo.UpdateSites(ctx, clinicId, siteId, &site)).To(Succeed())
 				got, err := repo.Get(ctx, clinicId, userId)
 				Expect(err).To(Succeed())
-				Expect(len(got.Sites)).To(Equal(1))
-				Expect(got.Sites[0].Name).To(Equal(site.Name))
+				Expect(got.Sites).ToNot(BeNil())
+				Expect(len(*got.Sites)).To(Equal(1))
+				Expect((*got.Sites)[0].Name).To(Equal(site.Name))
 			})
 		})
 	})
