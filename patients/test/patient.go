@@ -40,7 +40,7 @@ func RandomPatient() patients.Patient {
 		IsMigrated:       test.Faker.Bool(),
 		DataSources:      (*[]patients.DataSource)(&dataSources),
 		EHRSubscriptions: RandomSubscriptions(),
-		Sites:            []sites.Site{},
+		Sites:            &[]sites.Site{},
 	}
 }
 

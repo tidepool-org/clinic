@@ -74,12 +74,12 @@ func (s *service) Create(ctx context.Context, patient Patient) (*Patient, error)
 		return nil, errors.New("user id is missing")
 	}
 
-	if len(patient.Sites) > 0 {
-		pSites, err := s.resolveSites(ctx, clinicId, patient.Sites)
+	if patient.Sites != nil && len(*patient.Sites) > 0 {
+		resolved, err := s.resolveSites(ctx, clinicId, *patient.Sites)
 		if err != nil {
 			return nil, err
 		}
-		patient.Sites = pSites
+		patient.Sites = &resolved
 	}
 
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
@@ -117,11 +117,12 @@ func (s *service) Update(ctx context.Context, update PatientUpdate) (*Patient, e
 		}
 	}
 
-	if len(update.Patient.Sites) > 0 {
-		update.Patient.Sites, err = s.resolveSites(ctx, update.ClinicId, update.Patient.Sites)
+	if update.Patient.Sites != nil && len(*update.Patient.Sites) > 0 {
+		resolved, err := s.resolveSites(ctx, update.ClinicId, *update.Patient.Sites)
 		if err != nil {
 			return nil, err
 		}
+		update.Patient.Sites = &resolved
 	}
 
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)

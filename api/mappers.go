@@ -113,15 +113,14 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 		dto.PatientTags = &patientTags
 	}
 	if c.Sites != nil {
-		clinicSites := make([]ClinicSiteV1, 0, len(c.Sites))
+		sites := make([]SiteV1, 0, len(c.Sites))
 		for _, site := range c.Sites {
-			clinicSites = append(clinicSites, ClinicSiteV1{
-				Id:       site.Id.Hex(),
-				Name:     site.Name,
-				Patients: site.Patients,
+			sites = append(sites, SiteV1{
+				Id:   site.Id.Hex(),
+				Name: site.Name,
 			})
 		}
-		dto.Sites = clinicSites
+		dto.Sites = sites
 	}
 	if c.Timezone != nil {
 		tz := ClinicTimezoneV1(*c.Timezone)
@@ -241,12 +240,16 @@ func NewPatient(dto PatientV1) patients.Patient {
 		Mrn:           dto.Mrn,
 		TargetDevices: dto.TargetDevices,
 		Reviews:       NewReviews(dto.Reviews),
-		Sites:         NewSites(dto.Sites),
 	}
 
 	if dto.Tags != nil {
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
+	}
+
+	if dto.Sites != nil {
+		sites := NewSites(dto.Sites)
+		patient.Sites = &sites
 	}
 
 	if dto.DataSources != nil {
@@ -304,13 +307,18 @@ func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patient
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
 	}
+	var sites []sites.Site
 	for _, site := range dto.Sites {
 		for _, clinicSite := range clinicSites {
 			if clinicSite.Id.Hex() == site.Id {
-				patient.Sites = append(patient.Sites, clinicSite)
+				sites = append(sites, clinicSite)
 			}
 		}
 	}
+	if sites != nil {
+		patient.Sites = &sites
+	}
+
 	return patient
 }
 
@@ -1697,10 +1705,13 @@ func NewMatchOrderCriteria(criteria []EhrMatchRequestPatientsOptionsV1Criteria) 
 	return result, nil
 }
 
-func NewSitesDto(sites []sites.Site) []SiteV1 {
-	result := make([]SiteV1, len(sites))
-	for i := range len(sites) {
-		result[i] = NewSiteDto(sites[i])
+func NewSitesDto(sites *[]sites.Site) []SiteV1 {
+	if sites == nil {
+		return []SiteV1{}
+	}
+	result := make([]SiteV1, len(*sites))
+	for i := range len(*sites) {
+		result[i] = NewSiteDto((*sites)[i])
 	}
 	return result
 }

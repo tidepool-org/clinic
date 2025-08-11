@@ -87,7 +87,7 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 
 func (h *Handler) GetClinic(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	clinic, err := h.ClinicsManager.GetWithPatientCounts(ctx, string(clinicId))
+	clinic, err := h.Clinics.Get(ctx, string(clinicId))
 	if err != nil {
 		return err
 	}

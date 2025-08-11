@@ -575,7 +575,7 @@ func (c *repository) CreateSite(ctx context.Context, clinicId string, site *site
 	filter := bson.M{"_id": id}
 	update := bson.M{
 		"$push":        bson.M{"sites": site},
-		"$currentDate": bson.M{"updatedTime": bson.M{"$type": "timestamp"}},
+		"$currentDate": bson.M{"updatedTime": true},
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	res := c.collection.FindOneAndUpdate(ctx, filter, update, opts)
@@ -613,7 +613,7 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 	}
 	update := bson.M{
 		"$pull":        bson.M{"sites": bson.M{"id": siteOID}},
-		"$currentDate": bson.M{"updatedTime": bson.M{"$type": "timestamp"}},
+		"$currentDate": bson.M{"updatedTime": true},
 	}
 	res, err := c.collection.UpdateOne(ctx, selector, update)
 	if err != nil {
@@ -645,7 +645,7 @@ func (c *repository) UpdateSite(ctx context.Context,
 	}
 	update := bson.M{
 		"$set":         bson.M{"sites.$.name": site.Name},
-		"$currentDate": bson.M{"updatedTime": bson.M{"$type": "timestamp"}},
+		"$currentDate": bson.M{"updatedTime": true},
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	res := c.collection.FindOneAndUpdate(ctx, selector, update, opts)

@@ -291,7 +291,9 @@ var _ = Describe("New Merge Planner", func() {
 		Context("a patient that is retained", func() {
 			retained := func() (*patients.Patient, []sites.Site) {
 				for _, plan := range plans {
-					if plan.PatientAction == merge.PatientActionRetain && len(plan.TargetPatient.Sites) > 0 {
+					if plan.PatientAction == merge.PatientActionRetain &&
+						plan.TargetPatient.Sites != nil &&
+						len(*plan.TargetPatient.Sites) > 0 {
 						res := collection.FindOne(context.Background(), bson.M{
 							"clinicId": plan.TargetClinicId,
 							"userId":   *plan.TargetPatient.UserId,
@@ -299,7 +301,7 @@ var _ = Describe("New Merge Planner", func() {
 						Expect(res.Err()).To(Succeed())
 						p := &patients.Patient{}
 						Expect(res.Decode(p)).To(Succeed())
-						return p, plan.TargetPatient.Sites
+						return p, *plan.TargetPatient.Sites
 					}
 				}
 				Fail("no suitable retained patients found")
@@ -308,14 +310,17 @@ var _ = Describe("New Merge Planner", func() {
 
 			It("keeps its sites", func() {
 				patient, sites := retained()
-				Expect(patient.Sites).To(Equal(sites))
+				Expect(patient.Sites).ToNot(BeNil())
+				Expect(*patient.Sites).To(Equal(sites))
 			})
 		})
 
 		Context("a patient that is moved", func() {
 			moved := func() (*patients.Patient, []sites.Site) {
 				for _, plan := range plans {
-					if plan.PatientAction == merge.PatientActionMove && len(plan.SourcePatient.Sites) > 0 {
+					if plan.PatientAction == merge.PatientActionMove &&
+						plan.SourcePatient.Sites != nil &&
+						len(*plan.SourcePatient.Sites) > 0 {
 						res := collection.FindOne(context.Background(), bson.M{
 							"clinicId": plan.TargetClinicId,
 							"userId":   *plan.SourcePatient.UserId,
@@ -323,7 +328,7 @@ var _ = Describe("New Merge Planner", func() {
 						Expect(res.Err()).To(Succeed())
 						p := &patients.Patient{}
 						Expect(res.Decode(p)).To(Succeed())
-						return p, plan.SourcePatient.Sites
+						return p, *plan.SourcePatient.Sites
 					}
 				}
 				Fail("no suitable moved patients found")
@@ -332,7 +337,8 @@ var _ = Describe("New Merge Planner", func() {
 
 			It("keeps its sites", func() {
 				patient, sites := moved()
-				Expect(patient.Sites).To(Equal(sites))
+				Expect(patient.Sites).ToNot(BeNil())
+				Expect(*patient.Sites).To(Equal(sites))
 			})
 		})
 
@@ -342,10 +348,10 @@ var _ = Describe("New Merge Planner", func() {
 					if plan.PatientAction != merge.PatientActionMerge {
 						continue
 					}
-					if len(plan.SourcePatient.Sites) < 1 {
+					if plan.SourcePatient.Sites == nil || len(*plan.SourcePatient.Sites) < 1 {
 						continue
 					}
-					if len(plan.TargetPatient.Sites) < 1 {
+					if plan.TargetPatient.Sites == nil || len(*plan.TargetPatient.Sites) < 1 {
 						continue
 					}
 					res := collection.FindOne(context.Background(), bson.M{
@@ -369,7 +375,8 @@ var _ = Describe("New Merge Planner", func() {
 				// Note: The execution of a patient plan is not responsible for renaming
 				// duplicate site names, so any duplicates will remain.
 				patient, srcPatient, targetPatient := merged()
-				Expect(patient.Sites).To(ConsistOf(slices.Concat(srcPatient.Sites, targetPatient.Sites)))
+				combined := slices.Concat(*srcPatient.Sites, *targetPatient.Sites)
+				Expect(*patient.Sites).To(ConsistOf(combined))
 			})
 		})
 
@@ -379,7 +386,7 @@ var _ = Describe("New Merge Planner", func() {
 					if plan.PatientAction != merge.PatientActionMergeInto {
 						continue
 					}
-					if len(plan.TargetPatient.Sites) < 1 {
+					if plan.TargetPatient.Sites == nil || len(*plan.TargetPatient.Sites) < 1 {
 						continue
 					}
 					res := collection.FindOne(context.Background(), bson.M{
@@ -408,7 +415,9 @@ var _ = Describe("New Merge Planner", func() {
 				// info" action. However, that behavior is covered in the "merge" action's
 				// tests.
 				patient, targetPatient := mergedInto()
-				Expect(patient.Sites).To(ContainElements(targetPatient.Sites))
+				Expect(patient.Sites).ToNot(BeNil())
+				Expect(targetPatient.Sites).ToNot(BeNil())
+				Expect(*patient.Sites).To(ContainElements(*targetPatient.Sites))
 			})
 		})
 
