@@ -1330,6 +1330,12 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			opts.SetSort(bson.D{{Key: sortKey, Value: 1}})
 		}
 
+		count, err := r.collection.CountDocuments(ctx, selector)
+		if err != nil {
+			return nil, err
+		}
+		tide.Metadata.CandidatePatients += int(count)
+
 		cursor, err := r.collection.Find(ctx, selector, opts)
 		if err != nil {
 			return nil, err
@@ -1341,7 +1347,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		tide.Results[category.Heading] = PatientsToTideResult(patientsList, *params.Period, &exclusions)
-
+		tide.Metadata.SelectedPatients += len(tide.Results[category.Heading])
 		remaining -= len(patientsList)
 		if remaining < 1 {
 			break
@@ -1363,6 +1369,12 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			{"summary.cgmStats.periods." + *params.Period + ".timeInTargetPercent", -1},
 		})
 
+		count, err := r.collection.CountDocuments(ctx, selector)
+		if err != nil {
+			return nil, err
+		}
+		tide.Metadata.CandidatePatients += int(count)
+
 		cursor, err := r.collection.Find(ctx, selector, opts)
 		if err != nil {
 			return nil, err
@@ -1374,6 +1386,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		tide.Results["meetingTargets"] = PatientsToTideResult(patientsList, *params.Period, &exclusions)
+		tide.Metadata.SelectedPatients += len(tide.Results["meetingTargets"])
 	}
 
 	{
@@ -1406,6 +1419,12 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			{Key: "summary.cgmStats.dates.lastData", Value: 1},
 		})
 
+		count, err := r.collection.CountDocuments(ctx, selector)
+		if err != nil {
+			return nil, err
+		}
+		tide.Metadata.CandidatePatients += int(count)
+
 		cursor, err := r.collection.Find(ctx, selector, opts)
 		if err != nil {
 			return nil, err
@@ -1417,7 +1436,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		tide.Results["noData"] = PatientsToTideResult(patientsList, *params.Period, &exclusions)
-
+		tide.Metadata.SelectedPatients += len(tide.Results["noData"])
 	}
 
 	return &tide, nil
