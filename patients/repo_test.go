@@ -4,10 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand/v2"
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
+
+	"go.uber.org/zap/zapcore"
+
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/patients"
@@ -15,13 +27,6 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx/fxtest"
-	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 var DemoPatientId = "demo"
@@ -206,9 +211,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patient.Mrn
 				updated, err := repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).To(HaveOccurred())
 				Expect(updated).To(BeNil())
@@ -235,9 +240,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patientsTest.RandomPatient().Mrn
 				result, err = repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -1578,6 +1583,39 @@ var _ = Describe("Patients Repository", func() {
 
 })
 
+var _ = Describe("TideReport", func() {
+	Context("Metadata", func() {
+		It("includes the number of candidate patients", func() {
+			numWithoutData := 151
+			ctx, th := newTestRepo(GinkgoT(), 0, numWithoutData)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Metadata.CandidatePatients).To(Equal(numWithoutData))
+		})
+
+		It("includes the number of selected patients", func() {
+			numWithData := 101
+			numWithoutData := 51
+			ctx, th := newTestRepo(GinkgoT(), numWithData, numWithoutData)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			exp := patients.TideReportNoDataPatientLimit + patients.TideReportPatientLimit
+			Expect(tide.Metadata.SelectedPatients).To(Equal(exp))
+		})
+
+		AfterEach(func() {
+			database := dbTest.GetTestDatabase()
+			patients := database.Collection("patients")
+			_, err := patients.DeleteMany(context.Background(), primitive.M{})
+			Expect(err).To(Succeed())
+		})
+	})
+})
+
 func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 	return MatchAllFields(Fields{
 		"Id":                             PointTo(Not(BeEmpty())),
@@ -1604,4 +1642,88 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
 		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
 	})
+}
+
+func newTestRepo(t FullGinkgoTInterface, withData, withoutData int) (
+	context.Context, *repoTestHelper) {
+
+	t.Helper()
+	cfg := &config.Config{ClinicDemoPatientUserId: DemoPatientId}
+	database := dbTest.GetTestDatabase()
+	collection := database.Collection("patients")
+	lifecycle := fxtest.NewLifecycle(t)
+	logger := testLogger()
+	repo, err := patients.NewRepository(cfg, database, logger, lifecycle)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(repo).ToNot(BeNil())
+	lifecycle.RequireStart()
+	ctx := context.Background()
+	clinicId := primitive.NewObjectID()
+	tagId := primitive.NewObjectID()
+
+	yesterday := time.Now().Add(-24 * time.Hour)
+	allPatients := []any{}
+	modelPatient := patientsTest.RandomPatient() // re-use patient to save a little time
+	for range withData {
+		patient := modelPatient
+		patientUUID := test.Faker.UUID().V4()
+		patient.UserId = &patientUUID
+		patient.Summary = &patients.Summary{
+			CGM: &patients.PatientCGMStats{
+				Dates: patients.PatientSummaryDates{
+					LastData: &yesterday,
+				},
+				Periods: patients.PatientCGMPeriods{
+					"7d": randomPeriods[rand.IntN(len(randomPeriods))],
+				},
+			},
+		}
+		patient.ClinicId = &clinicId
+		patient.Tags = &[]primitive.ObjectID{tagId}
+		allPatients = append(allPatients, patient)
+	}
+	for range withoutData {
+		patient := patientsTest.RandomPatient()
+
+		patient.ClinicId = &clinicId
+		patient.Tags = &[]primitive.ObjectID{tagId}
+		allPatients = append(allPatients, patient)
+	}
+	result, err := collection.InsertMany(ctx, allPatients)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(len(result.InsertedIDs)).To(Equal(withData + withoutData))
+
+	return ctx, &repoTestHelper{
+		clinicId: clinicId,
+		tagId:    tagId,
+		repo:     repo,
+	}
+}
+
+var onePct = 1.0
+var randomPeriods = []patients.PatientCGMPeriod{
+	{TimeInAnyLowPercent: &onePct},
+	{TimeInVeryLowPercent: &onePct},
+	{TimeInTargetPercent: &onePct},
+}
+
+type repoTestHelper struct {
+	clinicId primitive.ObjectID
+	tagId    primitive.ObjectID
+	repo     patients.Repository
+}
+
+func (r repoTestHelper) params(period string, cutoff time.Time) patients.TideReportParams {
+	return patients.TideReportParams{
+		Period:         &period,
+		Tags:           &[]string{r.tagId.Hex()},
+		LastDataCutoff: &cutoff,
+	}
+}
+
+func testLogger() *zap.SugaredLogger {
+	enc := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	core := zapcore.NewCore(enc, zapcore.AddSync(GinkgoWriter), zapcore.
+		DebugLevel)
+	return zap.New(core).Sugar()
 }

@@ -3,8 +3,9 @@ package patients
 import "time"
 
 type Tide struct {
-	Config  TideConfig  `json:"config"`
-	Results TideResults `json:"results"`
+	Config   TideConfig   `json:"config"`
+	Results  TideResults  `json:"results"`
+	Metadata TideMetadata `json:"metadata"`
 }
 
 type TideConfig struct {
@@ -55,3 +56,12 @@ type TideResultPatient struct {
 }
 
 type TideResults map[string][]TideResultPatient
+
+type TideMetadata struct {
+	// CandidatePatients is the number of patients considered for the Tide Report, after
+	// filters, but before limits.
+	CandidatePatients int
+	// SelectedPatients is the number of patients included in the Tide Report, after filters
+	// and limits.
+	SelectedPatients int
+}

@@ -757,6 +757,10 @@ type BgmPeriodV1 struct {
 
 	// AverageGlucoseMmolDelta Difference between the averageGlucose in this period and the other offset version
 	AverageGlucoseMmolDelta     *float64 `json:"averageGlucoseMmolDelta,omitempty"`
+	CoefficientOfVariation      float64  `json:"coefficientOfVariation"`
+	CoefficientOfVariationDelta float64  `json:"coefficientOfVariationDelta"`
+	DaysWithData                int      `json:"daysWithData"`
+	DaysWithDataDelta           int      `json:"daysWithDataDelta"`
 	HasAverageDailyRecords      bool     `json:"hasAverageDailyRecords"`
 	HasAverageGlucoseMmol       bool     `json:"hasAverageGlucoseMmol"`
 	HasTimeInAnyHighPercent     bool     `json:"hasTimeInAnyHighPercent"`
@@ -777,7 +781,11 @@ type BgmPeriodV1 struct {
 	HasTimeInVeryLowRecords     bool     `json:"hasTimeInVeryLowRecords"`
 	HasTotalRecords             bool     `json:"hasTotalRecords"`
 	Max                         float64  `json:"max"`
+	MaxDelta                    float64  `json:"maxDelta"`
 	Min                         float64  `json:"min"`
+	MinDelta                    float64  `json:"minDelta"`
+	StandardDeviation           float64  `json:"standardDeviation"`
+	StandardDeviationDelta      float64  `json:"standardDeviationDelta"`
 
 	// TimeInAnyHighPercent Percentage of time spent in Any high glucose range
 	TimeInAnyHighPercent *float64 `json:"timeInAnyHighPercent,omitempty"`
@@ -957,7 +965,9 @@ type CgmPeriodV1 struct {
 	HoursWithData                   int      `json:"hoursWithData"`
 	HoursWithDataDelta              int      `json:"hoursWithDataDelta"`
 	Max                             float64  `json:"max"`
+	MaxDelta                        float64  `json:"maxDelta"`
 	Min                             float64  `json:"min"`
+	MinDelta                        float64  `json:"minDelta"`
 	StandardDeviation               float64  `json:"standardDeviation"`
 	StandardDeviationDelta          float64  `json:"standardDeviationDelta"`
 
@@ -1729,6 +1739,15 @@ type TideFiltersV1 struct {
 	TimeInVeryLowPercent      string `json:"timeInVeryLowPercent"`
 }
 
+// TideMetadataV1 Metadata describing the results of the Tide Report.
+type TideMetadataV1 struct {
+	// CandidatePatients The total number of possible patients, after filters, but before limits.
+	CandidatePatients *int `json:"candidatePatients,omitempty"`
+
+	// SelectedPatients The total number of selected patients, after filters and limits.
+	SelectedPatients *int `json:"selectedPatients,omitempty"`
+}
+
 // TidePatientV1 defines model for tidePatient.v1.
 type TidePatientV1 struct {
 	DataSources *[]DataSourceV1 `json:"dataSources"`
@@ -1745,8 +1764,11 @@ type TidePatientV1 struct {
 
 // TideResponseV1 Report of at-risk patients based on specific grouping criteria
 type TideResponseV1 struct {
-	Config  TideConfigV1  `json:"config"`
-	Results TideResultsV1 `json:"results"`
+	Config TideConfigV1 `json:"config"`
+
+	// Metadata Metadata describing the results of the Tide Report.
+	Metadata TideMetadataV1 `json:"metadata"`
+	Results  TideResultsV1  `json:"results"`
 }
 
 // TideResultPatientV1 defines model for tideResultPatient.v1.
@@ -1929,13 +1951,13 @@ type ListPatientsParams struct {
 	// LastReviewed Inclusive
 	LastReviewed *time.Time `form:"lastReviewed,omitempty" json:"lastReviewed,omitempty"`
 
-	// CgmMax Max glucose value in Mmol/L
+	// CgmMax Max glucose value in mmol/L
 	CgmMax *FloatFilter `form:"cgm.max,omitempty" json:"cgm.max,omitempty"`
 
-	// CgmMin Min glucose value in Mmol/L
+	// CgmMin Min glucose value in mmol/L
 	CgmMin *FloatFilter `form:"cgm.min,omitempty" json:"cgm.min,omitempty"`
 
-	// CgmAverageGlucoseMmol Average glucose value of records in Mmol/L
+	// CgmAverageGlucoseMmol Average glucose value of records in mmol/L
 	CgmAverageGlucoseMmol *FloatFilter `form:"cgm.averageGlucoseMmol,omitempty" json:"cgm.averageGlucoseMmol,omitempty"`
 
 	// CgmGlucoseManagementIndicator Glucose management Indicator of records
@@ -2031,19 +2053,19 @@ type ListPatientsParams struct {
 	// CgmDaysWithData Total days with data in period
 	CgmDaysWithData *IntFilter `form:"cgm.daysWithData,omitempty" json:"cgm.daysWithData,omitempty"`
 
-	// CgmStandardDeviation Standard deviation of glucose values in Mmol/L
+	// CgmStandardDeviation Standard deviation of glucose values in mmol/L
 	CgmStandardDeviation *FloatFilter `form:"cgm.standardDeviation,omitempty" json:"cgm.standardDeviation,omitempty"`
 
-	// CgmCoefficientOfVariation Coefficient Of Variation of glucose values in Mmol/L
+	// CgmCoefficientOfVariation Coefficient Of Variation of glucose values in mmol/L
 	CgmCoefficientOfVariation *FloatFilter `form:"cgm.coefficientOfVariation,omitempty" json:"cgm.coefficientOfVariation,omitempty"`
 
-	// BgmMax Max glucose value in Mmol/L
+	// BgmMax Max glucose value in mmol/L
 	BgmMax *FloatFilter `form:"bgm.max,omitempty" json:"bgm.max,omitempty"`
 
-	// BgmMin Min glucose value in Mmol/L
+	// BgmMin Min glucose value in mmol/L
 	BgmMin *FloatFilter `form:"bgm.min,omitempty" json:"bgm.min,omitempty"`
 
-	// BgmAverageGlucoseMmol Average glucose value of records in Mmol/L
+	// BgmAverageGlucoseMmol Average glucose value of records in mmol/L
 	BgmAverageGlucoseMmol *FloatFilter `form:"bgm.averageGlucoseMmol,omitempty" json:"bgm.averageGlucoseMmol,omitempty"`
 
 	// BgmTimeInVeryLowPercent Percentage of time [0.0-1.0]  below 54 mg/dL
@@ -2097,13 +2119,13 @@ type ListPatientsParams struct {
 	// BgmTotalRecords Total records in period
 	BgmTotalRecords *IntFilter `form:"bgm.totalRecords,omitempty" json:"bgm.totalRecords,omitempty"`
 
-	// CgmMaxDelta Delta of Max glucose value in Mmol/L
+	// CgmMaxDelta Delta of Max glucose value in mmol/L
 	CgmMaxDelta *FloatFilter `form:"cgm.maxDelta,omitempty" json:"cgm.maxDelta,omitempty"`
 
-	// CgmMinDelta Delta of Min glucose value in Mmol/L
+	// CgmMinDelta Delta of Min glucose value in mmol/L
 	CgmMinDelta *FloatFilter `form:"cgm.minDelta,omitempty" json:"cgm.minDelta,omitempty"`
 
-	// CgmAverageGlucoseMmolDelta Delta of average glucose value in Mmol/L
+	// CgmAverageGlucoseMmolDelta Delta of average glucose value in mmol/L
 	CgmAverageGlucoseMmolDelta *FloatFilter `form:"cgm.averageGlucoseMmolDelta,omitempty" json:"cgm.averageGlucoseMmolDelta,omitempty"`
 
 	// CgmGlucoseManagementIndicatorDelta Glucose management Indicator of records
@@ -2199,10 +2221,10 @@ type ListPatientsParams struct {
 	// CgmDaysWithDataDelta Delta of total days with data
 	CgmDaysWithDataDelta *IntFilter `form:"cgm.daysWithDataDelta,omitempty" json:"cgm.daysWithDataDelta,omitempty"`
 
-	// CgmStandardDeviationDelta Delta of the standard deviation of glucose values in Mmol/L
+	// CgmStandardDeviationDelta Delta of the standard deviation of glucose values in mmol/L
 	CgmStandardDeviationDelta *FloatFilter `form:"cgm.standardDeviationDelta,omitempty" json:"cgm.standardDeviationDelta,omitempty"`
 
-	// CgmCoefficientOfVariationDelta Delta of the coefficient of glucose values in Mmol/L
+	// CgmCoefficientOfVariationDelta Delta of the coefficient of glucose values in mmol/L
 	CgmCoefficientOfVariationDelta *FloatFilter `form:"cgm.coefficientOfVariationDelta,omitempty" json:"cgm.coefficientOfVariationDelta,omitempty"`
 
 	// CgmLastDataFrom Inclusive
@@ -2211,13 +2233,13 @@ type ListPatientsParams struct {
 	// CgmLastDataTo Exclusive
 	CgmLastDataTo *time.Time `form:"cgm.lastDataTo,omitempty" json:"cgm.lastDataTo,omitempty"`
 
-	// BgmMaxDelta Delta of Max glucose value in Mmol/L
+	// BgmMaxDelta Delta of Max glucose value in mmol/L
 	BgmMaxDelta *FloatFilter `form:"bgm.maxDelta,omitempty" json:"bgm.maxDelta,omitempty"`
 
-	// BgmMinDelta Delta of Min glucose value in Mmol/L
+	// BgmMinDelta Delta of Min glucose value in mmol/L
 	BgmMinDelta *FloatFilter `form:"bgm.minDelta,omitempty" json:"bgm.minDelta,omitempty"`
 
-	// BgmAverageGlucoseMmolDelta Delta of the average glucose values in Mmol/L
+	// BgmAverageGlucoseMmolDelta Delta of the average glucose values in mmol/L
 	BgmAverageGlucoseMmolDelta *FloatFilter `form:"bgm.averageGlucoseMmolDelta,omitempty" json:"bgm.averageGlucoseMmolDelta,omitempty"`
 
 	// BgmTimeInVeryLowPercentDelta Delta of time below 54 mg/dL
