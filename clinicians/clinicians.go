@@ -3,6 +3,7 @@ package clinicians
 import (
 	"context"
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -27,9 +28,9 @@ type Service interface {
 	Create(ctx context.Context, clinician *Clinician) (*Clinician, error)
 	Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error)
 	UpdateAll(ctx context.Context, update *CliniciansUpdate) error
-	Delete(ctx context.Context, clinicId string, clinicianId string) error
-	DeleteAll(ctx context.Context, clinicId string) error
-	DeleteFromAllClinics(ctx context.Context, clinicianId string) error
+	Delete(ctx context.Context, clinicId string, clinicianId string, metadata deletions.Metadata) error
+	DeleteAll(ctx context.Context, clinicId string, metadata deletions.Metadata) error
+	DeleteFromAllClinics(ctx context.Context, clinicianId string, metadata deletions.Metadata) error
 	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
 	DeleteInvite(ctx context.Context, clinicId, inviteId string) error
 	AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error)

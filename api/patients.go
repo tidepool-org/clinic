@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 	"net/http"
 	"time"
 
@@ -257,7 +258,7 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		deletedByUserId = &authData.SubjectId
 	}
 
-	err := h.Patients.Remove(ctx, clinicId, patientId, deletedByUserId)
+	err := h.Patients.Remove(ctx, clinicId, patientId, deletions.Metadata{DeletedByUserId: deletedByUserId})
 	if err != nil {
 		return err
 	}

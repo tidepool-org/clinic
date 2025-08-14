@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	clinicians "github.com/tidepool-org/clinic/clinicians"
+	deletions "github.com/tidepool-org/clinic/deletions"
 	store "github.com/tidepool-org/clinic/store"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -73,45 +74,45 @@ func (mr *MockServiceMockRecorder) Create(ctx, clinician any) *gomock.Call {
 }
 
 // Delete mocks base method.
-func (m *MockService) Delete(ctx context.Context, clinicId, clinicianId string) error {
+func (m *MockService) Delete(ctx context.Context, clinicId, clinicianId string, metadata deletions.Metadata) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, clinicId, clinicianId)
+	ret := m.ctrl.Call(m, "Delete", ctx, clinicId, clinicianId, metadata)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockServiceMockRecorder) Delete(ctx, clinicId, clinicianId any) *gomock.Call {
+func (mr *MockServiceMockRecorder) Delete(ctx, clinicId, clinicianId, metadata any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockService)(nil).Delete), ctx, clinicId, clinicianId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockService)(nil).Delete), ctx, clinicId, clinicianId, metadata)
 }
 
 // DeleteAll mocks base method.
-func (m *MockService) DeleteAll(ctx context.Context, clinicId string) error {
+func (m *MockService) DeleteAll(ctx context.Context, clinicId string, metadata deletions.Metadata) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteAll", ctx, clinicId)
+	ret := m.ctrl.Call(m, "DeleteAll", ctx, clinicId, metadata)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteAll indicates an expected call of DeleteAll.
-func (mr *MockServiceMockRecorder) DeleteAll(ctx, clinicId any) *gomock.Call {
+func (mr *MockServiceMockRecorder) DeleteAll(ctx, clinicId, metadata any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAll", reflect.TypeOf((*MockService)(nil).DeleteAll), ctx, clinicId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAll", reflect.TypeOf((*MockService)(nil).DeleteAll), ctx, clinicId, metadata)
 }
 
 // DeleteFromAllClinics mocks base method.
-func (m *MockService) DeleteFromAllClinics(ctx context.Context, clinicianId string) error {
+func (m *MockService) DeleteFromAllClinics(ctx context.Context, clinicianId string, metadata deletions.Metadata) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteFromAllClinics", ctx, clinicianId)
+	ret := m.ctrl.Call(m, "DeleteFromAllClinics", ctx, clinicianId, metadata)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteFromAllClinics indicates an expected call of DeleteFromAllClinics.
-func (mr *MockServiceMockRecorder) DeleteFromAllClinics(ctx, clinicianId any) *gomock.Call {
+func (mr *MockServiceMockRecorder) DeleteFromAllClinics(ctx, clinicianId, metadata any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFromAllClinics", reflect.TypeOf((*MockService)(nil).DeleteFromAllClinics), ctx, clinicianId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFromAllClinics", reflect.TypeOf((*MockService)(nil).DeleteFromAllClinics), ctx, clinicianId, metadata)
 }
 
 // DeleteInvite mocks base method.

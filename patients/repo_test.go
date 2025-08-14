@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store"
@@ -30,12 +31,14 @@ var _ = Describe("Patients Repository", func() {
 	var repo patients.Repository
 	var database *mongo.Database
 	var collection *mongo.Collection
+	var deletionsCollection *mongo.Collection
 
 	BeforeEach(func() {
 		var err error
 		cfg = &config.Config{ClinicDemoPatientUserId: DemoPatientId}
 		database = dbTest.GetTestDatabase()
 		collection = database.Collection("patients")
+		deletionsCollection = database.Collection("patient_deletions")
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
 		repo, err = patients.NewRepository(cfg, database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
@@ -77,6 +80,9 @@ var _ = Describe("Patients Repository", func() {
 			result, err := collection.DeleteMany(context.Background(), selector)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(int(result.DeletedCount)).To(Equal(count))
+
+			_, err = deletionsCollection.DeleteMany(context.Background(), bson.M{})
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		Describe("Create", func() {
@@ -380,7 +386,7 @@ var _ = Describe("Patients Repository", func() {
 
 		Describe("Remove", func() {
 			It("removes the correct patient from the collection", func() {
-				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, nil)
+				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 
 				res := collection.FindOne(context.Background(), bson.M{"$and": []bson.M{{"userId": randomPatient.UserId}, {"clinicId": randomPatient.ClinicId}}})
@@ -388,6 +394,16 @@ var _ = Describe("Patients Repository", func() {
 				Expect(res.Err()).ToNot(BeNil())
 				Expect(res.Err()).To(MatchError(mongo.ErrNoDocuments))
 				count -= 1
+			})
+
+			It("creates a deletion record", func() {
+				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, deletions.Metadata{})
+				Expect(err).ToNot(HaveOccurred())
+				count -= 1
+
+				count, err := deletionsCollection.CountDocuments(context.Background(), bson.M{"$and": []bson.M{{"patient.userId": randomPatient.UserId}, {"patient.clinicId": randomPatient.ClinicId}}})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(BeNumerically("==", 1))
 			})
 		})
 
@@ -400,7 +416,7 @@ var _ = Describe("Patients Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				count += 1
 
-				clinicIds, err := repo.DeleteFromAllClinics(context.Background(), *randomPatient.UserId)
+				clinicIds, err := repo.DeleteFromAllClinics(context.Background(), *randomPatient.UserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(clinicIds).To(ConsistOf(randomPatient.ClinicId.Hex(), patient.ClinicId.Hex()))
 				count -= 2
@@ -420,10 +436,28 @@ var _ = Describe("Patients Repository", func() {
 				Expect(res).To(Equal(int64(0)))
 			})
 
+			It("creates deletion records", func() {
+				// Add the same user to  a different clinic
+				patient := patientsTest.RandomPatient()
+				patient.UserId = randomPatient.UserId
+				_, err := collection.InsertOne(context.Background(), patient)
+				Expect(err).ToNot(HaveOccurred())
+				count += 1
+
+				clinicIds, err := repo.DeleteFromAllClinics(context.Background(), *randomPatient.UserId, deletions.Metadata{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(clinicIds).To(ConsistOf(randomPatient.ClinicId.Hex(), patient.ClinicId.Hex()))
+				count -= 2
+
+				count, err := deletionsCollection.CountDocuments(context.Background(), bson.M{"$and": []bson.M{{"patient.userId": randomPatient.UserId}}})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(BeNumerically("==", 2))
+			})
+
 			It("deletes no patients", func() {
 				unusedUserId := *patientsTest.RandomPatient().UserId
 
-				clinicIds, err := repo.DeleteFromAllClinics(context.Background(), unusedUserId)
+				clinicIds, err := repo.DeleteFromAllClinics(context.Background(), unusedUserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(clinicIds).To(BeEmpty())
 
@@ -654,9 +688,8 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("deletes non-custodial patients", func() {
-				deleted, err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId.Hex())
+				err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId.Hex(), deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(deleted).To(BeTrue())
 				count -= len(nonCustodial)
 
 				ids := make([]interface{}, len(nonCustodial))
@@ -671,10 +704,19 @@ var _ = Describe("Patients Repository", func() {
 				Expect(res).To(Equal(int64(0)))
 			})
 
-			It("does not delete custodial patients", func() {
-				deleted, err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId.Hex())
+			It("deletes non-custodial patients", func() {
+				err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId.Hex(), deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(deleted).To(BeTrue())
+				count -= len(nonCustodial)
+
+				count, err := deletionsCollection.CountDocuments(context.Background(), bson.M{"$and": []bson.M{{"patient.clinicId": clinicId}}})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(BeNumerically("==", len(nonCustodial)))
+			})
+
+			It("does not delete custodial patients", func() {
+				err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId.Hex(), deletions.Metadata{})
+				Expect(err).ToNot(HaveOccurred())
 				count -= len(nonCustodial)
 
 				ids := make([]interface{}, len(custodial))
@@ -692,9 +734,8 @@ var _ = Describe("Patients Repository", func() {
 			It("does not delete any patients for other clinic id", func() {
 				otherClinicId := primitive.NewObjectID()
 
-				deleted, err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), otherClinicId.Hex())
+				err := repo.DeleteNonCustodialPatientsOfClinic(context.Background(), otherClinicId.Hex(), deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(deleted).To(BeFalse())
 
 				res, err := collection.CountDocuments(context.Background(), bson.M{"clinicId": clinicId})
 				Expect(err).To(BeNil())

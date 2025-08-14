@@ -80,7 +80,6 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 			clinics.NewRepository,
 			clinicians.NewRepository,
 			clinicians.NewService,
-			patients.NewDeletionsRepository,
 			patients.NewRepository,
 			patients.NewService,
 			patients.NewCustodialService,
