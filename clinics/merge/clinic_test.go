@@ -3,6 +3,7 @@ package merge_test
 import (
 	"context"
 	"errors"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -62,6 +63,9 @@ func NewClinicMergeTest() *ClinicMergeTest {
 func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 	tb := GinkgoT()
 	t.ctrl = gomock.NewController(tb)
+
+	database := dbTest.GetTestDatabase()
+	patientsCollection := database.Collection("patients")
 
 	t.app = fxtest.New(tb,
 		fx.NopLogger,
@@ -129,19 +133,22 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.target.Id.Hex(), pcs)).To(Succeed())
 	}
 
+	toCreate := []any{}
 	for _, p := range t.sourcePatients {
 		p.ClinicId = t.source.Id
-		_, err := t.patientsService.Create(context.Background(), p)
-		Expect(err).ToNot(HaveOccurred())
+		toCreate = append(toCreate, p)
 	}
 	for _, p := range t.targetPatients {
 		p.ClinicId = t.target.Id
-		_, err := t.patientsService.Create(context.Background(), p)
-		Expect(err).ToNot(HaveOccurred())
+		toCreate = append(toCreate, p)
 	}
+	ctx := context.Background()
+	res, err := patientsCollection.InsertMany(ctx, toCreate)
+	Expect(err).To(Succeed())
+	Expect(len(res.InsertedIDs)).To(Equal(len(t.sourcePatients) + len(t.targetPatients)))
 
-	t.planner = merge.NewClinicMergePlanner(t.clinicsService, t.patientsService, t.cliniciansService, data.Source.Id.Hex(), data.Target.Id.Hex())
-
+	t.planner = merge.NewClinicMergePlanner(t.clinicsService, t.patientsService,
+		t.cliniciansService, data.Source.Id.Hex(), data.Target.Id.Hex())
 }
 
 var _ = Describe("New Clinic Merge Planner", Ordered, func() {
@@ -161,6 +168,10 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 
 	AfterAll(func() {
 		t.app.RequireStop()
+		database := dbTest.GetTestDatabase()
+		patientsCollection := database.Collection("patients")
+		_, err := patientsCollection.DeleteMany(context.Background(), bson.M{})
+		Expect(err).To(Succeed())
 	})
 
 	It("successfully generates the plan", func() {
