@@ -39,6 +39,7 @@ type manager struct {
 	cliniciansRepository *clinicians.Repository
 	config               *config.Config
 	dbClient             *mongo.Client
+	patientsRepository   patients.Repository
 	patientsService      patients.Service
 	shareCodeGenerator   clinics.ShareCodeGenerator
 	userService          patients.UserService
@@ -51,6 +52,7 @@ type Params struct {
 	CliniciansRepository *clinicians.Repository
 	Config               *config.Config
 	DbClient             *mongo.Client
+	PatientsRepository   patients.Repository
 	PatientsService      patients.Service
 	ShareCodeGenerator   clinics.ShareCodeGenerator
 	UserService          patients.UserService
@@ -62,6 +64,7 @@ func NewManager(cp Params) (Manager, error) {
 		cliniciansRepository: cp.CliniciansRepository,
 		config:               cp.Config,
 		dbClient:             cp.DbClient,
+		patientsRepository:   cp.PatientsRepository,
 		patientsService:      cp.PatientsService,
 		shareCodeGenerator:   cp.ShareCodeGenerator,
 		userService:          cp.UserService,
@@ -248,13 +251,12 @@ func (c *manager) deleteClinic(ctx context.Context, clinicId string, metadata de
 		return fmt.Errorf("%w: deletion of non-empty clinics is not allowed", errors.BadRequest)
 	}
 
-	if err := c.patientsService.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId, metadata); err != nil && !errs.Is(err, errors.NotFound) {
+	// Using the repository directly, because the service wraps deletes in transaction
+	if err := c.patientsRepository.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId, metadata); err != nil && !errs.Is(err, errors.NotFound) {
 		return err
 	}
-
-	// Using the repository directly, because the service wraps delete all in transaction
 	if err := c.cliniciansRepository.DeleteAll(ctx, clinicId, metadata); err != nil {
-		return  err
+		return err
 	}
 
 	return c.clinics.Delete(ctx, clinicId, metadata)

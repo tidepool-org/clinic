@@ -137,8 +137,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					List(gomock.Any(), &patients.Filter{ClinicId: &clinicIdStr, Mrn: create.Mrn}, gomock.Any(), gomock.Any()).
 					Return(&patients.ListResult{
-						Patients:   nil,
-						TotalCount: 0,
+						Patients:      nil,
+						MatchingCount: 0,
 					}, nil)
 
 				createdPatient, err := service.Create(context.Background(), create)
@@ -160,8 +160,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					List(gomock.Any(), &patients.Filter{ClinicId: &clinicIdStr, Mrn: create.Mrn}, gomock.Any(), gomock.Any()).
 					Return(&patients.ListResult{
-						Patients:   []*patients.Patient{&existing},
-						TotalCount: 1,
+						Patients:      []*patients.Patient{&existing},
+						MatchingCount: 1,
 					}, nil)
 
 				createdPatient, err := service.Create(context.Background(), create)
@@ -462,8 +462,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					List(gomock.Any(), &patients.Filter{ClinicId: &update.ClinicId, Mrn: update.Patient.Mrn}, gomock.Any(), gomock.Any()).
 					Return(&patients.ListResult{
-						Patients:   nil,
-						TotalCount: 0,
+						Patients:      nil,
+						MatchingCount: 0,
 					}, nil)
 
 				updatedPatient, err := service.Update(context.Background(), update)
@@ -478,8 +478,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					List(gomock.Any(), &patients.Filter{ClinicId: &update.ClinicId, Mrn: update.Patient.Mrn}, gomock.Any(), gomock.Any()).
 					Return(&patients.ListResult{
-						Patients:   []*patients.Patient{&existing},
-						TotalCount: 1,
+						Patients:      []*patients.Patient{&existing},
+						MatchingCount: 1,
 					}, nil)
 
 				updatedPatient, err := service.Update(context.Background(), update)

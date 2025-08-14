@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/errors"
@@ -16,16 +20,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const (
 	verificationTokenHeader                          = "verification-token"
 	messagesCollectionName                           = "redox"
 	summaryAndReportsRescheduledOrdersCollectionName = "scheduledSummaryAndReportsOrders"
-	rescheduledMessagesExpiration                    = 30 * 24 * time.Hour
+	rescheduledMessagesExpiration                    = 90 * 24 * time.Hour
 
 	MRNPatientMatchingCriteria            = "MRN"
 	MRNAndDOBPatientMatchingCriteria      = "MRN_DOB"
@@ -118,11 +119,19 @@ func (h *Handler) Initialize(ctx context.Context) error {
 	_, err = h.rescheduledSummaryAndReportsCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{
+				{Key: "lastMatchedOrder._id", Value: 1},
+				{Key: "createdTime", Value: -1},
+			},
+			Options: options.Index().
+				SetName("LastMatchedOrderByID"),
+		},
+		{
+			Keys: bson.D{
 				{Key: "createdTime", Value: 1},
 			},
 			Options: options.Index().
 				SetExpireAfterSeconds(int32(rescheduledMessagesExpiration.Seconds())).
-				SetName("CleanupExpiredRescheduledOrders"),
+				SetName("CleanupExpiredRescheduledOrdersAfter90d"),
 		},
 	})
 
@@ -226,10 +235,9 @@ func (h *Handler) FindMatchingClinic(ctx context.Context, criteria ClinicMatchin
 
 	enabled := true
 	filter := clinics.Filter{
-		EHRProvider:     &clinics.EHRProviderRedox,
-		EHRSourceId:     &criteria.SourceId,
-		EHRFacilityName: criteria.FacilityName,
-		EHREnabled:      &enabled,
+		EHRProvider: &clinics.EHRProviderRedox,
+		EHRSourceId: &criteria.SourceId,
+		EHREnabled:  &enabled,
 	}
 	page := store.Pagination{
 		Offset: 0,
@@ -385,7 +393,7 @@ func (h *Handler) findMatchingPatients(ctx context.Context, clinic clinics.Clini
 			return nil, err
 		}
 
-		if result.TotalCount > 0 {
+		if result.MatchingCount > 0 {
 			for _, patient := range result.Patients {
 				if patient == nil || patient.UserId == nil {
 					continue
@@ -449,8 +457,7 @@ func (p PatientMatchingValues) GetFilters(clinicId string, criteria []string) ([
 }
 
 type ClinicMatchingCriteria struct {
-	SourceId     string
-	FacilityName *string
+	SourceId string
 }
 
 func GetClinicMatchingCriteriaFromNewOrder(order *models.NewOrder) (ClinicMatchingCriteria, error) {
@@ -459,11 +466,6 @@ func GetClinicMatchingCriteriaFromNewOrder(order *models.NewOrder) (ClinicMatchi
 		return criteria, fmt.Errorf("%w: source id is required", errors.BadRequest)
 	}
 	criteria.SourceId = *order.Meta.Source.ID
-
-	if order.Order.OrderingFacility != nil {
-		criteria.FacilityName = order.Order.OrderingFacility.Name
-	}
-
 	return criteria, nil
 }
 

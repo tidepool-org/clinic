@@ -30,8 +30,8 @@ const (
 )
 
 var _ = Describe("Xealth Integration Test", Ordered, func() {
-	var clinic client.Clinic
-	var patient client.Patient
+	var clinic client.ClinicV1
+	var patient client.PatientV1
 	var dataTrackingId string
 
 	Describe("Create a clinic", func() {
@@ -108,7 +108,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			body, err := io.ReadAll(rec.Result().Body)
 			Expect(err).ToNot(HaveOccurred())
 
-			response := client.PatientsResponse{}
+			response := client.PatientsResponseV1{}
 			Expect(json.Unmarshal(body, &response)).To(Succeed())
 			Expect(response.Data).ToNot(BeNil())
 			Expect(response.Meta).ToNot(BeNil())
@@ -130,8 +130,9 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(patient.Email).To(PointTo(Equal("xealth@tidepool.org")))
 		})
 
-		It("last request dexcom connect time is set", func() {
-			Expect(patient.LastRequestedDexcomConnectTime).To(PointTo(BeTemporally("~", time.Now().UTC(), time.Second*5)))
+		It("dexcom connection request is correctly set", func() {
+			Expect(patient.ConnectionRequests.Dexcom).ToNot(BeEmpty())
+			Expect(patient.ConnectionRequests.Dexcom[0].CreatedTime).To(BeTemporally("~", time.Now().UTC(), time.Second*5))
 		})
 	})
 
@@ -420,7 +421,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 				body, err := io.ReadAll(rec.Result().Body)
 				Expect(err).ToNot(HaveOccurred())
 
-				response := client.PatientsResponse{}
+				response := client.PatientsResponseV1{}
 				Expect(json.Unmarshal(body, &response)).To(Succeed())
 				Expect(response.Data).ToNot(BeNil())
 				Expect(response.Meta).ToNot(BeNil())

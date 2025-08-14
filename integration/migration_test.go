@@ -3,17 +3,18 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/clinic/integration/test"
-	"net/http"
-	"net/http/httptest"
 )
 
 var _ = Describe("Migration Test", Ordered, func() {
-	var clinic client.Clinic
+	var clinic client.ClinicV1
 
 	Describe("Flag a clinician for migration", func() {
 		It("Succeeds", func() {

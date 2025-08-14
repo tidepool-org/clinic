@@ -3,18 +3,20 @@ package merge
 import (
 	"context"
 	"fmt"
+	"slices"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx"
-	"go.uber.org/zap"
-	"slices"
-	"time"
 )
 
 const (
@@ -198,25 +200,41 @@ func (m *ClinicMergePlanner) CliniciansMergePlan(ctx context.Context, source, ta
 
 func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics.Clinic) ([]patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
-	limit := 1000000
 
-	page := store.DefaultPagination().WithLimit(limit)
 	filter := patients.Filter{
-		ClinicId: &clinicId,
+		ClinicId:                                 &clinicId,
+		ExcludeSummaryExceptFieldsInMergeReports: true,
+		ExcludeDemo:                              true,
 	}
-	result, err := m.patients.List(ctx, &filter, page, nil)
-	if err != nil {
-		return nil, err
-	}
-	if result.TotalCount > limit {
-		return nil, fmt.Errorf("too many patients in clinic")
-	}
+	// limit the number of patients to stay under MongoDB's pipeline stage limit (100 MB).
+	//
+	// Analysis of patient records (including those without summaries) indicates that using
+	// the ExcludeSummaryExceptFieldsInMergeReports flag above, then average patient records
+	// are around 591.9 B in size. 100 MB / 640 B == 156250, but to be extra conservative
+	// against future increases in this size, and because clinic users are more likely to
+	// have summaries than not, we'll set to the limit to 75000 patients.
+	//
+	// For the above analysis I used this query:
+	//   db.patients.aggregate([{$limit:200000},{$addFields:{__tmp_cgm__:"$summary.cgmStats.dates",__tmp_bgm__:"$summary.bgmStats.dates"}},{$unset:"summary"},{$addFields:{"summary.bgmStats.dates":"$__tmp_bgm__","summary.cgmStats.dates":"__tmp_cgm__"}},{$unset:["__tmp_cgm__","__tmp_bgm__"]}, {$replaceWith: { size: {$bsonSize: '$$ROOT'}} },{ $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$size' }, avg: { $avg: '$size' } } }, { $unset: '_id' } ])
+	limit := 75000
+	page := store.DefaultPagination().WithLimit(limit)
+	sort := []*store.Sort{{Attribute: "_id", Ascending: true}}
+	list := []patients.Patient{}
 
-	list := make([]patients.Patient, 0, len(result.Patients))
-	for _, p := range result.Patients {
-		list = append(list, *p)
+	for {
+		result, err := m.patients.List(ctx, &filter, page, sort)
+		if err != nil {
+			return nil, err
+		}
+		list = slices.Grow(list, len(result.Patients))
+		for _, p := range result.Patients {
+			list = append(list, *p)
+		}
+		if len(list) == result.MatchingCount || len(result.Patients) == 0 {
+			break
+		}
+		page.Offset += len(result.Patients)
 	}
-
 	return list, nil
 }
 
@@ -312,10 +330,10 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		tpe := NewTagPlanExecutor(logger, c.ClinicsService)
 		logger.Info("starting tags migration")
 		for _, p := range plan.TagsPlans {
-			if err := tpe.Execute(ctx, p); err != nil {
+			if err := tpe.Execute(sessionContext, p); err != nil {
 				return nil, err
 			}
-			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeTag, p)); err != nil {
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeTag, p)); err != nil {
 				return nil, err
 			}
 		}
@@ -323,10 +341,16 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		logger.Info("starting patients migration")
 		ppe := NewPatientPlanExecutor(logger, c.ClinicsService, c.DB)
 		for _, p := range plan.PatientPlans {
-			if err := ppe.Execute(ctx, p, plan.Source, plan.Target); err != nil {
+			if err := ppe.Execute(sessionContext, p, plan.Source, plan.Target); err != nil {
 				return nil, err
 			}
-			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypePatient, p)); err != nil {
+			if p.SourcePatient != nil {
+				sanitizePatient(p.SourcePatient)
+			}
+			if p.TargetPatient != nil {
+				sanitizePatient(p.TargetPatient)
+			}
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypePatient, p)); err != nil {
 				return nil, err
 			}
 		}
@@ -334,19 +358,19 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		logger.Info("starting clinicians migration")
 		cpe := NewClinicianPlanExecutor(logger, c.DB)
 		for _, p := range plan.ClinicianPlans {
-			if err := cpe.Execute(ctx, p, plan.Target); err != nil {
+			if err := cpe.Execute(sessionContext, p, plan.Target); err != nil {
 				return nil, err
 			}
-			if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeClinician, p)); err != nil {
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeClinician, p)); err != nil {
 				return nil, err
 			}
 		}
 
 		logger.Info("finalizing clinic merge")
-		if err := c.ClinicManager.FinalizeMerge(ctx, plan.Source.Id.Hex(), plan.Target.Id.Hex()); err != nil {
+		if err := c.ClinicManager.FinalizeMerge(sessionContext, plan.Source.Id.Hex(), plan.Target.Id.Hex()); err != nil {
 			return nil, err
 		}
-		if err := c.persistPlan(ctx, NewPersistentPlan(planId, planTypeClinic, plan)); err != nil {
+		if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeClinic, plan)); err != nil {
 			return nil, err
 		}
 

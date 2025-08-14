@@ -494,7 +494,7 @@ github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/clinic/redox_models v0.0.0 => ./redox_models
 ## explicit; go 1.22
 github.com/tidepool-org/clinic/redox_models
-# github.com/tidepool-org/go-common v0.12.2-0.20240612192926-de6d5c5a742c
+# github.com/tidepool-org/go-common v0.12.2-0.20250129210214-bd36b59b9733
 ## explicit; go 1.22
 github.com/tidepool-org/go-common/clients
 github.com/tidepool-org/go-common/clients/disc
@@ -681,7 +681,7 @@ go.uber.org/zap/internal/exit
 go.uber.org/zap/internal/pool
 go.uber.org/zap/internal/stacktrace
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.29.0
+# golang.org/x/crypto v0.32.0
 ## explicit; go 1.20
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
@@ -689,7 +689,7 @@ golang.org/x/crypto/md4
 golang.org/x/crypto/ocsp
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/net v0.31.0
+# golang.org/x/net v0.34.0
 ## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/html
@@ -711,7 +711,7 @@ golang.org/x/oauth2/internal
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
 golang.org/x/sync/singleflight
-# golang.org/x/sys v0.27.0
+# golang.org/x/sys v0.29.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
 golang.org/x/sys/windows

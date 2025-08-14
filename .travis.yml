@@ -3,15 +3,15 @@ dist: jammy
 language: go
 
 go:
-  - 1.24.1
+  - 1.24.3
 
 services:
   - docker
 
 env:
   global:
-    - MONGODB=6.0.18
-    - MONGOSH=2.3.3
+    - MONGODB=8.0.9
+    - MONGOSH=2.5.1
 
 cache:
   directories:
@@ -28,8 +28,8 @@ before_install:
 addons:
   apt:
     sources:
-      - sourceline: 'deb https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse'
-        key_url: 'https://pgp.mongodb.com/server-6.0.asc'
+      - sourceline: 'deb https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/8.0 multiverse'
+        key_url: 'https://pgp.mongodb.com/server-8.0.asc'
   artifacts:
     s3_region: us-west-2
     paths:

@@ -3,7 +3,6 @@ module github.com/tidepool-org/clinic/client
 go 1.22
 
 require (
-	go.uber.org/mock v0.5.0
 	github.com/oapi-codegen/runtime v1.1.1
 	go.uber.org/mock v0.5.0
 )

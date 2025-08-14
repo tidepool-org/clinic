@@ -70,6 +70,7 @@ var _ = Describe("Clinics Manager", func() {
 			CliniciansRepository: cliniciansRepo,
 			Config:               cfg,
 			DbClient:             database.Client(),
+			PatientsRepository:   patientsRepo,
 			PatientsService:      patientsService,
 			ShareCodeGenerator:   nil,
 			UserService:          nil,

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"go.uber.org/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinics"
@@ -21,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
 
@@ -152,8 +152,7 @@ var _ = Describe("Redox", func() {
 			clinic.Id = &clinicId
 
 			criteria = redox.ClinicMatchingCriteria{
-				SourceId:     clinic.EHRSettings.SourceId,
-				FacilityName: &clinic.EHRSettings.Facility.Name,
+				SourceId: clinic.EHRSettings.SourceId,
 			}
 		})
 
@@ -167,10 +166,9 @@ var _ = Describe("Redox", func() {
 		It("returns the matching clinic when only one clinic matches", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
-				EHRProvider:     &clinics.EHRProviderRedox,
-				EHREnabled:      &ehrEnabled,
-				EHRSourceId:     &criteria.SourceId,
-				EHRFacilityName: criteria.FacilityName,
+				EHRProvider: &clinics.EHRProviderRedox,
+				EHREnabled:  &ehrEnabled,
+				EHRSourceId: &criteria.SourceId,
 			}), gomock.Any()).Return([]*clinics.Clinic{clinic}, nil)
 
 			res, err := handler.FindMatchingClinic(context.Background(), criteria)
@@ -181,10 +179,9 @@ var _ = Describe("Redox", func() {
 		It("returns an error when multiple clinics match the criteria", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
-				EHRProvider:     &clinics.EHRProviderRedox,
-				EHREnabled:      &ehrEnabled,
-				EHRSourceId:     &criteria.SourceId,
-				EHRFacilityName: criteria.FacilityName,
+				EHRProvider: &clinics.EHRProviderRedox,
+				EHREnabled:  &ehrEnabled,
+				EHRSourceId: &criteria.SourceId,
 			}), gomock.Any()).Return([]*clinics.Clinic{clinic, clinicsTest.RandomClinic()}, nil)
 
 			res, err := handler.FindMatchingClinic(context.Background(), criteria)
@@ -195,10 +192,9 @@ var _ = Describe("Redox", func() {
 		It("returns an error when no clinics match the criteria", func() {
 			ehrEnabled := true
 			clinicsService.EXPECT().List(gomock.Any(), gomock.Eq(&clinics.Filter{
-				EHRProvider:     &clinics.EHRProviderRedox,
-				EHREnabled:      &ehrEnabled,
-				EHRSourceId:     &criteria.SourceId,
-				EHRFacilityName: criteria.FacilityName,
+				EHRProvider: &clinics.EHRProviderRedox,
+				EHREnabled:  &ehrEnabled,
+				EHRSourceId: &criteria.SourceId,
 			}), gomock.Any()).Return([]*clinics.Clinic{}, nil)
 
 			res, err := handler.FindMatchingClinic(context.Background(), criteria)
@@ -281,8 +277,8 @@ var _ = Describe("Redox", func() {
 					Mrn:       &fixtureMrn,
 					BirthDate: &fixtureDateOfBirth,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient},
-					TotalCount: 1,
+					Patients:      []*patients.Patient{&patient},
+					MatchingCount: 1,
 				}, nil)
 
 				patientsService.EXPECT().UpdateEHRSubscription(
@@ -309,8 +305,8 @@ var _ = Describe("Redox", func() {
 					Mrn:       &fixtureMrn,
 					BirthDate: &fixtureDateOfBirth,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient, &second},
-					TotalCount: 2,
+					Patients:      []*patients.Patient{&patient, &second},
+					MatchingCount: 2,
 				}, nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
@@ -329,8 +325,8 @@ var _ = Describe("Redox", func() {
 					Mrn:       &fixtureMrn,
 					BirthDate: &fixtureDateOfBirth,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{},
-					TotalCount: 0,
+					Patients:      []*patients.Patient{},
+					MatchingCount: 0,
 				}, nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
@@ -371,8 +367,8 @@ var _ = Describe("Redox", func() {
 					ClinicId: &clinicId,
 					Mrn:      &fixtureMrn,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient, &patient},
-					TotalCount: 2,
+					Patients:      []*patients.Patient{&patient, &patient},
+					MatchingCount: 2,
 				}, nil)
 
 				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
@@ -380,8 +376,8 @@ var _ = Describe("Redox", func() {
 					BirthDate: &fixtureDateOfBirth,
 					FullName:  &fixtureFullName,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient},
-					TotalCount: 1,
+					Patients:      []*patients.Patient{&patient},
+					MatchingCount: 1,
 				}, nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)
@@ -423,8 +419,8 @@ var _ = Describe("Redox", func() {
 					ClinicId: &clinicId,
 					Mrn:      &fixtureMrn,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient, &patient},
-					TotalCount: 2,
+					Patients:      []*patients.Patient{&patient, &patient},
+					MatchingCount: 2,
 				}, nil)
 
 				patientsService.EXPECT().List(gomock.Any(), gomock.Eq(&patients.Filter{
@@ -432,8 +428,8 @@ var _ = Describe("Redox", func() {
 					BirthDate: &fixtureDateOfBirth,
 					FullName:  &fixtureFullName,
 				}), gomock.Any(), gomock.Any()).Return(&patients.ListResult{
-					Patients:   []*patients.Patient{&patient},
-					TotalCount: 1,
+					Patients:      []*patients.Patient{&patient},
+					MatchingCount: 1,
 				}, nil)
 
 				res, err := handler.MatchNewOrderToPatient(context.Background(), matchOrder)

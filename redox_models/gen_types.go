@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 )
 
-// NewFlowsheet defines model for NewFlowsheet.
+// NewFlowsheet defines model for newFlowsheet.
 type NewFlowsheet struct {
 	Meta struct {
 		DataModel    string `json:"DataModel"`
@@ -138,7 +138,7 @@ type NewFlowsheet struct {
 	} `json:"Visit,omitempty"`
 }
 
-// NewNotes defines model for NewNotes.
+// NewNotes defines model for newNotes.
 type NewNotes struct {
 	Meta struct {
 		DataModel    string `json:"DataModel"`
@@ -385,7 +385,7 @@ type NewNotes struct {
 	} `json:"Visit,omitempty"`
 }
 
-// NewOrder defines model for NewOrder.
+// NewOrder defines model for newOrder.
 type NewOrder struct {
 	Meta struct {
 		DataModel    string `json:"DataModel"`
@@ -780,7 +780,7 @@ type NewOrder struct {
 	} `json:"Visit,omitempty"`
 }
 
-// NewResults defines model for NewResults.
+// NewResults defines model for newResults.
 type NewResults struct {
 	Meta struct {
 		DataModel    string `json:"DataModel"`
@@ -1185,7 +1185,7 @@ type NewResults struct {
 	} `json:"Visit,omitempty"`
 }
 
-// ReplaceNotes defines model for ReplaceNotes.
+// ReplaceNotes defines model for replaceNotes.
 type ReplaceNotes struct {
 	Meta struct {
 		DataModel    string `json:"DataModel"`

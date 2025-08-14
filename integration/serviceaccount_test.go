@@ -3,23 +3,24 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/clinic/integration/test"
-	"io"
-	"net/http"
-	"net/http/httptest"
 )
 
 var _ = Describe("Service Account Integration Test", Ordered, func() {
-	var clinic client.Clinic
+	var clinic client.ClinicV1
 
 	Describe("Create a clinic", func() {
 		It("Succeeds", func() {
 			rec := httptest.NewRecorder()
-			req := prepareRequest(http.MethodPost, "/v1/clinics", "./test/serviceaccount_fixtures/01_create_clinic.json")
+			req := prepareRequest(http.MethodPost, "/v1/clinics", "./test/common_fixtures/01_create_clinic.json")
 			asClinician(req)
 
 			server.ServeHTTP(rec, req)
@@ -55,7 +56,7 @@ var _ = Describe("Service Account Integration Test", Ordered, func() {
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 
-			var clinicians client.Clinicians
+			var clinicians client.CliniciansV1
 			Expect(json.NewDecoder(rec.Result().Body).Decode(&clinicians)).To(Succeed())
 			Expect(clinicians).To(ContainElement(MatchFields(IgnoreExtras, Fields{
 				"Id": PointTo(Equal(test.TestServiceAccountUserId)),

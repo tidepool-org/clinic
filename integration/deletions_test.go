@@ -21,8 +21,8 @@ import (
 )
 
 var _ = Describe("Deletions Test", Ordered, func() {
-	var clinic client.Clinic
-	var clinician client.Clinician
+	var clinic client.ClinicV1
+	var clinician client.ClinicianV1
 
 	Describe("Create a clinic", func() {
 		It("Succeeds", func() {
@@ -83,7 +83,7 @@ var _ = Describe("Deletions Test", Ordered, func() {
 	})
 
 	Describe("Delete Patient", func() {
-		var patient client.Patient
+		var patient client.PatientV1
 
 		It("Returns the patient", func() {
 			endpoint := fmt.Sprintf("/v1/clinics/%v/patients?search=%s", *clinic.Id, "0000000001")
@@ -98,7 +98,7 @@ var _ = Describe("Deletions Test", Ordered, func() {
 			body, err := io.ReadAll(rec.Result().Body)
 			Expect(err).ToNot(HaveOccurred())
 
-			response := client.PatientsResponse{}
+			response := client.PatientsResponseV1{}
 			Expect(json.Unmarshal(body, &response)).To(Succeed())
 			Expect(response.Data).ToNot(BeNil())
 			Expect(response.Meta).ToNot(BeNil())

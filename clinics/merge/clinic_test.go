@@ -7,6 +7,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
@@ -20,129 +28,214 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/go-common/clients/shoreline"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx"
-	"go.uber.org/fx/fxtest"
-	"go.uber.org/mock/gomock"
-	"go.uber.org/zap"
 )
 
+type ClinicMergeTest struct {
+	cliniciansService clinicians.Service
+	clinicManager     manager.Manager
+	clinicsService    clinics.Service
+	patientsService   patients.Service
+	userService       *patientsTest.MockUserService
+	ctrl              *gomock.Controller
+	app               *fxtest.App
+
+	plan     merge.ClinicMergePlan
+	planId   primitive.ObjectID
+	executor *merge.ClinicPlanExecutor
+	planner  merge.Planner[merge.ClinicMergePlan]
+	db       *mongo.Database
+
+	source                       clinics.Clinic
+	sourceAdmin                  clinicians.Clinician
+	sourcePatients               []patients.Patient
+	target                       clinics.Clinic
+	targetAdmin                  clinicians.Clinician
+	targetPatientsWithDuplicates map[string]patients.Patient
+	targetPatients               []patients.Patient
+}
+
+func NewClinicMergeTest() *ClinicMergeTest {
+	return &ClinicMergeTest{}
+}
+
+func (t *ClinicMergeTest) Init(params mergeTest.Params) {
+	tb := GinkgoT()
+	t.ctrl = gomock.NewController(tb)
+
+	t.app = fxtest.New(tb,
+		fx.NopLogger,
+		fx.Provide(
+			zap.NewNop,
+			logger.Suggar,
+			dbTest.GetTestDatabase,
+			func(database *mongo.Database) *mongo.Client {
+				t.db = database
+				return database.Client()
+			},
+			func() patients.UserService {
+				return patientsTest.NewMockUserService(t.ctrl)
+			},
+			patientsTest.NewMockUserService,
+			config.NewConfig,
+			clinics.NewRepository,
+			clinicians.NewRepository,
+			clinicians.NewService,
+			patients.NewRepository,
+			patients.NewService,
+			patients.NewCustodialService,
+			clinics.NewShareCodeGenerator,
+			manager.NewManager,
+		),
+		fx.Invoke(func(ex merge.ClinicPlanExecutor, cliniciansSvc clinicians.Service, clinicsSvc clinics.Service, patientsSvc patients.Service, cManager manager.Manager, userSvc patients.UserService) {
+			t.cliniciansService = cliniciansSvc
+			t.clinicsService = clinicsSvc
+			t.executor = &ex
+			t.patientsService = patientsSvc
+			t.userService = userSvc.(*patientsTest.MockUserService)
+			t.clinicManager = cManager
+		}),
+	)
+	t.app.RequireStart()
+
+	data := mergeTest.RandomData(params)
+
+	t.sourceAdmin = data.SourceAdmin
+	t.sourcePatients = data.SourcePatients
+	t.targetAdmin = data.TargetAdmin
+	t.targetPatients = data.TargetPatients
+	t.targetPatientsWithDuplicates = data.TargetPatientsWithDuplicates
+
+	summaryPlaceholder := &patients.Summary{
+		CGM: &patients.PatientCGMStats{
+			Config:  patients.PatientSummaryConfig{},
+			Dates:   patients.PatientSummaryDates{},
+			Periods: patients.PatientCGMPeriods{},
+		},
+	}
+	t.sourcePatients[0].Summary = summaryPlaceholder
+	t.targetPatients[0].Summary = summaryPlaceholder
+
+	t.source = createClinic(t.userService, t.clinicManager, data.Source, data.SourceAdmin)
+	t.target = createClinic(t.userService, t.clinicManager, data.Target, data.TargetAdmin)
+
+	if params.UniquePatientCount > clinics.PatientCountSettingsHardLimitPatientCountDefault {
+		ctx := context.Background()
+		pcs := &clinics.PatientCountSettings{
+			HardLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
+			SoftLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
+		}
+		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.source.Id.Hex(), pcs)).To(Succeed())
+		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.target.Id.Hex(), pcs)).To(Succeed())
+	}
+
+	for _, p := range t.sourcePatients {
+		p.ClinicId = t.source.Id
+		_, err := t.patientsService.Create(context.Background(), p)
+		Expect(err).ToNot(HaveOccurred())
+	}
+	for _, p := range t.targetPatients {
+		p.ClinicId = t.target.Id
+		_, err := t.patientsService.Create(context.Background(), p)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	t.planner = merge.NewClinicMergePlanner(t.clinicsService, t.patientsService, t.cliniciansService, data.Source.Id.Hex(), data.Target.Id.Hex())
+
+}
+
 var _ = Describe("New Clinic Merge Planner", Ordered, func() {
-	var cliniciansService clinicians.Service
-	var clinicManager manager.Manager
-	var clinicsService clinics.Service
-	var patientsService patients.Service
-	var userService *patientsTest.MockUserService
-	var ctrl *gomock.Controller
-	var app *fxtest.App
-
-	var plan merge.ClinicMergePlan
-	var planId primitive.ObjectID
-	var executor *merge.ClinicPlanExecutor
-	var planner merge.Planner[merge.ClinicMergePlan]
-	var db *mongo.Database
-
-	var source clinics.Clinic
-	var sourceAdmin clinicians.Clinician
-	var sourcePatients []patients.Patient
-	var target clinics.Clinic
-	var targetAdmin clinicians.Clinician
-	var targetPatientsWithDuplicates map[string]patients.Patient
-	var targetPatients []patients.Patient
+	var t *ClinicMergeTest
+	var params = mergeTest.Params{
+		UniquePatientCount:           patientCount,
+		DuplicateAccountsCount:       duplicateAccountsCount,
+		LikelyDuplicateAccountsCount: likelyDuplicateAccountsCount,
+		NameOnlyMatchAccountsCount:   nameOnlyMatchAccountsCount,
+		MrnOnlyMatchAccountsCount:    mrnOnlyMatchAccountsCount,
+	}
 
 	BeforeAll(func() {
-		tb := GinkgoT()
-		ctrl = gomock.NewController(tb)
-		app = fxtest.New(tb,
-			fx.NopLogger,
-			fx.Provide(
-				zap.NewNop,
-				logger.Suggar,
-				dbTest.GetTestDatabase,
-				func(database *mongo.Database) *mongo.Client {
-					db = database
-					return database.Client()
-				},
-				func() patients.UserService {
-					return patientsTest.NewMockUserService(ctrl)
-				},
-				patientsTest.NewMockUserService,
-				config.NewConfig,
-				clinics.NewRepository,
-				clinicians.NewRepository,
-				clinicians.NewService,
-				patients.NewRepository,
-				patients.NewService,
-				patients.NewCustodialService,
-				clinics.NewShareCodeGenerator,
-				manager.NewManager,
-			),
-			fx.Invoke(func(ex merge.ClinicPlanExecutor, cliniciansSvc clinicians.Service, clinicsSvc clinics.Service, patientsSvc patients.Service, cManager manager.Manager, userSvc patients.UserService) {
-				cliniciansService = cliniciansSvc
-				clinicsService = clinicsSvc
-				executor = &ex
-				patientsService = patientsSvc
-				userService = userSvc.(*patientsTest.MockUserService)
-				clinicManager = cManager
-			}),
-		)
-		app.RequireStart()
-
-		data := mergeTest.RandomData(mergeTest.Params{
-			PatientCount:                 patientCount,
-			DuplicateAccountsCount:       duplicateAccountsCount,
-			LikelyDuplicateAccountsCount: likelyDuplicateAccountsCount,
-			NameOnlyMatchAccountsCount:   nameOnlyMatchAccountsCount,
-			MrnOnlyMatchAccountsCount:    mrnOnlyMatchAccountsCount,
-		})
-
-		sourceAdmin = data.SourceAdmin
-		sourcePatients = data.SourcePatients
-		targetAdmin = data.TargetAdmin
-		targetPatients = data.TargetPatients
-		targetPatientsWithDuplicates = data.TargetPatientsWithDuplicates
-
-		source = createClinic(userService, clinicManager, data.Source, data.SourceAdmin)
-		target = createClinic(userService, clinicManager, data.Target, data.TargetAdmin)
-
-		for _, p := range sourcePatients {
-			p.ClinicId = source.Id
-			_, err := patientsService.Create(context.Background(), p)
-			Expect(err).ToNot(HaveOccurred())
-		}
-		for _, p := range targetPatients {
-			p.ClinicId = target.Id
-			_, err := patientsService.Create(context.Background(), p)
-			Expect(err).ToNot(HaveOccurred())
-		}
-
-		planner = merge.NewClinicMergePlanner(clinicsService, patientsService, cliniciansService, data.Source.Id.Hex(), data.Target.Id.Hex())
-
+		t = NewClinicMergeTest()
+		t.Init(params)
 	})
 
 	AfterAll(func() {
-		app.RequireStop()
+		t.app.RequireStop()
 	})
 
 	It("successfully generates the plan", func() {
 		var err error
-		plan, err = planner.Plan(context.Background())
+		t.plan, err = t.planner.Plan(context.Background())
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("doesn't remove patient summaries", func() {
+		// Summaries should only be removed just before persistence. Removing them too early
+		// might preclude information from them appearing in generated merge reports.
+		sourceFound := false
+		targetFound := false
+		for _, p := range t.plan.PatientPlans {
+			if p.SourcePatient != nil && p.SourcePatient.Summary != nil {
+				sourceFound = true
+				continue
+			}
+			if p.TargetPatient != nil && p.TargetPatient.Summary != nil {
+				targetFound = true
+				continue
+			}
+			if targetFound && sourceFound {
+				break
+			}
+		}
+		Expect(sourceFound).To(BeTrue())
+		Expect(targetFound).To(BeTrue())
+	})
+
+	It("reverts the changes on failure", func() {
+		// Force a failure by changing a single clinician plan to fail
+		originalAction := t.plan.ClinicianPlans[0].ClinicianAction
+		t.plan.ClinicianPlans[0].ClinicianAction = "INVALID"
+		targetClinicId := t.target.Id.Hex()
+
+		var err error
+		t.planId, err = t.executor.Execute(context.Background(), t.plan)
+		Expect(err).To(HaveOccurred())
+
+		// Clinician plans are executed after patients plans so any patients that were moved during the merge
+		// should not be part of the target clinic if the merge transaction was rolled back
+		count := 0
+		for _, plan := range t.plan.PatientPlans {
+			if plan.PatientAction != merge.PatientActionMove {
+				continue
+			}
+
+			filter := patients.Filter{
+				UserId:   plan.SourcePatient.UserId,
+				ClinicId: &targetClinicId,
+			}
+			page := store.DefaultPagination().WithLimit(2)
+			result, err := t.patientsService.List(context.Background(), &filter, page, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result.MatchingCount).To(Equal(0))
+
+			count++
+		}
+		Expect(count).To(BeNumerically(">", 0))
+
+		// Restore the value of the clinician action to make sure the plan can be executed successfully
+		t.plan.ClinicianPlans[0].ClinicianAction = originalAction
 	})
 
 	It("successfully executes the plan", func() {
 		var err error
-		planId, err = executor.Execute(context.Background(), plan)
+		t.planId, err = t.executor.Execute(context.Background(), t.plan)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("moves the source patients to the target clinic", func() {
-		clinicId := target.Id.Hex()
+		clinicId := t.target.Id.Hex()
 		filter := patients.Filter{ClinicId: &clinicId}
 		page := store.DefaultPagination().WithLimit(100000)
-		result, err := patientsService.List(context.Background(), &filter, page, nil)
+		result, err := t.patientsService.List(context.Background(), &filter, page, nil)
 		Expect(err).ToNot(HaveOccurred())
 
 		ids := make([]string, len(result.Patients))
@@ -150,14 +243,14 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 			ids[i] = *p.UserId
 		}
 
-		expectedLen := len(sourcePatients) + len(targetPatients) - len(targetPatientsWithDuplicates)
+		expectedLen := len(t.sourcePatients) + len(t.targetPatients) - len(t.targetPatientsWithDuplicates)
 		expected := make([]string, 0, expectedLen)
-		for _, p := range sourcePatients {
-			if _, ok := targetPatientsWithDuplicates[*p.UserId]; !ok {
+		for _, p := range t.sourcePatients {
+			if _, ok := t.targetPatientsWithDuplicates[*p.UserId]; !ok {
 				expected = append(expected, *p.UserId)
 			}
 		}
-		for _, p := range targetPatients {
+		for _, p := range t.targetPatients {
 			expected = append(expected, *p.UserId)
 		}
 
@@ -165,10 +258,10 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	})
 
 	It("moves the source clinician to the target clinic and retains the target clinic admin", func() {
-		clinicId := target.Id.Hex()
+		clinicId := t.target.Id.Hex()
 		filter := clinicians.Filter{ClinicId: &clinicId}
 		page := store.DefaultPagination().WithLimit(100000)
-		result, err := cliniciansService.List(context.Background(), &filter, page)
+		result, err := t.cliniciansService.List(context.Background(), &filter, page)
 		Expect(err).ToNot(HaveOccurred())
 
 		ids := make([]string, len(result))
@@ -177,44 +270,44 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 		}
 
 		expected := []string{
-			*sourceAdmin.UserId,
-			*targetAdmin.UserId,
+			*t.sourceAdmin.UserId,
+			*t.targetAdmin.UserId,
 		}
 		Expect(ids).To(ConsistOf(expected))
 	})
 
 	It("removes the source clinic", func() {
-		_, err := clinicsService.Get(context.Background(), source.Id.Hex())
+		_, err := t.clinicsService.Get(context.Background(), t.source.Id.Hex())
 		Expect(errors.Is(err, errs.NotFound)).To(BeTrue())
 	})
 
 	It("merges share codes correctly", func() {
-		result, err := clinicsService.Get(context.Background(), target.Id.Hex())
+		result, err := t.clinicsService.Get(context.Background(), t.target.Id.Hex())
 		Expect(err).ToNot(HaveOccurred())
-		Expect(result.ShareCodes).To(gstruct.PointTo(ConsistOf([]string{*source.CanonicalShareCode, *target.CanonicalShareCode})))
+		Expect(result.ShareCodes).To(gstruct.PointTo(ConsistOf([]string{*t.source.CanonicalShareCode, *t.target.CanonicalShareCode})))
 	})
 
 	It("add clinician user ids to the admins array", func() {
 		expectedAdmins := []string{
-			*sourceAdmin.UserId,
-			*targetAdmin.UserId,
+			*t.sourceAdmin.UserId,
+			*t.targetAdmin.UserId,
 		}
-		result, err := clinicsService.Get(context.Background(), target.Id.Hex())
+		result, err := t.clinicsService.Get(context.Background(), t.target.Id.Hex())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(result.Admins).To(gstruct.PointTo(ConsistOf(expectedAdmins)))
 	})
 
 	It("merge tags correctly", func() {
 		uniqueTags := mapset.NewSet[string]()
-		for _, t := range source.PatientTags {
+		for _, t := range t.source.PatientTags {
 			uniqueTags.Append(t.Name)
 		}
-		for _, t := range target.PatientTags {
+		for _, t := range t.target.PatientTags {
 			uniqueTags.Append(t.Name)
 		}
 		expectedTagNames := uniqueTags.ToSlice()
 
-		result, err := clinicsService.Get(context.Background(), target.Id.Hex())
+		result, err := t.clinicsService.Get(context.Background(), t.target.Id.Hex())
 		Expect(err).ToNot(HaveOccurred())
 
 		resultingTagNames := make([]string, 0, len(result.PatientTags))
@@ -226,37 +319,37 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	})
 
 	It("contains plan for each source tag", func() {
-		for _, tag := range source.PatientTags {
+		for _, tag := range t.source.PatientTags {
 			expectedCount := 1
-			if clinicHasTagWithName(target, tag.Name) {
+			if clinicHasTagWithName(t.target, tag.Name) {
 				expectedCount = 2
 			}
-			hasMergePlan(db, bson.M{
-				"planId":              planId,
-				"type":                "tag",
-				"plan.name":           tag.Name,
+			hasMergePlan(t.db, bson.M{
+				"planId":    t.planId,
+				"type":      "tag",
+				"plan.name": tag.Name,
 			}, expectedCount)
 		}
 	})
 
 	It("contains plan for each target tag", func() {
-		for _, tag := range target.PatientTags {
+		for _, tag := range t.target.PatientTags {
 			expectedCount := 1
-			if clinicHasTagWithName(source, tag.Name) {
+			if clinicHasTagWithName(t.source, tag.Name) {
 				expectedCount = 2
 			}
-			hasMergePlan(db, bson.M{
-				"planId":              planId,
-				"type":                "tag",
-				"plan.name":           tag.Name,
+			hasMergePlan(t.db, bson.M{
+				"planId":    t.planId,
+				"type":      "tag",
+				"plan.name": tag.Name,
 			}, expectedCount)
 		}
 	})
 
 	It("contains plan for each source patient", func() {
-		for _, patient := range sourcePatients {
-			hasMergePlan(db, bson.M{
-				"planId":                    planId,
+		for _, patient := range t.sourcePatients {
+			hasMergePlan(t.db, bson.M{
+				"planId":                    t.planId,
 				"type":                      "patient",
 				"plan.sourcePatient.userId": *patient.UserId,
 			}, 1)
@@ -264,28 +357,50 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 	})
 
 	It("contains plan for source admin", func() {
-		hasMergePlan(db, bson.M{
-			"planId":                planId,
+		hasMergePlan(t.db, bson.M{
+			"planId":                t.planId,
 			"type":                  "clinician",
-			"plan.clinician.userId": *sourceAdmin.UserId,
+			"plan.clinician.userId": *t.sourceAdmin.UserId,
 		}, 1)
 	})
 
 	It("contains plan for target admin", func() {
-		hasMergePlan(db, bson.M{
-			"planId":                planId,
+		hasMergePlan(t.db, bson.M{
+			"planId":                t.planId,
 			"type":                  "clinician",
-			"plan.clinician.userId": *targetAdmin.UserId,
+			"plan.clinician.userId": *t.targetAdmin.UserId,
 		}, 1)
 	})
 
 	It("contains plan for clinics", func() {
-		hasMergePlan(db, bson.M{
-			"planId":          planId,
+		hasMergePlan(t.db, bson.M{
+			"planId":          t.planId,
 			"type":            "clinic",
-			"plan.source._id": source.Id,
-			"plan.target._id": target.Id,
+			"plan.source._id": t.source.Id,
+			"plan.target._id": t.target.Id,
 		}, 1)
+	})
+})
+
+var _ = Describe("New Clinic Merge Planner (w/ Large patient populations)", Ordered, func() {
+	var t *ClinicMergeTest
+	var params = mergeTest.Params{UniquePatientCount: 1025}
+
+	BeforeAll(func() {
+		t = NewClinicMergeTest()
+		t.Init(params)
+	})
+
+	AfterAll(func() {
+		t.app.RequireStop()
+	})
+
+	It("successfully handles multiple passes", func() {
+		var err error
+
+		t.plan, err = t.planner.Plan(context.Background())
+		Expect(err).ToNot(HaveOccurred())
+		Expect(t.plan.PatientPlans.GetResultingPatientsCount()).To(Equal(2050))
 	})
 })
 

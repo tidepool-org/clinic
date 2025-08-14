@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"go.uber.org/zap"
 	"strings"
 	"time"
@@ -15,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -71,16 +71,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				SetUnique(true).
 				SetName("UniqueCanonicalShareCode"),
 		},
-		{
-			Keys: bson.D{
-				{Key: "ehrSettings.sourceId", Value: 1},
-				{Key: "ehrSettings.facility.name", Value: 1},
-			},
-			Options: options.Index().
-				SetUnique(true).
-				SetName("UniqueEHRSourceFacility").
-				SetPartialFilterExpression(bson.D{{"ehrSettings.sourceId", bson.M{"$exists": true}}}),
-		},
 	})
 	return err
 }
@@ -122,9 +112,6 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	}
 	if filter.EHRProvider != nil {
 		selector["ehrSettings.provider"] = filter.EHRProvider
-	}
-	if filter.EHRFacilityName != nil {
-		selector["ehrSettings.facility.name"] = filter.EHRFacilityName
 	}
 	if filter.EHREnabled != nil {
 		selector["ehrSettings.enabled"] = filter.EHREnabled
@@ -531,7 +518,7 @@ func (r *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 			},
 		},
 		"$set": bson.M{
-			"updatedTime":          time.Now(),
+			"updatedTime": time.Now(),
 		},
 	}
 
@@ -542,7 +529,6 @@ func (r *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 
 	return err
 }
-
 
 func (r *repository) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
 	clinic, err := r.Get(ctx, clinicId)

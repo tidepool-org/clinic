@@ -59,6 +59,28 @@ var _ = Describe("Clinicians", func() {
 			Expect(plan.PreventsMerge()).To(BeFalse())
 		})
 
+		It("returns a plan that cannot be executed if target workspace has partial SSO and the source clinician doesn't exist in the target clinic", func() {
+			id := primitive.NewObjectID()
+			clinician := cliniciansTest.RandomClinician()
+			clinician.ClinicId = source.Id
+			clinician.Id = &id
+
+			cliniciansService.EXPECT().
+				Get(gomock.Any(), target.Id.Hex(), *clinician.UserId).
+				Return(nil, clinicians.ErrNotFound)
+
+			target.MembershipRestrictions = []clinics.MembershipRestrictions{
+				{"tidepool.org", "tidepool_idp"},
+			}
+
+			planner := merge.NewSourceClinicianMergePlanner(*clinician, source, target, cliniciansService)
+			plan, err := planner.Plan(context.Background())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(plan.ClinicianAction).To(Equal(merge.ClinicianActionMove))
+			Expect(plan.PreventsMerge()).To(BeTrue())
+			Expect(plan.Errors()).To(ContainElement(merge.ErrorPartialSSOSettingsPreventMovingClinicians))
+		})
+
 		It("returns a plan to merge the clinician if the clinician is a duplicate", func() {
 			id := primitive.NewObjectID()
 			clinician := cliniciansTest.RandomClinician()
@@ -166,7 +188,7 @@ var _ = Describe("Clinicians", func() {
 
 		BeforeEach(func() {
 			collection = test.GetTestDatabase().Collection("clinicians")
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 			defer cancel()
 
 			executor = merge.NewClinicianPlanExecutor(zap.NewNop().Sugar(), test.GetTestDatabase())
@@ -188,7 +210,7 @@ var _ = Describe("Clinicians", func() {
 
 		It("moves clinician from source to target clinics", func() {
 			plan := merge.ClinicianPlan{
-				Clinician: sourceClinician,
+				Clinician:       sourceClinician,
 				ClinicianAction: merge.ClinicianActionMove,
 			}
 			err := executor.Execute(context.Background(), plan, target)
@@ -200,7 +222,7 @@ var _ = Describe("Clinicians", func() {
 
 		It("retains target clinician when action is retain", func() {
 			plan := merge.ClinicianPlan{
-				Clinician: targetClinician,
+				Clinician:       targetClinician,
 				ClinicianAction: merge.ClinicianActionRetain,
 			}
 			err := executor.Execute(context.Background(), plan, target)
@@ -211,7 +233,7 @@ var _ = Describe("Clinicians", func() {
 
 		It("retains target clinician when action is 'merge into'", func() {
 			plan := merge.ClinicianPlan{
-				Clinician: targetClinician,
+				Clinician:       targetClinician,
 				ClinicianAction: merge.ClinicianActionMergeInto,
 			}
 			err := executor.Execute(context.Background(), plan, target)
@@ -222,12 +244,12 @@ var _ = Describe("Clinicians", func() {
 
 		When("there is a duplicate", func() {
 			BeforeEach(func() {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 				defer cancel()
 
 				selector := bson.M{
 					"clinicId": *targetClinician.ClinicId,
-					"userId": *targetClinician.UserId,
+					"userId":   *targetClinician.UserId,
 				}
 				update := bson.M{
 					"$set": bson.M{
@@ -241,7 +263,7 @@ var _ = Describe("Clinicians", func() {
 
 			It("removes clinician from the source clinic", func() {
 				plan := merge.ClinicianPlan{
-					Clinician: sourceClinician,
+					Clinician:       sourceClinician,
 					ClinicianAction: merge.ClinicianActionMerge,
 				}
 				err := executor.Execute(context.Background(), plan, target)
@@ -252,7 +274,7 @@ var _ = Describe("Clinicians", func() {
 
 			It("retains the clinician from the target clinic", func() {
 				plan := merge.ClinicianPlan{
-					Clinician: sourceClinician,
+					Clinician:       sourceClinician,
 					ClinicianAction: merge.ClinicianActionMerge,
 				}
 				err := executor.Execute(context.Background(), plan, target)
@@ -267,7 +289,7 @@ var _ = Describe("Clinicians", func() {
 func clinicianExists(collection *mongo.Collection, clinicId primitive.ObjectID, userId string) bool {
 	count, err := collection.CountDocuments(context.Background(), bson.M{
 		"clinicId": clinicId,
-		"userId": userId,
+		"userId":   userId,
 	})
 	Expect(err).ToNot(HaveOccurred())
 	return count > 0

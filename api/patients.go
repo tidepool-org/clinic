@@ -61,12 +61,19 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewPatientsResponseDto(list))
+	clinicPatientsCount, err := h.Patients.Count(ctx, &patients.Filter{
+		ClinicId:     strp(clinicId),
+	})
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientsResponseDto(list, clinicPatientsCount))
 }
 
 func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
-	dto := Patient{}
+	dto := PatientV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -112,7 +119,7 @@ func (h *Handler) GetPatient(ec echo.Context, clinicId ClinicId, patientId Patie
 
 func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := CreatePatient{}
+	dto := CreatePatientV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -141,16 +148,17 @@ func (h *Handler) CreatePatientFromUser(ec echo.Context, clinicId ClinicId, pati
 
 func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := Patient{}
+	dto := PatientV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
 	update := patients.PatientUpdate{
-		ClinicId:  clinicId,
-		UserId:    patientId,
-		Patient:   NewPatient(dto),
+		ClinicId: clinicId,
+		UserId:   patientId,
+		Patient:  NewPatient(dto),
 	}
+
 	patient, err := h.Patients.Update(ctx, update)
 	if err != nil {
 		return err
@@ -189,39 +197,9 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
-func (h *Handler) SendDexcomConnectRequest(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
-	ctx := ec.Request().Context()
-
-	authData := auth.GetAuthData(ctx)
-	if authData == nil || authData.SubjectId == "" {
-		return &echo.HTTPError{
-			Code:    http.StatusBadRequest,
-			Message: "expected authenticated user id",
-		}
-	}
-	if authData.ServerAccess {
-		return &echo.HTTPError{
-			Code:    http.StatusBadRequest,
-			Message: "expected user access token",
-		}
-	}
-
-	update := patients.LastRequestedDexcomConnectUpdate{
-		ClinicId: clinicId,
-		Time:     time.Now(),
-		UserId:   patientId,
-	}
-	patient, err := h.Patients.UpdateLastRequestedDexcomConnectTime(ctx, &update)
-	if err != nil {
-		return err
-	}
-
-	return ec.JSON(http.StatusOK, NewPatientDto(patient))
-}
-
 func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	dto := PatientPermissions{}
+	dto := PatientPermissionsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -290,15 +268,25 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 
 func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) error {
 	ctx := ec.Request().Context()
-	var dto *PatientSummary
+	var dto *PatientSummaryV1
 	if ec.Request().ContentLength != 0 {
-		dto = &PatientSummary{}
+		dto = &PatientSummaryV1{}
 		if err := ec.Bind(dto); err != nil {
 			return err
 		}
 	}
 
 	err := h.Patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto))
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) DeletePatientSummary(ec echo.Context, summaryId SummaryId) error {
+	ctx := ec.Request().Context()
+	err := h.Patients.DeleteSummaryInAllClinics(ctx, summaryId)
 	if err != nil {
 		return err
 	}
@@ -319,7 +307,7 @@ func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideRepo
 func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	dto := TidepoolUserIds{}
+	dto := TidepoolUserIdsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -341,11 +329,10 @@ func (h *Handler) DeletePatientTagFromClinicPatients(ec echo.Context, clinicId C
 func (h *Handler) AssignPatientTagToClinicPatients(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	dto := TidepoolUserIds{}
+	dto := TidepoolUserIdsV1{}
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
-
 
 	// We pass an empty request body as nil which will target all clinic patients for tag assignment
 	if ec.Request().Body == http.NoBody {
@@ -499,4 +486,30 @@ func (h *Handler) DeletePatientReviews(ec echo.Context, clinicId ClinicId, patie
 	}
 
 	return ec.JSON(http.StatusOK, NewReviewsDto(reviews))
+}
+
+func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId) error {
+	ctx := ec.Request().Context()
+
+	authData := auth.GetAuthData(ctx)
+	if err := authData.AssertAuthenticatedUser(); err != nil {
+		return err
+	}
+
+	provider, err := NewDataProvider(providerId)
+	if err != nil {
+		return err
+	}
+
+	request := patients.ConnectionRequest{
+		ProviderName: provider,
+		CreatedTime:  time.Now(),
+	}
+
+	err = h.Patients.AddProviderConnectionRequest(ctx, clinicId, patientId, request)
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
 }
