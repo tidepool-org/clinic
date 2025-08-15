@@ -4499,6 +4499,10 @@ components:
           example: 2
           x-go-type: int
       required:
+        - min
+        - minDelta
+        - max
+        - maxDelta
         - hasAverageGlucoseMmol
         - hasTimeInTargetPercent
         - hasTimeInTargetRecords
@@ -4508,24 +4512,16 @@ components:
         - hasTimeInVeryHighRecords
         - hasTimeInExtremeHighPercent
         - hasTimeInExtremeHighRecords
+        - hasTimeInAnyHighPercent
+        - hasTimeInAnyHighRecords
         - hasTimeInLowPercent
         - hasTimeInLowRecords
         - hasTimeInVeryLowPercent
         - hasTimeInVeryLowRecords
         - hasTimeInAnyLowPercent
         - hasTimeInAnyLowRecords
-        - hasTimeInAnyHighPercent
-        - hasTimeInAnyHighRecords
         - hasTotalRecords
         - hasAverageDailyRecords
-        - min
-        - minDelta
-        - max
-        - maxDelta
-        - standardDeviation
-        - standardDeviationDelta
-        - coefficientOfVariation
-        - coefficientOfVariationDelta
         - daysWithData
         - daysWithDataDelta
     bgmPeriods.v1:
