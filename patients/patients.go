@@ -3,6 +3,7 @@ package patients
 import (
 	"context"
 	"fmt"
+	"github.com/tidepool-org/clinic/deletions"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -52,11 +53,11 @@ type Service interface {
 	AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error)
 	DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]Review, error)
 	UpdateEmail(ctx context.Context, userId string, email *string) error
-	Remove(ctx context.Context, clinicId string, userId string, deletedByUserId *string) error
+	Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error
 	UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error)
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
-	DeleteFromAllClinics(ctx context.Context, userId string) ([]string, error)
-	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string) (bool, error)
+	DeleteFromAllClinics(ctx context.Context, userId string, metadata deletions.Metadata) ([]string, error)
+	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
@@ -100,13 +101,6 @@ type Patient struct {
 
 func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
-}
-
-type Deletion struct {
-	Id              *primitive.ObjectID `bson:"_id,omitempty"`
-	Patient         Patient             `bson:"patient"`
-	DeletedTime     time.Time           `bson:"deletedTime,omitempty"`
-	DeletedByUserId *string             `bson:"deletedByUserId,omitempty"`
 }
 
 type EHRSubscriptions map[string]EHRSubscription

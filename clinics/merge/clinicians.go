@@ -33,6 +33,8 @@ type ClinicianPlan struct {
 
 	SourceClinicName string `bson:"sourceClinicName"`
 	TargetClinicName string `bson:"targetClinicName"`
+
+	Error *ReportError `bson:"error"`
 }
 
 func (c ClinicianPlan) IsPendingInvite() bool {
@@ -44,10 +46,14 @@ func (c ClinicianPlan) PreventsMerge() bool {
 }
 
 func (c ClinicianPlan) Errors() []ReportError {
-	if c.ClinicianAction == ClinicianActionMove && c.IsPendingInvite() {
-		return []ReportError{ErrorCannotMergeWorkspaceWithPendingInvites}
+	var errs []ReportError
+	if c.Error != nil {
+		errs = append(errs, *c.Error)
 	}
-	return nil
+	if c.ClinicianAction == ClinicianActionMove && c.IsPendingInvite() {
+		errs = append(errs, ErrorCannotMergeWorkspaceWithPendingInvites)
+	}
+	return errs
 }
 
 func (c ClinicianPlan) GetClinicianName() string {
@@ -114,10 +120,10 @@ func NewSourceClinicianMergePlanner(clinician clinicians.Clinician, source, targ
 
 func (s *SourceClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, error) {
 	plan := ClinicianPlan{
-		Clinician:       s.clinician,
-		ClinicianAction: ClinicianActionMove,
-		ResultingRoles:  s.clinician.Roles,
-		Workspaces:      []string{*s.source.Name},
+		Clinician:        s.clinician,
+		ClinicianAction:  ClinicianActionMove,
+		ResultingRoles:   s.clinician.Roles,
+		Workspaces:       []string{*s.source.Name},
 		SourceClinicName: *s.source.Name,
 		TargetClinicName: *s.target.Name,
 	}
@@ -136,6 +142,10 @@ func (s *SourceClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, 
 				plan.ResultingRoles = targetClinician.Roles
 			}
 		}
+	}
+
+	if plan.ClinicianAction == ClinicianActionMove && len(s.target.MembershipRestrictions) > 0 {
+		plan.Error = &ErrorPartialSSOSettingsPreventMovingClinicians
 	}
 
 	return plan, nil
@@ -161,10 +171,10 @@ func NewTargetClinicianMergePlanner(clinician clinicians.Clinician, source, targ
 
 func (s *TargetClinicianMergePlanner) Plan(ctx context.Context) (ClinicianPlan, error) {
 	plan := ClinicianPlan{
-		Clinician:       s.clinician,
-		ClinicianAction: ClinicianActionRetain,
-		ResultingRoles:  s.clinician.Roles,
-		Workspaces:      []string{*s.target.Name},
+		Clinician:        s.clinician,
+		ClinicianAction:  ClinicianActionRetain,
+		ResultingRoles:   s.clinician.Roles,
+		Workspaces:       []string{*s.target.Name},
 		SourceClinicName: *s.source.Name,
 		TargetClinicName: *s.target.Name,
 	}
