@@ -4,10 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx/fxtest"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/patients"
@@ -15,13 +24,6 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx/fxtest"
-	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 var DemoPatientId = "demo"
@@ -206,9 +208,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patient.Mrn
 				updated, err := repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).To(HaveOccurred())
 				Expect(updated).To(BeNil())
@@ -235,9 +237,9 @@ var _ = Describe("Patients Repository", func() {
 
 				result.Mrn = patientsTest.RandomPatient().Mrn
 				result, err = repo.Update(context.Background(), patients.PatientUpdate{
-					ClinicId:  result.ClinicId.Hex(),
-					UserId:    *result.UserId,
-					Patient:   *result,
+					ClinicId: result.ClinicId.Hex(),
+					UserId:   *result.UserId,
+					Patient:  *result,
 				})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
@@ -307,6 +309,8 @@ var _ = Describe("Patients Repository", func() {
 					IsMigrated:       randomPatient.IsMigrated,
 					DataSources:      update.Patient.DataSources,
 					EHRSubscriptions: update.Patient.EHRSubscriptions,
+					GlycemicRanges:   update.Patient.GlycemicRanges,
+					DiagnosisType:    update.Patient.DiagnosisType,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -353,6 +357,8 @@ var _ = Describe("Patients Repository", func() {
 					IsMigrated:       randomPatient.IsMigrated,
 					DataSources:      randomPatient.DataSources,
 					EHRSubscriptions: randomPatient.EHRSubscriptions,
+					GlycemicRanges:   randomPatient.GlycemicRanges,
+					DiagnosisType:    randomPatient.DiagnosisType,
 				}
 				matchPatientFields = patientFieldsMatcher(expected)
 			})
@@ -1603,5 +1609,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
 		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
+		"GlycemicRanges":                 Equal(patient.GlycemicRanges),
+		"DiagnosisType":                  Equal(patient.DiagnosisType),
 	})
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime/types"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
@@ -15,7 +16,6 @@ import (
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func NewClinicWithDefaults(c ClinicV1) *clinics.Clinic {
@@ -201,6 +201,14 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 			CreatedTime:  patient.LastRequestedDexcomConnectTime,
 		}}
 	}
+	if patient.GlycemicRanges != "" {
+		glycemicRanges := GlycemicRangesV1(patient.GlycemicRanges)
+		dto.GlycemicRanges = &glycemicRanges
+	}
+	if patient.DiagnosisType != "" {
+		diagnosisType := DiagnosisTypeV1(patient.DiagnosisType)
+		dto.DiagnosisType = &diagnosisType
+	}
 
 	return dto
 }
@@ -263,6 +271,14 @@ func NewPatient(dto PatientV1) patients.Patient {
 		}
 		patient.DataSources = &dataSources
 	}
+
+	if dto.GlycemicRanges != nil {
+		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+	}
+	if dto.DiagnosisType != nil {
+		patient.DiagnosisType = string(*dto.DiagnosisType)
+	}
+
 	return patient
 }
 
@@ -289,6 +305,12 @@ func NewPatientFromCreate(dto CreatePatientV1) patients.Patient {
 	if dto.Tags != nil {
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
+	}
+	if dto.GlycemicRanges != nil {
+		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+	}
+	if dto.DiagnosisType != nil {
+		patient.DiagnosisType = string(*dto.DiagnosisType)
 	}
 	return patient
 }
