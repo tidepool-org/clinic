@@ -1283,8 +1283,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		},
 	}
 
-	limit := 50
-	exclusions := make([]primitive.ObjectID, 0, 50)
+	limit := 250
+	exclusions := make([]primitive.ObjectID, 0, limit)
 	tide := Tide{
 		Config: TideConfig{
 			ClinicId: clinicId,
@@ -1399,7 +1399,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		opts := options.Find()
-		opts.SetLimit(int64(25))
+		opts.SetLimit(int64(100))
 
 		opts.SetSort(bson.D{
 			{"summary.cgmStats.dates.lastData", 1},
