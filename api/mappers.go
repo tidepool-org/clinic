@@ -814,7 +814,7 @@ func NewPatientCountLimitDto(limit *clinics.PatientCountLimit) *PatientCountLimi
 	return dto
 }
 
-func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.Sort, error) {
+func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil
 	}
@@ -829,11 +829,6 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing period", errors.BadRequest)
 	} else if *period != "1d" && *period != "7d" && *period != "14d" && *period != "30d" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid period", errors.BadRequest)
-	}
-
-	periodVersion := "periods"
-	if offset != nil && *offset == true {
-		periodVersion = "offsetPeriods"
 	}
 
 	result := store.Sort{}
@@ -870,145 +865,151 @@ func ParseSort(sort *Sort, typ *string, period *string, offset *bool) ([]*store.
 		"hasOutdatedSince": "summary." + *typ + "Stats.dates.hasOutdatedSince",
 		"outdatedSince":    "summary." + *typ + "Stats.dates.outdatedSince",
 
-		"hasAverageGlucoseMmol":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasAverageGlucoseMmol",
-		"averageGlucoseMmol":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageGlucoseMmol",
-		"averageGlucoseMmolDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageGlucoseMmolDelta",
+		"min": "summary." + *typ + "Stats.periods." + *period + ".min",
+		"max": "summary." + *typ + "Stats.periods." + *period + ".max",
 
-		"hasGlucoseManagementIndicator":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasGlucoseManagementIndicator",
-		"glucoseManagementIndicator":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".glucoseManagementIndicator",
-		"glucoseManagementIndicatorDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".glucoseManagementIndicatorDelta",
+		"minDelta": "summary." + *typ + "Stats.periods." + *period + ".minDelta",
+		"maxDelta": "summary." + *typ + "Stats.periods." + *period + ".maxDelta",
 
-		"hasTimeCGMUsePercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeCGMUsePercent",
-		"timeCGMUsePercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUsePercent",
-		"timeCGMUsePercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUsePercentDelta",
+		"hasAverageGlucoseMmol":   "summary." + *typ + "Stats.periods." + *period + ".hasAverageGlucoseMmol",
+		"averageGlucoseMmol":      "summary." + *typ + "Stats.periods." + *period + ".averageGlucoseMmol",
+		"averageGlucoseMmolDelta": "summary." + *typ + "Stats.periods." + *period + ".averageGlucoseMmolDelta",
 
-		"hasTimeCGMUseRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeCGMUseRecords",
-		"timeCGMUseRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUseRecords",
-		"timeCGMUseRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUseRecordsDelta",
+		"hasGlucoseManagementIndicator":   "summary." + *typ + "Stats.periods." + *period + ".hasGlucoseManagementIndicator",
+		"glucoseManagementIndicator":      "summary." + *typ + "Stats.periods." + *period + ".glucoseManagementIndicator",
+		"glucoseManagementIndicatorDelta": "summary." + *typ + "Stats.periods." + *period + ".glucoseManagementIndicatorDelta",
 
-		"hasTimeCGMUseMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeCGMUseMinutes",
-		"timeCGMUseMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUseMinutes",
-		"timeCGMUseMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeCGMUseMinutesDelta",
+		"hasTimeCGMUsePercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUsePercent",
+		"timeCGMUsePercent":      "summary." + *typ + "Stats.periods." + *period + ".timeCGMUsePercent",
+		"timeCGMUsePercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeCGMUsePercentDelta",
 
-		"hasTimeInTargetPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInTargetPercent",
-		"timeInTargetPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetPercent",
-		"timeInTargetPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetPercentDelta",
+		"hasTimeCGMUseRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUseRecords",
+		"timeCGMUseRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeCGMUseRecords",
+		"timeCGMUseRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeCGMUseRecordsDelta",
 
-		"hasTimeInTargetRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInTargetRecords",
-		"timeInTargetRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetRecords",
-		"timeInTargetRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetRecordsDelta",
+		"hasTimeCGMUseMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeCGMUseMinutes",
+		"timeCGMUseMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeCGMUseMinutes",
+		"timeCGMUseMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeCGMUseMinutesDelta",
 
-		"hasTimeInTargetMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInTargetMinutes",
-		"timeInTargetMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetMinutes",
-		"timeInTargetMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInTargetMinutesDelta",
+		"hasTimeInTargetPercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetPercent",
+		"timeInTargetPercent":      "summary." + *typ + "Stats.periods." + *period + ".timeInTargetPercent",
+		"timeInTargetPercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInTargetPercentDelta",
 
-		"hasTimeInLowPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInLowPercent",
-		"timeInLowPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowPercent",
-		"timeInLowPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowPercentDelta",
+		"hasTimeInTargetRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetRecords",
+		"timeInTargetRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeInTargetRecords",
+		"timeInTargetRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInTargetRecordsDelta",
 
-		"hasTimeInLowRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInLowRecords",
-		"timeInLowRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowRecords",
-		"timeInLowRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowRecordsDelta",
+		"hasTimeInTargetMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInTargetMinutes",
+		"timeInTargetMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeInTargetMinutes",
+		"timeInTargetMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInTargetMinutesDelta",
 
-		"hasTimeInLowMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInLowMinutes",
-		"timeInLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowMinutes",
-		"timeInLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInLowMinutesDelta",
+		"hasTimeInLowPercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowPercent",
+		"timeInLowPercent":      "summary." + *typ + "Stats.periods." + *period + ".timeInLowPercent",
+		"timeInLowPercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInLowPercentDelta",
 
-		"hasTimeInVeryLowPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryLowPercent",
-		"timeInVeryLowPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowPercent",
-		"timeInVeryLowPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowPercentDelta",
+		"hasTimeInLowRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowRecords",
+		"timeInLowRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeInLowRecords",
+		"timeInLowRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInLowRecordsDelta",
 
-		"hasTimeInVeryLowRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryLowRecords",
-		"timeInVeryLowRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowRecords",
-		"timeInVeryLowRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowRecordsDelta",
+		"hasTimeInLowMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInLowMinutes",
+		"timeInLowMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeInLowMinutes",
+		"timeInLowMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInLowMinutesDelta",
 
-		"hasTimeInVeryLowMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryLowMinutes",
-		"timeInVeryLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowMinutes",
-		"timeInVeryLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryLowMinutesDelta",
+		"hasTimeInVeryLowPercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowPercent",
+		"timeInVeryLowPercent":      "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowPercent",
+		"timeInVeryLowPercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowPercentDelta",
 
-		"hasTimeInAnyLowPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowPercent",
-		"timeInAnyLowPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowPercent",
-		"timeInAnyLowPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowPercentDelta",
+		"hasTimeInVeryLowRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowRecords",
+		"timeInVeryLowRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowRecords",
+		"timeInVeryLowRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowRecordsDelta",
 
-		"hasTimeInAnyLowRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowRecords",
-		"timeInAnyLowRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowRecords",
-		"timeInAnyLowRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowRecordsDelta",
+		"hasTimeInVeryLowMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryLowMinutes",
+		"timeInVeryLowMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowMinutes",
+		"timeInVeryLowMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInVeryLowMinutesDelta",
 
-		"hasTimeInAnyLowMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyLowMinutes",
-		"timeInAnyLowMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowMinutes",
-		"timeInAnyLowMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyLowMinutesDelta",
+		"hasTimeInAnyLowPercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInAnyLowPercent",
+		"timeInAnyLowPercent":      "summary." + *typ + "Stats.periods." + *period + ".timeInAnyLowPercent",
+		"timeInAnyLowPercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInAnyLowPercentDelta",
 
-		"hasTimeInHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInHighPercent",
-		"timeInHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighPercent",
-		"timeInHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighPercentDelta",
+		"hasTimeInAnyLowRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInAnyLowRecords",
+		"timeInAnyLowRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeInAnyLowRecords",
+		"timeInAnyLowRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInAnyLowRecordsDelta",
 
-		"hasTimeInHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInHighMinutes",
-		"timeInHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighMinutes",
-		"timeInHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighMinutesDelta",
+		"hasTimeInAnyLowMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInAnyLowMinutes",
+		"timeInAnyLowMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeInAnyLowMinutes",
+		"timeInAnyLowMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInAnyLowMinutesDelta",
 
-		"hasTimeInHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInHighRecords",
-		"timeInHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighRecords",
-		"timeInHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInHighRecordsDelta",
+		"hasTimeInHighPercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighPercent",
+		"timeInHighPercent":      "summary." + *typ + "Stats.periods." + *period + ".timeInHighPercent",
+		"timeInHighPercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInHighPercentDelta",
 
-		"hasTimeInVeryHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryHighPercent",
-		"timeInVeryHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighPercent",
-		"timeInVeryHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighPercentDelta",
+		"hasTimeInHighMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighMinutes",
+		"timeInHighMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeInHighMinutes",
+		"timeInHighMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInHighMinutesDelta",
 
-		"hasTimeInVeryHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryHighRecords",
-		"timeInVeryHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighRecords",
-		"timeInVeryHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighRecordsDelta",
+		"hasTimeInHighRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInHighRecords",
+		"timeInHighRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeInHighRecords",
+		"timeInHighRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInHighRecordsDelta",
 
-		"hasTimeInVeryHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInVeryHighMinutes",
-		"timeInVeryHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutes",
-		"timeInVeryHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInVeryHighMinutesDelta",
+		"hasTimeInVeryHighPercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighPercent",
+		"timeInVeryHighPercent":      "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighPercent",
+		"timeInVeryHighPercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighPercentDelta",
 
-		"hasTimeInExtremeHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInExtremeHighPercent",
-		"timeInExtremeHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighPercent",
-		"timeInExtremeHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighPercentDelta",
+		"hasTimeInVeryHighRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighRecords",
+		"timeInVeryHighRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighRecords",
+		"timeInVeryHighRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighRecordsDelta",
 
-		"hasTimeInExtremeHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInExtremeHighRecords",
-		"timeInExtremeHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighRecords",
-		"timeInExtremeHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighRecordsDelta",
+		"hasTimeInVeryHighMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInVeryHighMinutes",
+		"timeInVeryHighMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighMinutes",
+		"timeInVeryHighMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInVeryHighMinutesDelta",
 
-		"hasTimeInExtremeHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInExtremeHighMinutes",
-		"timeInExtremeHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighMinutes",
-		"timeInExtremeHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInExtremeHighMinutesDelta",
+		"hasTimeInExtremeHighPercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInExtremeHighPercent",
+		"timeInExtremeHighPercent":      "summary." + *typ + "Stats.periods." + *period + ".timeInExtremeHighPercent",
+		"timeInExtremeHighPercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInExtremeHighPercentDelta",
 
-		"hasTimeInAnyHighPercent":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighPercent",
-		"timeInAnyHighPercent":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighPercent",
-		"timeInAnyHighPercentDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighPercentDelta",
+		"hasTimeInExtremeHighRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInExtremeHighRecords",
+		"timeInExtremeHighRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeInExtremeHighRecords",
+		"timeInExtremeHighRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInExtremeHighRecordsDelta",
 
-		"hasTimeInAnyHighRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighRecords",
-		"timeInAnyHighRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighRecords",
-		"timeInAnyHighRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighRecordsDelta",
+		"hasTimeInExtremeHighMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInExtremeHighMinutes",
+		"timeInExtremeHighMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeInExtremeHighMinutes",
+		"timeInExtremeHighMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInExtremeHighMinutesDelta",
 
-		"hasTimeInAnyHighMinutes":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTimeInAnyHighMinutes",
-		"timeInAnyHighMinutes":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighMinutes",
-		"timeInAnyHighMinutesDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".timeInAnyHighMinutesDelta",
+		"hasTimeInAnyHighPercent":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInAnyHighPercent",
+		"timeInAnyHighPercent":      "summary." + *typ + "Stats.periods." + *period + ".timeInAnyHighPercent",
+		"timeInAnyHighPercentDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInAnyHighPercentDelta",
 
-		"hasAverageDailyRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasAverageDailyRecords",
-		"averageDailyRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageDailyRecords",
-		"averageDailyRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".averageDailyRecordsDelta",
+		"hasTimeInAnyHighRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInAnyHighRecords",
+		"timeInAnyHighRecords":      "summary." + *typ + "Stats.periods." + *period + ".timeInAnyHighRecords",
+		"timeInAnyHighRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInAnyHighRecordsDelta",
 
-		"hasTotalRecords":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasTotalRecords",
-		"totalRecords":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".totalRecords",
-		"totalRecordsDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".totalRecordsDelta",
+		"hasTimeInAnyHighMinutes":   "summary." + *typ + "Stats.periods." + *period + ".hasTimeInAnyHighMinutes",
+		"timeInAnyHighMinutes":      "summary." + *typ + "Stats.periods." + *period + ".timeInAnyHighMinutes",
+		"timeInAnyHighMinutesDelta": "summary." + *typ + "Stats.periods." + *period + ".timeInAnyHighMinutesDelta",
 
-		"hasHoursWithData":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasHoursWithData",
-		"hoursWithData":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hoursWithData",
-		"hoursWithDataDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hoursWithDataDelta",
+		"hasAverageDailyRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasAverageDailyRecords",
+		"averageDailyRecords":      "summary." + *typ + "Stats.periods." + *period + ".averageDailyRecords",
+		"averageDailyRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".averageDailyRecordsDelta",
 
-		"hasDaysWithData":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasDaysWithData",
-		"daysWithData":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".daysWithData",
-		"daysWithDataDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".daysWithDataDelta",
+		"hasTotalRecords":   "summary." + *typ + "Stats.periods." + *period + ".hasTotalRecords",
+		"totalRecords":      "summary." + *typ + "Stats.periods." + *period + ".totalRecords",
+		"totalRecordsDelta": "summary." + *typ + "Stats.periods." + *period + ".totalRecordsDelta",
 
-		"hasStandardDeviation":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasStandardDeviation",
-		"standardDeviation":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".standardDeviation",
-		"standardDeviationDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".standardDeviationDelta",
+		"hasHoursWithData":   "summary." + *typ + "Stats.periods." + *period + ".hasHoursWithData",
+		"hoursWithData":      "summary." + *typ + "Stats.periods." + *period + ".hoursWithData",
+		"hoursWithDataDelta": "summary." + *typ + "Stats.periods." + *period + ".hoursWithDataDelta",
 
-		"hasCoefficientOfVariation":   "summary." + *typ + "Stats." + periodVersion + "." + *period + ".hasCoefficientOfVariation",
-		"coefficientOfVariation":      "summary." + *typ + "Stats." + periodVersion + "." + *period + ".coefficientOfVariation",
-		"coefficientOfVariationDelta": "summary." + *typ + "Stats." + periodVersion + "." + *period + ".coefficientOfVariationDelta",
+		"hasDaysWithData":   "summary." + *typ + "Stats.periods." + *period + ".hasDaysWithData",
+		"daysWithData":      "summary." + *typ + "Stats.periods." + *period + ".daysWithData",
+		"daysWithDataDelta": "summary." + *typ + "Stats.periods." + *period + ".daysWithDataDelta",
+
+		"hasStandardDeviation":   "summary." + *typ + "Stats.periods." + *period + ".hasStandardDeviation",
+		"standardDeviation":      "summary." + *typ + "Stats.periods." + *period + ".standardDeviation",
+		"standardDeviationDelta": "summary." + *typ + "Stats.periods." + *period + ".standardDeviationDelta",
+
+		"hasCoefficientOfVariation":   "summary." + *typ + "Stats.periods." + *period + ".hasCoefficientOfVariation",
+		"coefficientOfVariation":      "summary." + *typ + "Stats.periods." + *period + ".coefficientOfVariation",
+		"coefficientOfVariationDelta": "summary." + *typ + "Stats.periods." + *period + ".coefficientOfVariationDelta",
 	}
 
 	extraSort := map[string]string{
@@ -1211,6 +1212,12 @@ var validSortAttributes = map[string]map[string]struct{}{
 
 		"averageDailyRecords":      {},
 		"averageDailyRecordsDelta": {},
+
+		"min":      {},
+		"minDelta": {},
+
+		"max":      {},
+		"maxDelta": {},
 	},
 	"bgm": {
 		"fullName":       {},
@@ -1267,8 +1274,20 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"totalRecords":      {},
 		"totalRecordsDelta": {},
 
+		"standardDeviation":      {},
+		"standardDeviationDelta": {},
+
+		"coefficientOfVariation":      {},
+		"coefficientOfVariationDelta": {},
+
 		"averageDailyRecords":      {},
 		"averageDailyRecordsDelta": {},
+
+		"min":      {},
+		"minDelta": {},
+
+		"max":      {},
+		"maxDelta": {},
 	},
 }
 
@@ -1450,6 +1469,12 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	filters = patients.SummaryFilters{}
 
 	fieldsMap := map[string]*string{
+		"min":      params.CgmMin,
+		"minDelta": params.CgmMinDelta,
+
+		"max":      params.CgmMax,
+		"maxDelta": params.CgmMaxDelta,
+
 		"averageGlucoseMmol":         params.CgmAverageGlucoseMmol,
 		"glucoseManagementIndicator": params.CgmGlucoseManagementIndicator,
 
@@ -1545,6 +1570,9 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 	filters = patients.SummaryFilters{}
 
 	fieldsMap := map[string]*string{
+		"max": params.BgmMax,
+		"min": params.BgmMin,
+
 		"averageGlucoseMmol": params.BgmAverageGlucoseMmol,
 
 		"timeInVeryLowPercent":   params.BgmTimeInVeryLowPercent,

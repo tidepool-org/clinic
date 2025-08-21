@@ -9,6 +9,10 @@ type PatientBGMPeriod struct {
 	AverageDailyRecordsDelta      *float64 `bson:"averageDailyRecordsDelta,omitempty"`
 	AverageGlucoseMmol            *float64 `bson:"averageGlucoseMmol,omitempty"`
 	AverageGlucoseMmolDelta       *float64 `bson:"averageGlucoseMmolDelta,omitempty"`
+	CoefficientOfVariation        *float64 `bson:"coefficientOfVariation"`
+	CoefficientOfVariationDelta   *float64 `bson:"coefficientOfVariationDelta"`
+	DaysWithData                  int      `bson:"daysWithData"`
+	DaysWithDataDelta             int      `bson:"daysWithDataDelta"`
 	HasAverageDailyRecords        bool     `bson:"hasAverageDailyRecords"`
 	HasAverageGlucoseMmol         bool     `bson:"hasAverageGlucoseMmol"`
 	HasTimeInAnyHighPercent       bool     `bson:"hasTimeInAnyHighPercent"`
@@ -28,6 +32,12 @@ type PatientBGMPeriod struct {
 	HasTimeInVeryLowPercent       bool     `bson:"hasTimeInVeryLowPercent"`
 	HasTimeInVeryLowRecords       bool     `bson:"hasTimeInVeryLowRecords"`
 	HasTotalRecords               bool     `bson:"hasTotalRecords"`
+	Max                           float64  `bson:"max"`
+	MaxDelta                      float64  `bson:"maxDelta"`
+	Min                           float64  `bson:"min"`
+	MinDelta                      float64  `bson:"minDelta"`
+	StandardDeviation             *float64 `bson:"standardDeviation"`
+	StandardDeviationDelta        *float64 `bson:"standardDeviationDelta"`
 	TimeInAnyHighPercent          *float64 `bson:"timeInAnyHighPercent,omitempty"`
 	TimeInAnyHighPercentDelta     *float64 `bson:"timeInAnyHighPercentDelta,omitempty"`
 	TimeInAnyHighRecords          *int     `bson:"timeInAnyHighRecords,omitempty"`
@@ -134,6 +144,10 @@ type PatientCGMPeriod struct {
 	HasTotalRecords                 bool     `bson:"hasTotalRecords"`
 	HoursWithData                   int      `bson:"hoursWithData"`
 	HoursWithDataDelta              int      `bson:"hoursWithDataDelta"`
+	Max                             float64  `bson:"max"`
+	MaxDelta                        float64  `bson:"maxDelta"`
+	Min                             float64  `bson:"min"`
+	MinDelta                        float64  `bson:"minDelta"`
 	StandardDeviation               float64  `bson:"standardDeviation"`
 	StandardDeviationDelta          float64  `bson:"standardDeviationDelta"`
 	TimeCGMUseMinutes               *int     `bson:"timeCGMUseMinutes,omitempty"`

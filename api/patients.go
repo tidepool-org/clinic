@@ -51,7 +51,7 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	filter.CGMTime = ParseCGMSummaryDateFilters(params)
 	filter.BGMTime = ParseBGMSummaryDateFilters(params)
 
-	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period, params.OffsetPeriods)
+	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
 	if err != nil {
 		return err
 	}

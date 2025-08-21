@@ -1016,18 +1016,25 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter period: %s", err))
 	}
 
-	// ------------- Optional query parameter "offsetPeriods" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "offsetPeriods", ctx.QueryParams(), &params.OffsetPeriods)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offsetPeriods: %s", err))
-	}
-
 	// ------------- Optional query parameter "lastReviewed" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "lastReviewed", ctx.QueryParams(), &params.LastReviewed)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter lastReviewed: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.max", ctx.QueryParams(), &params.CgmMax)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.max: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.min", ctx.QueryParams(), &params.CgmMin)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.min: %s", err))
 	}
 
 	// ------------- Optional query parameter "cgm.averageGlucoseMmol" -------------
@@ -1268,6 +1275,20 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.coefficientOfVariation: %s", err))
 	}
 
+	// ------------- Optional query parameter "bgm.max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.max", ctx.QueryParams(), &params.BgmMax)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.max: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.min", ctx.QueryParams(), &params.BgmMin)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.min: %s", err))
+	}
+
 	// ------------- Optional query parameter "bgm.averageGlucoseMmol" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "bgm.averageGlucoseMmol", ctx.QueryParams(), &params.BgmAverageGlucoseMmol)
@@ -1392,6 +1413,20 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "bgm.totalRecords", ctx.QueryParams(), &params.BgmTotalRecords)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.totalRecords: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.maxDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.maxDelta", ctx.QueryParams(), &params.CgmMaxDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.maxDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "cgm.minDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cgm.minDelta", ctx.QueryParams(), &params.CgmMinDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.minDelta: %s", err))
 	}
 
 	// ------------- Optional query parameter "cgm.averageGlucoseMmolDelta" -------------
@@ -1644,6 +1679,20 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "cgm.lastDataTo", ctx.QueryParams(), &params.CgmLastDataTo)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cgm.lastDataTo: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.maxDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.maxDelta", ctx.QueryParams(), &params.BgmMaxDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.maxDelta: %s", err))
+	}
+
+	// ------------- Optional query parameter "bgm.minDelta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "bgm.minDelta", ctx.QueryParams(), &params.BgmMinDelta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter bgm.minDelta: %s", err))
 	}
 
 	// ------------- Optional query parameter "bgm.averageGlucoseMmolDelta" -------------
