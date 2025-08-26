@@ -984,6 +984,7 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 
 func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 	selector := bson.M{}
+	orSelectors := bson.A{}
 	if filter.ClinicId != nil {
 		clinicId := *filter.ClinicId
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
@@ -1048,12 +1049,12 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 			Pattern: search,
 			Options: "i",
 		}}
-		selector["$or"] = bson.A{
+		orSelectors = append(orSelectors, bson.A{
 			bson.M{"fullName": filter},
 			bson.M{"email": filter},
 			bson.M{"mrn": filter},
 			bson.M{"birthDate": filter},
-		}
+		})
 	}
 
 	if filter.Tags != nil {
@@ -1063,10 +1064,10 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 		} else {
 			// filter.Tags wasn't nil, but the values provided were not ObjectIDs, which
 			// indicates a search for patients WITHOUT any tags assigned.
-			selector["$or"] = []bson.M{
-				{"tags": bson.M{"$size": 0}},
-				{"tags": bson.M{"$exists": 0}},
-			}
+			orSelectors = append(orSelectors, bson.A{
+				bson.M{"tags": bson.M{"$size": 0}},
+				bson.M{"tags": bson.M{"$exists": 0}},
+			})
 		}
 	}
 
@@ -1081,10 +1082,10 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 		} else {
 			// filter.Sites wasn't nil, but the values provided were not ObjectIDs, which
 			// indicates a search for patients WITHOUT any sites assigned.
-			selector["$or"] = []bson.M{
-				{"sites": bson.M{"$size": 0}},
-				{"sites": bson.M{"$exists": 0}},
-			}
+			orSelectors = append(orSelectors, bson.A{
+				bson.M{"sites": bson.M{"$size": 0}},
+				bson.M{"sites": bson.M{"$exists": 0}},
+			})
 		}
 	}
 
@@ -1124,6 +1125,23 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 			field,
 			pair,
 		)
+	}
+
+	if len(orSelectors) == 1 {
+		selector["$or"] = orSelectors[0]
+	} else if len(orSelectors) > 1 {
+		// This might look odd, but it's the consequence of having multiple groups of
+		// clauses that want to be ORed. For example, if you want name == "Fred" OR name ==
+		// "Judy", but you also want sites size == 0 OR sites is empty, then you need to AND
+		// the OR clauses.
+		//
+		// Mongo doesn't seem to support an $and with a single $or "child", so that's why we
+		// have to special-case the case where len(orSelectors) == 1.
+		or := []bson.M{}
+		for _, ors := range orSelectors {
+			or = append(or, bson.M{"$or": ors})
+		}
+		selector["$and"] = or
 	}
 
 	return selector
