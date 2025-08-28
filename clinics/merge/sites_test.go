@@ -133,8 +133,6 @@ var _ = Describe("Sites", func() {
 				Return(th.Target, nil).AnyTimes()
 			th.Clinics.EXPECT().CreateSite(gomock.Any(), targetID,
 				incrementedSiteMatcher(dups.Target))
-			th.Patients.EXPECT().UpdateSites(gomock.Any(), th.Source.Id.Hex(),
-				dups.Source.Id.Hex(), gomock.AssignableToTypeOf(&dups.Source))
 			for _, plan := range th.Plans() {
 				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
 			}
@@ -154,8 +152,6 @@ var _ = Describe("Sites", func() {
 				Return(th.Target, nil).AnyTimes()
 			th.Clinics.EXPECT().CreateSite(gomock.Any(), targetID,
 				incrementedSiteMatcherN(dups.Target, times+2))
-			th.Patients.EXPECT().UpdateSites(gomock.Any(), th.Source.Id.Hex(),
-				dups.Source.Id.Hex(), gomock.AssignableToTypeOf(&dups.Source))
 			for _, plan := range th.Plans() {
 				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
 			}

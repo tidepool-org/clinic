@@ -198,9 +198,6 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 		if err != nil {
 			return err
 		}
-		if err := t.patientsService.UpdateSites(ctx, plan.SourceClinicId.Hex(), plan.Site.Id.Hex(), &plan.Site); err != nil {
-			return err
-		}
 		logger.Debugw("renamed source site", "from", prevName, "to", plan.Site.Name)
 	default:
 		return fmt.Errorf("unhandled site action for site %q: %s", plan.Name(), plan.Action)
