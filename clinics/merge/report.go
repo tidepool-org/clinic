@@ -104,13 +104,7 @@ func (r Report) addSourcePatients(report *xlsx.File) error {
 	sh.AddRow()
 
 	for _, plan := range r.plan.PatientPlans.GetSourcePatientPlans() {
-		sourceSiteNames := []string{}
-		if plan.SourcePatient != nil && plan.SourcePatient.Sites != nil {
-			for _, site := range *plan.SourcePatient.Sites {
-				sourceSiteNames = append(sourceSiteNames, site.Name)
-			}
-		}
-		addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames, r.plan.Target.Sites)
+		addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames, plan.SourceSiteNames)
 	}
 	return nil
 }
@@ -133,7 +127,7 @@ func (r Report) addTargetPatients(report *xlsx.File) error {
 	sh.AddRow()
 
 	for _, plan := range r.plan.PatientPlans.GetTargetPatientPlans() {
-		addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames, r.plan.Target.Sites)
+		addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames, plan.TargetSiteNames)
 	}
 	return nil
 }
@@ -199,7 +193,7 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 		currentRow.AddCell().SetValue(fmt.Sprintf("Patient %v", count))
 		currentRow.AddCell().SetValue(status)
 		currentRow.AddCell().SetValue(pointer.ToString(r.plan.Source.Name))
-		addPatientDetails(currentRow, *patientPlan.SourcePatient, patientPlan.SourceTagNames, r.plan.Target.Sites)
+		addPatientDetails(currentRow, *patientPlan.SourcePatient, patientPlan.SourceTagNames, patientPlan.RenamedSiteNames)
 
 		conflicts := patientPlan.Conflicts[PatientConflictCategoryDuplicateAccounts]
 		if num := len(conflicts); num > 1 {
@@ -214,13 +208,14 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 			currentRow.AddCell()
 			currentRow.AddCell().SetValue("(result)")
 			currentRow.AddCell()
-			addPatientDetails(currentRow, conflict.Patient, patientPlan.PostMigrationTagNames, r.plan.Target.Sites)
+
+			addPatientDetails(currentRow, conflict.Patient, patientPlan.PostMigrationTagNames, patientPlan.PostMigrationSiteNames)
 
 			currentRow = sh.AddRow()
 			currentRow.AddCell()
 			currentRow.AddCell().SetValue("(combined)")
 			currentRow.AddCell().SetValue(pointer.ToString(r.plan.Target.Name))
-			addPatientDetails(currentRow, conflict.Patient, patientPlan.TargetTagNames, r.plan.Target.Sites)
+			addPatientDetails(currentRow, conflict.Patient, patientPlan.TargetTagNames, patientPlan.TargetSiteNames)
 		}
 
 		conflictCategories := map[string]string{
@@ -243,7 +238,7 @@ func (r Report) addDuplicatesInMergedSheet(report *xlsx.File) error {
 				currentRow.AddCell()
 				currentRow.AddCell().SetValue("(retained)")
 				currentRow.AddCell().SetValue(pointer.ToString(r.plan.Target.Name))
-				addPatientDetails(currentRow, conflict.Patient, getUniquePatientTagNames(conflict.Patient, targetTags), r.plan.Target.Sites)
+				addPatientDetails(currentRow, conflict.Patient, getUniquePatientTagNames(conflict.Patient, targetTags), siteNames(conflict.Patient.Sites, r.plan.Target.Sites))
 			}
 		}
 
@@ -549,7 +544,7 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clini
 			currentRow = sh.AddRow()
 			currentRow.AddCell()
 
-			addPatientDetails(currentRow, p.Patient, getUniquePatientTagNames(p.Patient, tags), clinic.Sites)
+			addPatientDetails(currentRow, p.Patient, getUniquePatientTagNames(p.Patient, tags), siteNames(p.Patient.Sites, []sites.Site{}))
 
 			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryLikelyDuplicateAccounts], ", "))
 			currentRow.AddCell().SetValue(strings.Join(p.Conflicts[PatientConflictCategoryNameOnlyMatch], ", "))
@@ -560,7 +555,7 @@ func addDuplicatePatients(sh *xlsx.Sheet, clusters PatientClusters, clinic clini
 	}
 }
 
-func addPatientDetails(row *xlsx.Row, patient patients.Patient, tags []string, sites []sites.Site) {
+func addPatientDetails(row *xlsx.Row, patient patients.Patient, tags []string, sites []string) {
 	row.AddCell().SetValue(pointer.ToString(patient.FullName))
 	if !patient.IsCustodial() {
 		row.AddCell().SetValue("Y")
@@ -571,20 +566,7 @@ func addPatientDetails(row *xlsx.Row, patient patients.Patient, tags []string, s
 	row.AddCell().SetValue(pointer.ToString(patient.BirthDate))
 	row.AddCell().SetValue(pointer.ToString(patient.Mrn))
 	row.AddCell().SetValue(strings.Join(tags, ", "))
-	siteNames := []string{}
-	if patient.Sites != nil {
-		for _, site := range *patient.Sites {
-			renamed, err := maybeRenameSite(site, sites)
-			if err != nil {
-				continue
-			}
-			siteNames = append(siteNames, renamed)
-		}
-		slices.SortFunc(siteNames, func(i, j string) int {
-			return cmp.Compare(strings.ToLower(i), strings.ToLower(j))
-		})
-	}
-	row.AddCell().SetValue(strings.Join(siteNames, ", "))
+	row.AddCell().SetValue(strings.Join(sites, ", "))
 	if patient.Summary != nil && !patient.Summary.GetLastUploadDate().IsZero() {
 		row.AddCell().SetValue(patient.Summary.GetLastUploadDate().Format(LastUploadTimeFormat))
 	} else {
