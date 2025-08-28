@@ -1321,7 +1321,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 
 		opts := options.Find()
-		opts.SetLimit(TideReportPatientLimit)
+		opts.SetLimit(int64(remaining))
 
 		sortKey := "summary.cgmStats.periods." + *params.Period + "." + category.Field
 		if category.Comparison == "$gt" {
