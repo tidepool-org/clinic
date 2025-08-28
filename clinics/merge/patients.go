@@ -450,6 +450,17 @@ func (p *PatientPlanExecutor) mergeSites(ctx context.Context, plan PatientPlan, 
 		"clinicId": plan.TargetPatient.ClinicId,
 		"userId":   plan.TargetPatient.UserId,
 	}
+	if plan.SourcePatient != nil && plan.SourcePatient.Sites != nil {
+		srcSites := plan.SourcePatient.Sites
+		tgtSites := target.Sites
+		for i, srcSite := range *srcSites {
+			for _, tgtSite := range tgtSites {
+				if srcSite.Id == tgtSite.Id && srcSite.Name != tgtSite.Name {
+					(*srcSites)[i].Name = tgtSite.Name
+				}
+			}
+		}
+	}
 	update := bson.M{
 		"$push": bson.M{
 			"sites": bson.M{
