@@ -3,6 +3,7 @@ package merge
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -109,7 +110,12 @@ type PatientPlan struct {
 	SourceTagNames []string `bson:"sourceTagNames"`
 	TargetTagNames []string `bson:"targetTagNames"`
 
+	SourceSiteNames  []string `bson:"sourceSiteNames"`
+	RenamedSiteNames []string `bson:"mergedSiteNames"`
+	TargetSiteNames  []string `bson:"targetSiteNames"`
+
 	PostMigrationTagNames      []string `bson:"postMigrationTagNames"`
+	PostMigrationSiteNames     []string `bson:"postMigrationSiteNames"`
 	PostMigrationMRNUniqueness bool     `bson:"postMigrationMRNUniqueness"`
 
 	CanExecuteAction bool         `bson:"canExecuteAction"`
@@ -206,21 +212,40 @@ func (p *PatientMergePlanner) initMergedSites() error {
 	return nil
 }
 
+func siteNames(sites *[]sites.Site, targetSites []sites.Site) []string {
+	if sites == nil {
+		return nil
+	}
+	names := make([]string, 0, len(*sites))
+	for _, site := range *sites {
+		renamed, err := maybeRenameSite(site, targetSites)
+		if err != nil {
+			renamed = fmt.Sprintf("<error incrementing site name: %s>", err)
+		}
+		names = append(names, renamed)
+	}
+	slices.Sort(names)
+	return names
+}
+
 func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	mergeTargetPatients := map[string]struct{}{}
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))
 	for _, patient := range p.sourcePatients {
 		plan := PatientPlan{
-			SourceClinicId:        p.source.Id,
-			SourceClinicName:      *p.source.Name,
-			TargetClinicId:        p.target.Id,
-			TargetClinicName:      *p.target.Name,
-			SourcePatient:         &patient,
-			SourceTagNames:        getUniquePatientTagNames(patient, p.sourceTags),
-			Conflicts:             make(map[string][]Conflict),
-			PatientAction:         PatientActionMove,
-			PostMigrationTagNames: getUniquePatientTagNames(patient, p.sourceTags),
-			CanExecuteAction:      true,
+			SourceClinicId:         p.source.Id,
+			SourceClinicName:       *p.source.Name,
+			TargetClinicId:         p.target.Id,
+			TargetClinicName:       *p.target.Name,
+			SourcePatient:          &patient,
+			SourceTagNames:         getUniquePatientTagNames(patient, p.sourceTags),
+			SourceSiteNames:        siteNames(patient.Sites, []sites.Site{}),
+			RenamedSiteNames:       siteNames(patient.Sites, p.target.Sites),
+			Conflicts:              make(map[string][]Conflict),
+			PatientAction:          PatientActionMove,
+			PostMigrationTagNames:  getUniquePatientTagNames(patient, p.sourceTags),
+			PostMigrationSiteNames: siteNames(patient.Sites, p.target.Sites),
+			CanExecuteAction:       true,
 		}
 
 		duplicates := getDuplicates(patient, p.targetByAttribute)
@@ -235,10 +260,16 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				plan.PatientAction = PatientActionMerge
 				plan.TargetPatient = target
 				plan.TargetTagNames = getUniquePatientTagNames(*target, p.targetTags)
+				plan.TargetSiteNames = siteNames(target.Sites, p.target.Sites)
 
 				uniqueTags := mapset.NewSet(plan.SourceTagNames...)
 				uniqueTags.Append(plan.TargetTagNames...)
 				plan.PostMigrationTagNames = uniqueTags.ToSlice()
+				if patient.Sites == nil || target == nil || target.Sites == nil {
+					return nil, fmt.Errorf("unable to combine sites for duplicate patients")
+				}
+				combinedSites := slices.Concat(*target.Sites, *patient.Sites)
+				plan.PostMigrationSiteNames = siteNames(&combinedSites, *target.Sites)
 			}
 			plan.Conflicts[conflictCategory] = append(plan.Conflicts[conflictCategory], Conflict{
 				Category: conflictCategory,
@@ -284,6 +315,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 			TargetClinicName: *p.target.Name,
 			TargetPatient:    &patient,
 			TargetTagNames:   getUniquePatientTagNames(patient, p.targetTags),
+			TargetSiteNames:  siteNames(patient.Sites, p.target.Sites),
 			CanExecuteAction: true,
 		}
 		if _, ok := mergeTargetPatients[getUserId(patient)]; ok {
