@@ -2,20 +2,22 @@ package merge_test
 
 import (
 	"context"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/store/test"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/mock/gomock"
-	"go.uber.org/zap"
-	"time"
 )
 
 var _ = Describe("Clinicians", func() {

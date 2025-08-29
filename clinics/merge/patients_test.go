@@ -2,22 +2,26 @@ package merge_test
 
 import (
 	"context"
+	"slices"
+	"time"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
-	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/clinics/merge"
-	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
-	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
-	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/store/test"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
-	"time"
+
+	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/clinics/merge"
+	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
+	"github.com/tidepool-org/clinic/store/test"
 )
 
 const (
@@ -35,6 +39,7 @@ var _ = Describe("New Merge Planner", func() {
 	var targetPatients []patients.Patient
 	var targetPatientsWithDuplicates map[string]patients.Patient
 	var plans merge.PatientPlans
+	var planner *merge.PatientMergePlanner
 
 	BeforeEach(func() {
 		data := mergeTest.RandomData(mergeTest.Params{
@@ -50,9 +55,9 @@ var _ = Describe("New Merge Planner", func() {
 		targetPatients = data.TargetPatients
 		targetPatientsWithDuplicates = data.TargetPatientsWithDuplicates
 
-		planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
+		var err error
+		planner, err = merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 		Expect(err).ToNot(HaveOccurred())
-
 		plans, err = planner.Plan(context.Background())
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -77,7 +82,7 @@ var _ = Describe("New Merge Planner", func() {
 
 		It("produces correct plans", func() {
 			for _, plan := range plans {
-				switch plan.PatientAction{
+				switch plan.PatientAction {
 				case merge.PatientActionRetain:
 					// Retain target account - this action is produced for each target patient which doesn't have conflicts
 					Expect(plan.SourcePatient).To(BeNil())
@@ -112,7 +117,7 @@ var _ = Describe("New Merge Planner", func() {
 		It("can be executed", func() {
 			for _, plan := range plans {
 				Expect(plan.PreventsMerge()).To(BeFalse())
-				switch plan.PatientAction{
+				switch plan.PatientAction {
 				case merge.PatientActionRetain:
 					// Retain target account - this action is produced for each target patient which doesn't have conflicts
 					Expect(plan.SourcePatient).To(BeNil())
@@ -140,7 +145,7 @@ var _ = Describe("New Merge Planner", func() {
 
 		It("fails for merge plans with MRN conflicts when the target workspace requires unique MRNs", func() {
 			target.MRNSettings = &clinics.MRNSettings{
-				Unique:   true,
+				Unique: true,
 			}
 			planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
 			Expect(err).ToNot(HaveOccurred())
@@ -178,10 +183,10 @@ var _ = Describe("New Merge Planner", func() {
 
 			executor = merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), clinicsService, db)
 			collection = db.Collection("patients")
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 			defer cancel()
 
-			documents := make([]interface{}, 0, len(sourcePatients) + len(targetPatients))
+			documents := make([]any, 0, len(sourcePatients)+len(targetPatients))
 			for _, p := range sourcePatients {
 				documents = append(documents, p)
 			}
@@ -195,12 +200,8 @@ var _ = Describe("New Merge Planner", func() {
 
 			// The executor expects tags to be migrated before the patients
 			updated = target
-			updated.PatientTags = nil
-
 			// Retain target tag ids
-			for _, tag := range target.PatientTags {
-				updated.PatientTags = append(updated.PatientTags, tag)
-			}
+			updated.PatientTags = target.PatientTags
 
 			// Recreate source tags in target clinic as if they were migrated
 			for _, tag := range source.PatientTags {
@@ -233,7 +234,7 @@ var _ = Describe("New Merge Planner", func() {
 					continue
 				}
 				count, err := collection.CountDocuments(context.Background(), bson.M{
-					"userId": *patient.UserId,
+					"userId":   *patient.UserId,
 					"clinicId": *target.Id,
 				})
 				Expect(err).ToNot(HaveOccurred())
@@ -264,7 +265,7 @@ var _ = Describe("New Merge Planner", func() {
 
 				var result patients.Patient
 				err := collection.FindOne(context.Background(), bson.M{
-					"userId": *patient.UserId,
+					"userId":   *patient.UserId,
 					"clinicId": *target.Id,
 				}).Decode(&result)
 				Expect(err).ToNot(HaveOccurred())
@@ -287,6 +288,139 @@ var _ = Describe("New Merge Planner", func() {
 			}
 		})
 
+		Context("a patient that is retained", func() {
+			retained := func() (*patients.Patient, []sites.Site) {
+				for _, plan := range plans {
+					if plan.PatientAction == merge.PatientActionRetain &&
+						plan.TargetPatient.Sites != nil &&
+						len(*plan.TargetPatient.Sites) > 0 {
+						res := collection.FindOne(context.Background(), bson.M{
+							"clinicId": plan.TargetClinicId,
+							"userId":   *plan.TargetPatient.UserId,
+						})
+						Expect(res.Err()).To(Succeed())
+						p := &patients.Patient{}
+						Expect(res.Decode(p)).To(Succeed())
+						return p, *plan.TargetPatient.Sites
+					}
+				}
+				Fail("no suitable retained patients found")
+				return nil, nil
+			}
+
+			It("keeps its sites", func() {
+				patient, sites := retained()
+				Expect(patient.Sites).ToNot(BeNil())
+				Expect(*patient.Sites).To(Equal(sites))
+			})
+		})
+
+		Context("a patient that is moved", func() {
+			moved := func() (*patients.Patient, []sites.Site) {
+				for _, plan := range plans {
+					if plan.PatientAction == merge.PatientActionMove &&
+						plan.SourcePatient.Sites != nil &&
+						len(*plan.SourcePatient.Sites) > 0 {
+						res := collection.FindOne(context.Background(), bson.M{
+							"clinicId": plan.TargetClinicId,
+							"userId":   *plan.SourcePatient.UserId,
+						})
+						Expect(res.Err()).To(Succeed())
+						p := &patients.Patient{}
+						Expect(res.Decode(p)).To(Succeed())
+						return p, *plan.SourcePatient.Sites
+					}
+				}
+				Fail("no suitable moved patients found")
+				return nil, nil
+			}
+
+			It("keeps its sites", func() {
+				patient, sites := moved()
+				Expect(patient.Sites).ToNot(BeNil())
+				Expect(*patient.Sites).To(Equal(sites))
+			})
+		})
+
+		Context("a patient that is merged", func() {
+			merged := func() (*patients.Patient, *patients.Patient, *patients.Patient) {
+				for _, plan := range plans {
+					if plan.PatientAction != merge.PatientActionMerge {
+						continue
+					}
+					if plan.SourcePatient.Sites == nil || len(*plan.SourcePatient.Sites) < 1 {
+						continue
+					}
+					if plan.TargetPatient.Sites == nil || len(*plan.TargetPatient.Sites) < 1 {
+						continue
+					}
+					res := collection.FindOne(context.Background(), bson.M{
+						"clinicId": plan.TargetClinicId,
+						"userId":   *plan.TargetPatient.UserId,
+					})
+					if err := res.Err(); err != nil {
+						continue
+					}
+					p := &patients.Patient{}
+					if err := res.Decode(p); err != nil {
+						continue
+					}
+					return p, plan.SourcePatient, plan.TargetPatient
+				}
+				Fail("no suitable merged patients found")
+				return nil, nil, nil
+			}
+
+			It("has a union of its sites, including duplicates", func() {
+				// Note: The execution of a patient plan is not responsible for renaming
+				// duplicate site names, so any duplicates will remain.
+				patient, srcPatient, targetPatient := merged()
+				combined := slices.Concat(*srcPatient.Sites, *targetPatient.Sites)
+				Expect(*patient.Sites).To(ConsistOf(combined))
+			})
+		})
+
+		Context("a patient that is merged into", func() {
+			mergedInto := func() (*patients.Patient, *patients.Patient) {
+				for _, plan := range plans {
+					if plan.PatientAction != merge.PatientActionMergeInto {
+						continue
+					}
+					if plan.TargetPatient.Sites == nil || len(*plan.TargetPatient.Sites) < 1 {
+						continue
+					}
+					res := collection.FindOne(context.Background(), bson.M{
+						"clinicId": plan.TargetClinicId,
+						"userId":   *plan.TargetPatient.UserId,
+					})
+					if err := res.Err(); err != nil {
+						continue
+					}
+					p := &patients.Patient{}
+					if err := res.Decode(p); err != nil {
+						continue
+					}
+					return p, plan.TargetPatient
+				}
+				Fail("no suitable merged into patients found")
+				return nil, nil
+			}
+
+			It("doesn't lose its original sites", func() {
+				// Note: The execution of a patient plan is not responsible for renaming
+				// duplicate site names, so any duplicates will remain.
+				//
+				// The "merge into" action can't see that the resulting sites are 100%
+				// accurate, because there's no record of the source patient in a "merge
+				// info" action. However, that behavior is covered in the "merge" action's
+				// tests.
+				patient, targetPatient := mergedInto()
+				Expect(patient.Sites).ToNot(BeNil())
+				Expect(targetPatient.Sites).ToNot(BeNil())
+				Expect(*patient.Sites).To(ContainElements(*targetPatient.Sites))
+			})
+		})
+
 		It("removes source patients which have duplicates from the source clinic", func() {
 			for _, patient := range sourcePatients {
 				if _, ok := targetPatientsWithDuplicates[*patient.UserId]; !ok {
@@ -294,7 +428,7 @@ var _ = Describe("New Merge Planner", func() {
 					continue
 				}
 				count, err := collection.CountDocuments(context.Background(), bson.M{
-					"userId": *patient.UserId,
+					"userId":   *patient.UserId,
 					"clinicId": *source.Id,
 				})
 				Expect(err).ToNot(HaveOccurred())

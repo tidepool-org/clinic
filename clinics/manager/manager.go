@@ -4,17 +4,19 @@ import (
 	"context"
 	errs "errors"
 	"fmt"
+
 	"github.com/tidepool-org/clinic/deletions"
 
-	"github.com/tidepool-org/clinic/errors"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx"
 )
 
 const (
@@ -32,6 +34,21 @@ type Manager interface {
 	DeleteClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error
 	GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error)
 	FinalizeMerge(ctx context.Context, sourceId, targetId string) error
+	// CreateSite within a clinic.
+	//
+	// CreateSite is expected to return an error if a site with the given name already
+	// exists, or if creating a new site would exceed the maximum number of sites.
+	CreateSite(_ context.Context, clinicId string, name string) (*sites.Site, error)
+	// DeleteSite within a clinic.
+	//
+	// The Site should be removed from the clinic and any patient records that include the
+	// site.
+	DeleteSite(_ context.Context, clinicId string, siteId string) error
+	// UpdateSite within a clinic.
+	//
+	// Sites are denormalized over the clinics and patients collections. This function
+	// should handle maintaining that denormalization.
+	UpdateSite(_ context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error)
 }
 
 type manager struct {
@@ -93,7 +110,7 @@ func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 		}
 	}
 
-	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
+	transaction := func(sessionCtx mongo.SessionContext) (any, error) {
 		// Set initial admins
 		create.Clinic.AddAdmin(create.CreatorUserId)
 
@@ -137,7 +154,7 @@ func (c *manager) CreateClinic(ctx context.Context, create *CreateClinic) (*clin
 }
 
 func (c *manager) DeleteClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error {
-	transaction := func(sessionCtx mongo.SessionContext) (interface{}, error) {
+	transaction := func(sessionCtx mongo.SessionContext) (any, error) {
 		return nil, c.deleteClinic(sessionCtx, clinicId, metadata)
 	}
 
@@ -272,4 +289,77 @@ func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool
 		return true
 	}
 	return false
+}
+
+// CreateSite implements [Manager].
+func (c *manager) CreateSite(ctx context.Context, clinicId, name string) (
+	*sites.Site, error) {
+
+	site, err := c.clinics.CreateSite(ctx, clinicId, sites.New(name))
+	if err != nil {
+		return nil, err
+	}
+	return site, nil
+}
+
+// DeleteSite implements [Manager].
+func (c *manager) DeleteSite(ctx context.Context, clinicId, siteId string) error {
+	tx := func(sessionCtx mongo.SessionContext) (any, error) {
+		return nil, c.deleteSite(sessionCtx, clinicId, siteId)
+	}
+	_, err := store.WithTransaction(ctx, c.dbClient, tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// deleteSite and ripple the changes to a clinic's patients.
+//
+// This should be run in a transaction to prevent races.
+func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error {
+	if err := c.patientsService.DeleteSites(ctx, clinicId, siteId); err != nil {
+		return err
+	}
+	if err := c.clinics.DeleteSite(ctx, clinicId, siteId); err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateSite implements [Manager].
+func (c *manager) UpdateSite(ctx context.Context,
+	clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
+
+	tx := func(sessionCtx mongo.SessionContext) (any, error) {
+		return c.updateSite(sessionCtx, clinicId, siteId, site)
+	}
+	updated, err := store.WithTransaction(ctx, c.dbClient, tx)
+	if err != nil {
+		return nil, err
+	}
+	site, ok := updated.(*sites.Site)
+	if !ok {
+		return nil, fmt.Errorf("expected a *sites.Site")
+	}
+	return site, nil
+}
+
+// updateSite and ripple the changes to a clinic's patients.
+//
+// This should be run in a transaction to prevent races.
+func (c *manager) updateSite(ctx context.Context,
+	clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
+
+	updated, err := c.clinics.UpdateSite(ctx, clinicId, siteId, site)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.patientsService.UpdateSites(ctx, clinicId, siteId, site); err != nil {
+		if errs.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound
+		}
+		return nil, err
+	}
+	return updated, nil
 }
