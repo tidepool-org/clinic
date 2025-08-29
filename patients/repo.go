@@ -29,7 +29,7 @@ const (
 // Collation to use for string fields
 var collation = options.Collation{Locale: "en", Strength: 1}
 
-//go:generate mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
+//go:generate go tool mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
 
 type Repository interface {
 	Service
