@@ -506,11 +506,20 @@ var _ = Describe("Clinics Manager", func() {
 				siteId := th.Clinic.Sites[0].Id.Hex()
 				clinicId := th.Clinic.Id.Hex()
 				newSite := &sites.Site{Name: "fooberry-jones"}
-				_, err := mngr.UpdateSite(ctx, clinicId, siteId, newSite)
+				patient := th.createPatient(ctx, clinicId)
+				*patient.Sites = append(*patient.Sites, *newSite)
+				_, err := th.PatientsRepo.Update(ctx, patients.PatientUpdate{
+					ClinicId: clinicId,
+					UserId:   *patient.UserId,
+					Patient:  *patient,
+				})
+				Expect(err).To(Succeed())
+				_, err = mngr.UpdateSite(ctx, clinicId, siteId, newSite)
 				Expect(err).To(Succeed())
 				patients, err := th.PatientsRepo.List(ctx, &patients.Filter{
 					ClinicId: &clinicId,
 				}, store.DefaultPagination(), nil)
+				Expect(len(patients.Patients) > 0).To(BeTrue())
 				Expect(err).To(Succeed())
 
 				for _, patient := range patients.Patients {
@@ -519,6 +528,50 @@ var _ = Describe("Clinics Manager", func() {
 						return s.Id.Hex() == siteId
 					})).To(BeFalse())
 				}
+			})
+		})
+
+		Describe("ConvertPatientTagToSite", func() {
+			It("works", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				clinicId := th.Clinic.Id.Hex()
+				testTagName := "testing"
+				tag, err := th.ClinicsRepo.CreatePatientTag(ctx, clinicId, testTagName)
+				Expect(err).To(Succeed())
+
+				site, err := mngr.ConvertPatientTagToSite(ctx, clinicId, tag.Id.Hex())
+				Expect(err).To(Succeed())
+				Expect(site.Name).To(Equal(testTagName))
+			})
+
+			It("can rename the site to avoid conflicts", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				clinicId := th.Clinic.Id.Hex()
+				testTagName := th.Clinic.Sites[0].Name
+				tag, err := th.ClinicsRepo.CreatePatientTag(ctx, clinicId, testTagName)
+				Expect(err).To(Succeed())
+
+				site, err := mngr.ConvertPatientTagToSite(ctx, clinicId, tag.Id.Hex())
+				Expect(err).To(Succeed())
+				Expect(site.Name).To(Equal(testTagName + " (2)"))
+			})
+
+			It("deletes the tag", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				clinicId := th.Clinic.Id.Hex()
+				testTagName := th.Clinic.Sites[0].Name
+				tag, err := th.ClinicsRepo.CreatePatientTag(ctx, clinicId, testTagName)
+				Expect(err).To(Succeed())
+				tagID := tag.Id.Hex()
+
+				_, err = mngr.ConvertPatientTagToSite(ctx, clinicId, tagID)
+				Expect(err).To(Succeed())
+
+				after, err := th.ClinicsRepo.Get(ctx, clinicId)
+				Expect(err).To(Succeed())
+				pred := func(i clinics.PatientTag) bool { return i.Id.Hex() == tagID }
+				found := slices.ContainsFunc(after.PatientTags, pred)
+				Expect(found).To(BeFalse())
 			})
 		})
 	})
@@ -609,6 +662,18 @@ func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *c
 		Site:         &site,
 		mngr:         mngr,
 	}
+}
+
+func (h *createSiteTestHelper) createPatient(ctx context.Context,
+	clinicId string) *patients.Patient {
+
+	p := patientsTest.RandomPatient()
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	Expect(err).To(Succeed())
+	p.ClinicId = &clinicOID
+	out, err := h.PatientsRepo.Create(ctx, p)
+	Expect(err).To(Succeed())
+	return out
 }
 
 type mockUserService struct{}

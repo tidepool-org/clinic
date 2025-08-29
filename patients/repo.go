@@ -1598,6 +1598,34 @@ func (r *repository) MergeSites(ctx context.Context,
 	return nil
 }
 
+func (r *repository) ConvertPatientTagToSite(ctx context.Context,
+	clinicId, patientTagId string, site *sites.Site) error {
+
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	patientTagOID, err := primitive.ObjectIDFromHex(patientTagId)
+	if err != nil {
+		return fmt.Errorf("parsing source site's ObjectId: %w", err)
+	}
+
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"tags":     bson.M{"$eq": patientTagOID},
+	}
+	update := bson.M{
+		"$push":        bson.M{"sites": site},
+		"$pull":        bson.M{"tags": patientTagOID},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type RescheduleOrderPipelineParams struct {
 	clinicIds        []string
 	userId           *string

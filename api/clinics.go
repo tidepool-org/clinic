@@ -570,3 +570,14 @@ func (h *Handler) MergeSite(ec echo.Context, clinicId ClinicId, targetSiteId Sit
 	}
 	return ec.JSON(http.StatusOK, merged)
 }
+
+func (h *Handler) ConvertPatientTagToSite(ec echo.Context,
+	clinicId ClinicId, patientTagId PatientTagId) error {
+
+	ctx := ec.Request().Context()
+	created, err := h.ClinicsManager.ConvertPatientTagToSite(ctx, clinicId, patientTagId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, created)
+}

@@ -221,6 +221,26 @@ func (mr *MockClientInterfaceMockRecorder) ConnectProvider(ctx, clinicId, patien
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectProvider", reflect.TypeOf((*MockClientInterface)(nil).ConnectProvider), varargs...)
 }
 
+// ConvertPatientTagToSite mocks base method.
+func (m *MockClientInterface) ConvertPatientTagToSite(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientTagId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ConvertPatientTagToSite", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConvertPatientTagToSite indicates an expected call of ConvertPatientTagToSite.
+func (mr *MockClientInterfaceMockRecorder) ConvertPatientTagToSite(ctx, clinicId, patientTagId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientTagId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertPatientTagToSite", reflect.TypeOf((*MockClientInterface)(nil).ConvertPatientTagToSite), varargs...)
+}
+
 // CreateClinic mocks base method.
 func (m *MockClientInterface) CreateClinic(ctx context.Context, body CreateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -2403,6 +2423,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ConnectProviderWithRespo
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, patientId, providerId}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectProviderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ConnectProviderWithResponse), varargs...)
+}
+
+// ConvertPatientTagToSiteWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) ConvertPatientTagToSiteWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*ConvertPatientTagToSiteResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientTagId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ConvertPatientTagToSiteWithResponse", varargs...)
+	ret0, _ := ret[0].(*ConvertPatientTagToSiteResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConvertPatientTagToSiteWithResponse indicates an expected call of ConvertPatientTagToSiteWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) ConvertPatientTagToSiteWithResponse(ctx, clinicId, patientTagId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientTagId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertPatientTagToSiteWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ConvertPatientTagToSiteWithResponse), varargs...)
 }
 
 // CreateClinicWithBodyWithResponse mocks base method.

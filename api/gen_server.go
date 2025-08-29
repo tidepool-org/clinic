@@ -103,6 +103,9 @@ type ServerInterface interface {
 	// Update Patient Tag
 	// (PUT /v1/clinics/{clinicId}/patient_tags/{patientTagId})
 	UpdatePatientTag(ctx echo.Context, clinicId ClinicId, patientTagId PatientTagId) error
+	// Convert Patient Tag to Site
+	// (POST /v1/clinics/{clinicId}/patient_tags/{patientTagId}/site)
+	ConvertPatientTagToSite(ctx echo.Context, clinicId ClinicId, patientTagId PatientTagId) error
 	// List Patients
 	// (GET /v1/clinics/{clinicId}/patients)
 	ListPatients(ctx echo.Context, clinicId ClinicId, params ListPatientsParams) error
@@ -968,6 +971,32 @@ func (w *ServerInterfaceWrapper) UpdatePatientTag(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.UpdatePatientTag(ctx, clinicId, patientTagId)
+	return err
+}
+
+// ConvertPatientTagToSite converts echo context to params.
+func (w *ServerInterfaceWrapper) ConvertPatientTagToSite(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientTagId" -------------
+	var patientTagId PatientTagId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientTagId", ctx.Param("patientTagId"), &patientTagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientTagId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ConvertPatientTagToSite(ctx, clinicId, patientTagId)
 	return err
 }
 
@@ -2895,6 +2924,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/clinics/:clinicId/patient_tags", wrapper.CreatePatientTag)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.DeletePatientTag)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.UpdatePatientTag)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId/site", wrapper.ConvertPatientTagToSite)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients", wrapper.ListPatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients", wrapper.CreatePatientAccount)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/assign_tag/:patientTagId", wrapper.AssignPatientTagToClinicPatients)
