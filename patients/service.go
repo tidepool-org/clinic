@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"strings"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
@@ -343,6 +343,12 @@ func (s *service) RescheduleLastSubscriptionOrderForPatient(ctx context.Context,
 func (s *service) DeleteSites(ctx context.Context, clinicId, siteId string) error {
 	s.logger.Infow("deleting sites", "clinicId", clinicId, "siteId", siteId)
 	return s.patientsRepo.DeleteSites(ctx, clinicId, siteId)
+}
+
+func (s *service) MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error {
+	s.logger.Infow("merging sites", "clinicId", clinicId, "sourceSiteId",
+		sourceSiteId, "targetSiteId", targetSite.Id.Hex())
+	return s.patientsRepo.MergeSites(ctx, clinicId, sourceSiteId, targetSite)
 }
 
 func (s *service) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {

@@ -1564,6 +1564,40 @@ func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, s
 	return nil
 }
 
+func (r *repository) MergeSites(ctx context.Context,
+	clinicId, sourceSiteId string, targetSite *sites.Site) error {
+
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	sourceSiteOID, err := primitive.ObjectIDFromHex(sourceSiteId)
+	if err != nil {
+		return fmt.Errorf("parsing source site's ObjectId: %w", err)
+	}
+
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"$and": bson.A{
+			bson.M{"sites.id": bson.M{"$eq": sourceSiteOID}},
+			bson.M{"sites.id": bson.M{"$nin": bson.A{targetSite.Id}}},
+		},
+	}
+	update := bson.M{
+		"$push":        bson.M{"sites": targetSite},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+
+	if err := r.DeleteSites(ctx, clinicId, sourceSiteId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type RescheduleOrderPipelineParams struct {
 	clinicIds        []string
 	userId           *string

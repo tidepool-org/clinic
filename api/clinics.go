@@ -2,9 +2,10 @@ package api
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"net/http"
 	"time"
+
+	"github.com/tidepool-org/clinic/deletions"
 
 	"github.com/labstack/echo/v4"
 
@@ -555,4 +556,17 @@ func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 		return err
 	}
 	return ec.JSON(http.StatusOK, updated)
+}
+
+func (h *Handler) MergeSite(ec echo.Context, clinicId ClinicId, targetSiteId SiteId) error {
+	ctx := ec.Request().Context()
+	site := &sites.Site{}
+	if err := ec.Bind(site); err != nil {
+		return errors.BadRequest
+	}
+	merged, err := h.ClinicsManager.MergeSite(ctx, clinicId, site.Id.Hex(), targetSiteId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, merged)
 }

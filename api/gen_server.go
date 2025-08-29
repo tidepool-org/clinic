@@ -178,6 +178,9 @@ type ServerInterface interface {
 	// Update a Site
 	// (PUT /v1/clinics/{clinicId}/sites/{siteId})
 	UpdateSite(ctx echo.Context, clinicId ClinicId, siteId SiteId) error
+	// Merge two sites
+	// (POST /v1/clinics/{clinicId}/sites/{siteId}/merge)
+	MergeSite(ctx echo.Context, clinicId ClinicId, siteId SiteId) error
 	// Update Suppressed Notifications
 	// (POST /v1/clinics/{clinicId}/suppressed_notifications)
 	UpdateSuppressedNotifications(ctx echo.Context, clinicId ClinicId) error
@@ -2423,6 +2426,32 @@ func (w *ServerInterfaceWrapper) UpdateSite(ctx echo.Context) error {
 	return err
 }
 
+// MergeSite converts echo context to params.
+func (w *ServerInterfaceWrapper) MergeSite(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "siteId" -------------
+	var siteId SiteId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "siteId", ctx.Param("siteId"), &siteId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter siteId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.MergeSite(ctx, clinicId, siteId)
+	return err
+}
+
 // UpdateSuppressedNotifications converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdateSuppressedNotifications(ctx echo.Context) error {
 	var err error
@@ -2891,6 +2920,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/clinics/:clinicId/sites", wrapper.CreateSite)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/sites/:siteId", wrapper.DeleteSite)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/sites/:siteId", wrapper.UpdateSite)
+	router.POST(baseURL+"/v1/clinics/:clinicId/sites/:siteId/merge", wrapper.MergeSite)
 	router.POST(baseURL+"/v1/clinics/:clinicId/suppressed_notifications", wrapper.UpdateSuppressedNotifications)
 	router.GET(baseURL+"/v1/clinics/:clinicId/tide_report", wrapper.TideReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
