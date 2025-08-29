@@ -221,6 +221,26 @@ func (mr *MockClientInterfaceMockRecorder) ConnectProvider(ctx, clinicId, patien
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectProvider", reflect.TypeOf((*MockClientInterface)(nil).ConnectProvider), varargs...)
 }
 
+// ConvertPatientTagToSite mocks base method.
+func (m *MockClientInterface) ConvertPatientTagToSite(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientTagId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ConvertPatientTagToSite", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConvertPatientTagToSite indicates an expected call of ConvertPatientTagToSite.
+func (mr *MockClientInterfaceMockRecorder) ConvertPatientTagToSite(ctx, clinicId, patientTagId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientTagId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertPatientTagToSite", reflect.TypeOf((*MockClientInterface)(nil).ConvertPatientTagToSite), varargs...)
+}
+
 // CreateClinic mocks base method.
 func (m *MockClientInterface) CreateClinic(ctx context.Context, body CreateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1219,6 +1239,46 @@ func (mr *MockClientInterfaceMockRecorder) MergeClinicWithBody(ctx, clinicId, co
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, contentType, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeClinicWithBody", reflect.TypeOf((*MockClientInterface)(nil).MergeClinicWithBody), varargs...)
+}
+
+// MergeSite mocks base method.
+func (m *MockClientInterface) MergeSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, siteId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MergeSite", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MergeSite indicates an expected call of MergeSite.
+func (mr *MockClientInterfaceMockRecorder) MergeSite(ctx, clinicId, siteId, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, siteId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeSite", reflect.TypeOf((*MockClientInterface)(nil).MergeSite), varargs...)
+}
+
+// MergeSiteWithBody mocks base method.
+func (m *MockClientInterface) MergeSiteWithBody(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, siteId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MergeSiteWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MergeSiteWithBody indicates an expected call of MergeSiteWithBody.
+func (mr *MockClientInterfaceMockRecorder) MergeSiteWithBody(ctx, clinicId, siteId, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, siteId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeSiteWithBody", reflect.TypeOf((*MockClientInterface)(nil).MergeSiteWithBody), varargs...)
 }
 
 // MigrateLegacyClinicianPatients mocks base method.
@@ -2365,6 +2425,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ConnectProviderWithRespo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectProviderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ConnectProviderWithResponse), varargs...)
 }
 
+// ConvertPatientTagToSiteWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) ConvertPatientTagToSiteWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*ConvertPatientTagToSiteResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientTagId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ConvertPatientTagToSiteWithResponse", varargs...)
+	ret0, _ := ret[0].(*ConvertPatientTagToSiteResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConvertPatientTagToSiteWithResponse indicates an expected call of ConvertPatientTagToSiteWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) ConvertPatientTagToSiteWithResponse(ctx, clinicId, patientTagId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientTagId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertPatientTagToSiteWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ConvertPatientTagToSiteWithResponse), varargs...)
+}
+
 // CreateClinicWithBodyWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) CreateClinicWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateClinicResponse, error) {
 	m.ctrl.T.Helper()
@@ -3363,6 +3443,46 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) MergeClinicWithResponse(
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeClinicWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).MergeClinicWithResponse), varargs...)
+}
+
+// MergeSiteWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) MergeSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, siteId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MergeSiteWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*MergeSiteResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MergeSiteWithBodyWithResponse indicates an expected call of MergeSiteWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) MergeSiteWithBodyWithResponse(ctx, clinicId, siteId, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, siteId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeSiteWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).MergeSiteWithBodyWithResponse), varargs...)
+}
+
+// MergeSiteWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) MergeSiteWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, siteId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MergeSiteWithResponse", varargs...)
+	ret0, _ := ret[0].(*MergeSiteResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MergeSiteWithResponse indicates an expected call of MergeSiteWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) MergeSiteWithResponse(ctx, clinicId, siteId, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, siteId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeSiteWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).MergeSiteWithResponse), varargs...)
 }
 
 // MigrateLegacyClinicianPatientsWithBodyWithResponse mocks base method.

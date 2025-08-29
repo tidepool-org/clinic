@@ -3,9 +3,6 @@ package merge
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"slices"
-	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -117,7 +114,7 @@ func (s *SourceSiteMergePlanner) Plan(ctx context.Context) (SitePlan, error) {
 	for _, tgtSite := range s.target.Sites {
 		if tgtSite.Name == s.site.Name {
 			plan.Action = SiteActionRename
-			newName, err := maybeRenameSite(plan.Site, s.target.Sites)
+			newName, err := sites.MaybeRenameSite(plan.Site, s.target.Sites)
 			if err != nil {
 				return SitePlan{}, err
 			}
@@ -184,7 +181,7 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 			return fmt.Errorf("unable to get target clinic for site %s: %s", plan.Name(), err)
 		}
 		targetSites := targetClinic.Sites
-		newName, err := maybeRenameSite(plan.Site, targetSites)
+		newName, err := sites.MaybeRenameSite(plan.Site, targetSites)
 		if err != nil {
 			return err
 		}
@@ -203,40 +200,4 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 		return fmt.Errorf("unhandled site action for site %q: %s", plan.Name(), plan.Action)
 	}
 	return nil
-}
-
-// maybeRenameSite by adding numbered suffixes, if a duplicate site exists in targetSites.
-//
-// A site is considered a duplicate when it's not [sites.Site.Equals] to any element of
-// targetSites, but has the same name. Returns site.Name when no duplicate is found.
-func maybeRenameSite(site sites.Site, targetSites []sites.Site) (string, error) {
-	proposedName := site.Name
-	if slices.ContainsFunc(targetSites, site.Equals) {
-		return site.Name, nil
-	}
-	for sites.SiteExistsWithName(targetSites, proposedName) {
-		incremented, err := incNumericSuffix(proposedName)
-		if err != nil {
-			return "", err
-		}
-		proposedName = incremented
-	}
-	return proposedName, nil
-}
-
-var siteNameSuffix = regexp.MustCompile(` \((\d+)\)$`)
-
-func incNumericSuffix(name string) (string, error) {
-	matches := siteNameSuffix.FindStringSubmatch(name)
-	if len(matches) != 2 {
-		// It has no numeric suffix, so add " (2)".
-		return name + " (2)", nil
-	}
-	n, err := strconv.Atoi(matches[1])
-	if err != nil {
-		// This can only happen if siteNameSuffix, the regular expression itself, is faulty.
-		return "", fmt.Errorf("unable to parse site name suffix: %s", name)
-	}
-	base := name[:len(name)-len(matches[0])]
-	return fmt.Sprintf("%s (%d)", base, n+1), nil
 }

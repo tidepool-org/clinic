@@ -29,7 +29,7 @@ const (
 // Collation to use for string fields
 var collation = options.Collation{Locale: "en", Strength: 1}
 
-//go:generate mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
+//go:generate go tool mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
 
 type Repository interface {
 	Service
@@ -1561,6 +1561,68 @@ func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, s
 	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *repository) MergeSites(ctx context.Context,
+	clinicId, sourceSiteId string, targetSite *sites.Site) error {
+
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	sourceSiteOID, err := primitive.ObjectIDFromHex(sourceSiteId)
+	if err != nil {
+		return fmt.Errorf("parsing source site's ObjectId: %w", err)
+	}
+
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"$and": bson.A{
+			bson.M{"sites.id": bson.M{"$eq": sourceSiteOID}},
+			bson.M{"sites.id": bson.M{"$nin": bson.A{targetSite.Id}}},
+		},
+	}
+	update := bson.M{
+		"$push":        bson.M{"sites": targetSite},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+
+	if err := r.DeleteSites(ctx, clinicId, sourceSiteId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) ConvertPatientTagToSite(ctx context.Context,
+	clinicId, patientTagId string, site *sites.Site) error {
+
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	patientTagOID, err := primitive.ObjectIDFromHex(patientTagId)
+	if err != nil {
+		return fmt.Errorf("parsing source site's ObjectId: %w", err)
+	}
+
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"tags":     bson.M{"$eq": patientTagOID},
+	}
+	update := bson.M{
+		"$push":        bson.M{"sites": site},
+		"$pull":        bson.M{"tags": patientTagOID},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+
 	return nil
 }
 

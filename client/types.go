@@ -2435,6 +2435,9 @@ type CreateSiteJSONRequestBody = SiteCreationV1
 // UpdateSiteJSONRequestBody defines body for UpdateSite for application/json ContentType.
 type UpdateSiteJSONRequestBody = SiteV1
 
+// MergeSiteJSONRequestBody defines body for MergeSite for application/json ContentType.
+type MergeSiteJSONRequestBody = SiteV1
+
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications
 

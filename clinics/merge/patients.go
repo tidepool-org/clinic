@@ -212,13 +212,13 @@ func (p *PatientMergePlanner) initMergedSites() error {
 	return nil
 }
 
-func siteNames(sites *[]sites.Site, targetSites []sites.Site) []string {
-	if sites == nil {
+func siteNames(sourceSites *[]sites.Site, targetSites []sites.Site) []string {
+	if sourceSites == nil {
 		return nil
 	}
-	names := make([]string, 0, len(*sites))
-	for _, site := range *sites {
-		renamed, err := maybeRenameSite(site, targetSites)
+	names := make([]string, 0, len(*sourceSites))
+	for _, site := range *sourceSites {
+		renamed, err := sites.MaybeRenameSite(site, targetSites)
 		if err != nil {
 			renamed = fmt.Sprintf("<error incrementing site name: %s>", err)
 		}

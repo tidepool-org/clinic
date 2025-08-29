@@ -39,7 +39,7 @@ var ErrDuplicateSiteName = fmt.Errorf("%w site name", errors.Duplicate)
 var ErrMaximumSitesExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %d sites", errors.ConstraintViolation, sites.MaxSitesPerClinic)
 var ErrSiteNotFound = fmt.Errorf("%w: the clinic has no site with that name", errors.ConstraintViolation)
 
-//go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockRepository
+//go:generate go tool mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockRepository
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)

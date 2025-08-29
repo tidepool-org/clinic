@@ -1016,6 +1016,28 @@ paths:
       description: Delete a Site
       tags:
         - Clinics
+  /v1/clinics/{clinicId}/sites/{siteId}/merge:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/siteId'
+    post:
+      summary: Merge two sites
+      operationId: MergeSite
+      responses:
+        '200':
+          description: The merged clinic site
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/site.v1'
+      description: Merge a site, identified in the request body, into the site identified in the URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/site.v1'
+      tags:
+        - Clinics
   /v1/clinics/{clinicId}/clinicians/{clinicianId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1147,6 +1169,25 @@ paths:
         '204':
           description: No content
       description: Removes a patient tag from a clinic and tagged patients
+      tags:
+        - Clinics
+  /v1/clinics/{clinicId}/patient_tags/{patientTagId}/site:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientTagId'
+    post:
+      summary: Convert Patient Tag to Site
+      operationId: ConvertPatientTagToSite
+      responses:
+        '200':
+          description: The newly converted site.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/site.v1'
+        '409':
+          description: Cannot convert the tag to a site. This could occur for example when the maximum number of sites has already been reached.
+      description: Convert a patient tag to a site.
       tags:
         - Clinics
   /v1/clinics/{clinicId}/invites/clinicians:

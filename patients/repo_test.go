@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
+	"slices"
 	"strings"
 	"time"
 
@@ -1746,6 +1747,48 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("MergeSites", func() {
+			var patientWithSites patients.Patient
+
+			BeforeEach(func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *randomPatient.UserId
+				patientWithSites = randomPatient
+				sites := sitesTest.RandomSlice(1)
+				patientWithSites.Sites = &sites
+				update := patients.PatientUpdate{
+					ClinicId: clinicId,
+					UserId:   userId,
+					Patient:  patientWithSites,
+				}
+				_, err := repo.Update(ctx, update)
+				Expect(err).To(Succeed())
+			})
+
+			It("updates patients' sites", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *patientWithSites.UserId
+				source := (*patientWithSites.Sites)[0]
+				sourceId := source.Id.Hex()
+				preMerge, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).To(Succeed())
+				Expect(preMerge.Sites).ToNot(BeNil())
+				Expect(len(*preMerge.Sites)).To(Equal(1))
+				Expect((*preMerge.Sites)[0].Name).To(Equal(source.Name))
+				target := sitesTest.Random()
+				target.Name = source.Name + "-target"
+
+				Expect(repo.MergeSites(ctx, clinicId, sourceId, &target)).To(Succeed())
+				got, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).To(Succeed())
+				Expect(got.Sites).ToNot(BeNil())
+				Expect(len(*got.Sites)).To(Equal(1))
+				Expect((*got.Sites)[0].Name).To(Equal(target.Name))
+			})
+		})
+
 		Describe("UpdateSites", func() {
 			var patientWithSites patients.Patient
 
@@ -1779,6 +1822,55 @@ var _ = Describe("Patients Repository", func() {
 				Expect(got.Sites).ToNot(BeNil())
 				Expect(len(*got.Sites)).To(Equal(1))
 				Expect((*got.Sites)[0].Name).To(Equal(site.Name))
+			})
+		})
+
+		Describe("ConvertPatientTagToSite", func() {
+			It("works", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				Expect(randomPatient.Tags != nil).To(BeTrue())
+				Expect(len(*randomPatient.Tags) > 0).To(BeTrue())
+				tagID := (*randomPatient.Tags)[0]
+				site := sitesTest.Random()
+
+				err := repo.ConvertPatientTagToSite(ctx, clinicId, tagID.Hex(), &site)
+				Expect(err).To(Succeed())
+			})
+
+			It("removes the tag", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				Expect(randomPatient.Tags != nil).To(BeTrue())
+				Expect(len(*randomPatient.Tags) > 0).To(BeTrue())
+				tagID := (*randomPatient.Tags)[0]
+				site := sitesTest.Random()
+				err := repo.ConvertPatientTagToSite(ctx, clinicId, tagID.Hex(), &site)
+				Expect(err).To(Succeed())
+
+				patient, err := repo.Get(ctx, clinicId, *randomPatient.UserId)
+				Expect(err).To(Succeed())
+				Expect(slices.ContainsFunc(*patient.Tags, func(id primitive.ObjectID) bool {
+					return tagID == id
+				})).ToNot(BeTrue())
+			})
+
+			It("adds the site", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				Expect(randomPatient.Tags != nil).To(BeTrue())
+				Expect(len(*randomPatient.Tags) > 0).To(BeTrue())
+				tagID := (*randomPatient.Tags)[0]
+				site := sitesTest.Random()
+				err := repo.ConvertPatientTagToSite(ctx, clinicId, tagID.Hex(), &site)
+				Expect(err).To(Succeed())
+
+				patient, err := repo.Get(ctx, clinicId, *randomPatient.UserId)
+				Expect(err).To(Succeed())
+				Expect(patient.Sites != nil).To(BeTrue())
+				Expect(slices.ContainsFunc(*patient.Sites, func(s sites.Site) bool {
+					return s.Name == site.Name
+				})).To(BeTrue())
 			})
 		})
 	})

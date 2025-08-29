@@ -87,6 +87,20 @@ func (mr *MockServiceMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockService)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
 }
 
+// ConvertPatientTagToSite mocks base method.
+func (m *MockService) ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConvertPatientTagToSite", ctx, clinicId, patientTagId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConvertPatientTagToSite indicates an expected call of ConvertPatientTagToSite.
+func (mr *MockServiceMockRecorder) ConvertPatientTagToSite(ctx, clinicId, patientTagId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertPatientTagToSite", reflect.TypeOf((*MockService)(nil).ConvertPatientTagToSite), ctx, clinicId, patientTagId, site)
+}
+
 // Count mocks base method.
 func (m *MockService) Count(ctx context.Context, filter *patients.Filter) (int, error) {
 	m.ctrl.T.Helper()
@@ -246,6 +260,20 @@ func (m *MockService) List(ctx context.Context, filter *patients.Filter, paginat
 func (mr *MockServiceMockRecorder) List(ctx, filter, pagination, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockService)(nil).List), ctx, filter, pagination, sort)
+}
+
+// MergeSites mocks base method.
+func (m *MockService) MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MergeSites", ctx, clinicId, sourceSiteId, targetSite)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MergeSites indicates an expected call of MergeSites.
+func (mr *MockServiceMockRecorder) MergeSites(ctx, clinicId, sourceSiteId, targetSite any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeSites", reflect.TypeOf((*MockService)(nil).MergeSites), ctx, clinicId, sourceSiteId, targetSite)
 }
 
 // Remove mocks base method.

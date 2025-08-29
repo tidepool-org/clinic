@@ -780,6 +780,22 @@ allow {
 }
 allow {
   input.method == "PUT"
-  input.path = ["v1", "clinics", _, "sites",_]
+  input.path = ["v1", "clinics", _, "sites", _]
   clinician_has_write_access
+}
+
+# Allow backend services to merge two sites
+# POST /v1/clinics/:clinicId/sites/:targetSiteId/merge
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "sites", _, "merge"]
+  is_backend_service
+}
+
+# Allow backend services to convert a patient tag to a site
+# POST /v1/clinics/:clinicId/patient_tags/:patientTagId/site
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patient_tags", _, "site"]
+  is_backend_service
 }

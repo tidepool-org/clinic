@@ -3,11 +3,11 @@ package patients
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
@@ -44,7 +44,7 @@ var (
 	}
 )
 
-//go:generate mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
+//go:generate go tool mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
 	Count(ctx context.Context, filter *Filter) (int, error)
@@ -65,12 +65,14 @@ type Service interface {
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
+	ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 	RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error
 	DeleteSites(ctx context.Context, clinicId string, siteId string) error
+	MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error
 	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
 }
 
