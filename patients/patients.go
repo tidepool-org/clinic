@@ -44,7 +44,7 @@ var (
 	}
 )
 
-//go:generate mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
+//go:generate go tool mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
 	Count(ctx context.Context, filter *Filter) (int, error)
