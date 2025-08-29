@@ -51,6 +51,11 @@ type Manager interface {
 	// Sites are denormalized over the clinics and patients collections. This function
 	// should handle maintaining that denormalization.
 	UpdateSite(_ context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error)
+	// ConvertPatientTagToSite within a clinic.
+	//
+	// Useful after clinic merges for example. Or when clinics used a given tag to denote a
+	// site, before the introduction of sites.
+	ConvertPatientTagToSite(_ context.Context, clinicId, patientTagId string) (*sites.Site, error)
 }
 
 type manager struct {
@@ -327,6 +332,53 @@ func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error
 		return err
 	}
 	return nil
+}
+
+func (c *manager) ConvertPatientTagToSite(ctx context.Context,
+	clinicId, patientTagId string) (*sites.Site, error) {
+
+	clinic, err := c.clinics.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	var tag *clinics.PatientTag
+	for _, clinicTag := range clinic.PatientTags {
+		if clinicTag.Id.Hex() == patientTagId {
+			tag = &clinicTag
+			break
+		}
+	}
+	if tag == nil {
+		return nil, fmt.Errorf("unable to find patient tag: %w", errors.NotFound)
+	}
+
+	siteName, err := sites.MaybeRenameSite(sites.Site{Name: tag.Name}, clinic.Sites)
+	if err != nil {
+		return nil, err
+	}
+
+	site, err := c.CreateSite(ctx, clinicId, siteName)
+	if err != nil {
+		if errs.Is(err, clinics.ErrMaximumSitesExceeded) {
+			return nil, errors.Conflict
+		}
+		if errs.Is(err, clinics.ErrDuplicateSiteName) {
+			return nil, errors.Conflict
+		}
+		return nil, err
+	}
+
+	err = c.patientsService.ConvertPatientTagToSite(ctx, clinicId, patientTagId, site)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.clinics.DeletePatientTag(ctx, clinicId, tag.Id.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	return site, nil
 }
 
 func (c *manager) MergeSite(ctx context.Context,

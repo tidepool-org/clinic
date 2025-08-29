@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
+	"slices"
 	"strings"
 	"time"
 
@@ -1821,6 +1822,55 @@ var _ = Describe("Patients Repository", func() {
 				Expect(got.Sites).ToNot(BeNil())
 				Expect(len(*got.Sites)).To(Equal(1))
 				Expect((*got.Sites)[0].Name).To(Equal(site.Name))
+			})
+		})
+
+		Describe("ConvertPatientTagToSite", func() {
+			It("works", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				Expect(randomPatient.Tags != nil).To(BeTrue())
+				Expect(len(*randomPatient.Tags) > 0).To(BeTrue())
+				tagID := (*randomPatient.Tags)[0]
+				site := sitesTest.Random()
+
+				err := repo.ConvertPatientTagToSite(ctx, clinicId, tagID.Hex(), &site)
+				Expect(err).To(Succeed())
+			})
+
+			It("removes the tag", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				Expect(randomPatient.Tags != nil).To(BeTrue())
+				Expect(len(*randomPatient.Tags) > 0).To(BeTrue())
+				tagID := (*randomPatient.Tags)[0]
+				site := sitesTest.Random()
+				err := repo.ConvertPatientTagToSite(ctx, clinicId, tagID.Hex(), &site)
+				Expect(err).To(Succeed())
+
+				patient, err := repo.Get(ctx, clinicId, *randomPatient.UserId)
+				Expect(err).To(Succeed())
+				Expect(slices.ContainsFunc(*patient.Tags, func(id primitive.ObjectID) bool {
+					return tagID == id
+				})).ToNot(BeTrue())
+			})
+
+			It("adds the site", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				Expect(randomPatient.Tags != nil).To(BeTrue())
+				Expect(len(*randomPatient.Tags) > 0).To(BeTrue())
+				tagID := (*randomPatient.Tags)[0]
+				site := sitesTest.Random()
+				err := repo.ConvertPatientTagToSite(ctx, clinicId, tagID.Hex(), &site)
+				Expect(err).To(Succeed())
+
+				patient, err := repo.Get(ctx, clinicId, *randomPatient.UserId)
+				Expect(err).To(Succeed())
+				Expect(patient.Sites != nil).To(BeTrue())
+				Expect(slices.ContainsFunc(*patient.Sites, func(s sites.Site) bool {
+					return s.Name == site.Name
+				})).To(BeTrue())
 			})
 		})
 	})

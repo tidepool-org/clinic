@@ -65,6 +65,7 @@ type Service interface {
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
+	ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
