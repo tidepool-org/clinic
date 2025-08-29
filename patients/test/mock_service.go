@@ -248,6 +248,20 @@ func (mr *MockServiceMockRecorder) List(ctx, filter, pagination, sort any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockService)(nil).List), ctx, filter, pagination, sort)
 }
 
+// MergeSites mocks base method.
+func (m *MockService) MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MergeSites", ctx, clinicId, sourceSiteId, targetSite)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MergeSites indicates an expected call of MergeSites.
+func (mr *MockServiceMockRecorder) MergeSites(ctx, clinicId, sourceSiteId, targetSite any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeSites", reflect.TypeOf((*MockService)(nil).MergeSites), ctx, clinicId, sourceSiteId, targetSite)
+}
+
 // Remove mocks base method.
 func (m *MockService) Remove(ctx context.Context, clinicId, userId string, metadata deletions.Metadata) error {
 	m.ctrl.T.Helper()

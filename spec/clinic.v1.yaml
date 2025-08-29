@@ -1016,6 +1016,28 @@ paths:
       description: Delete a Site
       tags:
         - Clinics
+  /v1/clinics/{clinicId}/sites/{siteId}/merge:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/siteId'
+    post:
+      summary: Merge two sites
+      operationId: MergeSite
+      responses:
+        '200':
+          description: The merged clinic site
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/site.v1'
+      description: Merge a site, identified in the request body, into the site identified in the URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/site.v1'
+      tags:
+        - Clinics
   /v1/clinics/{clinicId}/clinicians/{clinicianId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'

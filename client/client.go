@@ -305,6 +305,11 @@ type ClientInterface interface {
 
 	UpdateSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body UpdateSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// MergeSiteWithBody request with any body
+	MergeSiteWithBody(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	MergeSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdateSuppressedNotificationsWithBody request with any body
 	UpdateSuppressedNotificationsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1327,6 +1332,30 @@ func (c *Client) UpdateSiteWithBody(ctx context.Context, clinicId ClinicId, site
 
 func (c *Client) UpdateSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body UpdateSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateSiteRequest(c.Server, clinicId, siteId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MergeSiteWithBody(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMergeSiteRequestWithBody(c.Server, clinicId, siteId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MergeSite(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMergeSiteRequest(c.Server, clinicId, siteId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -6307,6 +6336,60 @@ func NewUpdateSiteRequestWithBody(server string, clinicId ClinicId, siteId SiteI
 	return req, nil
 }
 
+// NewMergeSiteRequest calls the generic MergeSite builder with application/json body
+func NewMergeSiteRequest(server string, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMergeSiteRequestWithBody(server, clinicId, siteId, "application/json", bodyReader)
+}
+
+// NewMergeSiteRequestWithBody generates requests for MergeSite with any type of body
+func NewMergeSiteRequestWithBody(server string, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "siteId", runtime.ParamLocationPath, siteId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/sites/%s/merge", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewUpdateSuppressedNotificationsRequest calls the generic UpdateSuppressedNotifications builder with application/json body
 func NewUpdateSuppressedNotificationsRequest(server string, clinicId ClinicId, body UpdateSuppressedNotificationsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7474,6 +7557,11 @@ type ClientWithResponsesInterface interface {
 	UpdateSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSiteResponse, error)
 
 	UpdateSiteWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, body UpdateSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSiteResponse, error)
+
+	// MergeSiteWithBodyWithResponse request with any body
+	MergeSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error)
+
+	MergeSiteWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error)
 
 	// UpdateSuppressedNotificationsWithBodyWithResponse request with any body
 	UpdateSuppressedNotificationsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSuppressedNotificationsResponse, error)
@@ -8741,6 +8829,28 @@ func (r UpdateSiteResponse) StatusCode() int {
 	return 0
 }
 
+type MergeSiteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SiteV1
+}
+
+// Status returns HTTPResponse.Status
+func (r MergeSiteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MergeSiteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdateSuppressedNotificationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -9837,6 +9947,23 @@ func (c *ClientWithResponses) UpdateSiteWithResponse(ctx context.Context, clinic
 		return nil, err
 	}
 	return ParseUpdateSiteResponse(rsp)
+}
+
+// MergeSiteWithBodyWithResponse request with arbitrary body returning *MergeSiteResponse
+func (c *ClientWithResponses) MergeSiteWithBodyWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error) {
+	rsp, err := c.MergeSiteWithBody(ctx, clinicId, siteId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMergeSiteResponse(rsp)
+}
+
+func (c *ClientWithResponses) MergeSiteWithResponse(ctx context.Context, clinicId ClinicId, siteId SiteId, body MergeSiteJSONRequestBody, reqEditors ...RequestEditorFn) (*MergeSiteResponse, error) {
+	rsp, err := c.MergeSite(ctx, clinicId, siteId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMergeSiteResponse(rsp)
 }
 
 // UpdateSuppressedNotificationsWithBodyWithResponse request with arbitrary body returning *UpdateSuppressedNotificationsResponse
@@ -11307,6 +11434,32 @@ func ParseUpdateSiteResponse(rsp *http.Response) (*UpdateSiteResponse, error) {
 	}
 
 	response := &UpdateSiteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SiteV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMergeSiteResponse parses an HTTP response from a MergeSiteWithResponse call
+func ParseMergeSiteResponse(rsp *http.Response) (*MergeSiteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MergeSiteResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
