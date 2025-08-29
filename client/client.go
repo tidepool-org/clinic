@@ -204,6 +204,9 @@ type ClientInterface interface {
 
 	UpdatePatientTag(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body UpdatePatientTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ConvertPatientTagToSite request
+	ConvertPatientTagToSite(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListPatients request
 	ListPatients(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -876,6 +879,18 @@ func (c *Client) UpdatePatientTagWithBody(ctx context.Context, clinicId ClinicId
 
 func (c *Client) UpdatePatientTag(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body UpdatePatientTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientTagRequest(c.Server, clinicId, patientTagId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConvertPatientTagToSite(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConvertPatientTagToSiteRequest(c.Server, clinicId, patientTagId)
 	if err != nil {
 		return nil, err
 	}
@@ -3195,6 +3210,47 @@ func NewUpdatePatientTagRequestWithBody(server string, clinicId ClinicId, patien
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewConvertPatientTagToSiteRequest generates requests for ConvertPatientTagToSite
+func NewConvertPatientTagToSiteRequest(server string, clinicId ClinicId, patientTagId PatientTagId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientTagId", runtime.ParamLocationPath, patientTagId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patient_tags/%s/site", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -7457,6 +7513,9 @@ type ClientWithResponsesInterface interface {
 
 	UpdatePatientTagWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body UpdatePatientTagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientTagResponse, error)
 
+	// ConvertPatientTagToSiteWithResponse request
+	ConvertPatientTagToSiteWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*ConvertPatientTagToSiteResponse, error)
+
 	// ListPatientsWithResponse request
 	ListPatientsWithResponse(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*ListPatientsResponse, error)
 
@@ -8285,6 +8344,28 @@ func (r UpdatePatientTagResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdatePatientTagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConvertPatientTagToSiteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SiteV1
+}
+
+// Status returns HTTPResponse.Status
+func (r ConvertPatientTagToSiteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConvertPatientTagToSiteResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9620,6 +9701,15 @@ func (c *ClientWithResponses) UpdatePatientTagWithResponse(ctx context.Context, 
 	return ParseUpdatePatientTagResponse(rsp)
 }
 
+// ConvertPatientTagToSiteWithResponse request returning *ConvertPatientTagToSiteResponse
+func (c *ClientWithResponses) ConvertPatientTagToSiteWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, reqEditors ...RequestEditorFn) (*ConvertPatientTagToSiteResponse, error) {
+	rsp, err := c.ConvertPatientTagToSite(ctx, clinicId, patientTagId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConvertPatientTagToSiteResponse(rsp)
+}
+
 // ListPatientsWithResponse request returning *ListPatientsResponse
 func (c *ClientWithResponses) ListPatientsWithResponse(ctx context.Context, clinicId ClinicId, params *ListPatientsParams, reqEditors ...RequestEditorFn) (*ListPatientsResponse, error) {
 	rsp, err := c.ListPatients(ctx, clinicId, params, reqEditors...)
@@ -10911,6 +11001,32 @@ func ParseUpdatePatientTagResponse(rsp *http.Response) (*UpdatePatientTagRespons
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest PatientTagV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConvertPatientTagToSiteResponse parses an HTTP response from a ConvertPatientTagToSiteWithResponse call
+func ParseConvertPatientTagToSiteResponse(rsp *http.Response) (*ConvertPatientTagToSiteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConvertPatientTagToSiteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SiteV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

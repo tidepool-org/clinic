@@ -351,6 +351,12 @@ func (s *service) MergeSites(ctx context.Context, clinicId, sourceSiteId string,
 	return s.patientsRepo.MergeSites(ctx, clinicId, sourceSiteId, targetSite)
 }
 
+func (s *service) ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error {
+	s.logger.Infow("converting patient tag to site", "clinicId", clinicId, "patientTagId",
+		patientTagId, "siteId", site.Id.Hex())
+	return s.patientsRepo.ConvertPatientTagToSite(ctx, clinicId, patientTagId, site)
+}
+
 func (s *service) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
 	s.logger.Infow("updating sites", "clinicId", clinicId, "siteId", siteId, "site", site)
 	return s.patientsRepo.UpdateSites(ctx, clinicId, siteId, site)

@@ -5,7 +5,9 @@ package sites
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -47,3 +49,39 @@ func New(name string) *Site {
 
 // MaxSitesPerClinic limits the sites per clinic, to prevent abuse.
 const MaxSitesPerClinic int = 50
+
+// MaybeRenameSite by adding numbered suffixes, if a duplicate site exists in targetSites.
+//
+// A site is considered a duplicate when it's not [sites.Site.Equals] to any element of
+// targetSites, but has the same name. Returns site.Name when no duplicate is found.
+func MaybeRenameSite(site Site, targetSites []Site) (string, error) {
+	proposedName := site.Name
+	if slices.ContainsFunc(targetSites, site.Equals) {
+		return site.Name, nil
+	}
+	for SiteExistsWithName(targetSites, proposedName) {
+		incremented, err := incNumericSuffix(proposedName)
+		if err != nil {
+			return "", err
+		}
+		proposedName = incremented
+	}
+	return proposedName, nil
+}
+
+var siteNameSuffix = regexp.MustCompile(` \((\d+)\)$`)
+
+func incNumericSuffix(name string) (string, error) {
+	matches := siteNameSuffix.FindStringSubmatch(name)
+	if len(matches) != 2 {
+		// It has no numeric suffix, so add " (2)".
+		return name + " (2)", nil
+	}
+	n, err := strconv.Atoi(matches[1])
+	if err != nil {
+		// This can only happen if siteNameSuffix, the regular expression itself, is faulty.
+		return "", fmt.Errorf("unable to parse site name suffix: %s", name)
+	}
+	base := name[:len(name)-len(matches[0])]
+	return fmt.Sprintf("%s (%d)", base, n+1), nil
+}

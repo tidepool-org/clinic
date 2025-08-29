@@ -87,6 +87,20 @@ func (mr *MockRepositoryMockRecorder) AssignPatientTagToClinicPatients(ctx, clin
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockRepository)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
 }
 
+// ConvertPatientTagToSite mocks base method.
+func (m *MockRepository) ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConvertPatientTagToSite", ctx, clinicId, patientTagId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConvertPatientTagToSite indicates an expected call of ConvertPatientTagToSite.
+func (mr *MockRepositoryMockRecorder) ConvertPatientTagToSite(ctx, clinicId, patientTagId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertPatientTagToSite", reflect.TypeOf((*MockRepository)(nil).ConvertPatientTagToSite), ctx, clinicId, patientTagId, site)
+}
+
 // Count mocks base method.
 func (m *MockRepository) Count(ctx context.Context, filter *patients.Filter) (int, error) {
 	m.ctrl.T.Helper()

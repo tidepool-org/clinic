@@ -791,3 +791,11 @@ allow {
   input.path = ["v1", "clinics", _, "sites", _, "merge"]
   is_backend_service
 }
+
+# Allow backend services to convert a patient tag to a site
+# POST /v1/clinics/:clinicId/patient_tags/:patientTagId/site
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patient_tags", _, "site"]
+  is_backend_service
+}
