@@ -2,6 +2,7 @@ package manager_test
 
 import (
 	"context"
+	stderrors "errors"
 	"slices"
 	"testing"
 
@@ -20,6 +21,7 @@ import (
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
+	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
@@ -376,6 +378,100 @@ var _ = Describe("Clinics Manager", func() {
 						return s.Id.Hex() == siteId
 					})).To(BeFalse())
 				}
+			})
+		})
+
+		Describe("MergeSite", func() {
+			It("works", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				targetSiteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				source, err := th.mngr.CreateSite(ctx, clinicId, "works")
+				Expect(err).To(Succeed())
+
+				_, err = mngr.MergeSite(ctx, clinicId, source.Id.Hex(), targetSiteId)
+				Expect(err).To(Succeed())
+			})
+
+			It("doesn't allow a site to merge into itself", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				siteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+
+				_, err := mngr.MergeSite(ctx, clinicId, siteId, siteId)
+				Expect(err).ToNot(Succeed())
+				Expect(stderrors.Is(err, errors.BadRequest)).To(BeTrue())
+			})
+
+			It("removes the source site from the clinic", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				targetSiteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				source, err := th.mngr.CreateSite(ctx, clinicId, "source")
+				Expect(err).To(Succeed())
+				_, err = mngr.MergeSite(ctx, clinicId, source.Id.Hex(), targetSiteId)
+				Expect(err).To(Succeed())
+				clinic, err := th.ClinicsRepo.Get(ctx, clinicId)
+				Expect(err).To(Succeed())
+
+				for _, site := range clinic.Sites {
+					Expect(site.Id.Hex()).ToNot(Equal(source.Id.Hex()))
+				}
+			})
+
+			It("removes the source site from patients", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				sourceSiteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				target, err := th.mngr.CreateSite(ctx, clinicId, "target")
+				Expect(err).To(Succeed())
+				_, err = mngr.MergeSite(ctx, clinicId, sourceSiteId, target.Id.Hex())
+				Expect(err).To(Succeed())
+				patients, err := th.PatientsRepo.List(ctx, &patients.Filter{
+					ClinicId: &clinicId,
+				}, store.DefaultPagination(), nil)
+				Expect(err).To(Succeed())
+
+				for _, patient := range patients.Patients {
+					Expect(patient.Sites).ToNot(BeNil())
+					Expect(slices.ContainsFunc(*patient.Sites, func(s sites.Site) bool {
+						return s.Id.Hex() == sourceSiteId
+					})).To(BeFalse())
+				}
+			})
+
+			It("adds the target site to patients", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				sourceSiteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				target, err := th.mngr.CreateSite(ctx, clinicId, "target")
+				Expect(err).To(Succeed())
+				_, err = mngr.MergeSite(ctx, clinicId, sourceSiteId, target.Id.Hex())
+				Expect(err).To(Succeed())
+				patients, err := th.PatientsRepo.List(ctx, &patients.Filter{
+					ClinicId: &clinicId,
+				}, store.DefaultPagination(), nil)
+				Expect(err).To(Succeed())
+
+				for _, patient := range patients.Patients {
+					Expect(patient.Sites).ToNot(BeNil())
+					Expect(slices.ContainsFunc(*patient.Sites, func(s sites.Site) bool {
+						return s.Id == target.Id
+					})).To(BeTrue())
+				}
+			})
+
+			It("returns the merged (target) site", func() {
+				ctx, mngr, th := newCreateSiteTestHelper(GinkgoTB())
+				sourceSiteId := th.Clinic.Sites[0].Id.Hex()
+				clinicId := th.Clinic.Id.Hex()
+				target, err := th.mngr.CreateSite(ctx, clinicId, "target")
+				Expect(err).To(Succeed())
+
+				merged, err := mngr.MergeSite(ctx, clinicId, sourceSiteId, target.Id.Hex())
+				Expect(err).To(Succeed())
+				Expect(merged.Name).To(Equal(target.Name))
+				Expect(merged.Id.Hex()).To(Equal(target.Id.Hex()))
 			})
 		})
 

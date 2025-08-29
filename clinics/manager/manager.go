@@ -44,6 +44,8 @@ type Manager interface {
 	// The Site should be removed from the clinic and any patient records that include the
 	// site.
 	DeleteSite(_ context.Context, clinicId string, siteId string) error
+	// MergeSite combines the patients from two sites into the target, deleting the source.
+	MergeSite(_ context.Context, clinicId, sourceSiteId, targetSiteId string) (*sites.Site, error)
 	// UpdateSite within a clinic.
 	//
 	// Sites are denormalized over the clinics and patients collections. This function
@@ -325,6 +327,38 @@ func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error
 		return err
 	}
 	return nil
+}
+
+func (c *manager) MergeSite(ctx context.Context,
+	clinicId, sourceSiteId, targetSiteId string) (*sites.Site, error) {
+
+	if sourceSiteId == targetSiteId {
+		return nil, fmt.Errorf("can't merge a site into itself: %w", errors.BadRequest)
+	}
+
+	clinic, err := c.clinics.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	var targetSite *sites.Site
+	for _, site := range clinic.Sites {
+		if site.Id.Hex() == targetSiteId {
+			targetSite = &site
+			break
+		}
+	}
+	if targetSite == nil {
+		return nil, errors.NotFound
+	}
+	err = c.patientsService.MergeSites(ctx, clinicId, sourceSiteId, targetSite)
+	if err != nil {
+		return nil, err
+	}
+	err = c.clinics.DeleteSite(ctx, clinicId, sourceSiteId)
+	if err != nil {
+		return nil, err
+	}
+	return targetSite, nil
 }
 
 // UpdateSite implements [Manager].
