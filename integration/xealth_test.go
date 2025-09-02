@@ -130,6 +130,11 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(patient.Email).To(PointTo(Equal("xealth@tidepool.org")))
 		})
 
+		It("abbott connection request is correctly set", func() {
+			Expect(patient.ConnectionRequests.Abbott).ToNot(BeEmpty())
+			Expect(patient.ConnectionRequests.Abbott[0].CreatedTime).To(BeTemporally("~", time.Now().UTC(), time.Second*5))
+		})
+
 		It("dexcom connection request is correctly set", func() {
 			Expect(patient.ConnectionRequests.Dexcom).ToNot(BeEmpty())
 			Expect(patient.ConnectionRequests.Dexcom[0].CreatedTime).To(BeTemporally("~", time.Now().UTC(), time.Second*5))
@@ -143,7 +148,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(response.Programs).To(HaveLen(1))
 
 			program := response.Programs[0]
-			Expect(program.Description).To(PointTo(Equal("Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Dexcom (pending)")))
+			Expect(program.Description).To(PointTo(Equal("Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Abbott (pending), Dexcom (pending)")))
 			Expect(program.EnrolledDate).To(PointTo(Equal("2021-01-14")))
 			Expect(program.HasStatusView).To(PointTo(BeFalse()))
 			Expect(program.HasAlert).To(PointTo(BeFalse()))
@@ -175,7 +180,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			program := response.Programs[0]
 
 			// Last upload should be set to the summary last updated date
-			Expect(program.Description).To(PointTo(Equal("Last Upload: 2024-01-18 | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Dexcom (pending)")))
+			Expect(program.Description).To(PointTo(Equal("Last Upload: 2024-01-18 | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Abbott (pending), Dexcom (pending)")))
 			Expect(program.EnrolledDate).To(PointTo(Equal("2021-01-14")))
 			Expect(program.HasStatusView).To(PointTo(BeTrue()))
 			Expect(program.HasAlert).To(PointTo(BeTrue()))
@@ -241,7 +246,7 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			today := time.Now().UTC().Format(time.DateOnly)
 
 			// Last upload should be set to the summary last updated date
-			Expect(program.Description).To(PointTo(Equal(fmt.Sprintf("Last Upload: 2024-01-18 | Last Viewed by You: %s | Claimed Account?: No | Cloud Connections: Dexcom (pending)", today))))
+			Expect(program.Description).To(PointTo(Equal(fmt.Sprintf("Last Upload: 2024-01-18 | Last Viewed by You: %s | Claimed Account?: No | Cloud Connections: Abbott (pending), Dexcom (pending)", today))))
 			Expect(program.EnrolledDate).To(PointTo(Equal("2021-01-14")))
 			Expect(program.HasStatusView).To(PointTo(BeTrue()))
 			Expect(program.HasAlert).To(PointTo(BeFalse()))

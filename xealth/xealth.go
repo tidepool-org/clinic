@@ -438,77 +438,30 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 	}
 
 	if match.Patient == nil {
-		if preorderData == nil {
-			return fmt.Errorf("%w: preorder data is required to create a new patient", errs.BadRequest)
+		create, err := GetPatientCreateFromOrder(match, preorderData)
+		if err != nil {
+			return fmt.Errorf("unable to create patient create: %w", err)
 		}
 
-		validTagIds := make(map[string]struct{})
-		for _, tag := range match.Clinic.PatientTags {
-			validTagIds[tag.Id.Hex()] = struct{}{}
-		}
-
-		create := patients.Patient{
-			ClinicId:    match.Clinic.Id,
-			BirthDate:   &match.Criteria.DateOfBirth,
-			Mrn:         &match.Criteria.Mrn,
-			Permissions: &patients.CustodialAccountPermissions,
-		}
-		connectDexcom := false
-		if preorderData.Guardian != nil {
-			create.FullName = &match.Criteria.FullName
-			if strings.TrimSpace(preorderData.Guardian.Email) != "" {
-				create.Email = &preorderData.Guardian.Email
-				connectDexcom = preorderData.Guardian.ConnectDexcom
-			}
-		} else if preorderData.Patient != nil {
-			create.FullName = &match.Criteria.FullName
-			if strings.TrimSpace(preorderData.Patient.Email) != "" {
-				create.Email = &preorderData.Patient.Email
-				connectDexcom = preorderData.Patient.ConnectDexcom
-			}
-		} else {
-			return fmt.Errorf("%w: unable to create patient preorder data is missing", errs.BadRequest)
-		}
-
-		var tags []primitive.ObjectID
-		if preorderData.Tags != nil {
-			tags = make([]primitive.ObjectID, 0, len(preorderData.Tags.Ids))
-			for _, tagId := range preorderData.Tags.Ids {
-				if _, ok := validTagIds[tagId]; ok {
-					if objId, err := primitive.ObjectIDFromHex(tagId); err == nil {
-						tags = append(tags, objId)
-					}
-				}
-			}
-		}
-
-		if len(tags) > 0 {
-			create.Tags = &tags
-		}
-
-		if connectDexcom {
-			dataSources := []patients.DataSource{{
-				ProviderName: patients.DexcomDataSourceProviderName,
-				State:        patients.DataSourceStatePending,
-			}}
-			create.DataSources = &dataSources
-		}
-
-		match.Patient, err = d.patients.Create(ctx, create)
+		match.Patient, err = d.patients.Create(ctx, *create)
 		if err != nil {
 			return fmt.Errorf("unable to create new patient from order: %w", err)
 		}
 
-		if connectDexcom {
-			if err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
-				ProviderName: patients.DexcomDataSourceProviderName,
-				CreatedTime:  time.Now(),
-			}); err != nil {
-				return fmt.Errorf("unable to update dexcom connection: %w", err)
+		if create.DataSources != nil {
+			for _, dataSource := range *create.DataSources {
+				if err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
+					ProviderName: dataSource.ProviderName,
+					CreatedTime:  time.Now(),
+				}); err != nil {
+					return fmt.Errorf("unable to update %s connection: %w", dataSource.ProviderName, err)
+				}
 			}
-			match.Patient, err = d.patients.Get(ctx, create.ClinicId.Hex(), *match.Patient.UserId)
-			if err != nil {
-				return fmt.Errorf("unable to get updated patient")
+			if len(*create.DataSources) > 0 {
+				match.Patient, err = d.patients.Get(ctx, create.ClinicId.Hex(), *match.Patient.UserId)
+				if err != nil {
+					return fmt.Errorf("unable to get updated patient")
+				}
 			}
 		}
 	}
@@ -519,6 +472,77 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 	}
 
 	return nil
+}
+
+func GetPatientCreateFromOrder(match MatchingResult[*xealth_client.EventNotificationResponse], preorderData *PreorderFormData) (*patients.Patient, error) {
+	if preorderData == nil || (preorderData.Guardian == nil && preorderData.Patient == nil) {
+		return nil, fmt.Errorf("%w: preorder data is required to create a new patient", errs.BadRequest)
+	}
+
+	create := patients.Patient{
+		ClinicId:    match.Clinic.Id,
+		BirthDate:   &match.Criteria.DateOfBirth,
+		Mrn:         &match.Criteria.Mrn,
+		Permissions: &patients.CustodialAccountPermissions,
+	}
+
+	var providers []string
+	if preorderData.Guardian != nil {
+		create.FullName = &match.Criteria.FullName
+		if strings.TrimSpace(preorderData.Guardian.Email) != "" {
+			create.Email = &preorderData.Guardian.Email
+			if preorderData.Guardian.ConnectAbbott {
+				providers = append(providers, patients.AbbottDataSourceProviderName)
+			}
+			if preorderData.Guardian.ConnectDexcom {
+				providers = append(providers, patients.DexcomDataSourceProviderName)
+			}
+		}
+	} else if preorderData.Patient != nil {
+		create.FullName = &match.Criteria.FullName
+		if strings.TrimSpace(preorderData.Patient.Email) != "" {
+			create.Email = &preorderData.Patient.Email
+			if preorderData.Patient.ConnectAbbott {
+				providers = append(providers, patients.AbbottDataSourceProviderName)
+			}
+			if preorderData.Patient.ConnectDexcom {
+				providers = append(providers, patients.DexcomDataSourceProviderName)
+			}
+		}
+	}
+
+	validTagIDs := make(map[string]struct{})
+	for _, tag := range match.Clinic.PatientTags {
+		validTagIDs[tag.Id.Hex()] = struct{}{}
+	}
+
+	var tags []primitive.ObjectID
+	if preorderData.Tags != nil {
+		tags = make([]primitive.ObjectID, 0, len(preorderData.Tags.Ids))
+		for _, tagId := range preorderData.Tags.Ids {
+			if _, ok := validTagIDs[tagId]; ok {
+				if objId, err := primitive.ObjectIDFromHex(tagId); err == nil {
+					tags = append(tags, objId)
+				}
+			}
+		}
+		if len(tags) > 0 {
+			create.Tags = &tags
+		}
+	}
+
+	if len(providers) > 0 {
+		var dataSources []patients.DataSource
+		for _, provider := range providers {
+			dataSources = append(dataSources, patients.DataSource{
+				ProviderName: provider,
+				State:        patients.DataSourceStatePending,
+			})
+		}
+		create.DataSources = &dataSources
+	}
+
+	return &create, nil
 }
 
 func GetSubscriptionUpdateFromOrderEvent(orderEvent OrderEvent, clinic *clinics.Clinic) (*patients.SubscriptionUpdate, error) {
