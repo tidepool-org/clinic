@@ -295,7 +295,7 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		return nil, fmt.Errorf("unable to obtain last viewed date: %w", err)
 	}
 
-	programs.Programs[0].Description = GetProgramDescription(summaryLastUpdated, lastViewed)
+	programs.Programs[0].Description = GetProgramDescription(summaryLastUpdated, lastViewed, patient.Permissions, patient.DataSources)
 	programs.Programs[0].EnrolledDate = GetProgramEnrollmentDateFromOrder(order)
 	programs.Programs[0].HasAlert = IsProgramAlertActive(summaryLastUpdated, lastViewed)
 	programs.Programs[0].HasStatusView = HasStatusView(patient, subscription)
@@ -502,7 +502,7 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		if connectDexcom {
 			if err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
 				ProviderName: patients.DexcomDataSourceProviderName,
-				CreatedTime: time.Now(),
+				CreatedTime:  time.Now(),
 			}); err != nil {
 				return fmt.Errorf("unable to update dexcom connection: %w", err)
 			}
