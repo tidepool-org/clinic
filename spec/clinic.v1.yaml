@@ -1035,7 +1035,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/site.v1'
+              $ref: '#/components/schemas/siteById.v1'
       tags:
         - Clinics
   /v1/clinics/{clinicId}/clinicians/{clinicianId}:
@@ -4860,6 +4860,15 @@ components:
         - createdTime
         - updatedTime
         - connectionRequests
+    siteById.v1:
+      type: object
+      title: SiteById
+      description: A clinic's physical or logical location—id only.
+      properties:
+        id:
+          $ref: '#/components/schemas/objectid.v1'
+      required:
+        - id
     emailaddress.v1:
       title: Email Address
       description: An email address, as specified by [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322).
