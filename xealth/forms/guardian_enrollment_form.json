@@ -35,6 +35,11 @@
         "dependencies": {
           "email": {
             "properties": {
+              "connectAbbott": {
+                "title": "Connect with FreeStyle Libre",
+                "description": "",
+                "type": "boolean"
+              },
               "connectDexcom": {
                 "title": "Connect with Dexcom",
                 "description": "",
@@ -62,9 +67,21 @@
     }
   },
   "uiSchema": {
-    "ui:order": ["guardian", "tags"],
+    "ui:order": [
+      "guardian",
+      "tags"
+    ],
     "guardian": {
-      "ui:order": ["firstName", "lastName", "email", "connectDexcom"],
+      "ui:order": [
+        "firstName",
+        "lastName",
+        "email",
+        "connectAbbott",
+        "connectDexcom"
+      ],
+      "connectAbbott": {
+        "ui:help": "If this box is checked, patient will receive an email to authorize sharing FreeStyle Libre data with Tidepool. For US FreeStyle Libre Users Only"
+      },
       "connectDexcom": {
         "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
       }

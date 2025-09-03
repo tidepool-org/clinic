@@ -161,6 +161,7 @@
     "userInput": {
       "patient": {
         "email": "xealth@tidepool.org",
+        "connectAbbott": true,
         "connectDexcom": true
       }
     }

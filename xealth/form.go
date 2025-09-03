@@ -41,6 +41,7 @@ type Guardian struct {
 	FirstName     string `json:"firstName,omitempty"`
 	LastName      string `json:"lastName,omitempty"`
 	Email         string `json:"email,omitempty"`
+	ConnectAbbott bool   `json:"connectAbbott,omitempty"`
 	ConnectDexcom bool   `json:"connectDexcom,omitempty"`
 }
 type GuardianFormData struct {
@@ -61,6 +62,7 @@ func (g GuardianFormData) Normalize() PreorderFormData {
 
 type Patient struct {
 	Email         string `json:"email,omitempty"`
+	ConnectAbbott bool   `json:"connectAbbott,omitempty"`
 	ConnectDexcom bool   `json:"connectDexcom,omitempty"`
 }
 

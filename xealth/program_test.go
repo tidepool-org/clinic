@@ -185,35 +185,87 @@ var _ = Describe("Program", func() {
 	Describe("Description", func() {
 		var lastUpload time.Time
 		var lastViewed time.Time
+		var permissions *patients.Permissions
+		var dataSources *[]patients.DataSource
 
 		BeforeEach(func() {
 			lastUpload = time.Time{}
 			lastViewed = time.Time{}
+			permissions = nil
+			dataSources = nil
 		})
 
-		It("is correct when last upload and last viewed are not set", func() {
-			expected := "Last Upload: N/A | Last Viewed by You: N/A"
-			Expect(xealth.GetProgramDescription(lastUpload, lastViewed)).To(PointTo(Equal(expected)))
+		It("is correct when all parameters are not set ", func() {
+			expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: None"
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
 		})
 
 		It("is correct when last upload is set", func() {
 			lastUpload = time.Date(2020, 02, 28, 0, 0, 0, 0, time.Local)
-			expected := "Last Upload: 2020-02-28 | Last Viewed by You: N/A"
-			Expect(xealth.GetProgramDescription(lastUpload, lastViewed)).To(PointTo(Equal(expected)))
+			expected := "Last Upload: 2020-02-28 | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: None"
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
 		})
 
 		It("is correct when last viewed is set", func() {
 			lastViewed = time.Date(2019, 01, 15, 0, 0, 0, 0, time.Local)
-			expected := "Last Upload: N/A | Last Viewed by You: 2019-01-15"
-			Expect(xealth.GetProgramDescription(lastUpload, lastViewed)).To(PointTo(Equal(expected)))
+			expected := "Last Upload: N/A | Last Viewed by You: 2019-01-15 | Claimed Account?: No | Cloud Connections: None"
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
 		})
 
 		It("is correct when last viewed and last upload are set", func() {
 			lastUpload = time.Date(2020, 02, 28, 0, 0, 0, 0, time.Local)
 			lastViewed = time.Date(2019, 01, 15, 0, 0, 0, 0, time.Local)
-			expected := "Last Upload: 2020-02-28 | Last Viewed by You: 2019-01-15"
-			Expect(xealth.GetProgramDescription(lastUpload, lastViewed)).To(PointTo(Equal(expected)))
+			expected := "Last Upload: 2020-02-28 | Last Viewed by You: 2019-01-15 | Claimed Account?: No | Cloud Connections: None"
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
 		})
+
+		It("is correct when account is not claimed", func() {
+			expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: None"
+			permissions := &patients.Permissions{
+				Custodian: &patients.Permission{},
+			}
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
+		})
+
+		It("is correct when account is claimed", func() {
+			expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: Yes | Cloud Connections: None"
+			permissions := &patients.Permissions{}
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
+		})
+
+		It("is correct with a single cloud connection in 'pendingReconnect' state", func() {
+			expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Dexcom (pending reconnect)"
+			dataSources = &[]patients.DataSource{
+				{ProviderName: "dexcom", State: "pendingReconnect"},
+			}
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
+		})
+
+		It("is correct with a single cloud connection in connected state", func() {
+			expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Dexcom (connected)"
+			dataSources = &[]patients.DataSource{
+				{ProviderName: "dexcom", State: "connected"},
+			}
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
+		})
+
+		It("is correct with a twiist cloud connection", func() {
+			expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: twiist (connected)"
+			dataSources = &[]patients.DataSource{
+				{ProviderName: "twiist", State: "connected"},
+			}
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
+		})
+
+		It("is correct with multiple cloud connections", func() {
+			expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Abbott (connected), twiist (error)"
+			dataSources = &[]patients.DataSource{
+				{ProviderName: "twiist", State: "error"},
+				{ProviderName: "abbott", State: "connected"},
+			}
+			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, permissions, dataSources)).To(PointTo(Equal(expected)))
+		})
+
 	})
 
 	Describe("IsProgramAlertActive", func() {
