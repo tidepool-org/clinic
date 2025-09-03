@@ -560,11 +560,11 @@ func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 
 func (h *Handler) MergeSite(ec echo.Context, clinicId ClinicId, targetSiteId SiteId) error {
 	ctx := ec.Request().Context()
-	site := &sites.Site{}
+	site := &SiteByIdV1{}
 	if err := ec.Bind(site); err != nil {
 		return errors.BadRequest
 	}
-	merged, err := h.ClinicsManager.MergeSite(ctx, clinicId, site.Id.Hex(), targetSiteId)
+	merged, err := h.ClinicsManager.MergeSite(ctx, clinicId, *site.Id, targetSiteId)
 	if err != nil {
 		return err
 	}

@@ -1654,6 +1654,12 @@ type SiteV1 struct {
 	Name string `json:"name"`
 }
 
+// SiteByIdV1 A clinic's physical or logical location—id only.
+type SiteByIdV1 struct {
+	// Id String representation of a resource id
+	Id *ObjectidV1 `json:"id,omitempty"`
+}
+
 // SiteCreationV1 A clinic's physical or logical location.
 type SiteCreationV1 struct {
 	// Name The site description.
@@ -2436,7 +2442,7 @@ type CreateSiteJSONRequestBody = SiteCreationV1
 type UpdateSiteJSONRequestBody = SiteV1
 
 // MergeSiteJSONRequestBody defines body for MergeSite for application/json ContentType.
-type MergeSiteJSONRequestBody = SiteV1
+type MergeSiteJSONRequestBody = SiteByIdV1
 
 // UpdateSuppressedNotificationsJSONRequestBody defines body for UpdateSuppressedNotifications for application/json ContentType.
 type UpdateSuppressedNotificationsJSONRequestBody = UpdateSuppressedNotifications
