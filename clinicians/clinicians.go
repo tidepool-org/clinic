@@ -3,12 +3,14 @@ package clinicians
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"sort"
-	"time"
 )
 
 var (
@@ -21,7 +23,7 @@ const (
 	RoleClinicMember = "CLINIC_MEMBER"
 )
 
-//go:generate mockgen --build_flags=--mod=mod -source=./clinicians.go -destination=./test/mock_service.go -package test MockService
+//go:generate go tool mockgen --build_flags=--mod=mod -source=./clinicians.go -destination=./test/mock_service.go -package test MockService
 type Service interface {
 	Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error)

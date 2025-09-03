@@ -8,14 +8,15 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime/types"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func NewClinicWithDefaults(c ClinicV1) *clinics.Clinic {
@@ -111,6 +112,16 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 		}
 		dto.PatientTags = &patientTags
 	}
+	if c.Sites != nil {
+		sites := make([]SiteV1, 0, len(c.Sites))
+		for _, site := range c.Sites {
+			sites = append(sites, SiteV1{
+				Id:   site.Id.Hex(),
+				Name: site.Name,
+			})
+		}
+		dto.Sites = sites
+	}
 	if c.Timezone != nil {
 		tz := ClinicTimezoneV1(*c.Timezone)
 		dto.Timezone = &tz
@@ -186,6 +197,7 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
 			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
 		},
+		Sites: NewSitesDto(patient.Sites),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -235,6 +247,11 @@ func NewPatient(dto PatientV1) patients.Patient {
 		patient.Tags = &tags
 	}
 
+	if dto.Sites != nil {
+		sites := NewSites(dto.Sites)
+		patient.Sites = &sites
+	}
+
 	if dto.DataSources != nil {
 		var dataSources []patients.DataSource
 		for _, d := range *dto.DataSources {
@@ -266,7 +283,7 @@ func NewPatient(dto PatientV1) patients.Patient {
 	return patient
 }
 
-func NewPatientFromCreate(dto CreatePatientV1) patients.Patient {
+func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patients.Patient {
 	patient := patients.Patient{
 		Permissions: NewPermissions(dto.Permissions),
 	}
@@ -290,6 +307,18 @@ func NewPatientFromCreate(dto CreatePatientV1) patients.Patient {
 		tags := store.ObjectIDSFromStringArray(*dto.Tags)
 		patient.Tags = &tags
 	}
+	var sites []sites.Site
+	for _, site := range dto.Sites {
+		for _, clinicSite := range clinicSites {
+			if clinicSite.Id.Hex() == site.Id {
+				sites = append(sites, clinicSite)
+			}
+		}
+	}
+	if sites != nil {
+		patient.Sites = &sites
+	}
+
 	return patient
 }
 
@@ -494,6 +523,15 @@ func NewPermissionsDto(dto *patients.Permissions) *PatientPermissionsV1 {
 		}
 	}
 	return permissions
+}
+
+func NewPatientTagDto(tag *clinics.PatientTag) *PatientTagV1 {
+	hexID := tag.Id.Hex()
+	dto := &PatientTagV1{
+		Id:   &hexID,
+		Name: tag.Name,
+	}
+	return dto
 }
 
 func NewPatientTagsDto(tags *[]primitive.ObjectID) *[]string {
@@ -1665,4 +1703,38 @@ func NewMatchOrderCriteria(criteria []EhrMatchRequestPatientsOptionsV1Criteria) 
 	}
 
 	return result, nil
+}
+
+func NewSitesDto(sites *[]sites.Site) []SiteV1 {
+	if sites == nil {
+		return []SiteV1{}
+	}
+	result := make([]SiteV1, len(*sites))
+	for i := range len(*sites) {
+		result[i] = NewSiteDto((*sites)[i])
+	}
+	return result
+}
+
+func NewSiteDto(site sites.Site) SiteV1 {
+	return SiteV1{
+		Id:   site.Id.Hex(),
+		Name: site.Name,
+	}
+}
+
+func NewSites(s []SiteV1) []sites.Site {
+	result := make([]sites.Site, len(s))
+	for i := range len(s) {
+		result[i] = NewSite(s[i])
+	}
+	return result
+}
+
+func NewSite(site SiteV1) sites.Site {
+	oid, _ := primitive.ObjectIDFromHex(site.Id)
+	return sites.Site{
+		Id:   oid,
+		Name: site.Name,
+	}
 }

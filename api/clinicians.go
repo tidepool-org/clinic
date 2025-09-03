@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (h *Handler) ListAllClinicians(ec echo.Context, params ListAllCliniciansParams) error {
@@ -260,6 +261,9 @@ func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page st
 	}
 
 	clinicList, err := h.Clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
+	if err != nil {
+		return err
+	}
 	dtos, err := NewClinicianClinicRelationshipsDto(cliniciansList, clinicList)
 	if err != nil {
 		return err

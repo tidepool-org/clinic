@@ -3,12 +3,14 @@ package patients
 import (
 	"context"
 	"errors"
+	"net/http"
+
+	"go.uber.org/fx"
+
 	clinicErrs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
-	"go.uber.org/fx"
-	"net/http"
 )
 
 var UserServiceModule = fx.Provide(
@@ -20,7 +22,7 @@ var UserServiceModule = fx.Provide(
 	NewUserService,
 )
 
-//go:generate mockgen --build_flags=--mod=mod -source=./users.go -destination=./test/mock_users.go -package test MockUserService
+//go:generate go tool mockgen --build_flags=--mod=mod -source=./users.go -destination=./test/mock_users.go -package test MockUserService
 
 type UserService interface {
 	CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error)
@@ -107,7 +109,7 @@ func (s *userService) PopulatePatientDetailsFromExistingUser(ctx context.Context
 	}
 
 	PopulatePatientFromUserAndProfile(patient, *user, *profile)
-	
+
 	return nil
 }
 

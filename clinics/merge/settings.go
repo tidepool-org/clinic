@@ -2,9 +2,10 @@ package merge
 
 import (
 	"context"
-	"github.com/tidepool-org/clinic/clinics"
 	"sort"
 	"strings"
+
+	"github.com/tidepool-org/clinic/clinics"
 )
 
 const (
