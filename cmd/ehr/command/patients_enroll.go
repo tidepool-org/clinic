@@ -113,7 +113,6 @@ func init() {
 	patientsEnrollCmd.Flags().BoolVar(&patientsEnrollParams.DryRun, "dry-run", false, "The mrn origin to use when creating the order")
 
 	patientsCmd.AddCommand(patientsEnrollCmd)
-	rootCmd.AddCommand(patientsCmd)
 }
 
 func NewXealthClient(logger *zap.SugaredLogger) (xealth_client.ClientWithResponsesInterface, error) {

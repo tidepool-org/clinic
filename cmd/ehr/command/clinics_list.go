@@ -41,5 +41,4 @@ func listClinics(service clinics.Service) error {
 
 func init() {
 	clinicsCmd.AddCommand(clinicsListCmd)
-	rootCmd.AddCommand(clinicsCmd)
 }

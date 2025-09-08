@@ -112,5 +112,4 @@ func init() {
 	patientsListCmd.Flags().BoolVar(&patientsListParams.OnlyWithoutMRN, "without-mrn", false, "Return only users without MRN")
 
 	patientsCmd.AddCommand(patientsListCmd)
-	rootCmd.AddCommand(patientsCmd)
 }

@@ -169,6 +169,8 @@ type Filter struct {
 
 	HasSubscription *bool
 	HasMRN          *bool
+	HasEmail        *bool
+	IsCustodial     *bool
 
 	Period *string
 

@@ -1006,6 +1006,23 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 			selector["ehrSubscriptions"] = empty
 		}
 	}
+	if filter.HasEmail != nil {
+		empty := bson.M{
+			"$in": bson.A{nil, ""},
+		}
+		if *filter.HasEmail {
+			selector["email"] = bson.M{
+				"$not": empty,
+			}
+		} else {
+			selector["email"] = empty
+		}
+	}
+	if filter.IsCustodial != nil {
+		selector["permissions.custodian"] = bson.M{
+			"$exists": *filter.IsCustodial,
+		}
+	}
 	if filter.BirthDate != nil {
 		selector["birthDate"] = filter.BirthDate
 	}
