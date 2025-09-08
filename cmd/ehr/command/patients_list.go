@@ -24,8 +24,8 @@ var patientsListParams = struct {
 var patientsListCmd = &cobra.Command{
 	Use:   "list",
 	Args:  cobra.ExactArgs(1),
-	Short: "List Xealth Enabled Clinics",
-	Long:  "The list command is used to retrieve a list of all Xealth enabled clinics",
+	Short: "List patients in EHR enabled clinics",
+	Long:  "The list command is used to retrieve a list of all patients in EHR enabled clinics",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		patientsListParams.ClinicId = args[0]
 		return Run(listPatients)
@@ -33,7 +33,7 @@ var patientsListCmd = &cobra.Command{
 }
 
 func listPatients(clinicsService clinics.Service, patientsService patients.Service) error {
-	_, err := getXealthClinic(patientsListParams.ClinicId, clinicsService)
+	_, err := getEHRClinic(patientsListParams.ClinicId, clinicsService)
 	if err != nil {
 		return err
 	}
@@ -67,6 +67,9 @@ func listPatients(clinicsService clinics.Service, patientsService patients.Servi
 	}
 
 	result, err := patientsService.List(context.TODO(), &filter, page, sort)
+	if err != nil {
+		return fmt.Errorf("patients list error: %w", err)
+	}
 	for _, patient := range result.Patients {
 		mrn := "(empty)"
 		name := "(empty)"
