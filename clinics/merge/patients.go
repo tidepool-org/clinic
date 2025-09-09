@@ -269,7 +269,7 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 					return nil, fmt.Errorf("unable to combine sites for duplicate patients")
 				}
 				combinedSites := slices.Concat(*target.Sites, *patient.Sites)
-				plan.PostMigrationSiteNames = siteNames(&combinedSites, *target.Sites)
+				plan.PostMigrationSiteNames = siteNames(&combinedSites, p.target.Sites)
 			}
 			plan.Conflicts[conflictCategory] = append(plan.Conflicts[conflictCategory], Conflict{
 				Category: conflictCategory,
