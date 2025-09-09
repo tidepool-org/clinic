@@ -56,6 +56,7 @@ var _ = Describe("Clinicians Service", func() {
 					patientsTest.NewMockUserService,
 					config.NewConfig,
 					clinics.NewRepository,
+					clinics.NewService,
 					clinicians.NewRepository,
 					clinicians.NewService,
 					patients.NewRepository,

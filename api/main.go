@@ -159,6 +159,7 @@ func Dependencies() []fx.Option {
 			clinicians.NewRepository,
 			clinicians.NewService,
 			clinics.NewRepository,
+			clinics.NewService,
 			clinics.NewShareCodeGenerator,
 			config.NewConfig,
 			manager.NewManager,

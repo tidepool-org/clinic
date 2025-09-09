@@ -2,6 +2,7 @@ package manager_test
 
 import (
 	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -57,16 +58,20 @@ var _ = Describe("Clinics Manager", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(clinicsRepo).ToNot(BeNil())
 
+		clinicsService, err := clinics.NewService(clinicsRepo)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(clinicsService).ToNot(BeNil())
+
 		patientsRepo, err := patients.NewRepository(cfg, database, lgr, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsRepo).ToNot(BeNil())
 
-		patientsService, err = patients.NewService(patientsRepo, clinicsRepo, nil, lgr, database.Client())
+		patientsService, err = patients.NewService(patientsRepo, clinicsService, nil, lgr, database.Client())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsService).ToNot(BeNil())
 
 		mngr, err = manager.NewManager(manager.Params{
-			Clinics:              clinicsRepo,
+			ClinicsService:       clinicsService,
 			CliniciansRepository: cliniciansRepo,
 			Config:               cfg,
 			DbClient:             database.Client(),

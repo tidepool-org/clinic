@@ -3,9 +3,11 @@ package merge_test
 import (
 	"context"
 	"errors"
-	mapset "github.com/deckarep/golang-set/v2"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/onsi/gomega/gstruct"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -78,6 +80,7 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 			patientsTest.NewMockUserService,
 			config.NewConfig,
 			clinics.NewRepository,
+			clinics.NewService,
 			clinicians.NewRepository,
 			clinicians.NewService,
 			patients.NewRepository,

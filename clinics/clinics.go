@@ -3,11 +3,11 @@ package clinics
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -35,7 +35,7 @@ var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin",
 var MaximumPatientTags = 50
 var ErrMaximumPatientTagsExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %v patient tags", errors.ConstraintViolation, MaximumPatientTags)
 
-//go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockRepository
+//go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockService
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -59,6 +59,29 @@ type Service interface {
 	GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error)
 	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
 	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
+	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
+	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
+}
+
+//go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_repository.go -package test MockRepository
+type Repository interface {
+	Get(ctx context.Context, id string) (*Clinic, error)
+	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error)
+	Create(ctx context.Context, clinic *Clinic) (*Clinic, error)
+	Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error)
+	Delete(ctx context.Context, id string, metadata deletions.Metadata) error
+	UpsertAdmin(ctx context.Context, clinicId, clinicianId string) error
+	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
+	UpdateTier(ctx context.Context, clinicId, tier string) error
+	UpdateSuppressedNotifications(ctx context.Context, clinicId string, suppressedNotifications SuppressedNotifications) error
+	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*Clinic, error)
+	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*Clinic, error)
+	DeletePatientTag(ctx context.Context, clinicId, tagId string) (*Clinic, error)
+	ListMembershipRestrictions(ctx context.Context, clinicId string) ([]MembershipRestrictions, error)
+	UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error
+	UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error
+	UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error
+	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
 	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 }

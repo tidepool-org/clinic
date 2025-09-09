@@ -4,6 +4,7 @@ import (
 	"context"
 	errs "errors"
 	"fmt"
+
 	"github.com/tidepool-org/clinic/deletions"
 
 	"github.com/tidepool-org/clinic/errors"
@@ -48,7 +49,7 @@ type manager struct {
 type Params struct {
 	fx.In
 
-	Clinics              clinics.Service
+	ClinicsService       clinics.Service
 	CliniciansRepository *clinicians.Repository
 	Config               *config.Config
 	DbClient             *mongo.Client
@@ -60,7 +61,7 @@ type Params struct {
 
 func NewManager(cp Params) (Manager, error) {
 	return &manager{
-		clinics:              cp.Clinics,
+		clinics:              cp.ClinicsService,
 		cliniciansRepository: cp.CliniciansRepository,
 		config:               cp.Config,
 		dbClient:             cp.DbClient,

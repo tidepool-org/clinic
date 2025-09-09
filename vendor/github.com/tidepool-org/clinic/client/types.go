@@ -757,8 +757,8 @@ type BgmPeriodV1 struct {
 
 	// AverageGlucoseMmolDelta Difference between the averageGlucose in this period and the other offset version
 	AverageGlucoseMmolDelta     *float64 `json:"averageGlucoseMmolDelta,omitempty"`
-	CoefficientOfVariation      float64  `json:"coefficientOfVariation"`
-	CoefficientOfVariationDelta float64  `json:"coefficientOfVariationDelta"`
+	CoefficientOfVariation      *float64 `json:"coefficientOfVariation,omitempty"`
+	CoefficientOfVariationDelta *float64 `json:"coefficientOfVariationDelta,omitempty"`
 	DaysWithData                int      `json:"daysWithData"`
 	DaysWithDataDelta           int      `json:"daysWithDataDelta"`
 	HasAverageDailyRecords      bool     `json:"hasAverageDailyRecords"`
@@ -784,8 +784,8 @@ type BgmPeriodV1 struct {
 	MaxDelta                    float64  `json:"maxDelta"`
 	Min                         float64  `json:"min"`
 	MinDelta                    float64  `json:"minDelta"`
-	StandardDeviation           float64  `json:"standardDeviation"`
-	StandardDeviationDelta      float64  `json:"standardDeviationDelta"`
+	StandardDeviation           *float64 `json:"standardDeviation,omitempty"`
+	StandardDeviationDelta      *float64 `json:"standardDeviationDelta,omitempty"`
 
 	// TimeInAnyHighPercent Percentage of time spent in Any high glucose range
 	TimeInAnyHighPercent *float64 `json:"timeInAnyHighPercent,omitempty"`
@@ -1739,15 +1739,6 @@ type TideFiltersV1 struct {
 	TimeInVeryLowPercent      string `json:"timeInVeryLowPercent"`
 }
 
-// TideMetadataV1 Metadata describing the results of the Tide Report.
-type TideMetadataV1 struct {
-	// CandidatePatients The total number of possible patients, after filters, but before limits.
-	CandidatePatients *int `json:"candidatePatients,omitempty"`
-
-	// SelectedPatients The total number of selected patients, after filters and limits.
-	SelectedPatients *int `json:"selectedPatients,omitempty"`
-}
-
 // TidePatientV1 defines model for tidePatient.v1.
 type TidePatientV1 struct {
 	DataSources *[]DataSourceV1 `json:"dataSources"`
@@ -1764,11 +1755,8 @@ type TidePatientV1 struct {
 
 // TideResponseV1 Report of at-risk patients based on specific grouping criteria
 type TideResponseV1 struct {
-	Config TideConfigV1 `json:"config"`
-
-	// Metadata Metadata describing the results of the Tide Report.
-	Metadata TideMetadataV1 `json:"metadata"`
-	Results  TideResultsV1  `json:"results"`
+	Config  TideConfigV1  `json:"config"`
+	Results TideResultsV1 `json:"results"`
 }
 
 // TideResultPatientV1 defines model for tideResultPatient.v1.

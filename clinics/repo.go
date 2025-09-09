@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/store"
@@ -22,14 +22,14 @@ const (
 	CollectionName = "clinics"
 )
 
-func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Service, error) {
+func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Repository, error) {
 	deletionsRepo, err := deletions.NewRepository[Clinic]("clinic", db, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	repo := &repository{
-		collection: db.Collection(CollectionName),
+		collection:    db.Collection(CollectionName),
 		deletionsRepo: deletionsRepo,
 	}
 
@@ -49,7 +49,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 }
 
 type repository struct {
-	collection *mongo.Collection
+	collection    *mongo.Collection
 	deletionsRepo deletions.Repository[Clinic]
 }
 
@@ -423,15 +423,6 @@ func (r *repository) UpdateMembershipRestrictions(ctx context.Context, id string
 	return err
 }
 
-func (r *repository) GetEHRSettings(ctx context.Context, clinicId string) (*EHRSettings, error) {
-	clinic, err := r.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.EHRSettings, nil
-}
-
 func (r *repository) UpdateEHRSettings(ctx context.Context, id string, settings *EHRSettings) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
@@ -451,15 +442,6 @@ func (r *repository) UpdateEHRSettings(ctx context.Context, id string, settings 
 	return err
 }
 
-func (r *repository) GetMRNSettings(ctx context.Context, clinicId string) (*MRNSettings, error) {
-	clinic, err := r.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.MRNSettings, nil
-}
-
 func (r *repository) UpdateMRNSettings(ctx context.Context, id string, settings *MRNSettings) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
@@ -477,15 +459,6 @@ func (r *repository) UpdateMRNSettings(ctx context.Context, id string, settings 
 	}
 
 	return err
-}
-
-func (r *repository) GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error) {
-	clinic, err := r.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.PatientCountSettings, nil
 }
 
 func (r *repository) UpdatePatientCountSettings(ctx context.Context, id string, settings *PatientCountSettings) error {
@@ -528,15 +501,6 @@ func (r *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 	}
 
 	return err
-}
-
-func (r *repository) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
-	clinic, err := r.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.PatientCount, nil
 }
 
 func (r *repository) UpdatePatientCount(ctx context.Context, id string, patientCount *PatientCount) error {
