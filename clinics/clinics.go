@@ -3,6 +3,7 @@ package clinics
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,6 +14,7 @@ import (
 )
 
 const (
+	CollectionName             = "clinics"
 	DefaultMrnIdType           = "MRN"
 	WorkspaceIdTypeClinicId    = "clinicId"
 	WorkspaceIdTypeEHRSourceId = "ehrSourceId"
@@ -35,7 +37,7 @@ var ErrAdminRequired = fmt.Errorf("%w: the clinic must have at least one admin",
 var MaximumPatientTags = 50
 var ErrMaximumPatientTagsExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %v patient tags", errors.ConstraintViolation, MaximumPatientTags)
 
-//go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockService
+//go:generate mockgen -source=./clinics.go -destination=./test/mock_clinics.go -package test
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -63,7 +65,6 @@ type Service interface {
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 }
 
-//go:generate mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_repository.go -package test MockRepository
 type Repository interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error)
@@ -380,4 +381,33 @@ func filterByEHRSourceId(clinics []*Clinic, sourceId string) ([]*Clinic, error) 
 	}
 
 	return results, nil
+}
+
+func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
+	if len(clinic.PatientTags) >= MaximumPatientTags {
+		return ErrMaximumPatientTagsExceeded
+	}
+
+	if IsDuplicatePatientTag(clinic, tag) {
+		return ErrDuplicatePatientTagName
+	}
+
+	return nil
+}
+
+func IsDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
+	trimmedNewTagName := strings.ToLower(strings.ReplaceAll(tag.Name, " ", ""))
+
+	for _, p := range clinic.PatientTags {
+		// We only check for duplication against other tags
+		if p.Id.Hex() != tag.Id.Hex() {
+			trimmedExistingTagName := strings.ToLower(strings.ReplaceAll(p.Name, " ", ""))
+
+			if trimmedExistingTagName == trimmedNewTagName {
+				return true
+			}
+		}
+	}
+
+	return false
 }

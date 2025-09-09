@@ -1,35 +1,36 @@
-package clinics
+package service
 
 import (
 	"context"
 
+	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/store"
 )
 
-func NewService(repository Repository) (Service, error) {
+func NewService(repository clinics.Repository) (clinics.Service, error) {
 	return &service{
 		repository: repository,
 	}, nil
 }
 
 type service struct {
-	repository Repository
+	repository clinics.Repository
 }
 
-func (s *service) Get(ctx context.Context, id string) (*Clinic, error) {
+func (s *service) Get(ctx context.Context, id string) (*clinics.Clinic, error) {
 	return s.repository.Get(ctx, id)
 }
 
-func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error) {
+func (s *service) List(ctx context.Context, filter *clinics.Filter, pagination store.Pagination) ([]*clinics.Clinic, error) {
 	return s.repository.List(ctx, filter, pagination)
 }
 
-func (s *service) Create(ctx context.Context, clinic *Clinic) (*Clinic, error) {
+func (s *service) Create(ctx context.Context, clinic *clinics.Clinic) (*clinics.Clinic, error) {
 	return s.repository.Create(ctx, clinic)
 }
 
-func (s *service) Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error) {
+func (s *service) Update(ctx context.Context, id string, clinic *clinics.Clinic) (*clinics.Clinic, error) {
 	return s.repository.Update(ctx, id, clinic)
 }
 
@@ -49,31 +50,31 @@ func (s *service) UpdateTier(ctx context.Context, clinicId string, tier string) 
 	return s.repository.UpdateTier(ctx, clinicId, tier)
 }
 
-func (s *service) UpdateSuppressedNotifications(ctx context.Context, clinicId string, suppressedNotifications SuppressedNotifications) error {
+func (s *service) UpdateSuppressedNotifications(ctx context.Context, clinicId string, suppressedNotifications clinics.SuppressedNotifications) error {
 	return s.repository.UpdateSuppressedNotifications(ctx, clinicId, suppressedNotifications)
 }
 
-func (s *service) CreatePatientTag(ctx context.Context, clinicId string, tagName string) (*Clinic, error) {
+func (s *service) CreatePatientTag(ctx context.Context, clinicId string, tagName string) (*clinics.Clinic, error) {
 	return s.repository.CreatePatientTag(ctx, clinicId, tagName)
 }
 
-func (s *service) UpdatePatientTag(ctx context.Context, clinicId string, tagId string, tagName string) (*Clinic, error) {
+func (s *service) UpdatePatientTag(ctx context.Context, clinicId string, tagId string, tagName string) (*clinics.Clinic, error) {
 	return s.repository.UpdatePatientTag(ctx, clinicId, tagId, tagName)
 }
 
-func (s *service) DeletePatientTag(ctx context.Context, clinicId string, tagId string) (*Clinic, error) {
+func (s *service) DeletePatientTag(ctx context.Context, clinicId string, tagId string) (*clinics.Clinic, error) {
 	return s.repository.DeletePatientTag(ctx, clinicId, tagId)
 }
 
-func (s *service) ListMembershipRestrictions(ctx context.Context, clinicId string) ([]MembershipRestrictions, error) {
+func (s *service) ListMembershipRestrictions(ctx context.Context, clinicId string) ([]clinics.MembershipRestrictions, error) {
 	return s.repository.ListMembershipRestrictions(ctx, clinicId)
 }
 
-func (s *service) UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error {
+func (s *service) UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []clinics.MembershipRestrictions) error {
 	return s.repository.UpdateMembershipRestrictions(ctx, clinicId, restrictions)
 }
 
-func (s *service) GetEHRSettings(ctx context.Context, clinicId string) (*EHRSettings, error) {
+func (s *service) GetEHRSettings(ctx context.Context, clinicId string) (*clinics.EHRSettings, error) {
 	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
 		return nil, err
 	} else {
@@ -81,11 +82,11 @@ func (s *service) GetEHRSettings(ctx context.Context, clinicId string) (*EHRSett
 	}
 }
 
-func (s *service) UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error {
+func (s *service) UpdateEHRSettings(ctx context.Context, clinicId string, settings *clinics.EHRSettings) error {
 	return s.repository.UpdateEHRSettings(ctx, clinicId, settings)
 }
 
-func (s *service) GetMRNSettings(ctx context.Context, clinicId string) (*MRNSettings, error) {
+func (s *service) GetMRNSettings(ctx context.Context, clinicId string) (*clinics.MRNSettings, error) {
 	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
 		return nil, err
 	} else {
@@ -93,11 +94,11 @@ func (s *service) GetMRNSettings(ctx context.Context, clinicId string) (*MRNSett
 	}
 }
 
-func (s *service) UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error {
+func (s *service) UpdateMRNSettings(ctx context.Context, clinicId string, settings *clinics.MRNSettings) error {
 	return s.repository.UpdateMRNSettings(ctx, clinicId, settings)
 }
 
-func (s *service) GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error) {
+func (s *service) GetPatientCountSettings(ctx context.Context, clinicId string) (*clinics.PatientCountSettings, error) {
 	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
 		return nil, err
 	} else {
@@ -105,11 +106,11 @@ func (s *service) GetPatientCountSettings(ctx context.Context, clinicId string) 
 	}
 }
 
-func (s *service) UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error {
+func (s *service) UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *clinics.PatientCountSettings) error {
 	return s.repository.UpdatePatientCountSettings(ctx, clinicId, settings)
 }
 
-func (s *service) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
+func (s *service) GetPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error) {
 	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
 		return nil, err
 	} else {
@@ -117,7 +118,7 @@ func (s *service) GetPatientCount(ctx context.Context, clinicId string) (*Patien
 	}
 }
 
-func (s *service) UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error {
+func (s *service) UpdatePatientCount(ctx context.Context, clinicId string, patientCount *clinics.PatientCount) error {
 	return s.repository.UpdatePatientCount(ctx, clinicId, patientCount)
 }
 

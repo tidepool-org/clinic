@@ -1,4 +1,4 @@
-package clinics_test
+package service_test
 
 import (
 	"context"
@@ -13,6 +13,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 )
@@ -29,10 +31,10 @@ var _ = Describe("Clinics", func() {
 		var err error
 		database = dbTest.GetTestDatabase()
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repository, err := clinics.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
+		repository, err := clinicsRepository.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repository).ToNot(BeNil())
-		service, err = clinics.NewService(repository)
+		service, err = clinicsService.NewService(repository)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(service).ToNot(BeNil())
 		lifecycle.RequireStart()

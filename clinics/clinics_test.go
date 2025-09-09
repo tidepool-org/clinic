@@ -1,12 +1,13 @@
 package clinics_test
 
 import (
-	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"github.com/tidepool-org/clinic/clinics"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/test"
 )
 
@@ -147,3 +148,7 @@ var _ = Describe("Clinics", func() {
 		})
 	})
 })
+
+func Ptr[T any](value T) *T {
+	return &value
+}

@@ -1,4 +1,4 @@
-package patients_test
+package repository_test
 
 import (
 	"context"
@@ -11,18 +11,19 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+
 	"github.com/onsi/gomega/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
-
 	"go.uber.org/zap/zapcore"
 
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/patients"
+	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
@@ -45,7 +46,7 @@ var _ = Describe("Patients Repository", func() {
 		collection = database.Collection("patients")
 		deletionsCollection = database.Collection("patient_deletions")
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repo, err = patients.NewRepository(cfg, database, zap.NewNop().Sugar(), lifecycle)
+		repo, err = patientsRepository.NewRepository(cfg, database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repo).ToNot(BeNil())
 		lifecycle.RequireStart()
@@ -73,7 +74,7 @@ var _ = Describe("Patients Repository", func() {
 			allPatientIds = result.InsertedIDs
 
 			randomPatient = documents[test.Faker.IntBetween(0, count-1)].(patients.Patient)
-			matchPatientFields = patientFieldsMatcher(randomPatient)
+			matchPatientFields = patientsTest.PatientFieldsMatcher(randomPatient)
 		})
 
 		AfterEach(func() {
@@ -95,7 +96,7 @@ var _ = Describe("Patients Repository", func() {
 
 			BeforeEach(func() {
 				patient = patientsTest.RandomPatient()
-				matchPatientFields = patientFieldsMatcher(patient)
+				matchPatientFields = patientsTest.PatientFieldsMatcher(patient)
 			})
 
 			AfterEach(func() {
@@ -258,7 +259,7 @@ var _ = Describe("Patients Repository", func() {
 
 				patient.Id = result.Id
 				patient.LegacyClinicianIds = []string{test.Faker.UUID().V4()}
-				matchPatientFields = patientFieldsMatcher(patient)
+				matchPatientFields = patientsTest.PatientFieldsMatcher(patient)
 
 				result, err = repo.Create(context.Background(), patient)
 				Expect(err).ToNot(HaveOccurred())
@@ -313,7 +314,7 @@ var _ = Describe("Patients Repository", func() {
 					DataSources:      update.Patient.DataSources,
 					EHRSubscriptions: update.Patient.EHRSubscriptions,
 				}
-				matchPatientFields = patientFieldsMatcher(expected)
+				matchPatientFields = patientsTest.PatientFieldsMatcher(expected)
 			})
 
 			It("updates the patient in the collection", func() {
@@ -359,7 +360,7 @@ var _ = Describe("Patients Repository", func() {
 					DataSources:      randomPatient.DataSources,
 					EHRSubscriptions: randomPatient.EHRSubscriptions,
 				}
-				matchPatientFields = patientFieldsMatcher(expected)
+				matchPatientFields = patientsTest.PatientFieldsMatcher(expected)
 			})
 
 			It("updates the email", func() {
@@ -879,7 +880,7 @@ var _ = Describe("Patients Repository", func() {
 				offsetResults, err := repo.List(context.Background(), &filter, pagination, nil)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(offsetResults.Patients).To(HaveLen(2))
-				Expect(*offsetResults.Patients[0]).To(patientFieldsMatcher(*result.Patients[1]))
+				Expect(*offsetResults.Patients[0]).To(patientsTest.PatientFieldsMatcher(*result.Patients[1]))
 			})
 
 			It("filters by users id correctly", func() {
@@ -1390,7 +1391,7 @@ var _ = Describe("Patients Repository", func() {
 			It("returns the updated permissions", func() {
 				permissions := patientsTest.RandomPermissions()
 				randomPatient.Permissions = &permissions
-				matchPatientFields = patientFieldsMatcher(randomPatient)
+				matchPatientFields = patientsTest.PatientFieldsMatcher(randomPatient)
 
 				result, err := repo.UpdatePermissions(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, &permissions)
 				Expect(err).ToNot(HaveOccurred())
@@ -1603,7 +1604,7 @@ var _ = Describe("TideReport", func() {
 
 			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
 			Expect(err).To(Succeed())
-			exp := patients.TideReportNoDataPatientLimit + patients.TideReportPatientLimit
+			exp := patientsRepository.TideReportNoDataPatientLimit + patientsRepository.TideReportPatientLimit
 			Expect(tide.Metadata.SelectedPatients).To(Equal(exp))
 		})
 
@@ -1616,34 +1617,6 @@ var _ = Describe("TideReport", func() {
 	})
 })
 
-func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
-	return MatchAllFields(Fields{
-		"Id":                             PointTo(Not(BeEmpty())),
-		"UserId":                         PointTo(Equal(*patient.UserId)),
-		"ClinicId":                       PointTo(Equal(*patient.ClinicId)),
-		"BirthDate":                      PointTo(Equal(*patient.BirthDate)),
-		"Email":                          PointTo(Equal(*patient.Email)),
-		"FullName":                       PointTo(Equal(*patient.FullName)),
-		"Mrn":                            PointTo(Equal(*patient.Mrn)),
-		"Tags":                           PointTo(Equal(*patient.Tags)),
-		"TargetDevices":                  PointTo(Equal(*patient.TargetDevices)),
-		"Permissions":                    PointTo(Equal(*patient.Permissions)),
-		"IsMigrated":                     Equal(patient.IsMigrated),
-		"LegacyClinicianIds":             ConsistOf(patient.LegacyClinicianIds),
-		"UpdatedTime":                    Ignore(),
-		"CreatedTime":                    Ignore(),
-		"InvitedBy":                      Ignore(),
-		"Summary":                        Ignore(),
-		"Reviews":                        Ignore(),
-		"ProviderConnectionRequests":     Equal(patient.ProviderConnectionRequests),
-		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
-		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
-		"DataSources":                    PointTo(Equal(*patient.DataSources)),
-		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
-		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
-	})
-}
-
 func newTestRepo(t FullGinkgoTInterface, withData, withoutData int) (
 	context.Context, *repoTestHelper) {
 
@@ -1653,7 +1626,7 @@ func newTestRepo(t FullGinkgoTInterface, withData, withoutData int) (
 	collection := database.Collection("patients")
 	lifecycle := fxtest.NewLifecycle(t)
 	logger := testLogger()
-	repo, err := patients.NewRepository(cfg, database, logger, lifecycle)
+	repo, err := patientsRepository.NewRepository(cfg, database, logger, lifecycle)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(repo).ToNot(BeNil())
 	lifecycle.RequireStart()

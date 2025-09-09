@@ -3,12 +3,13 @@ package clinicians
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
+
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"sort"
-	"time"
 )
 
 var (
@@ -17,11 +18,12 @@ var (
 )
 
 const (
+	CollectionName   = "clinicians"
 	RoleClinicAdmin  = "CLINIC_ADMIN"
 	RoleClinicMember = "CLINIC_MEMBER"
 )
 
-//go:generate mockgen --build_flags=--mod=mod -source=./clinicians.go -destination=./test/mock_service.go -package test MockService
+//go:generate mockgen -source=./clinicians.go -destination=./test/mock_clinicians.go -package test
 type Service interface {
 	Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error)
@@ -31,6 +33,19 @@ type Service interface {
 	Delete(ctx context.Context, clinicId string, clinicianId string, metadata deletions.Metadata) error
 	DeleteAll(ctx context.Context, clinicId string, metadata deletions.Metadata) error
 	DeleteFromAllClinics(ctx context.Context, clinicianId string, metadata deletions.Metadata) error
+	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
+	DeleteInvite(ctx context.Context, clinicId, inviteId string) error
+	AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error)
+}
+
+type Repository interface {
+	Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error)
+	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error)
+	Create(ctx context.Context, clinician *Clinician) (*Clinician, error)
+	Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error)
+	UpdateAll(ctx context.Context, update *CliniciansUpdate) error
+	Delete(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error
+	DeleteAll(ctx context.Context, clinicId string, metadata deletions.Metadata) error
 	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
 	DeleteInvite(ctx context.Context, clinicId, inviteId string) error
 	AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error)

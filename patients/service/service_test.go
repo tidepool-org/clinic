@@ -1,25 +1,27 @@
-package patients_test
+package service_test
 
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
-
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"github.com/onsi/gomega/types"
-	"github.com/tidepool-org/clinic/clinics"
-	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
-	"github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/patients"
-	patientsTest "github.com/tidepool-org/clinic/patients/test"
-	clinicStoreTest "github.com/tidepool-org/clinic/store/test"
-	"github.com/tidepool-org/clinic/test"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic/clinics"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	"github.com/tidepool-org/clinic/deletions"
+	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
+	patientsService "github.com/tidepool-org/clinic/patients/service"
+	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	clinicStoreTest "github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/clinic/test"
 )
 
 func Ptr[T any](value T) *T {
@@ -43,7 +45,7 @@ var _ = Describe("Patients Service", func() {
 		client := clinicStoreTest.GetTestDatabase().Client()
 
 		var err error
-		service, err = patients.NewService(repo, clinicsService, nil, zap.NewNop().Sugar(), client)
+		service, err = patientsService.NewService(repo, clinicsService, nil, zap.NewNop().Sugar(), client)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -67,7 +69,7 @@ var _ = Describe("Patients Service", func() {
 				Upload: &patients.Permission{},
 			}
 
-			matchPatientFields = patientFieldsMatcher(randomPatient)
+			matchPatientFields = patientsTest.PatientFieldsMatcher(randomPatient)
 		})
 
 		When("the clinic requires the mrn to be set", func() {
@@ -591,7 +593,6 @@ var _ = Describe("Patients Service", func() {
 				expectDeletePatient.UserId = &userId
 				expectDeletePatient.ClinicId = &clinicObjId
 
-				
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
 					Return(nil)
@@ -768,7 +769,7 @@ var _ = Describe("Patients Service", func() {
 				UpdatePatientCount(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(patientCount)).
 				Return(nil)
 
-			err = service.Remove(context.Background(), clinicId, userId,  deletions.Metadata{})
+			err = service.Remove(context.Background(), clinicId, userId, deletions.Metadata{})
 			Expect(err).To(BeNil())
 		})
 	})

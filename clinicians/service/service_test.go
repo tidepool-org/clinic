@@ -1,4 +1,4 @@
-package clinicians_test
+package service_test
 
 import (
 	"context"
@@ -9,13 +9,19 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
 	"github.com/tidepool-org/clinic/clinicians"
+	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
+	cliniciansService "github.com/tidepool-org/clinic/clinicians/service"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
+	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
+	patientsService "github.com/tidepool-org/clinic/patients/service"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
@@ -28,10 +34,10 @@ import (
 )
 
 var _ = Describe("Clinicians Service", func() {
-	var cliniciansService clinicians.Service
-	var clinicsService clinics.Service
-	var userService *patientsTest.MockUserService
-	var patientsService patients.Service
+	var cliniciansSvc clinicians.Service
+	var clinicsSvc clinics.Service
+	var userSvc *patientsTest.MockUserService
+	var patientsSvc patients.Service
 	var ctrl *gomock.Controller
 	var app *fxtest.App
 	beforeOnce := sync.Once{}
@@ -55,19 +61,19 @@ var _ = Describe("Clinicians Service", func() {
 					},
 					patientsTest.NewMockUserService,
 					config.NewConfig,
-					clinics.NewRepository,
-					clinics.NewService,
-					clinicians.NewRepository,
-					clinicians.NewService,
-					patients.NewRepository,
-					patients.NewService,
-					patients.NewCustodialService,
+					clinicsRepository.NewRepository,
+					clinicsService.NewService,
+					cliniciansRepository.NewRepository,
+					cliniciansService.NewService,
+					patientsRepository.NewRepository,
+					patientsService.NewService,
+					patientsService.NewCustodialService,
 				),
-				fx.Invoke(func(cliniciansSvc clinicians.Service, clinicsSvc clinics.Service, userSvc patients.UserService, patientsSvc patients.Service) {
-					cliniciansService = cliniciansSvc
-					clinicsService = clinicsSvc
-					userService = userSvc.(*patientsTest.MockUserService)
-					patientsService = patientsSvc
+				fx.Invoke(func(cliniciansService clinicians.Service, clinicsService clinics.Service, userService patients.UserService, patientsService patients.Service) {
+					cliniciansSvc = cliniciansService
+					clinicsSvc = clinicsService
+					userSvc = userService.(*patientsTest.MockUserService)
+					patientsSvc = patientsService
 				}),
 			)
 			app.RequireStart()
@@ -88,7 +94,7 @@ var _ = Describe("Clinicians Service", func() {
 			clinic = clinicsTest.RandomClinic()
 
 			var err error
-			clinic, err = clinicsService.Create(context.Background(), clinic)
+			clinic, err = clinicsSvc.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
@@ -98,7 +104,7 @@ var _ = Describe("Clinicians Service", func() {
 			clinician.ClinicId = clinic.Id
 			clinician.Roles = []string{"CLINIC_ADMIN"}
 
-			_, err = cliniciansService.Create(context.Background(), clinician)
+			_, err = cliniciansSvc.Create(context.Background(), clinician)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -106,13 +112,13 @@ var _ = Describe("Clinicians Service", func() {
 			clinician := cliniciansTest.RandomClinician()
 			clinician.ClinicId = clinic.Id
 
-			created, err := cliniciansService.Create(context.Background(), clinician)
+			created, err := cliniciansSvc.Create(context.Background(), clinician)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(created).ToNot(BeNil())
 			Expect(created.Id).ToNot(BeNil())
 			Expect(created.UserId).ToNot(BeNil())
 
-			result, err := cliniciansService.Get(context.Background(), created.ClinicId.Hex(), *created.UserId)
+			result, err := cliniciansSvc.Get(context.Background(), created.ClinicId.Hex(), *created.UserId)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).ToNot(BeNil())
 			Expect(result.Id).ToNot(BeNil())
@@ -124,10 +130,10 @@ var _ = Describe("Clinicians Service", func() {
 			clinician.ClinicId = clinic.Id
 			clinician.Roles = []string{"CLINIC_ADMIN"}
 
-			_, err := cliniciansService.Create(context.Background(), clinician)
+			_, err := cliniciansSvc.Create(context.Background(), clinician)
 			Expect(err).ToNot(HaveOccurred())
 
-			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsSvc.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).To(ContainElement(*clinician.UserId))
@@ -142,7 +148,7 @@ var _ = Describe("Clinicians Service", func() {
 			clinic = clinicsTest.RandomClinic()
 
 			var err error
-			clinic, err = clinicsService.Create(context.Background(), clinic)
+			clinic, err = clinicsSvc.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
@@ -152,15 +158,15 @@ var _ = Describe("Clinicians Service", func() {
 			clinician.ClinicId = clinic.Id
 			clinician.Roles = []string{"CLINIC_ADMIN"}
 
-			_, err = cliniciansService.Create(context.Background(), clinician)
+			_, err = cliniciansSvc.Create(context.Background(), clinician)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Prevents orphaning a clinic", func() {
-			err := cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId, deletions.Metadata{})
+			err := cliniciansSvc.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
 
-			res, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			res, err := cliniciansSvc.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).ToNot(BeNil())
 			Expect(res.ClinicId).ToNot(BeNil())
@@ -169,7 +175,7 @@ var _ = Describe("Clinicians Service", func() {
 		})
 
 		It("Allows orphaning when deleting from all clinics", func() {
-			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
+			err := cliniciansSvc.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -178,16 +184,16 @@ var _ = Describe("Clinicians Service", func() {
 			second.ClinicId = clinic.Id
 			second.Roles = []string{"CLINIC_ADMIN"}
 
-			created, err := cliniciansService.Create(context.Background(), second)
+			created, err := cliniciansSvc.Create(context.Background(), second)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(created).ToNot(BeNil())
 			Expect(created.Id).ToNot(BeNil())
 			Expect(created.UserId).ToNot(BeNil())
 
-			err = cliniciansService.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId, deletions.Metadata{})
+			err = cliniciansSvc.Delete(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 
-			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsSvc.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).ToNot(ContainElement(*clinician.UserId))
@@ -198,10 +204,10 @@ var _ = Describe("Clinicians Service", func() {
 			clinician.ClinicId = clinic.Id
 			clinician.Roles = []string{"CLINIC_ADMIN"}
 
-			_, err := cliniciansService.Create(context.Background(), clinician)
+			_, err := cliniciansSvc.Create(context.Background(), clinician)
 			Expect(err).ToNot(HaveOccurred())
 
-			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsSvc.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).To(ContainElement(*clinician.UserId))
@@ -219,7 +225,7 @@ var _ = Describe("Clinicians Service", func() {
 			for i, clinic := range clinicsList {
 				var err error
 				clinic.Admins = &[]string{*clinician.UserId}
-				clinic, err = clinicsService.Create(context.Background(), clinic)
+				clinic, err = clinicsSvc.Create(context.Background(), clinic)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(clinic).ToNot(BeNil())
 
@@ -227,17 +233,17 @@ var _ = Describe("Clinicians Service", func() {
 				clinician.ClinicId = clinic.Id
 				clinician.Roles = []string{"CLINIC_ADMIN"}
 
-				_, err = cliniciansService.Create(context.Background(), clinician)
+				_, err = cliniciansSvc.Create(context.Background(), clinician)
 				Expect(err).ToNot(HaveOccurred())
 			}
 		})
 
 		It("Allows orphaning when deleting from all clinics", func() {
-			err := cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
+			err := cliniciansSvc.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 
 			for _, clinic := range clinicsList {
-				result, err := cliniciansService.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				result, err := cliniciansSvc.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
 				Expect(err).To(Equal(clinicians.ErrNotFound))
 				Expect(result).To(BeNil())
 			}
@@ -250,22 +256,22 @@ var _ = Describe("Clinicians Service", func() {
 			patient.Permissions = &patients.Permissions{
 				View: &patients.Permission{},
 			}
-			_, err := patientsService.Create(context.Background(), patient)
+			_, err := patientsSvc.Create(context.Background(), patient)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete all clinician records
-			err = cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
+			err = cliniciansSvc.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 
 			// Check clinicians records were deleted
 			for _, clinic := range clinicsList {
-				result, err := cliniciansService.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				result, err := cliniciansSvc.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
 				Expect(err).To(Equal(clinicians.ErrNotFound))
 				Expect(result).To(BeNil())
 			}
 
 			// Check non-custodial patient was deleted
-			_, err = patientsService.Get(context.Background(), patient.ClinicId.Hex(), *patient.UserId)
+			_, err = patientsSvc.Get(context.Background(), patient.ClinicId.Hex(), *patient.UserId)
 			Expect(err).To(Equal(patients.ErrNotFound))
 		})
 
@@ -274,22 +280,22 @@ var _ = Describe("Clinicians Service", func() {
 			patient := patientsTest.RandomPatient()
 			patient.ClinicId = clinician.ClinicId
 			patient.Permissions = &patients.CustodialAccountPermissions
-			_, err := patientsService.Create(context.Background(), patient)
+			_, err := patientsSvc.Create(context.Background(), patient)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete all clinician records
-			err = cliniciansService.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
+			err = cliniciansSvc.DeleteFromAllClinics(context.Background(), *clinician.UserId, deletions.Metadata{})
 			Expect(err).ToNot(HaveOccurred())
 
 			// Check clinicians records were deleted
 			for _, clinic := range clinicsList {
-				result, err := cliniciansService.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
+				result, err := cliniciansSvc.Get(context.Background(), clinic.Id.Hex(), *clinician.UserId)
 				Expect(err).To(Equal(clinicians.ErrNotFound))
 				Expect(result).To(BeNil())
 			}
 
 			// Check custodial patient was not deleted
-			_, err = patientsService.Get(context.Background(), patient.ClinicId.Hex(), *patient.UserId)
+			_, err = patientsSvc.Get(context.Background(), patient.ClinicId.Hex(), *patient.UserId)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -306,7 +312,7 @@ var _ = Describe("Clinicians Service", func() {
 			admins = make([]*clinicians.Clinician, count)
 
 			var err error
-			clinic, err = clinicsService.Create(context.Background(), clinic)
+			clinic, err = clinicsSvc.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
@@ -314,7 +320,7 @@ var _ = Describe("Clinicians Service", func() {
 				members[i] = cliniciansTest.RandomClinician()
 				members[i].ClinicId = clinic.Id
 				members[i].Roles = []string{"CLINIC_MEMBER"}
-				_, err = cliniciansService.Create(context.Background(), members[i])
+				_, err = cliniciansSvc.Create(context.Background(), members[i])
 				Expect(err).ToNot(HaveOccurred())
 			}
 
@@ -322,18 +328,18 @@ var _ = Describe("Clinicians Service", func() {
 				admins[i] = cliniciansTest.RandomClinician()
 				admins[i].ClinicId = clinic.Id
 				admins[i].Roles = []string{"CLINIC_ADMIN"}
-				_, err = cliniciansService.Create(context.Background(), admins[i])
+				_, err = cliniciansSvc.Create(context.Background(), admins[i])
 				Expect(err).ToNot(HaveOccurred())
 			}
 		})
 
 		AfterEach(func() {
 			for _, clinician := range admins {
-				err := cliniciansService.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId, deletions.Metadata{})
+				err := cliniciansSvc.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 			}
 			for _, clinician := range members {
-				err := cliniciansService.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId, deletions.Metadata{})
+				err := cliniciansSvc.Delete(context.Background(), clinic.Id.Hex(), *clinician.UserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 			}
 		})
@@ -345,7 +351,7 @@ var _ = Describe("Clinicians Service", func() {
 			}
 			pagination := store.Pagination{}
 
-			results, err := cliniciansService.List(context.Background(), &filter, pagination)
+			results, err := cliniciansSvc.List(context.Background(), &filter, pagination)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).ToNot(BeEmpty())
 
@@ -363,7 +369,7 @@ var _ = Describe("Clinicians Service", func() {
 			clinic = clinicsTest.RandomClinic()
 
 			var err error
-			clinic, err = clinicsService.Create(context.Background(), clinic)
+			clinic, err = clinicsSvc.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
@@ -373,14 +379,14 @@ var _ = Describe("Clinicians Service", func() {
 			clinician.ClinicId = clinic.Id
 			clinician.Roles = []string{"CLINIC_ADMIN"}
 
-			clinician, err = cliniciansService.Create(context.Background(), clinician)
+			clinician, err = cliniciansSvc.Create(context.Background(), clinician)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Updates an existing clinician", func() {
 			updatedName := test.Faker.Person().Name()
 
-			result, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			result, err := cliniciansSvc.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).ToNot(BeNil())
 
@@ -391,7 +397,7 @@ var _ = Describe("Clinicians Service", func() {
 				ClinicianId: *clinician.UserId,
 				Clinician:   *result,
 			}
-			updated, err := cliniciansService.Update(context.Background(), clinicianUpdate)
+			updated, err := cliniciansSvc.Update(context.Background(), clinicianUpdate)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(updated).ToNot(BeNil())
 			Expect(updated.Name).ToNot(BeNil())
@@ -403,7 +409,7 @@ var _ = Describe("Clinicians Service", func() {
 			newClinician.ClinicId = clinic.Id
 			newClinician.Roles = []string{"CLINIC_MEMBER"}
 
-			newClinician, err := cliniciansService.Create(context.Background(), newClinician)
+			newClinician, err := cliniciansSvc.Create(context.Background(), newClinician)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(newClinician).ToNot(BeNil())
 
@@ -415,10 +421,10 @@ var _ = Describe("Clinicians Service", func() {
 					Roles: []string{"CLINIC_ADMIN"},
 				},
 			}
-			newClinician, err = cliniciansService.Update(context.Background(), clinicianUpdate)
+			newClinician, err = cliniciansSvc.Update(context.Background(), clinicianUpdate)
 			Expect(err).ToNot(HaveOccurred())
 
-			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsSvc.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).To(ContainElement(*newClinician.UserId))
@@ -430,7 +436,7 @@ var _ = Describe("Clinicians Service", func() {
 			newClinician := cliniciansTest.RandomClinician()
 			newClinician.ClinicId = clinic.Id
 			newClinician.Roles = []string{"CLINIC_ADMIN"}
-			_, err := cliniciansService.Create(context.Background(), newClinician)
+			_, err := cliniciansSvc.Create(context.Background(), newClinician)
 			Expect(err).ToNot(HaveOccurred())
 
 			clinicianUpdate := &clinicians.ClinicianUpdate{
@@ -441,10 +447,10 @@ var _ = Describe("Clinicians Service", func() {
 					Roles: []string{"CLINIC_MEMBER"},
 				},
 			}
-			_, err = cliniciansService.Update(context.Background(), clinicianUpdate)
+			_, err = cliniciansSvc.Update(context.Background(), clinicianUpdate)
 			Expect(err).ToNot(HaveOccurred())
 
-			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsSvc.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).ToNot(ContainElement(*clinician.UserId))
@@ -459,10 +465,10 @@ var _ = Describe("Clinicians Service", func() {
 					Roles: []string{"CLINIC_MEMBER"},
 				},
 			}
-			_, err := cliniciansService.Update(context.Background(), clinicianUpdate)
+			_, err := cliniciansSvc.Update(context.Background(), clinicianUpdate)
 			Expect(err).To(MatchError("constraint violation: the clinic must have at least one admin"))
 
-			res, err := cliniciansService.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
+			res, err := cliniciansSvc.Get(context.Background(), clinician.ClinicId.Hex(), *clinician.UserId)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).ToNot(BeNil())
 			Expect(res.ClinicId).ToNot(BeNil())
@@ -480,7 +486,7 @@ var _ = Describe("Clinicians Service", func() {
 					Roles: roles,
 				},
 			}
-			updated, err := cliniciansService.Update(context.Background(), clinicianUpdate)
+			updated, err := cliniciansSvc.Update(context.Background(), clinicianUpdate)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(updated).ToNot(BeNil())
 			Expect(updated.RolesUpdates).To(HaveLen(1))
@@ -498,7 +504,7 @@ var _ = Describe("Clinicians Service", func() {
 			clinic = clinicsTest.RandomClinic()
 
 			var err error
-			clinic, err = clinicsService.Create(context.Background(), clinic)
+			clinic, err = clinicsSvc.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
@@ -508,13 +514,13 @@ var _ = Describe("Clinicians Service", func() {
 			clinician.ClinicId = clinic.Id
 			clinician.Roles = []string{"CLINIC_ADMIN"}
 
-			_, err = cliniciansService.Create(context.Background(), clinician)
+			_, err = cliniciansSvc.Create(context.Background(), clinician)
 			Expect(err).ToNot(HaveOccurred())
 
 			invite = cliniciansTest.RandomClinicianInvite()
 			invite.ClinicId = clinic.Id
 			invite.Roles = []string{"CLINIC_ADMIN"}
-			_, err = cliniciansService.Create(context.Background(), invite)
+			_, err = cliniciansSvc.Create(context.Background(), invite)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -532,19 +538,19 @@ var _ = Describe("Clinicians Service", func() {
 				UserId:   userId,
 			}
 
-			userService.EXPECT().
+			userSvc.EXPECT().
 				GetUserProfile(gomock.Any(), gomock.Eq(userId)).
 				Return(&patients.Profile{
 					FullName: &name,
 				}, nil)
 
-			result, err := cliniciansService.AssociateInvite(context.Background(), association)
+			result, err := cliniciansSvc.AssociateInvite(context.Background(), association)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).ToNot(BeNil())
 			Expect(result.Name).ToNot(BeNil())
 			Expect(*result.Name).To(Equal(name))
 
-			clinic, err = clinicsService.Get(context.Background(), clinic.Id.Hex())
+			clinic, err = clinicsSvc.Get(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic.Admins).ToNot(BeNil())
 			Expect(*clinic.Admins).To(ContainElement(userId))

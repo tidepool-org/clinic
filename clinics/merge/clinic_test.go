@@ -3,6 +3,7 @@ package merge_test
 import (
 	"context"
 	"errors"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,14 +19,20 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinicians"
+	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
+	cliniciansService "github.com/tidepool-org/clinic/clinicians/service"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	"github.com/tidepool-org/clinic/config"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
+	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
+	patientsService "github.com/tidepool-org/clinic/patients/service"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
@@ -79,13 +86,13 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 			},
 			patientsTest.NewMockUserService,
 			config.NewConfig,
-			clinics.NewRepository,
-			clinics.NewService,
-			clinicians.NewRepository,
-			clinicians.NewService,
-			patients.NewRepository,
-			patients.NewService,
-			patients.NewCustodialService,
+			clinicsRepository.NewRepository,
+			clinicsService.NewService,
+			cliniciansRepository.NewRepository,
+			cliniciansService.NewService,
+			patientsRepository.NewRepository,
+			patientsService.NewService,
+			patientsService.NewCustodialService,
 			clinics.NewShareCodeGenerator,
 			manager.NewManager,
 		),
@@ -392,7 +399,7 @@ var _ = Describe("New Clinic Merge Planner (w/ Large patient populations)", Orde
 	BeforeAll(func() {
 		t = NewClinicMergeTest()
 		t.Init(params)
-	})
+	}, PollProgressAfter(30*time.Second))
 
 	AfterAll(func() {
 		t.app.RequireStop()

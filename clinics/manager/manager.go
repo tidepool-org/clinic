@@ -37,7 +37,7 @@ type Manager interface {
 
 type manager struct {
 	clinics              clinics.Service
-	cliniciansRepository *clinicians.Repository
+	cliniciansRepository clinicians.Repository
 	config               *config.Config
 	dbClient             *mongo.Client
 	patientsRepository   patients.Repository
@@ -50,7 +50,7 @@ type Params struct {
 	fx.In
 
 	ClinicsService       clinics.Service
-	CliniciansRepository *clinicians.Repository
+	CliniciansRepository clinicians.Repository
 	Config               *config.Config
 	DbClient             *mongo.Client
 	PatientsRepository   patients.Repository

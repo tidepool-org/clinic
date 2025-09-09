@@ -3,16 +3,17 @@ package patients
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 )
 
 const (
+	CollectionName                     = "patients"
 	SubscriptionRedoxSummaryAndReports = "summaryAndReports"
 	SubscriptionXealthReports          = "xealthReports"
 )
@@ -43,7 +44,7 @@ var (
 	}
 )
 
-//go:generate mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
+//go:generate mockgen -source=./patients.go -destination=./test/mock_patients.go -package test
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
 	Count(ctx context.Context, filter *Filter) (int, error)
@@ -69,6 +70,10 @@ type Service interface {
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 	RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error
+}
+
+type Repository interface {
+	Service
 }
 
 type Patient struct {
