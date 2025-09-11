@@ -475,7 +475,11 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			UserId:   *match.Patient.UserId,
 			Patient:  *match.Patient,
 		}); err != nil {
-			return fmt.Errorf("unable to update patient: %w", err)
+			if errors.Is(err, patients.ErrDuplicateEmail) {
+				d.logger.Warnw("custodial account email is already taken", "clinicId", match.Patient.ClinicId.Hex(), "userId", *match.Patient.UserId)
+			} else {
+				return fmt.Errorf("unable to update patient: %w", err)
+			}
 		}
 	}
 
