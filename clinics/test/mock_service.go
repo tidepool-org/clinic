@@ -103,6 +103,21 @@ func (mr *MockServiceMockRecorder) CreateSite(ctx, clinicId, site any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSite", reflect.TypeOf((*MockService)(nil).CreateSite), ctx, clinicId, site)
 }
 
+// CreateSiteIgnoringLimit mocks base method.
+func (m *MockService) CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSiteIgnoringLimit", ctx, clinicId, site)
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSiteIgnoringLimit indicates an expected call of CreateSiteIgnoringLimit.
+func (mr *MockServiceMockRecorder) CreateSiteIgnoringLimit(ctx, clinicId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSiteIgnoringLimit", reflect.TypeOf((*MockService)(nil).CreateSiteIgnoringLimit), ctx, clinicId, site)
+}
+
 // Delete mocks base method.
 func (m *MockService) Delete(ctx context.Context, id string, metadata deletions.Metadata) error {
 	m.ctrl.T.Helper()

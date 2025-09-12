@@ -117,7 +117,7 @@ var _ = Describe("Sites", func() {
 			targetID := th.Target.Id.Hex()
 			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics, th.Patients)
 
-			th.Clinics.EXPECT().CreateSite(gomock.Any(), targetID, &srcSite)
+			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID, &srcSite)
 			for _, plan := range th.Plans() {
 				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
 			}
@@ -132,7 +132,7 @@ var _ = Describe("Sites", func() {
 
 			th.Clinics.EXPECT().Get(gomock.Any(), targetID).
 				Return(th.Target, nil).AnyTimes()
-			th.Clinics.EXPECT().CreateSite(gomock.Any(), targetID,
+			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID,
 				incrementedSiteMatcher(dups.Target))
 			th.Patients.EXPECT().UpdateSites(gomock.Any(), sourceID, dups.Source.Id.Hex(),
 				incrementedSiteMatcher(dups.Source))
@@ -154,7 +154,7 @@ var _ = Describe("Sites", func() {
 
 			th.Clinics.EXPECT().Get(gomock.Any(), targetID).
 				Return(th.Target, nil).AnyTimes()
-			th.Clinics.EXPECT().CreateSite(gomock.Any(), targetID,
+			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID,
 				incrementedSiteMatcherN(dups.Target, times+2))
 			th.Patients.EXPECT().UpdateSites(gomock.Any(), sourceID, dups.Source.Id.Hex(),
 				incrementedSiteMatcherN(dups.Source, times+2))

@@ -2,7 +2,6 @@ package merge
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -88,27 +87,6 @@ func (s SitesPlans) GetRenamedSitesCount() int {
 	return count
 }
 
-// GetRenamedSitesCount is the number of sites from the source clinic that will be renamed
-// during a merge.
-func (s SitesPlans) Warnings() []string {
-	warnings := []string{}
-	if len(s) > sites.MaxSitesPerClinic {
-		sourceSites := 0
-		for _, plan := range s {
-			if plan.Action != SiteActionRetain {
-				sourceSites++
-			}
-		}
-		format := "The sum of sites between the two clinics (%d) is greater than " +
-			"the limit (%d). After merging, %d clinic(s) from the source clinic " +
-			"will be irretrieably lost."
-		warning := fmt.Sprintf(format, len(s), sites.MaxSitesPerClinic,
-			min(sourceSites, len(s)-sites.MaxSitesPerClinic))
-		warnings = append(warnings, warning)
-	}
-	return warnings
-}
-
 type SourceSiteMergePlanner struct {
 	site sites.Site
 
@@ -192,22 +170,12 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 	case SiteActionRetain:
 		logger.Debug("retaining existing target site")
 	case SiteActionMove:
-		_, err := t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
+		_, err := t.clinicsService.CreateSiteIgnoringLimit(ctx,
+			plan.TargetClinicId.Hex(), &plan.Site)
 		if err != nil {
-			if errors.Is(err, clinics.ErrMaximumSitesExceeded) {
-				if err := t.patientsService.DeleteSites(ctx, plan.SourceClinicId.Hex(),
-					plan.Site.Id.Hex()); err != nil {
-					logger.Warnw("unable to delete source patient site", "error", err)
-					return err
-				}
-				msg := fmt.Sprintf("clinic site creation failed: %s, deleted", err)
-				logger.Warnw(msg, "site name", plan.Site.Name)
-			} else {
-				return err
-			}
-		} else {
-			logger.Debug("created new target site")
+			return err
 		}
+		logger.Debug("created new target site")
 	case SiteActionRename:
 		targetClinic, err := t.clinicsService.Get(ctx, plan.TargetClinicId.Hex())
 		if err != nil {
@@ -224,7 +192,7 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 		}
 		prevName := plan.Site.Name
 		plan.Site.Name = newName
-		_, err = t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
+		_, err = t.clinicsService.CreateSiteIgnoringLimit(ctx, plan.TargetClinicId.Hex(), &plan.Site)
 		if err != nil {
 			return err
 		}

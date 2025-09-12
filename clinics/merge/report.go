@@ -405,10 +405,6 @@ func (r Report) addSitesSummary(sh *xlsx.Sheet) error {
 	resultingSitesCount := r.plan.SitesPlans.GetResultingSitesCount()
 
 	currentRow := sh.AddRow()
-	for _, warning := range r.plan.SitesPlans.Warnings() {
-		currentRow.AddCell().SetValue("WARNING: " + warning)
-		currentRow = sh.AddRow()
-	}
 
 	currentRow.AddCell().SetValue(fmt.Sprintf("Resulting Sites (%d) ---", resultingSitesCount))
 	currentRow.AddCell().SetValue("Workspace ---")

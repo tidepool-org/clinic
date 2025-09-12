@@ -32,6 +32,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 	repo := &repository{
 		collection:    db.Collection(CollectionName),
 		deletionsRepo: deletionsRepo,
+		logger:        logger,
 	}
 
 	lifecycle.Append(fx.Hook{
@@ -52,6 +53,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 type repository struct {
 	collection    *mongo.Collection
 	deletionsRepo deletions.Repository[Clinic]
+	logger        *zap.SugaredLogger
 }
 
 func (r *repository) Initialize(ctx context.Context) error {
@@ -560,11 +562,59 @@ func (r *repository) UpdatePatientCount(ctx context.Context, id string, patientC
 }
 
 // CreateSite while checking constraints.
-func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+func (c *repository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (
+	*sites.Site, error) {
 
 	if err := c.maintainSitesConstraintsOnCreate(ctx, clinicId, site.Name); err != nil {
 		return nil, err
 	}
+	id, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return nil, err
+	}
+	if site.Id.IsZero() {
+		site.Id = primitive.NewObjectID()
+	}
+	filter := bson.M{"_id": id}
+	update := bson.M{
+		"$push":        bson.M{"sites": site},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	res := c.collection.FindOneAndUpdate(ctx, filter, update, opts)
+	if err := res.Err(); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	clinic := &Clinic{}
+	if err := res.Decode(clinic); err != nil {
+		return nil, err
+	}
+	for _, candidate := range clinic.Sites {
+		if candidate.Name == site.Name {
+			return &candidate, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unable to find newly created site %+v %s %+v", clinic.Sites, site.Name, clinic)
+}
+
+// CreateSiteIgnoringLimit will ignore MaxClinicSitesLimit.
+//
+// This is intended to be used only when merging two sites. In that case we want to allow
+// the resulting clinic to be over the sites limit.
+func (c *repository) CreateSiteIgnoringLimit(ctx context.Context, clinicId string,
+	site *sites.Site) (*sites.Site, error) {
+
+	if err := c.maintainSitesConstraintsOnCreate(ctx, clinicId, site.Name); err != nil {
+		if !errors.Is(err, ErrMaximumSitesExceeded) {
+			return nil, err
+		}
+		c.logger.Info("creating a site in excess of sites.MaxSitesPerClinic")
+	}
+
 	id, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
 		return nil, err

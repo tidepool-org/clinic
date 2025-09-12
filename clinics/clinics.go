@@ -66,6 +66,7 @@ type Service interface {
 	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 	CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
+	CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
 	DeleteSite(ctx context.Context, clinicId, siteId string) error
 	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error)
 }
