@@ -2,6 +2,7 @@ package merge
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -172,9 +173,20 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 	case SiteActionMove:
 		_, err := t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
 		if err != nil {
-			return err
+			if errors.Is(err, clinics.ErrMaximumSitesExceeded) {
+				if err := t.patientsService.DeleteSites(ctx, plan.SourceClinicId.Hex(),
+					plan.Site.Id.Hex()); err != nil {
+					logger.Warnw("unable to delete source patient site", "error", err)
+					return err
+				}
+				msg := fmt.Sprintf("clinic site creation failed: %s, deleted", err)
+				logger.Warnw(msg, "site name", plan.Site.Name)
+			} else {
+				return err
+			}
+		} else {
+			logger.Debug("created new target site")
 		}
-		logger.Debug("creating new target site")
 	case SiteActionRename:
 		targetClinic, err := t.clinicsService.Get(ctx, plan.TargetClinicId.Hex())
 		if err != nil {
