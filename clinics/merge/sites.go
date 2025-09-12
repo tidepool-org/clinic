@@ -88,6 +88,27 @@ func (s SitesPlans) GetRenamedSitesCount() int {
 	return count
 }
 
+// GetRenamedSitesCount is the number of sites from the source clinic that will be renamed
+// during a merge.
+func (s SitesPlans) Warnings() []string {
+	warnings := []string{}
+	if len(s) > sites.MaxSitesPerClinic {
+		sourceSites := 0
+		for _, plan := range s {
+			if plan.Action != SiteActionRetain {
+				sourceSites++
+			}
+		}
+		format := "The sum of sites between the two clinics (%d) is greater than " +
+			"the limit (%d). After merging, %d clinic(s) from the source clinic " +
+			"will be irretrieably lost."
+		warning := fmt.Sprintf(format, len(s), sites.MaxSitesPerClinic,
+			min(sourceSites, len(s)-sites.MaxSitesPerClinic))
+		warnings = append(warnings, warning)
+	}
+	return warnings
+}
+
 type SourceSiteMergePlanner struct {
 	site sites.Site
 
