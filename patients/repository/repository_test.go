@@ -53,6 +53,8 @@ var _ = Describe("Patients Repository", func() {
 	})
 
 	Context("with random data", func() {
+		var clinicId primitive.ObjectID
+		var clinicIdString string
 		var allPatientIds []interface{}
 		var allPatients []patients.Patient
 		var randomPatient patients.Patient
@@ -60,11 +62,19 @@ var _ = Describe("Patients Repository", func() {
 		var count int
 
 		BeforeEach(func() {
+			clinicId = primitive.NewObjectID()
+			clinicIdString = clinicId.Hex()
 			count = 10
 			documents := make([]interface{}, count)
 			allPatients = make([]patients.Patient, count)
 			for i := range documents {
 				patient := patientsTest.RandomPatient()
+				if i%2 == 0 {
+					patient.ClinicId = &clinicId
+				}
+				if i%3 == 0 {
+					patient.DataSources = &[]patients.DataSource{{ProviderName: "twiist", State: "disconnected"}}
+				}
 				documents[i] = patient
 				allPatients[i] = patient
 			}
@@ -291,6 +301,36 @@ var _ = Describe("Patients Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 				Expect(*result).To(matchPatientFields)
+			})
+		})
+
+		Describe("GetClinicIds", func() {
+			var anotherRandomPatient patients.Patient
+
+			BeforeEach(func() {
+				anotherRandomPatient = patientsTest.RandomPatient()
+				anotherRandomPatient.UserId = randomPatient.UserId
+				result, err := collection.InsertOne(context.Background(), anotherRandomPatient)
+				Expect(err).ToNot(HaveOccurred())
+				id := result.InsertedID.(primitive.ObjectID)
+				anotherRandomPatient.Id = &id
+			})
+
+			AfterEach(func() {
+				selector := primitive.M{
+					"_id": anotherRandomPatient.Id,
+				}
+				result, err := collection.DeleteOne(context.Background(), selector)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(int(result.DeletedCount)).To(Equal(1))
+			})
+
+			It("returns the correct clinic ids", func() {
+				result, err := repo.GetClinicIds(context.Background(), *randomPatient.UserId)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				Expect(result).To(ConsistOf(randomPatient.ClinicId.Hex(), anotherRandomPatient.ClinicId.Hex()))
 			})
 		})
 
@@ -840,6 +880,46 @@ var _ = Describe("Patients Repository", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(count).To(Equal(0))
 				})
+			})
+		})
+
+		Describe("Counts", func() {
+			It("returns the expected count for the clinic id", func() {
+				counts, err := repo.Counts(context.Background(), clinicIdString)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(counts).ToNot(BeNil())
+				Expect(counts.Total).To(Equal(5))
+				Expect(counts.Demo).To(Equal(0))
+				Expect(counts.Plan).To(Equal(3))
+				Expect(counts.Providers).ToNot(BeNil())
+				Expect(counts.Providers).To(HaveKeyWithValue("twiist", patients.ProviderCounts{States: map[string]int{"disconnected": 2}, Total: 2}))
+			})
+
+			It("returns the expected count for a clinic id with one patient", func() {
+				counts, err := repo.Counts(context.Background(), allPatients[1].ClinicId.Hex())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(counts).ToNot(BeNil())
+				Expect(counts.Total).To(Equal(1))
+				Expect(counts.Demo).To(Equal(0))
+				Expect(counts.Plan).To(Equal(1))
+				Expect(counts.Providers).ToNot(BeNil())
+				Expect(counts.Providers).ToNot(HaveKey("twiist"))
+			})
+
+			It("returns no patients if the clinic id is unknown", func() {
+				counts, err := repo.Counts(context.Background(), primitive.NewObjectID().Hex())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(counts).ToNot(BeNil())
+				Expect(counts.Total).To(Equal(0))
+				Expect(counts.Demo).To(Equal(0))
+				Expect(counts.Plan).To(Equal(0))
+				Expect(counts.Providers).To(BeEmpty())
+			})
+
+			It("returns an error if the clinic id is invalid", func() {
+				counts, err := repo.Counts(context.Background(), "invalid_clinic_id")
+				Expect(err).To(HaveOccurred())
+				Expect(counts).To(BeNil())
 			})
 		})
 

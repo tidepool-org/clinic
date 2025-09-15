@@ -10,12 +10,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
+	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
 	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	"github.com/tidepool-org/clinic/patients"
+	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 )
 
@@ -24,20 +27,29 @@ func Ptr[T any](value T) *T {
 }
 
 var _ = Describe("Clinics", func() {
+	var patientsRepoController *gomock.Controller
+	var patientsRepo *patientsTest.MockRepository
 	var database *mongo.Database
 	var service clinics.Service
 
 	BeforeEach(func() {
 		var err error
 		database = dbTest.GetTestDatabase()
+		lgr := zap.NewNop().Sugar()
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repository, err := clinicsRepository.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
+		repository, err := clinicsRepository.NewRepository(database, lgr, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repository).ToNot(BeNil())
-		service, err = clinicsService.NewService(repository)
+		patientsRepoController = gomock.NewController(GinkgoT())
+		patientsRepo = patientsTest.NewMockRepository(patientsRepoController)
+		service, err = clinicsService.NewService(repository, patientsRepo, lgr)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(service).ToNot(BeNil())
 		lifecycle.RequireStart()
+	})
+
+	AfterEach(func() {
+		patientsRepoController.Finish()
 	})
 
 	Describe("GetPatientCountSettings", func() {
@@ -142,32 +154,43 @@ var _ = Describe("Clinics", func() {
 		})
 	})
 
-	Describe("UpdatePatientCount", func() {
-		It("returns an error if the clinic is not found", func() {
-			expectedPatientCount := &clinics.PatientCount{
-				PatientCount: 10,
-			}
+	Describe("RefreshPatientCount", func() {
+		It("returns an error if the patient repository returns an error", func() {
+			testErr := fmt.Errorf("test error")
+			clinicIdString := primitive.NewObjectID().Hex()
+			patientsRepo.
+				EXPECT().
+				Counts(gomock.Any(), clinicIdString).
+				Return(nil, testErr)
 
-			err := service.UpdatePatientCount(context.Background(), primitive.NewObjectID().Hex(), expectedPatientCount)
+			err := service.RefreshPatientCount(context.Background(), clinicIdString)
+			Expect(err).To(Equal(testErr))
+		})
+
+		It("returns an error if the clinic is not found", func() {
+			clinicIdString := primitive.NewObjectID().Hex()
+			patientsRepo.
+				EXPECT().
+				Counts(gomock.Any(), clinicIdString).
+				Return(&patients.Counts{}, nil)
+
+			err := service.RefreshPatientCount(context.Background(), clinicIdString)
 			Expect(err).To(Equal(clinics.ErrNotFound))
 		})
 
-		It("updates the patient count", func() {
+		It("refreshes the patient count", func() {
 			clinic := clinicsTest.RandomClinic()
 			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
-			expectedPatientCount := &clinics.PatientCount{
-				PatientCount: 10,
-			}
+			patientsRepo.
+				EXPECT().
+				Counts(gomock.Any(), clinic.Id.Hex()).
+				Return(&patients.Counts{Total: 10, Demo: 1, Plan: 5}, nil)
 
-			err = service.UpdatePatientCount(context.Background(), clinic.Id.Hex(), expectedPatientCount)
+			err = service.RefreshPatientCount(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
-
-			patientCount, err := service.GetPatientCount(context.Background(), clinic.Id.Hex())
-			Expect(err).ToNot(HaveOccurred())
-			Expect(patientCount).To(Equal(expectedPatientCount))
 		})
 	})
 

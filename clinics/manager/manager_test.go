@@ -64,15 +64,15 @@ var _ = Describe("Clinics Manager", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(clinicsRepo).ToNot(BeNil())
 
-		clinicsSvc, err := clinicsService.NewService(clinicsRepo)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(clinicsSvc).ToNot(BeNil())
-
 		patientsRepo, err := patientsRepository.NewRepository(cfg, database, lgr, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsRepo).ToNot(BeNil())
 
-		patientsSvc, err = patientsService.NewService(patientsRepo, clinicsSvc, nil, lgr, database.Client())
+		clinicsSvc, err := clinicsService.NewService(clinicsRepo, patientsRepo, lgr)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(clinicsSvc).ToNot(BeNil())
+
+		patientsSvc, err = patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, lgr, database.Client())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsSvc).ToNot(BeNil())
 
@@ -269,6 +269,10 @@ var _ = Describe("Clinics Manager", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(patientCount).ToNot(BeNil())
 				Expect(patientCount.PatientCount).To(Equal(0))
+				Expect(patientCount.Total).To(Equal(0))
+				Expect(patientCount.Demo).To(Equal(0))
+				Expect(patientCount.Plan).To(Equal(0))
+				Expect(patientCount.Providers).To(BeNil())
 			})
 		})
 
@@ -276,6 +280,7 @@ var _ = Describe("Clinics Manager", func() {
 			BeforeEach(func() {
 				randomPatient := patientsTest.RandomPatient()
 				randomPatient.ClinicId = clinic.Id
+				randomPatient.DataSources = &[]patients.DataSource{}
 				randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
 
 				createdPatient, err := patientsSvc.Create(context.Background(), randomPatient)
@@ -288,6 +293,10 @@ var _ = Describe("Clinics Manager", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(patientCount).ToNot(BeNil())
 				Expect(patientCount.PatientCount).To(Equal(1))
+				Expect(patientCount.Total).To(Equal(1))
+				Expect(patientCount.Demo).To(Equal(0))
+				Expect(patientCount.Plan).To(Equal(1))
+				Expect(patientCount.Providers).To(BeNil())
 			})
 
 			When("a demo patient is added to the clinic", func() {
@@ -307,12 +316,17 @@ var _ = Describe("Clinics Manager", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(patientCount).ToNot(BeNil())
 					Expect(patientCount.PatientCount).To(Equal(1))
+					Expect(patientCount.Total).To(Equal(2))
+					Expect(patientCount.Demo).To(Equal(1))
+					Expect(patientCount.Plan).To(Equal(1))
+					Expect(patientCount.Providers).To(BeNil())
 				})
 
-				When("aanother patient is added to the clinic", func() {
+				When("a patient with a twiist data source is added to the clinic", func() {
 					BeforeEach(func() {
 						randomPatient := patientsTest.RandomPatient()
 						randomPatient.ClinicId = clinic.Id
+						randomPatient.DataSources = &[]patients.DataSource{{ProviderName: "twiist", State: "disconnected"}}
 						randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
 
 						createdPatient, err := patientsSvc.Create(context.Background(), randomPatient)
@@ -324,7 +338,36 @@ var _ = Describe("Clinics Manager", func() {
 						patientCount, err := mngr.GetClinicPatientCount(context.Background(), clinicIdString)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(patientCount).ToNot(BeNil())
-						Expect(patientCount.PatientCount).To(Equal(2))
+						Expect(patientCount.PatientCount).To(Equal(1))
+						Expect(patientCount.Total).To(Equal(3))
+						Expect(patientCount.Demo).To(Equal(1))
+						Expect(patientCount.Plan).To(Equal(1))
+						Expect(patientCount.Providers).ToNot(BeNil())
+						Expect(patientCount.Providers).To(HaveKeyWithValue("twiist", clinics.PatientProviderCount{States: map[string]int{"disconnected": 1}, Total: 1}))
+					})
+
+					When("aanother patient is added to the clinic", func() {
+						BeforeEach(func() {
+							randomPatient := patientsTest.RandomPatient()
+							randomPatient.ClinicId = clinic.Id
+							randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
+
+							createdPatient, err := patientsSvc.Create(context.Background(), randomPatient)
+							Expect(err).ToNot(HaveOccurred())
+							Expect(createdPatient).ToNot(BeNil())
+						})
+
+						It("returns the correct patient count", func() {
+							patientCount, err := mngr.GetClinicPatientCount(context.Background(), clinicIdString)
+							Expect(err).ToNot(HaveOccurred())
+							Expect(patientCount).ToNot(BeNil())
+							Expect(patientCount.PatientCount).To(Equal(2))
+							Expect(patientCount.Total).To(Equal(4))
+							Expect(patientCount.Demo).To(Equal(1))
+							Expect(patientCount.Plan).To(Equal(2))
+							Expect(patientCount.Providers).ToNot(BeNil())
+							Expect(patientCount.Providers).To(HaveKeyWithValue("twiist", clinics.PatientProviderCount{States: map[string]int{"disconnected": 1}, Total: 1}))
+						})
 					})
 				})
 			})

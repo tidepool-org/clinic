@@ -221,6 +221,20 @@ func (mr *MockServiceMockRecorder) ListMembershipRestrictions(ctx, clinicId any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembershipRestrictions", reflect.TypeOf((*MockService)(nil).ListMembershipRestrictions), ctx, clinicId)
 }
 
+// RefreshPatientCount mocks base method.
+func (m *MockService) RefreshPatientCount(ctx context.Context, clinicId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefreshPatientCount", ctx, clinicId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RefreshPatientCount indicates an expected call of RefreshPatientCount.
+func (mr *MockServiceMockRecorder) RefreshPatientCount(ctx, clinicId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshPatientCount", reflect.TypeOf((*MockService)(nil).RefreshPatientCount), ctx, clinicId)
+}
+
 // RemoveAdmin mocks base method.
 func (m *MockService) RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error {
 	m.ctrl.T.Helper()
@@ -290,20 +304,6 @@ func (m *MockService) UpdateMembershipRestrictions(ctx context.Context, clinicId
 func (mr *MockServiceMockRecorder) UpdateMembershipRestrictions(ctx, clinicId, restrictions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMembershipRestrictions", reflect.TypeOf((*MockService)(nil).UpdateMembershipRestrictions), ctx, clinicId, restrictions)
-}
-
-// UpdatePatientCount mocks base method.
-func (m *MockService) UpdatePatientCount(ctx context.Context, clinicId string, patientCount *clinics.PatientCount) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdatePatientCount", ctx, clinicId, patientCount)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdatePatientCount indicates an expected call of UpdatePatientCount.
-func (mr *MockServiceMockRecorder) UpdatePatientCount(ctx, clinicId, patientCount any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientCount", reflect.TypeOf((*MockService)(nil).UpdatePatientCount), ctx, clinicId, patientCount)
 }
 
 // UpdatePatientCountSettings mocks base method.
@@ -502,21 +502,6 @@ func (m *MockRepository) List(ctx context.Context, filter *clinics.Filter, pagin
 func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepository)(nil).List), ctx, filter, pagination)
-}
-
-// ListMembershipRestrictions mocks base method.
-func (m *MockRepository) ListMembershipRestrictions(ctx context.Context, clinicId string) ([]clinics.MembershipRestrictions, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListMembershipRestrictions", ctx, clinicId)
-	ret0, _ := ret[0].([]clinics.MembershipRestrictions)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListMembershipRestrictions indicates an expected call of ListMembershipRestrictions.
-func (mr *MockRepositoryMockRecorder) ListMembershipRestrictions(ctx, clinicId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembershipRestrictions", reflect.TypeOf((*MockRepository)(nil).ListMembershipRestrictions), ctx, clinicId)
 }
 
 // RemoveAdmin mocks base method.

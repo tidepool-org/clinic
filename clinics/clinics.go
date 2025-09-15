@@ -61,7 +61,7 @@ type Service interface {
 	GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error)
 	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
 	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
-	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
+	RefreshPatientCount(ctx context.Context, clinicId string) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 }
 
@@ -78,7 +78,6 @@ type Repository interface {
 	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*Clinic, error)
 	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*Clinic, error)
 	DeletePatientTag(ctx context.Context, clinicId, tagId string) (*Clinic, error)
-	ListMembershipRestrictions(ctx context.Context, clinicId string) ([]MembershipRestrictions, error)
 	UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error
 	UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error
 	UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error
@@ -185,25 +184,22 @@ type FlowsheetSettings struct {
 	Icode bool `bson:"icode,omitempty"`
 }
 
-func getOrElse[T any, PT *T](val PT, def T) T {
-	if val == nil {
-		return def
-	}
-	return *val
+type PatientProviderCount struct {
+	States map[string]int `bson:"states,omitempty"`
+	Total  int            `bson:"total"`
 }
 
 type PatientCount struct {
-	PatientCount int `bson:"patientCount"`
-}
+	PatientCount int `bson:"patientCount"` // DEPRECATED: use Plan instead
 
-func (p PatientCount) IsValid() bool {
-	return p.PatientCount >= 0
+	Total     int                             `bson:"total"`
+	Demo      int                             `bson:"demo"`
+	Plan      int                             `bson:"plan"`
+	Providers map[string]PatientProviderCount `bson:"providers,omitempty"`
 }
 
 func NewPatientCount() *PatientCount {
-	return &PatientCount{
-		PatientCount: 0,
-	}
+	return &PatientCount{}
 }
 
 type PatientCountSettings struct {

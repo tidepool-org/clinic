@@ -20,7 +20,7 @@ const (
 
 var (
 	ErrNotFound           = fmt.Errorf("patient %w", errors.NotFound)
-	SummaryNotFound       = fmt.Errorf("summary %w", errors.NoChange)
+	ErrSummaryNotFound    = fmt.Errorf("summary %w", errors.NoChange)
 	ErrPermissionNotFound = fmt.Errorf("permission %w", errors.NotFound)
 	ErrDuplicatePatient   = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
@@ -74,6 +74,21 @@ type Service interface {
 
 type Repository interface {
 	Service
+
+	GetClinicIds(ctx context.Context, userId string) ([]string, error)
+	Counts(ctx context.Context, clinicId string) (*Counts, error)
+}
+
+type ProviderCounts struct {
+	States map[string]int `bson:"states,omitempty"`
+	Total  int            `bson:"total"`
+}
+
+type Counts struct {
+	Total     int                       `bson:"total"`
+	Demo      int                       `bson:"demo"`
+	Plan      int                       `bson:"plan"`
+	Providers map[string]ProviderCounts `bson:"providers,omitempty"`
 }
 
 type Patient struct {

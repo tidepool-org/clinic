@@ -814,6 +814,31 @@ func NewPatientCountLimitDto(limit *clinics.PatientCountLimit) *PatientCountLimi
 	return dto
 }
 
+func NewPatientCountDto(patientCount *clinics.PatientCount) PatientCountV1 {
+	if patientCount == nil {
+		return PatientCountV1{}
+	}
+
+	dto := PatientCountV1{
+		PatientCount: patientCount.PatientCount,
+		Total:        patientCount.Total,
+		Demo:         patientCount.Demo,
+		Plan:         patientCount.Plan,
+	}
+	if patientCount.Providers != nil {
+		providers := make(map[string]PatientProviderCountV1, len(patientCount.Providers))
+		for provider, providerPatientCount := range patientCount.Providers {
+			providers[provider] = PatientProviderCountV1{
+				States: providerPatientCount.States,
+				Total:  providerPatientCount.Total,
+			}
+		}
+		dto.Providers = &providers
+	}
+
+	return dto
+}
+
 func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil

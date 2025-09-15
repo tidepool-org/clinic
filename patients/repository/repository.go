@@ -176,6 +176,34 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 	return patient, nil
 }
 
+func (r *repository) GetClinicIds(ctx context.Context, userId string) ([]string, error) {
+	selector := bson.M{"userId": userId}
+	options := options.Find().SetProjection(bson.M{"_id": 0, "clinicId": 1})
+	cursor, err := r.collection.Find(ctx, selector, options)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			r.logger.Errorw("error closing cursor", "error", err)
+		}
+	}()
+
+	var results []bson.M
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	var clinicIds []string
+	for _, result := range results {
+		if clinicObjectId, ok := result["clinicId"].(primitive.ObjectID); ok {
+			clinicIds = append(clinicIds, clinicObjectId.Hex())
+		}
+	}
+
+	return clinicIds, nil
+}
+
 func (r *repository) Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
@@ -210,6 +238,86 @@ func (r *repository) Count(ctx context.Context, filter *patients.Filter) (int, e
 	}
 
 	return int(count), nil
+}
+
+func (r *repository) Counts(ctx context.Context, clinicId string) (*patients.Counts, error) {
+	clinicObjectId, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	demoPatientIds := []string{}
+	if r.config.ClinicDemoPatientUserId != "" {
+		demoPatientIds = append(demoPatientIds, r.config.ClinicDemoPatientUserId)
+	}
+
+	pipeline := bson.A{
+
+		// Only for the specified clinic id
+		bson.M{"$match": bson.M{"clinicId": clinicObjectId}},
+
+		// Multiple counts in a single query
+		bson.M{"$facet": bson.M{
+
+			// Total patients
+			"total": bson.A{
+				bson.M{"$count": "total"},
+			},
+
+			// Demo patients (according to config DemoPatientUserId)
+			"demo": bson.A{
+				bson.M{"$match": bson.M{"userId": bson.M{"$in": demoPatientIds}}},
+				bson.M{"$count": "total"},
+			},
+
+			// Calculated plan-based patients
+			"plan": bson.A{
+
+				// Excludes demo and twiist data source patients
+				// Update if patient count rules change
+				bson.M{"$match": bson.M{
+					"$nor": bson.A{
+						bson.M{"userId": bson.M{"$in": demoPatientIds}},
+						bson.M{"dataSources.providerName": "twiist"},
+					},
+				}},
+				bson.M{"$count": "total"},
+			},
+
+			// Breakdown by data source provider and state (not required, but useful)
+			"providers": bson.A{
+				bson.M{"$match": bson.M{"userId": bson.M{"$nin": demoPatientIds}}},
+				bson.M{"$unwind": "$dataSources"},
+				bson.M{"$group": bson.M{"_id": bson.M{"providerName": "$dataSources.providerName", "state": "$dataSources.state"}, "total": bson.M{"$sum": 1}}},
+				bson.M{"$group": bson.M{"_id": "$_id.providerName", "states": bson.M{"$push": bson.M{"k": "$_id.state", "v": "$total"}}, "total": bson.M{"$sum": "$total"}}},
+				bson.M{"$project": bson.M{"_id": 0, "k": "$_id", "v": bson.M{"states": bson.M{"$arrayToObject": "$states"}, "total": "$total"}}},
+				bson.M{"$sort": bson.M{"k": 1}},
+			},
+		}},
+
+		// Project to expected output data structure
+		bson.M{"$project": bson.M{
+			"_id":       0,
+			"total":     bson.M{"$ifNull": bson.A{bson.M{"$first": "$total.total"}, 0}},
+			"demo":      bson.M{"$ifNull": bson.A{bson.M{"$first": "$demo.total"}, 0}},
+			"plan":      bson.M{"$ifNull": bson.A{bson.M{"$first": "$plan.total"}, 0}},
+			"providers": bson.M{"$arrayToObject": "$providers"},
+		}},
+	}
+
+	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	counts := []*patients.Counts{}
+	if err := cursor.All(ctx, &counts); err != nil {
+		return nil, err
+	} else if len(counts) != 1 {
+		return nil, fmt.Errorf("expected single counts result, got %v", len(counts))
+	}
+
+	return counts[0], nil
 }
 
 func (r *repository) List(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sorts []*store.Sort) (*patients.ListResult, error) {
@@ -563,7 +671,7 @@ func (r *repository) deleteMany(ctx context.Context, selector bson.M, metadata d
 		return nil, err
 	}
 	if result.DeletedCount != int64(len(patients)) {
-		return nil, fmt.Errorf("unabel to delete all non custodial patients of a clinic")
+		return nil, fmt.Errorf("unable to delete all non custodial patients of a clinic")
 	}
 
 	return patients, nil
@@ -601,7 +709,7 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
-		return patients.SummaryNotFound
+		return patients.ErrSummaryNotFound
 	}
 
 	return nil
@@ -630,7 +738,7 @@ func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId st
 	}
 
 	if resCgm.ModifiedCount == 0 && resBgm.ModifiedCount == 0 {
-		return patients.SummaryNotFound
+		return patients.ErrSummaryNotFound
 	}
 
 	return nil

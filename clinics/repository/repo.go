@@ -392,15 +392,6 @@ func (r *repository) DeletePatientTag(ctx context.Context, id, tagId string) (*c
 	return r.Get(ctx, id)
 }
 
-func (r *repository) ListMembershipRestrictions(ctx context.Context, id string) ([]clinics.MembershipRestrictions, error) {
-	clinic, err := r.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.MembershipRestrictions, nil
-}
-
 func (r *repository) UpdateMembershipRestrictions(ctx context.Context, id string, restrictions []clinics.MembershipRestrictions) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}

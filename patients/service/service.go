@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
@@ -18,21 +19,23 @@ import (
 )
 
 type service struct {
+	config   *config.Config
 	dbClient *mongo.Client
 	logger   *zap.SugaredLogger
 
-	clinics          clinics.Service
+	clinicsService   clinics.Service
 	custodialService CustodialService
 	patientsRepo     patients.Repository
 }
 
 var _ patients.Service = &service{}
 
-func NewService(repo patients.Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (patients.Service, error) {
+func NewService(config *config.Config, repo patients.Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (patients.Service, error) {
 	return &service{
+		config:           config,
 		dbClient:         dbClient,
 		logger:           logger,
-		clinics:          clinics,
+		clinicsService:   clinics,
 		custodialService: custodialService,
 		patientsRepo:     repo,
 	}, nil
@@ -78,7 +81,7 @@ func (s *service) Create(ctx context.Context, patient patients.Patient) (*patien
 
 	result, err := s.patientsRepo.Create(ctx, patient)
 
-	s.updateClinicPatientCount(ctx, clinicId)
+	_ = s.clinicsService.RefreshPatientCount(ctx, clinicId) // Ignore any error, already logged
 
 	return result, err
 }
@@ -110,7 +113,17 @@ func (s *service) Update(ctx context.Context, update patients.PatientUpdate) (*p
 	}
 
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
-	return s.patientsRepo.Update(ctx, update)
+	patient, err := s.patientsRepo.Update(ctx, update)
+	if err != nil {
+		return nil, err
+	}
+
+	// Updates to the demo patient user should not affect the patient count
+	if update.UserId != s.config.ClinicDemoPatientUserId {
+		_ = s.clinicsService.RefreshPatientCount(ctx, update.ClinicId) // Ignore any error, already logged
+	}
+
+	return patient, nil
 }
 func (s *service) AddReview(ctx context.Context, clinicId, userId string, review patients.Review) ([]patients.Review, error) {
 	return s.patientsRepo.AddReview(ctx, clinicId, userId, review)
@@ -135,7 +148,8 @@ func (s *service) Remove(ctx context.Context, clinicId string, userId string, me
 		return err
 	}
 
-	s.updateClinicPatientCount(ctx, clinicId)
+	_ = s.clinicsService.RefreshPatientCount(ctx, clinicId) // Ignore any error, already logged
+
 	return nil
 }
 
@@ -189,7 +203,7 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, userId string, metad
 	res, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
 		clinicIds, err := s.patientsRepo.DeleteFromAllClinics(ctx, userId, metadata)
 		for _, clinicId := range clinicIds {
-			s.updateClinicPatientCount(ctx, clinicId)
+			_ = s.clinicsService.RefreshPatientCount(ctx, clinicId) // Ignore any error, already logged
 		}
 		return clinicIds, err
 	})
@@ -209,7 +223,8 @@ func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinic
 			return nil, err
 		}
 
-		s.updateClinicPatientCount(ctx, clinicId)
+		_ = s.clinicsService.RefreshPatientCount(ctx, clinicId) // Ignore any error, already logged
+
 		return nil, nil
 	})
 
@@ -233,7 +248,17 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *pati
 
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "provider", request.ProviderName)
-	return s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request)
+
+	if err := s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request); err != nil {
+		return err
+	}
+
+	// Updates to the demo patient user should not affect the patient count
+	if userId != s.config.ClinicDemoPatientUserId {
+		_ = s.clinicsService.RefreshPatientCount(ctx, clinicId) // Ignore any error, already logged
+	}
+
+	return nil
 }
 
 func (s *service) AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
@@ -253,7 +278,27 @@ func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinic
 
 func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *patients.DataSources) error {
 	s.logger.Infow("updating data sources for clinic patients", "userId", userId)
-	return s.patientsRepo.UpdatePatientDataSources(ctx, userId, dataSources)
+	if err := s.patientsRepo.UpdatePatientDataSources(ctx, userId, dataSources); err != nil {
+		return err
+	}
+
+	// Updates to the demo patient user should not affect the patient count
+	if userId != s.config.ClinicDemoPatientUserId {
+
+		// Get all clinic ids for this user
+		clinicIds, err := s.patientsRepo.GetClinicIds(ctx, userId)
+		if err != nil {
+			s.logger.Errorw("unable to get clinic ids for user to refresh patient counts", "userId", userId, "error", err)
+			return nil
+		}
+
+		// Update the patient counts for the clinics
+		for _, clinicId := range clinicIds {
+			_ = s.clinicsService.RefreshPatientCount(ctx, clinicId) // Ignore any error, already logged
+		}
+	}
+
+	return nil
 }
 
 func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {
@@ -289,7 +334,7 @@ func (s *service) RescheduleLastSubscriptionOrderForPatient(ctx context.Context,
 }
 
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, existingUserId *string, patient *patients.Patient) error {
-	mrnSettings, err := s.clinics.GetMRNSettings(ctx, clinicId)
+	mrnSettings, err := s.clinicsService.GetMRNSettings(ctx, clinicId)
 	if err != nil || mrnSettings == nil {
 		return err
 	}
@@ -327,7 +372,7 @@ func (s *service) enforcePatientCountSettings(ctx context.Context, clinicId stri
 	}
 
 	// Get any clinic patient count settings, if none found, then no limits, so allow
-	patientCountSettings, err := s.clinics.GetPatientCountSettings(ctx, clinicId)
+	patientCountSettings, err := s.clinicsService.GetPatientCountSettings(ctx, clinicId)
 	if err != nil || patientCountSettings == nil {
 		return err
 	}
@@ -346,7 +391,7 @@ func (s *service) enforcePatientCountSettings(ctx context.Context, clinicId stri
 	}
 
 	// Get the current clinic patient count
-	patientCount, err := s.clinics.GetPatientCount(ctx, clinicId)
+	patientCount, err := s.clinicsService.GetPatientCount(ctx, clinicId)
 	if err != nil {
 		return err
 	} else if patientCount == nil {
@@ -359,19 +404,6 @@ func (s *service) enforcePatientCountSettings(ctx context.Context, clinicId stri
 	}
 
 	return nil
-}
-
-func (s *service) updateClinicPatientCount(ctx context.Context, clinicId string) {
-	patientCount, err := s.patientsRepo.Count(ctx, &patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})
-	if err != nil {
-		s.logger.Errorw("error fetching clinic patient count", "error", err, "clinicId", clinicId)
-		return
-	}
-
-	if err := s.clinics.UpdatePatientCount(ctx, clinicId, &clinics.PatientCount{PatientCount: patientCount}); err != nil {
-		s.logger.Errorw("error updating clinic patient count", "error", err, "clinicId", clinicId)
-		return
-	}
 }
 
 func shouldRemovePatientFromClinic(patient *patients.Patient) bool {

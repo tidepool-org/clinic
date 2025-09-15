@@ -15,6 +15,7 @@ import (
 
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
@@ -28,7 +29,10 @@ func Ptr[T any](value T) *T {
 	return &value
 }
 
+var DemoPatientId = "demo"
+
 var _ = Describe("Patients Service", func() {
+	var cfg *config.Config
 	var service patients.Service
 	var clinicsService *clinicsTest.MockService
 	var repo *patientsTest.MockRepository
@@ -36,6 +40,8 @@ var _ = Describe("Patients Service", func() {
 	var clinicsCtrl *gomock.Controller
 
 	BeforeEach(func() {
+		cfg = &config.Config{ClinicDemoPatientUserId: DemoPatientId}
+
 		repoCtrl = gomock.NewController(GinkgoT())
 		clinicsCtrl = gomock.NewController(GinkgoT())
 
@@ -45,7 +51,7 @@ var _ = Describe("Patients Service", func() {
 		client := clinicStoreTest.GetTestDatabase().Client()
 
 		var err error
-		service, err = patientsService.NewService(repo, clinicsService, nil, zap.NewNop().Sugar(), client)
+		service, err = patientsService.NewService(cfg, repo, clinicsService, nil, zap.NewNop().Sugar(), client)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -82,16 +88,12 @@ var _ = Describe("Patients Service", func() {
 
 			It("creates the patient in the repository when the MRN is set", func() {
 				clinicIdString := clinicId.Hex()
-				patientCount := &clinics.PatientCount{PatientCount: 10}
 
 				repo.EXPECT().
 					Create(gomock.Any(), gomock.Eq(randomPatient)).
 					Return(&randomPatient, nil)
-				repo.EXPECT().
-					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
-					Return(patientCount.PatientCount, nil)
 				clinicsService.EXPECT().
-					UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 					Return(nil)
 
 				createdPatient, err := service.Create(context.Background(), randomPatient)
@@ -120,7 +122,6 @@ var _ = Describe("Patients Service", func() {
 			It("creates the patient in the repository with uniqueness flag set to true", func() {
 				create := randomPatient
 				clinicIdStr := clinicId.Hex()
-				patientCount := &clinics.PatientCount{PatientCount: 10}
 
 				// Expect the uniqueness flag to be set to true
 				expected := create
@@ -129,11 +130,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Create(gomock.Any(), gomock.Eq(expected)).
 					Return(&expected, nil)
-				repo.EXPECT().
-					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdStr, ExcludeDemo: true})).
-					Return(patientCount.PatientCount, nil)
 				clinicsService.EXPECT().
-					UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdStr), gomock.Eq(patientCount)).
+					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdStr)).
 					Return(nil)
 
 				repo.EXPECT().
@@ -204,11 +202,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Create(gomock.Any(), gomock.Eq(randomPatient)).
 					Return(&randomPatient, nil)
-				repo.EXPECT().
-					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
-					Return(patientCount.PatientCount, nil)
 				clinicsService.EXPECT().
-					UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 					Return(nil)
 
 				createdPatient, err := service.Create(context.Background(), randomPatient)
@@ -240,11 +235,8 @@ var _ = Describe("Patients Service", func() {
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
 						Return(&randomPatient, nil)
-					repo.EXPECT().
-						Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
-						Return(patientCount.PatientCount, nil)
 					clinicsService.EXPECT().
-						UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 						Return(nil)
 
 					createdPatient, err := service.Create(context.Background(), randomPatient)
@@ -261,11 +253,8 @@ var _ = Describe("Patients Service", func() {
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
 						Return(&randomPatient, nil)
-					repo.EXPECT().
-						Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
-						Return(patientCount.PatientCount, nil)
 					clinicsService.EXPECT().
-						UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 						Return(nil)
 
 					createdPatient, err := service.Create(context.Background(), randomPatient)
@@ -282,11 +271,8 @@ var _ = Describe("Patients Service", func() {
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
 						Return(&randomPatient, nil)
-					repo.EXPECT().
-						Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
-						Return(patientCount.PatientCount, nil)
 					clinicsService.EXPECT().
-						UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 						Return(nil)
 
 					createdPatient, err := service.Create(context.Background(), randomPatient)
@@ -303,11 +289,8 @@ var _ = Describe("Patients Service", func() {
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
 						Return(&randomPatient, nil)
-					repo.EXPECT().
-						Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
-						Return(patientCount.PatientCount, nil)
 					clinicsService.EXPECT().
-						UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 						Return(nil)
 
 					createdPatient, err := service.Create(context.Background(), randomPatient)
@@ -367,11 +350,8 @@ var _ = Describe("Patients Service", func() {
 							repo.EXPECT().
 								Create(gomock.Any(), gomock.Eq(randomPatient)).
 								Return(&randomPatient, nil)
-							repo.EXPECT().
-								Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
-								Return(patientCount.PatientCount, nil)
 							clinicsService.EXPECT().
-								UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+								RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 								Return(nil)
 
 							createdPatient, err := service.Create(context.Background(), randomPatient)
@@ -383,11 +363,8 @@ var _ = Describe("Patients Service", func() {
 							repo.EXPECT().
 								Create(gomock.Any(), gomock.Eq(randomPatient)).
 								Return(&randomPatient, nil)
-							repo.EXPECT().
-								Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicIdString, ExcludeDemo: true})).
-								Return(patientCount.PatientCount, nil)
 							clinicsService.EXPECT().
-								UpdatePatientCount(gomock.Any(), gomock.Eq(clinicIdString), gomock.Eq(patientCount)).
+								RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 								Return(nil)
 
 							createdPatient, err := service.Create(context.Background(), randomPatient)
@@ -426,6 +403,10 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Update(gomock.Any(), gomock.Eq(update)).
 					Return(&update.Patient, nil)
+				clinicsService.
+					EXPECT().
+					RefreshPatientCount(gomock.Any(), gomock.Eq(update.ClinicId)).
+					Return(nil)
 
 				updatedPatient, err := service.Update(context.Background(), update)
 				Expect(err).To(BeNil())
@@ -460,6 +441,11 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Update(gomock.Any(), gomock.Eq(expectedUpdate)).
 					Return(&update.Patient, nil)
+
+				clinicsService.
+					EXPECT().
+					RefreshPatientCount(gomock.Any(), gomock.Eq(update.ClinicId)).
+					Return(nil)
 
 				repo.EXPECT().
 					List(gomock.Any(), &patients.Filter{ClinicId: &update.ClinicId, Mrn: update.Patient.Mrn}, gomock.Any(), gomock.Any()).
@@ -506,6 +492,10 @@ var _ = Describe("Patients Service", func() {
 					EXPECT().
 					GetMRNSettings(gomock.Any(), gomock.Eq(update.ClinicId)).
 					Return(nil, nil)
+				clinicsService.
+					EXPECT().
+					RefreshPatientCount(gomock.Any(), gomock.Eq(update.ClinicId)).
+					Return(nil)
 			})
 
 			It("deactivates subscriptions if patients mrn has changed", func() {
@@ -558,7 +548,6 @@ var _ = Describe("Patients Service", func() {
 				clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
 				Expect(err).ToNot(HaveOccurred())
 
-				patientCount := &clinics.PatientCount{PatientCount: 10}
 				expectDeletePatient := patientsTest.RandomPatient()
 				expectDeletePatient.UserId = &userId
 				expectDeletePatient.ClinicId = &clinicObjId
@@ -566,11 +555,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
 					Return(nil)
-				repo.EXPECT().
-					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})).
-					Return(patientCount.PatientCount, nil)
 				clinicsService.EXPECT().
-					UpdatePatientCount(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(patientCount)).
+					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 					Return(nil)
 
 				patient, err := service.UpdatePermissions(context.Background(), clinicId, userId, perms)
@@ -588,7 +574,6 @@ var _ = Describe("Patients Service", func() {
 				clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
 				Expect(err).ToNot(HaveOccurred())
 
-				patientCount := &clinics.PatientCount{PatientCount: 10}
 				expectDeletePatient := patientsTest.RandomPatient()
 				expectDeletePatient.UserId = &userId
 				expectDeletePatient.ClinicId = &clinicObjId
@@ -596,11 +581,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
 					Return(nil)
-				repo.EXPECT().
-					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})).
-					Return(patientCount.PatientCount, nil)
 				clinicsService.EXPECT().
-					UpdatePatientCount(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(patientCount)).
+					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 					Return(nil)
 
 				patient, err := service.UpdatePermissions(context.Background(), clinicId, userId, perms)
@@ -636,7 +618,6 @@ var _ = Describe("Patients Service", func() {
 				clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
 				Expect(err).ToNot(HaveOccurred())
 
-				patientCount := &clinics.PatientCount{PatientCount: 10}
 				expectDeletePatient := patientsTest.RandomPatient()
 				expectDeletePatient.UserId = &userId
 				expectDeletePatient.ClinicId = &clinicObjId
@@ -647,11 +628,8 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
 					Return(nil)
-				repo.EXPECT().
-					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})).
-					Return(patientCount.PatientCount, nil)
 				clinicsService.EXPECT().
-					UpdatePatientCount(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(patientCount)).
+					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 					Return(nil)
 
 				patient, err := service.DeletePermission(context.Background(), clinicId, userId, permission)
@@ -694,12 +672,9 @@ var _ = Describe("Patients Service", func() {
 			repo.EXPECT().
 				DeleteFromAllClinics(gomock.Any(), gomock.Eq(userId), gomock.Any()).
 				Return(expectedClinicIds, nil)
-			for index, expectedClinicId := range expectedClinicIds {
-				repo.EXPECT().
-					Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: Ptr(expectedClinicId), ExcludeDemo: true})).
-					Return(index, nil)
+			for _, expectedClinicId := range expectedClinicIds {
 				clinicsService.EXPECT().
-					UpdatePatientCount(gomock.Any(), gomock.Eq(expectedClinicId), gomock.Eq(&clinics.PatientCount{PatientCount: index})).
+					RefreshPatientCount(gomock.Any(), gomock.Eq(expectedClinicId)).
 					Return(nil)
 			}
 
@@ -712,16 +687,12 @@ var _ = Describe("Patients Service", func() {
 	Describe("DeleteNonCustodialPatientsOfClinic", func() {
 		It("deletes non-custodial patients of clinic", func() {
 			clinicId := "1234567890"
-			patientCount := &clinics.PatientCount{PatientCount: 10}
 
 			repo.EXPECT().
 				DeleteNonCustodialPatientsOfClinic(gomock.Any(), gomock.Eq(clinicId), gomock.Any()).
 				Return(nil)
-			repo.EXPECT().
-				Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: Ptr(clinicId), ExcludeDemo: true})).
-				Return(patientCount.PatientCount, nil)
 			clinicsService.EXPECT().
-				UpdatePatientCount(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(patientCount)).
+				RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 				Return(nil)
 
 			err := service.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId, deletions.Metadata{})
@@ -730,16 +701,12 @@ var _ = Describe("Patients Service", func() {
 
 		It("deletes one or more non-custodial patients of clinic", func() {
 			clinicId := "1234567890"
-			patientCount := &clinics.PatientCount{PatientCount: 10}
 
 			repo.EXPECT().
 				DeleteNonCustodialPatientsOfClinic(gomock.Any(), gomock.Eq(clinicId), gomock.Any()).
 				Return(nil)
-			repo.EXPECT().
-				Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: Ptr(clinicId), ExcludeDemo: true})).
-				Return(patientCount.PatientCount, nil)
 			clinicsService.EXPECT().
-				UpdatePatientCount(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(patientCount)).
+				RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 				Return(nil)
 
 			err := service.DeleteNonCustodialPatientsOfClinic(context.Background(), clinicId, deletions.Metadata{})
@@ -754,7 +721,6 @@ var _ = Describe("Patients Service", func() {
 			clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
 			Expect(err).ToNot(HaveOccurred())
 
-			patientCount := &clinics.PatientCount{PatientCount: 10}
 			expectDeletePatient := patientsTest.RandomPatient()
 			expectDeletePatient.UserId = &userId
 			expectDeletePatient.ClinicId = &clinicObjId
@@ -762,11 +728,8 @@ var _ = Describe("Patients Service", func() {
 			repo.EXPECT().
 				Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
 				Return(nil)
-			repo.EXPECT().
-				Count(gomock.Any(), gomock.Eq(&patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})).
-				Return(patientCount.PatientCount, nil)
 			clinicsService.EXPECT().
-				UpdatePatientCount(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(patientCount)).
+				RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 				Return(nil)
 
 			err = service.Remove(context.Background(), clinicId, userId, deletions.Metadata{})

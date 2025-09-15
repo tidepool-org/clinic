@@ -12,30 +12,6 @@ import (
 )
 
 var _ = Describe("Clinics", func() {
-	Describe("PatientCount", func() {
-		Describe("IsValid", func() {
-			var patientCount *clinics.PatientCount
-
-			BeforeEach(func() {
-				patientCount = &clinics.PatientCount{
-					PatientCount: 0,
-				}
-			})
-
-			It("returns true when valid", func() {
-				isValid := patientCount.IsValid()
-				Expect(isValid).To(BeTrue())
-			})
-
-			It("returns false when patient count is invalid", func() {
-				patientCount.PatientCount = -1
-
-				isValid := patientCount.IsValid()
-				Expect(isValid).To(BeFalse())
-			})
-		})
-	})
-
 	Describe("PatientCountSettings", func() {
 		Describe("IsValid", func() {
 			var now time.Time

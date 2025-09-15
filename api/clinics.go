@@ -2,15 +2,16 @@ package api
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/merge"
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -464,9 +465,17 @@ func (h *Handler) GetPatientCount(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, PatientCountV1{
-		PatientCount: patientCount.PatientCount,
-	})
+	return ec.JSON(http.StatusOK, NewPatientCountDto(patientCount))
+}
+
+func (h *Handler) RefreshPatientCount(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+
+	if err := h.ClinicsManager.RefreshClinicPatientCount(ctx, clinicId); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusAccepted)
 }
 
 func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error {

@@ -1523,8 +1523,21 @@ type PatientClinicRelationshipsV1 = []PatientClinicRelationshipV1
 
 // PatientCountV1 defines model for patientCount.v1.
 type PatientCountV1 struct {
-	// PatientCount The patient count for a clinic
+	// Demo The count of patients classified as demo
+	Demo int `json:"demo"`
+
+	// PatientCount The count of patients classified as applying towards the plan patient limit (DEPRECATED use plan property instead)
+	// Deprecated:
 	PatientCount int `json:"patientCount"`
+
+	// Plan The count of patients classified as applying towards the plan patient limit
+	Plan int `json:"plan"`
+
+	// Providers The count of patients by provider
+	Providers *map[string]PatientProviderCountV1 `json:"providers,omitempty"`
+
+	// Total The count of all patients, regardless of classification
+	Total int `json:"total"`
 }
 
 // PatientCountLimitV1 defines model for patientCountLimit.v1.
@@ -1551,6 +1564,15 @@ type PatientPermissionsV1 struct {
 	Note      *map[string]interface{} `json:"note,omitempty"`
 	Upload    *map[string]interface{} `json:"upload,omitempty"`
 	View      *map[string]interface{} `json:"view,omitempty"`
+}
+
+// PatientProviderCountV1 defines model for patientProviderCount.v1.
+type PatientProviderCountV1 struct {
+	// States The count of patients for the provider by data source state
+	States map[string]int `json:"states"`
+
+	// Total The count of patients that have a provider as a data source
+	Total int `json:"total"`
 }
 
 // PatientReviewV1 A summary of a patients recent data

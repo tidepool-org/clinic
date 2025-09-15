@@ -473,6 +473,21 @@ func (mr *MockRepositoryMockRecorder) Count(ctx, filter any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockRepository)(nil).Count), ctx, filter)
 }
 
+// Counts mocks base method.
+func (m *MockRepository) Counts(ctx context.Context, clinicId string) (*patients.Counts, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Counts", ctx, clinicId)
+	ret0, _ := ret[0].(*patients.Counts)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Counts indicates an expected call of Counts.
+func (mr *MockRepositoryMockRecorder) Counts(ctx, clinicId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Counts", reflect.TypeOf((*MockRepository)(nil).Counts), ctx, clinicId)
+}
+
 // Create mocks base method.
 func (m *MockRepository) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -588,6 +603,21 @@ func (m *MockRepository) Get(ctx context.Context, clinicId, userId string) (*pat
 func (mr *MockRepositoryMockRecorder) Get(ctx, clinicId, userId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRepository)(nil).Get), ctx, clinicId, userId)
+}
+
+// GetClinicIds mocks base method.
+func (m *MockRepository) GetClinicIds(ctx context.Context, userId string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClinicIds", ctx, userId)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClinicIds indicates an expected call of GetClinicIds.
+func (mr *MockRepositoryMockRecorder) GetClinicIds(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClinicIds", reflect.TypeOf((*MockRepository)(nil).GetClinicIds), ctx, userId)
 }
 
 // List mocks base method.
