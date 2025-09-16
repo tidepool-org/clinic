@@ -21,15 +21,15 @@ OSTYPE:=$(shell echo $${OSTYPE})
 .PHONY: generate
 generate: $(REDOCLY_CLI)
 	$(REDOCLY_CLI) bundle ../TidepoolApi/reference/clinic.v1.yaml -o ./spec/clinic.v1.yaml
-	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=server spec/clinic.v1.yaml > api/gen_server.go
-	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=spec spec/clinic.v1.yaml > api/gen_spec.go
-	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=types spec/clinic.v1.yaml > api/gen_types.go
-	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=types spec/clinic.v1.yaml > client/types.go
-	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=client spec/clinic.v1.yaml > client/client.go
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=server -o api/gen_server.go spec/clinic.v1.yaml
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=spec -o api/gen_spec.go spec/clinic.v1.yaml
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=api -generate=types -o api/gen_types.go spec/clinic.v1.yaml
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=types -o client/types.go spec/clinic.v1.yaml
+	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=client -o client/client.go spec/clinic.v1.yaml
 	$(REDOCLY_CLI) bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml
-	$(OAPI_CODEGEN) -package=redox_models -generate=types spec/redox.v1.yaml > redox_models/gen_types.go
-	$(OAPI_CODEGEN) -include-tags="Orders (Partner)",Webhooks -package=xealth_client -generate=types,skip-prune ../TidepoolApi/reference/xealth.v2.yaml > xealth_client/gen_types.go
-	$(OAPI_CODEGEN) -include-tags="Orders (Partner)" -package=xealth_client -generate=client ../TidepoolApi/reference/xealth.v2.yaml > xealth_client/gen_client.go
+	$(OAPI_CODEGEN) -package=redox_models -generate=types -o redox_models/gen_types.go spec/redox.v1.yaml
+	$(OAPI_CODEGEN) -include-tags="Orders (Partner)",Webhooks -package=xealth_client -generate=types,skip-prune -o xealth_client/gen_types.go ../TidepoolApi/reference/xealth.v2.yaml
+	$(OAPI_CODEGEN) -include-tags="Orders (Partner)" -package=xealth_client -generate=client -o xealth_client/gen_client.go ../TidepoolApi/reference/xealth.v2.yaml
 	go generate ./...
 	cd client && go generate ./...
 
