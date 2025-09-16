@@ -1647,11 +1647,10 @@ type ShareCodeV1 = string
 
 // SiteV1 A clinic's physical or logical location.
 type SiteV1 struct {
-	// Id String representation of a resource id
-	Id string `json:"id"`
+	Id SiteIdV1 `json:"id"`
 
-	// Name The site description.
-	Name string `json:"name"`
+	// Name The site's name.
+	Name SiteNameV1 `json:"name"`
 }
 
 // SiteByIdV1 A clinic's physical or logical location—id only.
@@ -1662,9 +1661,15 @@ type SiteByIdV1 struct {
 
 // SiteCreationV1 A clinic's physical or logical location.
 type SiteCreationV1 struct {
-	// Name The site description.
-	Name string `json:"name"`
+	// Name The site's name.
+	Name SiteNameV1 `json:"name"`
 }
+
+// SiteIdV1 defines model for siteId.v1.
+type SiteIdV1 = string
+
+// SiteNameV1 The site's name.
+type SiteNameV1 = string
 
 // StateV1 State or province. In the U.S., typically something like `CA` or `California`.
 type StateV1 = string
@@ -1892,7 +1897,7 @@ type Search = string
 type ShareCode = string
 
 // SiteId defines model for siteId.
-type SiteId = string
+type SiteId = SiteIdV1
 
 // Sort defines model for sort.
 type Sort = string

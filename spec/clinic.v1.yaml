@@ -2304,20 +2304,9 @@ components:
       description: A clinic's physical or logical location.
       properties:
         id:
-          title: Object Id
-          type: string
-          x-go-type-skip-optional-pointer: true
-          description: String representation of a resource id
-          minLength: 24
-          maxLength: 24
-          pattern: ^[a-f0-9]{24}$
+          $ref: '#/components/schemas/siteId.v1'
         name:
-          type: string
-          x-go-type-skip-optional-pointer: true
-          description: The site description.
-          minLength: 1
-          maxLength: 200
-          pattern: ^[[:graph:]\p{L}\p{N}][[:graph:]\p{L}\p{N} ]*$
+          $ref: '#/components/schemas/siteName.v1'
       required:
         - id
         - name
@@ -2327,12 +2316,7 @@ components:
       description: A clinic's physical or logical location.
       properties:
         name:
-          type: string
-          x-go-type-skip-optional-pointer: true
-          description: The site description.
-          minLength: 1
-          maxLength: 200
-          pattern: ^[[:graph:]\p{L}\p{N}][[:graph:]\p{L}\p{N} ]*$
+          $ref: '#/components/schemas/siteName.v1'
       required:
         - name
     tidepoolUserIds.v1:
@@ -2717,6 +2701,19 @@ components:
       maxLength: 24
       pattern: ^[a-f0-9]{24}$
       readOnly: true
+    siteId.v1:
+      allOf:
+        - $ref: '#/components/schemas/objectid.v1'
+        - x-go-type-skip-optional-pointer: true
+          x-go-type: string
+          readOnly: true
+    siteName.v1:
+      type: string
+      x-go-type-skip-optional-pointer: true
+      description: The site's name.
+      minLength: 1
+      maxLength: 200
+      pattern: ^[[:graph:]\p{L}\p{N}][[:graph:]\p{L}\p{N} ]*$
     phoneNumber.v1:
       title: Phone Number
       type: object
@@ -5302,8 +5299,7 @@ components:
       in: path
       required: true
       schema:
-        type: string
-        pattern: ^[a-f0-9]{24}$
+        $ref: '#/components/schemas/siteId.v1'
     userId:
       name: userId
       in: path
