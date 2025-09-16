@@ -332,7 +332,7 @@ func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 		return err
 	}
 
-	return ec.JSON(http.StatusNoContent, nil)
+	return ec.NoContent(http.StatusNoContent)
 }
 
 func (h *Handler) ListMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
@@ -542,7 +542,7 @@ func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) 
 	if err := h.ClinicsManager.DeleteSite(ctx, clinicId, siteId); err != nil {
 		return err
 	}
-	return ec.JSON(http.StatusNoContent, nil)
+	return ec.NoContent(http.StatusNoContent)
 }
 
 func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
