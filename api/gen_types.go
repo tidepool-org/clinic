@@ -1482,6 +1482,9 @@ type MrnSettingsV1 struct {
 // NameV1 Name of the clinic.
 type NameV1 = string
 
+// ObjectIdV1 String representation of a resource id
+type ObjectIdV1 = string
+
 // ObjectidV1 String representation of a resource id
 type ObjectidV1 = string
 
@@ -1896,8 +1899,8 @@ type Search = string
 // ShareCode defines model for shareCode.
 type ShareCode = string
 
-// SiteId defines model for siteId.
-type SiteId = SiteIdV1
+// SiteId String representation of a resource id
+type SiteId = ObjectIdV1
 
 // Sort defines model for sort.
 type Sort = string
