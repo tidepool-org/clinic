@@ -4857,6 +4857,13 @@ components:
         - createdTime
         - updatedTime
         - connectionRequests
+    objectId.v1:
+      title: Object Id
+      type: string
+      description: String representation of a resource id
+      minLength: 24
+      maxLength: 24
+      pattern: ^[a-f0-9]{24}$
     siteById.v1:
       type: object
       title: SiteById
@@ -5299,7 +5306,7 @@ components:
       in: path
       required: true
       schema:
-        $ref: '#/components/schemas/siteId.v1'
+        $ref: '#/components/schemas/objectId.v1'
     userId:
       name: userId
       in: path
