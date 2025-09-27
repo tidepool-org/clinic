@@ -264,22 +264,58 @@ paths:
           in: query
           name: period
           description: Time Period to display
+          required: true
         - schema:
             type: array
             items:
               type: string
-              format: ^[a-f0-9]{24}$
+              pattern: ^[a-f0-9]{24}$
+            minItems: 1
           in: query
           name: tags
           description: Comma-separated list of patient tag IDs
           style: form
           explode: false
+          required: true
         - schema:
             type: string
             format: date-time
           in: query
           name: lastDataCutoff
-          description: Inclusive
+          description: Inclusive minimum of date of last data from a patient.
+          required: true
+        - schema:
+            type: array
+            x-go-type-skip-optional-pointer: true
+            x-omitempty: true
+            x-omitzero: true
+            items:
+              type: string
+              enum:
+                - timeInVeryLowPercent
+                - timeInAnyLowPercent
+                - timeInExtremeHighPercent
+                - timeInVeryHighPercent
+                - timeInHighPercent
+                - dropInTimeInTargetPercent
+                - timeInTargetPercent
+                - timeCGMUsePercent
+                - meetingTargets
+                - noData
+          in: query
+          name: categories
+          description: Comma-separated list of TIDE report categories.
+          style: form
+          explode: false
+        - schema:
+            type: boolean
+            x-go-type-skip-optional-pointer: true
+            x-omitempty: true
+            x-omitzero: true
+          in: query
+          name: excludeNoDataPatients
+          description: If true, then exclude / omit patients with no data in the TIDE report.
+          style: form
   /v1/clinics/{clinicId}/patients:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -3530,21 +3566,9 @@ components:
     tideFilters.v1:
       type: object
       title: tidefilters.v1
-      description: ''
+      description: Visual representation of filtered categories selected
       properties:
-        timeInVeryLowPercent:
-          type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
-        timeInAnyLowPercent:
-          type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
         dropInTimeInTargetPercent:
-          type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
-        timeInTargetPercent:
           type: string
           pattern: ^(>=|>|<=|<)\d\.\d\d?$
           example: '>0.5'
@@ -3552,12 +3576,30 @@ components:
           type: string
           pattern: ^(>=|>|<=|<)\d\.\d\d?$
           example: '>0.5'
-      required:
-        - timeInVeryLowPercent
-        - timeInAnyLowPercent
-        - dropInTimeInTargetPercent
-        - timeInTargetPercent
-        - timeCGMUsePercent
+        timeInAnyLowPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInExtremeHighPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInHighPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInTargetPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInVeryHighPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInVeryLowPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
     tideConfig.v1:
       type: object
       title: tideconfig.v1
@@ -3582,6 +3624,10 @@ components:
           x-go-type: float64
         veryHighGlucoseThreshold:
           description: Threshold used for determining if a value is very high
+          type: number
+          x-go-type: float64
+        extremeHighGlucoseThreshold:
+          description: Threshold used for determining if a value is extremely high
           type: number
           x-go-type: float64
         lowGlucoseThreshold:
@@ -3771,14 +3817,6 @@ components:
       type: object
       title: tideresults.v1
       description: ''
-      required:
-        - timeInVeryLowPercent
-        - timeInLowPercent
-        - dropInTimeInTargetPercent
-        - timeInTargetPercent
-        - timeCGMUsePercent
-        - meetingTargets
-        - noData
       additionalProperties:
         type: array
         items:

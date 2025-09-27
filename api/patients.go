@@ -303,7 +303,7 @@ func (h *Handler) DeletePatientSummary(ec echo.Context, summaryId SummaryId) err
 
 func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideReportParams) error {
 	ctx := ec.Request().Context()
-	tide, err := h.Patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
+	tide, err := h.Patients.TideReport(ctx, clinicId, NewTideReportParams(params))
 	if err != nil {
 		return err
 	}

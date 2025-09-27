@@ -430,6 +430,20 @@ func NewReviews(reviews PatientReviewsV1) []patients.Review {
 	return result
 }
 
+func NewTideReportParams(params TideReportParams) patients.TideReportParams {
+	var categories []string
+	for _, cat := range params.Categories {
+		categories = append(categories, string(cat))
+	}
+	return patients.TideReportParams{
+		Period:                params.Period,
+		Tags:                  params.Tags,
+		LastDataCutoff:        params.LastDataCutoff,
+		Categories:            categories,
+		ExcludeNoDataPatients: params.ExcludeNoDataPatients,
+	}
+}
+
 func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 	if tide == nil {
 		return nil
