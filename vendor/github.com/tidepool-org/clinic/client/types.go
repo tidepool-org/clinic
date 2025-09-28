@@ -710,6 +710,20 @@ const (
 	Tier0400 TierV1 = "tier0400"
 )
 
+// Defines values for TideReportParamsCategories.
+const (
+	DropInTimeInTargetPercent TideReportParamsCategories = "dropInTimeInTargetPercent"
+	MeetingTargets            TideReportParamsCategories = "meetingTargets"
+	NoData                    TideReportParamsCategories = "noData"
+	TimeCGMUsePercent         TideReportParamsCategories = "timeCGMUsePercent"
+	TimeInAnyLowPercent       TideReportParamsCategories = "timeInAnyLowPercent"
+	TimeInExtremeHighPercent  TideReportParamsCategories = "timeInExtremeHighPercent"
+	TimeInHighPercent         TideReportParamsCategories = "timeInHighPercent"
+	TimeInTargetPercent       TideReportParamsCategories = "timeInTargetPercent"
+	TimeInVeryHighPercent     TideReportParamsCategories = "timeInVeryHighPercent"
+	TimeInVeryLowPercent      TideReportParamsCategories = "timeInVeryLowPercent"
+)
+
 // Defines values for FindPatientsParamsWorkspaceIdType.
 const (
 	FindPatientsParamsWorkspaceIdTypeClinicId    FindPatientsParamsWorkspaceIdType = "clinicId"
@@ -1482,6 +1496,9 @@ type MrnSettingsV1 struct {
 // NameV1 Name of the clinic.
 type NameV1 = string
 
+// ObjectIdV1 String representation of a resource id
+type ObjectIdV1 = string
+
 // ObjectidV1 String representation of a resource id
 type ObjectidV1 = string
 
@@ -1647,11 +1664,10 @@ type ShareCodeV1 = string
 
 // SiteV1 A clinic's physical or logical location.
 type SiteV1 struct {
-	// Id String representation of a resource id
-	Id string `json:"id"`
+	Id SiteIdV1 `json:"id"`
 
-	// Name The site description.
-	Name string `json:"name"`
+	// Name The site's name.
+	Name SiteNameV1 `json:"name"`
 }
 
 // SiteByIdV1 A clinic's physical or logical location—id only.
@@ -1662,9 +1678,15 @@ type SiteByIdV1 struct {
 
 // SiteCreationV1 A clinic's physical or logical location.
 type SiteCreationV1 struct {
-	// Name The site description.
-	Name string `json:"name"`
+	// Name The site's name.
+	Name SiteNameV1 `json:"name"`
 }
+
+// SiteIdV1 defines model for siteId.v1.
+type SiteIdV1 = string
+
+// SiteNameV1 The site's name.
+type SiteNameV1 = string
 
 // StateV1 State or province. In the U.S., typically something like `CA` or `California`.
 type StateV1 = string
@@ -1732,8 +1754,13 @@ type SuppressedNotificationsV1 struct {
 // TideConfigV1 defines model for tideConfig.v1.
 type TideConfigV1 struct {
 	// ClinicId Clinic identifier.
-	ClinicId *ClinicIdV1   `json:"clinicId,omitempty"`
-	Filters  TideFiltersV1 `json:"filters"`
+	ClinicId *ClinicIdV1 `json:"clinicId,omitempty"`
+
+	// ExtremeHighGlucoseThreshold Threshold used for determining if a value is extremely high
+	ExtremeHighGlucoseThreshold *float64 `json:"extremeHighGlucoseThreshold,omitempty"`
+
+	// Filters Visual representation of filtered categories selected
+	Filters TideFiltersV1 `json:"filters"`
 
 	// HighGlucoseThreshold Threshold used for determining if a value is high
 	HighGlucoseThreshold float64   `json:"highGlucoseThreshold"`
@@ -1754,13 +1781,16 @@ type TideConfigV1 struct {
 	VeryLowGlucoseThreshold float64 `json:"veryLowGlucoseThreshold"`
 }
 
-// TideFiltersV1 defines model for tideFilters.v1.
+// TideFiltersV1 Visual representation of filtered categories selected
 type TideFiltersV1 struct {
-	DropInTimeInTargetPercent string `json:"dropInTimeInTargetPercent"`
-	TimeCGMUsePercent         string `json:"timeCGMUsePercent"`
-	TimeInAnyLowPercent       string `json:"timeInAnyLowPercent"`
-	TimeInTargetPercent       string `json:"timeInTargetPercent"`
-	TimeInVeryLowPercent      string `json:"timeInVeryLowPercent"`
+	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
+	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
+	TimeInAnyLowPercent       *string `json:"timeInAnyLowPercent,omitempty"`
+	TimeInExtremeHighPercent  *string `json:"timeInExtremeHighPercent,omitempty"`
+	TimeInHighPercent         *string `json:"timeInHighPercent,omitempty"`
+	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
+	TimeInVeryHighPercent     *string `json:"timeInVeryHighPercent,omitempty"`
+	TimeInVeryLowPercent      *string `json:"timeInVeryLowPercent,omitempty"`
 }
 
 // TidePatientV1 defines model for tidePatient.v1.
@@ -1891,8 +1921,8 @@ type Search = string
 // ShareCode defines model for shareCode.
 type ShareCode = string
 
-// SiteId defines model for siteId.
-type SiteId = string
+// SiteId String representation of a resource id
+type SiteId = ObjectIdV1
 
 // Sort defines model for sort.
 type Sort = string
@@ -2324,14 +2354,23 @@ type ListPatientsParams struct {
 // TideReportParams defines parameters for TideReport.
 type TideReportParams struct {
 	// Period Time Period to display
-	Period *string `form:"period,omitempty" json:"period,omitempty"`
+	Period string `form:"period" json:"period"`
 
 	// Tags Comma-separated list of patient tag IDs
-	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+	Tags []string `form:"tags" json:"tags"`
 
-	// LastDataCutoff Inclusive
-	LastDataCutoff *time.Time `form:"lastDataCutoff,omitempty" json:"lastDataCutoff,omitempty"`
+	// LastDataCutoff Inclusive minimum of date of last data from a patient.
+	LastDataCutoff time.Time `form:"lastDataCutoff" json:"lastDataCutoff"`
+
+	// Categories Comma-separated list of TIDE report categories. If omitted or empty, the default TIDE categories will be returned.
+	Categories []TideReportParamsCategories `form:"categories,omitempty" json:"categories,omitempty"`
+
+	// ExcludeNoDataPatients If true, then exclude / omit patients with no data in the TIDE report.
+	ExcludeNoDataPatients bool `form:"excludeNoDataPatients,omitempty" json:"excludeNoDataPatients,omitempty"`
 }
+
+// TideReportParamsCategories defines parameters for TideReport.
+type TideReportParamsCategories string
 
 // FindPatientsParams defines parameters for FindPatients.
 type FindPatientsParams struct {

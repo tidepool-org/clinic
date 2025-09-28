@@ -2362,7 +2362,7 @@ type TideReportParams struct {
 	// LastDataCutoff Inclusive minimum of date of last data from a patient.
 	LastDataCutoff time.Time `form:"lastDataCutoff" json:"lastDataCutoff"`
 
-	// Categories Comma-separated list of TIDE report categories.
+	// Categories Comma-separated list of TIDE report categories. If omitted or empty, the default TIDE categories will be returned.
 	Categories []TideReportParamsCategories `form:"categories,omitempty" json:"categories,omitempty"`
 
 	// ExcludeNoDataPatients If true, then exclude / omit patients with no data in the TIDE report.
