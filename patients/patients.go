@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/deletions"
@@ -100,11 +101,63 @@ type Patient struct {
 	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
-	GlycemicRanges             string                     `bson:"glycemicRanges,omitempty"`
+	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
 	DiagnosisType              string                     `bson:"diagnosisType,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+}
+
+type GlycemicRanges struct {
+	Type GlycemicRangeType `json:"type"`
+
+	// only one of the following should be present, based on Type
+	Preset GlycemicRangesPreset `bson:",omitempty"`
+	Custom GlycemicRangesCustom `bson:",omitempty"`
+}
+
+var _ bsoncodec.Zeroer = (*GlycemicRanges)(nil)
+
+// IsZero implements bsoncodec.Zeroer
+func (g GlycemicRanges) IsZero() bool {
+	return g.Type == "" && g.Preset.IsZero() && g.Custom.IsZero()
+}
+
+type GlycemicRangesPreset string
+
+var _ bsoncodec.Zeroer = (*GlycemicRangesPreset)(nil)
+
+// IsZero implements bsoncodec.Zeroer
+func (g GlycemicRangesPreset) IsZero() bool {
+	return string(g) == ""
+}
+
+// String implements fmt.Stringer
+func (g GlycemicRangesPreset) String() string {
+	return string(g)
+}
+
+type GlycemicRangesCustom struct {
+	Name       string                   `bson:"name"`
+	Thresholds []GlycemicRangeThreshold `bson:"thresholds"`
+}
+
+// IsZero implements bsoncodec.Zeroer
+func (g GlycemicRangesCustom) IsZero() bool {
+	return g.Name == "" && len(g.Thresholds) == 0
+}
+
+var _ bsoncodec.Zeroer = (*GlycemicRangesCustom)(nil)
+
+type GlycemicRangeThreshold struct {
+	Name       string         `bson:"name"`
+	UpperBound ValueWithUnits `bson:"upperBound"`
+	Inclusive  bool           `bson:"inclusive"`
+}
+
+type ValueWithUnits struct {
+	Value float32 `bson:"value"`
+	Units string  `bson:"units"`
 }
 
 func (p Patient) IsCustodial() bool {
@@ -274,3 +327,10 @@ type TideReportParams struct {
 	Categories     []string
 	ExcludeNoData  bool
 }
+
+type GlycemicRangeType string
+
+const (
+	GlycemicRangeTypePreset GlycemicRangeType = "preset"
+	GlycemicRangeTypeCustom GlycemicRangeType = "custom"
+)

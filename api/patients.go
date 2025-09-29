@@ -2,9 +2,10 @@ package api
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"net/http"
 	"time"
+
+	"github.com/tidepool-org/clinic/deletions"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/errors"

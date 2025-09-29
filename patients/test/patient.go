@@ -48,14 +48,48 @@ func RandomPatient() patients.Patient {
 	}
 }
 
-func RandomGlycemicRanges() string {
-	all := []api.GlycemicRangesV1{
-		api.ADAStandard,
-		api.ADAPregnancyType1,
-		api.ADAPregnancyGDMOrType2,
-		api.ADAOlderOrHighRisk,
+func RandomGlycemicRanges() patients.GlycemicRanges {
+	if rand.IntN(2)%2 == 0 {
+		return RandomGlycemicRangesCustom()
 	}
-	return string(all[rand.IntN(len(all))])
+	return RandomGlycemicRangesPreset()
+}
+
+func RandomGlycemicRangesCustom() patients.GlycemicRanges {
+	return patients.GlycemicRanges{
+		Type: "custom",
+		Custom: patients.GlycemicRangesCustom{
+			Name: test.Faker.Lorem().Sentence(1 + rand.IntN(5)),
+			Thresholds: []patients.GlycemicRangeThreshold{
+				{
+					Name: test.Faker.Lorem().Sentence(1 + rand.IntN(5)),
+					UpperBound: patients.ValueWithUnits{
+						Units: test.Faker.RandomStringElement([]string{
+							"mg/dL",
+							"mmol/L",
+						}),
+						Value: test.Faker.Float32(1, 0, 100),
+					},
+					Inclusive: test.Faker.Bool(),
+				},
+			},
+		},
+	}
+}
+
+var glycemicRangesPresets = []api.GlycemicRangesV1Preset{
+	api.ADAOlderOrHighRisk,
+	api.ADAPregnancyGDMOrType2,
+	api.ADAPregnancyType1,
+	api.ADAStandard,
+}
+
+func RandomGlycemicRangesPreset() patients.GlycemicRanges {
+	choice := glycemicRangesPresets[rand.IntN(len(glycemicRangesPresets))]
+	return patients.GlycemicRanges{
+		Type:   "preset",
+		Preset: patients.GlycemicRangesPreset(string(choice)),
+	}
 }
 
 func RandomDiagnosisType() string {

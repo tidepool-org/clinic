@@ -286,6 +286,41 @@ var _ = Describe("Patients Repository", func() {
 				Expect(err).To(Equal(patients.ErrDuplicatePatient))
 				Expect(result).To(BeNil())
 			})
+
+			It("stores the diagnosis type", func() {
+				ctx := context.Background()
+				result, err := repo.Create(ctx, patient)
+				patient.Id = result.Id
+				Expect(err).To(Succeed())
+
+				got, err := repo.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
+				Expect(err).To(Succeed())
+				Expect(got.DiagnosisType).To(Equal(patient.DiagnosisType))
+			})
+
+			It("stores preset glycemic ranges", func() {
+				patient.GlycemicRanges = patientsTest.RandomGlycemicRangesPreset()
+				ctx := context.Background()
+				result, err := repo.Create(ctx, patient)
+				patient.Id = result.Id
+				Expect(err).To(Succeed())
+
+				got, err := repo.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
+				Expect(err).To(Succeed())
+				Expect(got.GlycemicRanges).To(Equal(patient.GlycemicRanges))
+			})
+
+			It("stores custom glycemic ranges", func() {
+				patient.GlycemicRanges = patientsTest.RandomGlycemicRangesCustom()
+				ctx := context.Background()
+				result, err := repo.Create(ctx, patient)
+				patient.Id = result.Id
+				Expect(err).To(Succeed())
+
+				got, err := repo.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
+				Expect(err).To(Succeed())
+				Expect(got.GlycemicRanges).To(Equal(patient.GlycemicRanges))
+			})
 		})
 
 		Describe("Get", func() {
