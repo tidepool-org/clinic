@@ -32,8 +32,8 @@ const (
 
 // Defines values for ClinicV1PreferredBgUnits.
 const (
-	MgdL  ClinicV1PreferredBgUnits = "mg/dL"
-	MmolL ClinicV1PreferredBgUnits = "mmol/L"
+	ClinicV1PreferredBgUnitsMgdL  ClinicV1PreferredBgUnits = "mg/dL"
+	ClinicV1PreferredBgUnitsMmolL ClinicV1PreferredBgUnits = "mmol/L"
 )
 
 // Defines values for ClinicTimezoneV1.
@@ -686,12 +686,24 @@ const (
 	Xealth EhrSettingsV1Provider = "xealth"
 )
 
-// Defines values for GlycemicRangesV1.
+// Defines values for GlycemicRangesV1Preset.
 const (
-	ADAOlderOrHighRisk     GlycemicRangesV1 = "ADA older or high-risk"
-	ADAPregnancyGDMOrType2 GlycemicRangesV1 = "ADA pregnancy GDM or type 2"
-	ADAPregnancyType1      GlycemicRangesV1 = "ADA pregnancy type 1"
-	ADAStandard            GlycemicRangesV1 = "ADA standard"
+	ADAOlderOrHighRisk     GlycemicRangesV1Preset = "ADA older or high-risk"
+	ADAPregnancyGDMOrType2 GlycemicRangesV1Preset = "ADA pregnancy GDM or type 2"
+	ADAPregnancyType1      GlycemicRangesV1Preset = "ADA pregnancy type 1"
+	ADAStandard            GlycemicRangesV1Preset = "ADA standard"
+)
+
+// Defines values for GlycemicRangesV1Type.
+const (
+	Custom GlycemicRangesV1Type = "custom"
+	Preset GlycemicRangesV1Type = "preset"
+)
+
+// Defines values for GlycemicRangesThresholdUpperBoundV1Units.
+const (
+	GlycemicRangesThresholdUpperBoundV1UnitsMgdL  GlycemicRangesThresholdUpperBoundV1Units = "mg/dL"
+	GlycemicRangesThresholdUpperBoundV1UnitsMmolL GlycemicRangesThresholdUpperBoundV1Units = "mmol/L"
 )
 
 // Defines values for MigrationStatusV1.
@@ -1302,9 +1314,7 @@ type CreatePatientV1 struct {
 	DiagnosisType        *DiagnosisTypeV1    `json:"diagnosisType,omitempty"`
 
 	// FullName The full name of the patient
-	FullName *string `json:"fullName,omitempty"`
-
-	// GlycemicRanges An identifier for a pre-defined set of thresholds and times in range.
+	FullName       *string           `json:"fullName,omitempty"`
 	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
 	IsMigrated     *bool             `json:"isMigrated,omitempty"`
 
@@ -1457,8 +1467,40 @@ type GenerateMergeReportV1 struct {
 	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
 }
 
-// GlycemicRangesV1 An identifier for a pre-defined set of thresholds and times in range.
-type GlycemicRangesV1 string
+// GlycemicRangesV1 defines model for glycemicRanges.v1.
+type GlycemicRangesV1 struct {
+	Custom GlycemicRangesCustomV1 `json:"custom,omitempty,omitzero"`
+	Preset GlycemicRangesV1Preset `json:"preset,omitempty,omitzero"`
+	Type   GlycemicRangesV1Type   `json:"type"`
+}
+
+// GlycemicRangesV1Preset defines model for GlycemicRangesV1.Preset.
+type GlycemicRangesV1Preset string
+
+// GlycemicRangesV1Type defines model for GlycemicRangesV1.Type.
+type GlycemicRangesV1Type string
+
+// GlycemicRangesCustomV1 defines model for glycemicRangesCustom.v1.
+type GlycemicRangesCustomV1 struct {
+	Name       string                      `json:"name"`
+	Thresholds []GlycemicRangesThresholdV1 `json:"thresholds"`
+}
+
+// GlycemicRangesThresholdV1 defines model for glycemicRangesThreshold.v1.
+type GlycemicRangesThresholdV1 struct {
+	Inclusive  bool                                `json:"inclusive,omitempty"`
+	Name       string                              `json:"name"`
+	UpperBound GlycemicRangesThresholdUpperBoundV1 `json:"upperBound"`
+}
+
+// GlycemicRangesThresholdUpperBoundV1 defines model for glycemicRangesThresholdUpperBound.v1.
+type GlycemicRangesThresholdUpperBoundV1 struct {
+	Units GlycemicRangesThresholdUpperBoundV1Units `json:"units"`
+	Value float32                                  `json:"value"`
+}
+
+// GlycemicRangesThresholdUpperBoundV1Units defines model for GlycemicRangesThresholdUpperBoundV1.Units.
+type GlycemicRangesThresholdUpperBoundV1Units string
 
 // MembershipRestrictionV1 A user joining a clinic must match all of the defined restrictions
 type MembershipRestrictionV1 struct {
@@ -1543,9 +1585,7 @@ type PatientV1 struct {
 	Email                *string                       `json:"email,omitempty"`
 
 	// FullName The full name of the patient
-	FullName string `json:"fullName"`
-
-	// GlycemicRanges An identifier for a pre-defined set of thresholds and times in range.
+	FullName       string            `json:"fullName"`
 	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))

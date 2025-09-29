@@ -3,12 +3,14 @@ package test
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/test"
-	"go.mongodb.org/mongo-driver/mongo"
-	"os"
 
 	"time"
 )
@@ -27,7 +29,6 @@ func SetupDatabase() {
 
 	databaseName := fmt.Sprintf("clinic_test_%s_%d", test.Faker.RandomStringWithLength(10), ginkgo.GinkgoParallelProcess())
 	Expect(os.Setenv("TIDEPOOL_CLINIC_DATABASE_NAME", databaseName)).To(Succeed())
-
 	config, err := store.NewConfig()
 	Expect(err).ToNot(HaveOccurred())
 

@@ -65,7 +65,7 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 		tier = c.Tier
 	}
 
-	units := MgdL
+	units := ClinicV1PreferredBgUnitsMgdL
 	if c.PreferredBgUnits != "" {
 		units = ClinicV1PreferredBgUnits(c.PreferredBgUnits)
 	}
@@ -197,7 +197,8 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
 			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
 		},
-		Sites: NewSitesDto(patient.Sites),
+		Sites:          NewSitesDto(patient.Sites),
+		GlycemicRanges: NewGlycemicRangesDto(patient.GlycemicRanges),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -213,10 +214,7 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 			CreatedTime:  patient.LastRequestedDexcomConnectTime,
 		}}
 	}
-	if patient.GlycemicRanges != "" {
-		glycemicRanges := GlycemicRangesV1(patient.GlycemicRanges)
-		dto.GlycemicRanges = &glycemicRanges
-	}
+
 	if patient.DiagnosisType != "" {
 		dto.DiagnosisType = NewDiagnosisTypeDto(patient.DiagnosisType)
 	}
@@ -248,6 +246,147 @@ func NewDiagnosisTypeDto(diagnosisType string) *DiagnosisTypeV1 {
 	default:
 		return nil
 	}
+}
+
+func NewGlycemicRangesDto(ranges patients.GlycemicRanges) *GlycemicRangesV1 {
+	v1Ranges, err := newGlycemicRangesDtoWithError(ranges)
+	if err != nil {
+		return nil
+	}
+	return v1Ranges
+}
+
+func newGlycemicRangesDtoWithError(ranges patients.GlycemicRanges) (
+	*GlycemicRangesV1, error) {
+
+	switch ranges.Type {
+	case "custom":
+		custom, err := newGlycemicRangesDtoCustom(ranges.Custom)
+		if err != nil {
+			return nil, err
+		}
+		return &GlycemicRangesV1{Type: "custom", Custom: *custom}, nil
+	case "preset":
+		preset, err := newGlycemicRangesDtoPreset(ranges.Preset)
+		if err != nil {
+			return nil, err
+		}
+		return &GlycemicRangesV1{Type: "preset", Preset: *preset}, nil
+	}
+
+	return nil, progErrf("unhandled glycemic range type: %q", ranges.Type)
+}
+
+func newGlycemicRangesDtoCustom(custom patients.GlycemicRangesCustom) (
+	*GlycemicRangesCustomV1, error) {
+
+	dtoCustom := &GlycemicRangesCustomV1{
+		Name:       custom.Name,
+		Thresholds: []GlycemicRangesThresholdV1{},
+	}
+	for _, threshold := range custom.Thresholds {
+		upperBound := GlycemicRangesThresholdUpperBoundV1{
+			Value: threshold.UpperBound.Value,
+		}
+		switch threshold.UpperBound.Units {
+		case string(GlycemicRangesThresholdUpperBoundV1UnitsMgdL):
+			upperBound.Units = GlycemicRangesThresholdUpperBoundV1UnitsMgdL
+		case string(GlycemicRangesThresholdUpperBoundV1UnitsMmolL):
+			upperBound.Units = GlycemicRangesThresholdUpperBoundV1UnitsMmolL
+		default:
+			return nil, progErrf("unhandled units: %q", threshold.UpperBound.Units)
+		}
+		customThreshold := GlycemicRangesThresholdV1{
+			Inclusive:  threshold.Inclusive,
+			Name:       threshold.Name,
+			UpperBound: upperBound,
+		}
+		dtoCustom.Thresholds = append(dtoCustom.Thresholds, customThreshold)
+	}
+	return dtoCustom, nil
+}
+
+func newGlycemicRangesDtoPreset(preset patients.GlycemicRangesPreset) (
+	*GlycemicRangesV1Preset, error) {
+
+	var dtoPreset GlycemicRangesV1Preset = ADAStandard
+	switch string(preset) {
+	case string(ADAStandard):
+		dtoPreset = ADAStandard
+	case string(ADAPregnancyType1):
+		dtoPreset = ADAPregnancyType1
+	case string(ADAPregnancyGDMOrType2):
+		dtoPreset = ADAPregnancyGDMOrType2
+	case string(ADAOlderOrHighRisk):
+		dtoPreset = ADAOlderOrHighRisk
+	default:
+		return nil, progErrf("unhandled glycemic ranges preset: %q", preset)
+	}
+	return &dtoPreset, nil
+}
+
+func NewGlycemicRanges(ranges *GlycemicRangesV1) patients.GlycemicRanges {
+	gr, err := newGlycemicRangesWithError(ranges)
+	if err != nil {
+		return patients.GlycemicRanges{}
+	}
+	return *gr
+}
+
+// programmingError indicates that the generated types here in the api package no longer
+// align with those in the patients package.
+type programmingError struct {
+	msg string
+}
+
+func (p *programmingError) Error() string {
+	return "PROGRAMMING ERROR: " + p.msg
+}
+
+func progErrf(format string, args ...any) *programmingError {
+	return &programmingError{msg: fmt.Sprintf(format, args...)}
+}
+
+func newGlycemicRangesWithError(ranges *GlycemicRangesV1) (
+	*patients.GlycemicRanges, error) {
+
+	pType := patients.GlycemicRangeType(ranges.Type)
+	switch pType {
+	case patients.GlycemicRangeTypeCustom:
+		out := &patients.GlycemicRanges{
+			Type: pType,
+			Custom: patients.GlycemicRangesCustom{
+				Name:       ranges.Custom.Name,
+				Thresholds: newGlycemicRangesCustomThresholds(ranges.Custom.Thresholds),
+			},
+		}
+		return out, nil
+	case patients.GlycemicRangeTypePreset:
+		out := &patients.GlycemicRanges{
+			Type:   pType,
+			Preset: patients.GlycemicRangesPreset(ranges.Preset),
+		}
+		return out, nil
+	default:
+		return nil, progErrf("unhandled glycemic ranges type: %T", *ranges)
+	}
+}
+
+func newGlycemicRangesCustomThresholds(thresholds []GlycemicRangesThresholdV1) (
+	_ []patients.GlycemicRangeThreshold) {
+
+	out := []patients.GlycemicRangeThreshold{}
+	for _, threshold := range thresholds {
+		out = append(out, patients.GlycemicRangeThreshold{
+			Name: threshold.Name,
+			UpperBound: patients.ValueWithUnits{
+				Value: threshold.UpperBound.Value,
+				Units: string(threshold.UpperBound.Units),
+			},
+			Inclusive: threshold.Inclusive,
+		})
+	}
+	return out
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {
@@ -315,7 +454,7 @@ func NewPatient(dto PatientV1) patients.Patient {
 	}
 
 	if dto.GlycemicRanges != nil {
-		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+		patient.GlycemicRanges = NewGlycemicRanges(dto.GlycemicRanges)
 	}
 	if dto.DiagnosisType != nil {
 		patient.DiagnosisType = string(*dto.DiagnosisType)
@@ -360,7 +499,7 @@ func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patient
 		patient.Sites = &sites
 	}
 	if dto.GlycemicRanges != nil {
-		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+		patient.GlycemicRanges = NewGlycemicRanges(dto.GlycemicRanges)
 	}
 	if dto.DiagnosisType != nil {
 		patient.DiagnosisType = string(*dto.DiagnosisType)
