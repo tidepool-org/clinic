@@ -461,7 +461,7 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 			Tags:                        &tide.Config.Tags,
 			VeryHighGlucoseThreshold:    tide.Config.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:     tide.Config.VeryLowGlucoseThreshold,
-			ExtremeHighGlucoseThreshold: &tide.Config.VeryHighGlucoseThreshold,
+			ExtremeHighGlucoseThreshold: &tide.Config.ExtremeHighGlucoseThreshold,
 		},
 		Results: TideResultsV1{},
 	}
