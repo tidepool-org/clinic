@@ -4783,16 +4783,87 @@ components:
         - twiist
         - dexcom
         - abbott
+    glycemicRangesTypes.v1:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - preset
+            - custom
+          default: preset
+      discriminator:
+        propertyName: type
+    glycemicRangesPresets.v1:
+      allOf:
+        - $ref: '#/components/schemas/glycemicRangesTypes.v1'
+        - type: object
+          properties:
+            preset:
+              type: string
+              minLength: 1
+              enum:
+                - ADA standard
+                - ADA pregnancy type 1
+                - ADA pregnancy GDM or type 2
+                - ADA older or high-risk
+              default: ADA standard
+          required:
+            - preset
+    glycemicRangesThresholdUpperBound.v1:
+      type: object
+      properties:
+        value:
+          type: number
+          format: float
+        units:
+          type: string
+          enum:
+            - mg/dL
+            - mmol/L
+      required:
+        - value
+        - units
+    glycemicRangesThreshold.v1:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        upperBound:
+          $ref: '#/components/schemas/glycemicRangesThresholdUpperBound.v1'
+        inclusive:
+          type: boolean
+          default: false
+          x-go-type-skip-optional-pointer: true
+      required:
+        - name
+        - upperBound
+    glycemicRangesCustom.v1:
+      allOf:
+        - $ref: '#/components/schemas/glycemicRangesTypes.v1'
+        - type: object
+          properties:
+            name:
+              type: string
+              minLength: 1
+            thresholds:
+              type: array
+              items:
+                $ref: '#/components/schemas/glycemicRangesThreshold.v1'
+              minLength: 4
+              maxLength: 5
+          required:
+            - name
+            - thresholds
     glycemicRanges.v1:
-      title: Glycemic Ranges
-      description: An identifier for a pre-defined set of thresholds and times in range.
-      type: string
-      enum:
-        - ADA standard
-        - ADA pregnancy type 1
-        - ADA pregnancy GDM or type 2
-        - ADA older or high-risk
-      example: ADA standard
+      oneOf:
+        - $ref: '#/components/schemas/glycemicRangesPresets.v1'
+        - $ref: '#/components/schemas/glycemicRangesCustom.v1'
+      discriminator:
+        propertyName: type
     diagnosisType.v1:
       title: Diagnosis Type
       type: string

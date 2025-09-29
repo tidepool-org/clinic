@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -65,7 +66,7 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 		tier = c.Tier
 	}
 
-	units := MgdL
+	units := ClinicV1PreferredBgUnitsMgdL
 	if c.PreferredBgUnits != "" {
 		units = ClinicV1PreferredBgUnits(c.PreferredBgUnits)
 	}
@@ -197,7 +198,8 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
 			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
 		},
-		Sites: NewSitesDto(patient.Sites),
+		Sites:          NewSitesDto(patient.Sites),
+		GlycemicRanges: NewGlycemicRangesDto(patient.GlycemicRanges),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -213,16 +215,182 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 			CreatedTime:  patient.LastRequestedDexcomConnectTime,
 		}}
 	}
-	if patient.GlycemicRanges != "" {
-		glycemicRanges := GlycemicRangesV1(patient.GlycemicRanges)
-		dto.GlycemicRanges = &glycemicRanges
-	}
+
 	if patient.DiagnosisType != "" {
 		diagnosisType := DiagnosisTypeV1(patient.DiagnosisType)
 		dto.DiagnosisType = &diagnosisType
 	}
 
 	return dto
+}
+
+// adaStandardPresetV1 is a fallback value for glycemic ranges.
+//
+// None of the existing mappers return an error. To maintain that pattern, in the event of
+// an error, functions can fall back to the ADAStandard, which are the default for
+// unspecified cases.
+var adaStandardPresetV1 *GlycemicRangesV1
+
+// adaStandardPreset is a fallback value for glycemic ranges.
+//
+// None of the existing mappers return an error. To maintain that pattern, in the event of
+// an error, functions can fall back to the ADAStandard, which are the default for
+// unspecified cases.
+var adaStandardPreset = patients.GlycemicRanges{
+	Type: "preset",
+	GlycemicRangesPreset: &patients.GlycemicRangesPreset{
+		Preset: string(ADAStandard),
+	},
+}
+
+func init() {
+	fallback, err := json.Marshal(GlycemicRangesPresetsV1{
+		Type:   GlycemicRangesPresetsV1TypePreset,
+		Preset: ADAStandard,
+	})
+	if err != nil {
+		panic(fmt.Sprintf("fatal error marshaling fallback glycemic ranges: %s", err))
+	}
+	adaStandardPresetV1 = &GlycemicRangesV1{union: fallback}
+}
+
+func NewGlycemicRangesDto(ranges patients.GlycemicRanges) *GlycemicRangesV1 {
+	v1Ranges, err := newGlycemicRangesDtoWithError(ranges)
+	if err != nil {
+		// TODO: Log this?
+		return adaStandardPresetV1
+	}
+	return v1Ranges
+}
+
+func newGlycemicRangesDtoWithError(ranges patients.GlycemicRanges) (
+	*GlycemicRangesV1, error) {
+
+	var value any
+
+	switch ranges.Type {
+	case "custom":
+		custom := GlycemicRangesCustomV1{
+			Name:       ranges.Name,
+			Thresholds: []GlycemicRangesThresholdV1{},
+			Type:       GlycemicRangesCustomV1TypeCustom,
+		}
+		for _, threshold := range ranges.Thresholds {
+			upperBound := GlycemicRangesThresholdUpperBoundV1{
+				Value: threshold.UpperBound.Value,
+			}
+			switch threshold.UpperBound.Units {
+			case string(GlycemicRangesThresholdUpperBoundV1UnitsMgdL):
+				upperBound.Units = GlycemicRangesThresholdUpperBoundV1UnitsMgdL
+			case string(GlycemicRangesThresholdUpperBoundV1UnitsMmolL):
+				upperBound.Units = GlycemicRangesThresholdUpperBoundV1UnitsMmolL
+			default:
+				// This should never happen. The Threshold values should have been validated
+				// by the generated handler code before this function was called.
+				return nil, fmt.Errorf("unhandled units: %q", threshold.UpperBound.Units)
+			}
+			customThreshold := GlycemicRangesThresholdV1{
+				Inclusive:  threshold.Inclusive,
+				Name:       threshold.Name,
+				UpperBound: upperBound,
+			}
+			custom.Thresholds = append(custom.Thresholds, customThreshold)
+		}
+		value = custom
+	case "preset":
+		preset := GlycemicRangesPresetsV1{
+			Type: GlycemicRangesPresetsV1TypePreset,
+		}
+		switch ranges.GlycemicRangesPreset.Preset {
+		case string(ADAStandard):
+			preset.Preset = ADAStandard
+		case string(ADAPregnancyType1):
+			preset.Preset = ADAPregnancyType1
+		case string(ADAPregnancyGDMOrType2):
+			preset.Preset = ADAPregnancyGDMOrType2
+		case string(ADAOlderOrHighRisk):
+			preset.Preset = ADAOlderOrHighRisk
+		default:
+			return nil, fmt.Errorf("unhandled glycemic ranges preset: %q",
+				ranges.GlycemicRangesPreset.Preset)
+		}
+		value = preset
+	default:
+		// This should never happen, The Type values should have been validated by the
+		// generated handler code before this function was called.
+		return nil, fmt.Errorf("unhandled glycemic range type: %q", ranges.Type)
+	}
+
+	rawMessage, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error marshaling glycemic ranges: %w", err)
+	}
+
+	return &GlycemicRangesV1{
+		union: rawMessage,
+	}, nil
+}
+
+func NewGlycemicRanges(ranges *GlycemicRangesV1) patients.GlycemicRanges {
+	gr, err := newGlycemicRangesWithError(ranges)
+	if err != nil {
+		// TODO: Log this?
+		return adaStandardPreset
+	}
+	return *gr
+}
+
+func newGlycemicRangesWithError(ranges *GlycemicRangesV1) (
+	*patients.GlycemicRanges, error) {
+
+	discriminator, err := ranges.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+
+	out := &patients.GlycemicRanges{
+		Type: discriminator,
+	}
+	switch GlycemicRangesCustomV1Type(discriminator) {
+	case GlycemicRangesCustomV1TypeCustom:
+		custom, err := ranges.AsGlycemicRangesCustomV1()
+		if err != nil {
+			return nil, err
+		}
+		out.GlycemicRangesCustom = &patients.GlycemicRangesCustom{
+			Name:       custom.Name,
+			Thresholds: newGlycemicRangesCustomThresholds(custom.Thresholds),
+		}
+		return out, nil
+	case GlycemicRangesCustomV1TypePreset:
+		preset, err := ranges.AsGlycemicRangesPresetsV1()
+		if err != nil {
+			return nil, err
+		}
+		out.GlycemicRangesPreset = &patients.GlycemicRangesPreset{
+			Preset: string(preset.Preset),
+		}
+		return out, nil
+	default:
+		return nil, fmt.Errorf("unhandled glycemic ranges type: %s", discriminator)
+	}
+}
+
+func newGlycemicRangesCustomThresholds(thresholds []GlycemicRangesThresholdV1) (
+	_ []patients.GlycemicRangeThreshold) {
+
+	out := []patients.GlycemicRangeThreshold{}
+	for _, threshold := range thresholds {
+		out = append(out, patients.GlycemicRangeThreshold{
+			Name: threshold.Name,
+			UpperBound: patients.ValueWithUnits{
+				Value: threshold.UpperBound.Value,
+				Units: string(threshold.UpperBound.Units),
+			},
+			Inclusive: threshold.Inclusive,
+		})
+	}
+	return out
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {
@@ -290,7 +458,7 @@ func NewPatient(dto PatientV1) patients.Patient {
 	}
 
 	if dto.GlycemicRanges != nil {
-		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+		patient.GlycemicRanges = NewGlycemicRanges(dto.GlycemicRanges)
 	}
 	if dto.DiagnosisType != nil {
 		patient.DiagnosisType = string(*dto.DiagnosisType)
@@ -335,7 +503,7 @@ func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patient
 		patient.Sites = &sites
 	}
 	if dto.GlycemicRanges != nil {
-		patient.GlycemicRanges = string(*dto.GlycemicRanges)
+		patient.GlycemicRanges = NewGlycemicRanges(dto.GlycemicRanges)
 	}
 	if dto.DiagnosisType != nil {
 		patient.DiagnosisType = string(*dto.DiagnosisType)

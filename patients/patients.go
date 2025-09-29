@@ -3,8 +3,10 @@ package patients
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/deletions"
@@ -100,11 +102,56 @@ type Patient struct {
 	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
-	GlycemicRanges             string                     `bson:"glycemicRanges,omitempty"`
+	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
 	DiagnosisType              string                     `bson:"diagnosisType,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+}
+
+type GlycemicRanges struct {
+	Type string `json:"type"`
+
+	// only one of the following should be present, based on Type
+	*GlycemicRangesPreset `bson:",inline,omitempty"`
+	*GlycemicRangesCustom `bson:",inline,omitempty"`
+}
+
+type GlycemicRangesPreset struct {
+	Preset string `json:"preset"`
+}
+
+var _ bsoncodec.Zeroer = (*GlycemicRangesPreset)(nil)
+
+// IsZero implements bsoncodec.Zeroer
+func (g *GlycemicRangesPreset) IsZero() bool {
+	log.Printf("\n\n!!! ZEROER: %+v\n\n", *g)
+	return g.Preset == ""
+}
+
+type GlycemicRangesCustom struct {
+	Name       string                   `json:"name"`
+	Thresholds []GlycemicRangeThreshold `json:"thresholds"`
+}
+
+// IsZero implements bsoncodec.Zeroer
+func (g *GlycemicRangesCustom) IsZero() bool {
+	log.Printf("\n\n!!! ZEROER: %+v\n\n", *g)
+	//panic("you shall not pass!")
+	return g.Name == "" && len(g.Thresholds) == 0
+}
+
+var _ bsoncodec.Zeroer = (*GlycemicRangesCustom)(nil)
+
+type GlycemicRangeThreshold struct {
+	Name       string         `json:"name"`
+	UpperBound ValueWithUnits `json:"upperBound"`
+	Inclusive  bool           `json:"inclusive"`
+}
+
+type ValueWithUnits struct {
+	Value float32 `json:"value"`
+	Units string  `json:"units"`
 }
 
 func (p Patient) IsCustodial() bool {

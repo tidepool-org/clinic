@@ -4,8 +4,11 @@
 package api
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
+	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -32,8 +35,8 @@ const (
 
 // Defines values for ClinicV1PreferredBgUnits.
 const (
-	MgdL  ClinicV1PreferredBgUnits = "mg/dL"
-	MmolL ClinicV1PreferredBgUnits = "mmol/L"
+	ClinicV1PreferredBgUnitsMgdL  ClinicV1PreferredBgUnits = "mg/dL"
+	ClinicV1PreferredBgUnitsMmolL ClinicV1PreferredBgUnits = "mmol/L"
 )
 
 // Defines values for ClinicTimezoneV1.
@@ -686,12 +689,36 @@ const (
 	Xealth EhrSettingsV1Provider = "xealth"
 )
 
-// Defines values for GlycemicRangesV1.
+// Defines values for GlycemicRangesCustomV1Type.
 const (
-	ADAOlderOrHighRisk     GlycemicRangesV1 = "ADA older or high-risk"
-	ADAPregnancyGDMOrType2 GlycemicRangesV1 = "ADA pregnancy GDM or type 2"
-	ADAPregnancyType1      GlycemicRangesV1 = "ADA pregnancy type 1"
-	ADAStandard            GlycemicRangesV1 = "ADA standard"
+	GlycemicRangesCustomV1TypeCustom GlycemicRangesCustomV1Type = "custom"
+	GlycemicRangesCustomV1TypePreset GlycemicRangesCustomV1Type = "preset"
+)
+
+// Defines values for GlycemicRangesPresetsV1Preset.
+const (
+	ADAOlderOrHighRisk     GlycemicRangesPresetsV1Preset = "ADA older or high-risk"
+	ADAPregnancyGDMOrType2 GlycemicRangesPresetsV1Preset = "ADA pregnancy GDM or type 2"
+	ADAPregnancyType1      GlycemicRangesPresetsV1Preset = "ADA pregnancy type 1"
+	ADAStandard            GlycemicRangesPresetsV1Preset = "ADA standard"
+)
+
+// Defines values for GlycemicRangesPresetsV1Type.
+const (
+	GlycemicRangesPresetsV1TypeCustom GlycemicRangesPresetsV1Type = "custom"
+	GlycemicRangesPresetsV1TypePreset GlycemicRangesPresetsV1Type = "preset"
+)
+
+// Defines values for GlycemicRangesThresholdUpperBoundV1Units.
+const (
+	GlycemicRangesThresholdUpperBoundV1UnitsMgdL  GlycemicRangesThresholdUpperBoundV1Units = "mg/dL"
+	GlycemicRangesThresholdUpperBoundV1UnitsMmolL GlycemicRangesThresholdUpperBoundV1Units = "mmol/L"
+)
+
+// Defines values for GlycemicRangesTypesV1Type.
+const (
+	Custom GlycemicRangesTypesV1Type = "custom"
+	Preset GlycemicRangesTypesV1Type = "preset"
 )
 
 // Defines values for MigrationStatusV1.
@@ -1289,9 +1316,7 @@ type CreatePatientV1 struct {
 	DiagnosisType        *DiagnosisTypeV1    `json:"diagnosisType,omitempty"`
 
 	// FullName The full name of the patient
-	FullName *string `json:"fullName,omitempty"`
-
-	// GlycemicRanges An identifier for a pre-defined set of thresholds and times in range.
+	FullName       *string           `json:"fullName,omitempty"`
 	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
 	IsMigrated     *bool             `json:"isMigrated,omitempty"`
 
@@ -1444,8 +1469,56 @@ type GenerateMergeReportV1 struct {
 	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
 }
 
-// GlycemicRangesV1 An identifier for a pre-defined set of thresholds and times in range.
-type GlycemicRangesV1 string
+// GlycemicRangesV1 defines model for glycemicRanges.v1.
+type GlycemicRangesV1 struct {
+	union json.RawMessage
+}
+
+// GlycemicRangesCustomV1 defines model for glycemicRangesCustom.v1.
+type GlycemicRangesCustomV1 struct {
+	Name       string                      `json:"name"`
+	Thresholds []GlycemicRangesThresholdV1 `json:"thresholds"`
+	Type       GlycemicRangesCustomV1Type  `json:"type"`
+}
+
+// GlycemicRangesCustomV1Type defines model for GlycemicRangesCustomV1.Type.
+type GlycemicRangesCustomV1Type string
+
+// GlycemicRangesPresetsV1 defines model for glycemicRangesPresets.v1.
+type GlycemicRangesPresetsV1 struct {
+	Preset GlycemicRangesPresetsV1Preset `json:"preset"`
+	Type   GlycemicRangesPresetsV1Type   `json:"type"`
+}
+
+// GlycemicRangesPresetsV1Preset defines model for GlycemicRangesPresetsV1.Preset.
+type GlycemicRangesPresetsV1Preset string
+
+// GlycemicRangesPresetsV1Type defines model for GlycemicRangesPresetsV1.Type.
+type GlycemicRangesPresetsV1Type string
+
+// GlycemicRangesThresholdV1 defines model for glycemicRangesThreshold.v1.
+type GlycemicRangesThresholdV1 struct {
+	Inclusive  bool                                `json:"inclusive,omitempty"`
+	Name       string                              `json:"name"`
+	UpperBound GlycemicRangesThresholdUpperBoundV1 `json:"upperBound"`
+}
+
+// GlycemicRangesThresholdUpperBoundV1 defines model for glycemicRangesThresholdUpperBound.v1.
+type GlycemicRangesThresholdUpperBoundV1 struct {
+	Units GlycemicRangesThresholdUpperBoundV1Units `json:"units"`
+	Value float32                                  `json:"value"`
+}
+
+// GlycemicRangesThresholdUpperBoundV1Units defines model for GlycemicRangesThresholdUpperBoundV1.Units.
+type GlycemicRangesThresholdUpperBoundV1Units string
+
+// GlycemicRangesTypesV1 defines model for glycemicRangesTypes.v1.
+type GlycemicRangesTypesV1 struct {
+	Type GlycemicRangesTypesV1Type `json:"type"`
+}
+
+// GlycemicRangesTypesV1Type defines model for GlycemicRangesTypesV1.Type.
+type GlycemicRangesTypesV1Type string
 
 // MembershipRestrictionV1 A user joining a clinic must match all of the defined restrictions
 type MembershipRestrictionV1 struct {
@@ -1530,9 +1603,7 @@ type PatientV1 struct {
 	Email                *string                       `json:"email,omitempty"`
 
 	// FullName The full name of the patient
-	FullName string `json:"fullName"`
-
-	// GlycemicRanges An identifier for a pre-defined set of thresholds and times in range.
+	FullName       string            `json:"fullName"`
 	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
@@ -2507,3 +2578,92 @@ type MatchClinicAndPatientJSONRequestBody = EhrMatchRequestV1
 
 // UpdateClinicUserDetailsJSONRequestBody defines body for UpdateClinicUserDetails for application/json ContentType.
 type UpdateClinicUserDetailsJSONRequestBody = UpdateUserDetailsV1
+
+// AsGlycemicRangesPresetsV1 returns the union data inside the GlycemicRangesV1 as a GlycemicRangesPresetsV1
+func (t GlycemicRangesV1) AsGlycemicRangesPresetsV1() (GlycemicRangesPresetsV1, error) {
+	var body GlycemicRangesPresetsV1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGlycemicRangesPresetsV1 overwrites any union data inside the GlycemicRangesV1 as the provided GlycemicRangesPresetsV1
+func (t *GlycemicRangesV1) FromGlycemicRangesPresetsV1(v GlycemicRangesPresetsV1) error {
+	v.Type = "glycemicRangesPresets.v1"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGlycemicRangesPresetsV1 performs a merge with any union data inside the GlycemicRangesV1, using the provided GlycemicRangesPresetsV1
+func (t *GlycemicRangesV1) MergeGlycemicRangesPresetsV1(v GlycemicRangesPresetsV1) error {
+	v.Type = "glycemicRangesPresets.v1"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsGlycemicRangesCustomV1 returns the union data inside the GlycemicRangesV1 as a GlycemicRangesCustomV1
+func (t GlycemicRangesV1) AsGlycemicRangesCustomV1() (GlycemicRangesCustomV1, error) {
+	var body GlycemicRangesCustomV1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromGlycemicRangesCustomV1 overwrites any union data inside the GlycemicRangesV1 as the provided GlycemicRangesCustomV1
+func (t *GlycemicRangesV1) FromGlycemicRangesCustomV1(v GlycemicRangesCustomV1) error {
+	v.Type = "glycemicRangesCustom.v1"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeGlycemicRangesCustomV1 performs a merge with any union data inside the GlycemicRangesV1, using the provided GlycemicRangesCustomV1
+func (t *GlycemicRangesV1) MergeGlycemicRangesCustomV1(v GlycemicRangesCustomV1) error {
+	v.Type = "glycemicRangesCustom.v1"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t GlycemicRangesV1) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t GlycemicRangesV1) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "glycemicRangesCustom.v1":
+		return t.AsGlycemicRangesCustomV1()
+	case "glycemicRangesPresets.v1":
+		return t.AsGlycemicRangesPresetsV1()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t GlycemicRangesV1) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *GlycemicRangesV1) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
