@@ -451,16 +451,17 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 
 	tideResult := &TideResponseV1{
 		Config: TideConfigV1{
-			ClinicId:                 &tide.Config.ClinicId,
-			Filters:                  TideFiltersV1(tide.Config.Filters),
-			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
-			LastDataCutoff:           tide.Config.LastDataCutoff,
-			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
-			Period:                   tide.Config.Period,
-			SchemaVersion:            tide.Config.SchemaVersion,
-			Tags:                     &tide.Config.Tags,
-			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
-			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
+			ClinicId:                    &tide.Config.ClinicId,
+			Filters:                     TideFiltersV1(tide.Config.Filters),
+			HighGlucoseThreshold:        tide.Config.HighGlucoseThreshold,
+			LastDataCutoff:              tide.Config.LastDataCutoff,
+			LowGlucoseThreshold:         tide.Config.LowGlucoseThreshold,
+			Period:                      tide.Config.Period,
+			SchemaVersion:               tide.Config.SchemaVersion,
+			Tags:                        &tide.Config.Tags,
+			VeryHighGlucoseThreshold:    tide.Config.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:     tide.Config.VeryLowGlucoseThreshold,
+			ExtremeHighGlucoseThreshold: &tide.Config.VeryHighGlucoseThreshold,
 		},
 		Results: TideResultsV1{},
 	}

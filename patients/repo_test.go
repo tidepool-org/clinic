@@ -2157,6 +2157,31 @@ var _ = Describe("TideReport", func() {
 						}}
 				})
 
+				Context("Config", func() {
+					It("includes the correct config metadata", func(ctx SpecContext) {
+						period := "14d"
+						cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
+						params := patients.TideReportParams{
+							Period:         period,
+							Tags:           []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+							LastDataCutoff: cutoff,
+						}
+						report, err := repo.TideReport(ctx, clinicId.Hex(), params)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(report.Config.Period).To(Equal("14d"))
+						Expect(report.Config.LastDataCutoff).To(Equal(params.LastDataCutoff))
+						Expect(report.Config.Tags).To(ConsistOf(params.Tags))
+						Expect(report.Config.SchemaVersion).To(Equal(patients.TideSchemaVersion))
+						Expect(report.Config.ClinicId).To(Equal(clinicId.Hex()))
+						Expect(report.Config.VeryHighGlucoseThreshold).To(Equal(patients.VeryHighGlucoseThreshold))
+						Expect(report.Config.VeryLowGlucoseThreshold).To(Equal(patients.VeryLowGlucoseThreshold))
+						Expect(report.Config.ExtremeHighGlucoseThreshold).To(Equal(patients.ExtremeHighGlucoseThreshold))
+						Expect(report.Config.LowGlucoseThreshold).To(Equal(patients.LowGlucoseThreshold))
+						Expect(report.Config.HighGlucoseThreshold).To(Equal(patients.HighGlucoseThreshold))
+					})
+				})
+
 				It("matches default categories given no categories in params", func(ctx SpecContext) {
 					period := "14d"
 					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)

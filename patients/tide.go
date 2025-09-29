@@ -3,12 +3,12 @@ package patients
 import "time"
 
 const (
-	veryLowGlucoseThreshold     = 3.0
-	lowGlucoseThreshold         = 3.9
-	highGlucoseThreshold        = 10.0
-	veryHighGlucoseThreshold    = 13.9
-	extremeHighGlucoseThreshold = 19.4
-	tideSchemaVersion           = 2
+	VeryLowGlucoseThreshold     = 3.0
+	LowGlucoseThreshold         = 3.9
+	HighGlucoseThreshold        = 10.0
+	VeryHighGlucoseThreshold    = 13.9
+	ExtremeHighGlucoseThreshold = 19.4
+	TideSchemaVersion           = 2
 )
 
 type Tide struct {
