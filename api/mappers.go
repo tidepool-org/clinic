@@ -475,6 +475,7 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
 				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
 				TimeInHighPercent:          patient.TimeInHighPercent,
+				TimeInExtremeHighPercent:   patient.TimeInExtremeHighPercent,
 				TimeInLowPercent:           patient.TimeInLowPercent,
 				TimeInTargetPercent:        patient.TimeInTargetPercent,
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,

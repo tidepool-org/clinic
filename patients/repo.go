@@ -1365,6 +1365,7 @@ func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]
 				resultPatient.TimeInVeryLowPercent = v.TimeInVeryLowPercent
 				resultPatient.TimeInAnyLowPercent = v.TimeInAnyLowPercent
 				resultPatient.TimeInAnyHighPercent = v.TimeInAnyHighPercent
+				resultPatient.TimeInExtremeHighPercent = v.TimeInExtremeHighPercent
 			}
 		}
 
@@ -1464,6 +1465,7 @@ var availableCategories = [...]tideCategory{
 				SummaryFieldComparator:      "$gte",
 				ComparatorOperandExpression: 0.7,
 			},
+			// These "$not" expressions are because the fields may not exist in the patient summary
 			{
 				SummaryField:                "timeInAnyLowPercent",
 				SummaryFieldComparator:      "$not",
@@ -1471,6 +1473,21 @@ var availableCategories = [...]tideCategory{
 			},
 			{
 				SummaryField:                "timeInVeryLowPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .01},
+			},
+			{
+				SummaryField:                "timeInHighPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .25},
+			},
+			{
+				SummaryField:                "timeInVeryHighPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .05},
+			},
+			{
+				SummaryField:                "timeInExtremeHighPercent",
 				SummaryFieldComparator:      "$not",
 				ComparatorOperandExpression: bson.M{"$gt": .01},
 			},

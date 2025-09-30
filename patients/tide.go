@@ -57,6 +57,7 @@ type TideResultPatient struct {
 	Patient                    TidePatient `json:"patient"`
 	TimeCGMUseMinutes          *int        `json:"timeCGMUseMinutes,omitempty"`
 	TimeCGMUsePercent          *float64    `json:"timeCGMUsePercent,omitempty"`
+	TimeInExtremeHighPercent   *float64    `json:"timeInExtremeHighPercent,omitempty"`
 	TimeInHighPercent          *float64    `json:"timeInHighPercent,omitempty"`
 	TimeInLowPercent           *float64    `json:"timeInLowPercent,omitempty"`
 	TimeInTargetPercent        *float64    `json:"timeInTargetPercent,omitempty"`

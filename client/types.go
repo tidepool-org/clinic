@@ -1835,6 +1835,9 @@ type TideResultPatientV1 struct {
 	// TimeInAnyLowPercent Percentage of time spent in any low glucose range
 	TimeInAnyLowPercent *float64 `json:"timeInAnyLowPercent,omitempty"`
 
+	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
+	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
+
 	// TimeInHighPercent Percentage of time spent in high glucose range
 	TimeInHighPercent *float64 `json:"timeInHighPercent,omitempty"`
 
