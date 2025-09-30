@@ -15,6 +15,7 @@ import (
 	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -77,6 +78,14 @@ func (s *service) Create(ctx context.Context, patient patients.Patient) (*patien
 		return nil, errors.New("user id is missing")
 	}
 
+	if patient.Sites != nil && len(*patient.Sites) > 0 {
+		resolved, err := s.resolveSites(ctx, clinicId, *patient.Sites)
+		if err != nil {
+			return nil, err
+		}
+		patient.Sites = &resolved
+	}
+
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
 
 	result, err := s.patientsRepo.Create(ctx, patient)
@@ -112,6 +121,14 @@ func (s *service) Update(ctx context.Context, update patients.PatientUpdate) (*p
 		}
 	}
 
+	if update.Patient.Sites != nil && len(*update.Patient.Sites) > 0 {
+		resolved, err := s.resolveSites(ctx, update.ClinicId, *update.Patient.Sites)
+		if err != nil {
+			return nil, err
+		}
+		update.Patient.Sites = &resolved
+	}
+
 	s.logger.Infow("updating patient", "userId", existing.UserId, "clinicId", update.ClinicId)
 	patient, err := s.patientsRepo.Update(ctx, update)
 	if err != nil {
@@ -125,6 +142,42 @@ func (s *service) Update(ctx context.Context, update patients.PatientUpdate) (*p
 
 	return patient, nil
 }
+
+// resolveSites to ensure the most up to date site info.
+//
+// Because site names (and possibly other info) are denormalized, when setting patient sites
+// we have to ensure they have the most up to date information from the clinic site object.
+func (s *service) resolveSites(ctx context.Context,
+	clinicId string, patientSites []sites.Site) ([]sites.Site, error) {
+
+	clinic, err := s.clinicsService.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	fromClinic := []sites.Site{}
+	for _, pSite := range patientSites {
+		clinicSite, found := findMatchingSite(clinic.Sites, pSite)
+		if !found {
+			s.logger.Infow("unable to assign site to patient",
+				"reason", "not found in clinic",
+				"siteId", pSite.Id.Hex(),
+				"clinicId", clinicId)
+			return nil, clinics.ErrSiteNotFound
+		}
+		fromClinic = append(fromClinic, clinicSite)
+	}
+	return fromClinic, nil
+}
+
+func findMatchingSite(clinicSites []sites.Site, patientSite sites.Site) (sites.Site, bool) {
+	for _, clinicSite := range clinicSites {
+		if clinicSite.Id.Hex() == patientSite.Id.Hex() {
+			return clinicSite, true
+		}
+	}
+	return sites.Site{}, false
+}
+
 func (s *service) AddReview(ctx context.Context, clinicId, userId string, review patients.Review) ([]patients.Review, error) {
 	return s.patientsRepo.AddReview(ctx, clinicId, userId, review)
 }
@@ -331,6 +384,28 @@ func (s *service) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Cont
 func (s *service) RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error {
 	s.logger.Infow("rescheduling patient subscriptions", "subscription", subscription, "clinicIds", strings.Join(clinicIds, ", "), "userId", userId)
 	return s.patientsRepo.RescheduleLastSubscriptionOrderForPatient(ctx, clinicIds, userId, subscription, ordersCollection, targetCollection)
+}
+
+func (s *service) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	s.logger.Infow("deleting sites", "clinicId", clinicId, "siteId", siteId)
+	return s.patientsRepo.DeleteSites(ctx, clinicId, siteId)
+}
+
+func (s *service) MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error {
+	s.logger.Infow("merging sites", "clinicId", clinicId, "sourceSiteId",
+		sourceSiteId, "targetSiteId", targetSite.Id.Hex())
+	return s.patientsRepo.MergeSites(ctx, clinicId, sourceSiteId, targetSite)
+}
+
+func (s *service) ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error {
+	s.logger.Infow("converting patient tag to site", "clinicId", clinicId, "patientTagId",
+		patientTagId, "siteId", site.Id.Hex())
+	return s.patientsRepo.ConvertPatientTagToSite(ctx, clinicId, patientTagId, site)
+}
+
+func (s *service) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	s.logger.Infow("updating sites", "clinicId", clinicId, "siteId", siteId, "site", site)
+	return s.patientsRepo.UpdateSites(ctx, clinicId, siteId, site)
 }
 
 func (s *service) enforceMrnSettings(ctx context.Context, clinicId string, existingUserId *string, patient *patients.Patient) error {

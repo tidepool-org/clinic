@@ -6,10 +6,11 @@ import (
 	"sort"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -23,7 +24,7 @@ const (
 	RoleClinicMember = "CLINIC_MEMBER"
 )
 
-//go:generate mockgen -source=./clinicians.go -destination=./test/mock_clinicians.go -package test
+//go:generate go tool mockgen -source=./clinicians.go -destination=./test/mock_clinicians.go -package test
 type Service interface {
 	Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error)

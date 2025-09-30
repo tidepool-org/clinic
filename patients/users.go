@@ -21,7 +21,7 @@ var UserServiceModule = fx.Provide(
 	NewUserService,
 )
 
-//go:generate mockgen -source=./users.go -destination=./test/mock_users.go -package test
+//go:generate go tool mockgen -source=./users.go -destination=./test/mock_users.go -package test
 
 type UserService interface {
 	CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error)

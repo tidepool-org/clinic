@@ -14,6 +14,7 @@ import (
 	"github.com/tidepool-org/go-common/clients/shoreline"
 
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/test"
 )
 
@@ -44,6 +45,7 @@ func RandomPatient() patients.Patient {
 		IsMigrated:       test.Faker.Bool(),
 		DataSources:      (*[]patients.DataSource)(&dataSources),
 		EHRSubscriptions: RandomSubscriptions(),
+		Sites:            &[]sites.Site{},
 	}
 }
 
@@ -81,6 +83,7 @@ func RandomPatientUpdate() patients.PatientUpdate {
 			Permissions:      patient.Permissions,
 			DataSources:      patient.DataSources,
 			EHRSubscriptions: RandomSubscriptions(),
+			Sites:            patient.Sites,
 		},
 	}
 }
@@ -171,5 +174,6 @@ func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
 		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
+		"Sites":                          Equal(patient.Sites),
 	})
 }

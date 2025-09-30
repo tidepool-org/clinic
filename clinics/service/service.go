@@ -8,6 +8,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -61,15 +62,15 @@ func (s *service) UpdateSuppressedNotifications(ctx context.Context, clinicId st
 	return s.repository.UpdateSuppressedNotifications(ctx, clinicId, suppressedNotifications)
 }
 
-func (s *service) CreatePatientTag(ctx context.Context, clinicId string, tagName string) (*clinics.Clinic, error) {
+func (s *service) CreatePatientTag(ctx context.Context, clinicId string, tagName string) (*clinics.PatientTag, error) {
 	return s.repository.CreatePatientTag(ctx, clinicId, tagName)
 }
 
-func (s *service) UpdatePatientTag(ctx context.Context, clinicId string, tagId string, tagName string) (*clinics.Clinic, error) {
+func (s *service) UpdatePatientTag(ctx context.Context, clinicId string, tagId string, tagName string) (*clinics.PatientTag, error) {
 	return s.repository.UpdatePatientTag(ctx, clinicId, tagId, tagName)
 }
 
-func (s *service) DeletePatientTag(ctx context.Context, clinicId string, tagId string) (*clinics.Clinic, error) {
+func (s *service) DeletePatientTag(ctx context.Context, clinicId string, tagId string) error {
 	return s.repository.DeletePatientTag(ctx, clinicId, tagId)
 }
 
@@ -178,4 +179,20 @@ func (s *service) RefreshPatientCount(ctx context.Context, clinicId string) erro
 
 func (s *service) AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error {
 	return s.repository.AppendShareCodes(ctx, clinicId, shareCodes)
+}
+
+func (s *service) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+	return s.repository.CreateSite(ctx, clinicId, site)
+}
+
+func (s *service) CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+	return s.repository.CreateSiteIgnoringLimit(ctx, clinicId, site)
+}
+
+func (s *service) DeleteSite(ctx context.Context, clinicId, siteId string) error {
+	return s.repository.DeleteSite(ctx, clinicId, siteId)
+}
+
+func (s *service) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
+	return s.repository.UpdateSite(ctx, clinicId, siteId, site)
 }

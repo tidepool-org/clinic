@@ -2,16 +2,21 @@ package test
 
 import (
 	"fmt"
+	"math/rand/v2"
+	"time"
+
 	mapset "github.com/deckarep/golang-set/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/tidepool-org/clinic/clinicians"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/sites"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	"github.com/tidepool-org/clinic/test"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"time"
 )
 
 type Data struct {
@@ -26,8 +31,8 @@ type Data struct {
 }
 
 type Params struct {
-	UniquePatientCount     int
-	DuplicateAccountsCount int
+	UniquePatientCount           int
+	DuplicateAccountsCount       int
 	LikelyDuplicateAccountsCount int
 	NameOnlyMatchAccountsCount   int
 	MrnOnlyMatchAccountsCount    int
@@ -35,7 +40,7 @@ type Params struct {
 
 func RandomData(p Params) Data {
 	duplicateCount := p.DuplicateAccountsCount + p.LikelyDuplicateAccountsCount + p.NameOnlyMatchAccountsCount + p.MrnOnlyMatchAccountsCount
-	totalCount := 2 * p.UniquePatientCount + duplicateCount
+	totalCount := 2*p.UniquePatientCount + duplicateCount
 
 	unique := generateUniquePatients(totalCount)
 
@@ -49,18 +54,26 @@ func RandomData(p Params) Data {
 
 	targetPatientsWithDuplicates := make(map[string]patients.Patient)
 
+	srcDupSite := sitesTest.Random()
+	source.Sites = append(source.Sites, srcDupSite)
+	tgtDupSite := sitesTest.Random()
+	tgtDupSite.Name = srcDupSite.Name
+	target.Sites = append(target.Sites, tgtDupSite)
+
 	var sourcePatients, targetPatients []patients.Patient
 
 	unique, sourcePatients = removeTailElements(unique, p.UniquePatientCount)
 	for i := range sourcePatients {
 		sourcePatients[i].ClinicId = source.Id
 		sourcePatients[i].Tags = randomTagIds(len(source.PatientTags)-1, source.PatientTags)
+		sourcePatients[i].Sites = &[]sites.Site{source.Sites[rand.IntN(len(source.Sites))]}
 	}
 
 	unique, targetPatients = removeTailElements(unique, p.UniquePatientCount)
 	for i := range targetPatients {
 		targetPatients[i].ClinicId = target.Id
 		targetPatients[i].Tags = randomTagIds(len(target.PatientTags)-1, target.PatientTags)
+		targetPatients[i].Sites = &[]sites.Site{target.Sites[rand.IntN(len(target.Sites))]}
 	}
 
 	i := 0
@@ -77,6 +90,10 @@ func RandomData(p Params) Data {
 		// and append it to the final list of patients
 		makeDuplicatePatientAccount(sourcePatient, &targetPatient)
 
+		if j == 0 { // ensure that at least one merging patient has the duplicate site
+			*sourcePatients[i].Sites = append(*sourcePatients[i].Sites, srcDupSite)
+			*targetPatient.Sites = append(*targetPatient.Sites, tgtDupSite)
+		}
 		targetPatients = append(targetPatients, targetPatient)
 		targetPatientsWithDuplicates[*sourcePatient.UserId] = targetPatient
 	}
@@ -151,7 +168,7 @@ type ClusterParams struct {
 func RandomDataForClustering(c ClusterParams) ClusterData {
 	clinic := *clinicsTest.RandomClinic()
 	clusterSize := c.InClusterNameOnlyMatchAccountsCount + c.InClusterMRNOnlyMatchAccountsCount + c.InClusterLikelyDuplicateAccountsCount
-	uniqueCount := c.ClusterCount + c.ClusterCount * (clusterSize)
+	uniqueCount := c.ClusterCount + c.ClusterCount*(clusterSize)
 
 	unique := generateUniquePatients(uniqueCount)
 	for _, patient := range unique {
@@ -238,7 +255,6 @@ func randomTagIds(count int, tags []clinics.PatientTag) *[]primitive.ObjectID {
 	return &result
 }
 
-
 func generateUnique(generate func() string, count int) []string {
 	unique := mapset.NewSet[string]()
 	for i := 0; i < count; {
@@ -274,12 +290,12 @@ func removeTailElement(pts []patients.Patient) ([]patients.Patient, patients.Pat
 }
 
 func removeTailElements(pts []patients.Patient, count int) ([]patients.Patient, []patients.Patient) {
-	if count > len(pts)  {
+	if count > len(pts) {
 		panic(fmt.Sprintf("cannot remove %d elements from a list with length %d", count, len(pts)))
 	}
 
-	tail := append(make([]patients.Patient, 0, count), pts[len(pts) - count:]...)
-	head := append(make([]patients.Patient, 0, len(pts) - count), pts[:len(pts) - count]...)
+	tail := append(make([]patients.Patient, 0, count), pts[len(pts)-count:]...)
+	head := append(make([]patients.Patient, 0, len(pts)-count), pts[:len(pts)-count]...)
 	return head, tail
 }
 

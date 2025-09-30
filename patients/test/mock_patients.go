@@ -15,6 +15,7 @@ import (
 
 	deletions "github.com/tidepool-org/clinic/deletions"
 	patients "github.com/tidepool-org/clinic/patients"
+	sites "github.com/tidepool-org/clinic/sites"
 	store "github.com/tidepool-org/clinic/store"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -84,6 +85,20 @@ func (m *MockService) AssignPatientTagToClinicPatients(ctx context.Context, clin
 func (mr *MockServiceMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicId, tagId, patientIds any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockService)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
+}
+
+// ConvertPatientTagToSite mocks base method.
+func (m *MockService) ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConvertPatientTagToSite", ctx, clinicId, patientTagId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConvertPatientTagToSite indicates an expected call of ConvertPatientTagToSite.
+func (mr *MockServiceMockRecorder) ConvertPatientTagToSite(ctx, clinicId, patientTagId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertPatientTagToSite", reflect.TypeOf((*MockService)(nil).ConvertPatientTagToSite), ctx, clinicId, patientTagId, site)
 }
 
 // Count mocks base method.
@@ -189,6 +204,20 @@ func (mr *MockServiceMockRecorder) DeleteReview(ctx, clinicId, clinicianId, user
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReview", reflect.TypeOf((*MockService)(nil).DeleteReview), ctx, clinicId, clinicianId, userId)
 }
 
+// DeleteSites mocks base method.
+func (m *MockService) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSites", ctx, clinicId, siteId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSites indicates an expected call of DeleteSites.
+func (mr *MockServiceMockRecorder) DeleteSites(ctx, clinicId, siteId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSites", reflect.TypeOf((*MockService)(nil).DeleteSites), ctx, clinicId, siteId)
+}
+
 // DeleteSummaryInAllClinics mocks base method.
 func (m *MockService) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
 	m.ctrl.T.Helper()
@@ -231,6 +260,20 @@ func (m *MockService) List(ctx context.Context, filter *patients.Filter, paginat
 func (mr *MockServiceMockRecorder) List(ctx, filter, pagination, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockService)(nil).List), ctx, filter, pagination, sort)
+}
+
+// MergeSites mocks base method.
+func (m *MockService) MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MergeSites", ctx, clinicId, sourceSiteId, targetSite)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MergeSites indicates an expected call of MergeSites.
+func (mr *MockServiceMockRecorder) MergeSites(ctx, clinicId, sourceSiteId, targetSite any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeSites", reflect.TypeOf((*MockService)(nil).MergeSites), ctx, clinicId, sourceSiteId, targetSite)
 }
 
 // Remove mocks base method.
@@ -377,6 +420,20 @@ func (mr *MockServiceMockRecorder) UpdatePermissions(ctx, clinicId, userId, perm
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockService)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
 }
 
+// UpdateSites mocks base method.
+func (m *MockService) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSites", ctx, clinicId, siteId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSites indicates an expected call of UpdateSites.
+func (mr *MockServiceMockRecorder) UpdateSites(ctx, clinicId, siteId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSites", reflect.TypeOf((*MockService)(nil).UpdateSites), ctx, clinicId, siteId, site)
+}
+
 // UpdateSummaryInAllClinics mocks base method.
 func (m *MockService) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *patients.Summary) error {
 	m.ctrl.T.Helper()
@@ -456,6 +513,20 @@ func (m *MockRepository) AssignPatientTagToClinicPatients(ctx context.Context, c
 func (mr *MockRepositoryMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicId, tagId, patientIds any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockRepository)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
+}
+
+// ConvertPatientTagToSite mocks base method.
+func (m *MockRepository) ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConvertPatientTagToSite", ctx, clinicId, patientTagId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConvertPatientTagToSite indicates an expected call of ConvertPatientTagToSite.
+func (mr *MockRepositoryMockRecorder) ConvertPatientTagToSite(ctx, clinicId, patientTagId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertPatientTagToSite", reflect.TypeOf((*MockRepository)(nil).ConvertPatientTagToSite), ctx, clinicId, patientTagId, site)
 }
 
 // Count mocks base method.
@@ -576,6 +647,20 @@ func (mr *MockRepositoryMockRecorder) DeleteReview(ctx, clinicId, clinicianId, u
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReview", reflect.TypeOf((*MockRepository)(nil).DeleteReview), ctx, clinicId, clinicianId, userId)
 }
 
+// DeleteSites mocks base method.
+func (m *MockRepository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSites", ctx, clinicId, siteId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSites indicates an expected call of DeleteSites.
+func (mr *MockRepositoryMockRecorder) DeleteSites(ctx, clinicId, siteId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSites", reflect.TypeOf((*MockRepository)(nil).DeleteSites), ctx, clinicId, siteId)
+}
+
 // DeleteSummaryInAllClinics mocks base method.
 func (m *MockRepository) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
 	m.ctrl.T.Helper()
@@ -633,6 +718,20 @@ func (m *MockRepository) List(ctx context.Context, filter *patients.Filter, pagi
 func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepository)(nil).List), ctx, filter, pagination, sort)
+}
+
+// MergeSites mocks base method.
+func (m *MockRepository) MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MergeSites", ctx, clinicId, sourceSiteId, targetSite)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MergeSites indicates an expected call of MergeSites.
+func (mr *MockRepositoryMockRecorder) MergeSites(ctx, clinicId, sourceSiteId, targetSite any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeSites", reflect.TypeOf((*MockRepository)(nil).MergeSites), ctx, clinicId, sourceSiteId, targetSite)
 }
 
 // Remove mocks base method.
@@ -777,6 +876,20 @@ func (m *MockRepository) UpdatePermissions(ctx context.Context, clinicId, userId
 func (mr *MockRepositoryMockRecorder) UpdatePermissions(ctx, clinicId, userId, permissions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockRepository)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
+}
+
+// UpdateSites mocks base method.
+func (m *MockRepository) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSites", ctx, clinicId, siteId, site)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSites indicates an expected call of UpdateSites.
+func (mr *MockRepositoryMockRecorder) UpdateSites(ctx, clinicId, siteId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSites", reflect.TypeOf((*MockRepository)(nil).UpdateSites), ctx, clinicId, siteId, site)
 }
 
 // UpdateSummaryInAllClinics mocks base method.

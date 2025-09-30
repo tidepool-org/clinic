@@ -2,16 +2,18 @@ package merge_test
 
 import (
 	"context"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/pointer"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.uber.org/mock/gomock"
-	"go.uber.org/zap"
-	"time"
 )
 
 const (
@@ -72,7 +74,6 @@ var _ = Describe("Tags", func() {
 				Expect(plan.PreventsMerge()).To(BeFalse())
 				Expect(plan.TagAction).To(Equal(expectedTagAction))
 				Expect(plan.Workspaces).To(ConsistOf(expectedWorkspaces))
-
 			}
 		})
 	})
@@ -98,7 +99,6 @@ var _ = Describe("Tags", func() {
 				Expect(plan.PreventsMerge()).To(BeFalse())
 				Expect(plan.TagAction).To(Equal(expectedTagAction))
 				Expect(plan.Workspaces).To(ConsistOf(expectedWorkspaces))
-
 			}
 		})
 	})
@@ -134,7 +134,7 @@ var _ = Describe("Tags", func() {
 		})
 
 		It("creates a tag in the target clinic for all non-overlapping tags", func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 20)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 			defer cancel()
 
 			created := 0

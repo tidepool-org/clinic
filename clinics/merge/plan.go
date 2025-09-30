@@ -2,6 +2,7 @@ package merge
 
 import (
 	"context"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -43,7 +44,7 @@ func RunPlanners[T Plan](ctx context.Context, planners []Planner[T]) ([]T, error
 
 func PlansPreventMerge[T Plan](plans []T) bool {
 	for _, s := range plans {
-		if s.PreventsMerge() == true {
+		if s.PreventsMerge() {
 			return true
 		}
 	}

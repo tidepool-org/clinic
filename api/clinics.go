@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/merge"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -303,7 +305,7 @@ func (h *Handler) CreatePatientTag(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+	return ec.JSON(http.StatusOK, NewPatientTagDto(updated))
 }
 
 func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
@@ -318,18 +320,18 @@ func (h *Handler) UpdatePatientTag(ec echo.Context, clinicId ClinicId, patientTa
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+	return ec.JSON(http.StatusOK, NewPatientTagDto(updated))
 }
 
 func (h *Handler) DeletePatientTag(ec echo.Context, clinicId ClinicId, patientTagId PatientTagId) error {
 	ctx := ec.Request().Context()
 
-	updated, err := h.Clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId))
+	err := h.Clinics.DeletePatientTag(ctx, string(clinicId), string(patientTagId))
 	if err != nil {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, NewClinicDto(updated).PatientTags)
+	return ec.NoContent(http.StatusNoContent)
 }
 
 func (h *Handler) ListMembershipRestrictions(ec echo.Context, clinicId ClinicId) error {
@@ -501,6 +503,8 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 		return err
 	}
 
+	disposition := fmt.Sprintf("attachment; filename=merge-report-%d.xlsx", time.Now().Unix())
+	ec.Response().Header().Set(echo.HeaderContentDisposition, disposition)
 	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.ms-excel")
 	ec.Response().WriteHeader(http.StatusOK)
 	return file.Write(ec.Response())
@@ -525,4 +529,62 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	site := &SiteV1{}
+	if err := ec.Bind(site); err != nil {
+		return errors.BadRequest
+	}
+	created, err := h.ClinicsManager.CreateSite(ctx, clinicId, site.Name)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, created)
+}
+
+func (h *Handler) DeleteSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
+	ctx := ec.Request().Context()
+	if err := h.ClinicsManager.DeleteSite(ctx, clinicId, siteId); err != nil {
+		return err
+	}
+	return ec.NoContent(http.StatusNoContent)
+}
+
+func (h *Handler) UpdateSite(ec echo.Context, clinicId ClinicId, siteId SiteId) error {
+	ctx := ec.Request().Context()
+	site := &sites.Site{}
+	if err := ec.Bind(site); err != nil {
+		return errors.BadRequest
+	}
+	updated, err := h.ClinicsManager.UpdateSite(ctx, clinicId, siteId, site)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, updated)
+}
+
+func (h *Handler) MergeSite(ec echo.Context, clinicId ClinicId, targetSiteId SiteId) error {
+	ctx := ec.Request().Context()
+	site := &SiteByIdV1{}
+	if err := ec.Bind(site); err != nil {
+		return errors.BadRequest
+	}
+	merged, err := h.ClinicsManager.MergeSite(ctx, clinicId, *site.Id, targetSiteId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, merged)
+}
+
+func (h *Handler) ConvertPatientTagToSite(ec echo.Context,
+	clinicId ClinicId, patientTagId PatientTagId) error {
+
+	ctx := ec.Request().Context()
+	created, err := h.ClinicsManager.ConvertPatientTagToSite(ctx, clinicId, patientTagId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, created)
 }

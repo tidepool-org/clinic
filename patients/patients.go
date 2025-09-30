@@ -9,6 +9,7 @@ import (
 
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -44,7 +45,7 @@ var (
 	}
 )
 
-//go:generate mockgen -source=./patients.go -destination=./test/mock_patients.go -package test
+//go:generate go tool mockgen -source=./patients.go -destination=./test/mock_patients.go -package test
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
 	Count(ctx context.Context, filter *Filter) (int, error)
@@ -65,11 +66,15 @@ type Service interface {
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
+	ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 	RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error
+	DeleteSites(ctx context.Context, clinicId string, siteId string) error
+	MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error
+	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
 }
 
 type Repository interface {
@@ -114,6 +119,7 @@ type Patient struct {
 	ProviderConnectionRequests ProviderConnectionRequests `bson:"providerConnectionRequests,omitempty"`
 	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
+	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
@@ -186,6 +192,8 @@ type Filter struct {
 	BirthDate    *string
 	FullName     *string
 	LastReviewed *time.Time
+	// Sites to which the patient must be assigned to be included.
+	Sites *[]string
 
 	HasSubscription *bool
 	HasMRN          *bool

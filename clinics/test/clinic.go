@@ -2,16 +2,16 @@ package test
 
 import (
 	"fmt"
-	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/tidepool-org/clinic/test"
 	"time"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	sitesTest "github.com/tidepool-org/clinic/sites/test"
+	"github.com/tidepool-org/clinic/test"
 )
-
-
 
 func strp(val string) *string {
 	return &val
@@ -23,7 +23,7 @@ func RandomClinics(count int) []*clinics.Clinic {
 	}
 
 	clinics := make([]*clinics.Clinic, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		clinics[i] = RandomClinic()
 	}
 	return clinics
@@ -44,6 +44,9 @@ func RandomClinic() *clinics.Clinic {
 	clinic.Country = strp(test.Faker.Address().Country())
 	clinic.Name = strp(test.Faker.Company().Name())
 	clinic.PatientTags = RandomTags(3)
+	clinic.PostalCode = strp(test.Faker.Address().PostCode())
+	clinic.State = strp(test.Faker.Address().State())
+	clinic.Sites = sitesTest.RandomSlice(2)
 	clinic.PostalCode = strp(test.Faker.Address().PostCode())
 	clinic.State = strp(test.Faker.Address().State())
 	clinic.CanonicalShareCode = strp(shareCode)
@@ -70,7 +73,7 @@ func RandomClinic() *clinics.Clinic {
 func RandomTags(count int) []clinics.PatientTag {
 	names := mapset.NewSet[string]()
 	tags := make([]clinics.PatientTag, count)
-	for i, _ := range tags {
+	for i := range tags {
 		id := RandomObjectId()
 		name := fmt.Sprintf("%d %.20s", test.Faker.Company().EIN(), test.Faker.Company().Name())
 		for names.Contains(name) {
