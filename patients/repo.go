@@ -173,6 +173,84 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetName("Sites"),
 		},
+		// This kludgy indexing strategy is due to the way the data is currently
+		// shaped. For each time period, we need to index individual time periods
+		// 1d, 7d, 14d, 30d. These partial filter expressions will mostly meet the
+		// conditions of a `meetingTargets` patient while limiting the number of
+		// range scans. As there are not a lot of time periods (for now), this is
+		// an OK solution. Ideally this would be refactored and the summary would
+		// be something like {userId: ".", clinicId: ".", "period": ".",
+		// "timeInVeryLowPercent": 0.0} but that's for the future. There is also
+		// the possibly of using wildcard indexes (with their limitations) or
+		// possibly even using an entity attribute value style approach. I'm not a
+		// fan of either approach - the wildcard because of its quirks and
+		// limitations and the EAV, while allowing to more quickly sort the MANY
+		// differ summary fields available, it makes it harder to view a single
+		// document and get the full picture of the actual summary. TBD.
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "userId", Value: 1},
+				{Key: "tags", Value: 1},
+				// Blocking sort lastData because we know it will be at most 30d, while there are an infinite number of points between .70 and 1.0 timeInTargetPercent
+				{Key: "summary.cgmStats.dates.lastData", Value: 1},
+				{Key: "summary.cgmStats.periods.1d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetName("MeetingTargetsIndex1d").
+				SetPartialFilterExpression(bson.D{
+					{"summary.cgmStats.periods.1d.timeInTargetPercent", bson.M{"$gte": .70}},
+					{"summary.cgmStats.periods.1d.timeCGMUsePercent", bson.M{"$gte": .70}},
+				}),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "userId", Value: 1},
+				{Key: "tags", Value: 1},
+				// Blocking sort lastData because we know it will be at most 30d, while there are an infinite number of points between .70 and 1.0 timeInTargetPercent
+				{Key: "summary.cgmStats.dates.lastData", Value: 1},
+				{Key: "summary.cgmStats.periods.7d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetName("MeetingTargetsIndex7d").
+				SetPartialFilterExpression(bson.D{
+					{"summary.cgmStats.periods.7d.timeInTargetPercent", bson.M{"$gte": .70}},
+					{"summary.cgmStats.periods.7d.timeCGMUsePercent", bson.M{"$gte": .70}},
+				}),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "userId", Value: 1},
+				{Key: "tags", Value: 1},
+				// Blocking sort lastData because we know it will be at most 30d, while there are an infinite number of points between .70 and 1.0 timeInTargetPercent
+				{Key: "summary.cgmStats.dates.lastData", Value: 1},
+				{Key: "summary.cgmStats.periods.14d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetName("MeetingTargetsIndex14d").
+				SetPartialFilterExpression(bson.D{
+					{"summary.cgmStats.periods.14d.timeInTargetPercent", bson.M{"$gte": .70}},
+					{"summary.cgmStats.periods.14d.timeCGMUsePercent", bson.M{"$gte": .70}},
+				}),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "userId", Value: 1},
+				{Key: "tags", Value: 1},
+				// Blocking sort lastData because we know it will be at most 30d, while there are an infinite number of points between .70 and 1.0 timeInTargetPercent
+				{Key: "summary.cgmStats.dates.lastData", Value: 1},
+				{Key: "summary.cgmStats.periods.30d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetName("MeetingTargetsIndex30d").
+				SetPartialFilterExpression(bson.D{
+					{"summary.cgmStats.periods.30d.timeInTargetPercent", bson.M{"$gte": .70}},
+					{"summary.cgmStats.periods.30d.timeCGMUsePercent", bson.M{"$gte": .70}},
+				}),
+		},
 	})
 	return err
 }
@@ -1300,75 +1378,136 @@ const TideReportPatientLimit = 100
 const TideReportNoDataPatientLimit = 50
 
 type tideCategory struct {
-	CategoryName           string
+	CategoryName          string
+	SummaryField          string
+	SummaryFieldSortOrder int                  // Sort order against SummaryField. < 0 for desc, > 0 for ascending, 0 for no sort.
+	SummaryFieldFilters   []summaryFieldFilter // Filters to filter category against while querying, if any.
+}
+
+// summaryFieldFilter allows defines a query on a summary field
+type summaryFieldFilter struct {
 	SummaryField           string
-	SummaryFieldComparator string  // SummaryField comparison operator. May be the zero value, in which case no added query filter comparison is performed.
-	ComparatorOperandValue float64 // value to compare SummaryField against
-	SummaryFieldSortOrder  int     // Sort order against SummaryField. < 0 for desc, > 0 for ascending, 0 for no sort.
+	SummaryFieldComparator string // SummaryField comparison operator. This is one of the mongodb query operators such as `$gt`, `$lt`, `$not` etc.
+	// ComparatorOperandValue float64
+	ComparatorOperandExpression any // expression to compare SummaryField against - this may be a simple value like an string, int32, long or an objects.  Because it may take different forms it is of type any
 }
 
 // availableCategories are the categories available for a TIDE report.
 var availableCategories = [...]tideCategory{
 	{
-		CategoryName:           "timeInVeryLowPercent",
-		SummaryField:           "timeInVeryLowPercent",
-		SummaryFieldComparator: "$gt",
-		ComparatorOperandValue: 0.01,
-		SummaryFieldSortOrder:  -1,
+		CategoryName:          "timeInVeryLowPercent",
+		SummaryField:          "timeInVeryLowPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInVeryLowPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.01,
+			}},
 	},
 	{
-		CategoryName:           "timeInAnyLowPercent",
-		SummaryField:           "timeInAnyLowPercent",
-		SummaryFieldComparator: "$gt",
-		ComparatorOperandValue: 0.04,
-		SummaryFieldSortOrder:  -1,
+		CategoryName:          "timeInAnyLowPercent",
+		SummaryField:          "timeInAnyLowPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInAnyLowPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.04,
+			}},
 	},
 	{
-		CategoryName:           "dropInTimeInTargetPercent",
-		SummaryField:           "timeInTargetPercentDelta",
-		SummaryFieldComparator: "$lt",
-		ComparatorOperandValue: -0.15,
-		SummaryFieldSortOrder:  1, // ascending sort so that largest negative value is first
+		CategoryName:          "dropInTimeInTargetPercent",
+		SummaryField:          "timeInTargetPercentDelta",
+		SummaryFieldSortOrder: 1, // ascending sort so that largest negative value is first
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInTargetPercentDelta",
+				SummaryFieldComparator:      "$lt",
+				ComparatorOperandExpression: -0.15,
+			}},
 	},
 	{
-		CategoryName:           "timeInTargetPercent",
-		SummaryField:           "timeInTargetPercent",
-		SummaryFieldComparator: "$lt",
-		ComparatorOperandValue: 0.7,
-		SummaryFieldSortOrder:  1,
+		CategoryName:          "timeInTargetPercent",
+		SummaryField:          "timeInTargetPercent",
+		SummaryFieldSortOrder: 1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInTargetPercent",
+				SummaryFieldComparator:      "$lt",
+				ComparatorOperandExpression: 0.7,
+			}},
 	},
 	{
-		CategoryName:           "timeCGMUsePercent",
-		SummaryField:           "timeCGMUsePercent",
-		SummaryFieldComparator: "$lt",
-		ComparatorOperandValue: 0.7,
-		SummaryFieldSortOrder:  1,
+		CategoryName:          "timeCGMUsePercent",
+		SummaryField:          "timeCGMUsePercent",
+		SummaryFieldSortOrder: 1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeCGMUsePercent",
+				SummaryFieldComparator:      "$lt",
+				ComparatorOperandExpression: 0.7,
+			}},
 	},
 	{
 		CategoryName:          "meetingTargets",
 		SummaryField:          "timeInTargetPercent",
 		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInTargetPercent",
+				SummaryFieldComparator:      "$gte",
+				ComparatorOperandExpression: 0.7,
+			},
+			{
+				SummaryField:                "timeCGMUsePercent",
+				SummaryFieldComparator:      "$gte",
+				ComparatorOperandExpression: 0.7,
+			},
+			{
+				SummaryField:                "timeInAnyLowPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .04},
+			},
+			{
+				SummaryField:                "timeInVeryLowPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .01},
+			},
+		},
 	},
 	{
-		CategoryName:           "timeInExtremeHighPercent",
-		SummaryField:           "timeInExtremeHighPercent",
-		SummaryFieldComparator: "$gt",
-		ComparatorOperandValue: 0.01,
-		SummaryFieldSortOrder:  -1,
+		CategoryName:          "timeInExtremeHighPercent",
+		SummaryField:          "timeInExtremeHighPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInExtremeHighPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.01,
+			}},
 	},
 	{
-		CategoryName:           "timeInVeryHighPercent",
-		SummaryField:           "timeInVeryHighPercent",
-		SummaryFieldComparator: "$gt",
-		ComparatorOperandValue: 0.05,
-		SummaryFieldSortOrder:  -1,
+		CategoryName:          "timeInVeryHighPercent",
+		SummaryField:          "timeInVeryHighPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInVeryHighPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.05,
+			}},
 	},
 	{
-		CategoryName:           "timeInHighPercent",
-		SummaryField:           "timeInHighPercent",
-		SummaryFieldComparator: "$gt",
-		ComparatorOperandValue: 0.25,
-		SummaryFieldSortOrder:  -1,
+		CategoryName:          "timeInHighPercent",
+		SummaryField:          "timeInHighPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInHighPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.25,
+			}},
 	},
 }
 
@@ -1455,12 +1594,13 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			"tags":                            bson.M{"$all": tags},
 			"summary.cgmStats.dates.lastData": bson.M{"$gte": params.LastDataCutoff},
 		}
-		if category.SummaryFieldComparator != "" {
-			selector["summary.cgmStats.periods."+params.Period+"."+category.SummaryField] = bson.M{category.SummaryFieldComparator: category.ComparatorOperandValue}
-		}
 
 		opts := options.Find()
 		opts.SetLimit(int64(remaining))
+
+		for _, filter := range category.SummaryFieldFilters {
+			selector["summary.cgmStats.periods."+params.Period+"."+filter.SummaryField] = bson.M{filter.SummaryFieldComparator: filter.ComparatorOperandExpression}
+		}
 
 		sortKey := "summary.cgmStats.periods." + params.Period + "." + category.SummaryField
 		if category.SummaryFieldSortOrder < 0 {
@@ -1668,7 +1808,6 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 	now := time.Now()
 	activeSubscriptionKey := fmt.Sprintf("ehrSubscriptions.%s.active", params.subscription)
 	matchedMessagesSubscriptionKey := fmt.Sprintf("$ehrSubscriptions.%s.matchedMessages", params.subscription)
-
 	clinicObjIds := make([]primitive.ObjectID, 0, len(params.clinicIds))
 	for _, clinicId := range params.clinicIds {
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)

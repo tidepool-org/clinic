@@ -2337,6 +2337,254 @@ var _ = Describe("TideReport", func() {
 
 					Expect(report.Results["timeCGMUsePercent"]).To(tideResultsPatientMatcher(timeCGMUsePercentResults))
 				})
+
+				It(`meetingTargets correctly identifies patients meeting targets if no other categories are given in parameters`, func(ctx SpecContext) {
+					period := "14d"
+					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
+					params := patients.TideReportParams{
+						Period:                period,
+						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff:        cutoff,
+						ExcludeNoDataPatients: true,
+						Categories:            []string{"meetingTargets"},
+					}
+					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
+					Expect(err).ToNot(HaveOccurred())
+					numResultCategories := 1
+					Expect(len(report.Results)).To(Equal(numResultCategories))
+					Expect(report.Metadata.CandidatePatients).To(Equal(3))
+					Expect(report.Metadata.SelectedPatients).To(Equal(3))
+
+					meetingTargetsResults = []patients.TideResultPatient{
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("meeting+targets@tidepool.org"),
+								FullName: strp("Meeting Targets"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaaaaaa"),
+								Tags:     []string{`efefefefefefefefefefefef`, `aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(3.8986111111111112),
+							TimeCGMUseMinutes:        intp(15120),
+							TimeCGMUsePercent:        floatp(0.75),
+							TimeInHighPercent:        floatp(0),
+							TimeInLowPercent:         floatp(0.013888888888888888),
+							TimeInTargetPercent:      floatp(0.9861111111111112),
+							TimeInTargetPercentDelta: floatp(0),
+							TimeInVeryHighPercent:    floatp(0),
+							TimeInVeryLowPercent:     floatp(0),
+							TimeInAnyHighPercent:     floatp(0),
+							TimeInAnyLowPercent:      floatp(0.013888888888888888),
+							LastData:                 mustTime("2025-07-31T11:54:00.359Z"),
+						},
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("disconnected+user@tidepool.org"),
+								FullName: strp("Disconnected User"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaadcdc"),
+								Tags:     []string{`aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(4.366742521825891),
+							TimeCGMUseMinutes:        intp(20045),
+							TimeCGMUsePercent:        floatp(0.9942956349206349),
+							TimeInHighPercent:        floatp(0.001995510102269893),
+							TimeInLowPercent:         floatp(0.014218009478672985),
+							TimeInTargetPercent:      floatp(0.976303317535545),
+							TimeInTargetPercentDelta: floatp(0.022936733994397884),
+							TimeInVeryHighPercent:    floatp(0),
+							TimeInVeryLowPercent:     floatp(0.0074831628835120975),
+							TimeInAnyHighPercent:     floatp(0.001995510102269893),
+							TimeInAnyLowPercent:      floatp(0.021701172362185085),
+							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
+						},
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("meeting+targets+ii@tidepool.org"),
+								FullName: strp("Meeting Targets II"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaa0000"),
+								Tags:     []string{`aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(5.300278257324843),
+							TimeCGMUseMinutes:        intp(19625),
+							TimeCGMUsePercent:        floatp(0.9734623015873016),
+							TimeInHighPercent:        floatp(0.06929936305732484),
+							TimeInLowPercent:         floatp(0.006878980891719746),
+							TimeInTargetPercent:      floatp(0.8991082802547771),
+							TimeInTargetPercentDelta: floatp(0.008514718886567851),
+							TimeInVeryHighPercent:    floatp(0.019872611464968153),
+							TimeInVeryLowPercent:     floatp(0.004840764331210191),
+							TimeInAnyHighPercent:     floatp(0.08917197452229299),
+							TimeInAnyLowPercent:      floatp(0.011719745222929937),
+							LastData:                 mustTime("2025-07-07T16:28:39.66Z"),
+						},
+					}
+					Expect(report.Results["meetingTargets"]).To(tideResultsPatientMatcher(meetingTargetsResults))
+				})
+
+				It(`meetingTargets and noData patients works`, func(ctx SpecContext) {
+					period := "14d"
+					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
+					params := patients.TideReportParams{
+						Period:                period,
+						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff:        cutoff,
+						ExcludeNoDataPatients: false,
+						Categories:            []string{"meetingTargets"},
+					}
+					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
+					Expect(err).ToNot(HaveOccurred())
+					numResultCategories := 2
+					Expect(len(report.Results)).To(Equal(numResultCategories))
+					Expect(report.Metadata.CandidatePatients).To(Equal(5))
+					Expect(report.Metadata.SelectedPatients).To(Equal(5))
+
+					meetingTargetsResults = []patients.TideResultPatient{
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("meeting+targets@tidepool.org"),
+								FullName: strp("Meeting Targets"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaaaaaa"),
+								Tags:     []string{`efefefefefefefefefefefef`, `aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(3.8986111111111112),
+							TimeCGMUseMinutes:        intp(15120),
+							TimeCGMUsePercent:        floatp(0.75),
+							TimeInHighPercent:        floatp(0),
+							TimeInLowPercent:         floatp(0.013888888888888888),
+							TimeInTargetPercent:      floatp(0.9861111111111112),
+							TimeInTargetPercentDelta: floatp(0),
+							TimeInVeryHighPercent:    floatp(0),
+							TimeInVeryLowPercent:     floatp(0),
+							TimeInAnyHighPercent:     floatp(0),
+							TimeInAnyLowPercent:      floatp(0.013888888888888888),
+							LastData:                 mustTime("2025-07-31T11:54:00.359Z"),
+						},
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("disconnected+user@tidepool.org"),
+								FullName: strp("Disconnected User"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaadcdc"),
+								Tags:     []string{`aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(4.366742521825891),
+							TimeCGMUseMinutes:        intp(20045),
+							TimeCGMUsePercent:        floatp(0.9942956349206349),
+							TimeInHighPercent:        floatp(0.001995510102269893),
+							TimeInLowPercent:         floatp(0.014218009478672985),
+							TimeInTargetPercent:      floatp(0.976303317535545),
+							TimeInTargetPercentDelta: floatp(0.022936733994397884),
+							TimeInVeryHighPercent:    floatp(0),
+							TimeInVeryLowPercent:     floatp(0.0074831628835120975),
+							TimeInAnyHighPercent:     floatp(0.001995510102269893),
+							TimeInAnyLowPercent:      floatp(0.021701172362185085),
+							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
+						},
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("meeting+targets+ii@tidepool.org"),
+								FullName: strp("Meeting Targets II"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaa0000"),
+								Tags:     []string{`aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(5.300278257324843),
+							TimeCGMUseMinutes:        intp(19625),
+							TimeCGMUsePercent:        floatp(0.9734623015873016),
+							TimeInHighPercent:        floatp(0.06929936305732484),
+							TimeInLowPercent:         floatp(0.006878980891719746),
+							TimeInTargetPercent:      floatp(0.8991082802547771),
+							TimeInTargetPercentDelta: floatp(0.008514718886567851),
+							TimeInVeryHighPercent:    floatp(0.019872611464968153),
+							TimeInVeryLowPercent:     floatp(0.004840764331210191),
+							TimeInAnyHighPercent:     floatp(0.08917197452229299),
+							TimeInAnyLowPercent:      floatp(0.011719745222929937),
+							LastData:                 mustTime("2025-07-07T16:28:39.66Z"),
+						},
+					}
+					Expect(report.Results["meetingTargets"]).To(tideResultsPatientMatcher(meetingTargetsResults))
+					Expect(report.Results["noData"]).To(tideResultsPatientMatcher(noDataPatientResults))
+				})
+
+				It(`meetingTargets and another chosen category works`, func(ctx SpecContext) {
+					period := "14d"
+					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
+					params := patients.TideReportParams{
+						Period:                period,
+						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff:        cutoff,
+						ExcludeNoDataPatients: true,
+						Categories:            []string{"meetingTargets", "timeInVeryLowPercent"},
+					}
+					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
+					Expect(err).ToNot(HaveOccurred())
+					numResultCategories := 2
+					Expect(len(report.Results)).To(Equal(numResultCategories))
+					Expect(report.Metadata.CandidatePatients).To(Equal(4))
+					Expect(report.Metadata.SelectedPatients).To(Equal(4))
+
+					meetingTargetsResults = []patients.TideResultPatient{
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("meeting+targets@tidepool.org"),
+								FullName: strp("Meeting Targets"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaaaaaa"),
+								Tags:     []string{`efefefefefefefefefefefef`, `aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(3.8986111111111112),
+							TimeCGMUseMinutes:        intp(15120),
+							TimeCGMUsePercent:        floatp(0.75),
+							TimeInHighPercent:        floatp(0),
+							TimeInLowPercent:         floatp(0.013888888888888888),
+							TimeInTargetPercent:      floatp(0.9861111111111112),
+							TimeInTargetPercentDelta: floatp(0),
+							TimeInVeryHighPercent:    floatp(0),
+							TimeInVeryLowPercent:     floatp(0),
+							TimeInAnyHighPercent:     floatp(0),
+							TimeInAnyLowPercent:      floatp(0.013888888888888888),
+							LastData:                 mustTime("2025-07-31T11:54:00.359Z"),
+						},
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("disconnected+user@tidepool.org"),
+								FullName: strp("Disconnected User"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaadcdc"),
+								Tags:     []string{`aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(4.366742521825891),
+							TimeCGMUseMinutes:        intp(20045),
+							TimeCGMUsePercent:        floatp(0.9942956349206349),
+							TimeInHighPercent:        floatp(0.001995510102269893),
+							TimeInLowPercent:         floatp(0.014218009478672985),
+							TimeInTargetPercent:      floatp(0.976303317535545),
+							TimeInTargetPercentDelta: floatp(0.022936733994397884),
+							TimeInVeryHighPercent:    floatp(0),
+							TimeInVeryLowPercent:     floatp(0.0074831628835120975),
+							TimeInAnyHighPercent:     floatp(0.001995510102269893),
+							TimeInAnyLowPercent:      floatp(0.021701172362185085),
+							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
+						},
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("meeting+targets+ii@tidepool.org"),
+								FullName: strp("Meeting Targets II"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaa0000"),
+								Tags:     []string{`aaaaaaaaaaaaaaaaaaaaaaaa`},
+							},
+							AverageGlucoseMmol:       floatp(5.300278257324843),
+							TimeCGMUseMinutes:        intp(19625),
+							TimeCGMUsePercent:        floatp(0.9734623015873016),
+							TimeInHighPercent:        floatp(0.06929936305732484),
+							TimeInLowPercent:         floatp(0.006878980891719746),
+							TimeInTargetPercent:      floatp(0.8991082802547771),
+							TimeInTargetPercentDelta: floatp(0.008514718886567851),
+							TimeInVeryHighPercent:    floatp(0.019872611464968153),
+							TimeInVeryLowPercent:     floatp(0.004840764331210191),
+							TimeInAnyHighPercent:     floatp(0.08917197452229299),
+							TimeInAnyLowPercent:      floatp(0.011719745222929937),
+							LastData:                 mustTime("2025-07-07T16:28:39.66Z"),
+						},
+					}
+					Expect(report.Results["meetingTargets"]).To(tideResultsPatientMatcher(meetingTargetsResults))
+					Expect(report.Results["timeInVeryLowPercent"]).To(tideResultsPatientMatcher(timeInVeryLowResults))
+				})
 			})
 		})
 	})
