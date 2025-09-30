@@ -303,7 +303,6 @@ paths:
                 - timeInTargetPercent
                 - timeCGMUsePercent
                 - meetingTargets
-                - noData
           in: query
           style: form
           explode: false

@@ -714,7 +714,6 @@ const (
 const (
 	DropInTimeInTargetPercent TideReportParamsCategories = "dropInTimeInTargetPercent"
 	MeetingTargets            TideReportParamsCategories = "meetingTargets"
-	NoData                    TideReportParamsCategories = "noData"
 	TimeCGMUsePercent         TideReportParamsCategories = "timeCGMUsePercent"
 	TimeInAnyLowPercent       TideReportParamsCategories = "timeInAnyLowPercent"
 	TimeInExtremeHighPercent  TideReportParamsCategories = "timeInExtremeHighPercent"
