@@ -21,14 +21,14 @@ var _ = Describe("Clinics", func() {
 				now = time.Now()
 				patientCountSettings = &clinics.PatientCountSettings{
 					HardLimit: &clinics.PatientCountLimit{
-						PatientCount: 0,
-						StartDate:    Ptr(now.Add(-time.Minute)),
-						EndDate:      Ptr(now.Add(time.Minute)),
+						Plan:      0,
+						StartDate: Ptr(now.Add(-time.Minute)),
+						EndDate:   Ptr(now.Add(time.Minute)),
 					},
 					SoftLimit: &clinics.PatientCountLimit{
-						PatientCount: 0,
-						StartDate:    Ptr(now.Add(-time.Minute)),
-						EndDate:      Ptr(now.Add(time.Minute)),
+						Plan:      0,
+						StartDate: Ptr(now.Add(-time.Minute)),
+						EndDate:   Ptr(now.Add(time.Minute)),
 					},
 				}
 			})
@@ -39,14 +39,14 @@ var _ = Describe("Clinics", func() {
 			})
 
 			It("returns false when hard limit patient count is invalid", func() {
-				patientCountSettings.HardLimit.PatientCount = -1
+				patientCountSettings.HardLimit.Plan = -1
 
 				isValid := patientCountSettings.IsValid()
 				Expect(isValid).To(BeFalse())
 			})
 
 			It("returns false when soft limit patient count is invalid", func() {
-				patientCountSettings.SoftLimit.PatientCount = -1
+				patientCountSettings.SoftLimit.Plan = -1
 
 				isValid := patientCountSettings.IsValid()
 				Expect(isValid).To(BeFalse())
@@ -61,9 +61,9 @@ var _ = Describe("Clinics", func() {
 			BeforeEach(func() {
 				now = time.Now()
 				patientCountLimit = &clinics.PatientCountLimit{
-					PatientCount: 0,
-					StartDate:    Ptr(now.Add(-time.Minute)),
-					EndDate:      Ptr(now.Add(time.Minute)),
+					Plan:      0,
+					StartDate: Ptr(now.Add(-time.Minute)),
+					EndDate:   Ptr(now.Add(time.Minute)),
 				}
 			})
 
@@ -73,7 +73,7 @@ var _ = Describe("Clinics", func() {
 			})
 
 			It("returns false when patient count is invalid", func() {
-				patientCountLimit.PatientCount = -1
+				patientCountLimit.Plan = -1
 
 				isValid := patientCountLimit.IsValid()
 				Expect(isValid).To(BeFalse())

@@ -153,10 +153,9 @@ func (s *service) RefreshPatientCount(ctx context.Context, clinicId string) erro
 	}
 
 	patientCount := &clinics.PatientCount{
-		PatientCount: counts.Plan,
-		Total:        counts.Total,
-		Demo:         counts.Demo,
-		Plan:         counts.Plan,
+		Total: counts.Total,
+		Demo:  counts.Demo,
+		Plan:  counts.Plan,
 	}
 	if counts.Providers != nil {
 		patientCount.Providers = make(map[string]clinics.PatientProviderCount, len(counts.Providers))

@@ -20,9 +20,9 @@ const (
 	WorkspaceIdTypeClinicId    = "clinicId"
 	WorkspaceIdTypeEHRSourceId = "ehrSourceId"
 
-	CountryCodeUS                                    = "US"
-	PatientCountSettingsHardLimitPatientCountDefault = 250
-	DefaultCoefficientOfVariationUnits               = "UNIT_INTERVAL"
+	CountryCodeUS                            = "US"
+	PatientCountSettingsHardLimitPlanDefault = 250
+	DefaultCoefficientOfVariationUnits       = "UNIT_INTERVAL"
 )
 
 var (
@@ -203,8 +203,6 @@ type PatientProviderCount struct {
 }
 
 type PatientCount struct {
-	PatientCount int `bson:"patientCount"` // DEPRECATED: use Plan instead
-
 	Total     int                             `bson:"total"`
 	Demo      int                             `bson:"demo"`
 	Plan      int                             `bson:"plan"`
@@ -233,19 +231,19 @@ func (p PatientCountSettings) IsValid() bool {
 func DefaultPatientCountSettings() *PatientCountSettings {
 	return &PatientCountSettings{
 		HardLimit: &PatientCountLimit{
-			PatientCount: PatientCountSettingsHardLimitPatientCountDefault,
+			Plan: PatientCountSettingsHardLimitPlanDefault,
 		},
 	}
 }
 
 type PatientCountLimit struct {
-	PatientCount int        `bson:"patientCount"`
-	StartDate    *time.Time `bson:"startDate,omitempty"`
-	EndDate      *time.Time `bson:"endDate,omitempty"`
+	Plan      int        `bson:"plan"`
+	StartDate *time.Time `bson:"startDate,omitempty"`
+	EndDate   *time.Time `bson:"endDate,omitempty"`
 }
 
 func (p PatientCountLimit) IsValid() bool {
-	if p.PatientCount < 0 {
+	if p.Plan < 0 {
 		return false
 	}
 	if p.StartDate != nil && p.EndDate != nil && p.StartDate.After(*p.EndDate) {

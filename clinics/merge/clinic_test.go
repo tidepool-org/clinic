@@ -140,11 +140,11 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 	t.source = createClinic(t.userService, t.clinicManager, data.Source, data.SourceAdmin)
 	t.target = createClinic(t.userService, t.clinicManager, data.Target, data.TargetAdmin)
 
-	if params.UniquePatientCount > clinics.PatientCountSettingsHardLimitPatientCountDefault {
+	if params.UniquePatientCount > clinics.PatientCountSettingsHardLimitPlanDefault {
 		ctx := context.Background()
 		pcs := &clinics.PatientCountSettings{
-			HardLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
-			SoftLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
+			HardLimit: &clinics.PatientCountLimit{Plan: params.UniquePatientCount * 2},
+			SoftLimit: &clinics.PatientCountLimit{Plan: params.UniquePatientCount * 2},
 		}
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.source.Id.Hex(), pcs)).To(Succeed())
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.target.Id.Hex(), pcs)).To(Succeed())

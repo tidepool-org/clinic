@@ -69,10 +69,10 @@ var _ = Describe("Clinics", func() {
 		It("returns patient count settings when set", func() {
 			expectedPatientCountSettings := &clinics.PatientCountSettings{
 				HardLimit: &clinics.PatientCountLimit{
-					PatientCount: 10,
+					Plan: 10,
 				},
 				SoftLimit: &clinics.PatientCountLimit{
-					PatientCount: 5,
+					Plan: 5,
 				},
 			}
 
@@ -92,10 +92,10 @@ var _ = Describe("Clinics", func() {
 		It("returns an error if the clinic is not found", func() {
 			expectedPatientCountSettings := &clinics.PatientCountSettings{
 				HardLimit: &clinics.PatientCountLimit{
-					PatientCount: 10,
+					Plan: 10,
 				},
 				SoftLimit: &clinics.PatientCountLimit{
-					PatientCount: 5,
+					Plan: 5,
 				},
 			}
 
@@ -111,10 +111,10 @@ var _ = Describe("Clinics", func() {
 
 			expectedPatientCountSettings := &clinics.PatientCountSettings{
 				HardLimit: &clinics.PatientCountLimit{
-					PatientCount: 10,
+					Plan: 10,
 				},
 				SoftLimit: &clinics.PatientCountLimit{
-					PatientCount: 5,
+					Plan: 5,
 				},
 			}
 
@@ -141,7 +141,7 @@ var _ = Describe("Clinics", func() {
 
 		It("returns patient count when set", func() {
 			expectedPatientCount := &clinics.PatientCount{
-				PatientCount: 10,
+				Plan: 10,
 			}
 
 			clinic := clinicsTest.RandomClinic()

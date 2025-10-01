@@ -80,7 +80,7 @@ type Service interface {
 type Repository interface {
 	Service
 
-	GetClinicIds(ctx context.Context, userId string) ([]string, error)
+	ClinicIds(ctx context.Context, userId string) ([]string, error)
 	Counts(ctx context.Context, clinicId string) (*Counts, error)
 }
 

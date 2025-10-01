@@ -816,7 +816,7 @@ func NewPatientCountLimit(dto *PatientCountLimitV1) *clinics.PatientCountLimit {
 	}
 
 	patientCountLimit := &clinics.PatientCountLimit{
-		PatientCount: dto.PatientCount,
+		Plan: dto.Plan,
 	}
 
 	if dto.StartDate != nil {
@@ -837,7 +837,7 @@ func NewPatientCountLimitDto(limit *clinics.PatientCountLimit) *PatientCountLimi
 	}
 
 	dto := &PatientCountLimitV1{
-		PatientCount: limit.PatientCount,
+		Plan: limit.Plan,
 	}
 
 	if limit.StartDate != nil {
@@ -858,10 +858,9 @@ func NewPatientCountDto(patientCount *clinics.PatientCount) PatientCountV1 {
 	}
 
 	dto := PatientCountV1{
-		PatientCount: patientCount.PatientCount,
-		Total:        patientCount.Total,
-		Demo:         patientCount.Demo,
-		Plan:         patientCount.Plan,
+		Total: patientCount.Total,
+		Demo:  patientCount.Demo,
+		Plan:  patientCount.Plan,
 	}
 	if patientCount.Providers != nil {
 		providers := make(map[string]PatientProviderCountV1, len(patientCount.Providers))

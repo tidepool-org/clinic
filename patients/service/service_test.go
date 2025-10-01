@@ -183,17 +183,17 @@ var _ = Describe("Patients Service", func() {
 			BeforeEach(func() {
 				now = time.Now()
 				clinicIdString = clinicId.Hex()
-				patientCount = &clinics.PatientCount{PatientCount: 9}
+				patientCount = &clinics.PatientCount{Plan: 9}
 				patientCountSettings = &clinics.PatientCountSettings{
 					HardLimit: &clinics.PatientCountLimit{
-						PatientCount: 10,
-						StartDate:    Ptr(now.Add(-time.Hour)),
-						EndDate:      Ptr(now.Add(time.Hour)),
+						Plan:      10,
+						StartDate: Ptr(now.Add(-time.Hour)),
+						EndDate:   Ptr(now.Add(time.Hour)),
 					},
 					SoftLimit: &clinics.PatientCountLimit{
-						PatientCount: 1,
-						StartDate:    Ptr(now.Add(-time.Hour)),
-						EndDate:      Ptr(now.Add(time.Hour)),
+						Plan:      1,
+						StartDate: Ptr(now.Add(-time.Hour)),
+						EndDate:   Ptr(now.Add(time.Hour)),
 					},
 				}
 
@@ -332,7 +332,7 @@ var _ = Describe("Patients Service", func() {
 					})
 
 					It("returns an error when patient count is greater than or equal to the hard limit", func() {
-						patientCount.PatientCount = patientCountSettings.HardLimit.PatientCount
+						patientCount.Plan = patientCountSettings.HardLimit.Plan
 
 						clinicsService.EXPECT().
 							GetPatientCount(gomock.Any(), gomock.Eq(clinicId.Hex())).

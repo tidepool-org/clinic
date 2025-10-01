@@ -339,7 +339,7 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 	if userId != s.config.ClinicDemoPatientUserId {
 
 		// Get all clinic ids for this user
-		clinicIds, err := s.patientsRepo.GetClinicIds(ctx, userId)
+		clinicIds, err := s.patientsRepo.ClinicIds(ctx, userId)
 		if err != nil {
 			s.logger.Errorw("unable to get clinic ids for user to refresh patient counts", "userId", userId, "error", err)
 			return nil
@@ -474,7 +474,7 @@ func (s *service) enforcePatientCountSettings(ctx context.Context, clinicId stri
 	}
 
 	// If patient count equals or exceeds patient count hard limit setting, then error
-	if patientCount.PatientCount >= patientCountSettings.HardLimit.PatientCount {
+	if patientCount.Plan >= patientCountSettings.HardLimit.Plan {
 		return fmt.Errorf("%w: patient count exceeds limit", errors2.PaymentRequired)
 	}
 

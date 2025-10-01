@@ -185,7 +185,7 @@ func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*
 	return patient, nil
 }
 
-func (r *repository) GetClinicIds(ctx context.Context, userId string) ([]string, error) {
+func (r *repository) ClinicIds(ctx context.Context, userId string) ([]string, error) {
 	selector := bson.M{"userId": userId}
 	options := options.Find().SetProjection(bson.M{"_id": 0, "clinicId": 1})
 	cursor, err := r.collection.Find(ctx, selector, options)

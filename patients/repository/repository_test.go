@@ -307,33 +307,41 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
-		Describe("GetClinicIds", func() {
-			var anotherRandomPatient patients.Patient
+		Describe("ClinicIds", func() {
+			var sameUserDifferentClinicPatient patients.Patient
+			var differentUserSameClinicPatient patients.Patient
 
 			BeforeEach(func() {
-				anotherRandomPatient = patientsTest.RandomPatient()
-				anotherRandomPatient.UserId = randomPatient.UserId
-				result, err := collection.InsertOne(context.Background(), anotherRandomPatient)
+				sameUserDifferentClinicPatient = patientsTest.RandomPatient()
+				sameUserDifferentClinicPatient.UserId = randomPatient.UserId
+				result, err := collection.InsertOne(context.Background(), sameUserDifferentClinicPatient)
 				Expect(err).ToNot(HaveOccurred())
-				id := result.InsertedID.(primitive.ObjectID)
-				anotherRandomPatient.Id = &id
+				sameUserId := result.InsertedID.(primitive.ObjectID)
+				sameUserDifferentClinicPatient.Id = &sameUserId
+
+				differentUserSameClinicPatient = patientsTest.RandomPatient()
+				differentUserSameClinicPatient.ClinicId = randomPatient.ClinicId
+				result, err = collection.InsertOne(context.Background(), differentUserSameClinicPatient)
+				Expect(err).ToNot(HaveOccurred())
+				differentUserId := result.InsertedID.(primitive.ObjectID)
+				differentUserSameClinicPatient.Id = &differentUserId
 			})
 
 			AfterEach(func() {
 				selector := primitive.M{
-					"_id": anotherRandomPatient.Id,
+					"_id": primitive.M{"$in": []primitive.ObjectID{*sameUserDifferentClinicPatient.Id, *differentUserSameClinicPatient.Id}},
 				}
-				result, err := collection.DeleteOne(context.Background(), selector)
+				result, err := collection.DeleteMany(context.Background(), selector)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(int(result.DeletedCount)).To(Equal(1))
+				Expect(int(result.DeletedCount)).To(Equal(2))
 			})
 
-			It("returns the correct clinic ids", func() {
-				result, err := repo.GetClinicIds(context.Background(), *randomPatient.UserId)
+			It("returns only clinic ids associated with the patient", func() {
+				result, err := repo.ClinicIds(context.Background(), *randomPatient.UserId)
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(result).To(ConsistOf(randomPatient.ClinicId.Hex(), anotherRandomPatient.ClinicId.Hex()))
+				Expect(result).To(ConsistOf(randomPatient.ClinicId.Hex(), sameUserDifferentClinicPatient.ClinicId.Hex()))
 			})
 		})
 
