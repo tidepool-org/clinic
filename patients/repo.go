@@ -185,14 +185,20 @@ func (r *repository) Initialize(ctx context.Context) error {
 		// possibly even using an entity attribute value style approach. I'm not a
 		// fan of either approach - the wildcard because of its quirks and
 		// limitations and the EAV, while allowing to more quickly sort the MANY
-		// differ summary fields available, it makes it harder to view a single
-		// document and get the full picture of the actual summary. TBD.
+		// differ(ing|ent) summary fields available, it makes it harder to view a
+		// single document and get the full picture of the actual summary. TBD.
+		//
+		// The order on whether to order the trailing fields in the index as
+		// (lastData, timeInTargetPercent) vs (timeInTargetPercent, lastData)
+		// is a question on which one is more restrictive, with the more
+		// restrictive field being first. Since we are sorting by
+		// timeInTargetPercent, that may introduce a blocking sort but that is
+		// outweighed by the benefit of much less data being returned.
 		{
 			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "userId", Value: 1},
 				{Key: "tags", Value: 1},
-				// Blocking sort lastData because we know it will be at most 30d, while there are an infinite number of points between .70 and 1.0 timeInTargetPercent
 				{Key: "summary.cgmStats.dates.lastData", Value: 1},
 				{Key: "summary.cgmStats.periods.1d.timeInTargetPercent", Value: 1},
 			},
@@ -1379,10 +1385,17 @@ const TideReportPatientLimit = 100
 const TideReportNoDataPatientLimit = 50
 
 type tideCategory struct {
-	CategoryName          string
-	SummaryField          string
-	SummaryFieldSortOrder int                  // Sort order against SummaryField. < 0 for desc, > 0 for ascending, 0 for no sort.
-	SummaryFieldFilters   []summaryFieldFilter // Filters to filter category against while querying, if any.
+	CategoryName string
+	SummaryField string
+
+	// SummaryFieldSortOrder controls sorting of the [SummaryField].
+	//
+	// Value: < 0 - sort in descending order
+	//          0 - no sorting
+	//        > 0 - sort in ascending order
+	SummaryFieldSortOrder int
+	// SummaryFieldFilters optionally filter a category while querying.
+	SummaryFieldFilters []summaryFieldFilter
 }
 
 // summaryFieldFilter allows defines a query on a summary field
@@ -1542,8 +1555,8 @@ var defaultOrderedCategoryNames = []string{
 	"meetingTargets",
 }
 
-// getCategoriesByNames returns a slice of categories with a CategoryName in names. The order of the returned slice matches the order of the name in names.
-func getCategoriesByNames(names []string) []tideCategory {
+// categoriesByNames returns a slice of categories with a CategoryName in names. The order of the returned slice matches the order of the name in names.
+func categoriesByNames(names []string) []tideCategory {
 	cats := make([]tideCategory, 0, len(names))
 	alreadySeen := make(map[string]bool, len(names))
 	for _, name := range names {
@@ -1574,9 +1587,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 	var categories []tideCategory
 	if len(params.Categories) == 0 {
-		categories = getCategoriesByNames(defaultOrderedCategoryNames)
+		categories = categoriesByNames(defaultOrderedCategoryNames)
 	} else {
-		categories = getCategoriesByNames(params.Categories)
+		categories = categoriesByNames(params.Categories)
 	}
 
 	remaining := TideReportPatientLimit
