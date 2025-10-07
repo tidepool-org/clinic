@@ -270,8 +270,7 @@ paths:
           schema:
             type: array
             items:
-              type: string
-              pattern: ^[a-f0-9]{24}$
+              $ref: '#/components/schemas/objectId.v1'
             minItems: 1
           in: query
           style: form
@@ -285,7 +284,14 @@ paths:
           in: query
           required: true
         - name: categories
-          description: Comma-separated list of TIDE report categories. If omitted or empty, the default TIDE categories will be returned.
+          description: |
+            Comma-separated list of TIDE report categories to return in queried order. If omitted or empty, the default TIDE categories will be returned, which are:
+              timeInVeryLowPercent
+              timeInAnyLowPercent
+              dropInTimeInTargetPercent
+              timeInTargetPercent
+              timeInTargetPercent
+              meetingTargets
           schema:
             type: array
             x-go-type-skip-optional-pointer: true
@@ -3547,6 +3553,13 @@ components:
         - roles
         - createdTime
         - updatedTime
+    objectId.v1:
+      title: Object Id
+      type: string
+      description: String representation of a resource id
+      minLength: 24
+      maxLength: 24
+      pattern: ^[a-f0-9]{24}$
     patientTagIds.v1:
       type: array
       title: Patient Tag ID List
@@ -3616,23 +3629,23 @@ components:
           type: string
           format: date-time
         highGlucoseThreshold:
-          description: Threshold used for determining if a value is high
+          description: Minimum exclusive threshold in mmol/L for categorizing if a glucose value is high as established by the AACE.
           type: number
           x-go-type: float64
         veryHighGlucoseThreshold:
-          description: Threshold used for determining if a value is very high
+          description: Minimum exclusive threshold in mmol/L for categorizing if a glucose value is very high as established by the AACE.
           type: number
           x-go-type: float64
         extremeHighGlucoseThreshold:
-          description: Threshold used for determining if a value is extremely high
+          description: Minimum inclusive threshold in mmol/L for categorizing if a glucose value is extremely high. Not defined by the AACE.
           type: number
           x-go-type: float64
         lowGlucoseThreshold:
-          description: Threshold used for determining if a value is low
+          description: Maximum exclusive threshold in mmol/L for categorizing if a glucose value is low as established by the AACE.
           type: number
           x-go-type: float64
         veryLowGlucoseThreshold:
-          description: Threshold used for determining if a value is very low
+          description: Maximum exclusive threshold in mmol/L for categorizing if a glucose value is very low as established by the AACE.
           type: number
           x-go-type: float64
         tags:
@@ -4897,13 +4910,6 @@ components:
         - createdTime
         - updatedTime
         - connectionRequests
-    objectId.v1:
-      title: Object Id
-      type: string
-      description: String representation of a resource id
-      minLength: 24
-      maxLength: 24
-      pattern: ^[a-f0-9]{24}$
     siteById.v1:
       type: object
       title: SiteById
