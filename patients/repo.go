@@ -214,7 +214,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "clinicId", Value: 1},
 				{Key: "userId", Value: 1},
 				{Key: "tags", Value: 1},
-				// Blocking sort lastData because we know it will be at most 30d, while there are an infinite number of points between .70 and 1.0 timeInTargetPercent
 				{Key: "summary.cgmStats.dates.lastData", Value: 1},
 				{Key: "summary.cgmStats.periods.7d.timeInTargetPercent", Value: 1},
 			},
@@ -230,7 +229,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "clinicId", Value: 1},
 				{Key: "userId", Value: 1},
 				{Key: "tags", Value: 1},
-				// Blocking sort lastData because we know it will be at most 30d, while there are an infinite number of points between .70 and 1.0 timeInTargetPercent
 				{Key: "summary.cgmStats.dates.lastData", Value: 1},
 				{Key: "summary.cgmStats.periods.14d.timeInTargetPercent", Value: 1},
 			},
@@ -246,7 +244,6 @@ func (r *repository) Initialize(ctx context.Context) error {
 				{Key: "clinicId", Value: 1},
 				{Key: "userId", Value: 1},
 				{Key: "tags", Value: 1},
-				// Blocking sort lastData because we know it will be at most 30d, while there are an infinite number of points between .70 and 1.0 timeInTargetPercent
 				{Key: "summary.cgmStats.dates.lastData", Value: 1},
 				{Key: "summary.cgmStats.periods.30d.timeInTargetPercent", Value: 1},
 			},
@@ -1400,10 +1397,11 @@ type tideCategory struct {
 
 // summaryFieldFilter allows defines a query on a summary field
 type summaryFieldFilter struct {
-	SummaryField           string
-	SummaryFieldComparator string // SummaryField comparison operator. This is one of the mongodb query operators such as `$gt`, `$lt`, `$not` etc.
-	// ComparatorOperandValue float64
-	ComparatorOperandExpression any // expression to compare SummaryField against - this may be a simple value like an string, int32, long or an objects.  Because it may take different forms it is of type any
+	SummaryField string
+	// SummaryFieldComparator is the mongodb comparison operator, e.g., `$gt`, `$not`, etc used with one of the operands being [SummaryField] and the other operand [ComparatorOperandExpression].
+	SummaryFieldComparator string
+	// ComparatorOperandExpression is an expression to compare [SummaryField] against. Because it may take different forms it is of type any. This may be a simple value like an string, int32, long or an object.
+	ComparatorOperandExpression any
 }
 
 // availableCategories are the categories available for a TIDE report.
@@ -1502,7 +1500,7 @@ var availableCategories = [...]tideCategory{
 			{
 				SummaryField:                "timeInExtremeHighPercent",
 				SummaryFieldComparator:      "$not",
-				ComparatorOperandExpression: bson.M{"$gt": .01},
+				ComparatorOperandExpression: bson.M{"$gte": .01},
 			},
 		},
 	},
@@ -1513,7 +1511,7 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
 				SummaryField:                "timeInExtremeHighPercent",
-				SummaryFieldComparator:      "$gt",
+				SummaryFieldComparator:      "$gte",
 				ComparatorOperandExpression: 0.01,
 			}},
 	},
