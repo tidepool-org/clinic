@@ -2542,11 +2542,11 @@ func (w *ServerInterfaceWrapper) TideReport(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter categories: %s", err))
 	}
 
-	// ------------- Optional query parameter "excludeNoDataPatients" -------------
+	// ------------- Optional query parameter "excludeNoData" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "excludeNoDataPatients", ctx.QueryParams(), &params.ExcludeNoDataPatients)
+	err = runtime.BindQueryParameter("form", true, false, "excludeNoData", ctx.QueryParams(), &params.ExcludeNoData)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter excludeNoDataPatients: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter excludeNoData: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments

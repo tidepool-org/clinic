@@ -440,7 +440,7 @@ func NewTideReportParams(params TideReportParams) patients.TideReportParams {
 		Tags:                  params.Tags,
 		LastDataCutoff:        params.LastDataCutoff,
 		Categories:            categories,
-		ExcludeNoDataPatients: params.ExcludeNoDataPatients,
+		ExcludeNoDataPatients: params.ExcludeNoData,
 	}
 }
 

@@ -6570,7 +6570,7 @@ func NewTideReportRequest(server string, clinicId ClinicId, params *TideReportPa
 			}
 		}
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "excludeNoDataPatients", runtime.ParamLocationQuery, params.ExcludeNoDataPatients); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "excludeNoData", runtime.ParamLocationQuery, params.ExcludeNoData); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err

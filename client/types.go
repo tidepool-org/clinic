@@ -2373,8 +2373,8 @@ type TideReportParams struct {
 	//   meetingTargets
 	Categories []TideReportParamsCategories `form:"categories,omitempty" json:"categories,omitempty"`
 
-	// ExcludeNoDataPatients If true, then exclude / omit patients with no data in the TIDE report.
-	ExcludeNoDataPatients bool `form:"excludeNoDataPatients,omitempty" json:"excludeNoDataPatients,omitempty"`
+	// ExcludeNoData If true, then exclude / omit patients with no data in the TIDE report.
+	ExcludeNoData bool `form:"excludeNoData,omitempty" json:"excludeNoData,omitempty"`
 }
 
 // TideReportParamsCategories defines parameters for TideReport.
