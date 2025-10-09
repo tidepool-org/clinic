@@ -1440,17 +1440,6 @@ var availableCategories = [...]tideCategory{
 			}},
 	},
 	{
-		CategoryName:          "timeInTargetPercent",
-		SummaryField:          "timeInTargetPercent",
-		SummaryFieldSortOrder: 1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:                "timeInTargetPercent",
-				SummaryFieldComparator:      "$lt",
-				ComparatorOperandExpression: 0.7,
-			}},
-	},
-	{
 		CategoryName:          "timeCGMUsePercent",
 		SummaryField:          "timeCGMUsePercent",
 		SummaryFieldSortOrder: 1,
@@ -1488,7 +1477,7 @@ var availableCategories = [...]tideCategory{
 				ComparatorOperandExpression: bson.M{"$gt": .01},
 			},
 			{
-				SummaryField:                "timeInHighPercent",
+				SummaryField:                "timeInAnyHighPercent",
 				SummaryFieldComparator:      "$not",
 				ComparatorOperandExpression: bson.M{"$gt": .25},
 			},
@@ -1527,12 +1516,12 @@ var availableCategories = [...]tideCategory{
 			}},
 	},
 	{
-		CategoryName:          "timeInHighPercent",
-		SummaryField:          "timeInHighPercent",
+		CategoryName:          "timeInAnyHighPercent",
+		SummaryField:          "timeInAnyHighPercent",
 		SummaryFieldSortOrder: -1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInHighPercent",
+				SummaryField:                "timeInAnyHighPercent",
 				SummaryFieldComparator:      "$gt",
 				ComparatorOperandExpression: 0.25,
 			}},
@@ -1547,8 +1536,9 @@ var availableCategories = [...]tideCategory{
 var defaultOrderedCategoryNames = []string{
 	"timeInVeryLowPercent",
 	"timeInAnyLowPercent",
+	"timeInVeryHighPercent",
+	"timeInAnyHighPercent",
 	"dropInTimeInTargetPercent",
-	"timeInTargetPercent",
 	"timeCGMUsePercent",
 	"meetingTargets",
 }
@@ -1661,7 +1651,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		}
 	}
 
-	if !params.ExcludeNoDataPatients {
+	if !params.ExcludeNoData {
 		// This specifically catches users who:
 		// -  Have never had cgm data, resulting in a missing lastData field
 		// OR

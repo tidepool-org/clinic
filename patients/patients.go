@@ -264,9 +264,9 @@ type DataSource struct {
 }
 
 type TideReportParams struct {
-	Period                string
-	Tags                  []string
-	LastDataCutoff        time.Time
-	Categories            []string
-	ExcludeNoDataPatients bool
+	Period         string
+	Tags           []string
+	LastDataCutoff time.Time
+	Categories     []string
+	ExcludeNoData  bool
 }

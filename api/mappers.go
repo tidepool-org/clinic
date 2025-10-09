@@ -436,11 +436,11 @@ func NewTideReportParams(params TideReportParams) patients.TideReportParams {
 		categories = append(categories, string(cat))
 	}
 	return patients.TideReportParams{
-		Period:                params.Period,
-		Tags:                  params.Tags,
-		LastDataCutoff:        params.LastDataCutoff,
-		Categories:            categories,
-		ExcludeNoDataPatients: params.ExcludeNoData,
+		Period:         params.Period,
+		Tags:           params.Tags,
+		LastDataCutoff: params.LastDataCutoff,
+		Categories:     categories,
+		ExcludeNoData:  params.ExcludeNoData,
 	}
 }
 

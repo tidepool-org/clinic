@@ -1883,7 +1883,7 @@ var _ = Describe("TideReport", func() {
 	Context("Metadata", func() {
 		It("includes the number of candidate patients", func() {
 			numWithoutData := 151
-			ctx, th := newTestRepo(GinkgoT(), 0, numWithoutData)
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{}, numWithoutData)
 			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
 
 			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
@@ -1892,9 +1892,13 @@ var _ = Describe("TideReport", func() {
 		})
 
 		It("includes the number of selected patients", func() {
-			numWithData := 101
+			withDataCounts := patientDataCounts{
+				withVeryLow:        33,
+				withLow:            33,
+				withMeetingTargets: 35,
+			}
 			numWithoutData := 51
-			ctx, th := newTestRepo(GinkgoT(), numWithData, numWithoutData)
+			ctx, th := newTestRepo(GinkgoT(), withDataCounts, numWithoutData)
 			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
 
 			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
@@ -1961,6 +1965,8 @@ var _ = Describe("TideReport", func() {
 				var timeCGMUsePercentResults []patients.TideResultPatient
 				var noDataPatientResults []patients.TideResultPatient
 				var meetingTargetsResults []patients.TideResultPatient
+				var timeInVeryHighResults []patients.TideResultPatient
+				var timeInAnyHighResults []patients.TideResultPatient
 				BeforeEach(func() {
 					timeInVeryLowResults = []patients.TideResultPatient{
 						{
@@ -2008,6 +2014,73 @@ var _ = Describe("TideReport", func() {
 							LastData:                 mustTime("2025-07-03T14:49:07.079Z"),
 						},
 					}
+					timeInVeryHighResults = []patients.TideResultPatient{
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("time+in+high+and+very+high@tidepool.org"),
+								FullName: strp("High Glucose Person"),
+								Id:       strp("7da9314c-8c73-487a-a7fb-ffbf8837f77d"),
+								Tags:     []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+							},
+							AverageGlucoseMmol:       floatp(9.590087955646196),
+							TimeCGMUseMinutes:        intp(19615),
+							TimeCGMUsePercent:        floatp(0.9729662698412699),
+							TimeInHighPercent:        floatp(0.2523578893703798),
+							TimeInLowPercent:         floatp(0.007137394850879429),
+							TimeInTargetPercent:      floatp(0.7110119806270711),
+							TimeInTargetPercentDelta: floatp(0.01276636659198338),
+							TimeInVeryHighPercent:    floatp(0.12923782819270965),
+							TimeInVeryLowPercent:     floatp(0.0002549069589599796),
+							TimeInAnyHighPercent:     floatp(0.38159571756308946),
+							TimeInAnyLowPercent:      floatp(0.007392301809839409),
+							LastData:                 mustTime("2025-08-13T16:12:15Z"),
+						},
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("time+in+high+veryHigh+extremeHigh+glucose@tidepool.org"),
+								FullName: strp("Extreme High"),
+								Id:       strp("712994f9-79b3-4aaf-a82b-0c50aca5ed13"),
+								Tags:     []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+							},
+							AverageGlucoseMmol:       floatp(8.963836134474947),
+							TimeCGMUseMinutes:        intp(19855),
+							TimeCGMUsePercent:        floatp(0.9848710317460317),
+							TimeInHighPercent:        floatp(0.20246789221858474),
+							TimeInLowPercent:         floatp(0.02820448249811131),
+							TimeInTargetPercent:      floatp(0.7139511458071015),
+							TimeInTargetPercentDelta: floatp(-0.08842379102968467),
+							TimeInVeryHighPercent:    floatp(0.14102241249055653),
+							TimeInVeryLowPercent:     floatp(0.004354066985645933),
+							TimeInAnyHighPercent:     floatp(0.34349030470914127),
+							TimeInExtremeHighPercent: floatp(0.02064971040040292),
+							TimeInAnyLowPercent:      floatp(0.03255854948375724),
+							LastData:                 mustTime("2025-07-08T18:15:42.591Z"),
+						},
+					}
+					timeInAnyHighResults = []patients.TideResultPatient{
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("time+in+high@tidepool.org"),
+								FullName: strp("High Glucose"),
+								Id:       strp("54dceb3f-8591-45d1-b275-355e7f547aca"),
+								Tags:     []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+							},
+							AverageGlucoseMmol:       floatp(8.277430555555556),
+							TimeCGMUseMinutes:        intp(20160),
+							TimeCGMUsePercent:        floatp(1),
+							TimeInHighPercent:        floatp(0.5972222222222222),
+							TimeInLowPercent:         floatp(0),
+							TimeInTargetPercent:      floatp(0.3819444444444444),
+							TimeInTargetPercentDelta: floatp(0),
+							TimeInVeryHighPercent:    floatp(0.020833333333333332),
+							TimeInVeryLowPercent:     floatp(0),
+							TimeInAnyHighPercent:     floatp(0.6180555555555556),
+							TimeInAnyLowPercent:      floatp(0),
+							TimeInExtremeHighPercent: floatp(0),
+							LastData:                 mustTime("2025-07-05T23:55:00Z"),
+						},
+					}
+
 					timeCGMUsePercentResults = []patients.TideResultPatient{
 						{
 							AverageGlucoseMmol: floatp(3.898989898989899),
@@ -2192,10 +2265,10 @@ var _ = Describe("TideReport", func() {
 					}
 					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
 					Expect(err).ToNot(HaveOccurred())
-					numResultCategories := 7
+					numResultCategories := 8
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(8))
-					Expect(report.Metadata.SelectedPatients).To(Equal(8))
+					Expect(report.Metadata.CandidatePatients).To(Equal(11))
+					Expect(report.Metadata.SelectedPatients).To(Equal(11))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(tideResultsPatientMatcher(timeInVeryLowResults))
 
@@ -2206,22 +2279,25 @@ var _ = Describe("TideReport", func() {
 					Expect(report.Results["noData"]).To(tideResultsPatientMatcher(noDataPatientResults))
 
 					Expect(report.Results["meetingTargets"]).To(tideResultsPatientMatcher(meetingTargetsResults))
+					Expect(report.Results["timeInVeryHighPercent"]).To(tideResultsPatientMatcher(timeInVeryHighResults))
+					Expect(report.Results["timeInAnyHighPercent"]).To(tideResultsPatientMatcher(timeInAnyHighResults))
 				})
 
-				It("matches default categories if Tide Report params use explicit categories", func(ctx SpecContext) {
+				It("matches default categories if Tide Report params use explicitly empty categories", func(ctx SpecContext) {
 					period := "14d"
 					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
 					params := patients.TideReportParams{
 						Period:         period,
 						Tags:           []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
 						LastDataCutoff: cutoff,
+						Categories:     []string{},
 					}
 					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
 					Expect(err).ToNot(HaveOccurred())
-					numResultCategories := 7
+					numResultCategories := 8
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(8))
-					Expect(report.Metadata.SelectedPatients).To(Equal(8))
+					Expect(report.Metadata.CandidatePatients).To(Equal(11))
+					Expect(report.Metadata.SelectedPatients).To(Equal(11))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(tideResultsPatientMatcher(timeInVeryLowResults))
 
@@ -2232,23 +2308,25 @@ var _ = Describe("TideReport", func() {
 					Expect(report.Results["noData"]).To(tideResultsPatientMatcher(noDataPatientResults))
 
 					Expect(report.Results["meetingTargets"]).To(tideResultsPatientMatcher(meetingTargetsResults))
+					Expect(report.Results["timeInVeryHighPercent"]).To(tideResultsPatientMatcher(timeInVeryHighResults))
+					Expect(report.Results["timeInAnyHighPercent"]).To(tideResultsPatientMatcher(timeInAnyHighResults))
 				})
 
 				It(`excludes the "noData" category if params excludeNoDataPatient is explicitly set`, func(ctx SpecContext) {
 					period := "14d"
 					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
 					params := patients.TideReportParams{
-						Period:                period,
-						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-						LastDataCutoff:        cutoff,
-						ExcludeNoDataPatients: true,
+						Period:         period,
+						Tags:           []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff: cutoff,
+						ExcludeNoData:  true,
 					}
 					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
 					Expect(err).ToNot(HaveOccurred())
-					numResultCategories := 6
+					numResultCategories := 7
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(6))
-					Expect(report.Metadata.SelectedPatients).To(Equal(6))
+					Expect(report.Metadata.CandidatePatients).To(Equal(9))
+					Expect(report.Metadata.SelectedPatients).To(Equal(9))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(tideResultsPatientMatcher(timeInVeryLowResults))
 
@@ -2257,6 +2335,8 @@ var _ = Describe("TideReport", func() {
 					Expect(report.Results["timeCGMUsePercent"]).To(tideResultsPatientMatcher(timeCGMUsePercentResults))
 
 					Expect(report.Results["meetingTargets"]).To(tideResultsPatientMatcher(meetingTargetsResults))
+					Expect(report.Results["timeInVeryHighPercent"]).To(tideResultsPatientMatcher(timeInVeryHighResults))
+					Expect(report.Results["timeInAnyHighPercent"]).To(tideResultsPatientMatcher(timeInAnyHighResults))
 
 					Expect(report.Results["noData"]).To(BeEmpty())
 				})
@@ -2265,11 +2345,11 @@ var _ = Describe("TideReport", func() {
 					period := "14d"
 					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
 					params := patients.TideReportParams{
-						Period:                period,
-						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-						LastDataCutoff:        cutoff,
-						ExcludeNoDataPatients: true,
-						Categories:            []string{"timeInVeryLowPercent", "timeCGMUsePercent"},
+						Period:         period,
+						Tags:           []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff: cutoff,
+						ExcludeNoData:  true,
+						Categories:     []string{"timeInVeryLowPercent", "timeCGMUsePercent"},
 					}
 					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
 					Expect(err).ToNot(HaveOccurred())
@@ -2342,11 +2422,11 @@ var _ = Describe("TideReport", func() {
 					period := "14d"
 					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
 					params := patients.TideReportParams{
-						Period:                period,
-						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-						LastDataCutoff:        cutoff,
-						ExcludeNoDataPatients: true,
-						Categories:            []string{"meetingTargets"},
+						Period:         period,
+						Tags:           []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff: cutoff,
+						ExcludeNoData:  true,
+						Categories:     []string{"meetingTargets"},
 					}
 					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
 					Expect(err).ToNot(HaveOccurred())
@@ -2424,11 +2504,11 @@ var _ = Describe("TideReport", func() {
 					period := "14d"
 					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
 					params := patients.TideReportParams{
-						Period:                period,
-						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-						LastDataCutoff:        cutoff,
-						ExcludeNoDataPatients: false,
-						Categories:            []string{"meetingTargets"},
+						Period:         period,
+						Tags:           []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff: cutoff,
+						ExcludeNoData:  false,
+						Categories:     []string{"meetingTargets"},
 					}
 					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
 					Expect(err).ToNot(HaveOccurred())
@@ -2507,11 +2587,11 @@ var _ = Describe("TideReport", func() {
 					period := "14d"
 					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
 					params := patients.TideReportParams{
-						Period:                period,
-						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-						LastDataCutoff:        cutoff,
-						ExcludeNoDataPatients: true,
-						Categories:            []string{"meetingTargets", "timeInVeryLowPercent"},
+						Period:         period,
+						Tags:           []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff: cutoff,
+						ExcludeNoData:  true,
+						Categories:     []string{"meetingTargets", "timeInVeryLowPercent"},
 					}
 					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
 					Expect(err).ToNot(HaveOccurred())
@@ -2586,67 +2666,25 @@ var _ = Describe("TideReport", func() {
 					Expect(report.Results["timeInVeryLowPercent"]).To(tideResultsPatientMatcher(timeInVeryLowResults))
 				})
 
-				It(`patient will be placed in "closest" category supplied in parameters when they "qualify" for a higher category. Person in timeInExtremeHighPercent will be placed in "lower" category timeInVeryHighPercent if only timeInVeryHighPercent category is selected in parameters`, func(ctx SpecContext) {
+				It(`patient will be placed in "closest" category supplied in parameters when they "qualify" for a higher category. People in timeInVeryHighPercent will be placed in "lower" category timeInAnyHighPercent only if timeInAnyHighPercent category is selected before timeInVeryHighPercent or timeInVeryHighPercent is excluded in the category parameters`, func(ctx SpecContext) {
 					period := "14d"
 					cutoff := time.Date(2025, time.July, 1, 0, 0, 0, 0, time.UTC)
 					params := patients.TideReportParams{
-						Period:                period,
-						Tags:                  []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-						LastDataCutoff:        cutoff,
-						ExcludeNoDataPatients: true,
-						Categories:            []string{"timeInVeryHighPercent"},
+						Period:         period,
+						Tags:           []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+						LastDataCutoff: cutoff,
+						ExcludeNoData:  true,
+						Categories:     []string{"timeInAnyHighPercent"},
 					}
 					report, err := repo.TideReport(ctx, clinicId.Hex(), params)
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 1
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(2))
-					Expect(report.Metadata.SelectedPatients).To(Equal(2))
+					Expect(report.Metadata.CandidatePatients).To(Equal(3))
+					Expect(report.Metadata.SelectedPatients).To(Equal(3))
 
-					timeInVeryHighResults := []patients.TideResultPatient{
-						{
-							Patient: patients.TidePatient{
-								Email:    strp("time+in+high+and+very+high@tidepool.org"),
-								FullName: strp("High Glucose Person"),
-								Id:       strp("7da9314c-8c73-487a-a7fb-ffbf8837f77d"),
-								Tags:     []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-							},
-							AverageGlucoseMmol:       floatp(9.590087955646196),
-							TimeCGMUseMinutes:        intp(19615),
-							TimeCGMUsePercent:        floatp(0.9729662698412699),
-							TimeInHighPercent:        floatp(0.2523578893703798),
-							TimeInLowPercent:         floatp(0.007137394850879429),
-							TimeInTargetPercent:      floatp(0.7110119806270711),
-							TimeInTargetPercentDelta: floatp(0.01276636659198338),
-							TimeInVeryHighPercent:    floatp(0.12923782819270965),
-							TimeInVeryLowPercent:     floatp(0.0002549069589599796),
-							TimeInAnyHighPercent:     floatp(0.38159571756308946),
-							TimeInAnyLowPercent:      floatp(0.007392301809839409),
-							LastData:                 mustTime("2025-08-13T16:12:15Z"),
-						},
-						{
-							Patient: patients.TidePatient{
-								Email:    strp("time+in+high+veryHigh+extremeHigh+glucose@tidepool.org"),
-								FullName: strp("Extreme High"),
-								Id:       strp("712994f9-79b3-4aaf-a82b-0c50aca5ed13"),
-								Tags:     []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-							},
-							AverageGlucoseMmol:       floatp(8.963836134474947),
-							TimeCGMUseMinutes:        intp(19855),
-							TimeCGMUsePercent:        floatp(0.9848710317460317),
-							TimeInHighPercent:        floatp(0.20246789221858474),
-							TimeInLowPercent:         floatp(0.02820448249811131),
-							TimeInTargetPercent:      floatp(0.7139511458071015),
-							TimeInTargetPercentDelta: floatp(-0.08842379102968467),
-							TimeInVeryHighPercent:    floatp(0.14102241249055653),
-							TimeInVeryLowPercent:     floatp(0.004354066985645933),
-							TimeInAnyHighPercent:     floatp(0.34349030470914127),
-							TimeInExtremeHighPercent: floatp(0.02064971040040292),
-							TimeInAnyLowPercent:      floatp(0.03255854948375724),
-							LastData:                 mustTime("2025-07-08T18:15:42.591Z"),
-						},
-					}
-					Expect(report.Results["timeInVeryHighPercent"]).To(tideResultsPatientMatcher(timeInVeryHighResults))
+					timeInAnyHighAndUp := append(slices.Clone(timeInAnyHighResults), timeInVeryHighResults...)
+					Expect(report.Results["timeInAnyHighPercent"]).To(tideResultsPatientMatcher(timeInAnyHighAndUp))
 				})
 			})
 		})
@@ -2683,7 +2721,7 @@ func patientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 	})
 }
 
-func newTestRepo(t FullGinkgoTInterface, withData, withoutData int) (
+func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutData int) (
 	context.Context, *repoTestHelper) {
 
 	t.Helper()
@@ -2703,17 +2741,21 @@ func newTestRepo(t FullGinkgoTInterface, withData, withoutData int) (
 	yesterday := time.Now().Add(-24 * time.Hour)
 	allPatients := []any{}
 	modelPatient := patientsTest.RandomPatient() // re-use patient to save a little time
-	for range withData {
+	withData := dataCounts.Counts()
+	periods := genPeriods(dataCounts)
+	for i := range withData {
 		patient := modelPatient
 		patientUUID := test.Faker.UUID().V4()
 		patient.UserId = &patientUUID
+		oid := primitive.NewObjectID()
+		patient.Id = &oid
 		patient.Summary = &patients.Summary{
 			CGM: &patients.PatientCGMStats{
 				Dates: patients.PatientSummaryDates{
 					LastData: &yesterday,
 				},
 				Periods: patients.PatientCGMPeriods{
-					"7d": randomPeriods[rand.IntN(len(randomPeriods))],
+					"7d": periods[i],
 				},
 			},
 		}
@@ -2739,11 +2781,69 @@ func newTestRepo(t FullGinkgoTInterface, withData, withoutData int) (
 	}
 }
 
-var onePct = 1.0
-var randomPeriods = []patients.PatientCGMPeriod{
-	{TimeInAnyLowPercent: &onePct},
-	{TimeInVeryLowPercent: &onePct},
-	{TimeInTargetPercent: &onePct},
+type patientDataCounts struct {
+	withVeryLow        int
+	withLow            int
+	withVeryHigh       int
+	withHigh           int
+	withMeetingTargets int
+}
+
+func (p patientDataCounts) Counts() int {
+	return p.withVeryLow + p.withLow + p.withVeryHigh + p.withHigh + p.withMeetingTargets
+}
+
+func genPeriods(counts patientDataCounts) []patients.PatientCGMPeriod {
+	withData := counts.withVeryLow + counts.withLow + counts.withMeetingTargets + counts.withVeryHigh + counts.withHigh
+	periods := make([]patients.PatientCGMPeriod, 0, withData)
+	for range counts.withVeryLow {
+		timeInVeryLow := 0.015
+		periods = append(periods, patients.PatientCGMPeriod{
+			TimeInVeryLowPercent: &timeInVeryLow,
+			TimeInAnyLowPercent:  &timeInVeryLow,
+		})
+	}
+	for range counts.withLow {
+		timeInLow := .045
+		periods = append(periods, patients.PatientCGMPeriod{
+			TimeInLowPercent:    &timeInLow,
+			TimeInAnyLowPercent: &timeInLow,
+		})
+	}
+	for range counts.withMeetingTargets {
+		timeInRange := 0.75
+		timeCGMUse := 0.80
+		periods = append(periods, patients.PatientCGMPeriod{
+			TimeInTargetPercent: &timeInRange,
+			TimeCGMUsePercent:   &timeCGMUse,
+		})
+	}
+	for range counts.withVeryHigh {
+		timeInRange := 0.75
+		timeCGMUse := 0.80
+		periods = append(periods, patients.PatientCGMPeriod{
+			TimeInTargetPercent: &timeInRange,
+			TimeCGMUsePercent:   &timeCGMUse,
+		})
+	}
+	for range counts.withHigh {
+		timeInHigh := 0.26
+		periods = append(periods, patients.PatientCGMPeriod{
+			TimeInHighPercent:    &timeInHigh,
+			TimeInAnyHighPercent: &timeInHigh,
+		})
+	}
+	for range counts.withVeryHigh {
+		timeInVeryHigh := 0.055
+		periods = append(periods, patients.PatientCGMPeriod{
+			TimeInVeryHighPercent: &timeInVeryHigh,
+			TimeInAnyHighPercent:  &timeInVeryHigh,
+		})
+	}
+	rand.Shuffle(len(periods), func(i, j int) {
+		periods[i], periods[j] = periods[j], periods[i]
+	})
+	return periods
 }
 
 type repoTestHelper struct {
