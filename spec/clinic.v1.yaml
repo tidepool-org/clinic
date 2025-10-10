@@ -4884,6 +4884,22 @@ components:
         - thresholds
       x-go-type-skip-optional-pointer: true
       x-omitzero: true
+    glycemicRangesPreset.v1:
+      type: string
+      minLength: 1
+      enum:
+        - adaStandard
+        - adaPregnancyType1
+        - adaPregnancyType2
+        - adaHighRisk
+      x-enum-varnames:
+        - ADAStandard
+        - ADAPregnancyType1
+        - ADAPregnancyType2
+        - ADAHighRisk
+      default: adaStandard
+      x-go-type-skip-optional-pointer: true
+      x-omitzero: true
     glycemicRanges.v1:
       properties:
         type:
@@ -4895,20 +4911,9 @@ components:
         custom:
           $ref: '#/components/schemas/glycemicRangesCustom.v1'
         preset:
-          type: string
-          minLength: 1
-          enum:
-            - ADA standard
-            - ADA pregnancy type 1
-            - ADA pregnancy GDM or type 2
-            - ADA older or high-risk
-          default: ADA standard
-          x-go-type-skip-optional-pointer: true
-          x-omitzero: true
+          $ref: '#/components/schemas/glycemicRangesPreset.v1'
       required:
         - type
-      minimumProperties: 2
-      maximumProperties: 2
     diagnosisType.v1:
       title: Diagnosis Type
       type: string

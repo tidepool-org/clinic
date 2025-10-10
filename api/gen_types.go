@@ -686,18 +686,18 @@ const (
 	Xealth EhrSettingsV1Provider = "xealth"
 )
 
-// Defines values for GlycemicRangesV1Preset.
-const (
-	ADAOlderOrHighRisk     GlycemicRangesV1Preset = "ADA older or high-risk"
-	ADAPregnancyGDMOrType2 GlycemicRangesV1Preset = "ADA pregnancy GDM or type 2"
-	ADAPregnancyType1      GlycemicRangesV1Preset = "ADA pregnancy type 1"
-	ADAStandard            GlycemicRangesV1Preset = "ADA standard"
-)
-
 // Defines values for GlycemicRangesV1Type.
 const (
 	Custom GlycemicRangesV1Type = "custom"
 	Preset GlycemicRangesV1Type = "preset"
+)
+
+// Defines values for GlycemicRangesPresetV1.
+const (
+	ADAHighRisk       GlycemicRangesPresetV1 = "adaHighRisk"
+	ADAPregnancyType1 GlycemicRangesPresetV1 = "adaPregnancyType1"
+	ADAPregnancyType2 GlycemicRangesPresetV1 = "adaPregnancyType2"
+	ADAStandard       GlycemicRangesPresetV1 = "adaStandard"
 )
 
 // Defines values for GlycemicRangesThresholdUpperBoundV1Units.
@@ -1470,12 +1470,9 @@ type GenerateMergeReportV1 struct {
 // GlycemicRangesV1 defines model for glycemicRanges.v1.
 type GlycemicRangesV1 struct {
 	Custom GlycemicRangesCustomV1 `json:"custom,omitempty,omitzero"`
-	Preset GlycemicRangesV1Preset `json:"preset,omitempty,omitzero"`
+	Preset GlycemicRangesPresetV1 `json:"preset,omitempty,omitzero"`
 	Type   GlycemicRangesV1Type   `json:"type"`
 }
-
-// GlycemicRangesV1Preset defines model for GlycemicRangesV1.Preset.
-type GlycemicRangesV1Preset string
 
 // GlycemicRangesV1Type defines model for GlycemicRangesV1.Type.
 type GlycemicRangesV1Type string
@@ -1485,6 +1482,9 @@ type GlycemicRangesCustomV1 struct {
 	Name       string                      `json:"name"`
 	Thresholds []GlycemicRangesThresholdV1 `json:"thresholds"`
 }
+
+// GlycemicRangesPresetV1 defines model for glycemicRangesPreset.v1.
+type GlycemicRangesPresetV1 string
 
 // GlycemicRangesThresholdV1 defines model for glycemicRangesThreshold.v1.
 type GlycemicRangesThresholdV1 struct {

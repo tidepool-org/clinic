@@ -77,11 +77,11 @@ func RandomGlycemicRangesCustom() patients.GlycemicRanges {
 	}
 }
 
-var glycemicRangesPresets = []api.GlycemicRangesV1Preset{
-	api.ADAOlderOrHighRisk,
-	api.ADAPregnancyGDMOrType2,
-	api.ADAPregnancyType1,
+var glycemicRangesPresets = []api.GlycemicRangesPresetV1{
 	api.ADAStandard,
+	api.ADAPregnancyType1,
+	api.ADAPregnancyType2,
+	api.ADAHighRisk,
 }
 
 func RandomGlycemicRangesPreset() patients.GlycemicRanges {

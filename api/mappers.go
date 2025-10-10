@@ -307,18 +307,18 @@ func newGlycemicRangesDtoCustom(custom patients.GlycemicRangesCustom) (
 }
 
 func newGlycemicRangesDtoPreset(preset patients.GlycemicRangesPreset) (
-	*GlycemicRangesV1Preset, error) {
+	*GlycemicRangesPresetV1, error) {
 
-	var dtoPreset GlycemicRangesV1Preset = ADAStandard
+	var dtoPreset GlycemicRangesPresetV1 = ADAStandard
 	switch string(preset) {
 	case string(ADAStandard):
 		dtoPreset = ADAStandard
 	case string(ADAPregnancyType1):
 		dtoPreset = ADAPregnancyType1
-	case string(ADAPregnancyGDMOrType2):
-		dtoPreset = ADAPregnancyGDMOrType2
-	case string(ADAOlderOrHighRisk):
-		dtoPreset = ADAOlderOrHighRisk
+	case string(ADAPregnancyType2):
+		dtoPreset = ADAPregnancyType2
+	case string(ADAHighRisk):
+		dtoPreset = ADAHighRisk
 	default:
 		return nil, progErrf("unhandled glycemic ranges preset: %q", preset)
 	}
