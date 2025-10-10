@@ -5,11 +5,12 @@ import (
 	"errors"
 	"net/http"
 
+	"go.uber.org/fx"
+
 	clinicErrs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
-	"go.uber.org/fx"
 )
 
 var UserServiceModule = fx.Provide(

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
@@ -150,6 +151,7 @@ func setPermission(permissions *patients.Permissions, p string) {
 }
 
 func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
+	GinkgoHelper()
 	return MatchAllFields(Fields{
 		"Id":                             PointTo(Not(BeEmpty())),
 		"UserId":                         PointTo(Equal(*patient.UserId)),

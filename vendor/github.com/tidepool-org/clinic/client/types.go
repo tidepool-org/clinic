@@ -1529,20 +1529,22 @@ type PatientClinicRelationshipsV1 = []PatientClinicRelationshipV1
 
 // PatientCountV1 defines model for patientCount.v1.
 type PatientCountV1 struct {
-	// Demo The count of patients classified as demo
+	// Demo The count of patients associated with the clinic that are classified as demo and do not
+	// apply towards the plan-based patient count limit. Currently this is limited to 0 or 1,
+	// but allows for future expansion with multiple demo patients if needed.
 	Demo int `json:"demo"`
 
-	// PatientCount The count of patients classified as applying towards the plan-based patient count limit (DEPRECATED use plan property instead)
-	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-	PatientCount int `json:"patientCount"`
-
-	// Plan The count of patients classified as applying towards the plan-based patient count limit
+	// Plan The count of patients associated with the clinic classified as applying towards the
+	// plan-based patient count limit. This excludes patients classified as demo as well as any
+	// other classifications that do not apply towards the plan-based patient count limit
+	// for various business reasons.
 	Plan int `json:"plan"`
 
-	// Providers The count of patients by provider
+	// Providers The count of patients associated with the clinic by provider. As each patient may be associated
+	// with multiple providers, the sum of all provider counts may exceed the total patient count.
 	Providers *map[string]PatientProviderCountV1 `json:"providers,omitempty"`
 
-	// Total The count of all patients, regardless of classification
+	// Total The count of all patients associated with the clinic, regardless of classification.
 	Total int `json:"total"`
 }
 
@@ -1550,9 +1552,6 @@ type PatientCountV1 struct {
 type PatientCountLimitV1 struct {
 	// EndDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	EndDate *DatetimeV1 `json:"endDate,omitempty"`
-
-	// PatientCount The plan-based patient count limit (DEPRECATED use plan property instead)
-	PatientCount int `json:"patientCount"`
 
 	// Plan The plan-based patient count limit
 	Plan int `json:"plan"`
@@ -1575,12 +1574,14 @@ type PatientPermissionsV1 struct {
 	View      *map[string]interface{} `json:"view,omitempty"`
 }
 
-// PatientProviderCountV1 defines model for patientProviderCount.v1.
+// PatientProviderCountV1 The count of patients associated with the clinic for a specific provider. As each patient may be
+// associated with multiple providers, the sum of all provider counts may exceed the total patient count.
 type PatientProviderCountV1 struct {
-	// States The count of patients for the provider by data source state
+	// States The count of patients for the provider segmented by data source state. The possible
+	// states are connected, disconnected, error, pending, and pendingReconnect.
 	States map[string]int `json:"states"`
 
-	// Total The count of patients that have a provider as a data source
+	// Total The count of patients that have a specific provider as a data source.
 	Total int `json:"total"`
 }
 
