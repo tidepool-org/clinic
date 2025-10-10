@@ -1451,6 +1451,17 @@ var availableCategories = [...]tideCategory{
 			}},
 	},
 	{
+		CategoryName:          "timeInTargetPercent",
+		SummaryField:          "timeInTargetPercent",
+		SummaryFieldSortOrder: 1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInTargetPercent",
+				SummaryFieldComparator:      "$lt",
+				ComparatorOperandExpression: 0.7,
+			}},
+	},
+	{
 		CategoryName:          "meetingTargets",
 		SummaryField:          "timeInTargetPercent",
 		SummaryFieldSortOrder: -1,

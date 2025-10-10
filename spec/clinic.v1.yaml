@@ -285,7 +285,7 @@ paths:
           required: true
         - name: categories
           description: |
-            Comma-separated list of TIDE report categories to return in queried order. If omitted or empty, the default TIDE categories will be returned.
+            Comma-separated list of TIDE report categories to return in queried order. If omitted or empty, the default TIDE categories will be returned - see example.
           schema:
             type: array
             x-go-type-skip-optional-pointer: true
@@ -300,6 +300,7 @@ paths:
                 - timeInVeryHighPercent
                 - timeInAnyHighPercent
                 - dropInTimeInTargetPercent
+                - timeInTargetPercent
                 - timeCGMUsePercent
                 - meetingTargets
           in: query

@@ -718,6 +718,7 @@ const (
 	TimeInAnyHighPercent      TideReportParamsCategories = "timeInAnyHighPercent"
 	TimeInAnyLowPercent       TideReportParamsCategories = "timeInAnyLowPercent"
 	TimeInExtremeHighPercent  TideReportParamsCategories = "timeInExtremeHighPercent"
+	TimeInTargetPercent       TideReportParamsCategories = "timeInTargetPercent"
 	TimeInVeryHighPercent     TideReportParamsCategories = "timeInVeryHighPercent"
 	TimeInVeryLowPercent      TideReportParamsCategories = "timeInVeryLowPercent"
 )
@@ -2363,7 +2364,7 @@ type TideReportParams struct {
 	// LastDataCutoff Inclusive minimum of date of last data from a patient.
 	LastDataCutoff time.Time `form:"lastDataCutoff" json:"lastDataCutoff"`
 
-	// Categories Comma-separated list of TIDE report categories to return in queried order. If omitted or empty, the default TIDE categories will be returned.
+	// Categories Comma-separated list of TIDE report categories to return in queried order. If omitted or empty, the default TIDE categories will be returned - see example.
 	Categories []TideReportParamsCategories `form:"categories,omitempty" json:"categories,omitempty"`
 
 	// ExcludeNoData If true, then exclude / omit patients with no data in the TIDE report.
