@@ -19,6 +19,7 @@ import (
 	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -153,6 +154,14 @@ func (r *repository) Initialize(ctx context.Context) error {
 					{"mrn", bson.M{"$type": "string"}},
 					{"requireUniqueMrn", bson.M{"$eq": true}},
 				}),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "sites.id", Value: 1},
+			},
+			Options: options.Index().
+				SetName("Sites"),
 		},
 	})
 	return err
@@ -305,6 +314,10 @@ func (r *repository) Create(ctx context.Context, patient patients.Patient) (*pat
 			return nil, err
 		}
 	} else {
+		if patient.Sites != nil {
+			sites := uniqSites(*patient.Sites)
+			patient.Sites = &sites
+		}
 		patient.CreatedTime = time.Now()
 		patient.UpdatedTime = time.Now()
 		if _, err = r.collection.InsertOne(ctx, patient); err != nil {
@@ -325,6 +338,10 @@ func (r *repository) Update(ctx context.Context, patientUpdate patients.PatientU
 
 	patient := patientUpdate.Patient
 	patient.UpdatedTime = time.Now()
+	if patient.Sites != nil {
+		sites := uniqSites(*patient.Sites)
+		patient.Sites = &sites
+	}
 
 	update := bson.M{
 		"$set": patient,
@@ -338,6 +355,19 @@ func (r *repository) Update(ctx context.Context, patientUpdate patients.PatientU
 	}
 
 	return r.Get(ctx, patientUpdate.ClinicId, patientUpdate.UserId)
+}
+
+func uniqSites(allSites []sites.Site) []sites.Site {
+	uniq := map[string]struct{}{}
+	out := []sites.Site{}
+	for _, site := range allSites {
+		siteID := site.Id.Hex()
+		if _, seen := uniq[siteID]; !seen {
+			out = append(out, site)
+			uniq[siteID] = struct{}{}
+		}
+	}
+	return out
 }
 
 func (r *repository) UpdateEmail(ctx context.Context, userId string, email *string) error {
@@ -945,6 +975,7 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 
 func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 	selector := bson.M{}
+	orSelectors := bson.A{}
 	if filter.ClinicId != nil {
 		clinicId := *filter.ClinicId
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
@@ -1009,17 +1040,43 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 			Pattern: search,
 			Options: "i",
 		}}
-		selector["$or"] = bson.A{
+		orSelectors = append(orSelectors, bson.A{
 			bson.M{"fullName": filter},
 			bson.M{"email": filter},
 			bson.M{"mrn": filter},
 			bson.M{"birthDate": filter},
-		}
+		})
 	}
 
 	if filter.Tags != nil {
-		selector["tags"] = bson.M{
-			"$all": store.ObjectIDSFromStringArray(*filter.Tags),
+		ids := store.ObjectIDSFromStringArray(*filter.Tags)
+		if len(ids) > 0 {
+			selector["tags"] = bson.M{"$all": ids}
+		} else {
+			// filter.Tags wasn't nil, but the values provided were not ObjectIDs, which
+			// indicates a search for patients WITHOUT any tags assigned.
+			orSelectors = append(orSelectors, bson.A{
+				bson.M{"tags": bson.M{"$size": 0}},
+				bson.M{"tags": bson.M{"$exists": 0}},
+			})
+		}
+	}
+
+	if filter.Sites != nil {
+		ids := store.ObjectIDSFromStringArray(*filter.Sites)
+		if len(ids) > 0 {
+			selector["sites"] = bson.M{
+				"$elemMatch": bson.M{
+					"id": bson.M{"$in": ids},
+				},
+			}
+		} else {
+			// filter.Sites wasn't nil, but the values provided were not ObjectIDs, which
+			// indicates a search for patients WITHOUT any sites assigned.
+			orSelectors = append(orSelectors, bson.A{
+				bson.M{"sites": bson.M{"$size": 0}},
+				bson.M{"sites": bson.M{"$exists": 0}},
+			})
 		}
 	}
 
@@ -1059,6 +1116,23 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 			field,
 			pair,
 		)
+	}
+
+	if len(orSelectors) == 1 {
+		selector["$or"] = orSelectors[0]
+	} else if len(orSelectors) > 1 {
+		// This might look odd, but it's the consequence of having multiple groups of
+		// clauses that want to be ORed. For example, if you want name == "Fred" OR name ==
+		// "Judy", but you also want sites size == 0 OR sites is empty, then you need to AND
+		// the OR clauses.
+		//
+		// Mongo doesn't seem to support an $and with a single $or "child", so that's why we
+		// have to special-case the case where len(orSelectors) == 1.
+		or := []bson.M{}
+		for _, ors := range orSelectors {
+			or = append(or, bson.M{"$or": ors})
+		}
+		selector["$and"] = or
 	}
 
 	return selector
@@ -1431,6 +1505,116 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 	}
 
 	return &tide, nil
+}
+
+func (r *repository) DeleteSites(ctx context.Context, clinicId, siteId string) error {
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return fmt.Errorf("parsing site's ObjectId (%s): %w", siteId, err)
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId (%s): %w", clinicId, err)
+	}
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"sites": bson.M{
+			"$elemMatch": bson.M{"id": siteOID},
+		},
+	}
+	update := bson.M{
+		"$pull": bson.M{"sites": bson.M{"id": siteOID}},
+		"$set":  bson.M{"updatedTime": time.Now()},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repository) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	siteOID, err := primitive.ObjectIDFromHex(siteId)
+	if err != nil {
+		return fmt.Errorf("parsing site's ObjectId: %w", err)
+	}
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"sites.id": siteOID,
+	}
+	update := bson.M{
+		"$set":         bson.M{"sites.$.name": site.Name},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repository) MergeSites(ctx context.Context,
+	clinicId, sourceSiteId string, targetSite *sites.Site) error {
+
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	sourceSiteOID, err := primitive.ObjectIDFromHex(sourceSiteId)
+	if err != nil {
+		return fmt.Errorf("parsing source site's ObjectId: %w", err)
+	}
+
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"$and": bson.A{
+			bson.M{"sites.id": bson.M{"$eq": sourceSiteOID}},
+			bson.M{"sites.id": bson.M{"$nin": bson.A{targetSite.Id}}},
+		},
+	}
+	update := bson.M{
+		"$push":        bson.M{"sites": targetSite},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+
+	if err := r.DeleteSites(ctx, clinicId, sourceSiteId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) ConvertPatientTagToSite(ctx context.Context,
+	clinicId, patientTagId string, site *sites.Site) error {
+
+	clinicOID, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return fmt.Errorf("parsing clinic's ObjectId: %w", err)
+	}
+	patientTagOID, err := primitive.ObjectIDFromHex(patientTagId)
+	if err != nil {
+		return fmt.Errorf("parsing source site's ObjectId: %w", err)
+	}
+
+	selector := bson.M{
+		"clinicId": clinicOID,
+		"tags":     bson.M{"$eq": patientTagOID},
+	}
+	update := bson.M{
+		"$push":        bson.M{"sites": site},
+		"$pull":        bson.M{"tags": patientTagOID},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type RescheduleOrderPipelineParams struct {

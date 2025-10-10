@@ -744,3 +744,58 @@ allow {
   input.path = ["v1", "clinics", _, "patients", _, "reviews"]
   clinician_has_read_access
 }
+
+# Allow backend services or clinic admins to create a site
+# POST /v1/clinics/:clinicId/sites
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "sites"]
+  is_backend_service
+}
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "sites"]
+  clinician_has_write_access
+}
+
+# Allow backend services or clinic admins to delete a site
+# DELETE /v1/clinics/:clinicId/sites/:siteId
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "sites", _]
+  is_backend_service
+}
+allow {
+  input.method == "DELETE"
+  input.path = ["v1", "clinics", _, "sites", _]
+  clinician_has_write_access
+}
+
+# Allow backend services or clinic admins to update a site
+# PUT /v1/clinics/:clinicId/sites/:siteId
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "sites", _]
+  is_backend_service
+}
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "sites", _]
+  clinician_has_write_access
+}
+
+# Allow backend services to merge two sites
+# POST /v1/clinics/:clinicId/sites/:targetSiteId/merge
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "sites", _, "merge"]
+  is_backend_service
+}
+
+# Allow backend services to convert a patient tag to a site
+# POST /v1/clinics/:clinicId/patient_tags/:patientTagId/site
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patient_tags", _, "site"]
+  is_backend_service
+}

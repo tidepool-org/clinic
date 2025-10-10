@@ -15,6 +15,7 @@ import (
 
 	clinics "github.com/tidepool-org/clinic/clinics"
 	deletions "github.com/tidepool-org/clinic/deletions"
+	sites "github.com/tidepool-org/clinic/sites"
 	store "github.com/tidepool-org/clinic/store"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -73,10 +74,10 @@ func (mr *MockServiceMockRecorder) Create(ctx, clinic any) *gomock.Call {
 }
 
 // CreatePatientTag mocks base method.
-func (m *MockService) CreatePatientTag(ctx context.Context, clinicId, tagName string) (*clinics.Clinic, error) {
+func (m *MockService) CreatePatientTag(ctx context.Context, clinicId, tagName string) (*clinics.PatientTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePatientTag", ctx, clinicId, tagName)
-	ret0, _ := ret[0].(*clinics.Clinic)
+	ret0, _ := ret[0].(*clinics.PatientTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -85,6 +86,36 @@ func (m *MockService) CreatePatientTag(ctx context.Context, clinicId, tagName st
 func (mr *MockServiceMockRecorder) CreatePatientTag(ctx, clinicId, tagName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePatientTag", reflect.TypeOf((*MockService)(nil).CreatePatientTag), ctx, clinicId, tagName)
+}
+
+// CreateSite mocks base method.
+func (m *MockService) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSite", ctx, clinicId, site)
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSite indicates an expected call of CreateSite.
+func (mr *MockServiceMockRecorder) CreateSite(ctx, clinicId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSite", reflect.TypeOf((*MockService)(nil).CreateSite), ctx, clinicId, site)
+}
+
+// CreateSiteIgnoringLimit mocks base method.
+func (m *MockService) CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSiteIgnoringLimit", ctx, clinicId, site)
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSiteIgnoringLimit indicates an expected call of CreateSiteIgnoringLimit.
+func (mr *MockServiceMockRecorder) CreateSiteIgnoringLimit(ctx, clinicId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSiteIgnoringLimit", reflect.TypeOf((*MockService)(nil).CreateSiteIgnoringLimit), ctx, clinicId, site)
 }
 
 // Delete mocks base method.
@@ -102,18 +133,31 @@ func (mr *MockServiceMockRecorder) Delete(ctx, id, metadata any) *gomock.Call {
 }
 
 // DeletePatientTag mocks base method.
-func (m *MockService) DeletePatientTag(ctx context.Context, clinicId, tagId string) (*clinics.Clinic, error) {
+func (m *MockService) DeletePatientTag(ctx context.Context, clinicId, tagId string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeletePatientTag", ctx, clinicId, tagId)
-	ret0, _ := ret[0].(*clinics.Clinic)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeletePatientTag indicates an expected call of DeletePatientTag.
 func (mr *MockServiceMockRecorder) DeletePatientTag(ctx, clinicId, tagId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTag", reflect.TypeOf((*MockService)(nil).DeletePatientTag), ctx, clinicId, tagId)
+}
+
+// DeleteSite mocks base method.
+func (m *MockService) DeleteSite(ctx context.Context, clinicId, siteId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSite", ctx, clinicId, siteId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSite indicates an expected call of DeleteSite.
+func (mr *MockServiceMockRecorder) DeleteSite(ctx, clinicId, siteId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSite", reflect.TypeOf((*MockService)(nil).DeleteSite), ctx, clinicId, siteId)
 }
 
 // Get mocks base method.
@@ -321,10 +365,10 @@ func (mr *MockServiceMockRecorder) UpdatePatientCountSettings(ctx, clinicId, set
 }
 
 // UpdatePatientTag mocks base method.
-func (m *MockService) UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*clinics.Clinic, error) {
+func (m *MockService) UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*clinics.PatientTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePatientTag", ctx, clinicId, tagId, tagName)
-	ret0, _ := ret[0].(*clinics.Clinic)
+	ret0, _ := ret[0].(*clinics.PatientTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -333,6 +377,21 @@ func (m *MockService) UpdatePatientTag(ctx context.Context, clinicId, tagId, tag
 func (mr *MockServiceMockRecorder) UpdatePatientTag(ctx, clinicId, tagId, tagName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientTag", reflect.TypeOf((*MockService)(nil).UpdatePatientTag), ctx, clinicId, tagId, tagName)
+}
+
+// UpdateSite mocks base method.
+func (m *MockService) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSite", ctx, clinicId, siteId, site)
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSite indicates an expected call of UpdateSite.
+func (mr *MockServiceMockRecorder) UpdateSite(ctx, clinicId, siteId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSite", reflect.TypeOf((*MockService)(nil).UpdateSite), ctx, clinicId, siteId, site)
 }
 
 // UpdateSuppressedNotifications mocks base method.
@@ -431,10 +490,10 @@ func (mr *MockRepositoryMockRecorder) Create(ctx, clinic any) *gomock.Call {
 }
 
 // CreatePatientTag mocks base method.
-func (m *MockRepository) CreatePatientTag(ctx context.Context, clinicId, tagName string) (*clinics.Clinic, error) {
+func (m *MockRepository) CreatePatientTag(ctx context.Context, clinicId, tagName string) (*clinics.PatientTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePatientTag", ctx, clinicId, tagName)
-	ret0, _ := ret[0].(*clinics.Clinic)
+	ret0, _ := ret[0].(*clinics.PatientTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -443,6 +502,36 @@ func (m *MockRepository) CreatePatientTag(ctx context.Context, clinicId, tagName
 func (mr *MockRepositoryMockRecorder) CreatePatientTag(ctx, clinicId, tagName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePatientTag", reflect.TypeOf((*MockRepository)(nil).CreatePatientTag), ctx, clinicId, tagName)
+}
+
+// CreateSite mocks base method.
+func (m *MockRepository) CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSite", ctx, clinicId, site)
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSite indicates an expected call of CreateSite.
+func (mr *MockRepositoryMockRecorder) CreateSite(ctx, clinicId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSite", reflect.TypeOf((*MockRepository)(nil).CreateSite), ctx, clinicId, site)
+}
+
+// CreateSiteIgnoringLimit mocks base method.
+func (m *MockRepository) CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSiteIgnoringLimit", ctx, clinicId, site)
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSiteIgnoringLimit indicates an expected call of CreateSiteIgnoringLimit.
+func (mr *MockRepositoryMockRecorder) CreateSiteIgnoringLimit(ctx, clinicId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSiteIgnoringLimit", reflect.TypeOf((*MockRepository)(nil).CreateSiteIgnoringLimit), ctx, clinicId, site)
 }
 
 // Delete mocks base method.
@@ -460,18 +549,31 @@ func (mr *MockRepositoryMockRecorder) Delete(ctx, id, metadata any) *gomock.Call
 }
 
 // DeletePatientTag mocks base method.
-func (m *MockRepository) DeletePatientTag(ctx context.Context, clinicId, tagId string) (*clinics.Clinic, error) {
+func (m *MockRepository) DeletePatientTag(ctx context.Context, clinicId, tagId string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeletePatientTag", ctx, clinicId, tagId)
-	ret0, _ := ret[0].(*clinics.Clinic)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeletePatientTag indicates an expected call of DeletePatientTag.
 func (mr *MockRepositoryMockRecorder) DeletePatientTag(ctx, clinicId, tagId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePatientTag", reflect.TypeOf((*MockRepository)(nil).DeletePatientTag), ctx, clinicId, tagId)
+}
+
+// DeleteSite mocks base method.
+func (m *MockRepository) DeleteSite(ctx context.Context, clinicId, siteId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSite", ctx, clinicId, siteId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSite indicates an expected call of DeleteSite.
+func (mr *MockRepositoryMockRecorder) DeleteSite(ctx, clinicId, siteId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSite", reflect.TypeOf((*MockRepository)(nil).DeleteSite), ctx, clinicId, siteId)
 }
 
 // Get mocks base method.
@@ -619,10 +721,10 @@ func (mr *MockRepositoryMockRecorder) UpdatePatientCountSettings(ctx, clinicId, 
 }
 
 // UpdatePatientTag mocks base method.
-func (m *MockRepository) UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*clinics.Clinic, error) {
+func (m *MockRepository) UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*clinics.PatientTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePatientTag", ctx, clinicId, tagId, tagName)
-	ret0, _ := ret[0].(*clinics.Clinic)
+	ret0, _ := ret[0].(*clinics.PatientTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -631,6 +733,21 @@ func (m *MockRepository) UpdatePatientTag(ctx context.Context, clinicId, tagId, 
 func (mr *MockRepositoryMockRecorder) UpdatePatientTag(ctx, clinicId, tagId, tagName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePatientTag", reflect.TypeOf((*MockRepository)(nil).UpdatePatientTag), ctx, clinicId, tagId, tagName)
+}
+
+// UpdateSite mocks base method.
+func (m *MockRepository) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSite", ctx, clinicId, siteId, site)
+	ret0, _ := ret[0].(*sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSite indicates an expected call of UpdateSite.
+func (mr *MockRepositoryMockRecorder) UpdateSite(ctx, clinicId, siteId, site any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSite", reflect.TypeOf((*MockRepository)(nil).UpdateSite), ctx, clinicId, siteId, site)
 }
 
 // UpdateSuppressedNotifications mocks base method.

@@ -12,6 +12,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	oapiMiddleware "github.com/oapi-codegen/echo-middleware"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/auth"
 	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
 	cliniciansService "github.com/tidepool-org/clinic/clinicians/service"
@@ -32,10 +37,6 @@ import (
 	authClient "github.com/tidepool-org/platform/auth/client"
 	"github.com/tidepool-org/platform/client"
 	"github.com/tidepool-org/platform/platform"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/fx"
-	"go.uber.org/fx/fxevent"
-	"go.uber.org/zap"
 )
 
 var (
