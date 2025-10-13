@@ -965,6 +965,14 @@ paths:
           description: Comma-separated list of clinic site IDs
           style: form
           explode: false
+        - name: omitNonStandardRanges
+          description: |
+            Whether patients whose glycemic ranges selection is *not*
+            the ADA standard ranges (e.g. as used by the TIDE report)
+            should be omitted.
+          schema:
+            type: boolean
+          in: query
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account

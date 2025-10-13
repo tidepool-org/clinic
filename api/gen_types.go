@@ -2426,6 +2426,11 @@ type ListPatientsParams struct {
 
 	// Sites Comma-separated list of clinic site IDs
 	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
+
+	// OmitNonStandardRanges Whether patients whose glycemic ranges selection is *not*
+	// the ADA standard ranges (e.g. as used by the TIDE report)
+	// should be omitted.
+	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.
