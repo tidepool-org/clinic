@@ -1890,6 +1890,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sites: %s", err))
 	}
 
+	// ------------- Optional query parameter "omitNonStandardRanges" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "omitNonStandardRanges", ctx.QueryParams(), &params.OmitNonStandardRanges)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter omitNonStandardRanges: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.ListPatients(ctx, clinicId, params)
 	return err
