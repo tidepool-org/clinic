@@ -249,6 +249,10 @@ type Filter struct {
 	// the minimum content needed to generate clinic merge reports and perform clinic
 	// merges.
 	ExcludeSummaryExceptFieldsInMergeReports bool
+
+	// OmitNonStandardRanges will exclude patients that aren't assigned the ADA standard
+	// preset ranges.
+	OmitNonStandardRanges bool
 }
 
 type Permission = map[string]interface{}
