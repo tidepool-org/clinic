@@ -2514,25 +2514,39 @@ func (w *ServerInterfaceWrapper) TideReport(ctx echo.Context) error {
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params TideReportParams
-	// ------------- Optional query parameter "period" -------------
+	// ------------- Required query parameter "period" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "period", ctx.QueryParams(), &params.Period)
+	err = runtime.BindQueryParameter("form", true, true, "period", ctx.QueryParams(), &params.Period)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter period: %s", err))
 	}
 
-	// ------------- Optional query parameter "tags" -------------
+	// ------------- Required query parameter "tags" -------------
 
-	err = runtime.BindQueryParameter("form", false, false, "tags", ctx.QueryParams(), &params.Tags)
+	err = runtime.BindQueryParameter("form", false, true, "tags", ctx.QueryParams(), &params.Tags)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
 	}
 
-	// ------------- Optional query parameter "lastDataCutoff" -------------
+	// ------------- Required query parameter "lastDataCutoff" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "lastDataCutoff", ctx.QueryParams(), &params.LastDataCutoff)
+	err = runtime.BindQueryParameter("form", true, true, "lastDataCutoff", ctx.QueryParams(), &params.LastDataCutoff)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter lastDataCutoff: %s", err))
+	}
+
+	// ------------- Optional query parameter "categories" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "categories", ctx.QueryParams(), &params.Categories)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter categories: %s", err))
+	}
+
+	// ------------- Optional query parameter "excludeNoData" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "excludeNoData", ctx.QueryParams(), &params.ExcludeNoData)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter excludeNoData: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments

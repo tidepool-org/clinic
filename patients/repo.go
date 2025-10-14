@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -171,6 +172,87 @@ func (r *repository) Initialize(ctx context.Context) error {
 			},
 			Options: options.Index().
 				SetName("Sites"),
+		},
+		// This kludgy indexing strategy is due to the way the data is currently
+		// shaped. For each time period, we need to index individual time periods
+		// 1d, 7d, 14d, 30d. These partial filter expressions will mostly meet the
+		// conditions of a `meetingTargets` patient while limiting the number of
+		// range scans. As there are not a lot of time periods (for now), this is
+		// an OK solution. Ideally this would be refactored and the summary would
+		// be something like {userId: ".", clinicId: ".", "period": ".",
+		// "timeInVeryLowPercent": 0.0} but that's for the future. There is also
+		// the possibly of using wildcard indexes (with their limitations) or
+		// possibly even using an entity attribute value style approach. I'm not a
+		// fan of either approach - the wildcard because of its quirks and
+		// limitations and the EAV, while allowing to more quickly sort the MANY
+		// differ(ing|ent) summary fields available, it makes it harder to view a
+		// single document and get the full picture of the actual summary. TBD.
+		//
+		// The order on whether to order the trailing fields in the index as
+		// (lastData, timeInTargetPercent) vs (timeInTargetPercent, lastData)
+		// is a question on which one is more restrictive, with the more
+		// restrictive field being first. Since we are sorting by
+		// timeInTargetPercent, that may introduce a blocking sort but that is
+		// outweighed by the benefit of much less data being returned.
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "userId", Value: 1},
+				{Key: "tags", Value: 1},
+				{Key: "summary.cgmStats.dates.lastData", Value: 1},
+				{Key: "summary.cgmStats.periods.1d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetName("MeetingTargetsIndex1d").
+				SetPartialFilterExpression(bson.D{
+					{"summary.cgmStats.periods.1d.timeInTargetPercent", bson.M{"$gte": .70}},
+					{"summary.cgmStats.periods.1d.timeCGMUsePercent", bson.M{"$gte": .70}},
+				}),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "userId", Value: 1},
+				{Key: "tags", Value: 1},
+				{Key: "summary.cgmStats.dates.lastData", Value: 1},
+				{Key: "summary.cgmStats.periods.7d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetName("MeetingTargetsIndex7d").
+				SetPartialFilterExpression(bson.D{
+					{"summary.cgmStats.periods.7d.timeInTargetPercent", bson.M{"$gte": .70}},
+					{"summary.cgmStats.periods.7d.timeCGMUsePercent", bson.M{"$gte": .70}},
+				}),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "userId", Value: 1},
+				{Key: "tags", Value: 1},
+				{Key: "summary.cgmStats.dates.lastData", Value: 1},
+				{Key: "summary.cgmStats.periods.14d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetName("MeetingTargetsIndex14d").
+				SetPartialFilterExpression(bson.D{
+					{"summary.cgmStats.periods.14d.timeInTargetPercent", bson.M{"$gte": .70}},
+					{"summary.cgmStats.periods.14d.timeCGMUsePercent", bson.M{"$gte": .70}},
+				}),
+		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "userId", Value: 1},
+				{Key: "tags", Value: 1},
+				{Key: "summary.cgmStats.dates.lastData", Value: 1},
+				{Key: "summary.cgmStats.periods.30d.timeInTargetPercent", Value: 1},
+			},
+			Options: options.Index().
+				SetName("MeetingTargetsIndex30d").
+				SetPartialFilterExpression(bson.D{
+					{"summary.cgmStats.periods.30d.timeInTargetPercent", bson.M{"$gte": .70}},
+					{"summary.cgmStats.periods.30d.timeCGMUsePercent", bson.M{"$gte": .70}},
+				}),
 		},
 	})
 	return err
@@ -1286,6 +1368,7 @@ func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]
 				resultPatient.TimeInVeryLowPercent = v.TimeInVeryLowPercent
 				resultPatient.TimeInAnyLowPercent = v.TimeInAnyLowPercent
 				resultPatient.TimeInAnyHighPercent = v.TimeInAnyHighPercent
+				resultPatient.TimeInExtremeHighPercent = v.TimeInExtremeHighPercent
 			}
 		}
 
@@ -1295,8 +1378,199 @@ func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]
 	return categoryResult
 }
 
-const TideReportPatientLimit = 50
-const TideReportNoDataPatientLimit = 25
+const TideReportPatientLimit = 100
+const TideReportNoDataPatientLimit = 50
+
+type tideCategory struct {
+	CategoryName string
+	SummaryField string
+
+	// SummaryFieldSortOrder controls sorting of the [SummaryField].
+	//
+	// Value: < 0 - sort in descending order
+	//          0 - no sorting
+	//        > 0 - sort in ascending order
+	SummaryFieldSortOrder int
+	// SummaryFieldFilters optionally filter a category while querying.
+	SummaryFieldFilters []summaryFieldFilter
+}
+
+// summaryFieldFilter allows defines a query on a summary field
+type summaryFieldFilter struct {
+	SummaryField string
+	// SummaryFieldComparator is the mongodb comparison operator, e.g., `$gt`, `$not`, etc used with one of the operands being [SummaryField] and the other operand [ComparatorOperandExpression].
+	SummaryFieldComparator string
+	// ComparatorOperandExpression is an expression to compare [SummaryField] against. Because it may take different forms it is of type any. This may be a simple value like an string, int32, long or an object.
+	ComparatorOperandExpression any
+}
+
+// availableCategories are the categories available for a TIDE report.
+var availableCategories = [...]tideCategory{
+	{
+		CategoryName:          "timeInVeryLowPercent",
+		SummaryField:          "timeInVeryLowPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInVeryLowPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.01,
+			}},
+	},
+	{
+		CategoryName:          "timeInAnyLowPercent",
+		SummaryField:          "timeInAnyLowPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInAnyLowPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.04,
+			}},
+	},
+	{
+		CategoryName:          "dropInTimeInTargetPercent",
+		SummaryField:          "timeInTargetPercentDelta",
+		SummaryFieldSortOrder: 1, // ascending sort so that largest negative value is first
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInTargetPercentDelta",
+				SummaryFieldComparator:      "$lt",
+				ComparatorOperandExpression: -0.15,
+			}},
+	},
+	{
+		CategoryName:          "timeCGMUsePercent",
+		SummaryField:          "timeCGMUsePercent",
+		SummaryFieldSortOrder: 1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeCGMUsePercent",
+				SummaryFieldComparator:      "$lt",
+				ComparatorOperandExpression: 0.7,
+			}},
+	},
+	{
+		CategoryName:          "timeInTargetPercent",
+		SummaryField:          "timeInTargetPercent",
+		SummaryFieldSortOrder: 1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInTargetPercent",
+				SummaryFieldComparator:      "$lt",
+				ComparatorOperandExpression: 0.7,
+			}},
+	},
+	{
+		CategoryName:          "meetingTargets",
+		SummaryField:          "timeInTargetPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInTargetPercent",
+				SummaryFieldComparator:      "$gte",
+				ComparatorOperandExpression: 0.7,
+			},
+			{
+				SummaryField:                "timeCGMUsePercent",
+				SummaryFieldComparator:      "$gte",
+				ComparatorOperandExpression: 0.7,
+			},
+			// These "$not" expressions are because the fields may not exist in the patient summary
+			{
+				SummaryField:                "timeInAnyLowPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .04},
+			},
+			{
+				SummaryField:                "timeInVeryLowPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .01},
+			},
+			{
+				SummaryField:                "timeInAnyHighPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .25},
+			},
+			{
+				SummaryField:                "timeInVeryHighPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gt": .05},
+			},
+			{
+				SummaryField:                "timeInExtremeHighPercent",
+				SummaryFieldComparator:      "$not",
+				ComparatorOperandExpression: bson.M{"$gte": .01},
+			},
+		},
+	},
+	{
+		CategoryName:          "timeInExtremeHighPercent",
+		SummaryField:          "timeInExtremeHighPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInExtremeHighPercent",
+				SummaryFieldComparator:      "$gte",
+				ComparatorOperandExpression: 0.01,
+			}},
+	},
+	{
+		CategoryName:          "timeInVeryHighPercent",
+		SummaryField:          "timeInVeryHighPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInVeryHighPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.05,
+			}},
+	},
+	{
+		CategoryName:          "timeInAnyHighPercent",
+		SummaryField:          "timeInAnyHighPercent",
+		SummaryFieldSortOrder: -1,
+		SummaryFieldFilters: []summaryFieldFilter{
+			{
+				SummaryField:                "timeInAnyHighPercent",
+				SummaryFieldComparator:      "$gt",
+				ComparatorOperandExpression: 0.25,
+			}},
+	},
+}
+
+// defaultOrderedCategoryNames is the ORDERED listing of categories by name to
+// use if TideReportParams.Categories is empty. It is ordered because some
+// categories have a higher priority in terms of whether patients within that
+// category should be shown or not due to the restriction on returned results
+// by TideReportPatientLimit
+var defaultOrderedCategoryNames = []string{
+	"timeInVeryLowPercent",
+	"timeInAnyLowPercent",
+	"timeInVeryHighPercent",
+	"timeInAnyHighPercent",
+	"dropInTimeInTargetPercent",
+	"timeCGMUsePercent",
+	"meetingTargets",
+}
+
+// categoriesByNames returns a slice of categories with a CategoryName in names. The order of the returned slice matches the order of the name in names.
+func categoriesByNames(names []string) []tideCategory {
+	cats := make([]tideCategory, 0, len(names))
+	alreadySeen := make(map[string]bool, len(names))
+	for _, name := range names {
+		if !alreadySeen[name] {
+			alreadySeen[name] = true
+			idx := slices.IndexFunc(availableCategories[:], func(cat tideCategory) bool {
+				return cat.CategoryName == name
+			})
+			if idx > -1 {
+				cats = append(cats, availableCategories[idx])
+			}
+		}
+	}
+	return cats
+}
 
 func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
 	if clinicId == "" {
@@ -1304,61 +1578,17 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 	}
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 
-	if params.Tags == nil || len(*params.Tags) < 1 {
-		return nil, fmt.Errorf("%w: no tags provided", errors2.BadRequest)
-	}
-	tags := store.ObjectIDSFromStringArray(*params.Tags)
+	tags := store.ObjectIDSFromStringArray(params.Tags)
 
-	if params.LastDataCutoff == nil || params.LastDataCutoff.IsZero() {
+	if params.LastDataCutoff.IsZero() {
 		return nil, fmt.Errorf("%w: no lastDataCutoff provided", errors2.BadRequest)
 	}
 
-	if params.Period == nil {
-		return nil, fmt.Errorf("%w: no period provided", errors2.BadRequest)
-	}
-
-	if *params.Period != "1d" && *params.Period != "7d" && *params.Period != "14d" && *params.Period != "30d" {
-		return nil, fmt.Errorf("%w: provided period is not one of the valid periods", errors2.BadRequest)
-	}
-
-	type Category struct {
-		Heading    string
-		Field      string
-		Comparison string
-		Value      float64
-	}
-
-	categories := [...]Category{
-		{
-			Heading:    "timeInVeryLowPercent",
-			Field:      "timeInVeryLowPercent",
-			Comparison: "$gt",
-			Value:      0.01,
-		},
-		{
-			Heading:    "timeInAnyLowPercent",
-			Field:      "timeInAnyLowPercent",
-			Comparison: "$gt",
-			Value:      0.04,
-		},
-		{
-			Heading:    "dropInTimeInTargetPercent",
-			Field:      "timeInTargetPercentDelta",
-			Comparison: "$lt",
-			Value:      -0.15,
-		},
-		{
-			Heading:    "timeInTargetPercent",
-			Field:      "timeInTargetPercent",
-			Comparison: "$lt",
-			Value:      0.7,
-		},
-		{
-			Heading:    "timeCGMUsePercent",
-			Field:      "timeCGMUsePercent",
-			Comparison: "$lt",
-			Value:      0.7,
-		},
+	var categories []tideCategory
+	if len(params.Categories) == 0 {
+		categories = categoriesByNames(defaultOrderedCategoryNames)
+	} else {
+		categories = categoriesByNames(params.Categories)
 	}
 
 	remaining := TideReportPatientLimit
@@ -1367,40 +1597,44 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 		Config: TideConfig{
 			ClinicId: clinicId,
 			Filters: TideFilters{
-				TimeInVeryLowPercent:      ">0.01",
-				TimeInAnyLowPercent:       ">0.04",
-				DropInTimeInTargetPercent: "<-0.15",
-				TimeInTargetPercent:       "<0.7",
-				TimeCGMUsePercent:         "<0.7",
+				TimeInVeryLowPercent:      strp(">0.01"),
+				TimeInAnyLowPercent:       strp(">0.04"),
+				DropInTimeInTargetPercent: strp("<-0.15"),
+				TimeInTargetPercent:       strp("<0.7"),
+				TimeCGMUsePercent:         strp("<0.7"),
 			},
-			HighGlucoseThreshold:     10.0,
-			LastDataCutoff:           *params.LastDataCutoff,
-			LowGlucoseThreshold:      3.9,
-			Period:                   *params.Period,
-			SchemaVersion:            1,
-			Tags:                     *params.Tags,
-			VeryHighGlucoseThreshold: 13.9,
-			VeryLowGlucoseThreshold:  3.0,
+			HighGlucoseThreshold:        HighGlucoseThreshold,
+			LastDataCutoff:              params.LastDataCutoff,
+			LowGlucoseThreshold:         LowGlucoseThreshold,
+			Period:                      params.Period,
+			SchemaVersion:               TideSchemaVersion,
+			Tags:                        params.Tags,
+			VeryHighGlucoseThreshold:    VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:     VeryLowGlucoseThreshold,
+			ExtremeHighGlucoseThreshold: ExtremeHighGlucoseThreshold,
 		},
 		Results: TideResults{},
 	}
 
 	for _, category := range categories {
 		selector := bson.M{
-			"_id":      bson.M{"$nin": exclusions},
-			"clinicId": clinicObjId,
-			"tags":     bson.M{"$all": tags},
-			"summary.cgmStats.periods." + *params.Period + "." + category.Field: bson.M{category.Comparison: category.Value},
-			"summary.cgmStats.dates.lastData":                                   bson.M{"$gte": params.LastDataCutoff},
+			"_id":                             bson.M{"$nin": exclusions},
+			"clinicId":                        clinicObjId,
+			"tags":                            bson.M{"$all": tags},
+			"summary.cgmStats.dates.lastData": bson.M{"$gte": params.LastDataCutoff},
 		}
 
 		opts := options.Find()
 		opts.SetLimit(int64(remaining))
 
-		sortKey := "summary.cgmStats.periods." + *params.Period + "." + category.Field
-		if category.Comparison == "$gt" {
+		for _, filter := range category.SummaryFieldFilters {
+			selector["summary.cgmStats.periods."+params.Period+"."+filter.SummaryField] = bson.M{filter.SummaryFieldComparator: filter.ComparatorOperandExpression}
+		}
+
+		sortKey := "summary.cgmStats.periods." + params.Period + "." + category.SummaryField
+		if category.SummaryFieldSortOrder < 0 {
 			opts.SetSort(bson.D{{Key: sortKey, Value: -1}})
-		} else {
+		} else if category.SummaryFieldSortOrder > 0 {
 			opts.SetSort(bson.D{{Key: sortKey, Value: 1}})
 		}
 
@@ -1420,50 +1654,15 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
 
-		tide.Results[category.Heading] = PatientsToTideResult(patientsList, *params.Period, &exclusions)
-		tide.Metadata.SelectedPatients += len(tide.Results[category.Heading])
+		tide.Results[category.CategoryName] = PatientsToTideResult(patientsList, params.Period, &exclusions)
+		tide.Metadata.SelectedPatients += len(tide.Results[category.CategoryName])
 		remaining -= len(patientsList)
 		if remaining < 1 {
 			break
 		}
 	}
 
-	if remaining > 0 {
-		selector := bson.M{
-			"_id":                             bson.M{"$nin": exclusions},
-			"clinicId":                        clinicObjId,
-			"tags":                            bson.M{"$all": tags},
-			"summary.cgmStats.dates.lastData": bson.M{"$gte": params.LastDataCutoff},
-		}
-
-		opts := options.Find()
-		opts.SetLimit(int64(remaining))
-
-		opts.SetSort(bson.D{
-			{"summary.cgmStats.periods." + *params.Period + ".timeInTargetPercent", -1},
-		})
-
-		count, err := r.collection.CountDocuments(ctx, selector)
-		if err != nil {
-			return nil, err
-		}
-		tide.Metadata.CandidatePatients += int(count)
-
-		cursor, err := r.collection.Find(ctx, selector, opts)
-		if err != nil {
-			return nil, err
-		}
-
-		var patientsList []*Patient
-		if err = cursor.All(ctx, &patientsList); err != nil {
-			return nil, fmt.Errorf("error decoding patients list: %w", err)
-		}
-
-		tide.Results["meetingTargets"] = PatientsToTideResult(patientsList, *params.Period, &exclusions)
-		tide.Metadata.SelectedPatients += len(tide.Results["meetingTargets"])
-	}
-
-	{
+	if !params.ExcludeNoData {
 		// This specifically catches users who:
 		// -  Have never had cgm data, resulting in a missing lastData field
 		// OR
@@ -1509,7 +1708,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
 
-		tide.Results["noData"] = PatientsToTideResult(patientsList, *params.Period, &exclusions)
+		tide.Results["noData"] = PatientsToTideResult(patientsList, params.Period, &exclusions)
 		tide.Metadata.SelectedPatients += len(tide.Results["noData"])
 	}
 
@@ -1638,7 +1837,6 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 	now := time.Now()
 	activeSubscriptionKey := fmt.Sprintf("ehrSubscriptions.%s.active", params.subscription)
 	matchedMessagesSubscriptionKey := fmt.Sprintf("$ehrSubscriptions.%s.matchedMessages", params.subscription)
-
 	clinicObjIds := make([]primitive.ObjectID, 0, len(params.clinicIds))
 	for _, clinicId := range params.clinicIds {
 		clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
@@ -1728,4 +1926,8 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 	)
 
 	return pipeline
+}
+
+func strp(s string) *string {
+	return &s
 }

@@ -298,7 +298,7 @@ github.com/oapi-codegen/echo-middleware
 github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 github.com/oapi-codegen/oapi-codegen/v2/pkg/codegen
 github.com/oapi-codegen/oapi-codegen/v2/pkg/util
-# github.com/oapi-codegen/runtime v1.1.1
+# github.com/oapi-codegen/runtime v1.1.2
 ## explicit; go 1.20
 github.com/oapi-codegen/runtime
 github.com/oapi-codegen/runtime/types
@@ -509,7 +509,7 @@ github.com/tchap/go-patricia/v2/patricia
 ## explicit; go 1.18
 github.com/tealeg/xlsx/v3
 # github.com/tidepool-org/clinic/client v0.0.0 => ./client
-## explicit; go 1.22
+## explicit; go 1.24.1
 github.com/tidepool-org/clinic/client
 # github.com/tidepool-org/clinic/redox_models v0.0.0 => ./redox_models
 ## explicit; go 1.22

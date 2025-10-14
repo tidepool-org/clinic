@@ -430,6 +430,20 @@ func NewReviews(reviews PatientReviewsV1) []patients.Review {
 	return result
 }
 
+func NewTideReportParams(params TideReportParams) patients.TideReportParams {
+	var categories []string
+	for _, cat := range params.Categories {
+		categories = append(categories, string(cat))
+	}
+	return patients.TideReportParams{
+		Period:         params.Period,
+		Tags:           params.Tags,
+		LastDataCutoff: params.LastDataCutoff,
+		Categories:     categories,
+		ExcludeNoData:  params.ExcludeNoData,
+	}
+}
+
 func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 	if tide == nil {
 		return nil
@@ -437,16 +451,17 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 
 	tideResult := &TideResponseV1{
 		Config: TideConfigV1{
-			ClinicId:                 &tide.Config.ClinicId,
-			Filters:                  TideFiltersV1(tide.Config.Filters),
-			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
-			LastDataCutoff:           tide.Config.LastDataCutoff,
-			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
-			Period:                   tide.Config.Period,
-			SchemaVersion:            tide.Config.SchemaVersion,
-			Tags:                     &tide.Config.Tags,
-			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
-			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
+			ClinicId:                    &tide.Config.ClinicId,
+			Filters:                     TideFiltersV1(tide.Config.Filters),
+			HighGlucoseThreshold:        tide.Config.HighGlucoseThreshold,
+			LastDataCutoff:              tide.Config.LastDataCutoff,
+			LowGlucoseThreshold:         tide.Config.LowGlucoseThreshold,
+			Period:                      tide.Config.Period,
+			SchemaVersion:               tide.Config.SchemaVersion,
+			Tags:                        &tide.Config.Tags,
+			VeryHighGlucoseThreshold:    tide.Config.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:     tide.Config.VeryLowGlucoseThreshold,
+			ExtremeHighGlucoseThreshold: &tide.Config.ExtremeHighGlucoseThreshold,
 		},
 		Results: TideResultsV1{},
 	}
@@ -460,6 +475,7 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
 				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
 				TimeInHighPercent:          patient.TimeInHighPercent,
+				TimeInExtremeHighPercent:   patient.TimeInExtremeHighPercent,
 				TimeInLowPercent:           patient.TimeInLowPercent,
 				TimeInTargetPercent:        patient.TimeInTargetPercent,
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
