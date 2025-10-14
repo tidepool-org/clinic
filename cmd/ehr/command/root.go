@@ -20,8 +20,8 @@ func Run(f interface{}, opts ...fx.Option) error {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "xealth",
-	Short: "Helper tool to automate the enrollment of patients in Xealth",
+	Use:   "ehr",
+	Short: "Helper tool to to manage EHR integrations",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Overwrite zap's log level
 		return os.Setenv("LOG_LEVEL", logLevel)
