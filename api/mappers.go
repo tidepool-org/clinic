@@ -260,18 +260,18 @@ func newGlycemicRangesDtoWithError(ranges patients.GlycemicRanges) (
 	*GlycemicRangesV1, error) {
 
 	switch ranges.Type {
-	case "custom":
+	case patients.GlycemicRangeTypeCustom:
 		custom, err := newGlycemicRangesDtoCustom(ranges.Custom)
 		if err != nil {
 			return nil, err
 		}
-		return &GlycemicRangesV1{Type: "custom", Custom: *custom}, nil
-	case "preset":
+		return &GlycemicRangesV1{Type: Custom, Custom: *custom}, nil
+	case patients.GlycemicRangeTypePreset:
 		preset, err := newGlycemicRangesDtoPreset(ranges.Preset)
 		if err != nil {
 			return nil, err
 		}
-		return &GlycemicRangesV1{Type: "preset", Preset: *preset}, nil
+		return &GlycemicRangesV1{Type: Preset, Preset: *preset}, nil
 	}
 
 	return nil, progErrf("unhandled glycemic range type: %q", ranges.Type)
