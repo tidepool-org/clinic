@@ -714,11 +714,10 @@ const (
 const (
 	DropInTimeInTargetPercent TideReportParamsCategories = "dropInTimeInTargetPercent"
 	MeetingTargets            TideReportParamsCategories = "meetingTargets"
-	NoData                    TideReportParamsCategories = "noData"
 	TimeCGMUsePercent         TideReportParamsCategories = "timeCGMUsePercent"
+	TimeInAnyHighPercent      TideReportParamsCategories = "timeInAnyHighPercent"
 	TimeInAnyLowPercent       TideReportParamsCategories = "timeInAnyLowPercent"
 	TimeInExtremeHighPercent  TideReportParamsCategories = "timeInExtremeHighPercent"
-	TimeInHighPercent         TideReportParamsCategories = "timeInHighPercent"
 	TimeInTargetPercent       TideReportParamsCategories = "timeInTargetPercent"
 	TimeInVeryHighPercent     TideReportParamsCategories = "timeInVeryHighPercent"
 	TimeInVeryLowPercent      TideReportParamsCategories = "timeInVeryLowPercent"
@@ -1756,17 +1755,17 @@ type TideConfigV1 struct {
 	// ClinicId Clinic identifier.
 	ClinicId *ClinicIdV1 `json:"clinicId,omitempty"`
 
-	// ExtremeHighGlucoseThreshold Threshold used for determining if a value is extremely high
+	// ExtremeHighGlucoseThreshold Minimum inclusive threshold in mmol/L for categorizing if a glucose value is extremely high. Not defined by the AACE.
 	ExtremeHighGlucoseThreshold *float64 `json:"extremeHighGlucoseThreshold,omitempty"`
 
 	// Filters Visual representation of filtered categories selected
 	Filters TideFiltersV1 `json:"filters"`
 
-	// HighGlucoseThreshold Threshold used for determining if a value is high
+	// HighGlucoseThreshold Minimum exclusive threshold in mmol/L for categorizing if a glucose value is high as established by the AACE.
 	HighGlucoseThreshold float64   `json:"highGlucoseThreshold"`
 	LastDataCutoff       time.Time `json:"lastDataCutoff"`
 
-	// LowGlucoseThreshold Threshold used for determining if a value is low
+	// LowGlucoseThreshold Maximum exclusive threshold in mmol/L for categorizing if a glucose value is low as established by the AACE.
 	LowGlucoseThreshold float64 `json:"lowGlucoseThreshold"`
 	Period              string  `json:"period"`
 
@@ -1774,10 +1773,10 @@ type TideConfigV1 struct {
 	SchemaVersion int              `json:"schemaVersion"`
 	Tags          *PatientTagIdsV1 `json:"tags"`
 
-	// VeryHighGlucoseThreshold Threshold used for determining if a value is very high
+	// VeryHighGlucoseThreshold Minimum exclusive threshold in mmol/L for categorizing if a glucose value is very high as established by the AACE.
 	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold"`
 
-	// VeryLowGlucoseThreshold Threshold used for determining if a value is very low
+	// VeryLowGlucoseThreshold Maximum exclusive threshold in mmol/L for categorizing if a glucose value is very low as established by the AACE.
 	VeryLowGlucoseThreshold float64 `json:"veryLowGlucoseThreshold"`
 }
 
@@ -1834,6 +1833,9 @@ type TideResultPatientV1 struct {
 
 	// TimeInAnyLowPercent Percentage of time spent in any low glucose range
 	TimeInAnyLowPercent *float64 `json:"timeInAnyLowPercent,omitempty"`
+
+	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
+	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
 
 	// TimeInHighPercent Percentage of time spent in high glucose range
 	TimeInHighPercent *float64 `json:"timeInHighPercent,omitempty"`
@@ -2357,16 +2359,16 @@ type TideReportParams struct {
 	Period string `form:"period" json:"period"`
 
 	// Tags Comma-separated list of patient tag IDs
-	Tags []string `form:"tags" json:"tags"`
+	Tags []ObjectIdV1 `form:"tags" json:"tags"`
 
 	// LastDataCutoff Inclusive minimum of date of last data from a patient.
 	LastDataCutoff time.Time `form:"lastDataCutoff" json:"lastDataCutoff"`
 
-	// Categories Comma-separated list of TIDE report categories. If omitted or empty, the default TIDE categories will be returned.
+	// Categories Comma-separated list of TIDE report categories to return in queried order. If omitted or empty, the default TIDE categories will be returned - see example.
 	Categories []TideReportParamsCategories `form:"categories,omitempty" json:"categories,omitempty"`
 
-	// ExcludeNoDataPatients If true, then exclude / omit patients with no data in the TIDE report.
-	ExcludeNoDataPatients bool `form:"excludeNoDataPatients,omitempty" json:"excludeNoDataPatients,omitempty"`
+	// ExcludeNoData If true, then exclude / omit patients with no data in the TIDE report.
+	ExcludeNoData bool `form:"excludeNoData,omitempty" json:"excludeNoData,omitempty"`
 }
 
 // TideReportParamsCategories defines parameters for TideReport.
