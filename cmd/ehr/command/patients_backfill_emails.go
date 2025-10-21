@@ -3,6 +3,9 @@ package command
 import (
 	"context"
 	"fmt"
+	"net/mail"
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
@@ -11,15 +14,14 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
-	"net/mail"
-	"time"
 )
 
 const minimumAgeSelfOwnedAccountYears = 13
 
 var patientsBackfillEmailsParams = struct {
-	ClinicId string
-	DryRun   bool
+	BatchSize int
+	ClinicId  string
+	DryRun    bool
 }{}
 
 var patientsBackfillEmailsCommand = &cobra.Command{
@@ -31,6 +33,13 @@ var patientsBackfillEmailsCommand = &cobra.Command{
 		patientsBackfillEmailsParams.ClinicId = args[0]
 		return Run(backfillEmails)
 	},
+}
+
+func init() {
+	patientsBackfillEmailsCommand.Flags().BoolVar(&patientsBackfillEmailsParams.DryRun, "dry-run", false, "Only prints out users that will be updated")
+	patientsBackfillEmailsCommand.Flags().IntVar(&patientsBackfillEmailsParams.BatchSize, "batch-size", 100, "Batch size to use when fetching users")
+
+	patientsCmd.AddCommand(patientsBackfillEmailsCommand)
 }
 
 func backfillEmails(clinicsService clinics.Service, patientsService patients.Service, redoxService redox.Redox, logger *zap.SugaredLogger) error {
@@ -46,100 +55,98 @@ func backfillEmails(clinicsService clinics.Service, patientsService patients.Ser
 	hasEmail := false
 	isCustodial := true
 
-	page := store.DefaultPagination().WithLimit(1000000)
-	sort := []*store.Sort{{
-		Attribute: "mrn",
-		Ascending: true,
-	}}
+	updated := 0
+
 	filter := patients.Filter{
 		ClinicId:    &patientsBackfillEmailsParams.ClinicId,
 		HasEmail:    &hasEmail,
 		IsCustodial: &isCustodial,
 	}
-
-	result, err := patientsService.List(context.TODO(), &filter, page, sort)
-	if err != nil {
-		return fmt.Errorf("patients list error: %w", err)
-	}
-	if result.MatchingCount > page.Limit {
-		return fmt.Errorf("patients list limit exceeded")
-	}
-
-	updated := 0
-	for _, patient := range result.Patients {
-		mrn := "(empty)"
-		name := "(empty)"
-		userId := "(empty)"
-
-		if patient.Mrn != nil {
-			mrn = *patient.Mrn
+	sort := []*store.Sort{{
+		Attribute: "_id",
+		Ascending: true,
+	}}
+	page := store.DefaultPagination().WithLimit(patientsBackfillEmailsParams.BatchSize)
+	for {
+		result, err := patientsService.List(context.TODO(), &filter, page, sort)
+		if err != nil {
+			return fmt.Errorf("patients list error: %w", err)
 		}
-		if patient.FullName != nil {
-			name = *patient.FullName
-		}
-		if patient.UserId != nil {
-			userId = *patient.UserId
-		}
-		var subscription *patients.EHRSubscription
-		if patient.EHRSubscriptions != nil {
-			if sub, exists := patient.EHRSubscriptions[patients.SubscriptionRedoxSummaryAndReports]; exists && sub.Active {
-				subscription = &sub
+
+		for _, patient := range result.Patients {
+			mrn := "(empty)"
+			name := "(empty)"
+			userId := "(empty)"
+
+			if patient.Mrn != nil {
+				mrn = *patient.Mrn
 			}
-		}
-		if subscription == nil {
-			logger.Debugw("no active subscription found", "userId", userId)
-			continue
+			if patient.FullName != nil {
+				name = *patient.FullName
+			}
+			if patient.UserId != nil {
+				userId = *patient.UserId
+			}
+			var subscription *patients.EHRSubscription
+			if patient.EHRSubscriptions != nil {
+				if sub, exists := patient.EHRSubscriptions[patients.SubscriptionRedoxSummaryAndReports]; exists && sub.Active {
+					subscription = &sub
+				}
+			}
+			if subscription == nil {
+				logger.Debugw("no active subscription found", "userId", userId)
+				continue
+			}
+
+			messageRef := subscription.MatchedMessages[len(subscription.MatchedMessages)-1]
+			message, err := redoxService.FindMessage(context.TODO(), messageRef.DocumentId.Hex(), messageRef.DataModel, messageRef.EventType)
+			if err != nil {
+				logger.Errorw("unable to find order document", "userId", userId, "documentId", messageRef.DocumentId.Hex(), "error", err)
+				continue
+			}
+			var order models.NewOrder
+			if err := bson.Unmarshal(message.Message, &order); err != nil {
+				logger.Errorw("unable to unmarshal order for patient", "userId", userId, "error", err)
+				continue
+			}
+
+			email, err := GetEmailAddressFromOrder(order)
+			if err != nil {
+				logger.Errorw("unable to get email address from order", "userId", userId, "error", err)
+				continue
+			}
+			if email == nil {
+				logger.Debugw("no email address found", "userId", userId)
+				continue
+			}
+
+			if !patientsBackfillEmailsParams.DryRun {
+				patient.Email = email
+
+				_, err = patientsService.Update(context.TODO(), patients.PatientUpdate{
+					ClinicId: patient.ClinicId.Hex(),
+					UserId:   *patient.UserId,
+					Patient:  *patient,
+				})
+			}
+
+			if err != nil {
+				logger.Errorw("error updating patient", "userId", userId, "error", err)
+				continue
+			}
+
+			fmt.Printf("MRN %s - %s [%s] - New Email [%s]\n", mrn, name, userId, *email)
+			updated++
 		}
 
-		messageRef := subscription.MatchedMessages[len(subscription.MatchedMessages)-1]
-		message, err := redoxService.FindMessage(context.TODO(), messageRef.DocumentId.Hex(), messageRef.DataModel, messageRef.EventType)
-		if err != nil {
-			logger.Errorw("unable to find order document", "userId", userId, "documentId", messageRef.DocumentId.Hex(), "error", err)
-			continue
+		if len(result.Patients) < page.Limit {
+			break
 		}
-		var order models.NewOrder
-		if err := bson.Unmarshal(message.Message, &order); err != nil {
-			logger.Errorw("unable to unmarshal order for patient", "userId", userId, "error", err)
-			continue
-		}
-
-		email, err := GetEmailAddressFromOrder(order)
-		if err != nil {
-			logger.Errorw("unable to get email address from order", "userId", userId, "error", err)
-			continue
-		}
-		if email == nil {
-			logger.Debugw("no email address found", "userId", userId)
-			continue
-		}
-
-		if !patientsBackfillEmailsParams.DryRun {
-			patient.Email = email
-
-			_, err = patientsService.Update(context.TODO(), patients.PatientUpdate{
-				ClinicId: patient.ClinicId.Hex(),
-				UserId:   *patient.UserId,
-				Patient:  *patient,
-			})
-		}
-
-		if err != nil {
-			logger.Errorw("error updating patient", "userId", userId, "error", err)
-			continue
-		}
-
-		fmt.Printf("MRN %s - %s [%s] - New Email [%s]\n", mrn, name, userId, *email)
-		updated++
+		page = page.WithOffset(page.Offset + page.Limit)
 	}
 
 	fmt.Printf("%v patients were updated\n", updated)
 	return nil
-}
-
-func init() {
-	patientsBackfillEmailsCommand.Flags().BoolVar(&patientsBackfillEmailsParams.DryRun, "dry-run", false, "Only prints out users that will be updated")
-
-	patientsCmd.AddCommand(patientsBackfillEmailsCommand)
 }
 
 func GetBirthDateFromOrder(order models.NewOrder) (*time.Time, error) {

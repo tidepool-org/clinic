@@ -24,7 +24,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.0
 	github.com/open-policy-agent/opa v0.70.0
-	github.com/spf13/cobra v1.8.1
+	github.com/spf13/cobra v1.10.1
 	github.com/tealeg/xlsx/v3 v3.3.11
 	github.com/tidepool-org/clinic/client v0.0.0
 	github.com/tidepool-org/clinic/redox_models v0.0.0
@@ -114,7 +114,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/speakeasy-api/jsonpath v0.6.0 // indirect
 	github.com/speakeasy-api/openapi-overlay v0.10.2 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
