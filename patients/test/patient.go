@@ -92,8 +92,9 @@ func RandomGlycemicRangesPreset() patients.GlycemicRanges {
 	}
 }
 
-func RandomDiagnosisType() string {
+func RandomDiagnosisType() *patients.DiagnosisType {
 	all := []api.DiagnosisTypeV1{
+		api.DiagnosisTypeV1Empty,
 		api.DiagnosisTypeV1Gestational,
 		api.DiagnosisTypeV1Lada,
 		api.DiagnosisTypeV1Mody,
@@ -103,7 +104,8 @@ func RandomDiagnosisType() string {
 		api.DiagnosisTypeV1Type1,
 		api.DiagnosisTypeV1Type2,
 	}
-	return string(all[rand.IntN(len(all))])
+	choice := patients.DiagnosisType(all[rand.IntN(len(all))])
+	return &choice
 }
 
 func RandomSubscriptions() patients.EHRSubscriptions {

@@ -102,10 +102,22 @@ type Patient struct {
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
 	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
-	DiagnosisType              string                     `bson:"diagnosisType,omitempty"`
+	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+}
+
+type DiagnosisType string
+
+func (d *DiagnosisType) IsZero() bool {
+	// A value of nil is Zero, but the empty string is NOT.
+	//
+	// This means that clients that don't supply a value will not change an existing value,
+	// while those that specify an empty string will clear out the value. This is needed as
+	// some (faulty, but still relevant) clients won't/don't specify a value, but in those
+	// cases, we must keep the existing value.
+	return d == nil
 }
 
 type GlycemicRanges struct {

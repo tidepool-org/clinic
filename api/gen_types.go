@@ -646,6 +646,7 @@ const (
 
 // Defines values for DiagnosisTypeV1.
 const (
+	DiagnosisTypeV1Empty         DiagnosisTypeV1 = ""
 	DiagnosisTypeV1Gestational   DiagnosisTypeV1 = "gestational"
 	DiagnosisTypeV1Lada          DiagnosisTypeV1 = "lada"
 	DiagnosisTypeV1Mody          DiagnosisTypeV1 = "mody"
