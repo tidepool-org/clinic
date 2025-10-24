@@ -2635,6 +2635,10 @@ components:
           x-omitzero: true
           items:
             $ref: '#/components/schemas/site.v1'
+        glycemicRanges:
+          $ref: '#/components/schemas/glycemicRanges.v1'
+        diagnosisType:
+          $ref: '#/components/schemas/diagnosisType.v1'
     addServiceAccount.v1:
       title: AddServiceAccount
       x-stoplight:
@@ -4935,6 +4939,7 @@ components:
         - mody
         - other
         - notApplicable
+        - ''
       example: type1
     patient.v1:
       type: object
