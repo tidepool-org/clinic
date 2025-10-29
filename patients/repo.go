@@ -1190,7 +1190,7 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 
 	if filter.OmitNonStandardRanges {
 		orSelectors = append(orSelectors, bson.A{
-			bson.M{"glycemicRanges": bson.M{"type": "preset", "preset": "adaStandard"}},
+			bson.M{"glycemicRanges.preset": "adaStandard"},
 			// adaStandard is the default glycemicRanges---include patients with no setting
 			bson.M{"glycemicRanges": bson.M{"$exists": 0}},
 		})
