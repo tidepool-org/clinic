@@ -20,9 +20,7 @@ import (
 )
 
 func NewClinicWithDefaults(c ClinicV1) *clinics.Clinic {
-	clinic := mapClinic(c, clinics.NewClinicWithDefaults())
-	clinic.UpdatePatientCountSettingsForCountry()
-	return clinic
+	return mapClinic(c, clinics.NewClinicWithDefaults())
 }
 
 func NewClinic(c ClinicV1) *clinics.Clinic {

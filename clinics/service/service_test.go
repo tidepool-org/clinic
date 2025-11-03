@@ -55,8 +55,10 @@ var _ = Describe("Clinics", func() {
 	})
 
 	Describe("GetPatientCountSettings", func() {
-		It("returns patient count settings by default", func() {
+		It("returns patient count settings by default for a US default tier clinic", func() {
 			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr(clinics.CountryCodeUS)
+			clinic.Tier = clinics.DefaultTier
 			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
@@ -66,7 +68,33 @@ var _ = Describe("Clinics", func() {
 			Expect(patientCountSettings).To(Equal(clinics.DefaultPatientCountSettings()))
 		})
 
-		It("returns patient count settings when set", func() {
+		It("returns patient count settings by default for a non-US clinic", func() {
+			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr("CA")
+			clinic.Tier = clinics.DefaultTier
+			clinic, err := service.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(patientCountSettings).To(Equal(&clinics.PatientCountSettings{}))
+		})
+
+		It("returns patient count settings by default for a US non-default tier clinic", func() {
+			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr(clinics.CountryCodeUS)
+			clinic.Tier = "tier0200"
+			clinic, err := service.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(patientCountSettings).To(Equal(&clinics.PatientCountSettings{}))
+		})
+
+		It("returns patient count settings when set for a US default tier clinic", func() {
 			expectedPatientCountSettings := &clinics.PatientCountSettings{
 				HardLimit: &clinics.PatientCountLimit{
 					Plan: 10,
@@ -77,6 +105,8 @@ var _ = Describe("Clinics", func() {
 			}
 
 			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr(clinics.CountryCodeUS)
+			clinic.Tier = clinics.DefaultTier
 			clinic.PatientCountSettings = expectedPatientCountSettings
 			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
@@ -85,6 +115,52 @@ var _ = Describe("Clinics", func() {
 			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(patientCountSettings).To(Equal(expectedPatientCountSettings))
+		})
+
+		It("returns patient count settings when set for a non-US clinic", func() {
+			expectedPatientCountSettings := &clinics.PatientCountSettings{
+				HardLimit: &clinics.PatientCountLimit{
+					Plan: 10,
+				},
+				SoftLimit: &clinics.PatientCountLimit{
+					Plan: 5,
+				},
+			}
+
+			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr("CA")
+			clinic.Tier = clinics.DefaultTier
+			clinic.PatientCountSettings = expectedPatientCountSettings
+			clinic, err := service.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(patientCountSettings).To(Equal(&clinics.PatientCountSettings{}))
+		})
+
+		It("returns patient count settings when set for a non-US clinic", func() {
+			expectedPatientCountSettings := &clinics.PatientCountSettings{
+				HardLimit: &clinics.PatientCountLimit{
+					Plan: 10,
+				},
+				SoftLimit: &clinics.PatientCountLimit{
+					Plan: 5,
+				},
+			}
+
+			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr(clinics.CountryCodeUS)
+			clinic.Tier = "tier0200"
+			clinic.PatientCountSettings = expectedPatientCountSettings
+			clinic, err := service.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(patientCountSettings).To(Equal(&clinics.PatientCountSettings{}))
 		})
 	})
 
@@ -103,8 +179,10 @@ var _ = Describe("Clinics", func() {
 			Expect(err).To(Equal(clinics.ErrNotFound))
 		})
 
-		It("updates the patient count settings", func() {
+		It("updates the patient count settings for a US default tier clinic", func() {
 			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr(clinics.CountryCodeUS)
+			clinic.Tier = clinics.DefaultTier
 			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
@@ -124,6 +202,56 @@ var _ = Describe("Clinics", func() {
 			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(patientCountSettings).To(Equal(expectedPatientCountSettings))
+		})
+
+		It("updates the patient count settings for a non-US default tier clinic", func() {
+			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr("CA")
+			clinic.Tier = clinics.DefaultTier
+			clinic, err := service.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			expectedPatientCountSettings := &clinics.PatientCountSettings{
+				HardLimit: &clinics.PatientCountLimit{
+					Plan: 10,
+				},
+				SoftLimit: &clinics.PatientCountLimit{
+					Plan: 5,
+				},
+			}
+
+			err = service.UpdatePatientCountSettings(context.Background(), clinic.Id.Hex(), expectedPatientCountSettings)
+			Expect(err).ToNot(HaveOccurred())
+
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(patientCountSettings).To(Equal(&clinics.PatientCountSettings{}))
+		})
+
+		It("updates the patient count settings for a US no-default tier clinic", func() {
+			clinic := clinicsTest.RandomClinic()
+			clinic.Country = Ptr(clinics.CountryCodeUS)
+			clinic.Tier = "tier0200"
+			clinic, err := service.Create(context.Background(), clinic)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(clinic).ToNot(BeNil())
+
+			expectedPatientCountSettings := &clinics.PatientCountSettings{
+				HardLimit: &clinics.PatientCountLimit{
+					Plan: 10,
+				},
+				SoftLimit: &clinics.PatientCountLimit{
+					Plan: 5,
+				},
+			}
+
+			err = service.UpdatePatientCountSettings(context.Background(), clinic.Id.Hex(), expectedPatientCountSettings)
+			Expect(err).ToNot(HaveOccurred())
+
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(patientCountSettings).To(Equal(&clinics.PatientCountSettings{}))
 		})
 	})
 

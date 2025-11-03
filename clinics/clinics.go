@@ -141,8 +141,28 @@ type Clinic struct {
 	Sites                   []sites.Site             `bson:"sites,omitempty"`
 }
 
-func (c Clinic) IsOUS() bool {
-	return c.Country != nil && *c.Country != CountryCodeUS
+// For backwards compatibility, nil or empty country is treated as US.
+func (c Clinic) IsCountryCodeUS() bool {
+	return c.Country == nil || *c.Country == "" || *c.Country == CountryCodeUS
+}
+
+// For backwards compatibility, empty tier is treated as default tier.
+func (c Clinic) IsTierDefault() bool {
+	return c.Tier == "" || c.Tier == DefaultTier
+}
+
+// As of 10/31/2025, only US default tier clinics have patient count settings enabled.
+func (c Clinic) DoesClinicRequirePatientCountSetting() bool {
+	return c.IsCountryCodeUS() && c.IsTierDefault()
+}
+
+// If patient count settings are enabled, return them. Otherwise, unlimited.
+// For backwards compatibility, nil patient count settings is treated as unlimited.
+func (c Clinic) ResolvedPatientCountSettings() *PatientCountSettings {
+	if c.DoesClinicRequirePatientCountSetting() && c.PatientCountSettings != nil {
+		return c.PatientCountSettings
+	}
+	return UnlimitedPatientCountSettings()
 }
 
 type EHRSettings struct {
@@ -228,6 +248,10 @@ func (p PatientCountSettings) IsValid() bool {
 	return true
 }
 
+func UnlimitedPatientCountSettings() *PatientCountSettings {
+	return &PatientCountSettings{}
+}
+
 func DefaultPatientCountSettings() *PatientCountSettings {
 	return &PatientCountSettings{
 		HardLimit: &PatientCountLimit{
@@ -261,17 +285,6 @@ func NewClinicWithDefaults() *Clinic {
 
 func NewClinic() *Clinic {
 	return &Clinic{}
-}
-
-func (c *Clinic) UpdatePatientCountSettingsForCountry() bool {
-	if isOUS := c.IsOUS(); isOUS && c.PatientCountSettings != nil {
-		c.PatientCountSettings = nil
-		return true
-	} else if !isOUS && c.PatientCountSettings == nil {
-		c.PatientCountSettings = DefaultPatientCountSettings()
-		return true
-	}
-	return false
 }
 
 func (c *Clinic) HasAllRequiredFields() bool {

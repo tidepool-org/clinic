@@ -115,7 +115,7 @@ func (s *service) GetPatientCountSettings(ctx context.Context, clinicId string) 
 	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
 		return nil, err
 	} else {
-		return clinic.PatientCountSettings, nil
+		return clinic.ResolvedPatientCountSettings(), nil
 	}
 }
 
