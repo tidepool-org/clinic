@@ -35,9 +35,12 @@ var patientsEnrollCmd = &cobra.Command{
 }
 
 func enrollPatients(clinicsService clinics.Service, patientsService patients.Service, xealthClient xealth_client.ClientWithResponsesInterface) error {
-	clinic, err := getXealthClinic(patientsEnrollParams.ClinicId, clinicsService)
+	clinic, err := getEHRClinic(patientsEnrollParams.ClinicId, clinicsService)
 	if err != nil {
 		return err
+	}
+	if clinic.EHRSettings.Provider != clinics.EHRProviderXealth {
+		return fmt.Errorf("provider %s is not supported", clinic.EHRSettings.Provider)
 	}
 
 	page := store.DefaultPagination().WithLimit(patientsEnrollParams.Limit)
@@ -110,7 +113,6 @@ func init() {
 	patientsEnrollCmd.Flags().BoolVar(&patientsEnrollParams.DryRun, "dry-run", false, "The mrn origin to use when creating the order")
 
 	patientsCmd.AddCommand(patientsEnrollCmd)
-	rootCmd.AddCommand(patientsCmd)
 }
 
 func NewXealthClient(logger *zap.SugaredLogger) (xealth_client.ClientWithResponsesInterface, error) {

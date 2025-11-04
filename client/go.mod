@@ -1,6 +1,6 @@
 module github.com/tidepool-org/clinic/client
 
-go 1.22
+go 1.24.1
 
 require (
 	github.com/oapi-codegen/runtime v1.1.1

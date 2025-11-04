@@ -264,22 +264,63 @@ paths:
           in: query
           name: period
           description: Time Period to display
-        - schema:
+          required: true
+        - name: tags
+          description: Comma-separated list of patient tag IDs
+          schema:
             type: array
             items:
-              type: string
-              format: ^[a-f0-9]{24}$
+              $ref: '#/components/schemas/objectId.v1'
+            minItems: 1
           in: query
-          name: tags
-          description: Comma-separated list of patient tag IDs
           style: form
           explode: false
-        - schema:
+          required: true
+        - name: lastDataCutoff
+          description: Inclusive minimum of date of last data from a patient.
+          schema:
             type: string
             format: date-time
           in: query
-          name: lastDataCutoff
-          description: Inclusive
+          required: true
+        - name: categories
+          description: |
+            Comma-separated list of TIDE report categories to return in queried order. If omitted or empty, the default TIDE categories will be returned - see example.
+          schema:
+            type: array
+            x-go-type-skip-optional-pointer: true
+            x-omitempty: true
+            x-omitzero: true
+            items:
+              type: string
+              enum:
+                - timeInVeryLowPercent
+                - timeInAnyLowPercent
+                - timeInExtremeHighPercent
+                - timeInVeryHighPercent
+                - timeInAnyHighPercent
+                - dropInTimeInTargetPercent
+                - timeInTargetPercent
+                - timeCGMUsePercent
+                - meetingTargets
+          in: query
+          style: form
+          explode: false
+          example:
+            - timeInVeryLowPercent
+            - timeInAnyLowPercent
+            - timeInVeryHighPercent
+            - timeInAnyHighPercent
+            - dropInTimeInTargetPercent
+            - timeCGMUsePercent
+            - meetingTargets
+        - name: excludeNoData
+          description: If true, then exclude / omit patients with no data in the TIDE report.
+          schema:
+            type: boolean
+            x-go-type-skip-optional-pointer: true
+            x-omitempty: true
+          in: query
   /v1/clinics/{clinicId}/patients:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -924,6 +965,14 @@ paths:
           description: Comma-separated list of clinic site IDs
           style: form
           explode: false
+        - name: omitNonStandardRanges
+          description: |
+            Whether patients whose glycemic ranges selection is *not*
+            the ADA standard ranges (e.g. as used by the TIDE report)
+            should be omitted.
+          schema:
+            type: boolean
+          in: query
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
@@ -2394,6 +2443,10 @@ components:
           x-omitzero: true
           items:
             $ref: '#/components/schemas/site.v1'
+        glycemicRanges:
+          $ref: '#/components/schemas/glycemicRanges.v1'
+        diagnosisType:
+          $ref: '#/components/schemas/diagnosisType.v1'
     associateClinicianToUser.v1:
       title: Associate Clinician
       type: object
@@ -2599,6 +2652,10 @@ components:
           x-omitzero: true
           items:
             $ref: '#/components/schemas/site.v1'
+        glycemicRanges:
+          $ref: '#/components/schemas/glycemicRanges.v1'
+        diagnosisType:
+          $ref: '#/components/schemas/diagnosisType.v1'
     addServiceAccount.v1:
       title: AddServiceAccount
       x-stoplight:
@@ -3531,6 +3588,13 @@ components:
         - roles
         - createdTime
         - updatedTime
+    objectId.v1:
+      title: Object Id
+      type: string
+      description: String representation of a resource id
+      minLength: 24
+      maxLength: 24
+      pattern: ^[a-f0-9]{24}$
     patientTagIds.v1:
       type: array
       title: Patient Tag ID List
@@ -3547,21 +3611,9 @@ components:
     tideFilters.v1:
       type: object
       title: tidefilters.v1
-      description: ''
+      description: Visual representation of filtered categories selected
       properties:
-        timeInVeryLowPercent:
-          type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
-        timeInAnyLowPercent:
-          type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
         dropInTimeInTargetPercent:
-          type: string
-          pattern: ^(>=|>|<=|<)\d\.\d\d?$
-          example: '>0.5'
-        timeInTargetPercent:
           type: string
           pattern: ^(>=|>|<=|<)\d\.\d\d?$
           example: '>0.5'
@@ -3569,12 +3621,30 @@ components:
           type: string
           pattern: ^(>=|>|<=|<)\d\.\d\d?$
           example: '>0.5'
-      required:
-        - timeInVeryLowPercent
-        - timeInAnyLowPercent
-        - dropInTimeInTargetPercent
-        - timeInTargetPercent
-        - timeCGMUsePercent
+        timeInAnyLowPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInExtremeHighPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInHighPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInTargetPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInVeryHighPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
+        timeInVeryLowPercent:
+          type: string
+          pattern: ^(>=|>|<=|<)\d\.\d\d?$
+          example: '>0.5'
     tideConfig.v1:
       type: object
       title: tideconfig.v1
@@ -3594,19 +3664,23 @@ components:
           type: string
           format: date-time
         highGlucoseThreshold:
-          description: Threshold used for determining if a value is high
+          description: Minimum exclusive threshold in mmol/L for categorizing if a glucose value is high as established by the AACE.
           type: number
           x-go-type: float64
         veryHighGlucoseThreshold:
-          description: Threshold used for determining if a value is very high
+          description: Minimum exclusive threshold in mmol/L for categorizing if a glucose value is very high as established by the AACE.
+          type: number
+          x-go-type: float64
+        extremeHighGlucoseThreshold:
+          description: Minimum inclusive threshold in mmol/L for categorizing if a glucose value is extremely high. Not defined by the AACE.
           type: number
           x-go-type: float64
         lowGlucoseThreshold:
-          description: Threshold used for determining if a value is low
+          description: Maximum exclusive threshold in mmol/L for categorizing if a glucose value is low as established by the AACE.
           type: number
           x-go-type: float64
         veryLowGlucoseThreshold:
-          description: Threshold used for determining if a value is very low
+          description: Maximum exclusive threshold in mmol/L for categorizing if a glucose value is very low as established by the AACE.
           type: number
           x-go-type: float64
         tags:
@@ -3757,6 +3831,11 @@ components:
           type: number
           example: 0.35
           x-go-type: float64
+        timeInExtremeHighPercent:
+          description: Percentage of time spent in extreme high glucose range
+          type: number
+          example: 0.35
+          x-go-type: float64
         timeInAnyHighPercent:
           description: Percentage of time spent in any high glucose range
           type: number
@@ -3788,14 +3867,6 @@ components:
       type: object
       title: tideresults.v1
       description: ''
-      required:
-        - timeInVeryLowPercent
-        - timeInLowPercent
-        - dropInTimeInTargetPercent
-        - timeInTargetPercent
-        - timeCGMUsePercent
-        - meetingTargets
-        - noData
       additionalProperties:
         type: array
         items:
@@ -4796,6 +4867,97 @@ components:
         - twiist
         - dexcom
         - abbott
+    glycemicRangesThresholdUpperBound.v1:
+      type: object
+      properties:
+        value:
+          type: number
+          format: float
+        units:
+          type: string
+          enum:
+            - mg/dL
+            - mmol/L
+      required:
+        - value
+        - units
+    glycemicRangesThreshold.v1:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        upperBound:
+          $ref: '#/components/schemas/glycemicRangesThresholdUpperBound.v1'
+        inclusive:
+          type: boolean
+          default: false
+          x-go-type-skip-optional-pointer: true
+      required:
+        - name
+        - upperBound
+    glycemicRangesCustom.v1:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        thresholds:
+          type: array
+          items:
+            $ref: '#/components/schemas/glycemicRangesThreshold.v1'
+          minLength: 4
+          maxLength: 5
+      required:
+        - name
+        - thresholds
+      x-go-type-skip-optional-pointer: true
+      x-omitzero: true
+    glycemicRangesPreset.v1:
+      type: string
+      minLength: 1
+      enum:
+        - adaStandard
+        - adaPregnancyType1
+        - adaPregnancyType2
+        - adaHighRisk
+      x-enum-varnames:
+        - ADAStandard
+        - ADAPregnancyType1
+        - ADAPregnancyType2
+        - ADAHighRisk
+      default: adaStandard
+      x-go-type-skip-optional-pointer: true
+      x-omitzero: true
+    glycemicRanges.v1:
+      properties:
+        type:
+          type: string
+          enum:
+            - preset
+            - custom
+          default: preset
+        custom:
+          $ref: '#/components/schemas/glycemicRangesCustom.v1'
+        preset:
+          $ref: '#/components/schemas/glycemicRangesPreset.v1'
+      required:
+        - type
+    diagnosisType.v1:
+      title: Diagnosis Type
+      type: string
+      enum:
+        - type1
+        - type2
+        - type3c
+        - gestational
+        - prediabetes
+        - lada
+        - mody
+        - other
+        - notApplicable
+        - ''
+      example: type1
     patient.v1:
       type: object
       title: Patient
@@ -4867,6 +5029,10 @@ components:
           x-omitzero: true
           items:
             $ref: '#/components/schemas/site.v1'
+        glycemicRanges:
+          $ref: '#/components/schemas/glycemicRanges.v1'
+        diagnosisType:
+          $ref: '#/components/schemas/diagnosisType.v1'
       required:
         - id
         - fullName
@@ -4874,13 +5040,6 @@ components:
         - createdTime
         - updatedTime
         - connectionRequests
-    objectId.v1:
-      title: Object Id
-      type: string
-      description: String representation of a resource id
-      minLength: 24
-      maxLength: 24
-      pattern: ^[a-f0-9]{24}$
     siteById.v1:
       type: object
       title: SiteById

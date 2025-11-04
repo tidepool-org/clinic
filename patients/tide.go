@@ -2,6 +2,15 @@ package patients
 
 import "time"
 
+const (
+	VeryLowGlucoseThreshold     = 3.0
+	LowGlucoseThreshold         = 3.9
+	HighGlucoseThreshold        = 10.0
+	VeryHighGlucoseThreshold    = 13.9
+	ExtremeHighGlucoseThreshold = 19.4
+	TideSchemaVersion           = 2
+)
+
 type Tide struct {
 	Config   TideConfig   `json:"config"`
 	Results  TideResults  `json:"results"`
@@ -9,24 +18,28 @@ type Tide struct {
 }
 
 type TideConfig struct {
-	ClinicId                 string      `json:"clinicId,omitempty"`
-	Filters                  TideFilters `json:"filters"`
-	HighGlucoseThreshold     float64     `json:"highGlucoseThreshold"`
-	LastDataCutoff           time.Time   `json:"lastDataCutoff"`
-	LowGlucoseThreshold      float64     `json:"lowGlucoseThreshold"`
-	Period                   string      `json:"period"`
-	SchemaVersion            int         `json:"schemaVersion"`
-	Tags                     []string    `json:"tags"`
-	VeryHighGlucoseThreshold float64     `json:"veryHighGlucoseThreshold"`
-	VeryLowGlucoseThreshold  float64     `json:"veryLowGlucoseThreshold"`
+	ClinicId                    string      `json:"clinicId,omitempty"`
+	Filters                     TideFilters `json:"filters"`
+	HighGlucoseThreshold        float64     `json:"highGlucoseThreshold"`
+	LastDataCutoff              time.Time   `json:"lastDataCutoff"`
+	LowGlucoseThreshold         float64     `json:"lowGlucoseThreshold"`
+	Period                      string      `json:"period"`
+	SchemaVersion               int         `json:"schemaVersion"`
+	Tags                        []string    `json:"tags"`
+	VeryHighGlucoseThreshold    float64     `json:"veryHighGlucoseThreshold"`
+	VeryLowGlucoseThreshold     float64     `json:"veryLowGlucoseThreshold"`
+	ExtremeHighGlucoseThreshold float64     `json:"extremeHighGlucoseThreshold"`
 }
 
 type TideFilters struct {
-	DropInTimeInTargetPercent string `json:"dropInTimeInTargetPercent"`
-	TimeCGMUsePercent         string `json:"timeCGMUsePercent"`
-	TimeInAnyLowPercent       string `json:"timeInAnyLowPercent"`
-	TimeInTargetPercent       string `json:"timeInTargetPercent"`
-	TimeInVeryLowPercent      string `json:"timeInVeryLowPercent"`
+	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
+	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
+	TimeInAnyLowPercent       *string `json:"timeInAnyLowPercent,omitempty"`
+	TimeInExtremeHighPercent  *string `json:"timeInExtremeHighPercent,omitempty"`
+	TimeInHighPercent         *string `json:"timeInHighPercent,omitempty"`
+	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
+	TimeInVeryHighPercent     *string `json:"timeInVeryHighPercent,omitempty"`
+	TimeInVeryLowPercent      *string `json:"timeInVeryLowPercent,omitempty"`
 }
 
 type TidePatient struct {
@@ -44,6 +57,7 @@ type TideResultPatient struct {
 	Patient                    TidePatient `json:"patient"`
 	TimeCGMUseMinutes          *int        `json:"timeCGMUseMinutes,omitempty"`
 	TimeCGMUsePercent          *float64    `json:"timeCGMUsePercent,omitempty"`
+	TimeInExtremeHighPercent   *float64    `json:"timeInExtremeHighPercent,omitempty"`
 	TimeInHighPercent          *float64    `json:"timeInHighPercent,omitempty"`
 	TimeInLowPercent           *float64    `json:"timeInLowPercent,omitempty"`
 	TimeInTargetPercent        *float64    `json:"timeInTargetPercent,omitempty"`

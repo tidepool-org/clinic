@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tidepool-org/clinic/deletions"
@@ -120,9 +121,75 @@ type Patient struct {
 	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
+	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
+	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+}
+
+type DiagnosisType string
+
+func (d *DiagnosisType) IsZero() bool {
+	// A value of nil is Zero, but the empty string is NOT.
+	//
+	// This means that clients that don't supply a value will not change an existing value,
+	// while those that specify an empty string will clear out the value. This is needed as
+	// some (faulty, but still relevant) clients won't/don't specify a value, but in those
+	// cases, we must keep the existing value.
+	return d == nil
+}
+
+type GlycemicRanges struct {
+	Type GlycemicRangeType `json:"type"`
+
+	// only one of the following should be present, based on Type
+	Preset GlycemicRangesPreset `bson:",omitempty"`
+	Custom GlycemicRangesCustom `bson:",omitempty"`
+}
+
+var _ bsoncodec.Zeroer = (*GlycemicRanges)(nil)
+
+// IsZero implements bsoncodec.Zeroer
+func (g GlycemicRanges) IsZero() bool {
+	return g.Type == "" && g.Preset.IsZero() && g.Custom.IsZero()
+}
+
+type GlycemicRangesPreset string
+
+var _ bsoncodec.Zeroer = (*GlycemicRangesPreset)(nil)
+
+// IsZero implements bsoncodec.Zeroer
+func (g GlycemicRangesPreset) IsZero() bool {
+	return string(g) == ""
+}
+
+// String implements fmt.Stringer
+func (g GlycemicRangesPreset) String() string {
+	return string(g)
+}
+
+type GlycemicRangesCustom struct {
+	Name       string                   `bson:"name"`
+	Thresholds []GlycemicRangeThreshold `bson:"thresholds"`
+}
+
+// IsZero implements bsoncodec.Zeroer
+func (g GlycemicRangesCustom) IsZero() bool {
+	return g.Name == "" && len(g.Thresholds) == 0
+}
+
+var _ bsoncodec.Zeroer = (*GlycemicRangesCustom)(nil)
+
+type GlycemicRangeThreshold struct {
+	Name       string         `bson:"name"`
+	UpperBound ValueWithUnits `bson:"upperBound"`
+	Inclusive  bool           `bson:"inclusive"`
+}
+
+type ValueWithUnits struct {
+	Value float32 `bson:"value"`
+	Units string  `bson:"units"`
 }
 
 func (p Patient) IsCustodial() bool {
@@ -197,6 +264,8 @@ type Filter struct {
 
 	HasSubscription *bool
 	HasMRN          *bool
+	HasEmail        *bool
+	IsCustodial     *bool
 
 	Period *string
 
@@ -212,6 +281,10 @@ type Filter struct {
 	// the minimum content needed to generate clinic merge reports and perform clinic
 	// merges.
 	ExcludeSummaryExceptFieldsInMergeReports bool
+
+	// OmitNonStandardRanges will exclude patients that aren't assigned the ADA standard
+	// preset ranges.
+	OmitNonStandardRanges bool
 }
 
 type Permission = map[string]interface{}
@@ -284,7 +357,16 @@ type DataSource struct {
 }
 
 type TideReportParams struct {
-	Period         *string
-	Tags           *[]string
-	LastDataCutoff *time.Time
+	Period         string
+	Tags           []string
+	LastDataCutoff time.Time
+	Categories     []string
+	ExcludeNoData  bool
 }
+
+type GlycemicRangeType string
+
+const (
+	GlycemicRangeTypePreset GlycemicRangeType = "preset"
+	GlycemicRangeTypeCustom GlycemicRangeType = "custom"
+)
