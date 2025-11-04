@@ -5284,6 +5284,22 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
+		if params.OmitNonStandardRanges != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "omitNonStandardRanges", runtime.ParamLocationQuery, *params.OmitNonStandardRanges); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -6522,52 +6538,64 @@ func NewTideReportRequest(server string, clinicId ClinicId, params *TideReportPa
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.Period != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, *params.Period); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, params.Period); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
 				}
 			}
-
 		}
 
-		if params.Tags != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "tags", runtime.ParamLocationQuery, *params.Tags); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
+		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "tags", runtime.ParamLocationQuery, params.Tags); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
 				}
 			}
-
 		}
 
-		if params.LastDataCutoff != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "lastDataCutoff", runtime.ParamLocationQuery, *params.LastDataCutoff); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "lastDataCutoff", runtime.ParamLocationQuery, params.LastDataCutoff); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
 				}
 			}
+		}
 
+		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "categories", runtime.ParamLocationQuery, params.Categories); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "excludeNoData", runtime.ParamLocationQuery, params.ExcludeNoData); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
 		}
 
 		queryURL.RawQuery = queryValues.Encode()

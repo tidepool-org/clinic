@@ -2,9 +2,10 @@ package api
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 	"net/http"
 	"time"
+
+	"github.com/tidepool-org/clinic/deletions"
 
 	"github.com/tidepool-org/clinic/clinicians"
 	"github.com/tidepool-org/clinic/errors"
@@ -52,6 +53,9 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 
 	filter.CGMTime = ParseCGMSummaryDateFilters(params)
 	filter.BGMTime = ParseBGMSummaryDateFilters(params)
+
+	filter.OmitNonStandardRanges = params.OmitNonStandardRanges != nil &&
+		*params.OmitNonStandardRanges
 
 	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
 	if err != nil {
@@ -303,7 +307,7 @@ func (h *Handler) DeletePatientSummary(ec echo.Context, summaryId SummaryId) err
 
 func (h *Handler) TideReport(ec echo.Context, clinicId ClinicId, params TideReportParams) error {
 	ctx := ec.Request().Context()
-	tide, err := h.Patients.TideReport(ctx, clinicId, patients.TideReportParams(params))
+	tide, err := h.Patients.TideReport(ctx, clinicId, NewTideReportParams(params))
 	if err != nil {
 		return err
 	}

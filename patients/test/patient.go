@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/tidepool-org/go-common/clients/shoreline"
 
+	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/test"
@@ -47,7 +49,69 @@ func RandomPatient() patients.Patient {
 		DataSources:      (*[]patients.DataSource)(&dataSources),
 		EHRSubscriptions: RandomSubscriptions(),
 		Sites:            &[]sites.Site{},
+		GlycemicRanges:   RandomGlycemicRanges(),
+		DiagnosisType:    RandomDiagnosisType(),
 	}
+}
+
+func RandomGlycemicRanges() patients.GlycemicRanges {
+	if rand.IntN(2)%2 == 0 {
+		return RandomGlycemicRangesCustom()
+	}
+	return RandomGlycemicRangesPreset()
+}
+
+func RandomGlycemicRangesCustom() patients.GlycemicRanges {
+	return patients.GlycemicRanges{
+		Type: "custom",
+		Custom: patients.GlycemicRangesCustom{
+			Name: test.Faker.Lorem().Sentence(1 + rand.IntN(5)),
+			Thresholds: []patients.GlycemicRangeThreshold{
+				{
+					Name: test.Faker.Lorem().Sentence(1 + rand.IntN(5)),
+					UpperBound: patients.ValueWithUnits{
+						Units: test.Faker.RandomStringElement([]string{
+							"mg/dL",
+							"mmol/L",
+						}),
+						Value: test.Faker.Float32(1, 0, 100),
+					},
+					Inclusive: test.Faker.Bool(),
+				},
+			},
+		},
+	}
+}
+
+var glycemicRangesPresets = []api.GlycemicRangesPresetV1{
+	api.ADAStandard,
+	api.ADAPregnancyType1,
+	api.ADAPregnancyType2,
+	api.ADAHighRisk,
+}
+
+func RandomGlycemicRangesPreset() patients.GlycemicRanges {
+	choice := glycemicRangesPresets[rand.IntN(len(glycemicRangesPresets))]
+	return patients.GlycemicRanges{
+		Type:   "preset",
+		Preset: patients.GlycemicRangesPreset(string(choice)),
+	}
+}
+
+func RandomDiagnosisType() *patients.DiagnosisType {
+	all := []api.DiagnosisTypeV1{
+		api.DiagnosisTypeV1Empty,
+		api.DiagnosisTypeV1Gestational,
+		api.DiagnosisTypeV1Lada,
+		api.DiagnosisTypeV1Mody,
+		api.DiagnosisTypeV1NotApplicable,
+		api.DiagnosisTypeV1Other,
+		api.DiagnosisTypeV1Prediabetes,
+		api.DiagnosisTypeV1Type1,
+		api.DiagnosisTypeV1Type2,
+	}
+	choice := patients.DiagnosisType(all[rand.IntN(len(all))])
+	return &choice
 }
 
 func RandomSubscriptions() patients.EHRSubscriptions {
@@ -85,6 +149,8 @@ func RandomPatientUpdate() patients.PatientUpdate {
 			DataSources:      patient.DataSources,
 			EHRSubscriptions: RandomSubscriptions(),
 			Sites:            patient.Sites,
+			GlycemicRanges:   patient.GlycemicRanges,
+			DiagnosisType:    patient.DiagnosisType,
 		},
 	}
 }
@@ -177,5 +243,7 @@ func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
 		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
 		"Sites":                          Equal(patient.Sites),
+		"GlycemicRanges":                 Equal(patient.GlycemicRanges),
+		"DiagnosisType":                  Equal(patient.DiagnosisType),
 	})
 }

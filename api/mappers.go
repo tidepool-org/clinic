@@ -65,7 +65,7 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 		tier = c.Tier
 	}
 
-	units := MgdL
+	units := ClinicV1PreferredBgUnitsMgdL
 	if c.PreferredBgUnits != "" {
 		units = ClinicV1PreferredBgUnits(c.PreferredBgUnits)
 	}
@@ -197,7 +197,8 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
 			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
 		},
-		Sites: NewSitesDto(patient.Sites),
+		Sites:          NewSitesDto(patient.Sites),
+		GlycemicRanges: NewGlycemicRangesDto(patient.GlycemicRanges),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -214,7 +215,178 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		}}
 	}
 
+	if patient.DiagnosisType != nil {
+		dto.DiagnosisType = NewDiagnosisTypeDto(string(*patient.DiagnosisType))
+	}
+
 	return dto
+}
+
+func NewDiagnosisTypeDto(diagnosisType string) *DiagnosisTypeV1 {
+	dtoDiagnosisType := DiagnosisTypeV1(diagnosisType)
+	switch dtoDiagnosisType {
+	case DiagnosisTypeV1Gestational:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Lada:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Mody:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1NotApplicable:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Other:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Prediabetes:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Type1:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Type2:
+		return &dtoDiagnosisType
+	case DiagnosisTypeV1Type3c:
+		return &dtoDiagnosisType
+	default:
+		return nil
+	}
+}
+
+func NewGlycemicRangesDto(ranges patients.GlycemicRanges) *GlycemicRangesV1 {
+	v1Ranges, err := newGlycemicRangesDtoWithError(ranges)
+	if err != nil {
+		return nil
+	}
+	return v1Ranges
+}
+
+func newGlycemicRangesDtoWithError(ranges patients.GlycemicRanges) (
+	*GlycemicRangesV1, error) {
+
+	switch ranges.Type {
+	case patients.GlycemicRangeTypeCustom:
+		custom, err := newGlycemicRangesDtoCustom(ranges.Custom)
+		if err != nil {
+			return nil, err
+		}
+		return &GlycemicRangesV1{Type: Custom, Custom: *custom}, nil
+	case patients.GlycemicRangeTypePreset:
+		preset, err := newGlycemicRangesDtoPreset(ranges.Preset)
+		if err != nil {
+			return nil, err
+		}
+		return &GlycemicRangesV1{Type: Preset, Preset: *preset}, nil
+	}
+
+	return nil, progErrf("unhandled glycemic range type: %q", ranges.Type)
+}
+
+func newGlycemicRangesDtoCustom(custom patients.GlycemicRangesCustom) (
+	*GlycemicRangesCustomV1, error) {
+
+	dtoCustom := &GlycemicRangesCustomV1{
+		Name:       custom.Name,
+		Thresholds: []GlycemicRangesThresholdV1{},
+	}
+	for _, threshold := range custom.Thresholds {
+		upperBound := GlycemicRangesThresholdUpperBoundV1{
+			Value: threshold.UpperBound.Value,
+		}
+		switch threshold.UpperBound.Units {
+		case string(GlycemicRangesThresholdUpperBoundV1UnitsMgdL):
+			upperBound.Units = GlycemicRangesThresholdUpperBoundV1UnitsMgdL
+		case string(GlycemicRangesThresholdUpperBoundV1UnitsMmolL):
+			upperBound.Units = GlycemicRangesThresholdUpperBoundV1UnitsMmolL
+		default:
+			return nil, progErrf("unhandled units: %q", threshold.UpperBound.Units)
+		}
+		customThreshold := GlycemicRangesThresholdV1{
+			Inclusive:  threshold.Inclusive,
+			Name:       threshold.Name,
+			UpperBound: upperBound,
+		}
+		dtoCustom.Thresholds = append(dtoCustom.Thresholds, customThreshold)
+	}
+	return dtoCustom, nil
+}
+
+func newGlycemicRangesDtoPreset(preset patients.GlycemicRangesPreset) (
+	*GlycemicRangesPresetV1, error) {
+
+	var dtoPreset GlycemicRangesPresetV1 = ADAStandard
+	switch string(preset) {
+	case string(ADAStandard):
+		dtoPreset = ADAStandard
+	case string(ADAPregnancyType1):
+		dtoPreset = ADAPregnancyType1
+	case string(ADAPregnancyType2):
+		dtoPreset = ADAPregnancyType2
+	case string(ADAHighRisk):
+		dtoPreset = ADAHighRisk
+	default:
+		return nil, progErrf("unhandled glycemic ranges preset: %q", preset)
+	}
+	return &dtoPreset, nil
+}
+
+func NewGlycemicRanges(ranges *GlycemicRangesV1) patients.GlycemicRanges {
+	gr, err := newGlycemicRangesWithError(ranges)
+	if err != nil {
+		return patients.GlycemicRanges{}
+	}
+	return *gr
+}
+
+// programmingError indicates that the generated types here in the api package no longer
+// align with those in the patients package.
+type programmingError struct {
+	msg string
+}
+
+func (p *programmingError) Error() string {
+	return "PROGRAMMING ERROR: " + p.msg
+}
+
+func progErrf(format string, args ...any) *programmingError {
+	return &programmingError{msg: fmt.Sprintf(format, args...)}
+}
+
+func newGlycemicRangesWithError(ranges *GlycemicRangesV1) (
+	*patients.GlycemicRanges, error) {
+
+	pType := patients.GlycemicRangeType(ranges.Type)
+	switch pType {
+	case patients.GlycemicRangeTypeCustom:
+		out := &patients.GlycemicRanges{
+			Type: pType,
+			Custom: patients.GlycemicRangesCustom{
+				Name:       ranges.Custom.Name,
+				Thresholds: newGlycemicRangesCustomThresholds(ranges.Custom.Thresholds),
+			},
+		}
+		return out, nil
+	case patients.GlycemicRangeTypePreset:
+		out := &patients.GlycemicRanges{
+			Type:   pType,
+			Preset: patients.GlycemicRangesPreset(ranges.Preset),
+		}
+		return out, nil
+	default:
+		return nil, progErrf("unhandled glycemic ranges type: %T", *ranges)
+	}
+}
+
+func newGlycemicRangesCustomThresholds(thresholds []GlycemicRangesThresholdV1) (
+	_ []patients.GlycemicRangeThreshold) {
+
+	out := []patients.GlycemicRangeThreshold{}
+	for _, threshold := range thresholds {
+		out = append(out, patients.GlycemicRangeThreshold{
+			Name: threshold.Name,
+			UpperBound: patients.ValueWithUnits{
+				Value: threshold.UpperBound.Value,
+				Units: string(threshold.UpperBound.Units),
+			},
+			Inclusive: threshold.Inclusive,
+		})
+	}
+	return out
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {
@@ -280,6 +452,15 @@ func NewPatient(dto PatientV1) patients.Patient {
 		}
 		patient.DataSources = &dataSources
 	}
+
+	if dto.GlycemicRanges != nil {
+		patient.GlycemicRanges = NewGlycemicRanges(dto.GlycemicRanges)
+	}
+	if dto.DiagnosisType != nil {
+		dt := patients.DiagnosisType(*dto.DiagnosisType)
+		patient.DiagnosisType = &dt
+	}
+
 	return patient
 }
 
@@ -318,7 +499,13 @@ func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patient
 	if sites != nil {
 		patient.Sites = &sites
 	}
-
+	if dto.GlycemicRanges != nil {
+		patient.GlycemicRanges = NewGlycemicRanges(dto.GlycemicRanges)
+	}
+	if dto.DiagnosisType != nil {
+		dt := patients.DiagnosisType(*dto.DiagnosisType)
+		patient.DiagnosisType = &dt
+	}
 	return patient
 }
 
@@ -430,6 +617,20 @@ func NewReviews(reviews PatientReviewsV1) []patients.Review {
 	return result
 }
 
+func NewTideReportParams(params TideReportParams) patients.TideReportParams {
+	var categories []string
+	for _, cat := range params.Categories {
+		categories = append(categories, string(cat))
+	}
+	return patients.TideReportParams{
+		Period:         params.Period,
+		Tags:           params.Tags,
+		LastDataCutoff: params.LastDataCutoff,
+		Categories:     categories,
+		ExcludeNoData:  params.ExcludeNoData,
+	}
+}
+
 func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 	if tide == nil {
 		return nil
@@ -437,16 +638,17 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 
 	tideResult := &TideResponseV1{
 		Config: TideConfigV1{
-			ClinicId:                 &tide.Config.ClinicId,
-			Filters:                  TideFiltersV1(tide.Config.Filters),
-			HighGlucoseThreshold:     tide.Config.HighGlucoseThreshold,
-			LastDataCutoff:           tide.Config.LastDataCutoff,
-			LowGlucoseThreshold:      tide.Config.LowGlucoseThreshold,
-			Period:                   tide.Config.Period,
-			SchemaVersion:            tide.Config.SchemaVersion,
-			Tags:                     &tide.Config.Tags,
-			VeryHighGlucoseThreshold: tide.Config.VeryHighGlucoseThreshold,
-			VeryLowGlucoseThreshold:  tide.Config.VeryLowGlucoseThreshold,
+			ClinicId:                    &tide.Config.ClinicId,
+			Filters:                     TideFiltersV1(tide.Config.Filters),
+			HighGlucoseThreshold:        tide.Config.HighGlucoseThreshold,
+			LastDataCutoff:              tide.Config.LastDataCutoff,
+			LowGlucoseThreshold:         tide.Config.LowGlucoseThreshold,
+			Period:                      tide.Config.Period,
+			SchemaVersion:               tide.Config.SchemaVersion,
+			Tags:                        &tide.Config.Tags,
+			VeryHighGlucoseThreshold:    tide.Config.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:     tide.Config.VeryLowGlucoseThreshold,
+			ExtremeHighGlucoseThreshold: &tide.Config.ExtremeHighGlucoseThreshold,
 		},
 		Results: TideResultsV1{},
 	}
@@ -460,6 +662,7 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 				TimeCGMUseMinutes:          patient.TimeCGMUseMinutes,
 				TimeCGMUsePercent:          patient.TimeCGMUsePercent,
 				TimeInHighPercent:          patient.TimeInHighPercent,
+				TimeInExtremeHighPercent:   patient.TimeInExtremeHighPercent,
 				TimeInLowPercent:           patient.TimeInLowPercent,
 				TimeInTargetPercent:        patient.TimeInTargetPercent,
 				TimeInTargetPercentDelta:   patient.TimeInTargetPercentDelta,
