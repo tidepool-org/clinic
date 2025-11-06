@@ -302,6 +302,10 @@ func (p *Permissions) Empty() bool {
 		p.Note == nil
 }
 
+func (p *Permissions) IsClaimed() bool {
+	return p != nil && p.Custodian == nil
+}
+
 type ListResult struct {
 	Patients      []*Patient `bson:"data"`
 	MatchingCount int        `bson:"count"`
