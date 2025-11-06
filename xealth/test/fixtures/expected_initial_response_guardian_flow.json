@@ -9,8 +9,14 @@
     "formSchema": {
       "definitions": {
         "tags": {
-          "enum": ["000000000000000000000001", "000000000000000000000000"],
-          "enumNames": ["DIY Loop", "Tidepool Loop"]
+          "enum": [
+            "000000000000000000000001",
+            "000000000000000000000000"
+          ],
+          "enumNames": [
+            "DIY Loop",
+            "Tidepool Loop"
+          ]
         }
       },
       "description": "Please confirm a few details to complete set up. A parent or guardian is required to claim this patient's accounts because the patient is under 13 years of age.",
@@ -41,6 +47,11 @@
           "dependencies": {
             "email": {
               "properties": {
+                "connectAbbott": {
+                  "title": "Connect with FreeStyle Libre",
+                  "description": "",
+                  "type": "boolean"
+                },
                 "connectDexcom": {
                   "title": "Connect with Dexcom",
                   "description": "",
@@ -71,6 +82,9 @@
     },
     "uiSchema": {
       "guardian": {
+        "connectAbbott": {
+          "ui:help": "If this box is checked, patient will receive an email to authorize sharing FreeStyle Libre data with Tidepool. For US FreeStyle Libre Users Only"
+        },
         "connectDexcom": {
           "ui:help": "If this box is checked, patient will receive an email to authorize sharing Dexcom data with Tidepool. For US Dexcom Users Only"
         },
@@ -78,6 +92,7 @@
           "firstName",
           "lastName",
           "email",
+          "connectAbbott",
           "connectDexcom"
         ]
       },
