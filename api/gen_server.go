@@ -36,7 +36,7 @@ type ServerInterface interface {
 	DeleteClinic(ctx echo.Context, clinicId ClinicId) error
 	// Get Clinic
 	// (GET /v1/clinics/{clinicId})
-	GetClinic(ctx echo.Context, clinicId ClinicId) error
+	GetClinic(ctx echo.Context, clinicId ClinicId, params GetClinicParams) error
 	// Update Clinic
 	// (PUT /v1/clinics/{clinicId})
 	UpdateClinic(ctx echo.Context, clinicId ClinicId) error
@@ -459,8 +459,17 @@ func (w *ServerInterfaceWrapper) GetClinic(ctx echo.Context) error {
 
 	ctx.Set(SessionTokenScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetClinicParams
+	// ------------- Optional query parameter "includeCounts" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "includeCounts", ctx.QueryParams(), &params.IncludeCounts)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter includeCounts: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetClinic(ctx, clinicId)
+	err = w.Handler.GetClinic(ctx, clinicId, params)
 	return err
 }
 

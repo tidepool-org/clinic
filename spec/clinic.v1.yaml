@@ -160,7 +160,17 @@ paths:
         - TIDEPOOL_ADMIN
         - CLINIC_ADMIN
         - CLINIC_CLINICIAN
-      parameters: []
+      parameters:
+        - name: includeCounts
+          in: query
+          description: |
+            Include counts of patients in tags and sites.
+
+            This will add the optional "patients" field to the
+            clinic's sites and patient_tags fields which will indicate
+            the number of patients associated with each.
+          schema:
+            type: boolean
     put:
       summary: Update Clinic
       operationId: UpdateClinic
@@ -2355,6 +2365,10 @@ components:
           minLength: 1
           maxLength: 20
           pattern: ^[\p{L}\p{N}_+><-]{1}[\p{L}\p{N}\s_+><-]*$
+        patients:
+          type: integer
+          description: The number of patients tagged.
+          x-go-type-skip-optional-pointer: true
       required:
         - id
         - name
@@ -2371,6 +2385,10 @@ components:
           $ref: '#/components/schemas/siteId.v1'
         name:
           $ref: '#/components/schemas/siteName.v1'
+        patients:
+          type: integer
+          description: The number of patients associated with the site.
+          x-go-type-skip-optional-pointer: true
       required:
         - id
         - name

@@ -30,6 +30,10 @@ func (s *service) Get(ctx context.Context, id string) (*clinics.Clinic, error) {
 	return s.repository.Get(ctx, id)
 }
 
+func (s *service) GetWithCounts(ctx context.Context, id string) (*clinics.Clinic, error) {
+	return s.repository.GetWithCounts(ctx, id)
+}
+
 func (s *service) List(ctx context.Context, filter *clinics.Filter, pagination store.Pagination) ([]*clinics.Clinic, error) {
 	return s.repository.List(ctx, filter, pagination)
 }

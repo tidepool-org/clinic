@@ -235,6 +235,21 @@ func (mr *MockServiceMockRecorder) GetPatientCountSettings(ctx, clinicId any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPatientCountSettings", reflect.TypeOf((*MockService)(nil).GetPatientCountSettings), ctx, clinicId)
 }
 
+// GetWithCounts mocks base method.
+func (m *MockService) GetWithCounts(ctx context.Context, id string) (*clinics.Clinic, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithCounts", ctx, id)
+	ret0, _ := ret[0].(*clinics.Clinic)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWithCounts indicates an expected call of GetWithCounts.
+func (mr *MockServiceMockRecorder) GetWithCounts(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithCounts", reflect.TypeOf((*MockService)(nil).GetWithCounts), ctx, id)
+}
+
 // List mocks base method.
 func (m *MockService) List(ctx context.Context, filter *clinics.Filter, pagination store.Pagination) ([]*clinics.Clinic, error) {
 	m.ctrl.T.Helper()
@@ -589,6 +604,21 @@ func (m *MockRepository) Get(ctx context.Context, id string) (*clinics.Clinic, e
 func (mr *MockRepositoryMockRecorder) Get(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRepository)(nil).Get), ctx, id)
+}
+
+// GetWithCounts mocks base method.
+func (m *MockRepository) GetWithCounts(ctx context.Context, id string) (*clinics.Clinic, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithCounts", ctx, id)
+	ret0, _ := ret[0].(*clinics.Clinic)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWithCounts indicates an expected call of GetWithCounts.
+func (mr *MockRepositoryMockRecorder) GetWithCounts(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithCounts", reflect.TypeOf((*MockRepository)(nil).GetWithCounts), ctx, id)
 }
 
 // List mocks base method.

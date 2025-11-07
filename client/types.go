@@ -1699,6 +1699,9 @@ type PatientTagV1 struct {
 
 	// Name The tag display name
 	Name string `json:"name"`
+
+	// Patients The number of patients tagged.
+	Patients int `json:"patients,omitempty"`
 }
 
 // PatientTagIdsV1 defines model for patientTagIds.v1.
@@ -1769,6 +1772,9 @@ type SiteV1 struct {
 
 	// Name The site's name.
 	Name SiteNameV1 `json:"name"`
+
+	// Patients The number of patients associated with the site.
+	Patients int `json:"patients,omitempty"`
 }
 
 // SiteByIdV1 A clinic's physical or logical location—id only.
@@ -2069,6 +2075,16 @@ type ListClinicsParams struct {
 
 	// EhrEnabled Retrieve clinics with enabled EHR integration
 	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
+}
+
+// GetClinicParams defines parameters for GetClinic.
+type GetClinicParams struct {
+	// IncludeCounts Include counts of patients in tags and sites.
+	//
+	// This will add the optional "patients" field to the
+	// clinic's sites and patient_tags fields which will indicate
+	// the number of patients associated with each.
+	IncludeCounts *bool `form:"includeCounts,omitempty" json:"includeCounts,omitempty"`
 }
 
 // ListCliniciansParams defines parameters for ListClinicians.

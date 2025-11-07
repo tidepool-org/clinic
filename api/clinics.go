@@ -85,8 +85,17 @@ func (h *Handler) CreateClinic(ec echo.Context) error {
 	return ec.JSON(http.StatusOK, NewClinicDto(result))
 }
 
-func (h *Handler) GetClinic(ec echo.Context, clinicId ClinicId) error {
+func (h *Handler) GetClinic(ec echo.Context, clinicId ClinicId, p GetClinicParams) error {
 	ctx := ec.Request().Context()
+
+	if p.IncludeCounts != nil && *p.IncludeCounts {
+		clinic, err := h.Clinics.GetWithCounts(ctx, string(clinicId))
+		if err != nil {
+			return err
+		}
+		return ec.JSON(http.StatusOK, NewClinicDto(clinic))
+	}
+
 	clinic, err := h.Clinics.Get(ctx, string(clinicId))
 	if err != nil {
 		return err

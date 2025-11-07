@@ -114,7 +114,7 @@ type ClientInterface interface {
 	DeleteClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetClinic request
-	GetClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetClinic(ctx context.Context, clinicId ClinicId, params *GetClinicParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateClinicWithBody request with any body
 	UpdateClinicWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -484,8 +484,8 @@ func (c *Client) DeleteClinic(ctx context.Context, clinicId ClinicId, reqEditors
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetClinicRequest(c.Server, clinicId)
+func (c *Client) GetClinic(ctx context.Context, clinicId ClinicId, params *GetClinicParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetClinicRequest(c.Server, clinicId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2149,7 +2149,7 @@ func NewDeleteClinicRequest(server string, clinicId ClinicId) (*http.Request, er
 }
 
 // NewGetClinicRequest generates requests for GetClinic
-func NewGetClinicRequest(server string, clinicId ClinicId) (*http.Request, error) {
+func NewGetClinicRequest(server string, clinicId ClinicId, params *GetClinicParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -2172,6 +2172,28 @@ func NewGetClinicRequest(server string, clinicId ClinicId) (*http.Request, error
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.IncludeCounts != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "includeCounts", runtime.ParamLocationQuery, *params.IncludeCounts); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -7500,7 +7522,7 @@ type ClientWithResponsesInterface interface {
 	DeleteClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*DeleteClinicResponse, error)
 
 	// GetClinicWithResponse request
-	GetClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetClinicResponse, error)
+	GetClinicWithResponse(ctx context.Context, clinicId ClinicId, params *GetClinicParams, reqEditors ...RequestEditorFn) (*GetClinicResponse, error)
 
 	// UpdateClinicWithBodyWithResponse request with any body
 	UpdateClinicWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClinicResponse, error)
@@ -9508,8 +9530,8 @@ func (c *ClientWithResponses) DeleteClinicWithResponse(ctx context.Context, clin
 }
 
 // GetClinicWithResponse request returning *GetClinicResponse
-func (c *ClientWithResponses) GetClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetClinicResponse, error) {
-	rsp, err := c.GetClinic(ctx, clinicId, reqEditors...)
+func (c *ClientWithResponses) GetClinicWithResponse(ctx context.Context, clinicId ClinicId, params *GetClinicParams, reqEditors ...RequestEditorFn) (*GetClinicResponse, error) {
+	rsp, err := c.GetClinic(ctx, clinicId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

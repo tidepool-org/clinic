@@ -802,9 +802,9 @@ func (mr *MockClientInterfaceMockRecorder) GenerateMergeReportWithBody(ctx, clin
 }
 
 // GetClinic mocks base method.
-func (m *MockClientInterface) GetClinic(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (m *MockClientInterface) GetClinic(ctx context.Context, clinicId ClinicId, params *GetClinicParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
-	varargs := []any{ctx, clinicId}
+	varargs := []any{ctx, clinicId, params}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
@@ -815,9 +815,9 @@ func (m *MockClientInterface) GetClinic(ctx context.Context, clinicId ClinicId, 
 }
 
 // GetClinic indicates an expected call of GetClinic.
-func (mr *MockClientInterfaceMockRecorder) GetClinic(ctx, clinicId any, reqEditors ...any) *gomock.Call {
+func (mr *MockClientInterfaceMockRecorder) GetClinic(ctx, clinicId, params any, reqEditors ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, clinicId}, reqEditors...)
+	varargs := append([]any{ctx, clinicId, params}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClinic", reflect.TypeOf((*MockClientInterface)(nil).GetClinic), varargs...)
 }
 
@@ -3046,9 +3046,9 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClinicByShareCodeWith
 }
 
 // GetClinicWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) GetClinicWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetClinicResponse, error) {
+func (m *MockClientWithResponsesInterface) GetClinicWithResponse(ctx context.Context, clinicId ClinicId, params *GetClinicParams, reqEditors ...RequestEditorFn) (*GetClinicResponse, error) {
 	m.ctrl.T.Helper()
-	varargs := []any{ctx, clinicId}
+	varargs := []any{ctx, clinicId, params}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
@@ -3059,9 +3059,9 @@ func (m *MockClientWithResponsesInterface) GetClinicWithResponse(ctx context.Con
 }
 
 // GetClinicWithResponse indicates an expected call of GetClinicWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClinicWithResponse(ctx, clinicId any, reqEditors ...any) *gomock.Call {
+func (mr *MockClientWithResponsesInterfaceMockRecorder) GetClinicWithResponse(ctx, clinicId, params any, reqEditors ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, clinicId}, reqEditors...)
+	varargs := append([]any{ctx, clinicId, params}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClinicWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetClinicWithResponse), varargs...)
 }
 

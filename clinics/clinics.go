@@ -45,6 +45,7 @@ var ErrSiteNotFound = fmt.Errorf("%w: the clinic has no site with that name", er
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
+	GetWithCounts(ctx context.Context, id string) (*Clinic, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error)
 	Create(ctx context.Context, clinic *Clinic) (*Clinic, error)
 	Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error)
@@ -75,6 +76,7 @@ type Service interface {
 
 type Repository interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
+	GetWithCounts(ctx context.Context, id string) (*Clinic, error)
 	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error)
 	Create(ctx context.Context, clinic *Clinic) (*Clinic, error)
 	Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error)
@@ -321,8 +323,9 @@ func (p *PhoneNumber) HasAllRequiredFields() bool {
 }
 
 type PatientTag struct {
-	Id   *primitive.ObjectID `bson:"_id,omitempty"`
-	Name string              `bson:"name,omitempty"`
+	Id       *primitive.ObjectID `bson:"_id,omitempty"`
+	Name     string              `bson:"name,omitempty"`
+	Patients int                 `bson:"patients,omitempty"`
 }
 
 type SuppressedNotifications struct {
