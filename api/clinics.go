@@ -477,7 +477,7 @@ func (h *Handler) RefreshPatientCount(ec echo.Context, clinicId ClinicId) error 
 		return err
 	}
 
-	return ec.NoContent(http.StatusAccepted)
+	return ec.NoContent(http.StatusOK)
 }
 
 func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error {
