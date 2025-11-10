@@ -20,9 +20,9 @@ const (
 	WorkspaceIdTypeClinicId    = "clinicId"
 	WorkspaceIdTypeEHRSourceId = "ehrSourceId"
 
-	CountryCodeUS                                    = "US"
-	PatientCountSettingsHardLimitPatientCountDefault = 250
-	DefaultCoefficientOfVariationUnits               = "UNIT_INTERVAL"
+	CountryCodeUS                            = "US"
+	PatientCountSettingsHardLimitPlanDefault = 250
+	DefaultCoefficientOfVariationUnits       = "UNIT_INTERVAL"
 )
 
 var (
@@ -65,7 +65,7 @@ type Service interface {
 	GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error)
 	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
 	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
-	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
+	RefreshPatientCount(ctx context.Context, clinicId string) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 	CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
 	CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
@@ -86,7 +86,6 @@ type Repository interface {
 	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*PatientTag, error)
 	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*PatientTag, error)
 	DeletePatientTag(ctx context.Context, clinicId, tagId string) error
-	ListMembershipRestrictions(ctx context.Context, clinicId string) ([]MembershipRestrictions, error)
 	UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error
 	UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error
 	UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error
@@ -198,25 +197,20 @@ type FlowsheetSettings struct {
 	Icode bool `bson:"icode,omitempty"`
 }
 
-func getOrElse[T any, PT *T](val PT, def T) T {
-	if val == nil {
-		return def
-	}
-	return *val
+type PatientProviderCount struct {
+	States map[string]int `bson:"states,omitempty"`
+	Total  int            `bson:"total"`
 }
 
 type PatientCount struct {
-	PatientCount int `bson:"patientCount"`
-}
-
-func (p PatientCount) IsValid() bool {
-	return p.PatientCount >= 0
+	Total     int                             `bson:"total"`
+	Demo      int                             `bson:"demo"`
+	Plan      int                             `bson:"plan"`
+	Providers map[string]PatientProviderCount `bson:"providers,omitempty"`
 }
 
 func NewPatientCount() *PatientCount {
-	return &PatientCount{
-		PatientCount: 0,
-	}
+	return &PatientCount{}
 }
 
 type PatientCountSettings struct {
@@ -237,19 +231,19 @@ func (p PatientCountSettings) IsValid() bool {
 func DefaultPatientCountSettings() *PatientCountSettings {
 	return &PatientCountSettings{
 		HardLimit: &PatientCountLimit{
-			PatientCount: PatientCountSettingsHardLimitPatientCountDefault,
+			Plan: PatientCountSettingsHardLimitPlanDefault,
 		},
 	}
 }
 
 type PatientCountLimit struct {
-	PatientCount int        `bson:"patientCount"`
-	StartDate    *time.Time `bson:"startDate,omitempty"`
-	EndDate      *time.Time `bson:"endDate,omitempty"`
+	Plan      int        `bson:"plan"`
+	StartDate *time.Time `bson:"startDate,omitempty"`
+	EndDate   *time.Time `bson:"endDate,omitempty"`
 }
 
 func (p PatientCountLimit) IsValid() bool {
-	if p.PatientCount < 0 {
+	if p.Plan < 0 {
 		return false
 	}
 	if p.StartDate != nil && p.EndDate != nil && p.StartDate.After(*p.EndDate) {

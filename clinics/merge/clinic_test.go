@@ -8,9 +8,10 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/format"
 
 	mapset "github.com/deckarep/golang-set/v2"
+
+	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -139,11 +140,11 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 	t.source = createClinic(t.userService, t.clinicManager, data.Source, data.SourceAdmin)
 	t.target = createClinic(t.userService, t.clinicManager, data.Target, data.TargetAdmin)
 
-	if params.UniquePatientCount > clinics.PatientCountSettingsHardLimitPatientCountDefault {
+	if params.UniquePatientCount > clinics.PatientCountSettingsHardLimitPlanDefault {
 		ctx := context.Background()
 		pcs := &clinics.PatientCountSettings{
-			HardLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
-			SoftLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
+			HardLimit: &clinics.PatientCountLimit{Plan: params.UniquePatientCount * 2},
+			SoftLimit: &clinics.PatientCountLimit{Plan: params.UniquePatientCount * 2},
 		}
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.source.Id.Hex(), pcs)).To(Succeed())
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.target.Id.Hex(), pcs)).To(Succeed())

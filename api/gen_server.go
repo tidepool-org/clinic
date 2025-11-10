@@ -94,6 +94,9 @@ type ServerInterface interface {
 	// Get Patient Count
 	// (GET /v1/clinics/{clinicId}/patient_count)
 	GetPatientCount(ctx echo.Context, clinicId ClinicId) error
+	// Refresh Patient Count
+	// (POST /v1/clinics/{clinicId}/patient_count/refresh)
+	RefreshPatientCount(ctx echo.Context, clinicId ClinicId) error
 	// Create Patient Tag
 	// (POST /v1/clinics/{clinicId}/patient_tags)
 	CreatePatientTag(ctx echo.Context, clinicId ClinicId) error
@@ -901,6 +904,24 @@ func (w *ServerInterfaceWrapper) GetPatientCount(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetPatientCount(ctx, clinicId)
+	return err
+}
+
+// RefreshPatientCount converts echo context to params.
+func (w *ServerInterfaceWrapper) RefreshPatientCount(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.RefreshPatientCount(ctx, clinicId)
 	return err
 }
 
@@ -2942,6 +2963,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.GetMigration)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.UpdateMigration)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patient_count", wrapper.GetPatientCount)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patient_count/refresh", wrapper.RefreshPatientCount)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patient_tags", wrapper.CreatePatientTag)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.DeletePatientTag)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.UpdatePatientTag)

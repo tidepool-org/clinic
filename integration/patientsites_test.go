@@ -47,14 +47,14 @@ var _ = Describe("Patient Sites", func() {
 			clinicsRepo, err := clinicsRepository.NewRepository(database, logger, lifecycle)
 			Expect(err).To(Succeed())
 
-			clinicsSvc, err := clinicsService.NewService(clinicsRepo)
+			clinicsSvc, err := clinicsService.NewService(clinicsRepo, patientsRepo, logger)
 			Expect(err).To(Succeed())
 
 			randomClinic := clinicsTest.RandomClinic()
 			clinic, err = clinicsRepo.Create(ctx, randomClinic)
 			Expect(err).To(Succeed())
 
-			patientsSvc, err = patientsService.NewService(patientsRepo, clinicsSvc, nil, logger,
+			patientsSvc, err = patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, logger,
 				database.Client())
 			Expect(err).To(Succeed())
 			randomPatient := patientsTest.RandomPatient()

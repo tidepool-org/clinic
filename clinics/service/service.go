@@ -3,20 +3,27 @@ package service
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/deletions"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
-func NewService(repository clinics.Repository) (clinics.Service, error) {
+func NewService(repository clinics.Repository, patientsRepository patients.Repository, logger *zap.SugaredLogger) (clinics.Service, error) {
 	return &service{
-		repository: repository,
+		repository:         repository,
+		patientsRepository: patientsRepository,
+		logger:             logger,
 	}, nil
 }
 
 type service struct {
-	repository clinics.Repository
+	repository         clinics.Repository
+	patientsRepository patients.Repository
+	logger             *zap.SugaredLogger
 }
 
 func (s *service) Get(ctx context.Context, id string) (*clinics.Clinic, error) {
@@ -68,7 +75,12 @@ func (s *service) DeletePatientTag(ctx context.Context, clinicId string, tagId s
 }
 
 func (s *service) ListMembershipRestrictions(ctx context.Context, clinicId string) ([]clinics.MembershipRestrictions, error) {
-	return s.repository.ListMembershipRestrictions(ctx, clinicId)
+	clinic, err := s.repository.Get(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	return clinic.MembershipRestrictions, nil
 }
 
 func (s *service) UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []clinics.MembershipRestrictions) error {
@@ -114,13 +126,50 @@ func (s *service) UpdatePatientCountSettings(ctx context.Context, clinicId strin
 func (s *service) GetPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error) {
 	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
 		return nil, err
+	} else if clinic.PatientCount != nil {
+		return clinic.PatientCount, nil
+	}
+
+	if err := s.RefreshPatientCount(ctx, clinicId); err != nil {
+		return nil, err
+	}
+
+	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
+		return nil, err
 	} else {
 		return clinic.PatientCount, nil
 	}
 }
 
-func (s *service) UpdatePatientCount(ctx context.Context, clinicId string, patientCount *clinics.PatientCount) error {
-	return s.repository.UpdatePatientCount(ctx, clinicId, patientCount)
+func (s *service) RefreshPatientCount(ctx context.Context, clinicId string) error {
+	counts, err := s.patientsRepository.Counts(ctx, clinicId)
+	if err != nil {
+		s.logger.Errorf("Failed to refresh patient count for clinic %s: %v", clinicId, err)
+		return err
+	}
+
+	patientCount := &clinics.PatientCount{
+		Total: counts.Total,
+		Demo:  counts.Demo,
+		Plan:  counts.Plan,
+	}
+	if counts.Providers != nil {
+		patientCount.Providers = make(map[string]clinics.PatientProviderCount, len(counts.Providers))
+		for provider, providerPatientCount := range counts.Providers {
+			patientCount.Providers[provider] = clinics.PatientProviderCount{
+				States: providerPatientCount.States,
+				Total:  providerPatientCount.Total,
+			}
+		}
+	}
+
+	err = s.repository.UpdatePatientCount(ctx, clinicId, patientCount)
+	if err != nil {
+		s.logger.Errorf("Failed to update patient count for clinic %s: %v", clinicId, err)
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error {
