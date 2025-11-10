@@ -134,10 +134,6 @@ func (s *service) GetPatientCount(ctx context.Context, clinicId string) (*clinic
 		return nil, err
 	}
 
-	// NOTE: While RefreshPatientCount, above, is currently implemented as a synchronous operation, the external API
-	// defines it as an asynchronous operation in case the patient count calculations ever become too costly to do
-	// synchronously. If we do ever change the implementation to be asynchronous, this code will need to be updated
-	// to wait for the operation to complete or otherwise return some "not available" indicator.
 	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
 		return nil, err
 	} else {
