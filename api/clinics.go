@@ -531,6 +531,24 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	return ec.NoContent(http.StatusOK)
 }
 
+func (h *Handler) ListClinicPatientTags(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	tags, err := h.Clinics.ListPatientTags(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, NewClinicPatientTagsDetailsDto(tags))
+}
+
+func (h *Handler) ListClinicSites(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	sites, err := h.Clinics.ListSites(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	return ec.JSON(http.StatusOK, NewSitesDetailsDto(&sites))
+}
+
 func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 	site := &SiteV1{}

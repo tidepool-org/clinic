@@ -74,6 +74,10 @@ func (s *service) DeletePatientTag(ctx context.Context, clinicId string, tagId s
 	return s.repository.DeletePatientTag(ctx, clinicId, tagId)
 }
 
+func (s *service) ListPatientTags(ctx context.Context, clinicId string) ([]clinics.PatientTag, error) {
+	return s.repository.ListPatientTags(ctx, clinicId)
+}
+
 func (s *service) ListMembershipRestrictions(ctx context.Context, clinicId string) ([]clinics.MembershipRestrictions, error) {
 	clinic, err := s.repository.Get(ctx, clinicId)
 	if err != nil {
@@ -186,6 +190,10 @@ func (s *service) CreateSiteIgnoringLimit(ctx context.Context, clinicId string, 
 
 func (s *service) DeleteSite(ctx context.Context, clinicId, siteId string) error {
 	return s.repository.DeleteSite(ctx, clinicId, siteId)
+}
+
+func (s *service) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
+	return s.repository.ListSites(ctx, clinicId)
 }
 
 func (s *service) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error) {

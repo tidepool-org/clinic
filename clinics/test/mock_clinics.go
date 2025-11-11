@@ -265,6 +265,36 @@ func (mr *MockServiceMockRecorder) ListMembershipRestrictions(ctx, clinicId any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembershipRestrictions", reflect.TypeOf((*MockService)(nil).ListMembershipRestrictions), ctx, clinicId)
 }
 
+// ListPatientTags mocks base method.
+func (m *MockService) ListPatientTags(ctx context.Context, clinicId string) ([]clinics.PatientTag, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPatientTags", ctx, clinicId)
+	ret0, _ := ret[0].([]clinics.PatientTag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPatientTags indicates an expected call of ListPatientTags.
+func (mr *MockServiceMockRecorder) ListPatientTags(ctx, clinicId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPatientTags", reflect.TypeOf((*MockService)(nil).ListPatientTags), ctx, clinicId)
+}
+
+// ListSites mocks base method.
+func (m *MockService) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSites", ctx, clinicId)
+	ret0, _ := ret[0].([]sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSites indicates an expected call of ListSites.
+func (mr *MockServiceMockRecorder) ListSites(ctx, clinicId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSites", reflect.TypeOf((*MockService)(nil).ListSites), ctx, clinicId)
+}
+
 // RefreshPatientCount mocks base method.
 func (m *MockService) RefreshPatientCount(ctx context.Context, clinicId string) error {
 	m.ctrl.T.Helper()
@@ -604,6 +634,36 @@ func (m *MockRepository) List(ctx context.Context, filter *clinics.Filter, pagin
 func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepository)(nil).List), ctx, filter, pagination)
+}
+
+// ListPatientTags mocks base method.
+func (m *MockRepository) ListPatientTags(ctx context.Context, clinicId string) ([]clinics.PatientTag, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPatientTags", ctx, clinicId)
+	ret0, _ := ret[0].([]clinics.PatientTag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPatientTags indicates an expected call of ListPatientTags.
+func (mr *MockRepositoryMockRecorder) ListPatientTags(ctx, clinicId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPatientTags", reflect.TypeOf((*MockRepository)(nil).ListPatientTags), ctx, clinicId)
+}
+
+// ListSites mocks base method.
+func (m *MockRepository) ListSites(ctx context.Context, clinicId string) ([]sites.Site, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSites", ctx, clinicId)
+	ret0, _ := ret[0].([]sites.Site)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSites indicates an expected call of ListSites.
+func (mr *MockRepositoryMockRecorder) ListSites(ctx, clinicId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSites", reflect.TypeOf((*MockRepository)(nil).ListSites), ctx, clinicId)
 }
 
 // RemoveAdmin mocks base method.

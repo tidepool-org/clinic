@@ -54,6 +54,7 @@ type Service interface {
 	UpdateTier(ctx context.Context, clinicId, tier string) error
 	UpdateSuppressedNotifications(ctx context.Context, clinicId string, suppressedNotifications SuppressedNotifications) error
 	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*PatientTag, error)
+	ListPatientTags(ctx context.Context, clinicId string) ([]PatientTag, error)
 	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*PatientTag, error)
 	DeletePatientTag(ctx context.Context, clinicId, tagId string) error
 	ListMembershipRestrictions(ctx context.Context, clinicId string) ([]MembershipRestrictions, error)
@@ -70,6 +71,7 @@ type Service interface {
 	CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
 	CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
 	DeleteSite(ctx context.Context, clinicId, siteId string) error
+	ListSites(ctx context.Context, clinicId string) ([]sites.Site, error)
 	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error)
 }
 
@@ -86,6 +88,7 @@ type Repository interface {
 	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*PatientTag, error)
 	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*PatientTag, error)
 	DeletePatientTag(ctx context.Context, clinicId, tagId string) error
+	ListPatientTags(ctx context.Context, clinicId string) ([]PatientTag, error)
 	UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error
 	UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error
 	UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error
@@ -93,6 +96,7 @@ type Repository interface {
 	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 	CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
+	ListSites(ctx context.Context, clinicId string) ([]sites.Site, error)
 	CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
 	DeleteSite(ctx context.Context, clinicId, siteId string) error
 	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error)
@@ -321,8 +325,9 @@ func (p *PhoneNumber) HasAllRequiredFields() bool {
 }
 
 type PatientTag struct {
-	Id   *primitive.ObjectID `bson:"_id,omitempty"`
-	Name string              `bson:"name,omitempty"`
+	Id       *primitive.ObjectID `bson:"_id,omitempty"`
+	Name     string              `bson:"name,omitempty"`
+	Patients int                 `bson:"patients,omitempty"`
 }
 
 type SuppressedNotifications struct {

@@ -142,6 +142,38 @@ allow {
   input.path = ["v1", "clinics", _]
 }
 
+# Allow authenticated users to list clinic sites
+# GET /v1/clinics/:clinicId/sites
+allow {
+  is_authenticated_user
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "sites"]
+}
+
+# Allow backend services to list clinic sites
+# GET /v1/clinics/:clinicId/sites
+allow {
+  is_backend_service
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "sites"]
+}
+
+# Allow authenticated users to list clinic patient tags
+# GET /v1/clinics/:clinicId/patient_tags
+allow {
+  is_authenticated_user
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patient_tags"]
+}
+
+# Allow backend services to list clinic patient tags
+# GET /v1/clinics/:clinicId/patient_tags
+allow {
+  is_backend_service
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patient_tags"]
+}
+
 # Allow authenticated users to fetch clinics by share code
 # GET /v1/clinics/share_code/:shareCode
 allow {

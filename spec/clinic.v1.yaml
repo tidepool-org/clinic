@@ -995,6 +995,20 @@ paths:
   /v1/clinics/{clinicId}/patient_tags:
     parameters:
       - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: List Patient Tags
+      operationId: ListClinicPatientTags
+      responses:
+        '200':
+          description: The clinic's patient tags.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/patientTagDetail.v1'
+      tags:
+        - Clinics
     post:
       summary: Create Patient Tag
       operationId: CreatePatientTag
@@ -1016,6 +1030,20 @@ paths:
   /v1/clinics/{clinicId}/sites:
     parameters:
       - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: List Clinic Sites
+      operationId: ListClinicSites
+      responses:
+        '200':
+          description: The clinic's sites.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/siteDetail.v1'
+      tags:
+        - Clinics
     post:
       summary: Create a Site
       operationId: CreateSite
@@ -5038,6 +5066,34 @@ components:
         - createdTime
         - updatedTime
         - connectionRequests
+    patientTagDetail.v1:
+      allOf:
+        - $ref: '#/components/schemas/patientTag.v1'
+        - type: object
+          title: Patient Tag
+          description: |
+            An identifier marking a patient as a member of a logical group.
+
+            This view of the tags includes additional data that might not be
+            present when retrieving a clinic record.
+          properties:
+            patients:
+              type: integer
+              x-go-type-skip-optional-pointer: true
+    siteDetail.v1:
+      allOf:
+        - $ref: '#/components/schemas/site.v1'
+        - type: object
+          title: Site
+          description: |
+            A clinic's physical or logical location.
+
+            This view of the site includes additional data that might not be
+            present when retrieving a clinic record.
+          properties:
+            patients:
+              type: integer
+              x-go-type-skip-optional-pointer: true
     siteById.v1:
       type: object
       title: SiteById

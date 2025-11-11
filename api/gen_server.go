@@ -97,6 +97,9 @@ type ServerInterface interface {
 	// Refresh Patient Count
 	// (POST /v1/clinics/{clinicId}/patient_count/refresh)
 	RefreshPatientCount(ctx echo.Context, clinicId ClinicId) error
+	// List Patient Tags
+	// (GET /v1/clinics/{clinicId}/patient_tags)
+	ListClinicPatientTags(ctx echo.Context, clinicId ClinicId) error
 	// Create Patient Tag
 	// (POST /v1/clinics/{clinicId}/patient_tags)
 	CreatePatientTag(ctx echo.Context, clinicId ClinicId) error
@@ -175,6 +178,9 @@ type ServerInterface interface {
 	// Update Patient Count Settings
 	// (PUT /v1/clinics/{clinicId}/settings/patient_count)
 	UpdatePatientCountSettings(ctx echo.Context, clinicId ClinicId) error
+	// List Clinic Sites
+	// (GET /v1/clinics/{clinicId}/sites)
+	ListClinicSites(ctx echo.Context, clinicId ClinicId) error
 	// Create a Site
 	// (POST /v1/clinics/{clinicId}/sites)
 	CreateSite(ctx echo.Context, clinicId ClinicId) error
@@ -922,6 +928,24 @@ func (w *ServerInterfaceWrapper) RefreshPatientCount(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.RefreshPatientCount(ctx, clinicId)
+	return err
+}
+
+// ListClinicPatientTags converts echo context to params.
+func (w *ServerInterfaceWrapper) ListClinicPatientTags(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListClinicPatientTags(ctx, clinicId)
 	return err
 }
 
@@ -2413,6 +2437,24 @@ func (w *ServerInterfaceWrapper) UpdatePatientCountSettings(ctx echo.Context) er
 	return err
 }
 
+// ListClinicSites converts echo context to params.
+func (w *ServerInterfaceWrapper) ListClinicSites(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListClinicSites(ctx, clinicId)
+	return err
+}
+
 // CreateSite converts echo context to params.
 func (w *ServerInterfaceWrapper) CreateSite(ctx echo.Context) error {
 	var err error
@@ -2964,6 +3006,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/migrations/:userId", wrapper.UpdateMigration)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patient_count", wrapper.GetPatientCount)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patient_count/refresh", wrapper.RefreshPatientCount)
+	router.GET(baseURL+"/v1/clinics/:clinicId/patient_tags", wrapper.ListClinicPatientTags)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patient_tags", wrapper.CreatePatientTag)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.DeletePatientTag)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patient_tags/:patientTagId", wrapper.UpdatePatientTag)
@@ -2990,6 +3033,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/mrn", wrapper.UpdateMRNSettings)
 	router.GET(baseURL+"/v1/clinics/:clinicId/settings/patient_count", wrapper.GetPatientCountSettings)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/settings/patient_count", wrapper.UpdatePatientCountSettings)
+	router.GET(baseURL+"/v1/clinics/:clinicId/sites", wrapper.ListClinicSites)
 	router.POST(baseURL+"/v1/clinics/:clinicId/sites", wrapper.CreateSite)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/sites/:siteId", wrapper.DeleteSite)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/sites/:siteId", wrapper.UpdateSite)

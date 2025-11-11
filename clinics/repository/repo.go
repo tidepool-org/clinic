@@ -90,6 +90,165 @@ func (r *repository) Get(ctx context.Context, id string) (*clinics.Clinic, error
 	return clinic, nil
 }
 
+func (r *repository) ListPatientTags(ctx context.Context,
+	id string) ([]clinics.PatientTag, error) {
+
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{"_id": clinicId},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "patients",
+				"localField":   "_id",
+				"foreignField": "clinicId",
+				"as":           "tags_counts",
+				"pipeline": bson.A{
+					bson.M{"$unwind": "$tags"},
+					bson.M{
+						"$group": bson.M{
+							"_id":      "$tags",
+							"patients": bson.M{"$sum": 1},
+						},
+					},
+				},
+			},
+		},
+		bson.M{
+			"$set": bson.M{
+				"patientTags": bson.M{
+					"$map": bson.M{
+						"input": "$patientTags",
+						"in": bson.M{
+							"$let": bson.M{
+								"vars": bson.M{
+									"tag_count": bson.M{
+										"$first": bson.M{
+											"$filter": bson.M{
+												"input": "$tags_counts",
+												"as":    "tc",
+												"cond": bson.M{
+													"$eq": bson.A{
+														"$$this._id", "$$tc._id",
+													},
+												},
+											},
+										},
+									},
+								},
+								"in": bson.M{
+									"$mergeObjects": bson.A{
+										"$$this",
+										bson.M{
+											"patients": "$$tag_count.patients",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.M{
+			"$unset": "tags_counts",
+		},
+	}
+
+	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	if !cursor.Next(ctx) {
+		return nil, cursor.Err()
+	}
+	clinic := &clinics.Clinic{}
+	if err := cursor.Decode(clinic); err != nil {
+		return nil, err
+	}
+
+	return clinic.PatientTags, nil
+}
+
+func (r *repository) ListSites(ctx context.Context, id string) ([]sites.Site, error) {
+	clinicId, _ := primitive.ObjectIDFromHex(id)
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{"_id": clinicId},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "patients",
+				"localField":   "_id",
+				"foreignField": "clinicId",
+				"as":           "sites_counts",
+				"pipeline": bson.A{
+					bson.M{
+						"$unwind": "$sites",
+					},
+					bson.M{
+						"$group": bson.M{
+							"_id": "$sites.id",
+							"patients": bson.M{
+								"$sum": 1,
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.M{
+			"$set": bson.M{
+				"sites": bson.M{
+					"$map": bson.M{
+						"input": "$sites",
+						"in": bson.M{
+							"$let": bson.M{
+								"vars": bson.M{
+									"site_count": bson.M{
+										"$first": bson.M{
+											"$filter": bson.M{
+												"input": "$sites_counts",
+												"as":    "sc",
+												"cond": bson.M{
+													"$eq": bson.A{"$$this.id", "$$sc._id"},
+												},
+											},
+										},
+									},
+								},
+								"in": bson.M{
+									"$mergeObjects": bson.A{
+										"$$this", bson.M{"patients": "$$site_count.patients"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.M{
+			"$unset": "sites_counts",
+		},
+	}
+
+	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	if !cursor.Next(ctx) {
+		return nil, cursor.Err()
+	}
+	clinic := &clinics.Clinic{}
+	if err := cursor.Decode(clinic); err != nil {
+		return nil, err
+	}
+
+	return clinic.Sites, nil
+}
+
 func (r *repository) List(ctx context.Context, filter *clinics.Filter, pagination store.Pagination) ([]*clinics.Clinic, error) {
 	opts := options.Find().
 		SetSkip(int64(pagination.Offset)).

@@ -1701,6 +1701,16 @@ type PatientTagV1 struct {
 	Name string `json:"name"`
 }
 
+// PatientTagDetailV1 defines model for patientTagDetail.v1.
+type PatientTagDetailV1 struct {
+	// Id String representation of a resource id
+	Id *ObjectidV1 `json:"id,omitempty"`
+
+	// Name The tag display name
+	Name     string `json:"name"`
+	Patients int    `json:"patients,omitempty"`
+}
+
 // PatientTagIdsV1 defines model for patientTagIds.v1.
 type PatientTagIdsV1 = []string
 
@@ -1781,6 +1791,15 @@ type SiteByIdV1 struct {
 type SiteCreationV1 struct {
 	// Name The site's name.
 	Name SiteNameV1 `json:"name"`
+}
+
+// SiteDetailV1 defines model for siteDetail.v1.
+type SiteDetailV1 struct {
+	Id SiteIdV1 `json:"id"`
+
+	// Name The site's name.
+	Name     SiteNameV1 `json:"name"`
+	Patients int        `json:"patients,omitempty"`
 }
 
 // SiteIdV1 defines model for siteId.v1.

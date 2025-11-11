@@ -17,7 +17,7 @@ import (
 type Site struct {
 	Id       primitive.ObjectID `bson:"id" json:"id"`
 	Name     string             `bson:"name" json:"name"`
-	Patients int                `bson:"-" json:"patients,omitzero"`
+	Patients int                `bson:"patients,omitzero" json:"patients,omitzero"`
 }
 
 // Equals compares Name and Id to determine if two sites are equal.
