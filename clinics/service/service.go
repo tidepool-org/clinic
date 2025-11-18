@@ -126,7 +126,7 @@ func (s *service) UpdatePatientCountSettings(ctx context.Context, clinicId strin
 func (s *service) GetPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error) {
 	if clinic, err := s.repository.Get(ctx, clinicId); err != nil {
 		return nil, err
-	} else if clinic.PatientCount != nil {
+	} else if clinic.PatientCount != nil && !clinic.PatientCount.RequiresMigration() { // DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
 		return clinic.PatientCount, nil
 	}
 

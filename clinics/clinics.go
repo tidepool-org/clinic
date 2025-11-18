@@ -152,15 +152,15 @@ func (c Clinic) IsTierDefault() bool {
 }
 
 // As of 10/31/2025, only US default tier clinics have patient count settings enabled.
-func (c Clinic) DoesClinicRequirePatientCountSetting() bool {
+func (c Clinic) DoesClinicRequirePatientCountSettings() bool {
 	return c.IsCountryCodeUS() && c.IsTierDefault()
 }
 
 // If patient count settings are enabled, return them. Otherwise, unlimited.
 // For backwards compatibility, nil patient count settings is treated as unlimited.
 func (c Clinic) ResolvedPatientCountSettings() *PatientCountSettings {
-	if c.DoesClinicRequirePatientCountSetting() && c.PatientCountSettings != nil {
-		return c.PatientCountSettings
+	if c.DoesClinicRequirePatientCountSettings() && c.PatientCountSettings != nil {
+		return c.PatientCountSettings.Migrated() // DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
 	}
 	return UnlimitedPatientCountSettings()
 }
@@ -227,10 +227,18 @@ type PatientCount struct {
 	Demo      int                             `bson:"demo"`
 	Plan      int                             `bson:"plan"`
 	Providers map[string]PatientProviderCount `bson:"providers,omitempty"`
+
+	// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+	PatientCount *int `bson:"patientCount,omitempty"`
 }
 
 func NewPatientCount() *PatientCount {
 	return &PatientCount{}
+}
+
+// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+func (p PatientCount) RequiresMigration() bool {
+	return p.PatientCount != nil
 }
 
 type PatientCountSettings struct {
@@ -246,6 +254,18 @@ func (p PatientCountSettings) IsValid() bool {
 		return false
 	}
 	return true
+}
+
+// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+func (p *PatientCountSettings) Migrated() *PatientCountSettings {
+	normalized := &PatientCountSettings{}
+	if p.HardLimit != nil {
+		normalized.HardLimit = p.HardLimit.Migrated()
+	}
+	if p.SoftLimit != nil {
+		normalized.SoftLimit = p.SoftLimit.Migrated()
+	}
+	return normalized
 }
 
 func UnlimitedPatientCountSettings() *PatientCountSettings {
@@ -264,6 +284,9 @@ type PatientCountLimit struct {
 	Plan      int        `bson:"plan"`
 	StartDate *time.Time `bson:"startDate,omitempty"`
 	EndDate   *time.Time `bson:"endDate,omitempty"`
+
+	// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+	PatientCount *int `bson:"patientCount,omitempty"`
 }
 
 func (p PatientCountLimit) IsValid() bool {
@@ -274,6 +297,19 @@ func (p PatientCountLimit) IsValid() bool {
 		return false
 	}
 	return true
+}
+
+// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+func (p *PatientCountLimit) Migrated() *PatientCountLimit {
+	plan := p.Plan
+	if plan == 0 && p.PatientCount != nil {
+		plan = *p.PatientCount
+	}
+	return &PatientCountLimit{
+		Plan:      plan,
+		StartDate: p.StartDate,
+		EndDate:   p.EndDate,
+	}
 }
 
 func NewClinicWithDefaults() *Clinic {
