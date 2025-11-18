@@ -106,13 +106,6 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	// Update patient count settings if the country has changed
-	if result.UpdatePatientCountSettingsForCountry() {
-		if err := h.Clinics.UpdatePatientCountSettings(ctx, clinicId, result.PatientCountSettings); err != nil {
-			return err
-		}
-	}
-
 	return ec.JSON(http.StatusOK, NewClinicDto(result))
 }
 
