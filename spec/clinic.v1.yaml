@@ -992,6 +992,42 @@ paths:
               $ref: '#/components/schemas/patient.v1'
       tags:
         - Clinics
+  /v1/clinics/{clinicId}/patient_counts/patient_tags:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: List A Clinic's Patient Tags With Patient Counts
+      operationId: ListClinicPatientTagsWithPatientCounts
+      responses:
+        '200':
+          description: |
+            A summary of the clinic's patient tags with patient counts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/patientTagWithPatientCount.v1'
+      tags:
+        - Clinics
+  /v1/clinics/{clinicId}/patient_counts/sites:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    get:
+      summary: List A Clinic's Sites With Patient Counts
+      operationId: ListClinicSitesWithPatientCounts
+      responses:
+        '200':
+          description: |
+            A summary of the clinic's sites with patient counts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/siteWithPatientCount.v1'
+      tags:
+        - Clinics
   /v1/clinics/{clinicId}/patient_tags:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1070,7 +1106,7 @@ paths:
       - $ref: '#/components/parameters/clinicId'
       - $ref: '#/components/parameters/siteId'
     post:
-      summary: Merge two sites
+      summary: Merge Two Sites
       operationId: MergeSite
       responses:
         '200':
@@ -5038,6 +5074,26 @@ components:
         - createdTime
         - updatedTime
         - connectionRequests
+    patientTagWithPatientCount.v1:
+      allOf:
+        - $ref: '#/components/schemas/patientTag.v1'
+        - type: object
+          properties:
+            patients:
+              type: integer
+              x-go-type-skip-optional-pointer: true
+          required:
+            - patients
+    siteWithPatientCount.v1:
+      allOf:
+        - $ref: '#/components/schemas/site.v1'
+        - type: object
+          properties:
+            patients:
+              type: integer
+              x-go-type-skip-optional-pointer: true
+          required:
+            - patients
     siteById.v1:
       type: object
       title: SiteById

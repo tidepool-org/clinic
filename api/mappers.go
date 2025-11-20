@@ -130,6 +130,34 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 	return dto
 }
 
+func NewClinicPatientTagsWithPatientCountsDto(tags []clinics.PatientTag) (
+	_ *[]PatientTagWithPatientCountV1) {
+
+	var apiPatientTags []PatientTagWithPatientCountV1
+	for _, tag := range tags {
+		apiPatientTags = append(apiPatientTags, PatientTagWithPatientCountV1{
+			Id:       strp(tag.Id.Hex()),
+			Name:     tag.Name,
+			Patients: tag.Patients,
+		})
+	}
+	return &apiPatientTags
+}
+
+func NewClinicSitesWithPatientCountsDto(sites []sites.Site) (
+	_ *[]SiteWithPatientCountV1) {
+
+	var apiSites []SiteWithPatientCountV1
+	for _, site := range sites {
+		apiSites = append(apiSites, SiteWithPatientCountV1{
+			Id:       site.Id.Hex(),
+			Name:     site.Name,
+			Patients: site.Patients,
+		})
+	}
+	return &apiSites
+}
+
 func NewClinicsDto(clinics []*clinics.Clinic) []ClinicV1 {
 	dtos := make([]ClinicV1, 0)
 	for _, clinic := range clinics {

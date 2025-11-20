@@ -194,6 +194,12 @@ type ClientInterface interface {
 	// RefreshPatientCount request
 	RefreshPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListClinicPatientTagsWithPatientCounts request
+	ListClinicPatientTagsWithPatientCounts(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListClinicSitesWithPatientCounts request
+	ListClinicSitesWithPatientCounts(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreatePatientTagWithBody request with any body
 	CreatePatientTagWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -834,6 +840,30 @@ func (c *Client) GetPatientCount(ctx context.Context, clinicId ClinicId, reqEdit
 
 func (c *Client) RefreshPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRefreshPatientCountRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListClinicPatientTagsWithPatientCounts(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClinicPatientTagsWithPatientCountsRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListClinicSitesWithPatientCounts(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListClinicSitesWithPatientCountsRequest(c.Server, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -3114,6 +3144,74 @@ func NewRefreshPatientCountRequest(server string, clinicId ClinicId) (*http.Requ
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListClinicPatientTagsWithPatientCountsRequest generates requests for ListClinicPatientTagsWithPatientCounts
+func NewListClinicPatientTagsWithPatientCountsRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patient_counts/patient_tags", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListClinicSitesWithPatientCountsRequest generates requests for ListClinicSitesWithPatientCounts
+func NewListClinicSitesWithPatientCountsRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patient_counts/sites", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -7580,6 +7678,12 @@ type ClientWithResponsesInterface interface {
 	// RefreshPatientCountWithResponse request
 	RefreshPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*RefreshPatientCountResponse, error)
 
+	// ListClinicPatientTagsWithPatientCountsWithResponse request
+	ListClinicPatientTagsWithPatientCountsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListClinicPatientTagsWithPatientCountsResponse, error)
+
+	// ListClinicSitesWithPatientCountsWithResponse request
+	ListClinicSitesWithPatientCountsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListClinicSitesWithPatientCountsResponse, error)
+
 	// CreatePatientTagWithBodyWithResponse request with any body
 	CreatePatientTagWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePatientTagResponse, error)
 
@@ -8380,6 +8484,50 @@ func (r RefreshPatientCountResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r RefreshPatientCountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListClinicPatientTagsWithPatientCountsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]PatientTagWithPatientCountV1
+}
+
+// Status returns HTTPResponse.Status
+func (r ListClinicPatientTagsWithPatientCountsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListClinicPatientTagsWithPatientCountsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListClinicSitesWithPatientCountsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]SiteWithPatientCountV1
+}
+
+// Status returns HTTPResponse.Status
+func (r ListClinicSitesWithPatientCountsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListClinicSitesWithPatientCountsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9768,6 +9916,24 @@ func (c *ClientWithResponses) RefreshPatientCountWithResponse(ctx context.Contex
 	return ParseRefreshPatientCountResponse(rsp)
 }
 
+// ListClinicPatientTagsWithPatientCountsWithResponse request returning *ListClinicPatientTagsWithPatientCountsResponse
+func (c *ClientWithResponses) ListClinicPatientTagsWithPatientCountsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListClinicPatientTagsWithPatientCountsResponse, error) {
+	rsp, err := c.ListClinicPatientTagsWithPatientCounts(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListClinicPatientTagsWithPatientCountsResponse(rsp)
+}
+
+// ListClinicSitesWithPatientCountsWithResponse request returning *ListClinicSitesWithPatientCountsResponse
+func (c *ClientWithResponses) ListClinicSitesWithPatientCountsWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*ListClinicSitesWithPatientCountsResponse, error) {
+	rsp, err := c.ListClinicSitesWithPatientCounts(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListClinicSitesWithPatientCountsResponse(rsp)
+}
+
 // CreatePatientTagWithBodyWithResponse request with arbitrary body returning *CreatePatientTagResponse
 func (c *ClientWithResponses) CreatePatientTagWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePatientTagResponse, error) {
 	rsp, err := c.CreatePatientTagWithBody(ctx, clinicId, contentType, body, reqEditors...)
@@ -11064,6 +11230,58 @@ func ParseRefreshPatientCountResponse(rsp *http.Response) (*RefreshPatientCountR
 	response := &RefreshPatientCountResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseListClinicPatientTagsWithPatientCountsResponse parses an HTTP response from a ListClinicPatientTagsWithPatientCountsWithResponse call
+func ParseListClinicPatientTagsWithPatientCountsResponse(rsp *http.Response) (*ListClinicPatientTagsWithPatientCountsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListClinicPatientTagsWithPatientCountsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []PatientTagWithPatientCountV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListClinicSitesWithPatientCountsResponse parses an HTTP response from a ListClinicSitesWithPatientCountsWithResponse call
+func ParseListClinicSitesWithPatientCountsResponse(rsp *http.Response) (*ListClinicSitesWithPatientCountsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListClinicSitesWithPatientCountsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []SiteWithPatientCountV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

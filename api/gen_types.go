@@ -1704,6 +1704,16 @@ type PatientTagV1 struct {
 // PatientTagIdsV1 defines model for patientTagIds.v1.
 type PatientTagIdsV1 = []string
 
+// PatientTagWithPatientCountV1 defines model for patientTagWithPatientCount.v1.
+type PatientTagWithPatientCountV1 struct {
+	// Id String representation of a resource id
+	Id *ObjectidV1 `json:"id,omitempty"`
+
+	// Name The tag display name
+	Name     string `json:"name"`
+	Patients int    `json:"patients"`
+}
+
 // PatientsV1 defines model for patients.v1.
 type PatientsV1 = []PatientV1
 
@@ -1788,6 +1798,15 @@ type SiteIdV1 = string
 
 // SiteNameV1 The site's name.
 type SiteNameV1 = string
+
+// SiteWithPatientCountV1 defines model for siteWithPatientCount.v1.
+type SiteWithPatientCountV1 struct {
+	Id SiteIdV1 `json:"id"`
+
+	// Name The site's name.
+	Name     SiteNameV1 `json:"name"`
+	Patients int        `json:"patients"`
+}
 
 // StateV1 State or province. In the U.S., typically something like `CA` or `California`.
 type StateV1 = string
