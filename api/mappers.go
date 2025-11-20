@@ -103,7 +103,14 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 		dto.PhoneNumbers = &phoneNumbers
 	}
 	if c.PatientTags != nil {
-		dto.PatientTags = NewClinicPatientTagsDto(c.PatientTags)
+		var patientTags []PatientTagV1
+		for _, n := range c.PatientTags {
+			patientTags = append(patientTags, PatientTagV1{
+				Id:   strp(n.Id.Hex()),
+				Name: n.Name,
+			})
+		}
+		dto.PatientTags = &patientTags
 	}
 	if c.Sites != nil {
 		sites := make([]SiteV1, 0, len(c.Sites))
@@ -123,27 +130,32 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 	return dto
 }
 
-func NewClinicPatientTagsDto(tags []clinics.PatientTag) *[]PatientTagV1 {
-	var patientTags []PatientTagV1
-	for _, n := range tags {
-		patientTags = append(patientTags, PatientTagV1{
-			Id:   strp(n.Id.Hex()),
-			Name: n.Name,
+func NewClinicPatientTagsWithPatientCountsDto(tags []clinics.PatientTag) (
+	_ *[]PatientTagWithPatientCountV1) {
+
+	var apiPatientTags []PatientTagWithPatientCountV1
+	for _, tag := range tags {
+		apiPatientTags = append(apiPatientTags, PatientTagWithPatientCountV1{
+			Id:       strp(tag.Id.Hex()),
+			Name:     tag.Name,
+			Patients: tag.Patients,
 		})
 	}
-	return &patientTags
+	return &apiPatientTags
 }
 
-func NewClinicPatientTagsDetailsDto(tags []clinics.PatientTag) *[]PatientTagDetailV1 {
-	var patientTags []PatientTagDetailV1
-	for _, n := range tags {
-		patientTags = append(patientTags, PatientTagDetailV1{
-			Id:       strp(n.Id.Hex()),
-			Name:     n.Name,
-			Patients: n.Patients,
+func NewClinicSitesWithPatientCountsDto(sites []sites.Site) (
+	_ *[]SiteWithPatientCountV1) {
+
+	var apiSites []SiteWithPatientCountV1
+	for _, site := range sites {
+		apiSites = append(apiSites, SiteWithPatientCountV1{
+			Id:       site.Id.Hex(),
+			Name:     site.Name,
+			Patients: site.Patients,
 		})
 	}
-	return &patientTags
+	return &apiSites
 }
 
 func NewClinicsDto(clinics []*clinics.Clinic) []ClinicV1 {
@@ -1963,25 +1975,6 @@ func NewSiteDto(site sites.Site) SiteV1 {
 	return SiteV1{
 		Id:   site.Id.Hex(),
 		Name: site.Name,
-	}
-}
-
-func NewSitesDetailsDto(sites *[]sites.Site) []SiteDetailV1 {
-	if sites == nil {
-		return []SiteDetailV1{}
-	}
-	result := make([]SiteDetailV1, len(*sites))
-	for i := range len(*sites) {
-		result[i] = NewSiteDetailDto((*sites)[i])
-	}
-	return result
-}
-
-func NewSiteDetailDto(site sites.Site) SiteDetailV1 {
-	return SiteDetailV1{
-		Id:       site.Id.Hex(),
-		Name:     site.Name,
-		Patients: site.Patients,
 	}
 }
 

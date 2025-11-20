@@ -142,36 +142,36 @@ allow {
   input.path = ["v1", "clinics", _]
 }
 
-# Allow authenticated users to list clinic sites
-# GET /v1/clinics/:clinicId/sites
+# Allow authenticated users to list clinic sites with patient counts
+# GET /v1/clinics/:clinicId/counts/sites
 allow {
   is_authenticated_user
   input.method == "GET"
-  input.path = ["v1", "clinics", _, "sites"]
+  input.path = ["v1", "clinics", _, "patient_counts", "sites"]
 }
 
-# Allow backend services to list clinic sites
-# GET /v1/clinics/:clinicId/sites
+# Allow backend services to list clinic sites with patient counts
+# GET /v1/clinics/:clinicId/counts/sites
 allow {
   is_backend_service
   input.method == "GET"
-  input.path = ["v1", "clinics", _, "sites"]
+  input.path = ["v1", "clinics", _, "patient_counts", "sites"]
 }
 
-# Allow authenticated users to list clinic patient tags
-# GET /v1/clinics/:clinicId/patient_tags
+# Allow authenticated users to list clinic patient tags with patient counts
+# GET /v1/clinics/:clinicId/counts/patient_tags
 allow {
   is_authenticated_user
   input.method == "GET"
-  input.path = ["v1", "clinics", _, "patient_tags"]
+  input.path = ["v1", "clinics", _, "patient_counts", "patient_tags"]
 }
 
-# Allow backend services to list clinic patient tags
-# GET /v1/clinics/:clinicId/patient_tags
+# Allow backend services to list clinic patient tags with patient counts
+# GET /v1/clinics/:clinicId/counts/patient_tags
 allow {
   is_backend_service
   input.method == "GET"
-  input.path = ["v1", "clinics", _, "patient_tags"]
+  input.path = ["v1", "clinics", _, "patient_counts", "patient_tags"]
 }
 
 # Allow authenticated users to fetch clinics by share code

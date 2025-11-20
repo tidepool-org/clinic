@@ -1701,18 +1701,18 @@ type PatientTagV1 struct {
 	Name string `json:"name"`
 }
 
-// PatientTagDetailV1 defines model for patientTagDetail.v1.
-type PatientTagDetailV1 struct {
+// PatientTagIdsV1 defines model for patientTagIds.v1.
+type PatientTagIdsV1 = []string
+
+// PatientTagWithPatientCountV1 defines model for patientTagWithPatientCount.v1.
+type PatientTagWithPatientCountV1 struct {
 	// Id String representation of a resource id
 	Id *ObjectidV1 `json:"id,omitempty"`
 
 	// Name The tag display name
 	Name     string `json:"name"`
-	Patients int    `json:"patients,omitempty"`
+	Patients int    `json:"patients"`
 }
-
-// PatientTagIdsV1 defines model for patientTagIds.v1.
-type PatientTagIdsV1 = []string
 
 // PatientsV1 defines model for patients.v1.
 type PatientsV1 = []PatientV1
@@ -1793,20 +1793,20 @@ type SiteCreationV1 struct {
 	Name SiteNameV1 `json:"name"`
 }
 
-// SiteDetailV1 defines model for siteDetail.v1.
-type SiteDetailV1 struct {
-	Id SiteIdV1 `json:"id"`
-
-	// Name The site's name.
-	Name     SiteNameV1 `json:"name"`
-	Patients int        `json:"patients,omitempty"`
-}
-
 // SiteIdV1 defines model for siteId.v1.
 type SiteIdV1 = string
 
 // SiteNameV1 The site's name.
 type SiteNameV1 = string
+
+// SiteWithPatientCountV1 defines model for siteWithPatientCount.v1.
+type SiteWithPatientCountV1 struct {
+	Id SiteIdV1 `json:"id"`
+
+	// Name The site's name.
+	Name     SiteNameV1 `json:"name"`
+	Patients int        `json:"patients"`
+}
 
 // StateV1 State or province. In the U.S., typically something like `CA` or `California`.
 type StateV1 = string

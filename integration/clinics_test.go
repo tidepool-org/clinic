@@ -85,41 +85,46 @@ var _ = Describe("Clinics", func() {
 		Expect(err).To(Succeed())
 	})
 
-	Describe("GetWithCounts", func() {
-		It("returns patients per site", func() {
-			ctx := context.Background()
+	Context("patient counts", func() {
+		Describe("ListSites", func() {
+			It("returns patients per site", func() {
+				ctx := context.Background()
 
-			sitesList, err := clinicsSvc.ListSites(ctx, clinic.Id.Hex())
-			Expect(err).To(Succeed())
-			Expect(len(sitesList)).To(Equal(2))
-			var theSite *sites.Site
-			for _, site := range sitesList {
-				if site.Id == chosenSite.Id {
-					theSite = &site
-				} else {
-					Expect(site.Patients).To(Equal(0))
+				sitesList, err := clinicsSvc.ListSites(ctx, clinic.Id.Hex())
+				Expect(err).To(Succeed())
+				Expect(len(sitesList)).To(Equal(2))
+				var theSite *sites.Site
+				for _, site := range sitesList {
+					if site.Id == chosenSite.Id {
+						theSite = &site
+					} else {
+						Expect(site.Patients).To(Equal(0))
+					}
 				}
-			}
-			Expect(theSite).ToNot(Equal(nil))
-			Expect(theSite.Patients).To(Equal(1))
+				Expect(theSite).ToNot(Equal(nil))
+				Expect(theSite.Patients).To(Equal(1))
+			})
+
 		})
 
-		It("returns patients per tag", func() {
-			ctx := context.Background()
+		Describe("ListPatientTags", func() {
+			It("returns patients per tag", func() {
+				ctx := context.Background()
 
-			patientTags, err := clinicsSvc.ListPatientTags(ctx, clinic.Id.Hex())
-			Expect(err).To(Succeed())
-			Expect(len(patientTags)).To(Equal(3))
-			var theTag *clinics.PatientTag
-			for _, tag := range patientTags {
-				if *tag.Id == *chosenTag.Id {
-					theTag = &tag
-				} else {
-					Expect(tag.Patients).To(Equal(0))
+				patientTags, err := clinicsSvc.ListPatientTags(ctx, clinic.Id.Hex())
+				Expect(err).To(Succeed())
+				Expect(len(patientTags)).To(Equal(3))
+				var theTag *clinics.PatientTag
+				for _, tag := range patientTags {
+					if *tag.Id == *chosenTag.Id {
+						theTag = &tag
+					} else {
+						Expect(tag.Patients).To(Equal(0))
+					}
 				}
-			}
-			Expect(theTag).ToNot(BeNil())
-			Expect(theTag.Patients).To(Equal(1))
+				Expect(theTag).ToNot(BeNil())
+				Expect(theTag.Patients).To(Equal(1))
+			})
 		})
 	})
 })
