@@ -1698,7 +1698,8 @@ type PatientTagV1 struct {
 	Id *ObjectidV1 `json:"id,omitempty"`
 
 	// Name The tag display name
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	Patients int    `json:"patients,omitempty,omitzero"`
 }
 
 // PatientTagIdsV1 defines model for patientTagIds.v1.
@@ -1768,7 +1769,8 @@ type SiteV1 struct {
 	Id SiteIdV1 `json:"id"`
 
 	// Name The site's name.
-	Name SiteNameV1 `json:"name"`
+	Name     SiteNameV1 `json:"name"`
+	Patients int        `json:"patients,omitempty,omitzero"`
 }
 
 // SiteByIdV1 A clinic's physical or logical location—id only.

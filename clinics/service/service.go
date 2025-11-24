@@ -189,5 +189,12 @@ func (s *service) DeleteSite(ctx context.Context, clinicId, siteId string) error
 }
 
 func (s *service) UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
-	return s.repository.UpdateSite(ctx, clinicId, siteId, site)
+	site, err := s.repository.UpdateSite(ctx, clinicId, siteId, site)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.patientsRepository.UpdateSites(ctx, clinicId, siteId, site); err != nil {
+		return nil, err
+	}
+	return site, nil
 }
