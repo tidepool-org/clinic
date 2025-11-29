@@ -6,13 +6,19 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
+
+	"github.com/onsi/gomega/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/tidepool-org/go-common/clients/shoreline"
 
 	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/test"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 var permissions = []string{"view", "upload", "note", "custodian"}
@@ -208,4 +214,36 @@ func setPermission(permissions *patients.Permissions, p string) {
 	case "custodian":
 		permissions.Custodian = &patients.Permission{}
 	}
+}
+
+func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
+	GinkgoHelper()
+	return MatchAllFields(Fields{
+		"Id":                             PointTo(Not(BeEmpty())),
+		"UserId":                         PointTo(Equal(*patient.UserId)),
+		"ClinicId":                       PointTo(Equal(*patient.ClinicId)),
+		"BirthDate":                      PointTo(Equal(*patient.BirthDate)),
+		"Email":                          PointTo(Equal(*patient.Email)),
+		"FullName":                       PointTo(Equal(*patient.FullName)),
+		"Mrn":                            PointTo(Equal(*patient.Mrn)),
+		"Tags":                           PointTo(Equal(*patient.Tags)),
+		"TargetDevices":                  PointTo(Equal(*patient.TargetDevices)),
+		"Permissions":                    PointTo(Equal(*patient.Permissions)),
+		"IsMigrated":                     Equal(patient.IsMigrated),
+		"LegacyClinicianIds":             ConsistOf(patient.LegacyClinicianIds),
+		"UpdatedTime":                    Ignore(),
+		"CreatedTime":                    Ignore(),
+		"InvitedBy":                      Ignore(),
+		"Summary":                        Ignore(),
+		"Reviews":                        Ignore(),
+		"ProviderConnectionRequests":     Equal(patient.ProviderConnectionRequests),
+		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
+		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
+		"DataSources":                    PointTo(Equal(*patient.DataSources)),
+		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),
+		"EHRSubscriptions":               Equal(patient.EHRSubscriptions),
+		"Sites":                          Equal(patient.Sites),
+		"GlycemicRanges":                 Equal(patient.GlycemicRanges),
+		"DiagnosisType":                  Equal(patient.DiagnosisType),
+	})
 }

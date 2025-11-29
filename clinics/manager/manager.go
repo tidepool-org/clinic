@@ -60,7 +60,7 @@ type Manager interface {
 
 type manager struct {
 	clinics              clinics.Service
-	cliniciansRepository *clinicians.Repository
+	cliniciansRepository clinicians.Repository
 	config               *config.Config
 	dbClient             *mongo.Client
 	patientsRepository   patients.Repository
@@ -72,8 +72,8 @@ type manager struct {
 type Params struct {
 	fx.In
 
-	Clinics              clinics.Service
-	CliniciansRepository *clinicians.Repository
+	ClinicsService       clinics.Service
+	CliniciansRepository clinicians.Repository
 	Config               *config.Config
 	DbClient             *mongo.Client
 	PatientsRepository   patients.Repository
@@ -84,7 +84,7 @@ type Params struct {
 
 func NewManager(cp Params) (Manager, error) {
 	return &manager{
-		clinics:              cp.Clinics,
+		clinics:              cp.ClinicsService,
 		cliniciansRepository: cp.CliniciansRepository,
 		config:               cp.Config,
 		dbClient:             cp.DbClient,

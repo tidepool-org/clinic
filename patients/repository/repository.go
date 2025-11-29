@@ -1,4 +1,4 @@
-package patients
+package repository
 
 import (
 	"context"
@@ -19,32 +19,23 @@ import (
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
-)
-
-const (
-	CollectionName = "patients"
 )
 
 // Collation to use for string fields
 var collation = options.Collation{Locale: "en", Strength: 1}
 
-//go:generate go tool mockgen --build_flags=--mod=mod -source=./repo.go -destination=./test/mock_repository.go -package test -aux_files=github.com/tidepool-org/clinic/patients=patients.go MockRepository
-
-type Repository interface {
-	Service
-}
-
-func NewRepository(config *config.Config, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Repository, error) {
-	deletionsRepo, err := deletions.NewRepository[Patient]("patient", db, logger)
+func NewRepository(config *config.Config, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (patients.Repository, error) {
+	deletionsRepo, err := deletions.NewRepository[patients.Patient]("patient", db, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	repo := &repository{
 		config:        config,
-		collection:    db.Collection(CollectionName),
+		collection:    db.Collection(patients.CollectionName),
 		deletionsRepo: deletionsRepo,
 		logger:        logger,
 	}
@@ -68,7 +59,7 @@ type repository struct {
 	config        *config.Config
 	collection    *mongo.Collection
 	logger        *zap.SugaredLogger
-	deletionsRepo deletions.Repository[Patient]
+	deletionsRepo deletions.Repository[patients.Patient]
 }
 
 func (r *repository) Initialize(ctx context.Context) error {
@@ -258,17 +249,17 @@ func (r *repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*Patient, error) {
+func (r *repository) Get(ctx context.Context, clinicId string, userId string) (*patients.Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
 		"userId":   userId,
 	}
 
-	patient := &Patient{}
+	patient := &patients.Patient{}
 	err := r.collection.FindOne(ctx, selector).Decode(&patient)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, ErrNotFound
+		return nil, patients.ErrNotFound
 	} else if err != nil {
 		return nil, err
 	}
@@ -297,13 +288,13 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string,
 		return err
 	}
 	if res.DeletedCount == 0 {
-		return ErrNotFound
+		return patients.ErrNotFound
 	}
 
 	return nil
 }
 
-func (r *repository) Count(ctx context.Context, filter *Filter) (int, error) {
+func (r *repository) Count(ctx context.Context, filter *patients.Filter) (int, error) {
 	count, err := r.collection.CountDocuments(ctx, r.generateListFilterQuery(filter))
 	if err != nil {
 		return 0, err
@@ -312,7 +303,7 @@ func (r *repository) Count(ctx context.Context, filter *Filter) (int, error) {
 	return int(count), nil
 }
 
-func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination, sorts []*store.Sort) (*ListResult, error) {
+func (r *repository) List(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sorts []*store.Sort) (*patients.ListResult, error) {
 	// We use an aggregation pipeline with facet in order to get the count
 	// and the patients from a single query
 	pipeline := []bson.M{
@@ -347,13 +338,13 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		return nil, fmt.Errorf("error getting pipeline result")
 	}
 
-	result := ListResult{}
+	result := patients.ListResult{}
 	if err = cursor.Decode(&result); err != nil {
 		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
 
 	if result.MatchingCount == 0 {
-		result.Patients = make([]*Patient, 0)
+		result.Patients = make([]*patients.Patient, 0)
 	}
 
 	return &result, nil
@@ -378,7 +369,7 @@ func excludeSummaryExceptFieldsInMergeReports() []bson.M {
 	return out
 }
 
-func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, error) {
+func (r *repository) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
 	if patient.ClinicId == nil {
 		return nil, fmt.Errorf("patient clinic id is missing")
 	}
@@ -387,18 +378,18 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	}
 
 	clinicId := patient.ClinicId.Hex()
-	filter := &Filter{
+	filter := &patients.Filter{
 		ClinicId: &clinicId,
 		UserId:   patient.UserId,
 	}
-	patients, err := r.List(ctx, filter, store.Pagination{Limit: 1}, nil)
+	patientList, err := r.List(ctx, filter, store.Pagination{Limit: 1}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error checking for duplicate PatientsRepo: %v", err)
 	}
 
-	if patients.MatchingCount > 0 {
+	if patientList.MatchingCount > 0 {
 		if len(patient.LegacyClinicianIds) == 0 {
-			return nil, ErrDuplicatePatient
+			return nil, patients.ErrDuplicatePatient
 		}
 		// The user is being migrated multiple times from different legacy clinician accounts
 		if err = r.updateLegacyClinicianIds(ctx, patient); err != nil {
@@ -420,7 +411,7 @@ func (r *repository) Create(ctx context.Context, patient Patient) (*Patient, err
 	return result, err
 }
 
-func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*Patient, error) {
+func (r *repository) Update(ctx context.Context, patientUpdate patients.PatientUpdate) (*patients.Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(patientUpdate.ClinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -440,7 +431,7 @@ func (r *repository) Update(ctx context.Context, patientUpdate PatientUpdate) (*
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return nil, patients.ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
 	}
@@ -492,7 +483,7 @@ func (r *repository) UpdateEmail(ctx context.Context, userId string, email *stri
 	return err
 }
 
-func (r *repository) AddReview(ctx context.Context, clinicId, userId string, review Review) ([]Review, error) {
+func (r *repository) AddReview(ctx context.Context, clinicId, userId string, review patients.Review) ([]patients.Review, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -502,7 +493,7 @@ func (r *repository) AddReview(ctx context.Context, clinicId, userId string, rev
 	update := bson.M{
 		"$push": bson.M{
 			"reviews": bson.M{
-				"$each":     []Review{review},
+				"$each":     []patients.Review{review},
 				"$position": 0,
 				"$slice":    2,
 			},
@@ -511,18 +502,18 @@ func (r *repository) AddReview(ctx context.Context, clinicId, userId string, rev
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
-	patient := Patient{}
+	patient := patients.Patient{}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return nil, patients.ErrNotFound
 		}
 		return nil, err
 	}
 	return patient.Reviews, nil
 }
 
-func (r *repository) DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]Review, error) {
+func (r *repository) DeleteReview(ctx context.Context, clinicId, clinicianId, userId string) ([]patients.Review, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId":              clinicObjId,
@@ -535,7 +526,7 @@ func (r *repository) DeleteReview(ctx context.Context, clinicId, clinicianId, us
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	opts.SetProjection(bson.M{"reviews": 1})
 
-	patient := Patient{}
+	patient := patients.Patient{}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
 	if err != nil {
 		// This checking is after the fact to avoid get-modify-update race
@@ -543,13 +534,13 @@ func (r *repository) DeleteReview(ctx context.Context, clinicId, clinicianId, us
 			err = r.collection.FindOne(ctx, bson.M{"clinicId": clinicObjId, "userId": userId}).Decode(&patient)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
-					return nil, ErrNotFound
+					return nil, patients.ErrNotFound
 				}
 				return nil, err
 			}
 
 			if patient.Reviews[0].ClinicianId != clinicianId {
-				return nil, ErrReviewNotOwner
+				return nil, patients.ErrReviewNotOwner
 			}
 
 		}
@@ -558,7 +549,7 @@ func (r *repository) DeleteReview(ctx context.Context, clinicId, clinicianId, us
 	return patient.Reviews, nil
 }
 
-func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *Permissions) (*Patient, error) {
+func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *patients.Permissions) (*patients.Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -583,7 +574,7 @@ func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return nil, patients.ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
 	}
@@ -591,7 +582,7 @@ func (r *repository) UpdatePermissions(ctx context.Context, clinicId, userId str
 	return r.Get(ctx, clinicId, userId)
 }
 
-func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error) {
+func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, permission string) (*patients.Patient, error) {
 	key := fmt.Sprintf("permissions.%s", permission)
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
@@ -609,7 +600,7 @@ func (r *repository) DeletePermission(ctx context.Context, clinicId, userId, per
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrPermissionNotFound
+			return nil, patients.ErrPermissionNotFound
 		}
 		return nil, fmt.Errorf("error removing permission: %w", err)
 	}
@@ -651,13 +642,13 @@ func (r *repository) DeleteNonCustodialPatientsOfClinic(ctx context.Context, cli
 	return err
 }
 
-func (r *repository) deleteMany(ctx context.Context, selector bson.M, metadata deletions.Metadata) ([]Patient, error) {
+func (r *repository) deleteMany(ctx context.Context, selector bson.M, metadata deletions.Metadata) ([]patients.Patient, error) {
 	cursor, err := r.collection.Find(ctx, selector)
 	if err != nil {
 		return nil, fmt.Errorf("error listing patients: %w", err)
 	}
 
-	var patients []Patient
+	var patients []patients.Patient
 	if err = cursor.All(ctx, &patients); err != nil {
 		return nil, fmt.Errorf("error decoding patients list: %w", err)
 	}
@@ -690,7 +681,7 @@ func (r *repository) deleteMany(ctx context.Context, selector bson.M, metadata d
 	return patients, nil
 }
 
-func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error {
+func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *patients.Summary) error {
 	selector := bson.M{
 		"userId": userId,
 	}
@@ -722,7 +713,7 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
 	} else if res.ModifiedCount == 0 {
-		return SummaryNotFound
+		return patients.SummaryNotFound
 	}
 
 	return nil
@@ -751,13 +742,13 @@ func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId st
 	}
 
 	if resCgm.ModifiedCount == 0 && resBgm.ModifiedCount == 0 {
-		return SummaryNotFound
+		return patients.SummaryNotFound
 	}
 
 	return nil
 }
 
-func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error) {
+func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -773,7 +764,7 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	err := r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return nil, patients.ErrNotFound
 		}
 		return nil, fmt.Errorf("error updating patient: %w", err)
 	}
@@ -781,7 +772,7 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *U
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
-func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error {
+func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	currentTime := time.Now()
 
@@ -792,7 +783,7 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 		return fmt.Errorf("error finding patient: %w", err)
 	}
 
-	var providerDataSource DataSource
+	var providerDataSource patients.DataSource
 	if patient.DataSources != nil {
 		for _, source := range *patient.DataSources {
 			if source.ProviderName == request.ProviderName {
@@ -811,8 +802,8 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	mongoUpdate := bson.M{
 		"$set": bson.M{
 			"updatedTime":                  currentTime,
-			"dataSources.$.expirationTime": currentTime.Add(PendingDataSourceExpirationDuration),
-			"dataSources.$.state":          DataSourceStatePending,
+			"dataSources.$.expirationTime": currentTime.Add(patients.PendingDataSourceExpirationDuration),
+			"dataSources.$.state":          patients.DataSourceStatePending,
 		},
 	}
 
@@ -821,9 +812,9 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 		mongoUpdate = bson.M{
 			"$set": bson.M{
 				"updatedTime":                  currentTime,
-				"dataSources.$.expirationTime": currentTime.Add(PendingDataSourceExpirationDuration),
+				"dataSources.$.expirationTime": currentTime.Add(patients.PendingDataSourceExpirationDuration),
 				"dataSources.$.modifiedTime":   currentTime,
-				"dataSources.$.state":          DataSourceStatePendingReconnect,
+				"dataSources.$.state":          patients.DataSourceStatePendingReconnect,
 			},
 		}
 	}
@@ -840,7 +831,7 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return ErrNotFound
+			return patients.ErrNotFound
 		}
 		return fmt.Errorf("error updating patient: %w", err)
 	}
@@ -886,7 +877,7 @@ func (r *repository) RescheduleLastSubscriptionOrderForPatient(ctx context.Conte
 	return nil
 }
 
-func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient Patient) error {
+func (r *repository) updateLegacyClinicianIds(ctx context.Context, patient patients.Patient) error {
 	selector := bson.M{
 		"clinicId": patient.ClinicId,
 		"userId":   patient.UserId,
@@ -992,7 +983,7 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 	return nil
 }
 
-func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error {
+func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *patients.DataSources) error {
 	selector := bson.M{
 		"userId": userId,
 	}
@@ -1015,7 +1006,7 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	return nil
 }
 
-func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patientId string, update SubscriptionUpdate) error {
+func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patientId string, update patients.SubscriptionUpdate) error {
 	patient, err := r.Get(ctx, clinicId, patientId)
 	if err != nil {
 		return err
@@ -1033,13 +1024,13 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 
 	subscriptions := patient.EHRSubscriptions
 	if subscriptions == nil {
-		subscriptions = make(map[string]EHRSubscription)
+		subscriptions = make(map[string]patients.EHRSubscription)
 	}
 
 	now := time.Now()
 	subscription, ok := subscriptions[update.Name]
 	if !ok {
-		subscription = EHRSubscription{
+		subscription = patients.EHRSubscription{
 			CreatedAt: now,
 		}
 	}
@@ -1064,7 +1055,7 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 	return nil
 }
 
-func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
+func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 	selector := bson.M{}
 	orSelectors := bson.A{}
 	if filter.ClinicId != nil {
@@ -1254,13 +1245,13 @@ func (r *repository) generateListFilterQuery(filter *Filter) bson.M {
 	return selector
 }
 
-func MaybeApplyNumericFilter(selector bson.M, period string, typ string, field string, pair FilterPair) {
+func MaybeApplyNumericFilter(selector bson.M, period string, typ string, field string, pair patients.FilterPair) {
 	if operator, ok := cmpToMongoFilter(&pair.Cmp); ok {
 		selector["summary."+typ+"Stats.periods."+period+"."+field] = bson.M{operator: pair.Value}
 	}
 }
 
-func ApplyDateFilter(selector bson.M, typ string, field string, pair FilterDatePair) {
+func ApplyDateFilter(selector bson.M, typ string, field string, pair patients.FilterDatePair) {
 	dateFilter := bson.M{}
 
 	if pair.Min != nil {
@@ -1357,8 +1348,8 @@ func cmpToMongoFilter(cmp *string) (string, bool) {
 	return f, ok
 }
 
-func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]primitive.ObjectID) []TideResultPatient {
-	categoryResult := make([]TideResultPatient, 0, TideReportNoDataPatientLimit)
+func PatientsToTideResult(patientsList []*patients.Patient, period string, exclusions *[]primitive.ObjectID) []patients.TideResultPatient {
+	categoryResult := make([]patients.TideResultPatient, 0, TideReportNoDataPatientLimit)
 	for _, patient := range patientsList {
 		*exclusions = append(*exclusions, *patient.Id)
 
@@ -1367,8 +1358,8 @@ func PatientsToTideResult(patientsList []*Patient, period string, exclusions *[]
 			patientTags = append(patientTags, tag.Hex())
 		}
 
-		resultPatient := TideResultPatient{
-			Patient: TidePatient{
+		resultPatient := patients.TideResultPatient{
+			Patient: patients.TidePatient{
 				Email:       patient.Email,
 				FullName:    patient.FullName,
 				Id:          patient.UserId,
@@ -1597,7 +1588,7 @@ func categoriesByNames(names []string) []tideCategory {
 	return cats
 }
 
-func (r *repository) TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error) {
+func (r *repository) TideReport(ctx context.Context, clinicId string, params patients.TideReportParams) (*patients.Tide, error) {
 	if clinicId == "" {
 		return nil, fmt.Errorf("%w: empty clinicId provided", errors2.BadRequest)
 	}
@@ -1618,27 +1609,27 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 
 	remaining := TideReportPatientLimit
 	exclusions := make([]primitive.ObjectID, 0, TideReportPatientLimit)
-	tide := Tide{
-		Config: TideConfig{
+	tide := patients.Tide{
+		Config: patients.TideConfig{
 			ClinicId: clinicId,
-			Filters: TideFilters{
+			Filters: patients.TideFilters{
 				TimeInVeryLowPercent:      strp(">0.01"),
 				TimeInAnyLowPercent:       strp(">0.04"),
 				DropInTimeInTargetPercent: strp("<-0.15"),
 				TimeInTargetPercent:       strp("<0.7"),
 				TimeCGMUsePercent:         strp("<0.7"),
 			},
-			HighGlucoseThreshold:        HighGlucoseThreshold,
+			HighGlucoseThreshold:        patients.HighGlucoseThreshold,
 			LastDataCutoff:              params.LastDataCutoff,
-			LowGlucoseThreshold:         LowGlucoseThreshold,
+			LowGlucoseThreshold:         patients.LowGlucoseThreshold,
 			Period:                      params.Period,
-			SchemaVersion:               TideSchemaVersion,
+			SchemaVersion:               patients.TideSchemaVersion,
 			Tags:                        params.Tags,
-			VeryHighGlucoseThreshold:    VeryHighGlucoseThreshold,
-			VeryLowGlucoseThreshold:     VeryLowGlucoseThreshold,
-			ExtremeHighGlucoseThreshold: ExtremeHighGlucoseThreshold,
+			VeryHighGlucoseThreshold:    patients.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:     patients.VeryLowGlucoseThreshold,
+			ExtremeHighGlucoseThreshold: patients.ExtremeHighGlucoseThreshold,
 		},
-		Results: TideResults{},
+		Results: patients.TideResults{},
 	}
 
 	for _, category := range categories {
@@ -1674,7 +1665,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			return nil, err
 		}
 
-		var patientsList []*Patient
+		var patientsList []*patients.Patient
 		if err = cursor.All(ctx, &patientsList); err != nil {
 			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}
@@ -1728,7 +1719,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params Tid
 			return nil, err
 		}
 
-		var patientsList []*Patient
+		var patientsList []*patients.Patient
 		if err = cursor.All(ctx, &patientsList); err != nil {
 			return nil, fmt.Errorf("error decoding patients list: %w", err)
 		}

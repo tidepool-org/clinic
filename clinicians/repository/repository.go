@@ -1,32 +1,31 @@
-package clinicians
+package repository
 
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
-	"github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/store"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"time"
+
+	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/deletions"
+	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/store"
 )
 
-const (
-	CollectionName = "clinicians"
-)
-
-func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (*Repository, error) {
-	deletionsRepo, err := deletions.NewRepository[Clinician]("clinician", db, logger)
+func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (clinicians.Repository, error) {
+	deletionsRepo, err := deletions.NewRepository[clinicians.Clinician]("clinician", db, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	repo := &Repository{
-		collection:    db.Collection(CollectionName),
+		collection:    db.Collection(clinicians.CollectionName),
 		logger:        logger,
 		deletionsRepo: deletionsRepo,
 	}
@@ -49,7 +48,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 type Repository struct {
 	collection    *mongo.Collection
 	logger        *zap.SugaredLogger
-	deletionsRepo deletions.Repository[Clinician]
+	deletionsRepo deletions.Repository[clinicians.Clinician]
 }
 
 func (r *Repository) Initialize(ctx context.Context) error {
@@ -118,12 +117,12 @@ func (r *Repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (r *Repository) Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error) {
+func (r *Repository) Get(ctx context.Context, clinicId string, clinicianId string) (*clinicians.Clinician, error) {
 	selector := clinicianSelector(clinicId, clinicianId)
 	return r.getOne(ctx, selector)
 }
 
-func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error) {
+func (r *Repository) List(ctx context.Context, filter *clinicians.Filter, pagination store.Pagination) ([]*clinicians.Clinician, error) {
 	opts := options.Find().
 		SetSort(bson.D{{"createdTime", -1}}).
 		SetLimit(int64(pagination.Limit)).
@@ -164,7 +163,7 @@ func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.
 		return nil, fmt.Errorf("error listing clinicians: %w", err)
 	}
 
-	var clinicians []*Clinician
+	var clinicians []*clinicians.Clinician
 	if err = cursor.All(ctx, &clinicians); err != nil {
 		return nil, fmt.Errorf("error decoding clinicians list: %w", err)
 	}
@@ -172,11 +171,11 @@ func (r *Repository) List(ctx context.Context, filter *Filter, pagination store.
 	return clinicians, nil
 }
 
-func (r *Repository) Create(ctx context.Context, clinician *Clinician) (*Clinician, error) {
+func (r *Repository) Create(ctx context.Context, clinician *clinicians.Clinician) (*clinicians.Clinician, error) {
 	if exists, err := r.clinicianExists(ctx, clinician); err != nil {
 		return nil, fmt.Errorf("error checking for duplicate clinicians: %v", err)
 	} else if exists {
-		return nil, ErrDuplicate
+		return nil, clinicians.ErrDuplicate
 	}
 
 	clinician.CreatedTime = time.Now()
@@ -192,7 +191,7 @@ func (r *Repository) Create(ctx context.Context, clinician *Clinician) (*Clinici
 	return r.getOne(ctx, selector)
 }
 
-func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error) {
+func (r *Repository) Update(ctx context.Context, update *clinicians.ClinicianUpdate) (*clinicians.Clinician, error) {
 	selector := clinicianSelector(update.ClinicId, update.ClinicianId)
 	clinician, err := r.getOne(ctx, selector)
 	if err != nil {
@@ -213,7 +212,7 @@ func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clin
 
 		// Keep track of the user who updated clinician's roles
 		updates["$push"] = bson.M{
-			"rolesUpdates": RolesUpdate{
+			"rolesUpdates": clinicians.RolesUpdate{
 				Roles:     update.Clinician.Roles,
 				UpdatedBy: update.UpdatedBy,
 			},
@@ -223,7 +222,7 @@ func (r *Repository) Update(ctx context.Context, update *ClinicianUpdate) (*Clin
 	return r.updateOne(ctx, selector, updates)
 }
 
-func (r *Repository) UpdateAll(ctx context.Context, update *CliniciansUpdate) error {
+func (r *Repository) UpdateAll(ctx context.Context, update *clinicians.CliniciansUpdate) error {
 	selector := bson.M{
 		"userId": update.UserId,
 	}
@@ -265,7 +264,7 @@ func (r *Repository) DeleteAll(ctx context.Context, clinicId string, metadata de
 		return fmt.Errorf("error listing clinicians: %w", err)
 	}
 
-	var clinicians []Clinician
+	var clinicians []clinicians.Clinician
 	if err = cursor.All(ctx, &clinicians); err != nil {
 		return fmt.Errorf("error decoding patients list: %w", err)
 	}
@@ -298,7 +297,7 @@ func (r *Repository) DeleteAll(ctx context.Context, clinicId string, metadata de
 	return nil
 }
 
-func (r *Repository) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {
+func (r *Repository) GetInvite(ctx context.Context, clinicId, inviteId string) (*clinicians.Clinician, error) {
 	return r.getOne(ctx, inviteSelector(clinicId, inviteId))
 }
 
@@ -306,7 +305,7 @@ func (r *Repository) DeleteInvite(ctx context.Context, clinicId, inviteId string
 	return r.deleteOne(ctx, inviteSelector(clinicId, inviteId))
 }
 
-func (r *Repository) AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error) {
+func (r *Repository) AssociateInvite(ctx context.Context, associate clinicians.AssociateInvite) (*clinicians.Clinician, error) {
 	if associate.InviteId == "" {
 		return nil, fmt.Errorf("inviteId cannot be empty")
 	}
@@ -341,11 +340,11 @@ func (r *Repository) AssociateInvite(ctx context.Context, associate AssociateInv
 	return r.updateOne(ctx, idSelector, update)
 }
 
-func (r *Repository) getOne(ctx context.Context, selector bson.M) (*Clinician, error) {
-	clinician := &Clinician{}
+func (r *Repository) getOne(ctx context.Context, selector bson.M) (*clinicians.Clinician, error) {
+	clinician := &clinicians.Clinician{}
 	err := r.collection.FindOne(ctx, selector).Decode(clinician)
 	if err == mongo.ErrNoDocuments {
-		return nil, ErrNotFound
+		return nil, clinicians.ErrNotFound
 	} else if err != nil {
 		return nil, err
 	}
@@ -353,17 +352,17 @@ func (r *Repository) getOne(ctx context.Context, selector bson.M) (*Clinician, e
 	return clinician, nil
 }
 
-func (r *Repository) updateOne(ctx context.Context, selector, update bson.M) (*Clinician, error) {
+func (r *Repository) updateOne(ctx context.Context, selector, update bson.M) (*clinicians.Clinician, error) {
 	result := r.collection.FindOneAndUpdate(ctx, selector, update)
 	err := result.Err()
 
 	if result.Err() == mongo.ErrNoDocuments {
-		return nil, ErrNotFound
+		return nil, clinicians.ErrNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("unable to update clinician: %w", err)
 	}
 
-	beforeUpdate := Clinician{}
+	beforeUpdate := clinicians.Clinician{}
 	if err := result.Decode(&beforeUpdate); err != nil {
 		return nil, err
 	}
@@ -377,13 +376,13 @@ func (r *Repository) deleteOne(ctx context.Context, selector bson.M) error {
 		return fmt.Errorf("unable to delete clincian: %w", err)
 	}
 	if res.DeletedCount == int64(0) {
-		return ErrNotFound
+		return clinicians.ErrNotFound
 	}
 
 	return nil
 }
 
-func (r *Repository) clinicianExists(ctx context.Context, clinician *Clinician) (bool, error) {
+func (r *Repository) clinicianExists(ctx context.Context, clinician *clinicians.Clinician) (bool, error) {
 	or := make([]bson.M, 0)
 	if clinician.ClinicId != nil {
 		if clinician.UserId != nil {

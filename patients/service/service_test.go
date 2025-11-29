@@ -1,4 +1,4 @@
-package patients_test
+package service_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"github.com/onsi/gomega/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/mock/gomock"
@@ -18,6 +19,7 @@ import (
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	patientsService "github.com/tidepool-org/clinic/patients/service"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
 	sitesTest "github.com/tidepool-org/clinic/sites/test"
@@ -46,7 +48,7 @@ var _ = Describe("Patients Service", func() {
 		client := clinicStoreTest.GetTestDatabase().Client()
 
 		var err error
-		service, err = patients.NewService(repo, clinicsService, nil, zap.NewNop().Sugar(), client)
+		service, err = patientsService.NewService(repo, clinicsService, nil, zap.NewNop().Sugar(), client)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -71,7 +73,7 @@ var _ = Describe("Patients Service", func() {
 			}
 			randomPatient.Sites = &[]sites.Site{}
 
-			matchPatientFields = patientFieldsMatcher(randomPatient)
+			matchPatientFields = patientsTest.PatientFieldsMatcher(randomPatient)
 		})
 
 		When("the clinic requires the mrn to be set", func() {

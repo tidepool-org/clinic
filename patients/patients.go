@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	CollectionName                     = "patients"
 	SubscriptionRedoxSummaryAndReports = "summaryAndReports"
 	SubscriptionXealthReports          = "xealthReports"
 )
@@ -45,7 +46,7 @@ var (
 	}
 )
 
-//go:generate go tool mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
+//go:generate go tool mockgen -source=./patients.go -destination=./test/mock_patients.go -package test
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
 	Count(ctx context.Context, filter *Filter) (int, error)
@@ -75,6 +76,10 @@ type Service interface {
 	DeleteSites(ctx context.Context, clinicId string, siteId string) error
 	MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error
 	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
+}
+
+type Repository interface {
+	Service
 }
 
 type Patient struct {

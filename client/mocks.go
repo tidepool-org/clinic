@@ -1,7 +1,6 @@
 package client
 
-//go:generate go tool mockgen -source=./client.go -destination=./mock.go -package client ClientInterface
-//go:generate go tool mockgen -source=./client.go -destination=./mock.go -package client ClientWithResponsesInterface
+//go:generate go tool mockgen -source=./client.go -destination=./mock_client.go -package client ClientInterface, ClientWithResponsesInterface
 
 import "go.uber.org/mock/gomock"
 

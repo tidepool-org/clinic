@@ -1,18 +1,21 @@
-package clinics_test
+package service_test
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/sites"
 	dbTest "github.com/tidepool-org/clinic/store/test"
@@ -24,26 +27,29 @@ func Ptr[T any](value T) *T {
 
 var _ = Describe("Clinics", func() {
 	var database *mongo.Database
-	var repo clinics.Service
+	var service clinics.Service
 
 	BeforeEach(func() {
 		var err error
 		database = dbTest.GetTestDatabase()
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repo, err = clinics.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
+		repository, err := clinicsRepository.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(repo).ToNot(BeNil())
+		Expect(repository).ToNot(BeNil())
+		service, err = clinicsService.NewService(repository)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(service).ToNot(BeNil())
 		lifecycle.RequireStart()
 	})
 
 	Describe("GetPatientCountSettings", func() {
 		It("returns patient count settings by default", func() {
 			clinic := clinicsTest.RandomClinic()
-			clinic, err := repo.Create(context.Background(), clinic)
+			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
-			patientCountSettings, err := repo.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(patientCountSettings).To(Equal(clinics.DefaultPatientCountSettings()))
 		})
@@ -60,11 +66,11 @@ var _ = Describe("Clinics", func() {
 
 			clinic := clinicsTest.RandomClinic()
 			clinic.PatientCountSettings = expectedPatientCountSettings
-			clinic, err := repo.Create(context.Background(), clinic)
+			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
-			patientCountSettings, err := repo.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(patientCountSettings).To(Equal(expectedPatientCountSettings))
 		})
@@ -81,13 +87,13 @@ var _ = Describe("Clinics", func() {
 				},
 			}
 
-			err := repo.UpdatePatientCountSettings(context.Background(), primitive.NewObjectID().Hex(), expectedPatientCountSettings)
+			err := service.UpdatePatientCountSettings(context.Background(), primitive.NewObjectID().Hex(), expectedPatientCountSettings)
 			Expect(err).To(Equal(clinics.ErrNotFound))
 		})
 
 		It("updates the patient count settings", func() {
 			clinic := clinicsTest.RandomClinic()
-			clinic, err := repo.Create(context.Background(), clinic)
+			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
@@ -100,10 +106,10 @@ var _ = Describe("Clinics", func() {
 				},
 			}
 
-			err = repo.UpdatePatientCountSettings(context.Background(), clinic.Id.Hex(), expectedPatientCountSettings)
+			err = service.UpdatePatientCountSettings(context.Background(), clinic.Id.Hex(), expectedPatientCountSettings)
 			Expect(err).ToNot(HaveOccurred())
 
-			patientCountSettings, err := repo.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
+			patientCountSettings, err := service.GetPatientCountSettings(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(patientCountSettings).To(Equal(expectedPatientCountSettings))
 		})
@@ -112,11 +118,11 @@ var _ = Describe("Clinics", func() {
 	Describe("GetPatientCount", func() {
 		It("returns patient count by default", func() {
 			clinic := clinicsTest.RandomClinic()
-			clinic, err := repo.Create(context.Background(), clinic)
+			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
-			patientCount, err := repo.GetPatientCount(context.Background(), clinic.Id.Hex())
+			patientCount, err := service.GetPatientCount(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(patientCount).To(Equal(clinics.NewPatientCount()))
 		})
@@ -128,11 +134,11 @@ var _ = Describe("Clinics", func() {
 
 			clinic := clinicsTest.RandomClinic()
 			clinic.PatientCount = expectedPatientCount
-			clinic, err := repo.Create(context.Background(), clinic)
+			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
-			patientCount, err := repo.GetPatientCount(context.Background(), clinic.Id.Hex())
+			patientCount, err := service.GetPatientCount(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(patientCount).To(Equal(expectedPatientCount))
 		})
@@ -144,13 +150,13 @@ var _ = Describe("Clinics", func() {
 				PatientCount: 10,
 			}
 
-			err := repo.UpdatePatientCount(context.Background(), primitive.NewObjectID().Hex(), expectedPatientCount)
+			err := service.UpdatePatientCount(context.Background(), primitive.NewObjectID().Hex(), expectedPatientCount)
 			Expect(err).To(Equal(clinics.ErrNotFound))
 		})
 
 		It("updates the patient count", func() {
 			clinic := clinicsTest.RandomClinic()
-			clinic, err := repo.Create(context.Background(), clinic)
+			clinic, err := service.Create(context.Background(), clinic)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(clinic).ToNot(BeNil())
 
@@ -158,10 +164,10 @@ var _ = Describe("Clinics", func() {
 				PatientCount: 10,
 			}
 
-			err = repo.UpdatePatientCount(context.Background(), clinic.Id.Hex(), expectedPatientCount)
+			err = service.UpdatePatientCount(context.Background(), clinic.Id.Hex(), expectedPatientCount)
 			Expect(err).ToNot(HaveOccurred())
 
-			patientCount, err := repo.GetPatientCount(context.Background(), clinic.Id.Hex())
+			patientCount, err := service.GetPatientCount(context.Background(), clinic.Id.Hex())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(patientCount).To(Equal(expectedPatientCount))
 		})
@@ -279,7 +285,7 @@ func ptr[A any](a A) *A {
 
 type repoTestHelper struct {
 	Clinic *clinics.Clinic
-	Repo   clinics.Service
+	Repo   clinics.Repository
 	Site   *sites.Site
 
 	t FullGinkgoTInterface
@@ -288,7 +294,7 @@ type repoTestHelper struct {
 func newRepoTestHelper(t FullGinkgoTInterface) (context.Context, *repoTestHelper) {
 	db := dbTest.GetTestDatabase()
 	lifecycle := fxtest.NewLifecycle(t)
-	repo, err := clinics.NewRepository(db, zap.NewNop().Sugar(), lifecycle)
+	repo, err := clinicsRepository.NewRepository(db, zap.NewNop().Sugar(), lifecycle)
 	if err != nil {
 		t.Fatalf("failed to create new clinic repository: %s", err)
 	}
