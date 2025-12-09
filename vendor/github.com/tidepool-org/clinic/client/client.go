@@ -191,6 +191,9 @@ type ClientInterface interface {
 	// GetPatientCount request
 	GetPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// RefreshPatientCount request
+	RefreshPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreatePatientTagWithBody request with any body
 	CreatePatientTagWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -819,6 +822,18 @@ func (c *Client) UpdateMigration(ctx context.Context, clinicId ClinicIdV1, userI
 
 func (c *Client) GetPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetPatientCountRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RefreshPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRefreshPatientCountRequest(c.Server, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -3072,6 +3087,40 @@ func NewGetPatientCountRequest(server string, clinicId ClinicId) (*http.Request,
 	return req, nil
 }
 
+// NewRefreshPatientCountRequest generates requests for RefreshPatientCount
+func NewRefreshPatientCountRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patient_count/refresh", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewCreatePatientTagRequest calls the generic CreatePatientTag builder with application/json body
 func NewCreatePatientTagRequest(server string, clinicId ClinicId, body CreatePatientTagJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -5271,6 +5320,22 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.Sites != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "sites", runtime.ParamLocationQuery, *params.Sites); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OmitNonStandardRanges != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "omitNonStandardRanges", runtime.ParamLocationQuery, *params.OmitNonStandardRanges); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7512,6 +7577,9 @@ type ClientWithResponsesInterface interface {
 	// GetPatientCountWithResponse request
 	GetPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GetPatientCountResponse, error)
 
+	// RefreshPatientCountWithResponse request
+	RefreshPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*RefreshPatientCountResponse, error)
+
 	// CreatePatientTagWithBodyWithResponse request with any body
 	CreatePatientTagWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePatientTagResponse, error)
 
@@ -8291,6 +8359,27 @@ func (r GetPatientCountResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetPatientCountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RefreshPatientCountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r RefreshPatientCountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RefreshPatientCountResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9670,6 +9759,15 @@ func (c *ClientWithResponses) GetPatientCountWithResponse(ctx context.Context, c
 	return ParseGetPatientCountResponse(rsp)
 }
 
+// RefreshPatientCountWithResponse request returning *RefreshPatientCountResponse
+func (c *ClientWithResponses) RefreshPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*RefreshPatientCountResponse, error) {
+	rsp, err := c.RefreshPatientCount(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRefreshPatientCountResponse(rsp)
+}
+
 // CreatePatientTagWithBodyWithResponse request with arbitrary body returning *CreatePatientTagResponse
 func (c *ClientWithResponses) CreatePatientTagWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePatientTagResponse, error) {
 	rsp, err := c.CreatePatientTagWithBody(ctx, clinicId, contentType, body, reqEditors...)
@@ -10950,6 +11048,22 @@ func ParseGetPatientCountResponse(rsp *http.Response) (*GetPatientCountResponse,
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseRefreshPatientCountResponse parses an HTTP response from a RefreshPatientCountWithResponse call
+func ParseRefreshPatientCountResponse(rsp *http.Response) (*RefreshPatientCountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RefreshPatientCountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

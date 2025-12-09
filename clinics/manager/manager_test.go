@@ -8,36 +8,45 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 
+	"github.com/tidepool-org/go-common/clients/shoreline"
+
 	"github.com/tidepool-org/clinic/clinicians"
+	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
 	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
+	patientsService "github.com/tidepool-org/clinic/patients/service"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
 	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
-	"github.com/tidepool-org/go-common/clients/shoreline"
 )
+
+var DemoPatientId = "demo"
 
 func Ptr[T any](value T) *T {
 	return &value
 }
 
 var _ = Describe("Clinics Manager", func() {
-	var patientsService patients.Service
+	var patientsSvc patients.Service
 
 	var cfg *config.Config
 	var database *mongo.Database
@@ -45,8 +54,6 @@ var _ = Describe("Clinics Manager", func() {
 	var cliniciansCollection *mongo.Collection
 	var clinicsCollection *mongo.Collection
 	var mngr manager.Manager
-
-	var DemoPatientId = "demo"
 
 	BeforeEach(func() {
 		var err error
@@ -59,29 +66,33 @@ var _ = Describe("Clinics Manager", func() {
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
 		lgr := zap.NewNop().Sugar()
 
-		cliniciansRepo, err := clinicians.NewRepository(database, lgr, lifecycle)
+		cliniciansRepo, err := cliniciansRepository.NewRepository(database, lgr, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(cliniciansRepo).ToNot(BeNil())
 
-		clinicsRepo, err := clinics.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
+		clinicsRepo, err := clinicsRepository.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(clinicsRepo).ToNot(BeNil())
 
-		patientsRepo, err := patients.NewRepository(cfg, database, lgr, lifecycle)
+		patientsRepo, err := patientsRepository.NewRepository(cfg, database, lgr, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsRepo).ToNot(BeNil())
 
-		patientsService, err = patients.NewService(patientsRepo, clinicsRepo, nil, lgr, database.Client())
+		clinicsSvc, err := clinicsService.NewService(clinicsRepo, patientsRepo, lgr)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(patientsService).ToNot(BeNil())
+		Expect(clinicsSvc).ToNot(BeNil())
+
+		patientsSvc, err = patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, lgr, database.Client())
+		Expect(err).ToNot(HaveOccurred())
+		Expect(patientsSvc).ToNot(BeNil())
 
 		mngr, err = manager.NewManager(manager.Params{
-			Clinics:              clinicsRepo,
+			ClinicsService:       clinicsSvc,
 			CliniciansRepository: cliniciansRepo,
 			Config:               cfg,
 			DbClient:             database.Client(),
 			PatientsRepository:   patientsRepo,
-			PatientsService:      patientsService,
+			PatientsService:      patientsSvc,
 			ShareCodeGenerator:   nil,
 			UserService:          nil,
 		})
@@ -267,7 +278,10 @@ var _ = Describe("Clinics Manager", func() {
 				patientCount, err := mngr.GetClinicPatientCount(context.Background(), clinicIdString)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(patientCount).ToNot(BeNil())
-				Expect(patientCount.PatientCount).To(Equal(0))
+				Expect(patientCount.Total).To(Equal(0))
+				Expect(patientCount.Demo).To(Equal(0))
+				Expect(patientCount.Plan).To(Equal(0))
+				Expect(patientCount.Providers).To(BeNil())
 			})
 		})
 
@@ -275,9 +289,10 @@ var _ = Describe("Clinics Manager", func() {
 			BeforeEach(func() {
 				randomPatient := patientsTest.RandomPatient()
 				randomPatient.ClinicId = clinic.Id
+				randomPatient.DataSources = &[]patients.DataSource{}
 				randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
 
-				createdPatient, err := patientsService.Create(context.Background(), randomPatient)
+				createdPatient, err := patientsSvc.Create(context.Background(), randomPatient)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(createdPatient).ToNot(BeNil())
 			})
@@ -286,7 +301,10 @@ var _ = Describe("Clinics Manager", func() {
 				patientCount, err := mngr.GetClinicPatientCount(context.Background(), clinicIdString)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(patientCount).ToNot(BeNil())
-				Expect(patientCount.PatientCount).To(Equal(1))
+				Expect(patientCount.Total).To(Equal(1))
+				Expect(patientCount.Demo).To(Equal(0))
+				Expect(patientCount.Plan).To(Equal(1))
+				Expect(patientCount.Providers).To(BeNil())
 			})
 
 			When("a demo patient is added to the clinic", func() {
@@ -296,7 +314,7 @@ var _ = Describe("Clinics Manager", func() {
 					randomPatient.ClinicId = clinic.Id
 					randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
 
-					createdPatient, err := patientsService.Create(context.Background(), randomPatient)
+					createdPatient, err := patientsSvc.Create(context.Background(), randomPatient)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(createdPatient).ToNot(BeNil())
 				})
@@ -305,16 +323,20 @@ var _ = Describe("Clinics Manager", func() {
 					patientCount, err := mngr.GetClinicPatientCount(context.Background(), clinicIdString)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(patientCount).ToNot(BeNil())
-					Expect(patientCount.PatientCount).To(Equal(1))
+					Expect(patientCount.Total).To(Equal(2))
+					Expect(patientCount.Demo).To(Equal(1))
+					Expect(patientCount.Plan).To(Equal(1))
+					Expect(patientCount.Providers).To(BeNil())
 				})
 
-				When("aanother patient is added to the clinic", func() {
+				When("a patient with a twiist data source is added to the clinic", func() {
 					BeforeEach(func() {
 						randomPatient := patientsTest.RandomPatient()
 						randomPatient.ClinicId = clinic.Id
+						randomPatient.DataSources = &[]patients.DataSource{{ProviderName: "twiist", State: "disconnected"}}
 						randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
 
-						createdPatient, err := patientsService.Create(context.Background(), randomPatient)
+						createdPatient, err := patientsSvc.Create(context.Background(), randomPatient)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(createdPatient).ToNot(BeNil())
 					})
@@ -323,7 +345,34 @@ var _ = Describe("Clinics Manager", func() {
 						patientCount, err := mngr.GetClinicPatientCount(context.Background(), clinicIdString)
 						Expect(err).ToNot(HaveOccurred())
 						Expect(patientCount).ToNot(BeNil())
-						Expect(patientCount.PatientCount).To(Equal(2))
+						Expect(patientCount.Total).To(Equal(3))
+						Expect(patientCount.Demo).To(Equal(1))
+						Expect(patientCount.Plan).To(Equal(1))
+						Expect(patientCount.Providers).ToNot(BeNil())
+						Expect(patientCount.Providers).To(HaveKeyWithValue("twiist", clinics.PatientProviderCount{States: map[string]int{"disconnected": 1}, Total: 1}))
+					})
+
+					When("aanother patient is added to the clinic", func() {
+						BeforeEach(func() {
+							randomPatient := patientsTest.RandomPatient()
+							randomPatient.ClinicId = clinic.Id
+							randomPatient.Permissions = &patients.Permissions{View: &patients.Permission{}}
+
+							createdPatient, err := patientsSvc.Create(context.Background(), randomPatient)
+							Expect(err).ToNot(HaveOccurred())
+							Expect(createdPatient).ToNot(BeNil())
+						})
+
+						It("returns the correct patient count", func() {
+							patientCount, err := mngr.GetClinicPatientCount(context.Background(), clinicIdString)
+							Expect(err).ToNot(HaveOccurred())
+							Expect(patientCount).ToNot(BeNil())
+							Expect(patientCount.Total).To(Equal(4))
+							Expect(patientCount.Demo).To(Equal(1))
+							Expect(patientCount.Plan).To(Equal(2))
+							Expect(patientCount.Providers).ToNot(BeNil())
+							Expect(patientCount.Providers).To(HaveKeyWithValue("twiist", clinics.PatientProviderCount{States: map[string]int{"disconnected": 1}, Total: 1}))
+						})
 					})
 				})
 			})
@@ -580,8 +629,8 @@ var _ = Describe("Clinics Manager", func() {
 type createSiteTestHelper struct {
 	Clinician    *clinicians.Clinician
 	Clinic       *clinics.Clinic
-	ClinicsRepo  clinics.Service
-	PatientsRepo patients.Service
+	ClinicsRepo  clinics.Repository
+	PatientsRepo patients.Repository
 	Site         *sites.Site
 	mngr         manager.Manager
 }
@@ -589,32 +638,37 @@ type createSiteTestHelper struct {
 func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *createSiteTestHelper) {
 	t.Helper()
 	ctx := context.Background()
+	cfg := &config.Config{ClinicDemoPatientUserId: DemoPatientId}
 	db := dbTest.GetTestDatabase()
 	lifecycle := fxtest.NewLifecycle(t)
 	lgr := zap.NewNop().Sugar()
-	clinicsRepo, err := clinics.NewRepository(db, lgr, lifecycle)
+	clinicsRepo, err := clinicsRepository.NewRepository(db, lgr, lifecycle)
 	if err != nil {
 		t.Fatalf("failed to create clinics repo: %s", err)
 	}
-	patientsRepo, err := patients.NewRepository(&config.Config{}, db, lgr, lifecycle)
+	patientsRepo, err := patientsRepository.NewRepository(&config.Config{}, db, lgr, lifecycle)
 	if err != nil {
 		t.Fatalf("failed to create patients repo: %s", err)
 	}
-	cliniciansRepo, err := clinicians.NewRepository(db, lgr, lifecycle)
+	clinicsSvc, err := clinicsService.NewService(clinicsRepo, patientsRepo, lgr)
+	if err != nil {
+		t.Fatalf("failed to create clinics service: %s", err)
+	}
+	cliniciansRepo, err := cliniciansRepository.NewRepository(db, lgr, lifecycle)
 	if err != nil {
 		t.Fatalf("failed to create clinicians repo: %s", err)
 	}
-	patientsService, err := patients.NewService(patientsRepo, clinicsRepo, nil, lgr, db.Client())
+	patientsSvc, err := patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, lgr, db.Client())
 	if err != nil {
 		t.Fatalf("failed to create patients service: %s", err)
 	}
 
 	params := manager.Params{
-		Clinics:              clinicsRepo,
+		ClinicsService:       clinicsSvc,
 		CliniciansRepository: cliniciansRepo,
 		Config:               &config.Config{ClinicDemoPatientUserId: "demo"},
 		DbClient:             db.Client(),
-		PatientsService:      patientsService,
+		PatientsService:      patientsSvc,
 		ShareCodeGenerator:   newMockShareCodeGenerator(),
 		UserService:          newMockUserService(),
 	}

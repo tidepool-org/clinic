@@ -1,4 +1,4 @@
-package clinics
+package repository
 
 import (
 	"context"
@@ -14,23 +14,20 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
-const (
-	CollectionName = "clinics"
-)
-
-func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Service, error) {
-	deletionsRepo, err := deletions.NewRepository[Clinic]("clinic", db, logger)
+func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (clinics.Repository, error) {
+	deletionsRepo, err := deletions.NewRepository[clinics.Clinic]("clinic", db, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	repo := &repository{
-		collection:    db.Collection(CollectionName),
+		collection:    db.Collection(clinics.CollectionName),
 		deletionsRepo: deletionsRepo,
 		logger:        logger,
 	}
@@ -52,7 +49,7 @@ func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.L
 
 type repository struct {
 	collection    *mongo.Collection
-	deletionsRepo deletions.Repository[Clinic]
+	deletionsRepo deletions.Repository[clinics.Clinic]
 	logger        *zap.SugaredLogger
 }
 
@@ -78,14 +75,14 @@ func (r *repository) Initialize(ctx context.Context) error {
 	return err
 }
 
-func (r *repository) Get(ctx context.Context, id string) (*Clinic, error) {
+func (r *repository) Get(ctx context.Context, id string) (*clinics.Clinic, error) {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
-	clinic := &Clinic{}
+	clinic := &clinics.Clinic{}
 	err := r.collection.FindOne(ctx, selector).Decode(&clinic)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, ErrNotFound
+		return nil, clinics.ErrNotFound
 	} else if err != nil {
 		return nil, err
 	}
@@ -93,7 +90,7 @@ func (r *repository) Get(ctx context.Context, id string) (*Clinic, error) {
 	return clinic, nil
 }
 
-func (r *repository) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error) {
+func (r *repository) List(ctx context.Context, filter *clinics.Filter, pagination store.Pagination) ([]*clinics.Clinic, error) {
 	opts := options.Find().
 		SetSkip(int64(pagination.Offset)).
 		SetLimit(int64(pagination.Limit))
@@ -145,7 +142,7 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 		return nil, fmt.Errorf("error listing clinics: %w", err)
 	}
 
-	clinics := make([]*Clinic, 0)
+	clinics := make([]*clinics.Clinic, 0)
 	if err = cursor.All(ctx, &clinics); err != nil {
 		return nil, fmt.Errorf("error decoding clinics list: %w", err)
 	}
@@ -153,14 +150,14 @@ func (r *repository) List(ctx context.Context, filter *Filter, pagination store.
 	return clinics, nil
 }
 
-func (r *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error) {
-	clinics, err := r.List(ctx, &Filter{ShareCodes: *clinic.ShareCodes}, store.Pagination{Limit: 1, Offset: 0})
+func (r *repository) Create(ctx context.Context, clinic *clinics.Clinic) (*clinics.Clinic, error) {
+	clinicList, err := r.List(ctx, &clinics.Filter{ShareCodes: *clinic.ShareCodes}, store.Pagination{Limit: 1, Offset: 0})
 	if err != nil {
 		return nil, fmt.Errorf("error finding clinic by sharecode: %w", err)
 	}
 	// Fail gracefully if there is a clinic with duplicate share code
-	if len(clinics) > 0 {
-		return nil, ErrDuplicateShareCode
+	if len(clinicList) > 0 {
+		return nil, clinics.ErrDuplicateShareCode
 	}
 
 	setCreatedTime(clinic)
@@ -177,7 +174,7 @@ func (r *repository) Create(ctx context.Context, clinic *Clinic) (*Clinic, error
 	return r.Get(ctx, id.Hex())
 }
 
-func (r *repository) Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error) {
+func (r *repository) Update(ctx context.Context, id string, clinic *clinics.Clinic) (*clinics.Clinic, error) {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
@@ -222,7 +219,7 @@ func (r *repository) Delete(ctx context.Context, clinicId string, metadata delet
 
 	err = r.collection.FindOneAndDelete(ctx, selector).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
@@ -233,7 +230,7 @@ func (r *repository) RemoveAdmin(ctx context.Context, id, clinicianId string, al
 		return err
 	}
 	if !allowOrphaning && !canRemoveAdmin(*clinic, clinicianId) {
-		return ErrAdminRequired
+		return clinics.ErrAdminRequired
 	}
 
 	updatedTime := time.Now()
@@ -271,13 +268,13 @@ func (r *repository) UpdateTier(ctx context.Context, id, tier string) error {
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
 }
 
-func (r *repository) UpdateSuppressedNotifications(ctx context.Context, id string, suppressedNotifications SuppressedNotifications) error {
+func (r *repository) UpdateSuppressedNotifications(ctx context.Context, id string, suppressedNotifications clinics.SuppressedNotifications) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
@@ -289,25 +286,25 @@ func (r *repository) UpdateSuppressedNotifications(ctx context.Context, id strin
 	}
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
 }
 
-func (r *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*PatientTag, error) {
+func (r *repository) CreatePatientTag(ctx context.Context, id, tagName string) (*clinics.PatientTag, error) {
 	clinic, err := r.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	tagId := primitive.NewObjectID()
-	tag := PatientTag{
+	tag := clinics.PatientTag{
 		Id:   &tagId,
 		Name: strings.TrimSpace(tagName),
 	}
 
-	if err := AssertCanAddPatientTag(*clinic, tag); err != nil {
+	if err := clinics.AssertCanAddPatientTag(*clinic, tag); err != nil {
 		return nil, err
 	}
 
@@ -326,7 +323,7 @@ func (r *repository) CreatePatientTag(ctx context.Context, id, tagName string) (
 	updateErr := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if updateErr != nil {
 		if errors.Is(updateErr, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return nil, clinics.ErrNotFound
 		}
 		return nil, updateErr
 	}
@@ -334,20 +331,20 @@ func (r *repository) CreatePatientTag(ctx context.Context, id, tagName string) (
 	return &tag, nil
 }
 
-func (r *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*PatientTag, error) {
+func (r *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName string) (*clinics.PatientTag, error) {
 	clinic, err := r.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	tagObjectId, _ := primitive.ObjectIDFromHex(tagId)
-	tag := PatientTag{
+	tag := clinics.PatientTag{
 		Id:   &tagObjectId,
 		Name: strings.TrimSpace(tagName),
 	}
 
-	if isDuplicatePatientTag(*clinic, tag) {
-		return nil, ErrDuplicatePatientTagName
+	if clinics.IsDuplicatePatientTag(*clinic, tag) {
+		return nil, clinics.ErrDuplicatePatientTagName
 	}
 
 	clinicId, _ := primitive.ObjectIDFromHex(id)
@@ -364,7 +361,7 @@ func (r *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 	updateErr := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if updateErr != nil {
 		if errors.Is(updateErr, mongo.ErrNoDocuments) {
-			return nil, ErrPatientTagNotFound
+			return nil, clinics.ErrPatientTagNotFound
 		}
 		return nil, updateErr
 	}
@@ -390,7 +387,7 @@ func (r *repository) DeletePatientTag(ctx context.Context, id, tagId string) err
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return ErrNotFound
+			return clinics.ErrNotFound
 		}
 		return err
 	}
@@ -398,16 +395,7 @@ func (r *repository) DeletePatientTag(ctx context.Context, id, tagId string) err
 	return nil
 }
 
-func (r *repository) ListMembershipRestrictions(ctx context.Context, id string) ([]MembershipRestrictions, error) {
-	clinic, err := r.Get(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.MembershipRestrictions, nil
-}
-
-func (r *repository) UpdateMembershipRestrictions(ctx context.Context, id string, restrictions []MembershipRestrictions) error {
+func (r *repository) UpdateMembershipRestrictions(ctx context.Context, id string, restrictions []clinics.MembershipRestrictions) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
@@ -420,22 +408,13 @@ func (r *repository) UpdateMembershipRestrictions(ctx context.Context, id string
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
 }
 
-func (r *repository) GetEHRSettings(ctx context.Context, clinicId string) (*EHRSettings, error) {
-	clinic, err := r.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.EHRSettings, nil
-}
-
-func (r *repository) UpdateEHRSettings(ctx context.Context, id string, settings *EHRSettings) error {
+func (r *repository) UpdateEHRSettings(ctx context.Context, id string, settings *clinics.EHRSettings) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
@@ -448,22 +427,13 @@ func (r *repository) UpdateEHRSettings(ctx context.Context, id string, settings 
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
 }
 
-func (r *repository) GetMRNSettings(ctx context.Context, clinicId string) (*MRNSettings, error) {
-	clinic, err := r.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.MRNSettings, nil
-}
-
-func (r *repository) UpdateMRNSettings(ctx context.Context, id string, settings *MRNSettings) error {
+func (r *repository) UpdateMRNSettings(ctx context.Context, id string, settings *clinics.MRNSettings) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
@@ -476,22 +446,13 @@ func (r *repository) UpdateMRNSettings(ctx context.Context, id string, settings 
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
 }
 
-func (r *repository) GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error) {
-	clinic, err := r.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.PatientCountSettings, nil
-}
-
-func (r *repository) UpdatePatientCountSettings(ctx context.Context, id string, settings *PatientCountSettings) error {
+func (r *repository) UpdatePatientCountSettings(ctx context.Context, id string, settings *clinics.PatientCountSettings) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
@@ -504,7 +465,7 @@ func (r *repository) UpdatePatientCountSettings(ctx context.Context, id string, 
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
@@ -527,22 +488,13 @@ func (r *repository) AppendShareCodes(ctx context.Context, id string, shareCodes
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
 }
 
-func (r *repository) GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error) {
-	clinic, err := r.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	return clinic.PatientCount, nil
-}
-
-func (r *repository) UpdatePatientCount(ctx context.Context, id string, patientCount *PatientCount) error {
+func (r *repository) UpdatePatientCount(ctx context.Context, id string, patientCount *clinics.PatientCount) error {
 	clinicId, _ := primitive.ObjectIDFromHex(id)
 	selector := bson.M{"_id": clinicId}
 
@@ -555,7 +507,7 @@ func (r *repository) UpdatePatientCount(ctx context.Context, id string, patientC
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 
 	return err
@@ -584,11 +536,11 @@ func (c *repository) CreateSite(ctx context.Context, clinicId string, site *site
 	res := c.collection.FindOneAndUpdate(ctx, filter, update, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return nil, clinics.ErrNotFound
 		}
 		return nil, err
 	}
-	clinic := &Clinic{}
+	clinic := &clinics.Clinic{}
 	if err := res.Decode(clinic); err != nil {
 		return nil, err
 	}
@@ -609,7 +561,7 @@ func (c *repository) CreateSiteIgnoringLimit(ctx context.Context, clinicId strin
 	site *sites.Site) (*sites.Site, error) {
 
 	if err := c.maintainSitesConstraintsOnCreate(ctx, clinicId, site.Name); err != nil {
-		if !errors.Is(err, ErrMaximumSitesExceeded) {
+		if !errors.Is(err, clinics.ErrMaximumSitesExceeded) {
 			return nil, err
 		}
 		c.logger.Info("creating a site in excess of sites.MaxSitesPerClinic")
@@ -631,11 +583,11 @@ func (c *repository) CreateSiteIgnoringLimit(ctx context.Context, clinicId strin
 	res := c.collection.FindOneAndUpdate(ctx, filter, update, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return nil, clinics.ErrNotFound
 		}
 		return nil, err
 	}
-	clinic := &Clinic{}
+	clinic := &clinics.Clinic{}
 	if err := res.Decode(clinic); err != nil {
 		return nil, err
 	}
@@ -670,7 +622,7 @@ func (c *repository) DeleteSite(ctx context.Context, clinicId, siteId string) er
 		return err
 	}
 	if res.ModifiedCount != 1 {
-		return ErrNotFound
+		return clinics.ErrNotFound
 	}
 	return nil
 }
@@ -701,11 +653,11 @@ func (c *repository) UpdateSite(ctx context.Context,
 	res := c.collection.FindOneAndUpdate(ctx, selector, update, opts)
 	if err := res.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrNotFound
+			return nil, clinics.ErrNotFound
 		}
 		return nil, err
 	}
-	clinic := &Clinic{}
+	clinic := &clinics.Clinic{}
 	if err := res.Decode(&clinic); err != nil {
 		return nil, err
 	}
@@ -726,10 +678,10 @@ func (c *repository) maintainSitesConstraintsOnCreate(ctx context.Context,
 		return err
 	}
 	if sites.SiteExistsWithName(clinic.Sites, name) {
-		return ErrDuplicateSiteName
+		return clinics.ErrDuplicateSiteName
 	}
 	if len(clinic.Sites) >= sites.MaxSitesPerClinic {
-		return ErrMaximumSitesExceeded
+		return clinics.ErrMaximumSitesExceeded
 	}
 	return nil
 }
@@ -742,24 +694,24 @@ func (c *repository) maintainSitesConstraintsOnUpdate(ctx context.Context,
 		return err
 	}
 	if sites.SiteExistsWithName(clinic.Sites, name) {
-		return ErrDuplicateSiteName
+		return clinics.ErrDuplicateSiteName
 	}
 	return nil
 }
 
-func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
-	if len(clinic.PatientTags) >= MaximumPatientTags {
-		return ErrMaximumPatientTagsExceeded
+func AssertCanAddPatientTag(clinic clinics.Clinic, tag clinics.PatientTag) error {
+	if len(clinic.PatientTags) >= clinics.MaximumPatientTags {
+		return clinics.ErrMaximumPatientTagsExceeded
 	}
 
 	if isDuplicatePatientTag(clinic, tag) {
-		return ErrDuplicatePatientTagName
+		return clinics.ErrDuplicatePatientTagName
 	}
 
 	return nil
 }
 
-func isDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
+func isDuplicatePatientTag(clinic clinics.Clinic, tag clinics.PatientTag) bool {
 	trimmedNewTagName := strings.ToLower(strings.ReplaceAll(tag.Name, " ", ""))
 
 	for _, p := range clinic.PatientTags {
@@ -776,7 +728,7 @@ func isDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
 	return false
 }
 
-func canRemoveAdmin(clinic Clinic, clinicianId string) bool {
+func canRemoveAdmin(clinic clinics.Clinic, clinicianId string) bool {
 	var adminsPostUpdate []string
 	if clinic.Admins != nil {
 		for _, admin := range *clinic.Admins {
@@ -789,15 +741,15 @@ func canRemoveAdmin(clinic Clinic, clinicianId string) bool {
 	return len(adminsPostUpdate) >= 1
 }
 
-func setUpdatedTime(clinic *Clinic) {
+func setUpdatedTime(clinic *clinics.Clinic) {
 	clinic.UpdatedTime = time.Now()
 }
 
-func setCreatedTime(clinic *Clinic) {
+func setCreatedTime(clinic *clinics.Clinic) {
 	clinic.CreatedTime = time.Now()
 }
 
-func createUpdateDocument(clinic *Clinic) bson.M {
+func createUpdateDocument(clinic *clinics.Clinic) bson.M {
 	update := bson.M{}
 	if clinic != nil {
 		// Make sure we're not overriding the id and sharecodes

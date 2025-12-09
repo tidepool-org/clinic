@@ -18,14 +18,19 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/auth"
-	"github.com/tidepool-org/clinic/clinicians"
+	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
+	cliniciansService "github.com/tidepool-org/clinic/clinicians/service"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/migration"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
+	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
+	patientsService "github.com/tidepool-org/clinic/patients/service"
 	"github.com/tidepool-org/clinic/redox"
 	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/xealth"
@@ -150,16 +155,17 @@ func Dependencies() []fx.Option {
 			store.NewConfig,
 			store.NewClient,
 			store.NewDatabase,
-			patients.NewRepository,
-			patients.NewCustodialService,
-			patients.NewService,
+			patientsRepository.NewRepository,
+			patientsService.NewCustodialService,
+			patientsService.NewService,
 			redox.NewConfig,
 			redox.NewHandler,
 			xealth.NewStore,
 			xealth.NewHandler,
-			clinicians.NewRepository,
-			clinicians.NewService,
-			clinics.NewRepository,
+			cliniciansRepository.NewRepository,
+			cliniciansService.NewService,
+			clinicsRepository.NewRepository,
+			clinicsService.NewService,
 			clinics.NewShareCodeGenerator,
 			config.NewConfig,
 			manager.NewManager,

@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	mapset "github.com/deckarep/golang-set/v2"
+
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
@@ -21,13 +24,19 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/tidepool-org/clinic/clinicians"
+	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
+	cliniciansService "github.com/tidepool-org/clinic/clinicians/service"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	"github.com/tidepool-org/clinic/config"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
+	patientsService "github.com/tidepool-org/clinic/patients/service"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
@@ -89,12 +98,13 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 			},
 			patientsTest.NewMockUserService,
 			config.NewConfig,
-			clinics.NewRepository,
-			clinicians.NewRepository,
-			clinicians.NewService,
-			patients.NewRepository,
-			patients.NewService,
-			patients.NewCustodialService,
+			clinicsRepository.NewRepository,
+			clinicsService.NewService,
+			cliniciansRepository.NewRepository,
+			cliniciansService.NewService,
+			patientsRepository.NewRepository,
+			patientsService.NewService,
+			patientsService.NewCustodialService,
 			clinics.NewShareCodeGenerator,
 			manager.NewManager,
 		),
@@ -130,11 +140,11 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 	t.source = createClinic(t.userService, t.clinicManager, data.Source, data.SourceAdmin)
 	t.target = createClinic(t.userService, t.clinicManager, data.Target, data.TargetAdmin)
 
-	if params.UniquePatientCount > clinics.PatientCountSettingsHardLimitPatientCountDefault {
+	if params.UniquePatientCount > clinics.PatientCountSettingsHardLimitPlanDefault {
 		ctx := context.Background()
 		pcs := &clinics.PatientCountSettings{
-			HardLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
-			SoftLimit: &clinics.PatientCountLimit{PatientCount: params.UniquePatientCount * 2},
+			HardLimit: &clinics.PatientCountLimit{Plan: params.UniquePatientCount * 2},
+			SoftLimit: &clinics.PatientCountLimit{Plan: params.UniquePatientCount * 2},
 		}
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.source.Id.Hex(), pcs)).To(Succeed())
 		Expect(t.clinicsService.UpdatePatientCountSettings(ctx, t.target.Id.Hex(), pcs)).To(Succeed())
@@ -416,7 +426,7 @@ var _ = Describe("New Clinic Merge Planner (w/ Large patient populations)", Orde
 	BeforeAll(func() {
 		t = NewClinicMergeTest()
 		t.Init(params)
-	})
+	}, PollProgressAfter(30*time.Second))
 
 	AfterAll(func() {
 		t.app.RequireStop()

@@ -33,6 +33,7 @@ type Manager interface {
 	CreateClinic(ctx context.Context, create *CreateClinic) (*clinics.Clinic, error)
 	DeleteClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error
 	GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error)
+	RefreshClinicPatientCount(ctx context.Context, clinicId string) error
 	FinalizeMerge(ctx context.Context, sourceId, targetId string) error
 	// CreateSite within a clinic.
 	//
@@ -59,8 +60,8 @@ type Manager interface {
 }
 
 type manager struct {
-	clinics              clinics.Service
-	cliniciansRepository *clinicians.Repository
+	clinicsService       clinics.Service
+	cliniciansRepository clinicians.Repository
 	config               *config.Config
 	dbClient             *mongo.Client
 	patientsRepository   patients.Repository
@@ -72,8 +73,8 @@ type manager struct {
 type Params struct {
 	fx.In
 
-	Clinics              clinics.Service
-	CliniciansRepository *clinicians.Repository
+	ClinicsService       clinics.Service
+	CliniciansRepository clinicians.Repository
 	Config               *config.Config
 	DbClient             *mongo.Client
 	PatientsRepository   patients.Repository
@@ -84,7 +85,7 @@ type Params struct {
 
 func NewManager(cp Params) (Manager, error) {
 	return &manager{
-		clinics:              cp.Clinics,
+		clinicsService:       cp.ClinicsService,
 		cliniciansRepository: cp.CliniciansRepository,
 		config:               cp.Config,
 		dbClient:             cp.DbClient,
@@ -170,7 +171,7 @@ func (c *manager) DeleteClinic(ctx context.Context, clinicId string, metadata de
 }
 
 func (c *manager) FinalizeMerge(ctx context.Context, sourceId, targetId string) error {
-	source, err := c.clinics.Get(ctx, sourceId)
+	source, err := c.clinicsService.Get(ctx, sourceId)
 	if err != nil {
 		return err
 	}
@@ -183,45 +184,23 @@ func (c *manager) FinalizeMerge(ctx context.Context, sourceId, targetId string) 
 
 	// Append share codes of source clinic
 	if source.ShareCodes != nil {
-		err = c.clinics.AppendShareCodes(ctx, targetId, *source.ShareCodes)
+		err = c.clinicsService.AppendShareCodes(ctx, targetId, *source.ShareCodes)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Refresh patient count of target clinic
-	return c.refreshPatientCount(ctx, targetId)
+	_ = c.clinicsService.RefreshPatientCount(ctx, targetId) // Ignore any error, already logged
+
+	return nil
 }
 
 func (c *manager) GetClinicPatientCount(ctx context.Context, clinicId string) (*clinics.PatientCount, error) {
-	patientCount, err := c.clinics.GetPatientCount(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	if patientCount == nil {
-		count, err := c.patientsService.Count(ctx, &patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})
-		if err != nil {
-			return nil, err
-		}
-
-		patientCount = &clinics.PatientCount{PatientCount: count}
-		if err := c.clinics.UpdatePatientCount(ctx, clinicId, patientCount); err != nil {
-			return nil, err
-		}
-	}
-
-	return patientCount, nil
+	return c.clinicsService.GetPatientCount(ctx, clinicId)
 }
 
-func (c *manager) refreshPatientCount(ctx context.Context, clinicId string) error {
-	count, err := c.patientsService.Count(ctx, &patients.Filter{ClinicId: &clinicId, ExcludeDemo: true})
-	if err != nil {
-		return err
-	}
-
-	patientCount := &clinics.PatientCount{PatientCount: count}
-	return c.clinics.UpdatePatientCount(ctx, clinicId, patientCount)
+func (c *manager) RefreshClinicPatientCount(ctx context.Context, clinicId string) error {
+	return c.clinicsService.RefreshPatientCount(ctx, clinicId)
 }
 
 // Creates a clinic document in mongo and retries if there is a violation of the unique share code constraint
@@ -233,7 +212,7 @@ retryLoop:
 		create.Clinic.CanonicalShareCode = &shareCode
 		create.Clinic.ShareCodes = &shareCodes
 
-		clinic, err = c.clinics.Create(sessionCtx, &create.Clinic)
+		clinic, err = c.clinicsService.Create(sessionCtx, &create.Clinic)
 		if err == nil || !errs.Is(err, clinics.ErrDuplicateShareCode) {
 			break retryLoop
 		}
@@ -283,7 +262,7 @@ func (c *manager) deleteClinic(ctx context.Context, clinicId string, metadata de
 		return err
 	}
 
-	return c.clinics.Delete(ctx, clinicId, metadata)
+	return c.clinicsService.Delete(ctx, clinicId, metadata)
 }
 
 func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool {
@@ -302,7 +281,7 @@ func (c *manager) patientListAllowsClinicDeletion(list []*patients.Patient) bool
 func (c *manager) CreateSite(ctx context.Context, clinicId, name string) (
 	*sites.Site, error) {
 
-	site, err := c.clinics.CreateSite(ctx, clinicId, sites.New(name))
+	site, err := c.clinicsService.CreateSite(ctx, clinicId, sites.New(name))
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +307,7 @@ func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error
 	if err := c.patientsService.DeleteSites(ctx, clinicId, siteId); err != nil {
 		return err
 	}
-	if err := c.clinics.DeleteSite(ctx, clinicId, siteId); err != nil {
+	if err := c.clinicsService.DeleteSite(ctx, clinicId, siteId); err != nil {
 		return err
 	}
 	return nil
@@ -337,7 +316,7 @@ func (c *manager) deleteSite(ctx context.Context, clinicId, siteId string) error
 func (c *manager) ConvertPatientTagToSite(ctx context.Context,
 	clinicId, patientTagId string) (*sites.Site, error) {
 
-	clinic, err := c.clinics.Get(ctx, clinicId)
+	clinic, err := c.clinicsService.Get(ctx, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +352,7 @@ func (c *manager) ConvertPatientTagToSite(ctx context.Context,
 		return nil, err
 	}
 
-	err = c.clinics.DeletePatientTag(ctx, clinicId, tag.Id.Hex())
+	err = c.clinicsService.DeletePatientTag(ctx, clinicId, tag.Id.Hex())
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +367,7 @@ func (c *manager) MergeSite(ctx context.Context,
 		return nil, fmt.Errorf("can't merge a site into itself: %w", errors.BadRequest)
 	}
 
-	clinic, err := c.clinics.Get(ctx, clinicId)
+	clinic, err := c.clinicsService.Get(ctx, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -406,7 +385,7 @@ func (c *manager) MergeSite(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	err = c.clinics.DeleteSite(ctx, clinicId, sourceSiteId)
+	err = c.clinicsService.DeleteSite(ctx, clinicId, sourceSiteId)
 	if err != nil {
 		return nil, err
 	}
@@ -437,7 +416,7 @@ func (c *manager) UpdateSite(ctx context.Context,
 func (c *manager) updateSite(ctx context.Context,
 	clinicId, siteId string, site *sites.Site) (*sites.Site, error) {
 
-	updated, err := c.clinics.UpdateSite(ctx, clinicId, siteId, site)
+	updated, err := c.clinicsService.UpdateSite(ctx, clinicId, siteId, site)
 	if err != nil {
 		return nil, err
 	}

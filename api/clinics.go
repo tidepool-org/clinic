@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tidepool-org/clinic/deletions"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/tidepool-org/clinic/auth"
@@ -14,6 +12,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
 	"github.com/tidepool-org/clinic/clinics/merge"
+	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
@@ -105,13 +104,6 @@ func (h *Handler) UpdateClinic(ec echo.Context, clinicId ClinicId) error {
 	result, err := h.Clinics.Update(ctx, string(clinicId), NewClinic(dto))
 	if err != nil {
 		return err
-	}
-
-	// Update patient count settings if the country has changed
-	if result.UpdatePatientCountSettingsForCountry() {
-		if err := h.Clinics.UpdatePatientCountSettings(ctx, clinicId, result.PatientCountSettings); err != nil {
-			return err
-		}
 	}
 
 	return ec.JSON(http.StatusOK, NewClinicDto(result))
@@ -468,9 +460,17 @@ func (h *Handler) GetPatientCount(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
-	return ec.JSON(http.StatusOK, PatientCountV1{
-		PatientCount: patientCount.PatientCount,
-	})
+	return ec.JSON(http.StatusOK, NewPatientCountDto(patientCount))
+}
+
+func (h *Handler) RefreshPatientCount(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+
+	if err := h.ClinicsManager.RefreshClinicPatientCount(ctx, clinicId); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
 }
 
 func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error {

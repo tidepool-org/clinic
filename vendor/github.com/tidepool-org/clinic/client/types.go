@@ -23,17 +23,17 @@ const (
 
 // Defines values for ClinicV1ClinicType.
 const (
-	HealthcareSystem ClinicV1ClinicType = "healthcare_system"
-	Other            ClinicV1ClinicType = "other"
-	ProviderPractice ClinicV1ClinicType = "provider_practice"
-	Researcher       ClinicV1ClinicType = "researcher"
-	VeterinaryClinic ClinicV1ClinicType = "veterinary_clinic"
+	ClinicV1ClinicTypeHealthcareSystem ClinicV1ClinicType = "healthcare_system"
+	ClinicV1ClinicTypeOther            ClinicV1ClinicType = "other"
+	ClinicV1ClinicTypeProviderPractice ClinicV1ClinicType = "provider_practice"
+	ClinicV1ClinicTypeResearcher       ClinicV1ClinicType = "researcher"
+	ClinicV1ClinicTypeVeterinaryClinic ClinicV1ClinicType = "veterinary_clinic"
 )
 
 // Defines values for ClinicV1PreferredBgUnits.
 const (
-	MgdL  ClinicV1PreferredBgUnits = "mg/dL"
-	MmolL ClinicV1PreferredBgUnits = "mmol/L"
+	ClinicV1PreferredBgUnitsMgdL  ClinicV1PreferredBgUnits = "mg/dL"
+	ClinicV1PreferredBgUnitsMmolL ClinicV1PreferredBgUnits = "mmol/L"
 )
 
 // Defines values for ClinicTimezoneV1.
@@ -644,6 +644,20 @@ const (
 	PendingReconnect DataSourceV1State = "pendingReconnect"
 )
 
+// Defines values for DiagnosisTypeV1.
+const (
+	DiagnosisTypeV1Empty         DiagnosisTypeV1 = ""
+	DiagnosisTypeV1Gestational   DiagnosisTypeV1 = "gestational"
+	DiagnosisTypeV1Lada          DiagnosisTypeV1 = "lada"
+	DiagnosisTypeV1Mody          DiagnosisTypeV1 = "mody"
+	DiagnosisTypeV1NotApplicable DiagnosisTypeV1 = "notApplicable"
+	DiagnosisTypeV1Other         DiagnosisTypeV1 = "other"
+	DiagnosisTypeV1Prediabetes   DiagnosisTypeV1 = "prediabetes"
+	DiagnosisTypeV1Type1         DiagnosisTypeV1 = "type1"
+	DiagnosisTypeV1Type2         DiagnosisTypeV1 = "type2"
+	DiagnosisTypeV1Type3c        DiagnosisTypeV1 = "type3c"
+)
+
 // Defines values for EhrMatchMessageRefV1DataModel.
 const (
 	Order EhrMatchMessageRefV1DataModel = "Order"
@@ -671,6 +685,26 @@ const (
 const (
 	Redox  EhrSettingsV1Provider = "redox"
 	Xealth EhrSettingsV1Provider = "xealth"
+)
+
+// Defines values for GlycemicRangesV1Type.
+const (
+	Custom GlycemicRangesV1Type = "custom"
+	Preset GlycemicRangesV1Type = "preset"
+)
+
+// Defines values for GlycemicRangesPresetV1.
+const (
+	ADAHighRisk       GlycemicRangesPresetV1 = "adaHighRisk"
+	ADAPregnancyType1 GlycemicRangesPresetV1 = "adaPregnancyType1"
+	ADAPregnancyType2 GlycemicRangesPresetV1 = "adaPregnancyType2"
+	ADAStandard       GlycemicRangesPresetV1 = "adaStandard"
+)
+
+// Defines values for GlycemicRangesThresholdUpperBoundV1Units.
+const (
+	GlycemicRangesThresholdUpperBoundV1UnitsMgdL  GlycemicRangesThresholdUpperBoundV1Units = "mg/dL"
+	GlycemicRangesThresholdUpperBoundV1UnitsMmolL GlycemicRangesThresholdUpperBoundV1Units = "mmol/L"
 )
 
 // Defines values for MigrationStatusV1.
@@ -1278,10 +1312,12 @@ type CountryV1 = string
 type CreatePatientV1 struct {
 	AttestationSubmitted *bool               `json:"attestationSubmitted,omitempty"`
 	BirthDate            *openapi_types.Date `json:"birthDate,omitempty"`
+	DiagnosisType        *DiagnosisTypeV1    `json:"diagnosisType,omitempty"`
 
 	// FullName The full name of the patient
-	FullName   *string `json:"fullName,omitempty"`
-	IsMigrated *bool   `json:"isMigrated,omitempty"`
+	FullName       *string           `json:"fullName,omitempty"`
+	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
+	IsMigrated     *bool             `json:"isMigrated,omitempty"`
 
 	// LegacyClinicianId String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	LegacyClinicianId *Tidepooluserid `json:"legacyClinicianId,omitempty"`
@@ -1315,6 +1351,9 @@ type DataSourcesV1 = []DataSourceV1
 
 // DatetimeV1 [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 type DatetimeV1 = string
+
+// DiagnosisTypeV1 defines model for diagnosisType.v1.
+type DiagnosisTypeV1 string
 
 // EhrDestinationsV1 defines model for ehrDestinations.v1.
 type EhrDestinationsV1 struct {
@@ -1429,6 +1468,41 @@ type GenerateMergeReportV1 struct {
 	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
 }
 
+// GlycemicRangesV1 defines model for glycemicRanges.v1.
+type GlycemicRangesV1 struct {
+	Custom GlycemicRangesCustomV1 `json:"custom,omitempty,omitzero"`
+	Preset GlycemicRangesPresetV1 `json:"preset,omitempty,omitzero"`
+	Type   GlycemicRangesV1Type   `json:"type"`
+}
+
+// GlycemicRangesV1Type defines model for GlycemicRangesV1.Type.
+type GlycemicRangesV1Type string
+
+// GlycemicRangesCustomV1 defines model for glycemicRangesCustom.v1.
+type GlycemicRangesCustomV1 struct {
+	Name       string                      `json:"name"`
+	Thresholds []GlycemicRangesThresholdV1 `json:"thresholds"`
+}
+
+// GlycemicRangesPresetV1 defines model for glycemicRangesPreset.v1.
+type GlycemicRangesPresetV1 string
+
+// GlycemicRangesThresholdV1 defines model for glycemicRangesThreshold.v1.
+type GlycemicRangesThresholdV1 struct {
+	Inclusive  bool                                `json:"inclusive,omitempty"`
+	Name       string                              `json:"name"`
+	UpperBound GlycemicRangesThresholdUpperBoundV1 `json:"upperBound"`
+}
+
+// GlycemicRangesThresholdUpperBoundV1 defines model for glycemicRangesThresholdUpperBound.v1.
+type GlycemicRangesThresholdUpperBoundV1 struct {
+	Units GlycemicRangesThresholdUpperBoundV1Units `json:"units"`
+	Value float32                                  `json:"value"`
+}
+
+// GlycemicRangesThresholdUpperBoundV1Units defines model for GlycemicRangesThresholdUpperBoundV1.Units.
+type GlycemicRangesThresholdUpperBoundV1Units string
+
 // MembershipRestrictionV1 A user joining a clinic must match all of the defined restrictions
 type MembershipRestrictionV1 struct {
 	// EmailDomain The restriction applies only if the user has an email address with a matching domain
@@ -1508,10 +1582,12 @@ type PatientV1 struct {
 	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
 	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
 	DataSources          *[]DataSourceV1               `json:"dataSources"`
+	DiagnosisType        *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
 	Email                *string                       `json:"email,omitempty"`
 
 	// FullName The full name of the patient
-	FullName string `json:"fullName"`
+	FullName       string            `json:"fullName"`
+	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id                     *Tidepooluserid `json:"id,omitempty"`
@@ -1542,8 +1618,23 @@ type PatientClinicRelationshipsV1 = []PatientClinicRelationshipV1
 
 // PatientCountV1 defines model for patientCount.v1.
 type PatientCountV1 struct {
-	// PatientCount The patient count for a clinic
-	PatientCount int `json:"patientCount"`
+	// Demo The count of patients associated with the clinic that are classified as demo and do not
+	// apply towards the plan-based patient count limit. Currently this is limited to 0 or 1,
+	// but allows for future expansion with multiple demo patients if needed.
+	Demo int `json:"demo"`
+
+	// Plan The count of patients associated with the clinic classified as applying towards the
+	// plan-based patient count limit. This excludes patients classified as demo as well as any
+	// other classifications that do not apply towards the plan-based patient count limit
+	// for various business reasons.
+	Plan int `json:"plan"`
+
+	// Providers The count of patients associated with the clinic by provider. As each patient may be associated
+	// with multiple providers, the sum of all provider counts may exceed the total patient count.
+	Providers *map[string]PatientProviderCountV1 `json:"providers,omitempty"`
+
+	// Total The count of all patients associated with the clinic, regardless of classification.
+	Total int `json:"total"`
 }
 
 // PatientCountLimitV1 defines model for patientCountLimit.v1.
@@ -1551,8 +1642,8 @@ type PatientCountLimitV1 struct {
 	// EndDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	EndDate *DatetimeV1 `json:"endDate,omitempty"`
 
-	// PatientCount The patient count limit
-	PatientCount int `json:"patientCount"`
+	// Plan The plan-based patient count limit
+	Plan int `json:"plan"`
 
 	// StartDate [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	StartDate *DatetimeV1 `json:"startDate,omitempty"`
@@ -1570,6 +1661,17 @@ type PatientPermissionsV1 struct {
 	Note      *map[string]interface{} `json:"note,omitempty"`
 	Upload    *map[string]interface{} `json:"upload,omitempty"`
 	View      *map[string]interface{} `json:"view,omitempty"`
+}
+
+// PatientProviderCountV1 The count of patients associated with the clinic for a specific provider. As each patient may be
+// associated with multiple providers, the sum of all provider counts may exceed the total patient count.
+type PatientProviderCountV1 struct {
+	// States The count of patients for the provider segmented by data source state. The possible
+	// states are connected, disconnected, error, pending, and pendingReconnect.
+	States map[string]int `json:"states"`
+
+	// Total The count of patients that have a specific provider as a data source.
+	Total int `json:"total"`
 }
 
 // PatientReviewV1 A summary of a patients recent data
@@ -2351,6 +2453,11 @@ type ListPatientsParams struct {
 
 	// Sites Comma-separated list of clinic site IDs
 	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
+
+	// OmitNonStandardRanges Whether patients whose glycemic ranges selection is *not*
+	// the ADA standard ranges (e.g. as used by the TIDE report)
+	// should be omitted.
+	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.

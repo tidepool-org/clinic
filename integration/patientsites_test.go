@@ -10,9 +10,13 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/tidepool-org/clinic/clinics"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
+	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
+	patientsService "github.com/tidepool-org/clinic/patients/service"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
 	dbTest "github.com/tidepool-org/clinic/store/test"
@@ -37,17 +41,20 @@ var _ = Describe("Patient Sites", func() {
 			lifecycle := fxtest.NewLifecycle(GinkgoT())
 
 			cfg := &config.Config{ClinicDemoPatientUserId: "demo"}
-			patientsRepo, err := patients.NewRepository(cfg, database, logger, lifecycle)
+			patientsRepo, err := patientsRepository.NewRepository(cfg, database, logger, lifecycle)
 			Expect(err).To(Succeed())
 
-			clinicsRepo, err := clinics.NewRepository(database, logger, lifecycle)
+			clinicsRepo, err := clinicsRepository.NewRepository(database, logger, lifecycle)
+			Expect(err).To(Succeed())
+
+			clinicsSvc, err := clinicsService.NewService(clinicsRepo, patientsRepo, logger)
 			Expect(err).To(Succeed())
 
 			randomClinic := clinicsTest.RandomClinic()
 			clinic, err = clinicsRepo.Create(ctx, randomClinic)
 			Expect(err).To(Succeed())
 
-			patientsSvc, err = patients.NewService(patientsRepo, clinicsRepo, nil, logger,
+			patientsSvc, err = patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, logger,
 				database.Client())
 			Expect(err).To(Succeed())
 			randomPatient := patientsTest.RandomPatient()

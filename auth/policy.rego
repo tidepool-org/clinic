@@ -697,6 +697,14 @@ allow {
   is_backend_service
 }
 
+# Allow services to refresh patient count
+# POST /v1/clinics/:clinicId/patient_count/refresh
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patient_count", "refresh"]
+  is_backend_service
+}
+
 # Allow services to match EHR patients
 # GET /v1/redox/match
 allow {

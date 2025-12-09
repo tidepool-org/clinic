@@ -15,13 +15,14 @@ import (
 )
 
 const (
+	CollectionName                     = "patients"
 	SubscriptionRedoxSummaryAndReports = "summaryAndReports"
 	SubscriptionXealthReports          = "xealthReports"
 )
 
 var (
 	ErrNotFound           = fmt.Errorf("patient %w", errors.NotFound)
-	SummaryNotFound       = fmt.Errorf("summary %w", errors.NoChange)
+	ErrSummaryNotFound    = fmt.Errorf("summary %w", errors.NoChange)
 	ErrPermissionNotFound = fmt.Errorf("permission %w", errors.NotFound)
 	ErrDuplicatePatient   = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
@@ -45,7 +46,7 @@ var (
 	}
 )
 
-//go:generate go tool mockgen --build_flags=--mod=mod -source=./patients.go -destination=./test/mock_service.go -package test MockService
+//go:generate go tool mockgen -source=./patients.go -destination=./test/mock_patients.go -package test
 type Service interface {
 	Get(ctx context.Context, clinicId string, userId string) (*Patient, error)
 	Count(ctx context.Context, filter *Filter) (int, error)
@@ -75,6 +76,25 @@ type Service interface {
 	DeleteSites(ctx context.Context, clinicId string, siteId string) error
 	MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error
 	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
+}
+
+type Repository interface {
+	Service
+
+	ClinicIds(ctx context.Context, userId string) ([]string, error)
+	Counts(ctx context.Context, clinicId string) (*Counts, error)
+}
+
+type ProviderCounts struct {
+	States map[string]int `bson:"states,omitempty"`
+	Total  int            `bson:"total"`
+}
+
+type Counts struct {
+	Total     int                       `bson:"total"`
+	Demo      int                       `bson:"demo"`
+	Plan      int                       `bson:"plan"`
+	Providers map[string]ProviderCounts `bson:"providers,omitempty"`
 }
 
 type Patient struct {

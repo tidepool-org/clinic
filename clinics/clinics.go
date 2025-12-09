@@ -3,6 +3,7 @@ package clinics
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,13 +15,14 @@ import (
 )
 
 const (
+	CollectionName             = "clinics"
 	DefaultMrnIdType           = "MRN"
 	WorkspaceIdTypeClinicId    = "clinicId"
 	WorkspaceIdTypeEHRSourceId = "ehrSourceId"
 
-	CountryCodeUS                                    = "US"
-	PatientCountSettingsHardLimitPatientCountDefault = 250
-	DefaultCoefficientOfVariationUnits               = "UNIT_INTERVAL"
+	CountryCodeUS                            = "US"
+	PatientCountSettingsHardLimitPlanDefault = 250
+	DefaultCoefficientOfVariationUnits       = "UNIT_INTERVAL"
 )
 
 var (
@@ -39,7 +41,7 @@ var ErrDuplicateSiteName = fmt.Errorf("%w site name", errors.Duplicate)
 var ErrMaximumSitesExceeded = fmt.Errorf("%w: the clinic already has the maximum number of %d sites", errors.ConstraintViolation, sites.MaxSitesPerClinic)
 var ErrSiteNotFound = fmt.Errorf("%w: the clinic has no site with that name", errors.ConstraintViolation)
 
-//go:generate go tool mockgen --build_flags=--mod=mod -source=./clinics.go -destination=./test/mock_service.go -package test MockRepository
+//go:generate go tool mockgen -source=./clinics.go -destination=./test/mock_clinics.go -package test
 
 type Service interface {
 	Get(ctx context.Context, id string) (*Clinic, error)
@@ -63,6 +65,31 @@ type Service interface {
 	GetPatientCountSettings(ctx context.Context, clinicId string) (*PatientCountSettings, error)
 	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
 	GetPatientCount(ctx context.Context, clinicId string) (*PatientCount, error)
+	RefreshPatientCount(ctx context.Context, clinicId string) error
+	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
+	CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
+	CreateSiteIgnoringLimit(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
+	DeleteSite(ctx context.Context, clinicId, siteId string) error
+	UpdateSite(ctx context.Context, clinicId, siteId string, site *sites.Site) (*sites.Site, error)
+}
+
+type Repository interface {
+	Get(ctx context.Context, id string) (*Clinic, error)
+	List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinic, error)
+	Create(ctx context.Context, clinic *Clinic) (*Clinic, error)
+	Update(ctx context.Context, id string, clinic *Clinic) (*Clinic, error)
+	Delete(ctx context.Context, id string, metadata deletions.Metadata) error
+	UpsertAdmin(ctx context.Context, clinicId, clinicianId string) error
+	RemoveAdmin(ctx context.Context, clinicId, clinicianId string, allowOrphaning bool) error
+	UpdateTier(ctx context.Context, clinicId, tier string) error
+	UpdateSuppressedNotifications(ctx context.Context, clinicId string, suppressedNotifications SuppressedNotifications) error
+	CreatePatientTag(ctx context.Context, clinicId, tagName string) (*PatientTag, error)
+	UpdatePatientTag(ctx context.Context, clinicId, tagId, tagName string) (*PatientTag, error)
+	DeletePatientTag(ctx context.Context, clinicId, tagId string) error
+	UpdateMembershipRestrictions(ctx context.Context, clinicId string, restrictions []MembershipRestrictions) error
+	UpdateEHRSettings(ctx context.Context, clinicId string, settings *EHRSettings) error
+	UpdateMRNSettings(ctx context.Context, clinicId string, settings *MRNSettings) error
+	UpdatePatientCountSettings(ctx context.Context, clinicId string, settings *PatientCountSettings) error
 	UpdatePatientCount(ctx context.Context, clinicId string, patientCount *PatientCount) error
 	AppendShareCodes(ctx context.Context, clinicId string, shareCodes []string) error
 	CreateSite(ctx context.Context, clinicId string, site *sites.Site) (*sites.Site, error)
@@ -114,8 +141,28 @@ type Clinic struct {
 	Sites                   []sites.Site             `bson:"sites,omitempty"`
 }
 
-func (c Clinic) IsOUS() bool {
-	return c.Country != nil && *c.Country != CountryCodeUS
+// For backwards compatibility, nil or empty country is treated as US.
+func (c Clinic) IsCountryCodeUS() bool {
+	return c.Country == nil || *c.Country == "" || *c.Country == CountryCodeUS
+}
+
+// For backwards compatibility, empty tier is treated as default tier.
+func (c Clinic) IsTierDefault() bool {
+	return c.Tier == "" || c.Tier == DefaultTier
+}
+
+// As of 10/31/2025, only US default tier clinics have patient count settings enabled.
+func (c Clinic) DoesClinicRequirePatientCountSettings() bool {
+	return c.IsCountryCodeUS() && c.IsTierDefault()
+}
+
+// If patient count settings are enabled, return them. Otherwise, unlimited.
+// For backwards compatibility, nil patient count settings is treated as unlimited.
+func (c Clinic) ResolvedPatientCountSettings() *PatientCountSettings {
+	if c.DoesClinicRequirePatientCountSettings() && c.PatientCountSettings != nil {
+		return c.PatientCountSettings.Migrated() // DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+	}
+	return UnlimitedPatientCountSettings()
 }
 
 type EHRSettings struct {
@@ -170,25 +217,28 @@ type FlowsheetSettings struct {
 	Icode bool `bson:"icode,omitempty"`
 }
 
-func getOrElse[T any, PT *T](val PT, def T) T {
-	if val == nil {
-		return def
-	}
-	return *val
+type PatientProviderCount struct {
+	States map[string]int `bson:"states,omitempty"`
+	Total  int            `bson:"total"`
 }
 
 type PatientCount struct {
-	PatientCount int `bson:"patientCount"`
-}
+	Total     int                             `bson:"total"`
+	Demo      int                             `bson:"demo"`
+	Plan      int                             `bson:"plan"`
+	Providers map[string]PatientProviderCount `bson:"providers,omitempty"`
 
-func (p PatientCount) IsValid() bool {
-	return p.PatientCount >= 0
+	// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+	PatientCount *int `bson:"patientCount,omitempty"`
 }
 
 func NewPatientCount() *PatientCount {
-	return &PatientCount{
-		PatientCount: 0,
-	}
+	return &PatientCount{}
+}
+
+// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+func (p PatientCount) RequiresMigration() bool {
+	return p.PatientCount != nil
 }
 
 type PatientCountSettings struct {
@@ -206,28 +256,60 @@ func (p PatientCountSettings) IsValid() bool {
 	return true
 }
 
+// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+func (p *PatientCountSettings) Migrated() *PatientCountSettings {
+	normalized := &PatientCountSettings{}
+	if p.HardLimit != nil {
+		normalized.HardLimit = p.HardLimit.Migrated()
+	}
+	if p.SoftLimit != nil {
+		normalized.SoftLimit = p.SoftLimit.Migrated()
+	}
+	return normalized
+}
+
+func UnlimitedPatientCountSettings() *PatientCountSettings {
+	return &PatientCountSettings{}
+}
+
 func DefaultPatientCountSettings() *PatientCountSettings {
 	return &PatientCountSettings{
 		HardLimit: &PatientCountLimit{
-			PatientCount: PatientCountSettingsHardLimitPatientCountDefault,
+			Plan: PatientCountSettingsHardLimitPlanDefault,
 		},
 	}
 }
 
 type PatientCountLimit struct {
-	PatientCount int        `bson:"patientCount"`
-	StartDate    *time.Time `bson:"startDate,omitempty"`
-	EndDate      *time.Time `bson:"endDate,omitempty"`
+	Plan      int        `bson:"plan"`
+	StartDate *time.Time `bson:"startDate,omitempty"`
+	EndDate   *time.Time `bson:"endDate,omitempty"`
+
+	// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+	PatientCount *int `bson:"patientCount,omitempty"`
 }
 
 func (p PatientCountLimit) IsValid() bool {
-	if p.PatientCount < 0 {
+	if p.Plan < 0 {
 		return false
 	}
 	if p.StartDate != nil && p.EndDate != nil && p.StartDate.After(*p.EndDate) {
 		return false
 	}
 	return true
+}
+
+// DEPRECATED: BACK-4157 - Necessary for migration purposes only, remove after data migrated
+func (p *PatientCountLimit) Migrated() *PatientCountLimit {
+	plan := p.Plan
+	if plan == 0 && p.PatientCount != nil {
+		plan = *p.PatientCount
+	}
+	return &PatientCountLimit{
+		Plan:      plan,
+		StartDate: p.StartDate,
+		EndDate:   p.EndDate,
+	}
 }
 
 func NewClinicWithDefaults() *Clinic {
@@ -239,17 +321,6 @@ func NewClinicWithDefaults() *Clinic {
 
 func NewClinic() *Clinic {
 	return &Clinic{}
-}
-
-func (c *Clinic) UpdatePatientCountSettingsForCountry() bool {
-	if isOUS := c.IsOUS(); isOUS && c.PatientCountSettings != nil {
-		c.PatientCountSettings = nil
-		return true
-	} else if !isOUS && c.PatientCountSettings == nil {
-		c.PatientCountSettings = DefaultPatientCountSettings()
-		return true
-	}
-	return false
 }
 
 func (c *Clinic) HasAllRequiredFields() bool {
@@ -366,4 +437,33 @@ func filterByEHRSourceId(clinics []*Clinic, sourceId string) ([]*Clinic, error) 
 	}
 
 	return results, nil
+}
+
+func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
+	if len(clinic.PatientTags) >= MaximumPatientTags {
+		return ErrMaximumPatientTagsExceeded
+	}
+
+	if IsDuplicatePatientTag(clinic, tag) {
+		return ErrDuplicatePatientTagName
+	}
+
+	return nil
+}
+
+func IsDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
+	trimmedNewTagName := strings.ToLower(strings.ReplaceAll(tag.Name, " ", ""))
+
+	for _, p := range clinic.PatientTags {
+		// We only check for duplication against other tags
+		if p.Id.Hex() != tag.Id.Hex() {
+			trimmedExistingTagName := strings.ToLower(strings.ReplaceAll(p.Name, " ", ""))
+
+			if trimmedExistingTagName == trimmedNewTagName {
+				return true
+			}
+		}
+	}
+
+	return false
 }

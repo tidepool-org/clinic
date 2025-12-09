@@ -20,9 +20,7 @@ import (
 )
 
 func NewClinicWithDefaults(c ClinicV1) *clinics.Clinic {
-	clinic := mapClinic(c, clinics.NewClinicWithDefaults())
-	clinic.UpdatePatientCountSettingsForCountry()
-	return clinic
+	return mapClinic(c, clinics.NewClinicWithDefaults())
 }
 
 func NewClinic(c ClinicV1) *clinics.Clinic {
@@ -1019,7 +1017,7 @@ func NewPatientCountLimit(dto *PatientCountLimitV1) *clinics.PatientCountLimit {
 	}
 
 	patientCountLimit := &clinics.PatientCountLimit{
-		PatientCount: dto.PatientCount,
+		Plan: dto.Plan,
 	}
 
 	if dto.StartDate != nil {
@@ -1040,7 +1038,7 @@ func NewPatientCountLimitDto(limit *clinics.PatientCountLimit) *PatientCountLimi
 	}
 
 	dto := &PatientCountLimitV1{
-		PatientCount: limit.PatientCount,
+		Plan: limit.Plan,
 	}
 
 	if limit.StartDate != nil {
@@ -1050,6 +1048,30 @@ func NewPatientCountLimitDto(limit *clinics.PatientCountLimit) *PatientCountLimi
 	if limit.EndDate != nil {
 		endDate := limit.EndDate.Format(time.RFC3339Nano)
 		dto.EndDate = &endDate
+	}
+
+	return dto
+}
+
+func NewPatientCountDto(patientCount *clinics.PatientCount) PatientCountV1 {
+	if patientCount == nil {
+		return PatientCountV1{}
+	}
+
+	dto := PatientCountV1{
+		Total: patientCount.Total,
+		Demo:  patientCount.Demo,
+		Plan:  patientCount.Plan,
+	}
+	if patientCount.Providers != nil {
+		providers := make(map[string]PatientProviderCountV1, len(patientCount.Providers))
+		for provider, providerPatientCount := range patientCount.Providers {
+			providers[provider] = PatientProviderCountV1{
+				States: providerPatientCount.States,
+				Total:  providerPatientCount.Total,
+			}
+		}
+		dto.Providers = &providers
 	}
 
 	return dto

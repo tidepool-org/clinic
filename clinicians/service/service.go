@@ -1,29 +1,31 @@
-package clinicians
+package service
 
 import (
 	"context"
 	"fmt"
-	"github.com/tidepool-org/clinic/deletions"
 
-	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/deletions"
+	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/store"
 )
 
 type service struct {
 	dbClient        *mongo.Client
 	clinicsService  clinics.Service
-	repository      *Repository
+	repository      clinicians.Repository
 	logger          *zap.SugaredLogger
 	userService     patients.UserService
 	patientsService patients.Service
 }
 
-var _ Service = &service{}
+var _ clinicians.Service = &service{}
 
-func NewService(dbClient *mongo.Client, clinicsService clinics.Service, repository *Repository, logger *zap.SugaredLogger, userService patients.UserService, patientsService patients.Service) (Service, error) {
+func NewService(dbClient *mongo.Client, clinicsService clinics.Service, repository clinicians.Repository, logger *zap.SugaredLogger, userService patients.UserService, patientsService patients.Service) (clinicians.Service, error) {
 	return &service{
 		dbClient:        dbClient,
 		clinicsService:  clinicsService,
@@ -34,7 +36,7 @@ func NewService(dbClient *mongo.Client, clinicsService clinics.Service, reposito
 	}, nil
 }
 
-func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician, error) {
+func (s *service) Create(ctx context.Context, clinician *clinicians.Clinician) (*clinicians.Clinician, error) {
 	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
 		created, err := s.repository.Create(sessionCtx, clinician)
 		if err != nil {
@@ -57,10 +59,10 @@ func (s *service) Create(ctx context.Context, clinician *Clinician) (*Clinician,
 		return nil, err
 	}
 
-	return result.(*Clinician), nil
+	return result.(*clinicians.Clinician), nil
 }
 
-func (s *service) Update(ctx context.Context, update *ClinicianUpdate) (*Clinician, error) {
+func (s *service) Update(ctx context.Context, update *clinicians.ClinicianUpdate) (*clinicians.Clinician, error) {
 	result, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
 		updated, err := s.repository.Update(sessionCtx, update)
 		if err != nil {
@@ -78,14 +80,14 @@ func (s *service) Update(ctx context.Context, update *ClinicianUpdate) (*Clinici
 		return nil, err
 	}
 
-	return result.(*Clinician), nil
+	return result.(*clinicians.Clinician), nil
 }
 
-func (s *service) UpdateAll(ctx context.Context, update *CliniciansUpdate) error {
+func (s *service) UpdateAll(ctx context.Context, update *clinicians.CliniciansUpdate) error {
 	return s.repository.UpdateAll(ctx, update)
 }
 
-func (s *service) AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error) {
+func (s *service) AssociateInvite(ctx context.Context, associate clinicians.AssociateInvite) (*clinicians.Clinician, error) {
 	profile, err := s.userService.GetUserProfile(ctx, associate.UserId)
 	if err != nil {
 		return nil, err
@@ -110,14 +112,14 @@ func (s *service) AssociateInvite(ctx context.Context, associate AssociateInvite
 		return nil, err
 	}
 
-	return result.(*Clinician), nil
+	return result.(*clinicians.Clinician), nil
 }
 
-func (s *service) Get(ctx context.Context, clinicId string, clinicianId string) (*Clinician, error) {
+func (s *service) Get(ctx context.Context, clinicId string, clinicianId string) (*clinicians.Clinician, error) {
 	return s.repository.Get(ctx, clinicId, clinicianId)
 }
 
-func (s *service) List(ctx context.Context, filter *Filter, pagination store.Pagination) ([]*Clinician, error) {
+func (s *service) List(ctx context.Context, filter *clinicians.Filter, pagination store.Pagination) ([]*clinicians.Clinician, error) {
 	return s.repository.List(ctx, filter, pagination)
 }
 
@@ -144,7 +146,7 @@ func (s *service) DeleteAll(ctx context.Context, clinicId string, metadata delet
 
 func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string, metadata deletions.Metadata) error {
 	_, err := store.WithTransaction(ctx, s.dbClient, func(sessCtx mongo.SessionContext) (interface{}, error) {
-		filter := &Filter{
+		filter := &clinicians.Filter{
 			UserId: &clinicianId,
 		}
 		pagination := store.Pagination{
@@ -165,7 +167,7 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string, 
 			}
 
 			// Check if clinic has any remaining members
-			filter = &Filter{
+			filter = &clinicians.Filter{
 				ClinicId: &clinicId,
 			}
 			pagination = store.Pagination{
@@ -193,7 +195,7 @@ func (s *service) DeleteFromAllClinics(ctx context.Context, clinicianId string, 
 	return err
 }
 
-func (s *service) deleteSingle(ctx context.Context, clinician *Clinician, metadata deletions.Metadata, allowOrphaning bool) error {
+func (s *service) deleteSingle(ctx context.Context, clinician *clinicians.Clinician, metadata deletions.Metadata, allowOrphaning bool) error {
 	s.logger.Infow("deleting user from clinic", "userId", *clinician.UserId, "clinicId", clinician.ClinicId.Hex())
 	err := s.repository.Delete(ctx, clinician.ClinicId.Hex(), *clinician.UserId, metadata)
 	if err != nil {
@@ -207,7 +209,7 @@ func (s *service) deleteSingle(ctx context.Context, clinician *Clinician, metada
 
 // onUpdate makes sure the clinic object "admins" attribute is consistent with the admins in the clinicians collection.
 // It must be executed on every operation that can change the roles of clinician.
-func (s *service) onUpdate(ctx context.Context, updated *Clinician, allowOrphaning bool) error {
+func (s *service) onUpdate(ctx context.Context, updated *clinicians.Clinician, allowOrphaning bool) error {
 	if updated.UserId == nil {
 		return fmt.Errorf("clinician user id cannot be empty")
 	}
@@ -223,7 +225,7 @@ func (s *service) onUpdate(ctx context.Context, updated *Clinician, allowOrphani
 	return err
 }
 
-func (s *service) GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error) {
+func (s *service) GetInvite(ctx context.Context, clinicId, inviteId string) (*clinicians.Clinician, error) {
 	return s.repository.GetInvite(ctx, clinicId, inviteId)
 }
 

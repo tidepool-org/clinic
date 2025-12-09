@@ -2089,6 +2089,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/patientCount.v1'
+  /v1/clinics/{clinicId}/patient_count/refresh:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+    post:
+      operationId: RefreshPatientCount
+      summary: Refresh Patient Count
+      responses:
+        '200':
+          description: OK
+      description: An internal endpoint to refresh the patient count for the specified clinic.
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
+      parameters: []
   /v1/clinics/{clinicId}/ehr/sync:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -5380,8 +5395,8 @@ components:
       title: Patient Count Limit
       type: object
       properties:
-        patientCount:
-          description: The patient count limit
+        plan:
+          description: The plan-based patient count limit
           type: integer
           minimum: 0
         startDate:
@@ -5391,7 +5406,7 @@ components:
           description: The end date when the patient count limit should no longer be applied
           $ref: '#/components/schemas/datetime.v1'
       required:
-        - patientCount
+        - plan
     patientCountSettings.v1:
       title: Patient Count Settings
       type: object
@@ -5402,16 +5417,62 @@ components:
         softLimit:
           description: The soft limit for the clinic patient count where new patients may still be created
           $ref: '#/components/schemas/patientCountLimit.v1'
+    patientProviderCount.v1:
+      title: Patient Provider Count
+      description: |-
+        The count of patients associated with the clinic for a specific provider. As each patient may be 
+        associated with multiple providers, the sum of all provider counts may exceed the total patient count.
+      type: object
+      properties:
+        total:
+          description: The count of patients that have a specific provider as a data source.
+          type: integer
+          minimum: 0
+        states:
+          description: |-
+            The count of patients for the provider segmented by data source state. The possible
+            states are connected, disconnected, error, pending, and pendingReconnect.
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+      required:
+        - total
+        - states
     patientCount.v1:
       title: Patient Count
       type: object
       properties:
-        patientCount:
-          description: The patient count for a clinic
+        total:
+          description: The count of all patients associated with the clinic, regardless of classification.
           type: integer
           minimum: 0
+        demo:
+          description: |-
+            The count of patients associated with the clinic that are classified as demo and do not 
+            apply towards the plan-based patient count limit. Currently this is limited to 0 or 1,
+            but allows for future expansion with multiple demo patients if needed.
+          type: integer
+          minimum: 0
+        plan:
+          description: |-
+            The count of patients associated with the clinic classified as applying towards the 
+            plan-based patient count limit. This excludes patients classified as demo as well as any 
+            other classifications that do not apply towards the plan-based patient count limit 
+            for various business reasons.
+          type: integer
+          minimum: 0
+        providers:
+          type: object
+          description: |-
+            The count of patients associated with the clinic by provider. As each patient may be associated 
+            with multiple providers, the sum of all provider counts may exceed the total patient count.
+          additionalProperties:
+            $ref: '#/components/schemas/patientProviderCount.v1'
       required:
-        - patientCount
+        - total
+        - demo
+        - plan
   securitySchemes:
     sessionToken:
       name: x-tidepool-session-token
