@@ -9,17 +9,18 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/errors"
-	"github.com/tidepool-org/clinic/patients"
-	models "github.com/tidepool-org/clinic/redox_models"
-	"github.com/tidepool-org/clinic/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/patients"
+	models "github.com/tidepool-org/clinic/redox_models"
+	"github.com/tidepool-org/clinic/store"
 )
 
 const (
@@ -317,6 +318,7 @@ func (h *Handler) RescheduleSubscriptionOrdersForPatient(ctx context.Context, pa
 		if len(result) < limit {
 			break
 		}
+		page.Offset += len(result)
 	}
 
 	return h.patients.RescheduleLastSubscriptionOrderForPatient(

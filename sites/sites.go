@@ -17,7 +17,7 @@ import (
 type Site struct {
 	Id       primitive.ObjectID `bson:"id" json:"id"`
 	Name     string             `bson:"name" json:"name"`
-	Patients int                `bson:"-" json:"patients,omitzero"`
+	Patients int                `bson:"patients,omitempty" json:"patients,omitzero"`
 }
 
 // Equals compares Name and Id to determine if two sites are equal.
@@ -26,12 +26,12 @@ func (s Site) Equals(other Site) bool {
 }
 
 func (s Site) String() string {
-	return fmt.Sprintf("{Id:%s Name:%s}", s.Id.Hex(), s.Name)
+	return fmt.Sprintf("{Id:%s Name:%s Patients:%d}", s.Id.Hex(), s.Name, s.Patients)
 }
 
 // GomegaString cuz gomega is annoying and doesn't fall back to a standard fmt.Stringer.
 func (s Site) GomegaString() string {
-	return fmt.Sprintf("{Id:%s Name:%s}", s.Id.Hex(), s.Name)
+	return fmt.Sprintf("{Id:%s Name:%s Patients:%d}", s.Id.Hex(), s.Name, s.Patients)
 }
 
 func SiteExistsWithName(sites []Site, name string) bool {
