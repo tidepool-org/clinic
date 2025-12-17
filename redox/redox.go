@@ -477,8 +477,9 @@ func GetPatientMatchingValuesFromNewOrder(order models.NewOrder, clinic clinics.
 
 	mrnIdType := clinic.EHRSettings.GetMrnIDType()
 	for _, identifier := range order.Patient.Identifiers {
-		if identifier.IDType == mrnIdType {
+		if strings.EqualFold(identifier.IDType, mrnIdType) {
 			values.MRN = identifier.ID
+			break
 		}
 	}
 
