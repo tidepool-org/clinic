@@ -16,6 +16,7 @@ type DependenciesConfig struct {
 	ShorelineHost  string `envconfig:"TIDEPOOL_SHORELINE_CLIENT_ADDRESS" default:"http://shoreline:9107"`
 	SeagullHost    string `envconfig:"TIDEPOOL_SEAGULL_CLIENT_ADDRESS" default:"http://seagull:9120"`
 	GatekeeperHost string `envconfig:"TIDEPOOL_PERMISSION_CLIENT_ADDRESS" default:"http://gatekeeper:9123"`
+	DataHost       string `envconfig:"TIDEPOOL_DATA_CLIENT_ADDRESS" default:"http://data:9220"`
 	ServerSecret   string `envconfig:"TIDEPOOL_SERVER_TOKEN"`
 }
 
@@ -67,5 +68,13 @@ func seagullProvider(config DependenciesConfig, httpClient *http.Client) clients
 	return clients.NewSeagullClientBuilder().
 		WithHostGetter(disc.NewStaticHostGetterFromString(config.SeagullHost)).
 		WithHttpClient(httpClient).
+		Build()
+}
+
+func dataProvider(config DependenciesConfig, shoreline shoreline.Client, httpClient *http.Client) clients.DataClient {
+	return *clients.NewDataClientBuilder().
+		WithHostGetter(disc.NewStaticHostGetterFromString(config.DataHost)).
+		WithHttpClient(httpClient).
+		WithTokenProvider(shoreline).
 		Build()
 }
