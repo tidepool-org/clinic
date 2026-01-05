@@ -546,7 +546,7 @@ var _ = Describe("Patients Repository", func() {
 
 		Describe("Remove", func() {
 			It("removes the correct patient from the collection", func() {
-				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, deletions.Metadata{})
+				_, err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 
 				res := collection.FindOne(context.Background(), bson.M{"$and": []bson.M{{"userId": randomPatient.UserId}, {"clinicId": randomPatient.ClinicId}}})
@@ -557,7 +557,7 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("creates a deletion record", func() {
-				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, deletions.Metadata{})
+				_, err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, deletions.Metadata{})
 				Expect(err).ToNot(HaveOccurred())
 				count -= 1
 

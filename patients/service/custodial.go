@@ -14,6 +14,7 @@ import (
 type CustodialService interface {
 	CreateAccount(ctx context.Context, patient patients.Patient) (string, error)
 	UpdateAccount(ctx context.Context, patient patients.Patient) error
+	DeleteAccount(ctx context.Context, userID string) error
 }
 
 type custodialService struct {
@@ -56,6 +57,14 @@ func (c *custodialService) UpdateAccount(ctx context.Context, patient patients.P
 	c.logger.Debugw("updating custodial user", zap.String("userId", *patient.UserId))
 	if err := c.userService.UpdateCustodialAccount(ctx, patient); err != nil {
 		return fmt.Errorf("unable to update custodial user: %w", err)
+	}
+	return nil
+}
+
+func (c *custodialService) DeleteAccount(ctx context.Context, userID string) error {
+	c.logger.Debugw("Deleting custodial patient's user account", zap.String("userId", userID))
+	if err := c.userService.DeleteCustodialAccount(ctx, userID); err != nil {
+		return fmt.Errorf("unable to delete custodial patients's user account: %w", err)
 	}
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/tidepool-org/go-common/clients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/go-common/clients/status"
+	"github.com/tidepool-org/platform/auth"
 )
 
 var UserServiceModule = fx.Provide(
@@ -19,6 +20,7 @@ var UserServiceModule = fx.Provide(
 	shorelineProvider,
 	gatekeeperProvider,
 	seagullProvider,
+	dataProvider,
 	NewUserService,
 )
 
@@ -26,6 +28,7 @@ var UserServiceModule = fx.Provide(
 
 type UserService interface {
 	CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error)
+	DeleteCustodialAccount(ctx context.Context, userId string) error
 	GetUser(userId string) (*shoreline.UserData, error)
 	GetUserProfile(ctx context.Context, userId string) (*Profile, error)
 	UpdateCustodialAccount(ctx context.Context, patient Patient) error
@@ -36,6 +39,8 @@ type userService struct {
 	shorelineClient shoreline.Client
 	seagull         clients.Seagull
 	gatekeeper      clients.Gatekeeper
+	data            clients.DataClient
+	authClient      auth.Client
 }
 
 var _ UserService = &userService{}
@@ -46,6 +51,8 @@ type UserServiceParams struct {
 	ShorelineClient shoreline.Client
 	Seagull         clients.Seagull
 	Gatekeeper      clients.Gatekeeper
+	Data            clients.DataClient
+	Auth            auth.Client
 }
 
 func NewUserService(p UserServiceParams) (UserService, error) {
@@ -53,6 +60,8 @@ func NewUserService(p UserServiceParams) (UserService, error) {
 		shorelineClient: p.ShorelineClient,
 		seagull:         p.Seagull,
 		gatekeeper:      p.Gatekeeper,
+		data:            p.Data,
+		authClient:      p.Auth,
 	}, nil
 }
 
@@ -95,6 +104,38 @@ func (s *userService) GetUser(userId string) (*shoreline.UserData, error) {
 		return nil, err
 	}
 	return user, nil
+
+}
+
+func (s *userService) DeleteCustodialAccount(ctx context.Context, userId string) error {
+	if err := s.authClient.DeleteAllRestrictedTokens(ctx, userId); err != nil {
+		return err
+	}
+	hasData, err := s.data.HasAnyData(userId)
+	if err != nil {
+		return err
+	}
+	if !hasData {
+		// Only custodial users with NO data can have their user account actually deleted.
+		if err := s.shorelineClient.DeleteUser(userId, s.shorelineClient.TokenProvide()); err != nil {
+			var e *status.StatusError
+			if errors.As(err, &e) && e.Code == http.StatusNotFound {
+				return clinicErrs.NotFound
+			}
+			return err
+		}
+	} else {
+		// Otherwise, users with data will have their email address removed from their account, but the keycloak user won't actually be deleted.
+		emptyUsername := ""
+		emptyEmails := []string{""}
+		if err := s.shorelineClient.UpdateUser(userId, shoreline.UserUpdate{
+			Username: &emptyUsername,
+			Emails:   &emptyEmails,
+		}, s.shorelineClient.TokenProvide()); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *userService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *Patient) error {

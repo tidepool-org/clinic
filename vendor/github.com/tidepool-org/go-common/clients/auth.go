@@ -235,7 +235,7 @@ func (client *AuthClient) DeleteRestrictedToken(tokenID string, token string) er
 	defer res.Body.Close()
 
 	switch res.StatusCode {
-	case http.StatusNoContent:
+	case http.StatusOK:
 		return nil
 	default:
 		return &status.StatusError{

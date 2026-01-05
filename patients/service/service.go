@@ -191,19 +191,33 @@ func (s *service) UpdateEmail(ctx context.Context, userId string, email *string)
 	return s.patientsRepo.UpdateEmail(ctx, userId, email)
 }
 
-func (s *service) Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error {
+func (s *service) Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) (*patients.Patient, error) {
 	s.logger.Infow("deleting patient from clinic", "userId", userId, "clinicId", clinicId)
-	_, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		err := s.patientsRepo.Remove(sessionCtx, clinicId, userId, metadata)
-		return nil, err
+	patientRaw, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
+		patient, err := s.patientsRepo.Remove(sessionCtx, clinicId, userId, metadata)
+		if err != nil && !errors.Is(err, clinics.ErrNotFound) {
+			return nil, err
+		}
+		if patient == nil {
+			return nil, nil
+		}
+		if patient.IsCustodial() {
+			if err := s.custodialService.DeleteAccount(sessionCtx, userId); err != nil {
+				return nil, err
+			}
+		}
+		return patient, nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	_ = s.clinicsService.RefreshPatientCount(ctx, clinicId) // Ignore any error, already logged
 
-	return nil
+	if patient, ok := patientRaw.(*patients.Patient); ok {
+		return patient, nil
+	}
+	return nil, nil
 }
 
 func (s *service) UpdatePermissions(ctx context.Context, clinicId, userId string, permissions *patients.Permissions) (*patients.Patient, error) {
@@ -217,7 +231,7 @@ func (s *service) UpdatePermissions(ctx context.Context, clinicId, userId string
 				"deleting patient from clinic because the patient revoked all permissions",
 				"userId", userId, "clinicId", clinicId,
 			)
-			return nil, s.Remove(ctx, clinicId, userId, deletions.Metadata{DeletedByUserId: &userId})
+			return s.Remove(ctx, clinicId, userId, deletions.Metadata{DeletedByUserId: &userId})
 		}
 		return s.patientsRepo.UpdatePermissions(ctx, clinicId, userId, permissions)
 	})
@@ -238,7 +252,7 @@ func (s *service) DeletePermission(ctx context.Context, clinicId, userId, permis
 			"deleting patient from clinic because the patient revoked all permissions",
 			"userId", userId, "clinicId", clinicId,
 		)
-		if err := s.Remove(ctx, clinicId, userId, deletions.Metadata{DeletedByUserId: &userId}); err != nil {
+		if _, err := s.Remove(ctx, clinicId, userId, deletions.Metadata{DeletedByUserId: &userId}); err != nil {
 			// the patient was removed by concurrent request which is not a problem,
 			// because it had to be removed as a result of the current operation
 			if errors.Is(err, patients.ErrNotFound) {

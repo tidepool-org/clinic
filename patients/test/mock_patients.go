@@ -277,11 +277,12 @@ func (mr *MockServiceMockRecorder) MergeSites(ctx, clinicId, sourceSiteId, targe
 }
 
 // Remove mocks base method.
-func (m *MockService) Remove(ctx context.Context, clinicId, userId string, metadata deletions.Metadata) error {
+func (m *MockService) Remove(ctx context.Context, clinicId, userId string, metadata deletions.Metadata) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Remove", ctx, clinicId, userId, metadata)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Remove indicates an expected call of Remove.
@@ -735,11 +736,12 @@ func (mr *MockRepositoryMockRecorder) MergeSites(ctx, clinicId, sourceSiteId, ta
 }
 
 // Remove mocks base method.
-func (m *MockRepository) Remove(ctx context.Context, clinicId, userId string, metadata deletions.Metadata) error {
+func (m *MockRepository) Remove(ctx context.Context, clinicId, userId string, metadata deletions.Metadata) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Remove", ctx, clinicId, userId, metadata)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Remove indicates an expected call of Remove.

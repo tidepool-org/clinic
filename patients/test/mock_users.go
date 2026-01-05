@@ -57,6 +57,20 @@ func (mr *MockUserServiceMockRecorder) CreateCustodialAccount(ctx, patient any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCustodialAccount", reflect.TypeOf((*MockUserService)(nil).CreateCustodialAccount), ctx, patient)
 }
 
+// DeleteCustodialAccount mocks base method.
+func (m *MockUserService) DeleteCustodialAccount(ctx context.Context, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCustodialAccount", ctx, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCustodialAccount indicates an expected call of DeleteCustodialAccount.
+func (mr *MockUserServiceMockRecorder) DeleteCustodialAccount(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCustodialAccount", reflect.TypeOf((*MockUserService)(nil).DeleteCustodialAccount), ctx, userId)
+}
+
 // GetUser mocks base method.
 func (m *MockUserService) GetUser(userId string) (*shoreline.UserData, error) {
 	m.ctrl.T.Helper()

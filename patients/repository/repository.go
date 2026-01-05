@@ -295,7 +295,7 @@ func (r *repository) ClinicIds(ctx context.Context, userId string) ([]string, er
 	return clinicIds, nil
 }
 
-func (r *repository) Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error {
+func (r *repository) Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) (*patients.Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	selector := bson.M{
 		"clinicId": clinicObjId,
@@ -304,22 +304,24 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string,
 
 	patient, err := r.Get(ctx, clinicId, userId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = r.deletionsRepo.Create(ctx, *patient, metadata)
 	if err != nil {
-		return nil
+		// TODO: @toddkazakov is this intentional to return nil (prior code)
+		return nil, nil
 	}
 
-	res, err := r.collection.DeleteOne(ctx, selector)
+	var patientPriorDelete patients.Patient
+	// Doing a FindOneAndDelete because we want the state of the patient at the time of deletion to determine their custodial status.
+	err = r.collection.FindOneAndDelete(ctx, selector).Decode(&patientPriorDelete)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, patients.ErrNotFound
+	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if res.DeletedCount == 0 {
-		return patients.ErrNotFound
-	}
-
-	return nil
+	return &patientPriorDelete, nil
 }
 
 func (r *repository) Count(ctx context.Context, filter *patients.Filter) (int, error) {
