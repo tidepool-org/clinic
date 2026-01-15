@@ -80,21 +80,14 @@ func (r *repository) Get(ctx context.Context, id string) (*clinics.Clinic, error
 	if err != nil {
 		return nil, err
 	}
-	annotatedClinics, err := r.annotatedClinics(ctx, bson.M{"_id": clinicId})
+	annotatedClinic, err := r.annotateClinic(ctx, clinicId)
 	if err != nil {
 		return nil, err
 	}
-	if len(annotatedClinics) < 1 {
-		return nil, clinics.ErrNotFound
-	}
-	if len(annotatedClinics) > 1 {
-		return nil, fmt.Errorf("unable to annotate clinic: (expected 1, got %d)",
-			len(annotatedClinics))
-	}
-	return annotatedClinics[0], nil
+	return annotatedClinic, nil
 }
 
-func (r *repository) annotatedClinics(ctx context.Context, match bson.M) (
+func (r *repository) annotateClinics(ctx context.Context, match bson.M) (
 	[]*clinics.Clinic, error) {
 
 	pipeline := bson.A{
@@ -111,9 +104,6 @@ func (r *repository) annotatedClinics(ctx context.Context, match bson.M) (
 	if err != nil {
 		return nil, err
 	}
-	if !cursor.Next(ctx) {
-		return nil, cursor.Err()
-	}
 	clinicsList := []*clinics.Clinic{}
 	if err := cursor.All(ctx, &clinicsList); err != nil {
 		return nil, err
@@ -122,10 +112,10 @@ func (r *repository) annotatedClinics(ctx context.Context, match bson.M) (
 	return clinicsList, nil
 }
 
-func (r *repository) annotatedClinicSite(ctx context.Context,
-	clinicId, siteId primitive.ObjectID) (*sites.Site, error) {
+func (r *repository) annotateClinic(ctx context.Context, clinicId primitive.ObjectID) (
+	*clinics.Clinic, error) {
 
-	annotatedClinics, err := r.annotatedClinics(ctx, bson.M{"_id": clinicId})
+	annotatedClinics, err := r.annotateClinics(ctx, bson.M{"_id": clinicId})
 	if err != nil {
 		return nil, err
 	}
@@ -136,8 +126,18 @@ func (r *repository) annotatedClinicSite(ctx context.Context,
 		return nil, fmt.Errorf("unable to annotate clinic: (expected 1, got %d)",
 			len(annotatedClinics))
 	}
+	return annotatedClinics[0], nil
+}
+
+func (r *repository) annotateClinicSite(ctx context.Context,
+	clinicId, siteId primitive.ObjectID) (*sites.Site, error) {
+
+	annotatedClinic, err := r.annotateClinic(ctx, clinicId)
+	if err != nil {
+		return nil, err
+	}
 	var annotatedSite *sites.Site
-	for _, site := range annotatedClinics[0].Sites {
+	for _, site := range annotatedClinic.Sites {
 		if site.Id.Hex() == siteId.Hex() {
 			annotatedSite = &site
 			break
@@ -149,22 +149,15 @@ func (r *repository) annotatedClinicSite(ctx context.Context,
 	return annotatedSite, nil
 }
 
-func (r *repository) annotatedClinicPatientTag(ctx context.Context,
+func (r *repository) annotateClinicPatientTag(ctx context.Context,
 	clinicId, tagId primitive.ObjectID) (*clinics.PatientTag, error) {
 
-	annotatedClinics, err := r.annotatedClinics(ctx, bson.M{"_id": clinicId})
+	annotatedClinic, err := r.annotateClinic(ctx, clinicId)
 	if err != nil {
 		return nil, err
 	}
-	if len(annotatedClinics) < 1 {
-		return nil, clinics.ErrNotFound
-	}
-	if len(annotatedClinics) > 1 {
-		return nil, fmt.Errorf("unable to annotate clinic: (expected 1, got %d)",
-			len(annotatedClinics))
-	}
 	var annotatedTag *clinics.PatientTag
-	for _, tag := range annotatedClinics[0].PatientTags {
+	for _, tag := range annotatedClinic.PatientTags {
 		if tag.Id.Hex() == tagId.Hex() {
 			annotatedTag = &tag
 			break
@@ -347,7 +340,7 @@ func (r *repository) List(ctx context.Context, filter *clinics.Filter, paginatio
 	}
 	match := bson.M{"_id": bson.M{"$in": clinicIDs}}
 
-	return r.annotatedClinics(ctx, match)
+	return r.annotateClinics(ctx, match)
 }
 
 func (r *repository) Create(ctx context.Context, clinic *clinics.Clinic) (*clinics.Clinic, error) {
@@ -570,7 +563,7 @@ func (r *repository) UpdatePatientTag(ctx context.Context, id, tagId, tagName st
 		return nil, err
 	}
 
-	return r.annotatedClinicPatientTag(ctx, *clinic.Id, tagObjectId)
+	return r.annotateClinicPatientTag(ctx, *clinic.Id, tagObjectId)
 }
 
 func (r *repository) DeletePatientTag(ctx context.Context, id, tagId string) error {
@@ -860,7 +853,7 @@ func (c *repository) UpdateSite(ctx context.Context,
 		return nil, fmt.Errorf("updating clinic %q site %q: %w", clinicId, siteId, err)
 	}
 
-	return c.annotatedClinicSite(ctx, clinicOID, siteOID)
+	return c.annotateClinicSite(ctx, clinicOID, siteOID)
 }
 
 func (c *repository) maintainSitesConstraintsOnCreate(ctx context.Context,
