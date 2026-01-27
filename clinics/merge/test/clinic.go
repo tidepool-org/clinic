@@ -93,6 +93,9 @@ func RandomData(p Params) Data {
 		if j == 0 { // ensure that at least one merging patient has the duplicate site
 			*sourcePatients[i].Sites = append(*sourcePatients[i].Sites, srcDupSite)
 			*targetPatient.Sites = append(*targetPatient.Sites, tgtDupSite)
+		} else if j == 1 { // ensure that at least one merging patient has nil sites
+			targetPatient.Sites = nil
+			sourcePatient.Sites = nil
 		}
 		targetPatients = append(targetPatients, targetPatient)
 		targetPatientsWithDuplicates[*sourcePatient.UserId] = targetPatient

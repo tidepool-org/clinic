@@ -253,6 +253,8 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 			target, err := p.getTargetPatientById(userId)
 			if err != nil {
 				return nil, err
+			} else if target == nil {
+				return nil, fmt.Errorf("unable to get target patient with id: %s", userId)
 			}
 
 			if conflictCategory == PatientConflictCategoryDuplicateAccounts {
@@ -265,10 +267,13 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				uniqueTags := mapset.NewSet(plan.SourceTagNames...)
 				uniqueTags.Append(plan.TargetTagNames...)
 				plan.PostMigrationTagNames = uniqueTags.ToSlice()
-				if patient.Sites == nil || target == nil || target.Sites == nil {
-					return nil, fmt.Errorf("unable to combine sites for duplicate patients")
+				combinedSites := []sites.Site{}
+				if patient.Sites != nil {
+					combinedSites = slices.Concat(combinedSites, *patient.Sites)
 				}
-				combinedSites := slices.Concat(*target.Sites, *patient.Sites)
+				if target.Sites != nil {
+					combinedSites = slices.Concat(combinedSites, *target.Sites)
+				}
 				plan.PostMigrationSiteNames = siteNames(&combinedSites, p.target.Sites)
 			}
 			plan.Conflicts[conflictCategory] = append(plan.Conflicts[conflictCategory], Conflict{
