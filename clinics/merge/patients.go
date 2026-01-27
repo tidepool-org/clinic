@@ -253,8 +253,6 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 			target, err := p.getTargetPatientById(userId)
 			if err != nil {
 				return nil, err
-			} else if target == nil {
-				return nil, fmt.Errorf("unable to get target patient with id: %s", userId)
 			}
 
 			if conflictCategory == PatientConflictCategoryDuplicateAccounts {
