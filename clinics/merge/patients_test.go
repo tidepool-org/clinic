@@ -209,6 +209,9 @@ var _ = Describe("New Merge Planner", func() {
 				updated.PatientTags = append(updated.PatientTags, clinics.PatientTag{Id: &id, Name: tag.Name})
 			}
 
+			// Ensure that patients with nil sites can be merged successfully.
+			sourcePatients[1].Sites = nil
+
 			clinicsService.EXPECT().
 				Get(gomock.Any(), target.Id.Hex()).
 				Return(&updated, nil).

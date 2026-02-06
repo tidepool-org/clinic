@@ -480,26 +480,35 @@ func (p *PatientPlanExecutor) mergePatient(ctx context.Context, plan PatientPlan
 	return nil
 }
 
-func (p *PatientPlanExecutor) mergeSites(ctx context.Context, plan PatientPlan, target clinics.Clinic) error {
+func (p *PatientPlanExecutor) mergeSites(ctx context.Context, plan PatientPlan,
+	target clinics.Clinic) error {
+
+	if plan.SourcePatient == nil {
+		return nil
+	}
 	selector := bson.M{
 		"clinicId": plan.TargetPatient.ClinicId,
 		"userId":   plan.TargetPatient.UserId,
 	}
-	if plan.SourcePatient != nil && plan.SourcePatient.Sites != nil {
-		srcSites := plan.SourcePatient.Sites
-		tgtSites := target.Sites
-		for i, srcSite := range *srcSites {
-			for _, tgtSite := range tgtSites {
-				if srcSite.Id == tgtSite.Id && srcSite.Name != tgtSite.Name {
-					(*srcSites)[i].Name = tgtSite.Name
-				}
-			}
+	srcSites := plan.SourcePatient.Sites
+	if srcSites == nil || len(*srcSites) == 0 {
+		return nil
+	}
+
+	srcSitesToAdd := []sites.Site{}
+	for _, srcSite := range *srcSites {
+		containsSrcSite := func(tgtSite sites.Site) bool {
+			return srcSite.Id == tgtSite.Id
+		}
+		if !slices.ContainsFunc(target.Sites, containsSrcSite) {
+			srcSitesToAdd = append(srcSitesToAdd, srcSite)
 		}
 	}
+
 	update := bson.M{
 		"$push": bson.M{
 			"sites": bson.M{
-				"$each": plan.SourcePatient.Sites,
+				"$each": srcSitesToAdd,
 			},
 		},
 		"$currentDate": bson.M{"updatedTime": true},
