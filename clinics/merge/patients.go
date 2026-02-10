@@ -494,21 +494,18 @@ func (p *PatientPlanExecutor) mergeSites(ctx context.Context, plan PatientPlan,
 	if srcSites == nil || len(*srcSites) == 0 {
 		return nil
 	}
-
-	srcSitesToAdd := []sites.Site{}
-	for _, srcSite := range *srcSites {
-		containsSrcSite := func(tgtSite sites.Site) bool {
-			return srcSite.Id == tgtSite.Id
-		}
-		if !slices.ContainsFunc(target.Sites, containsSrcSite) {
-			srcSitesToAdd = append(srcSitesToAdd, srcSite)
+	tgtSites := target.Sites
+	for i, srcSite := range *srcSites {
+		for _, tgtSite := range tgtSites {
+			if srcSite.Id == tgtSite.Id && srcSite.Name != tgtSite.Name {
+				(*srcSites)[i].Name = tgtSite.Name
+			}
 		}
 	}
-
 	update := bson.M{
 		"$push": bson.M{
 			"sites": bson.M{
-				"$each": srcSitesToAdd,
+				"$each": srcSites,
 			},
 		},
 		"$currentDate": bson.M{"updatedTime": true},
