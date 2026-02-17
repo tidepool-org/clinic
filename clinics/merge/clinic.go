@@ -350,9 +350,6 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 
 	planId := primitive.NewObjectID()
 	_, err := store.WithTransaction(ctx, c.DBClient, func(sessionContext mongo.SessionContext) (any, error) {
-		// Site plans must be executed before clinics or patients for merging to proceed
-		// properly. The clinic and patient merge processes both assume that sites already
-		// have unique names, which the execution of the site plans accomplishes.
 		logger.Info("starting sites migration")
 		spe := NewSitePlanExecutor(logger, c.ClinicsService, c.PatientsService)
 		for _, plan := range plan.SitesPlans {
