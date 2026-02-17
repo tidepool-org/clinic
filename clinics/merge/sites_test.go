@@ -127,14 +127,13 @@ var _ = Describe("Sites", func() {
 			ctx, th := newSitesTestHelper(GinkgoT())
 			dups := th.createDuplicateSites("dup1")[0]
 			targetID := th.Target.Id.Hex()
-			sourceID := th.Source.Id.Hex()
 			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics, th.Patients)
 
 			th.Clinics.EXPECT().Get(gomock.Any(), targetID).
 				Return(th.Target, nil).AnyTimes()
 			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID,
 				incrementedSiteMatcher(dups.Target))
-			th.Patients.EXPECT().UpdateSites(gomock.Any(), sourceID, dups.Source.Id.Hex(),
+			th.Patients.EXPECT().UpdateSites(gomock.Any(), targetID, dups.Source.Id.Hex(),
 				incrementedSiteMatcher(dups.Source))
 			for _, plan := range th.Plans() {
 				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
@@ -149,14 +148,13 @@ var _ = Describe("Sites", func() {
 				th.createTargetSites(fmt.Sprintf("%s (%d)", dups.Target.Name, i+2))
 			}
 			targetID := th.Target.Id.Hex()
-			sourceID := th.Source.Id.Hex()
 			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics, th.Patients)
 
 			th.Clinics.EXPECT().Get(gomock.Any(), targetID).
 				Return(th.Target, nil).AnyTimes()
 			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID,
 				incrementedSiteMatcherN(dups.Target, times+2))
-			th.Patients.EXPECT().UpdateSites(gomock.Any(), sourceID, dups.Source.Id.Hex(),
+			th.Patients.EXPECT().UpdateSites(gomock.Any(), targetID, dups.Source.Id.Hex(),
 				incrementedSiteMatcherN(dups.Source, times+2))
 			for _, plan := range th.Plans() {
 				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
