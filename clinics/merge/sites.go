@@ -197,7 +197,7 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 			return err
 		}
 
-		err = t.patientsService.UpdateSites(ctx, plan.SourceClinicId.Hex(),
+		err = t.patientsService.UpdateSites(ctx, plan.TargetClinicId.Hex(),
 			plan.Site.Id.Hex(), &plan.Site)
 		if err != nil {
 			return err
