@@ -350,17 +350,6 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 
 	planId := primitive.NewObjectID()
 	_, err := store.WithTransaction(ctx, c.DBClient, func(sessionContext mongo.SessionContext) (any, error) {
-		logger.Info("starting sites migration")
-		spe := NewSitePlanExecutor(logger, c.ClinicsService, c.PatientsService)
-		for _, plan := range plan.SitesPlans {
-			if err := spe.Execute(sessionContext, plan); err != nil {
-				return nil, err
-			}
-			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeSite, plan)); err != nil {
-				return nil, err
-			}
-		}
-
 		logger.Info("starting tags migration")
 		tpe := NewTagPlanExecutor(logger, c.ClinicsService)
 		for _, p := range plan.TagsPlans {
@@ -385,6 +374,17 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 				sanitizePatient(p.TargetPatient)
 			}
 			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypePatient, p)); err != nil {
+				return nil, err
+			}
+		}
+
+		logger.Info("starting sites migration")
+		spe := NewSitePlanExecutor(logger, c.ClinicsService, c.PatientsService)
+		for _, plan := range plan.SitesPlans {
+			if err := spe.Execute(sessionContext, plan); err != nil {
+				return nil, err
+			}
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeSite, plan)); err != nil {
 				return nil, err
 			}
 		}
