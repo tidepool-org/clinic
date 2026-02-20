@@ -1371,6 +1371,9 @@ type EhrDestinationsV1 struct {
 type EhrFlowsheetSettingsV1 struct {
 	// Icode Determine if values should be sent in accorance with ICode2 rounding standards, or if we should send the values at higher precision.
 	Icode bool `json:"icode"`
+
+	// SendSeparateGMINote If true, include GMI in the notes.
+	SendSeparateGMINote bool `json:"sendSeparateGMINote,omitempty"`
 }
 
 // EhrMatchMessageRefV1 defines model for ehrMatchMessageRef.v1.

@@ -926,7 +926,8 @@ func NewEHRSettings(dto EhrSettingsV1) *clinics.EHRSettings {
 			Separator: dto.Tags.Separator,
 		},
 		Flowsheets: clinics.FlowsheetSettings{
-			Icode: dto.Flowsheets.Icode,
+			Icode:               dto.Flowsheets.Icode,
+			SendSeparateGMINote: dto.Flowsheets.SendSeparateGMINote,
 		},
 	}
 	if settings.ScheduledReports.OnUploadEnabled && dto.ScheduledReports.OnUploadNoteEventType != nil {
@@ -970,7 +971,8 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EhrSettingsV1 {
 			Separator: settings.Tags.Separator,
 		},
 		Flowsheets: EhrFlowsheetSettingsV1{
-			Icode: settings.Flowsheets.Icode,
+			Icode:               settings.Flowsheets.Icode,
+			SendSeparateGMINote: settings.Flowsheets.SendSeparateGMINote,
 		},
 	}
 	if settings.ScheduledReports.OnUploadNoteEventType != nil {

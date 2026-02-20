@@ -214,7 +214,8 @@ type TagsSettings struct {
 }
 
 type FlowsheetSettings struct {
-	Icode bool `bson:"icode,omitempty"`
+	Icode               bool `bson:"icode,omitempty"`
+	SendSeparateGMINote bool `bson:"sendSeparateGMINote,omitempty"`
 }
 
 type PatientProviderCount struct {
