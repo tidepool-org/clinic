@@ -1415,6 +1415,21 @@ components:
         - Meta
         - Patient
         - Observations
+    noteComponent:
+      type: object
+      properties:
+        ID:
+          type: string
+          nullable: true
+        Name:
+          type: string
+          nullable: true
+        Value:
+          type: string
+          nullable: true
+        Comments:
+          type: string
+          nullable: true
     newNotes:
       type: object
       properties:
@@ -2029,20 +2044,7 @@ components:
             Components:
               type: array
               items:
-                type: object
-                properties:
-                  ID:
-                    type: string
-                    nullable: true
-                  Name:
-                    type: string
-                    nullable: true
-                  Value:
-                    type: string
-                    nullable: true
-                  Comments:
-                    type: string
-                    nullable: true
+                $ref: '#/components/schemas/noteComponent'
           required:
             - ContentType
             - DocumentType

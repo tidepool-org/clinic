@@ -199,21 +199,16 @@ type NewNotes struct {
 				Office *string `json:"Office"`
 			} `json:"PhoneNumber,omitempty"`
 		} `json:"Authenticator,omitempty"`
-		Availability *string `json:"Availability"`
-		Components   *[]struct {
-			Comments *string `json:"Comments"`
-			ID       *string `json:"ID"`
-			Name     *string `json:"Name"`
-			Value    *string `json:"Value"`
-		} `json:"Components,omitempty"`
-		ContentType           string  `json:"ContentType"`
-		DocumentDescription   *string `json:"DocumentDescription"`
-		DocumentID            string  `json:"DocumentID"`
-		DocumentType          string  `json:"DocumentType"`
-		DocumentationDateTime *string `json:"DocumentationDateTime"`
-		FileContents          *string `json:"FileContents"`
-		FileName              *string `json:"FileName"`
-		FileType              *string `json:"FileType"`
+		Availability          *string          `json:"Availability"`
+		Components            *[]NoteComponent `json:"Components,omitempty"`
+		ContentType           string           `json:"ContentType"`
+		DocumentDescription   *string          `json:"DocumentDescription"`
+		DocumentID            string           `json:"DocumentID"`
+		DocumentType          string           `json:"DocumentType"`
+		DocumentationDateTime *string          `json:"DocumentationDateTime"`
+		FileContents          *string          `json:"FileContents"`
+		FileName              *string          `json:"FileName"`
+		FileType              *string          `json:"FileType"`
 		Notifications         *[]struct {
 			Address *struct {
 				City          *string `json:"City"`
@@ -1183,6 +1178,14 @@ type NewResults struct {
 		VisitDateTime *string `json:"VisitDateTime"`
 		VisitNumber   *string `json:"VisitNumber"`
 	} `json:"Visit,omitempty"`
+}
+
+// NoteComponent defines model for noteComponent.
+type NoteComponent struct {
+	Comments *string `json:"Comments"`
+	ID       *string `json:"ID"`
+	Name     *string `json:"Name"`
+	Value    *string `json:"Value"`
 }
 
 // ReplaceNotes defines model for replaceNotes.
