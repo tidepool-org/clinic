@@ -794,7 +794,9 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		"userId": userId,
 	}
 
-	set := bson.M{}
+	set := bson.M{
+		"updatedTime": time.Now(),
+	}
 	unset := bson.M{}
 	if summary == nil {
 		unset = bson.M{
@@ -809,9 +811,8 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		}
 	}
 
-	update := bson.M{}
-	if len(set) > 0 {
-		update["$set"] = set
+	update := bson.M{
+		"$set": set,
 	}
 	if len(unset) > 0 {
 		update["$unset"] = unset
@@ -1152,6 +1153,7 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 	res, err := r.collection.UpdateOne(ctx, selector, bson.M{
 		"$set": bson.M{
 			"ehrSubscriptions": subscriptions,
+			"updatedTime":      time.Now(),
 		},
 	})
 	if err != nil {
