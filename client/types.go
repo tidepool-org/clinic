@@ -1600,10 +1600,18 @@ type PatientV1 struct {
 	Sites       []SiteV1              `json:"sites,omitzero"`
 
 	// Summary A summary of a patients recent data
-	Summary       *PatientSummaryV1 `json:"summary,omitempty"`
-	Tags          *PatientTagIdsV1  `json:"tags"`
-	TargetDevices *[]string         `json:"targetDevices,omitempty"`
-	UpdatedTime   *time.Time        `json:"updatedTime,omitempty"`
+	Summary *PatientSummaryV1 `json:"summary,omitempty"`
+	Tags    *PatientTagIdsV1  `json:"tags"`
+
+	// TargetDevices When uploading data, the user selects a target device (typically
+	// make and model) of their data source (i.e. meter or pump) from a
+	// list. This selection is used by the Tidepool Uploader to select the
+	// correct drivers for communicating with the data source.
+	//
+	// These values are stored in the user's profile so that they can be
+	// pre-selected on next use, thereby streamlining the process.
+	TargetDevices *TargetdevicesV1 `json:"targetDevices,omitempty"`
+	UpdatedTime   *time.Time       `json:"updatedTime,omitempty"`
 }
 
 // PatientClinicRelationshipV1 defines model for patientClinicRelationship.v1.
@@ -1853,6 +1861,15 @@ type SummaryIdV1 = string
 type SuppressedNotificationsV1 struct {
 	PatientClinicInvitation *bool `json:"patientClinicInvitation,omitempty"`
 }
+
+// TargetdevicesV1 When uploading data, the user selects a target device (typically
+// make and model) of their data source (i.e. meter or pump) from a
+// list. This selection is used by the Tidepool Uploader to select the
+// correct drivers for communicating with the data source.
+//
+// These values are stored in the user's profile so that they can be
+// pre-selected on next use, thereby streamlining the process.
+type TargetdevicesV1 = []string
 
 // TideConfigV1 defines model for tideConfig.v1.
 type TideConfigV1 struct {
