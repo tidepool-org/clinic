@@ -2355,10 +2355,6 @@ components:
           minLength: 1
           maxLength: 20
           pattern: ^[\p{L}\p{N}_+><-]{1}[\p{L}\p{N}\s_+><-]*$
-        numPatients:
-          type: integer
-          x-go-type-skip-optional-pointer: true
-          x-omitzero: true
       required:
         - id
         - name
@@ -2375,10 +2371,6 @@ components:
           $ref: '#/components/schemas/siteId.v1'
         name:
           $ref: '#/components/schemas/siteName.v1'
-        numPatients:
-          type: integer
-          x-go-type-skip-optional-pointer: true
-          x-omitzero: true
       required:
         - id
         - name
