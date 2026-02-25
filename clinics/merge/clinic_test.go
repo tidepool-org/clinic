@@ -34,6 +34,7 @@ import (
 	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	"github.com/tidepool-org/clinic/config"
 	errs "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/outbox"
 	"github.com/tidepool-org/clinic/patients"
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsService "github.com/tidepool-org/clinic/patients/service"
@@ -102,6 +103,7 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 			clinicsService.NewService,
 			cliniciansRepository.NewRepository,
 			cliniciansService.NewService,
+			outbox.NewRepository,
 			patientsRepository.NewRepository,
 			patientsService.NewService,
 			patientsService.NewCustodialService,

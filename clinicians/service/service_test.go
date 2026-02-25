@@ -24,6 +24,7 @@ import (
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/logger"
+	"github.com/tidepool-org/clinic/outbox"
 	"github.com/tidepool-org/clinic/patients"
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsService "github.com/tidepool-org/clinic/patients/service"
@@ -65,6 +66,7 @@ var _ = Describe("Clinicians Service", func() {
 					clinicsService.NewService,
 					cliniciansRepository.NewRepository,
 					cliniciansService.NewService,
+					outbox.NewRepository,
 					patientsRepository.NewRepository,
 					patientsService.NewService,
 					patientsService.NewCustodialService,

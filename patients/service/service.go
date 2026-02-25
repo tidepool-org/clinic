@@ -14,6 +14,7 @@ import (
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/outbox"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
@@ -26,19 +27,23 @@ type service struct {
 
 	clinicsService   clinics.Service
 	custodialService CustodialService
+	outboxRepo       outbox.Repository
 	patientsRepo     patients.Repository
+	userService      patients.UserService
 }
 
 var _ patients.Service = &service{}
 
-func NewService(config *config.Config, repo patients.Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (patients.Service, error) {
+func NewService(config *config.Config, repo patients.Repository, clinics clinics.Service, custodialService CustodialService, outboxRepo outbox.Repository, userService patients.UserService, logger *zap.SugaredLogger, dbClient *mongo.Client) (patients.Service, error) {
 	return &service{
 		config:           config,
 		dbClient:         dbClient,
 		logger:           logger,
 		clinicsService:   clinics,
 		custodialService: custodialService,
+		outboxRepo:       outboxRepo,
 		patientsRepo:     repo,
+		userService:      userService,
 	}, nil
 }
 
@@ -302,6 +307,10 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *pati
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "provider", request.ProviderName)
 
+	if request.ProviderName == patients.GenericDataSourceProviderName {
+		return s.addGenericProviderConnectionRequest(ctx, clinicId, userId, request)
+	}
+
 	if err := s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request); err != nil {
 		return err
 	}
@@ -312,6 +321,56 @@ func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, us
 	}
 
 	return nil
+}
+
+func (s *service) addGenericProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
+	patient, err := s.patientsRepo.Get(ctx, clinicId, userId)
+	if err != nil {
+		return err
+	}
+
+	clinic, err := s.clinicsService.Get(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userService.GetUser(userId)
+	if err != nil {
+		return err
+	}
+
+	patientName := ""
+	if patient.FullName != nil {
+		patientName = *patient.FullName
+	}
+	patientEmail := user.Username
+	clinicName := ""
+	if clinic.Name != nil {
+		clinicName = *clinic.Name
+	}
+
+	event, err := outbox.NewEvent(outbox.EventTypeSendProviderConnectionEmail, outbox.SendProviderConnectionEmailPayload{
+		ClinicId:     clinicId,
+		ClinicName:   clinicName,
+		PatientEmail: patientEmail,
+		PatientName:  patientName,
+		ProviderName: request.ProviderName,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = store.WithTransaction(ctx, s.dbClient, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		if err := s.patientsRepo.AddProviderConnectionRequest(sessCtx, clinicId, userId, request); err != nil {
+			return nil, err
+		}
+		if err := s.outboxRepo.Create(sessCtx, event); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+
+	return err
 }
 
 func (s *service) AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error {
