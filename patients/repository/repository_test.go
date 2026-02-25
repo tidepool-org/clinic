@@ -502,6 +502,48 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("UpdateEHRSubscriptions", func() {
+			It("updates the patient's updatedTime", func() {
+				var matchedMessages int
+				for _, sub := range randomPatient.EHRSubscriptions {
+					matchedMessages += len(sub.MatchedMessages)
+				}
+
+				err := repo.UpdateEHRSubscription(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, patients.SubscriptionUpdate{
+					Name:     "summaryAndReports",
+					Provider: "redox",
+					Active:   true,
+					MatchedMessage: patients.MatchedMessage{
+						DocumentId: primitive.NewObjectID(),
+						DataModel:  "Order",
+						EventType:  "New",
+					},
+				})
+				Expect(err).ToNot(HaveOccurred())
+
+				updated, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(updated.UpdatedTime).To(BeTemporally(">", randomPatient.UpdatedTime))
+
+				var matchedMessagesAfterUpdate int
+				for _, sub := range updated.EHRSubscriptions {
+					matchedMessagesAfterUpdate += len(sub.MatchedMessages)
+				}
+				Expect(matchedMessagesAfterUpdate).To(Equal(matchedMessages + 1))
+			})
+		})
+
+		Describe("UpdateSummaryInAllClinics", func() {
+			It("updates the patient's updatedTime", func() {
+				err := repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				updated, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(updated.UpdatedTime).To(BeTemporally(">", randomPatient.UpdatedTime))
+			})
+		})
+
 		Describe("Remove", func() {
 			It("removes the correct patient from the collection", func() {
 				err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, deletions.Metadata{})

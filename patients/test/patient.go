@@ -51,6 +51,7 @@ func RandomPatient() patients.Patient {
 		Sites:            &[]sites.Site{},
 		GlycemicRanges:   RandomGlycemicRanges(),
 		DiagnosisType:    RandomDiagnosisType(),
+		UpdatedTime:      test.Faker.Time().TimeBetween(time.Now().Add(-time.Hour), time.Now().Add(-time.Minute)),
 	}
 }
 
