@@ -370,9 +370,8 @@ func (p *PhoneNumber) HasAllRequiredFields() bool {
 }
 
 type PatientTag struct {
-	Id       *primitive.ObjectID `bson:"_id,omitempty"`
-	Name     string              `bson:"name,omitempty"`
-	Patients int                 `bson:"patients,omitempty"`
+	Id   *primitive.ObjectID `bson:"_id,omitempty"`
+	Name string              `bson:"name,omitempty"`
 }
 
 type SuppressedNotifications struct {
