@@ -9,6 +9,7 @@ import (
 
 	"github.com/brpaz/echozap"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	oapiMiddleware "github.com/oapi-codegen/echo-middleware"
@@ -42,6 +43,10 @@ import (
 var (
 	ServerString        = ":8080"
 	ServerTimeoutAmount = 20
+)
+
+const (
+	metricsAddr = ":8081"
 )
 
 func Start(e *echo.Echo, lifecycle fx.Lifecycle) {
@@ -79,6 +84,15 @@ func SetReady(healthCheck *HealthCheck, db *mongo.Database, lifecycle fx.Lifecyc
 
 func NewServer(handler Handler, healthCheck *HealthCheck, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator, logger *zap.Logger) (*echo.Echo, error) {
 	e := echo.New()
+	e.Use(echoprometheus.NewMiddleware("clinic"))
+	go func() {
+		metrics := echo.New()
+		metrics.HideBanner = true
+		metrics.GET("/metrics", echoprometheus.NewHandler())
+		if err := metrics.Start(metricsAddr); err != nil {
+			e.Logger.Error("failed to start metrics server", "error", err)
+		}
+	}()
 	logger.Info("Starting Main Loop")
 	swagger, err := GetSwagger()
 	if err != nil {
