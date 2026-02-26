@@ -1,0 +1,6 @@
+{
+  "id": "4444444444",
+  "name": "Clinic User Clinician",
+  "email": "clinicuser@example.com",
+  "roles": ["CLINIC_MEMBER"]
+}
