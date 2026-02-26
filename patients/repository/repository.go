@@ -885,6 +885,10 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 	currentTime := time.Now()
 
+	if request.ProviderName == patients.GenericDataSourceProviderName {
+		return r.addGenericProviderConnectionRequest(ctx, clinicObjId, userId, request, currentTime)
+	}
+
 	// We fetch the current dexcom data source to determine if we are requesting an initial connection
 	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
 	patient, err := r.Get(ctx, clinicId, userId)
@@ -911,7 +915,7 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	mongoUpdate := bson.M{
 		"$set": bson.M{
 			"updatedTime":                  currentTime,
-			"dataSources.$.expirationTime": currentTime.Add(patients.PendingDataSourceExpirationDuration),
+			"dataSources.$.expirationTime": request.ExpirationTime,
 			"dataSources.$.state":          patients.DataSourceStatePending,
 		},
 	}
@@ -921,7 +925,7 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 		mongoUpdate = bson.M{
 			"$set": bson.M{
 				"updatedTime":                  currentTime,
-				"dataSources.$.expirationTime": currentTime.Add(patients.PendingDataSourceExpirationDuration),
+				"dataSources.$.expirationTime": request.ExpirationTime,
 				"dataSources.$.modifiedTime":   currentTime,
 				"dataSources.$.state":          patients.DataSourceStatePendingReconnect,
 			},
@@ -938,6 +942,36 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	}
 
 	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return patients.ErrNotFound
+		}
+		return fmt.Errorf("error updating patient: %w", err)
+	}
+
+	return nil
+}
+
+func (r *repository) addGenericProviderConnectionRequest(ctx context.Context, clinicObjId primitive.ObjectID, userId string, request patients.ConnectionRequest, currentTime time.Time) error {
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId":   userId,
+	}
+
+	key := "providerConnectionRequests." + request.ProviderName
+	mongoUpdate := bson.M{
+		"$set": bson.M{
+			"updatedTime": currentTime,
+		},
+		"$push": bson.M{
+			key: bson.M{
+				"$each":      bson.A{request},
+				"$position":  0,
+			},
+		},
+	}
+
+	err := r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return patients.ErrNotFound

@@ -1846,9 +1846,11 @@ var _ = Describe("Patients Repository", func() {
 				err := repo.UpdatePatientDataSources(context.Background(), *randomPatient.UserId, &dataSources)
 				Expect(err).ToNot(HaveOccurred())
 
+				now := time.Now().UTC().Truncate(time.Millisecond)
 				request := patients.ConnectionRequest{
-					ProviderName: patients.DexcomDataSourceProviderName,
-					CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
+					ProviderName:   patients.DexcomDataSourceProviderName,
+					CreatedTime:    now,
+					ExpirationTime: now.Add(patients.PendingDataSourceExpirationDuration),
 				}
 
 				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
@@ -1863,9 +1865,11 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("correctly adds multiple requests", func() {
+				now := time.Now().Truncate(time.Millisecond)
 				request := patients.ConnectionRequest{
-					ProviderName: patients.DexcomDataSourceProviderName,
-					CreatedTime:  time.Now().Truncate(time.Millisecond),
+					ProviderName:   patients.DexcomDataSourceProviderName,
+					CreatedTime:    now,
+					ExpirationTime: now.Add(patients.PendingDataSourceExpirationDuration),
 				}
 
 				err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
@@ -1884,6 +1888,82 @@ var _ = Describe("Patients Repository", func() {
 				Expect(dexcom).To(HaveLen(2))
 				Expect(dexcom[0]).To(BeComparableTo(request))
 				Expect(dexcom[1]).To(BeComparableTo(request))
+			})
+
+			It("adds a any provider connection request without requiring DataSources", func() {
+				now := time.Now().UTC().Truncate(time.Millisecond)
+				request := patients.ConnectionRequest{
+					ProviderName:   patients.GenericDataSourceProviderName,
+					CreatedTime:    now,
+					ExpirationTime: now.Add(patients.PendingDataSourceExpirationDuration),
+				}
+
+				err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient).ToNot(BeNil())
+				Expect(patient.ProviderConnectionRequests).To(HaveKey("any"))
+
+				generic := patient.ProviderConnectionRequests["any"]
+				Expect(generic).To(HaveLen(1))
+				Expect(generic[0].ProviderName).To(Equal(patients.GenericDataSourceProviderName))
+				Expect(generic[0].CreatedTime).To(BeComparableTo(request.CreatedTime))
+			})
+
+			It("does not modify DataSources for any provider requests", func() {
+				now := time.Now().UTC().Truncate(time.Millisecond)
+				request := patients.ConnectionRequest{
+					ProviderName:   patients.GenericDataSourceProviderName,
+					CreatedTime:    now,
+					ExpirationTime: now.Add(patients.PendingDataSourceExpirationDuration),
+				}
+
+				err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient).ToNot(BeNil())
+
+				// DataSources should still only have the dexcom source set up in BeforeEach
+				Expect(patient.DataSources).ToNot(BeNil())
+				Expect(*patient.DataSources).To(HaveLen(1))
+				Expect((*patient.DataSources)[0].ProviderName).To(Equal(patients.DexcomDataSourceProviderName))
+			})
+
+			It("correctly adds multiple any provider requests in order", func() {
+				now1 := time.Now().UTC().Truncate(time.Millisecond)
+				request1 := patients.ConnectionRequest{
+					ProviderName:   patients.GenericDataSourceProviderName,
+					CreatedTime:    now1,
+					ExpirationTime: now1.Add(patients.PendingDataSourceExpirationDuration),
+				}
+
+				err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request1)
+				Expect(err).ToNot(HaveOccurred())
+
+				time.Sleep(time.Millisecond)
+				now2 := time.Now().UTC().Truncate(time.Millisecond)
+				request2 := patients.ConnectionRequest{
+					ProviderName:   patients.GenericDataSourceProviderName,
+					CreatedTime:    now2,
+					ExpirationTime: now2.Add(patients.PendingDataSourceExpirationDuration),
+				}
+
+				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request2)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient).ToNot(BeNil())
+				Expect(patient.ProviderConnectionRequests).To(HaveKey("any"))
+
+				generic := patient.ProviderConnectionRequests["any"]
+				Expect(generic).To(HaveLen(2))
+				// Most recent request should be first (prepended)
+				Expect(generic[0].CreatedTime).To(BeTemporally(">", generic[1].CreatedTime))
 			})
 		})
 

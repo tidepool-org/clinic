@@ -717,6 +717,7 @@ const (
 // Defines values for ProviderIdV1.
 const (
 	Abbott ProviderIdV1 = "abbott"
+	Any    ProviderIdV1 = "any"
 	Dexcom ProviderIdV1 = "dexcom"
 	Twiist ProviderIdV1 = "twiist"
 )
@@ -1727,13 +1728,15 @@ type PostalCodeV1 = string
 
 // ProviderConnectionRequestV1 defines model for providerConnectionRequest.v1.
 type ProviderConnectionRequestV1 struct {
-	CreatedTime  time.Time    `json:"createdTime"`
-	ProviderName ProviderIdV1 `json:"providerName"`
+	CreatedTime    time.Time    `json:"createdTime"`
+	ExpirationTime time.Time    `json:"expirationTime"`
+	ProviderName   ProviderIdV1 `json:"providerName"`
 }
 
 // ProviderConnectionRequestsV1 defines model for providerConnectionRequests.v1.
 type ProviderConnectionRequestsV1 struct {
 	Abbott []ProviderConnectionRequestV1 `json:"abbott"`
+	Any    []ProviderConnectionRequestV1 `json:"any"`
 	Dexcom []ProviderConnectionRequestV1 `json:"dexcom"`
 	Twiist []ProviderConnectionRequestV1 `json:"twiist"`
 }

@@ -30,9 +30,10 @@ var (
 
 	PendingDataSourceExpirationDuration = time.Hour * 24 * 30
 
-	DexcomDataSourceProviderName = "dexcom"
-	TwiistDataSourceProviderName = "twiist"
-	AbbottDataSourceProviderName = "abbott"
+	DexcomDataSourceProviderName  = "dexcom"
+	TwiistDataSourceProviderName  = "twiist"
+	AbbottDataSourceProviderName  = "abbott"
+	GenericDataSourceProviderName = "any"
 
 	DataSourceStatePending          = "pending"
 	DataSourceStatePendingReconnect = "pendingReconnect"
@@ -224,8 +225,9 @@ type ProviderConnectionRequests map[string]ConnectionRequests
 type ConnectionRequests []ConnectionRequest
 
 type ConnectionRequest struct {
-	ProviderName string    `bson:"providerName"`
-	CreatedTime  time.Time `bson:"createdTime"`
+	ProviderName   string    `bson:"providerName"`
+	CreatedTime    time.Time `bson:"createdTime"`
+	ExpirationTime time.Time `bson:"expirationTime"`
 }
 
 type SubscriptionUpdate struct {

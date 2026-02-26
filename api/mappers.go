@@ -191,9 +191,10 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		Summary:       NewSummaryDto(patient.Summary),
 		Reviews:       NewReviewsDto(patient.Reviews),
 		ConnectionRequests: &ProviderConnectionRequestsV1{
-			Abbott: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Abbott),
-			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
-			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
+			Abbott:  NewConnectionRequestDTO(patient.ProviderConnectionRequests, Abbott),
+			Dexcom:  NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
+			Any:     NewConnectionRequestDTO(patient.ProviderConnectionRequests, Any),
+			Twiist:  NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
 		},
 		Sites:          NewSitesDto(patient.Sites),
 		GlycemicRanges: NewGlycemicRangesDto(patient.GlycemicRanges),
@@ -395,8 +396,9 @@ func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provi
 	result := make([]ProviderConnectionRequestV1, len(requestsForProvider))
 	for i, request := range requestsForProvider {
 		result[i] = ProviderConnectionRequestV1{
-			CreatedTime:  request.CreatedTime,
-			ProviderName: ProviderId(request.ProviderName),
+			CreatedTime:    request.CreatedTime,
+			ExpirationTime: request.ExpirationTime,
+			ProviderName:   ProviderId(request.ProviderName),
 		}
 	}
 	return result
@@ -1915,6 +1917,8 @@ func NewDataProvider(providerId ProviderId) (string, error) {
 		return patients.TwiistDataSourceProviderName, nil
 	case Abbott:
 		return patients.AbbottDataSourceProviderName, nil
+	case Any:
+		return patients.GenericDataSourceProviderName, nil
 	default:
 		return "", fmt.Errorf("%w: invalid provider id: %s", errors.BadRequest, string(providerId))
 	}
