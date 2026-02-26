@@ -1,0 +1,7 @@
+{
+  "restrictions": [
+    {
+      "emailDomain": "example.com"
+    }
+  ]
+}
