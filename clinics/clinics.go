@@ -219,7 +219,7 @@ type FlowsheetSettings struct {
 }
 
 type NoteSettings struct {
-	IncludeGMI bool `bson:"IncludeGmi,omitempty"`
+	IncludeGmi bool `bson:"IncludeGmi,omitempty"`
 }
 
 type PatientProviderCount struct {
