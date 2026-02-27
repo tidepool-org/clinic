@@ -175,6 +175,7 @@ type EHRSettings struct {
 	ScheduledReports ScheduledReports   `bson:"scheduledReports"`
 	Tags             TagsSettings       `bson:"tags"`
 	Flowsheets       FlowsheetSettings  `bson:"flowsheets"`
+	Notes            NoteSettings       `bson:"notes"`
 }
 
 func (e *EHRSettings) GetMrnIDType() string {
@@ -215,6 +216,10 @@ type TagsSettings struct {
 
 type FlowsheetSettings struct {
 	Icode bool `bson:"icode,omitempty"`
+}
+
+type NoteSettings struct {
+	IncludeGmi bool `bson:"IncludeGmi,omitempty"`
 }
 
 type PatientProviderCount struct {
