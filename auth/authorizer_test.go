@@ -144,6 +144,32 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
+		It("it allows ORCA to update a clinician", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "12345"},
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "orca",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("it allows ORCA to delete a clinician", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "clinicians", "12345"},
+				"method": "DELETE",
+				"auth": map[string]interface{}{
+					"subjectId":    "orca",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
 		It("allow clinic admins to delete patients of a clinic", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
@@ -1199,12 +1225,11 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-
 	It("it doesn't allow clinic admins to merge clinics", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},
 			"method": "POST",
-			"auth": clinicAdmin,
+			"auth":   clinicAdmin,
 		}
 		err := authorizer.EvaluatePolicy(context.Background(), input)
 		Expect(err).To(Equal(auth.ErrUnauthorized))
