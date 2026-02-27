@@ -280,6 +280,16 @@ allow {
   clinician_has_write_access
 }
 
+# Allow backend service to update or delete a clinician
+# PUT /v1/clinics/:clinicId/clinicians/:clinicianId
+# DELETE /v1/clinics/:clinicId/clinicians/:clinicianId
+allow {
+  allowed_methods := {"PUT", "DELETE"}
+  allowed_methods[input.method]
+  input.path = ["v1", "clinics", _, "clinicians", _]
+  is_backend_service
+}
+
 # Allow currently authenticated clinician to remove themselves from the clinic
 # DELETE /v1/clinics/:clinicId/clinicians/:clinicianId
 allow {
