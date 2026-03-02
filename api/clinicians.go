@@ -260,6 +260,10 @@ func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page st
 		clinicIds = append(clinicIds, clinician.ClinicId.Hex())
 	}
 
+	// if len(clinicIds) == 0 {
+	// 	return ec.JSON(http.StatusOK, ClinicianClinicRelationshipsV1{})
+	// }
+
 	clinicList, err := h.Clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
 	if err != nil {
 		return err

@@ -3,6 +3,7 @@ package clinicians
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 	"time"
 
@@ -127,4 +128,24 @@ type Filter struct {
 	Role             *string
 	CreatedTimeStart *time.Time
 	CreatedTimeEnd   *time.Time
+}
+
+func (f Filter) LogValue() slog.Value {
+	attrs := []slog.Attr{}
+	if f.ClinicId != nil {
+		attrs = append(attrs, slog.String("ClinicId", *f.ClinicId))
+	}
+	if f.UserId != nil {
+		attrs = append(attrs, slog.String("UserId", *f.UserId))
+	}
+	if f.Search != nil {
+		attrs = append(attrs, slog.String("Search", *f.Search))
+	}
+	if f.Email != nil {
+		attrs = append(attrs, slog.String("Email", *f.Email))
+	}
+	if f.Role != nil {
+		attrs = append(attrs, slog.String("Role", *f.Role))
+	}
+	return slog.GroupValue(attrs...)
 }

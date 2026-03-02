@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -89,6 +90,13 @@ func (r *repository) Get(ctx context.Context, id string) (*clinics.Clinic, error
 
 func (r *repository) annotateClinics(ctx context.Context, match bson.M) (
 	[]*clinics.Clinic, error) {
+
+	defer func(start time.Time, b []byte) {
+		r.logger.Debugw("annotated clinics",
+			"match", match,
+			"duration", time.Since(start),
+			"stack", string(b))
+	}(time.Now(), debug.Stack())
 
 	pipeline := bson.A{
 		bson.M{"$match": match},
@@ -334,12 +342,15 @@ func (r *repository) List(ctx context.Context, filter *clinics.Filter, paginatio
 	if err := cursor.All(ctx, &clinics); err != nil {
 		return nil, fmt.Errorf("error decoding clinics list: %w", err)
 	}
+	if len(clinics) == 0 {
+		r.logger.Debugw("annotated clinics", "len(clinics)", len(clinics))
+		return clinics, nil
+	}
 	clinicIDs := []primitive.ObjectID{}
 	for _, clinic := range clinics {
 		clinicIDs = append(clinicIDs, *clinic.Id)
 	}
 	match := bson.M{"_id": bson.M{"$in": clinicIDs}}
-
 	return r.annotateClinics(ctx, match)
 }
 
