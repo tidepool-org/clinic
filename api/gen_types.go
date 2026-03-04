@@ -1439,7 +1439,7 @@ type EhrSettingsV1 struct {
 	Enabled        bool                   `json:"enabled"`
 	Flowsheets     EhrFlowsheetSettingsV1 `json:"flowsheets"`
 	MrnIdType      string                 `json:"mrnIdType"`
-	Notes          EhrNoteSettingsV1      `json:"notes"`
+	Notes          EhrNoteSettingsV1      `json:"notes,omitempty"`
 	ProcedureCodes EhrProceduresV1        `json:"procedureCodes"`
 	Provider       EhrSettingsV1Provider  `json:"provider"`
 

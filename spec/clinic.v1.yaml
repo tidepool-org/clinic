@@ -5377,7 +5377,9 @@ components:
         flowsheets:
           $ref: '#/components/schemas/ehrFlowsheetSettings.v1'
         notes:
-          $ref: '#/components/schemas/ehrNoteSettings.v1'
+          x-go-type-skip-optional-pointer: true
+          allOf:
+            - $ref: '#/components/schemas/ehrNoteSettings.v1'
       required:
         - enabled
         - sourceId
@@ -5387,7 +5389,6 @@ components:
         - scheduledReports
         - tags
         - flowsheets
-        - notes
     mrnSettings.v1:
       title: MRN Settings
       x-stoplight:
