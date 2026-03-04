@@ -1,0 +1,8 @@
+{
+  "hardLimit": {
+    "plan": 250
+  },
+  "softLimit": {
+    "plan": 200
+  }
+}
