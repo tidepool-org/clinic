@@ -5344,7 +5344,7 @@ components:
       title: Note Settings
       type: object
       properties:
-        includeGmi:
+        includeGMI:
           type: boolean
           description: If true, include GMI in the notes.
           default: false
