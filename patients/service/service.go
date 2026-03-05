@@ -194,8 +194,22 @@ func (s *service) UpdateEmail(ctx context.Context, userId string, email *string)
 func (s *service) Remove(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error {
 	s.logger.Infow("deleting patient from clinic", "userId", userId, "clinicId", clinicId)
 	_, err := store.WithTransaction(ctx, s.dbClient, func(sessionCtx mongo.SessionContext) (interface{}, error) {
-		err := s.patientsRepo.Remove(sessionCtx, clinicId, userId, metadata)
-		return nil, err
+		patient, err := s.patientsRepo.Get(ctx, clinicId, userId)
+		if err != nil && !errors.Is(err, clinics.ErrNotFound) {
+			return nil, err
+		}
+		if patient == nil {
+			return nil, nil
+		}
+		if !patient.IsCustodial() {
+			err := s.patientsRepo.Remove(sessionCtx, clinicId, userId, metadata)
+			return nil, err
+		} else {
+			if err := s.custodialService.DeleteAccount(sessionCtx, clinicId, userId, metadata); err != nil {
+				return nil, err
+			}
+			return nil, nil
+		}
 	})
 	if err != nil {
 		return err

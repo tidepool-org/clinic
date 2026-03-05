@@ -19,6 +19,7 @@ var UserServiceModule = fx.Provide(
 	shorelineProvider,
 	gatekeeperProvider,
 	seagullProvider,
+	dataProvider,
 	NewUserService,
 )
 
@@ -26,6 +27,7 @@ var UserServiceModule = fx.Provide(
 
 type UserService interface {
 	CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error)
+	DeleteUserAccount(ctx context.Context, userId string) error
 	GetUser(userId string) (*shoreline.UserData, error)
 	GetUserProfile(ctx context.Context, userId string) (*Profile, error)
 	UpdateCustodialAccount(ctx context.Context, patient Patient) error
@@ -95,6 +97,18 @@ func (s *userService) GetUser(userId string) (*shoreline.UserData, error) {
 		return nil, err
 	}
 	return user, nil
+
+}
+
+func (s *userService) DeleteUserAccount(ctx context.Context, userID string) error {
+	if err := s.shorelineClient.DeleteUser(userID, s.shorelineClient.TokenProvide()); err != nil {
+		var e *status.StatusError
+		if errors.As(err, &e) && e.Code == http.StatusNotFound {
+			return clinicErrs.NotFound
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *userService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *Patient) error {
