@@ -1,0 +1,9 @@
+{
+  "fullName": "Metadata Patient",
+  "birthDate": "2000-01-01",
+  "mrn": "META000001",
+  "email": "redox@tidepool.org",
+  "creationMetadata": {
+    "integration": "redox"
+  }
+}
