@@ -101,7 +101,9 @@ func (h *Handler) CreatePatientAccount(ec echo.Context, clinicId ClinicId) error
 	patient.ClinicId = &clinicObjId
 	patient.Permissions = &patients.CustodialAccountPermissions
 
-	if !authData.ServerAccess {
+	if authData.ServerAccess {
+		patient.CreationMetadata = NewCreationMetadata(dto.CreationMetadata)
+	} else {
 		patient.InvitedBy = &authData.SubjectId
 	}
 

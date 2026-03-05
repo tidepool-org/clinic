@@ -217,7 +217,39 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		dto.DiagnosisType = NewDiagnosisTypeDto(string(*patient.DiagnosisType))
 	}
 
+	if patient.CreationMetadata != nil {
+		dto.CreationMetadata = NewCreationMetadataDto(patient.CreationMetadata)
+	}
+
 	return dto
+}
+
+func NewCreationMetadataDto(meta *patients.CreationMetadata) *PatientCreationMetadataV1 {
+	if meta == nil {
+		return nil
+	}
+	dto := &PatientCreationMetadataV1{}
+	if meta.Integration != "" {
+		integration := PatientCreationMetadataV1Integration(meta.Integration)
+		dto.Integration = &integration
+	}
+	return dto
+}
+
+func NewCreationMetadata(dto *PatientCreationMetadataV1) *patients.CreationMetadata {
+	if dto == nil {
+		return nil
+	}
+	meta := &patients.CreationMetadata{}
+	if dto.Integration != nil {
+		switch *dto.Integration {
+		case PatientCreationMetadataV1IntegrationRedox:
+			meta.Integration = patients.IntegrationRedox
+		case PatientCreationMetadataV1IntegrationXealth:
+			meta.Integration = patients.IntegrationXealth
+		}
+	}
+	return meta
 }
 
 func NewDiagnosisTypeDto(diagnosisType string) *DiagnosisTypeV1 {

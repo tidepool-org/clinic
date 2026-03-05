@@ -123,9 +123,21 @@ type Patient struct {
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
 	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
 	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
+	CreationMetadata           *CreationMetadata          `bson:"creationMetadata,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+}
+
+type Integration string
+
+const (
+	IntegrationRedox  Integration = "redox"
+	IntegrationXealth Integration = "xealth"
+)
+
+type CreationMetadata struct {
+	Integration Integration `bson:"integration,omitempty"`
 }
 
 type DiagnosisType string

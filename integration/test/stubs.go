@@ -158,6 +158,8 @@ func ShorelineStub() *httptest.Server {
 			}
 		} else if r.Method == http.MethodPost && strings.HasSuffix(r.RequestURI, "/serverlogin") {
 			w.Header().Set("x-tidepool-session-token", "server")
+		} else if r.Method == http.MethodPut && strings.HasPrefix(r.RequestURI, "/user/") {
+			// Handle custodial user updates
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
