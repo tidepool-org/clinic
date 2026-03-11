@@ -1418,7 +1418,7 @@ type EhrMatchResponseV1 struct {
 // EhrNoteSettingsV1 defines model for ehrNoteSettings.v1.
 type EhrNoteSettingsV1 struct {
 	// IncludeGMI If true, include GMI in the notes.
-	IncludeGMI bool `json:"includeGMI,omitempty"`
+	IncludeGMI bool `json:"includeGMI,omitzero"`
 }
 
 // EhrProceduresV1 defines model for ehrProcedures.v1.
@@ -1439,7 +1439,7 @@ type EhrSettingsV1 struct {
 	Enabled        bool                   `json:"enabled"`
 	Flowsheets     EhrFlowsheetSettingsV1 `json:"flowsheets"`
 	MrnIdType      string                 `json:"mrnIdType"`
-	Notes          EhrNoteSettingsV1      `json:"notes,omitempty"`
+	Notes          EhrNoteSettingsV1      `json:"notes,omitzero"`
 	ProcedureCodes EhrProceduresV1        `json:"procedureCodes"`
 	Provider       EhrSettingsV1Provider  `json:"provider"`
 

@@ -5338,6 +5338,8 @@ components:
           description: If true, include GMI in the notes.
           default: false
           x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          x-omitzero: true
     ehrSettings.v1:
       title: EHR Settings
       x-stoplight:
@@ -5378,6 +5380,8 @@ components:
           $ref: '#/components/schemas/ehrFlowsheetSettings.v1'
         notes:
           x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          x-omitzero: true
           allOf:
             - $ref: '#/components/schemas/ehrNoteSettings.v1'
       required:
