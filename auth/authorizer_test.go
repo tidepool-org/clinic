@@ -1212,6 +1212,19 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	It("allows backend services to send a provider connection request", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "connect", "dexcom"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinic-worker",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
 	It("it allows orca to merge clinics", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},

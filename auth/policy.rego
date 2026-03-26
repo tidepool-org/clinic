@@ -402,6 +402,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow backend services to send a provider connection request
+# POST /v1/clinics/:clinicId/patients/:patientId/connect/:provider
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "connect", _]
+  is_backend_service
+}
+
 # Allow currently authenticated clinician to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
