@@ -446,6 +446,11 @@ func NewPatient(dto PatientV1) patients.Patient {
 				newDataSource.ExpirationTime = &expirationTime
 			}
 
+			if d.LatestDataTime != nil {
+				latestDataTime, _ := time.Parse(time.RFC3339Nano, string(*d.LatestDataTime))
+				newDataSource.LatestDataTime = &latestDataTime
+			}
+
 			dataSources = append(dataSources, newDataSource)
 		}
 		patient.DataSources = &dataSources
@@ -772,6 +777,11 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSourceV
 			if d.ExpirationTime != nil {
 				expirationTime := DatetimeV1(d.ExpirationTime.Format(time.RFC3339Nano))
 				newDataSource.ExpirationTime = &expirationTime
+			}
+
+			if d.LatestDataTime != nil {
+				latestDataTime := DatetimeV1(d.LatestDataTime.Format(time.RFC3339Nano))
+				newDataSource.LatestDataTime = &latestDataTime
 			}
 
 			dtos = append(dtos, newDataSource)

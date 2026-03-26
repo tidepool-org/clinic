@@ -358,6 +358,7 @@ type DataSource struct {
 	ExpirationTime *time.Time          `bson:"expirationTime,omitempty"`
 	ProviderName   string              `bson:"providerName"`
 	State          string              `bson:"state"`
+	LatestDataTime *time.Time          `bson:"latestDataTime,omitempty"`
 }
 
 type TideReportParams struct {
