@@ -3758,6 +3758,9 @@ components:
           $ref: '#/components/schemas/datetime.v1'
         expirationTime:
           $ref: '#/components/schemas/datetime.v1'
+        latestDataTime:
+          $ref: '#/components/schemas/datetime.v1'
+          title: Time of the latest data point from this source
       required:
         - state
         - providerName
