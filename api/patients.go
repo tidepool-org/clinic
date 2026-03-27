@@ -503,8 +503,11 @@ func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId 
 	ctx := ec.Request().Context()
 
 	authData := auth.GetAuthData(ctx)
-	if err := authData.AssertAuthenticatedUser(); err != nil {
-		return err
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
 	}
 
 	provider, err := NewDataProvider(providerId)
