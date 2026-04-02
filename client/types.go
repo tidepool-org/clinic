@@ -683,8 +683,8 @@ const (
 
 // Defines values for EhrSettingsV1Provider.
 const (
-	Redox  EhrSettingsV1Provider = "redox"
-	Xealth EhrSettingsV1Provider = "xealth"
+	EhrSettingsV1ProviderRedox  EhrSettingsV1Provider = "redox"
+	EhrSettingsV1ProviderXealth EhrSettingsV1Provider = "xealth"
 )
 
 // Defines values for GlycemicRangesV1Type.
@@ -712,6 +712,12 @@ const (
 	COMPLETED MigrationStatusV1 = "COMPLETED"
 	PENDING   MigrationStatusV1 = "PENDING"
 	RUNNING   MigrationStatusV1 = "RUNNING"
+)
+
+// Defines values for PatientCreationMetadataV1Integration.
+const (
+	PatientCreationMetadataV1IntegrationRedox  PatientCreationMetadataV1Integration = "redox"
+	PatientCreationMetadataV1IntegrationXealth PatientCreationMetadataV1Integration = "xealth"
 )
 
 // Defines values for ProviderIdV1.
@@ -1310,9 +1316,10 @@ type CountryV1 = string
 
 // CreatePatientV1 defines model for createPatient.v1.
 type CreatePatientV1 struct {
-	AttestationSubmitted *bool               `json:"attestationSubmitted,omitempty"`
-	BirthDate            *openapi_types.Date `json:"birthDate,omitempty"`
-	DiagnosisType        *DiagnosisTypeV1    `json:"diagnosisType,omitempty"`
+	AttestationSubmitted *bool                      `json:"attestationSubmitted,omitempty"`
+	BirthDate            *openapi_types.Date        `json:"birthDate,omitempty"`
+	CreationMetadata     *PatientCreationMetadataV1 `json:"creationMetadata,omitempty"`
+	DiagnosisType        *DiagnosisTypeV1           `json:"diagnosisType,omitempty"`
 
 	// FullName The full name of the patient
 	FullName       *string           `json:"fullName,omitempty"`
@@ -1581,6 +1588,7 @@ type PatientV1 struct {
 	BirthDate            openapi_types.Date            `json:"birthDate"`
 	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
 	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
+	CreationMetadata     *PatientCreationMetadataV1    `json:"creationMetadata,omitempty"`
 	DataSources          *[]DataSourceV1               `json:"dataSources"`
 	DiagnosisType        *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
 	Email                *string                       `json:"email,omitempty"`
@@ -1655,6 +1663,14 @@ type PatientCountSettingsV1 struct {
 	SoftLimit *PatientCountLimitV1 `json:"softLimit,omitempty"`
 }
 
+// PatientCreationMetadataV1 defines model for patientCreationMetadata.v1.
+type PatientCreationMetadataV1 struct {
+	Integration *PatientCreationMetadataV1Integration `json:"integration,omitempty"`
+}
+
+// PatientCreationMetadataV1Integration defines model for PatientCreationMetadataV1.Integration.
+type PatientCreationMetadataV1Integration string
+
 // PatientPermissionsV1 defines model for patientPermissions.v1.
 type PatientPermissionsV1 struct {
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
@@ -1698,7 +1714,8 @@ type PatientTagV1 struct {
 	Id *ObjectidV1 `json:"id,omitempty"`
 
 	// Name The tag display name
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	NumPatients int    `json:"numPatients,omitempty,omitzero"`
 }
 
 // PatientTagIdsV1 defines model for patientTagIds.v1.
@@ -1768,7 +1785,8 @@ type SiteV1 struct {
 	Id SiteIdV1 `json:"id"`
 
 	// Name The site's name.
-	Name SiteNameV1 `json:"name"`
+	Name        SiteNameV1 `json:"name"`
+	NumPatients int        `json:"numPatients,omitempty,omitzero"`
 }
 
 // SiteByIdV1 A clinic's physical or logical location—id only.
