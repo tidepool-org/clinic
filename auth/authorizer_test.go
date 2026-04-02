@@ -1212,6 +1212,71 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	It("allows backend services to send a provider connection request", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "connect", "dexcom"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinic-worker",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("prevents unauthenticated requests from sending a provider connection request", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "connect", "dexcom"},
+			"method": "POST",
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("allows a clinician with read access to send a provider connection request", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "connect", "dexcom"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinician-user-id",
+				"serverAccess": false,
+			},
+			"clinician": clinicMember,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("prevents a clinician without read access from sending a provider connection request", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "connect", "dexcom"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinician-user-id",
+				"serverAccess": false,
+			},
+			"clinician": map[string]interface{}{
+				"roles": []string{},
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("prevents a patient from sending a provider connection request for themselves", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "connect", "dexcom"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
 	It("it allows orca to merge clinics", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},
