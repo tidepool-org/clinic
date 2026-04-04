@@ -28,6 +28,7 @@ import (
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/outbox"
 	"github.com/tidepool-org/clinic/patients"
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsService "github.com/tidepool-org/clinic/patients/service"
@@ -82,7 +83,10 @@ var _ = Describe("Clinics Manager", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(clinicsSvc).ToNot(BeNil())
 
-		patientsSvc, err = patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, lgr, database.Client())
+		outboxRepo, err := outbox.NewRepository(database, lgr, lifecycle)
+		Expect(err).ToNot(HaveOccurred())
+
+		patientsSvc, err = patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, outboxRepo, nil, lgr, database.Client())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsSvc).ToNot(BeNil())
 
@@ -658,7 +662,11 @@ func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *c
 	if err != nil {
 		t.Fatalf("failed to create clinicians repo: %s", err)
 	}
-	patientsSvc, err := patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, lgr, db.Client())
+	outboxRepo, err := outbox.NewRepository(db, lgr, lifecycle)
+	if err != nil {
+		t.Fatalf("failed to create outbox repo: %s", err)
+	}
+	patientsSvc, err := patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, outboxRepo, nil, lgr, db.Client())
 	if err != nil {
 		t.Fatalf("failed to create patients service: %s", err)
 	}

@@ -14,6 +14,7 @@ import (
 	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/outbox"
 	"github.com/tidepool-org/clinic/patients"
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsService "github.com/tidepool-org/clinic/patients/service"
@@ -54,7 +55,10 @@ var _ = Describe("Patient Sites", func() {
 			clinic, err = clinicsRepo.Create(ctx, randomClinic)
 			Expect(err).To(Succeed())
 
-			patientsSvc, err = patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, logger,
+			outboxRepo, err := outbox.NewRepository(database, logger, lifecycle)
+			Expect(err).To(Succeed())
+
+			patientsSvc, err = patientsService.NewService(cfg, patientsRepo, clinicsSvc, nil, outboxRepo, nil, logger,
 				database.Client())
 			Expect(err).To(Succeed())
 			randomPatient := patientsTest.RandomPatient()

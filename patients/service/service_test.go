@@ -19,6 +19,7 @@ import (
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
+	outboxTest "github.com/tidepool-org/clinic/outbox/test"
 	"github.com/tidepool-org/clinic/patients"
 	patientsService "github.com/tidepool-org/clinic/patients/service"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
@@ -26,6 +27,7 @@ import (
 	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	clinicStoreTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
+	"github.com/tidepool-org/go-common/clients/shoreline"
 )
 
 func Ptr[T any](value T) *T {
@@ -39,28 +41,38 @@ var _ = Describe("Patients Service", func() {
 	var service patients.Service
 	var clinicsService *clinicsTest.MockService
 	var repo *patientsTest.MockRepository
+	var outboxRepo *outboxTest.MockRepository
+	var userService *patientsTest.MockUserService
 	var repoCtrl *gomock.Controller
 	var clinicsCtrl *gomock.Controller
+	var outboxCtrl *gomock.Controller
+	var userCtrl *gomock.Controller
 
 	BeforeEach(func() {
 		cfg = &config.Config{ClinicDemoPatientUserId: DemoPatientId}
 
 		repoCtrl = gomock.NewController(GinkgoT())
 		clinicsCtrl = gomock.NewController(GinkgoT())
+		outboxCtrl = gomock.NewController(GinkgoT())
+		userCtrl = gomock.NewController(GinkgoT())
 
 		repo = patientsTest.NewMockRepository(repoCtrl)
 		clinicsService = clinicsTest.NewMockService(clinicsCtrl)
+		outboxRepo = outboxTest.NewMockRepository(outboxCtrl)
+		userService = patientsTest.NewMockUserService(userCtrl)
 
 		client := clinicStoreTest.GetTestDatabase().Client()
 
 		var err error
-		service, err = patientsService.NewService(cfg, repo, clinicsService, nil, zap.NewNop().Sugar(), client)
+		service, err = patientsService.NewService(cfg, repo, clinicsService, nil, outboxRepo, userService, zap.NewNop().Sugar(), client)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
 		repoCtrl.Finish()
 		clinicsCtrl.Finish()
+		outboxCtrl.Finish()
+		userCtrl.Finish()
 	})
 
 	Describe("Create", func() {
@@ -838,6 +850,82 @@ var _ = Describe("Patients Service", func() {
 
 			err = service.Remove(context.Background(), clinicId, userId, deletions.Metadata{})
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe("AddProviderConnectionRequest", func() {
+		var clinicId string
+		var clinicObjId primitive.ObjectID
+		var userId string
+		var patient *patients.Patient
+		var clinic *clinics.Clinic
+
+		BeforeEach(func() {
+			clinicObjId, _ = primitive.ObjectIDFromHex("60d1dc0eac5285751add8f82")
+			clinicId = clinicObjId.Hex()
+			userId = "user123"
+
+			clinicName := "Test Clinic"
+			clinic = &clinics.Clinic{
+				Id:   &clinicObjId,
+				Name: &clinicName,
+			}
+
+			fullName := "John Doe"
+			email := "patient@example.com"
+			patient = &patients.Patient{
+				ClinicId: &clinicObjId,
+				UserId:   &userId,
+				FullName: &fullName,
+				Email:    &email,
+			}
+		})
+
+		It("calls outbox Create for generic requests", func() {
+			now := time.Now()
+			request := patients.ConnectionRequest{
+				ProviderName:   patients.GenericDataSourceProviderName,
+				CreatedTime:    now,
+				ExpirationTime: now.Add(patients.PendingDataSourceExpirationDuration),
+			}
+
+			repo.EXPECT().
+				Get(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId)).
+				Return(patient, nil)
+			clinicsService.EXPECT().
+				Get(gomock.Any(), gomock.Eq(clinicId)).
+				Return(clinic, nil)
+			userService.EXPECT().
+				GetUser(gomock.Eq(userId)).
+				Return(&shoreline.UserData{UserID: userId, Username: "user@example.com"}, nil)
+			repo.EXPECT().
+				AddProviderConnectionRequest(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Eq(request)).
+				Return(nil)
+			outboxRepo.EXPECT().
+				Create(gomock.Any(), gomock.Any()).
+				Return(nil)
+
+			err := service.AddProviderConnectionRequest(context.Background(), clinicId, userId, request)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("does not call outbox Create for non-generic requests", func() {
+			now := time.Now()
+			request := patients.ConnectionRequest{
+				ProviderName:   patients.DexcomDataSourceProviderName,
+				CreatedTime:    now,
+				ExpirationTime: now.Add(patients.PendingDataSourceExpirationDuration),
+			}
+
+			repo.EXPECT().
+				AddProviderConnectionRequest(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Eq(request)).
+				Return(nil)
+			clinicsService.EXPECT().
+				RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
+				Return(nil)
+
+			err := service.AddProviderConnectionRequest(context.Background(), clinicId, userId, request)
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })

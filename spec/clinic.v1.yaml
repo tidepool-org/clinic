@@ -4812,6 +4812,7 @@ components:
         - dexcom
         - twiist
         - abbott
+        - any
     providerConnectionRequest.v1:
       title: Provider Connection Request
       x-stoplight:
@@ -4823,12 +4824,18 @@ components:
           x-stoplight:
             id: efcvyea5slw36
           format: date-time
+        expirationTime:
+          type: string
+          x-stoplight:
+            id: exp1r4t10nt1m
+          format: date-time
         providerName:
           $ref: '#/components/schemas/providerId.v1'
           x-stoplight:
             id: ej94kmuykpg1k
       required:
         - createdTime
+        - expirationTime
         - providerName
     providerConnectionRequests.v1:
       title: providerconnectionrequests.v1
@@ -4861,10 +4868,19 @@ components:
             $ref: '#/components/schemas/providerConnectionRequest.v1'
             x-stoplight:
               id: 47ez7wiccxdut
+        any:
+          type: array
+          x-stoplight:
+            id: g3n3r1cprov1d
+          items:
+            $ref: '#/components/schemas/providerConnectionRequest.v1'
+            x-stoplight:
+              id: g3n3r1cr3q1t
       required:
         - twiist
         - dexcom
         - abbott
+        - any
     glycemicRangesThresholdUpperBound.v1:
       type: object
       properties:
