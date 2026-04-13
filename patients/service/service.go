@@ -523,3 +523,7 @@ func deactiveAllSubscriptions(subscriptions patients.EHRSubscriptions) patients.
 	}
 	return subscriptions
 }
+
+func (s *service) UpdateDeviceIssues(ctx context.Context) error {
+	return s.patientsRepo.UpdateDeviceIssues(ctx)
+}

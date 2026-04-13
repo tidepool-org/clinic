@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"slices"
 	"strings"
@@ -2138,4 +2139,85 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 
 func strp(s string) *string {
 	return &s
+}
+
+const staleDataThreshold = 48 * time.Hour
+
+func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
+	staleDataPatients, err := r.patientsWithStaleData(ctx)
+	if err != nil {
+		r.logger.Errorw("finding patients failed", "error", err)
+		return err
+	}
+
+	r.logger.Info("patients with stale data", "num", len(staleDataPatients))
+
+	models := []mongo.WriteModel{}
+	for _, patient := range staleDataPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if src.State != "connected" {
+				continue
+			}
+			if src.LatestDataTime.After(time.Now().Add(-staleDataThreshold)) {
+				continue
+			}
+			if newest != nil && src.LatestDataTime.Before(*newest.LatestDataTime) {
+				continue
+			}
+			newest = &src
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.staleData": bson.M{
+					"effectiveTime": newest.LatestDataTime.Add(staleDataThreshold),
+					"providerId":    newest.ProviderName,
+				},
+			},
+		}
+		models = append(models, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+	if len(models) == 0 {
+		r.logger.Info("no stale data device issues found")
+		return nil
+	}
+
+	resp, err := r.collection.BulkWrite(ctx, models)
+	if err != nil {
+		r.logger.Errorw("bulk write failed", "error", err)
+		return fmt.Errorf("bulk writing patien device issues: %s", err)
+	}
+	slog.Warn("patients modified via UpdateDeviceIssues", "num", resp.ModifiedCount, "models", models[0])
+
+	return nil
+}
+
+func (r *repository) patientsWithStaleData(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	filter := bson.M{
+		"dataSources": bson.M{
+			"$elemMatch": bson.M{
+				"latestDataTime": bson.M{"$lt": time.Now().Add(-48 * time.Hour)},
+				"state":          "connected",
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with stale data: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	// TODO consider iterating through the cursor to minimize mem usage if needed.
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with stale data: %s", err)
+	}
+	return patients, nil
 }

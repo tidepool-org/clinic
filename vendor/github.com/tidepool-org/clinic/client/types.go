@@ -1355,6 +1355,18 @@ type DataSourcesV1 = []DataSourceV1
 // DatetimeV1 [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 type DatetimeV1 = string
 
+// DeviceIssuesV1 defines model for deviceIssues.v1.
+type DeviceIssuesV1 struct {
+	StaleData DeviceIssuesStaleDataV1 `json:"staleData,omitempty,omitzero"`
+}
+
+// DeviceIssuesStaleDataV1 defines model for .
+type DeviceIssuesStaleDataV1 struct {
+	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	EffectiveTime DatetimeV1   `json:"effectiveTime"`
+	ProviderId    ProviderIdV1 `json:"providerId"`
+}
+
 // DiagnosisTypeV1 defines model for diagnosisType.v1.
 type DiagnosisTypeV1 string
 
@@ -1585,6 +1597,7 @@ type PatientV1 struct {
 	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
 	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
 	DataSources          *[]DataSourceV1               `json:"dataSources"`
+	DeviceIssues         *DeviceIssuesV1               `json:"deviceIssues,omitempty"`
 	DiagnosisType        *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
 	Email                *string                       `json:"email,omitempty"`
 
@@ -2463,6 +2476,9 @@ type ListPatientsParams struct {
 	// the ADA standard ranges (e.g. as used by the TIDE report)
 	// should be omitted.
 	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
+
+	// DeviceIssues Excludes patients not experiencing devices issues.
+	DeviceIssues *bool `form:"deviceIssues,omitempty" json:"deviceIssues,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.

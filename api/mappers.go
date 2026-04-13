@@ -17,6 +17,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
+	"log/slog"
 )
 
 func NewClinicWithDefaults(c ClinicV1) *clinics.Clinic {
@@ -199,6 +200,7 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		},
 		Sites:          NewSitesDto(patient.Sites),
 		GlycemicRanges: NewGlycemicRangesDto(patient.GlycemicRanges),
+		DeviceIssues:   NewDeviceIssuesDto(patient.DeviceIssues),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -387,6 +389,20 @@ func newGlycemicRangesCustomThresholds(thresholds []GlycemicRangesThresholdV1) (
 		})
 	}
 	return out
+}
+
+func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
+	et := deviceIssues.StaleData.EffectiveTime;
+	 slog.Info("mapping to DeviceIssuesV1", "deviceIssues", deviceIssues)
+	if et.IsZero() {
+		return nil
+	}
+	return &DeviceIssuesV1{
+		StaleData: DeviceIssuesStaleDataV1{
+			EffectiveTime: et.Format(time.RFC3339Nano),
+			ProviderId: ProviderIdV1(deviceIssues.StaleData.ProviderId),
+		},
+	}
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {

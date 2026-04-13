@@ -825,3 +825,11 @@ allow {
   input.path = ["v1", "clinics", _, "patient_tags", _, "site"]
   is_backend_service
 }
+
+# Allow backend services to update device issues
+# POST /v1/device_issues
+allow {
+  input.method == "POST"
+  input.path = ["v1", "device_issues"]
+  is_backend_service
+}

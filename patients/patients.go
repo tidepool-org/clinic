@@ -73,6 +73,7 @@ type Service interface {
 	DeleteSites(ctx context.Context, clinicId string, siteId string) error
 	MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error
 	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
+	UpdateDeviceIssues(ctx context.Context) error
 }
 
 type Repository interface {
@@ -122,7 +123,25 @@ type Patient struct {
 	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
-	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+	LastRequestedDexcomConnectTime time.Time    `bson:"lastRequestedDexcomConnectTime,omitempty"`
+	DeviceIssues                   DeviceIssues `bson:"deviceIssues,omitempty"`
+}
+
+type DeviceIssues struct {
+	StaleData DeviceIssuesStaleData `bson:"staleData,omitzero"`
+}
+
+func (d DeviceIssues) IsZero() bool {
+	return d.StaleData.IsZero()
+}
+
+type DeviceIssuesStaleData struct {
+	EffectiveTime time.Time `bson:"effectiveTime"`
+	ProviderId    string    `bson:"providerId"`
+}
+
+func (d DeviceIssuesStaleData) IsZero() bool {
+	return d.EffectiveTime.IsZero() && d.ProviderId == ""
 }
 
 type DiagnosisType string
