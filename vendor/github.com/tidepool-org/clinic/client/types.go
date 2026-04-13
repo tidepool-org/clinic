@@ -1357,7 +1357,15 @@ type DatetimeV1 = string
 
 // DeviceIssuesV1 defines model for deviceIssues.v1.
 type DeviceIssuesV1 struct {
-	StaleData DeviceIssuesStaleDataV1 `json:"staleData,omitempty,omitzero"`
+	ExpiredConnectionInvitation DeviceIssuesExpiredConnectionInvitationV1 `json:"expiredConnectionInvitation,omitempty,omitzero"`
+	StaleData                   DeviceIssuesStaleDataV1                   `json:"staleData,omitempty,omitzero"`
+}
+
+// DeviceIssuesExpiredConnectionInvitationV1 defines model for .
+type DeviceIssuesExpiredConnectionInvitationV1 struct {
+	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	EffectiveTime DatetimeV1   `json:"effectiveTime"`
+	ProviderId    ProviderIdV1 `json:"providerId"`
 }
 
 // DeviceIssuesStaleDataV1 defines model for .

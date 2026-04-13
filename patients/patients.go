@@ -128,11 +128,13 @@ type Patient struct {
 }
 
 type DeviceIssues struct {
-	StaleData DeviceIssuesStaleData `bson:"staleData,omitzero"`
+	StaleData                   DeviceIssuesStaleData                   `bson:"staleData,omitzero"`
+	ExpiredConnectionInvitation DeviceIssuesExpiredConnectionInvitation `bson:"expiredConnectionInvitation,omitzero"`
 }
 
 func (d DeviceIssues) IsZero() bool {
-	return d.StaleData.IsZero()
+	return d.StaleData.IsZero() &&
+		d.ExpiredConnectionInvitation.IsZero()
 }
 
 type DeviceIssuesStaleData struct {
@@ -141,6 +143,15 @@ type DeviceIssuesStaleData struct {
 }
 
 func (d DeviceIssuesStaleData) IsZero() bool {
+	return d.EffectiveTime.IsZero() && d.ProviderId == ""
+}
+
+type DeviceIssuesExpiredConnectionInvitation struct {
+	EffectiveTime time.Time `bson:"effectiveTime"`
+	ProviderId    string    `bson:"providerId"`
+}
+
+func (d DeviceIssuesExpiredConnectionInvitation) IsZero() bool {
 	return d.EffectiveTime.IsZero() && d.ProviderId == ""
 }
 

@@ -17,7 +17,6 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
-	"log/slog"
 )
 
 func NewClinicWithDefaults(c ClinicV1) *clinics.Clinic {
@@ -392,17 +391,25 @@ func newGlycemicRangesCustomThresholds(thresholds []GlycemicRangesThresholdV1) (
 }
 
 func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
-	et := deviceIssues.StaleData.EffectiveTime;
-	 slog.Info("mapping to DeviceIssuesV1", "deviceIssues", deviceIssues)
-	if et.IsZero() {
+	if deviceIssues.IsZero() {
 		return nil
 	}
-	return &DeviceIssuesV1{
-		StaleData: DeviceIssuesStaleDataV1{
+
+	issues := &DeviceIssuesV1{}
+	if et := deviceIssues.StaleData.EffectiveTime; !et.IsZero() {
+		issues.StaleData = DeviceIssuesStaleDataV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
-			ProviderId: ProviderIdV1(deviceIssues.StaleData.ProviderId),
-		},
+			ProviderId:    ProviderIdV1(deviceIssues.StaleData.ProviderId),
+		}
 	}
+	if et := deviceIssues.ExpiredConnectionInvitation.EffectiveTime; !et.IsZero() {
+		issues.ExpiredConnectionInvitation = DeviceIssuesExpiredConnectionInvitationV1{
+			EffectiveTime: et.Format(time.RFC3339Nano),
+			ProviderId:    ProviderIdV1(deviceIssues.ExpiredConnectionInvitation.ProviderId),
+		}
+	}
+
+	return issues
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {

@@ -2144,15 +2144,13 @@ func strp(s string) *string {
 const staleDataThreshold = 48 * time.Hour
 
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
+	models := []mongo.WriteModel{}
+
 	staleDataPatients, err := r.patientsWithStaleData(ctx)
 	if err != nil {
-		r.logger.Errorw("finding patients failed", "error", err)
-		return err
+		r.logger.Errorw("unable to find patients with stale data", "error", err)
+		return err // TODO logging or erroring?
 	}
-
-	r.logger.Info("patients with stale data", "num", len(staleDataPatients))
-
-	models := []mongo.WriteModel{}
 	for _, patient := range staleDataPatients {
 		var newest *patients.DataSource
 		for _, src := range *patient.DataSources {
@@ -2166,6 +2164,11 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 				continue
 			}
 			newest = &src
+		}
+
+		if newest == nil {
+			// TODO is this an error?
+			continue
 		}
 
 		filter := bson.M{"_id": *patient.Id}
@@ -2182,17 +2185,61 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 			Update: update,
 		})
 	}
+
+	expiredPatients, err := r.patientsWithExpiredConnectionInvitations(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with expired invitations", "error", err)
+		return err // TODO logging or erroring?
+	}
+	slog.Info("patients with expired invites", "num", len(expiredPatients))
+	now := time.Now()
+	for _, patient := range expiredPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if src.State != "pending" {
+				continue
+			}
+			if src.ExpirationTime.After(now) {
+				continue
+			}
+			if newest != nil && src.ExpirationTime.Before(*newest.ExpirationTime) {
+				continue
+			}
+			newest = &src
+		}
+
+		if newest == nil {
+			// TODO is this an error?
+			slog.Info("newest expired is nil")
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.expiredConnectionInvitation": bson.M{
+					"effectiveTime": newest.ExpirationTime,
+					"providerId":    newest.ProviderName,
+				},
+			},
+		}
+		models = append(models, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
 	if len(models) == 0 {
-		r.logger.Info("no stale data device issues found")
+		slog.Info("no patient device issues found")
+		r.logger.Info("no patient device issues found")
 		return nil
 	}
+	slog.Info("found device issues", "num", len(models))
 
 	resp, err := r.collection.BulkWrite(ctx, models)
 	if err != nil {
-		r.logger.Errorw("bulk write failed", "error", err)
 		return fmt.Errorf("bulk writing patien device issues: %s", err)
 	}
-	slog.Warn("patients modified via UpdateDeviceIssues", "num", resp.ModifiedCount, "models", models[0])
+	slog.Info("patients modified via UpdateDeviceIssues", "num", resp.ModifiedCount, "models", models[0])
 
 	return nil
 }
@@ -2218,6 +2265,31 @@ func (r *repository) patientsWithStaleData(ctx context.Context) (
 	err = cur.All(ctx, &patients)
 	if err != nil {
 		return nil, fmt.Errorf("loading patients with stale data: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	filter := bson.M{
+		"dataSources": bson.M{
+			"$elemMatch": bson.M{
+				"expirationTime": bson.M{"$lt": time.Now()},
+				"state":          "pending",
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with expired invitations: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	// TODO consider iterating through the cursor to minimize mem usage if needed.
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with expired invitations: %s", err)
 	}
 	return patients, nil
 }
