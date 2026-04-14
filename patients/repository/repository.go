@@ -2151,6 +2151,48 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 		r.logger.Errorw("unable to find patients with stale data", "error", err)
 		return err // TODO logging or erroring?
 	}
+	models = slices.Concat(models, buildStaleDataModels(staleDataPatients))
+
+	expiredPatients, err := r.patientsWithExpiredConnectionInvitations(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with expired invitations", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildExpiredConnectionInvitationModels(expiredPatients))
+
+	staleInvitePatients, err := r.patientsWithStaleConnectionInvitations(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with stale invitations", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildStaleConnectionInvitationModels(staleInvitePatients))
+
+	disconnectedPatients, err := r.patientsWithDisconnectedDevices(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with disconnected devices", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildDisconnectedDeviceModels(disconnectedPatients))
+
+	if len(models) == 0 {
+		slog.Info("no patient device issues found")
+		r.logger.Info("no patient device issues found")
+		return nil
+	}
+	//slog.Info("found device issues", "num", len(models), "models", models)
+
+	_, err = r.collection.BulkWrite(ctx, models)
+	if err != nil {
+		return fmt.Errorf("bulk writing patien device issues: %s", err)
+	}
+	// slog.Info("patients modified via UpdateDeviceIssues", "num", resp.ModifiedCount,
+	// 	"models", models[0])
+
+	return nil
+}
+
+func buildStaleDataModels(staleDataPatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
 	for _, patient := range staleDataPatients {
 		var newest *patients.DataSource
 		for _, src := range *patient.DataSources {
@@ -2168,7 +2210,6 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 
 		if newest == nil {
 			// TODO is this an error?
-			r.logger.Info("newest expired is nil")
 			continue
 		}
 
@@ -2181,19 +2222,18 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 				},
 			},
 		}
-		models = append(models, &mongo.UpdateOneModel{
+		keep = append(keep, &mongo.UpdateOneModel{
 			Filter: filter,
 			Update: update,
 		})
 	}
 
-	expiredPatients, err := r.patientsWithExpiredConnectionInvitations(ctx)
-	if err != nil {
-		r.logger.Errorw("unable to find patients with expired invitations", "error", err)
-		return err // TODO logging or erroring?
-	}
-	slog.Info("patients with expired invites", "num", len(expiredPatients))
+	return keep
+}
+
+func buildExpiredConnectionInvitationModels(expiredPatients []patients.Patient) []mongo.WriteModel {
 	now := time.Now()
+	keep := []mongo.WriteModel{}
 	for _, patient := range expiredPatients {
 		var newest *patients.DataSource
 		for _, src := range *patient.DataSources {
@@ -2211,7 +2251,6 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 
 		if newest == nil {
 			// TODO is this an error?
-			r.logger.Info("newest expired is nil")
 			continue
 		}
 
@@ -2224,17 +2263,18 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 				},
 			},
 		}
-		models = append(models, &mongo.UpdateOneModel{
+		keep = append(keep, &mongo.UpdateOneModel{
 			Filter: filter,
 			Update: update,
 		})
 	}
 
-	staleInvitePatients, err := r.patientsWithStaleConnectionInvitations(ctx)
-	if err != nil {
-		r.logger.Errorw("unable to find patients with stale invitations", "error", err)
-		return err // TODO logging or erroring?
-	}
+	return keep
+}
+
+func buildStaleConnectionInvitationModels(staleInvitePatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
+	now := time.Now()
 	for _, patient := range staleInvitePatients {
 		var newest *patients.ConnectionRequest
 
@@ -2252,7 +2292,6 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 
 		if newest == nil {
 			// TODO is this an error?
-			r.logger.Info("newest expired is nil")
 			continue
 		}
 
@@ -2265,27 +2304,50 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 				},
 			},
 		}
-		models = append(models, &mongo.UpdateOneModel{
+		keep = append(keep, &mongo.UpdateOneModel{
 			Filter: filter,
 			Update: update,
 		})
 	}
 
-	if len(models) == 0 {
-		slog.Info("no patient device issues found")
-		r.logger.Info("no patient device issues found")
-		return nil
-	}
-	//slog.Info("found device issues", "num", len(models), "models", models)
+	return keep
+}
 
-	_, err = r.collection.BulkWrite(ctx, models)
-	if err != nil {
-		return fmt.Errorf("bulk writing patien device issues: %s", err)
-	}
-	// slog.Info("patients modified via UpdateDeviceIssues", "num", resp.ModifiedCount,
-	// 	"models", models[0])
+func buildDisconnectedDeviceModels(expiredPatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
+	for _, patient := range expiredPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if src.State != "disconnected" {
+				continue
+			}
+			if newest != nil && src.ModifiedTime.Before(*newest.ModifiedTime) {
+				continue
+			}
+			newest = &src
+		}
 
-	return nil
+		if newest == nil {
+			// TODO is this an error?
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.disconnected": bson.M{
+					"effectiveTime": newest.ModifiedTime,
+					"providerId":    newest.ProviderName,
+				},
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
 }
 
 func (r *repository) patientsWithStaleData(ctx context.Context) (
@@ -2372,6 +2434,30 @@ func (r *repository) patientsWithStaleConnectionInvitations(ctx context.Context)
 	err = cur.All(ctx, &patients)
 	if err != nil {
 		return nil, fmt.Errorf("loading patients with stale invitations: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) patientsWithDisconnectedDevices(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	filter := bson.M{
+		"dataSources": bson.M{
+			"$elemMatch": bson.M{
+				"state": "disconnected",
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with disconnected devices: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	// TODO consider iterating through the cursor to minimize mem usage if needed.
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with disconnected devices: %s", err)
 	}
 	return patients, nil
 }
