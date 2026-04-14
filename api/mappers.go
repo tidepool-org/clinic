@@ -408,6 +408,12 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 			ProviderId:    ProviderIdV1(deviceIssues.ExpiredConnectionInvitation.ProviderId),
 		}
 	}
+	if et := deviceIssues.StaleConnectionInvitation.EffectiveTime; !et.IsZero() {
+		issues.StaleConnectionInvitation = DeviceIssuesStaleConnectionInvitationV1{
+			EffectiveTime: et.Format(time.RFC3339Nano),
+			ProviderId:    ProviderIdV1(deviceIssues.StaleConnectionInvitation.ProviderId),
+		}
+	}
 
 	return issues
 }

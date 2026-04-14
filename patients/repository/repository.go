@@ -2168,6 +2168,7 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 
 		if newest == nil {
 			// TODO is this an error?
+			r.logger.Info("newest expired is nil")
 			continue
 		}
 
@@ -2210,7 +2211,7 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 
 		if newest == nil {
 			// TODO is this an error?
-			slog.Info("newest expired is nil")
+			r.logger.Info("newest expired is nil")
 			continue
 		}
 
@@ -2228,18 +2229,61 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 			Update: update,
 		})
 	}
+
+	staleInvitePatients, err := r.patientsWithStaleConnectionInvitations(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with stale invitations", "error", err)
+		return err // TODO logging or erroring?
+	}
+	for _, patient := range staleInvitePatients {
+		var newest *patients.ConnectionRequest
+
+		for _, reqs := range patient.ProviderConnectionRequests {
+			for _, req := range reqs {
+				if req.CreatedTime.Add(48 * time.Hour).After(now) {
+					continue
+				}
+				if newest != nil && req.CreatedTime.Before(newest.CreatedTime) {
+					continue
+				}
+				newest = &req
+			}
+		}
+
+		if newest == nil {
+			// TODO is this an error?
+			r.logger.Info("newest expired is nil")
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.staleConnectionInvitation": bson.M{
+					"effectiveTime": newest.CreatedTime.Add(48 * time.Hour),
+					"providerId":    newest.ProviderName,
+				},
+			},
+		}
+		models = append(models, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
 	if len(models) == 0 {
 		slog.Info("no patient device issues found")
 		r.logger.Info("no patient device issues found")
 		return nil
 	}
-	slog.Info("found device issues", "num", len(models))
+	//slog.Info("found device issues", "num", len(models), "models", models)
 
-	resp, err := r.collection.BulkWrite(ctx, models)
+	_, err = r.collection.BulkWrite(ctx, models)
 	if err != nil {
 		return fmt.Errorf("bulk writing patien device issues: %s", err)
 	}
-	slog.Info("patients modified via UpdateDeviceIssues", "num", resp.ModifiedCount, "models", models[0])
+	// slog.Info("patients modified via UpdateDeviceIssues", "num", resp.ModifiedCount,
+	// 	"models", models[0])
 
 	return nil
 }
@@ -2276,7 +2320,7 @@ func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Contex
 		"dataSources": bson.M{
 			"$elemMatch": bson.M{
 				"expirationTime": bson.M{"$lt": time.Now()},
-				"state":          "pending",
+				"state":          bson.M{"$in": bson.A{"pending", "pending-reconnect"}},
 			},
 		},
 	}
@@ -2290,6 +2334,44 @@ func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Contex
 	err = cur.All(ctx, &patients)
 	if err != nil {
 		return nil, fmt.Errorf("loading patients with expired invitations: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) patientsWithStaleConnectionInvitations(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	threshold := time.Now().Add(-48 * time.Hour)
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{
+				"providerConnectionRequests.abbott.createdTime": bson.M{
+					"$lt": threshold,
+				},
+			},
+			bson.M{
+				"providerConnectionRequests.dexcom.createdTime": bson.M{
+					"$lt": threshold,
+				},
+			},
+			bson.M{
+				"providerConnectionRequests.twiist.createdTime": bson.M{
+					"$lt": threshold,
+				},
+			},
+		},
+	}
+
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with stale invitations: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	// TODO consider iterating through the cursor to minimize mem usage if needed.
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with stale invitations: %s", err)
 	}
 	return patients, nil
 }

@@ -123,18 +123,21 @@ type Patient struct {
 	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
-	LastRequestedDexcomConnectTime time.Time    `bson:"lastRequestedDexcomConnectTime,omitempty"`
-	DeviceIssues                   DeviceIssues `bson:"deviceIssues,omitempty"`
+	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+
+	DeviceIssues DeviceIssues `bson:"deviceIssues,omitempty"`
 }
 
 type DeviceIssues struct {
 	StaleData                   DeviceIssuesStaleData                   `bson:"staleData,omitzero"`
 	ExpiredConnectionInvitation DeviceIssuesExpiredConnectionInvitation `bson:"expiredConnectionInvitation,omitzero"`
+	StaleConnectionInvitation   DeviceIssuesStaleConnectionInvitation   `bson:"staleConnectionInvitation,omitzero"`
 }
 
 func (d DeviceIssues) IsZero() bool {
 	return d.StaleData.IsZero() &&
-		d.ExpiredConnectionInvitation.IsZero()
+		d.ExpiredConnectionInvitation.IsZero() &&
+		d.StaleConnectionInvitation.IsZero()
 }
 
 type DeviceIssuesStaleData struct {
@@ -152,6 +155,15 @@ type DeviceIssuesExpiredConnectionInvitation struct {
 }
 
 func (d DeviceIssuesExpiredConnectionInvitation) IsZero() bool {
+	return d.EffectiveTime.IsZero() && d.ProviderId == ""
+}
+
+type DeviceIssuesStaleConnectionInvitation struct {
+	EffectiveTime time.Time `bson:"effectiveTime"`
+	ProviderId    string    `bson:"providerId"`
+}
+
+func (d DeviceIssuesStaleConnectionInvitation) IsZero() bool {
 	return d.EffectiveTime.IsZero() && d.ProviderId == ""
 }
 

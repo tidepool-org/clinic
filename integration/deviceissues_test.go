@@ -83,6 +83,32 @@ var _ = Describe("UpdateDeviceIssues", func() {
 			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
 		}
 	})
+
+	It("finds patients with stale device connection invitations", func() {
+		uploadPatientStaleDeviceConnectionInvitation(*clinic.Id, patient)
+		start := time.Now()
+
+		rec := httptest.NewRecorder()
+		req := prepareRequestWithBody(http.MethodPost, "/v1/device_issues", nil)
+		asServer(req)
+
+		server.ServeHTTP(rec, req)
+		Expect(rec.Result()).ToNot(BeNil())
+		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+		staleInvite := getPatient(*clinic.Id, *patient.Id)
+
+		Expect(staleInvite.DeviceIssues).ToNot(BeNil())
+		expirationTime := effectiveTimeFromStaleInvitationDexcom(staleInvite)
+		if expirationTime.After(start) {
+			Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
+				time.Now(), expirationTime))
+		}
+		provider := staleInvite.DeviceIssues.StaleConnectionInvitation.ProviderId
+		if provider != "dexcom" {
+			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
+		}
+	})
 })
 
 func createClinic() *client.ClinicV1 {
@@ -184,7 +210,9 @@ func uploadPatientStaleData(clinicID string, patient *client.PatientV1) {
 	}
 }
 
-func uploadPatientExpiredDeviceConnectionInvitation(clinicID string, patient *client.PatientV1) {
+func uploadPatientExpiredDeviceConnectionInvitation(clinicID string,
+	patient *client.PatientV1) {
+
 	GinkgoHelper()
 	ctx := context.Background()
 	now := time.Now()
@@ -203,6 +231,42 @@ func uploadPatientExpiredDeviceConnectionInvitation(clinicID string, patient *cl
 	updatedPatient := getPatient(clinicID, *patient.Id)
 	if updatedPatient.DataSources == nil || len(*updatedPatient.DataSources) < 1 {
 		Fail("expected a data source, got none")
+	}
+}
+
+func uploadPatientStaleDeviceConnectionInvitation(clinicID string,
+	patient *client.PatientV1) {
+
+	GinkgoHelper()
+	ctx := context.Background()
+	now := time.Now()
+	created := now.Add(-60 * time.Hour)
+	pcrs := patients.ProviderConnectionRequests{
+		"dexcom": patients.ConnectionRequests{
+			{
+				ProviderName: "dexcom",
+				CreatedTime:  created,
+			},
+		},
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicID)
+	Expect(err).To(Succeed())
+	update := patients.PatientUpdate{
+		ClinicId: clinicID,
+		UserId:   *patient.Id,
+		Patient: patients.Patient{
+			ClinicId:                   pointer.FromAny(clinicOID),
+			UserId:                     pointer.FromAny(*patient.Id),
+			ProviderConnectionRequests: pcrs,
+		},
+	}
+	_, err = patientsRepo().Update(ctx, update)
+	Expect(err).To(Succeed())
+
+	updatedPatient := getPatient(clinicID, *patient.Id)
+	if updatedPatient.ConnectionRequests == nil ||
+		len(updatedPatient.ConnectionRequests.Dexcom) < 1 {
+		Fail("expected a dexcom connection request, got none")
 	}
 }
 
@@ -251,5 +315,17 @@ func effectiveTimeFromExpiredInvitation(patient *client.PatientV1, providerId st
 		}
 	}
 	Fail(fmt.Sprintf("no data source found for providerId %q", providerId))
+	return time.Time{}
+}
+
+func effectiveTimeFromStaleInvitationDexcom(patient *client.PatientV1) time.Time {
+	GinkgoHelper()
+	for _, req := range patient.ConnectionRequests.Dexcom {
+		if req.CreatedTime.IsZero() {
+			Fail(fmt.Sprintf("expected created time to not be Zero"))
+		}
+		return req.CreatedTime
+	}
+	Fail(fmt.Sprintf("no device connection requirest found for providerId dexcom"))
 	return time.Time{}
 }
