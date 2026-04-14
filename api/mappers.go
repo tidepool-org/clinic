@@ -397,27 +397,33 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 
 	issues := &DeviceIssuesV1{}
 	if et := deviceIssues.StaleData.EffectiveTime; !et.IsZero() {
-		issues.StaleData = DeviceIssuesStaleDataV1{
+		issues.StaleData = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.StaleData.ProviderId),
 		}
 	}
 	if et := deviceIssues.ExpiredConnectionInvitation.EffectiveTime; !et.IsZero() {
-		issues.ExpiredConnectionInvitation = DeviceIssuesExpiredConnectionInvitationV1{
+		issues.ExpiredConnectionInvitation = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.ExpiredConnectionInvitation.ProviderId),
 		}
 	}
 	if et := deviceIssues.StaleConnectionInvitation.EffectiveTime; !et.IsZero() {
-		issues.StaleConnectionInvitation = DeviceIssuesStaleConnectionInvitationV1{
+		issues.StaleConnectionInvitation = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.StaleConnectionInvitation.ProviderId),
 		}
 	}
 	if et := deviceIssues.Disconnected.EffectiveTime; !et.IsZero() {
-		issues.Disconnected = DeviceIssuesDisconnectedV1{
+		issues.Disconnected = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.Disconnected.ProviderId),
+		}
+	}
+	if et := deviceIssues.Erroring.EffectiveTime; !et.IsZero() {
+		issues.Erroring = DeviceIssueV1{
+			EffectiveTime: et.Format(time.RFC3339Nano),
+			ProviderId:    ProviderIdV1(deviceIssues.Erroring.ProviderId),
 		}
 	}
 

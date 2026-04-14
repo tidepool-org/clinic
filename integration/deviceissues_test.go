@@ -135,6 +135,32 @@ var _ = Describe("UpdateDeviceIssues", func() {
 			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
 		}
 	})
+
+	It("finds patients with erroring devices", func() {
+		uploadPatientDeviceErroring(*clinic.Id, patient)
+		start := time.Now()
+
+		rec := httptest.NewRecorder()
+		req := prepareRequestWithBody(http.MethodPost, "/v1/device_issues", nil)
+		asServer(req)
+
+		server.ServeHTTP(rec, req)
+		Expect(rec.Result()).ToNot(BeNil())
+		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+		errorPatient := getPatient(*clinic.Id, *patient.Id)
+
+		Expect(errorPatient.DeviceIssues).ToNot(BeNil())
+		expirationTime := effectiveTimeFromError(errorPatient, "dexcom")
+		if expirationTime.After(start) {
+			Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
+				time.Now(), expirationTime))
+		}
+		provider := errorPatient.DeviceIssues.Erroring.ProviderId
+		if provider != "dexcom" {
+			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
+		}
+	})
 })
 
 func createClinic() *client.ClinicV1 {
@@ -317,6 +343,27 @@ func uploadPatientDeviceDisconnected(clinicID string, patient *client.PatientV1)
 	}
 }
 
+func uploadPatientDeviceErroring(clinicID string, patient *client.PatientV1) {
+	GinkgoHelper()
+	ctx := context.Background()
+	now := time.Now()
+	sources := &patients.DataSources{
+		{
+			DataSourceId: pointer.FromAny(primitive.NewObjectID()),
+			ModifiedTime: pointer.FromAny(now.Add(-time.Hour)),
+			ProviderName: "dexcom",
+			State:        "error",
+		},
+	}
+	err := patientsRepo().UpdatePatientDataSources(ctx, *patient.Id, sources)
+	Expect(err).To(Succeed())
+
+	updatedPatient := getPatient(clinicID, *patient.Id)
+	if updatedPatient.DataSources == nil || len(*updatedPatient.DataSources) < 1 {
+		Fail("expected a data source, got none")
+	}
+}
+
 func patientsRepo() patients.Repository {
 	GinkgoHelper()
 	logger := testLogger()
@@ -366,6 +413,23 @@ func effectiveTimeFromExpiredInvitation(patient *client.PatientV1, providerId st
 }
 
 func effectiveTimeFromDisconnected(patient *client.PatientV1, providerId string) (
+	_ time.Time) {
+
+	GinkgoHelper()
+
+	for _, dataSource := range *patient.DataSources {
+		if dataSource.ProviderName == providerId {
+			if dataSource.ModifiedTime == nil {
+				Fail(fmt.Sprintf("expected modified time to not be nil"))
+			}
+			return parseDatetime(*dataSource.ModifiedTime)
+		}
+	}
+	Fail(fmt.Sprintf("no data source found for providerId %q", providerId))
+	return time.Time{}
+}
+
+func effectiveTimeFromError(patient *client.PatientV1, providerId string) (
 	_ time.Time) {
 
 	GinkgoHelper()

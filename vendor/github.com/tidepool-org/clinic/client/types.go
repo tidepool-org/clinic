@@ -1355,40 +1355,20 @@ type DataSourcesV1 = []DataSourceV1
 // DatetimeV1 [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 type DatetimeV1 = string
 
+// DeviceIssueV1 defines model for deviceIssue.v1.
+type DeviceIssueV1 struct {
+	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	EffectiveTime DatetimeV1   `json:"effectiveTime"`
+	ProviderId    ProviderIdV1 `json:"providerId"`
+}
+
 // DeviceIssuesV1 defines model for deviceIssues.v1.
 type DeviceIssuesV1 struct {
-	Disconnected                DeviceIssuesDisconnectedV1                `json:"disconnected,omitempty,omitzero"`
-	ExpiredConnectionInvitation DeviceIssuesExpiredConnectionInvitationV1 `json:"expiredConnectionInvitation,omitempty,omitzero"`
-	StaleConnectionInvitation   DeviceIssuesStaleConnectionInvitationV1   `json:"staleConnectionInvitation,omitempty,omitzero"`
-	StaleData                   DeviceIssuesStaleDataV1                   `json:"staleData,omitempty,omitzero"`
-}
-
-// DeviceIssuesDisconnectedV1 defines model for .
-type DeviceIssuesDisconnectedV1 struct {
-	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	EffectiveTime DatetimeV1   `json:"effectiveTime"`
-	ProviderId    ProviderIdV1 `json:"providerId"`
-}
-
-// DeviceIssuesExpiredConnectionInvitationV1 defines model for .
-type DeviceIssuesExpiredConnectionInvitationV1 struct {
-	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	EffectiveTime DatetimeV1   `json:"effectiveTime"`
-	ProviderId    ProviderIdV1 `json:"providerId"`
-}
-
-// DeviceIssuesStaleConnectionInvitationV1 defines model for .
-type DeviceIssuesStaleConnectionInvitationV1 struct {
-	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	EffectiveTime DatetimeV1   `json:"effectiveTime"`
-	ProviderId    ProviderIdV1 `json:"providerId"`
-}
-
-// DeviceIssuesStaleDataV1 defines model for .
-type DeviceIssuesStaleDataV1 struct {
-	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	EffectiveTime DatetimeV1   `json:"effectiveTime"`
-	ProviderId    ProviderIdV1 `json:"providerId"`
+	Disconnected                DeviceIssueV1 `json:"disconnected,omitempty,omitzero"`
+	Erroring                    DeviceIssueV1 `json:"erroring,omitempty,omitzero"`
+	ExpiredConnectionInvitation DeviceIssueV1 `json:"expiredConnectionInvitation,omitempty,omitzero"`
+	StaleConnectionInvitation   DeviceIssueV1 `json:"staleConnectionInvitation,omitempty,omitzero"`
+	StaleData                   DeviceIssueV1 `json:"staleData,omitempty,omitzero"`
 }
 
 // DiagnosisTypeV1 defines model for diagnosisType.v1.
