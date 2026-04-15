@@ -255,7 +255,7 @@ func (c *manager) deleteClinic(ctx context.Context, clinicId string, metadata de
 	}
 
 	// Using the repository directly, because the service wraps deletes in transaction
-	if err := c.patientsRepository.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId, metadata); err != nil && !errs.Is(err, errors.NotFound) {
+	if _, err := c.patientsRepository.Remove(ctx, clinicId, c.config.ClinicDemoPatientUserId, metadata); err != nil && !errs.Is(err, errors.NotFound) {
 		return err
 	}
 	if err := c.cliniciansRepository.DeleteAll(ctx, clinicId, metadata); err != nil {

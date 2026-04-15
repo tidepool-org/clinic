@@ -269,7 +269,7 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		deletedByUserId = &authData.SubjectId
 	}
 
-	err := h.Patients.Remove(ctx, clinicId, patientId, deletions.Metadata{DeletedByUserId: deletedByUserId})
+	_, err := h.Patients.Remove(ctx, clinicId, patientId, deletions.Metadata{DeletedByUserId: deletedByUserId})
 	if err != nil {
 		return err
 	}

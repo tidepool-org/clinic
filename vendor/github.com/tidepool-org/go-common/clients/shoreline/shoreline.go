@@ -36,6 +36,7 @@ type Client interface {
 	UpdateUser(userID string, userUpdate UserUpdate, token string) error
 	CreateCustodialUserForClinic(clinicId string, userData CustodialUserData, token string) (*UserData, error)
 	DeleteUserSessions(userID, token string) error
+	DeleteUser(userID, token string) error
 }
 
 // ShorelineClient manages the local data for a client. A client is intended to be shared among multiple
@@ -510,6 +511,33 @@ func (client *ShorelineClient) DeleteUserSessions(userID, token string) error {
 	default:
 		return &status.StatusError{
 			Status: status.NewStatusf(res.StatusCode, "Unknown response code from service[%s]", req.URL),
+		}
+	}
+}
+
+func (client *ShorelineClient) DeleteUser(userID, token string) error {
+	host := client.getHost()
+	if host == nil {
+		return errors.New("No known user-api hosts.")
+	}
+
+	host.Path = path.Join(host.Path, "user", userID)
+
+	req, _ := http.NewRequest(http.MethodDelete, host.String(), nil)
+	req.Header.Add("x-tidepool-session-token", token)
+
+	res, err := client.httpClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "couldn't delete user")
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusNoContent:
+		return nil
+	default:
+		return &status.StatusError{
+			Status: status.NewStatusf(res.StatusCode, "Unexpected response code from service[%s]", req.URL),
 		}
 	}
 }
