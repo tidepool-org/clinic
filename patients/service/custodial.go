@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
+//go:generate go tool mockgen -source=./custodial.go -destination=./mock_custodial_service.go -package service CustodialService
 type CustodialService interface {
 	CreateAccount(ctx context.Context, patient patients.Patient) (string, error)
 	UpdateAccount(ctx context.Context, patient patients.Patient) error

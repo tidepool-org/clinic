@@ -756,6 +756,10 @@ func (m *mockUserService) UpdateCustodialAccount(ctx context.Context, patient pa
 	panic("not implemented") // TODO: Implement
 }
 
+func (m *mockUserService) DeleteCustodialAccount(ctx context.Context, userId string) error {
+	panic("not implemented") // TODO: Implement
+}
+
 func (m *mockUserService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *patients.Patient) error {
 	panic("not implemented") // TODO: Implement
 }

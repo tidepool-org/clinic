@@ -38,28 +38,33 @@ var _ = Describe("Patients Service", func() {
 	var cfg *config.Config
 	var service patients.Service
 	var clinicsService *clinicsTest.MockService
+	var custodialService *patientsService.MockCustodialService
 	var repo *patientsTest.MockRepository
 	var repoCtrl *gomock.Controller
+	var custodialCtrl *gomock.Controller
 	var clinicsCtrl *gomock.Controller
 
 	BeforeEach(func() {
 		cfg = &config.Config{ClinicDemoPatientUserId: DemoPatientId}
 
 		repoCtrl = gomock.NewController(GinkgoT())
+		custodialCtrl = gomock.NewController(GinkgoT())
 		clinicsCtrl = gomock.NewController(GinkgoT())
 
 		repo = patientsTest.NewMockRepository(repoCtrl)
+		custodialService = patientsService.NewMockCustodialService(custodialCtrl)
 		clinicsService = clinicsTest.NewMockService(clinicsCtrl)
 
 		client := clinicStoreTest.GetTestDatabase().Client()
 
 		var err error
-		service, err = patientsService.NewService(cfg, repo, clinicsService, nil, zap.NewNop().Sugar(), client)
+		service, err = patientsService.NewService(cfg, repo, clinicsService, custodialService, zap.NewNop().Sugar(), client)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
 		repoCtrl.Finish()
+		custodialCtrl.Finish()
 		clinicsCtrl.Finish()
 	})
 
@@ -218,6 +223,7 @@ var _ = Describe("Patients Service", func() {
 			When("the patient is custodial", func() {
 				BeforeEach(func() {
 					randomPatient.Permissions.Custodian = &patients.Permission{}
+
 				})
 
 				It("returns an error when GetPatientCountSettings returns an error", func() {
@@ -239,6 +245,11 @@ var _ = Describe("Patients Service", func() {
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
 						Return(&randomPatient, nil)
+					if randomPatient.IsCustodial() {
+						custodialService.EXPECT().
+							CreateAccount(gomock.Any(), gomock.Any()).
+							Return(*randomPatient.UserId, nil)
+					}
 					clinicsService.EXPECT().
 						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 						Return(nil)
@@ -257,6 +268,11 @@ var _ = Describe("Patients Service", func() {
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
 						Return(&randomPatient, nil)
+					if randomPatient.IsCustodial() {
+						custodialService.EXPECT().
+							CreateAccount(gomock.Any(), gomock.Any()).
+							Return(*randomPatient.UserId, nil)
+					}
 					clinicsService.EXPECT().
 						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 						Return(nil)
@@ -275,6 +291,11 @@ var _ = Describe("Patients Service", func() {
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
 						Return(&randomPatient, nil)
+					if randomPatient.IsCustodial() {
+						custodialService.EXPECT().
+							CreateAccount(gomock.Any(), gomock.Any()).
+							Return(*randomPatient.UserId, nil)
+					}
 					clinicsService.EXPECT().
 						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 						Return(nil)
@@ -293,6 +314,11 @@ var _ = Describe("Patients Service", func() {
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Eq(randomPatient)).
 						Return(&randomPatient, nil)
+					if randomPatient.IsCustodial() {
+						custodialService.EXPECT().
+							CreateAccount(gomock.Any(), gomock.Any()).
+							Return(*randomPatient.UserId, nil)
+					}
 					clinicsService.EXPECT().
 						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 						Return(nil)
@@ -367,6 +393,11 @@ var _ = Describe("Patients Service", func() {
 							repo.EXPECT().
 								Create(gomock.Any(), gomock.Eq(randomPatient)).
 								Return(&randomPatient, nil)
+							if randomPatient.IsCustodial() {
+								custodialService.EXPECT().
+									CreateAccount(gomock.Any(), gomock.Any()).
+									Return(*randomPatient.UserId, nil)
+							}
 							clinicsService.EXPECT().
 								RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
 								Return(nil)
@@ -386,6 +417,12 @@ var _ = Describe("Patients Service", func() {
 				clinicsService.EXPECT().
 					GetMRNSettings(gomock.Any(), gomock.Any()).
 					Return(&clinics.MRNSettings{Required: true}, nil)
+
+				if randomPatient.IsCustodial() {
+					custodialService.EXPECT().
+						CreateAccount(gomock.Any(), gomock.Any()).
+						Return(*randomPatient.UserId, nil)
+				}
 			})
 
 			It("accepts a valid site", func() {
@@ -399,6 +436,11 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Create(gomock.Any(), gomock.Eq(randomPatient)).
 					Return(&randomPatient, nil)
+				if randomPatient.IsCustodial() {
+					custodialService.EXPECT().
+						CreateAccount(gomock.Any(), gomock.Any()).
+						Return(*randomPatient.UserId, nil)
+				}
 
 				got, err := service.Create(context.Background(), randomPatient)
 				Expect(err).To(Succeed())
@@ -468,6 +510,11 @@ var _ = Describe("Patients Service", func() {
 					EXPECT().
 					RefreshPatientCount(gomock.Any(), gomock.Eq(update.ClinicId)).
 					Return(nil)
+				if update.Patient.IsCustodial() {
+					custodialService.EXPECT().
+						UpdateAccount(gomock.Any(), gomock.Any()).
+						Return(nil)
+				}
 
 				updatedPatient, err := service.Update(context.Background(), update)
 				Expect(err).To(BeNil())
@@ -502,6 +549,12 @@ var _ = Describe("Patients Service", func() {
 				repo.EXPECT().
 					Update(gomock.Any(), gomock.Eq(expectedUpdate)).
 					Return(&update.Patient, nil)
+
+				if update.Patient.IsCustodial() {
+					custodialService.EXPECT().
+						UpdateAccount(gomock.Any(), gomock.Any()).
+						Return(nil)
+				}
 
 				clinicsService.
 					EXPECT().
@@ -585,6 +638,11 @@ var _ = Describe("Patients Service", func() {
 					EXPECT().
 					Get(gomock.Any(), gomock.Eq(update.ClinicId), gomock.Eq(update.UserId)).
 					Return(&update.Patient, nil)
+				if update.Patient.IsCustodial() {
+					custodialService.EXPECT().
+						UpdateAccount(gomock.Any(), gomock.Any()).
+						Return(nil)
+				}
 				clinicsService.
 					EXPECT().
 					GetMRNSettings(gomock.Any(), gomock.Eq(update.ClinicId)).
@@ -658,6 +716,9 @@ var _ = Describe("Patients Service", func() {
 
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
+					Return(&expectDeletePatient, nil)
+				custodialService.EXPECT().
+					DeleteAccount(gomock.Any(), gomock.Eq(userId)).
 					Return(nil)
 				clinicsService.EXPECT().
 					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
@@ -684,7 +745,7 @@ var _ = Describe("Patients Service", func() {
 
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
-					Return(nil)
+					Return(nil, nil)
 				clinicsService.EXPECT().
 					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 					Return(nil)
@@ -731,7 +792,13 @@ var _ = Describe("Patients Service", func() {
 					Return(&patients.Patient{Permissions: &patients.Permissions{}}, nil)
 				repo.EXPECT().
 					Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
-					Return(nil)
+					Return(&expectDeletePatient, nil)
+				if expectDeletePatient.IsCustodial() {
+					custodialService.EXPECT().
+						DeleteAccount(gomock.Any(), gomock.Eq(*expectDeletePatient.UserId)).
+						Return(nil)
+				}
+
 				clinicsService.EXPECT().
 					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 					Return(nil)
@@ -831,12 +898,18 @@ var _ = Describe("Patients Service", func() {
 
 			repo.EXPECT().
 				Remove(gomock.Any(), gomock.Eq(clinicId), gomock.Eq(userId), gomock.Any()).
-				Return(nil)
+				Return(&expectDeletePatient, nil)
+			if expectDeletePatient.IsCustodial() {
+				custodialService.EXPECT().
+					DeleteAccount(gomock.Any(), gomock.Eq(userId)).
+					Return(nil)
+			}
+
 			clinicsService.EXPECT().
 				RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
 				Return(nil)
 
-			err = service.Remove(context.Background(), clinicId, userId, deletions.Metadata{})
+			_, err = service.Remove(context.Background(), clinicId, userId, deletions.Metadata{})
 			Expect(err).To(BeNil())
 		})
 	})
