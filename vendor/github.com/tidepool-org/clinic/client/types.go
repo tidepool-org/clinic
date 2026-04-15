@@ -1337,6 +1337,9 @@ type DataSourceV1 struct {
 	// ExpirationTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	ExpirationTime *DatetimeV1 `json:"expirationTime,omitempty"`
 
+	// LatestDataTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	LatestDataTime *DatetimeV1 `json:"latestDataTime,omitempty"`
+
 	// ModifiedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	ModifiedTime *DatetimeV1       `json:"modifiedTime,omitempty"`
 	ProviderName ProviderNameV1    `json:"providerName"`
@@ -1698,7 +1701,8 @@ type PatientTagV1 struct {
 	Id *ObjectidV1 `json:"id,omitempty"`
 
 	// Name The tag display name
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	NumPatients int    `json:"numPatients,omitempty,omitzero"`
 }
 
 // PatientTagIdsV1 defines model for patientTagIds.v1.
@@ -1768,7 +1772,8 @@ type SiteV1 struct {
 	Id SiteIdV1 `json:"id"`
 
 	// Name The site's name.
-	Name SiteNameV1 `json:"name"`
+	Name        SiteNameV1 `json:"name"`
+	NumPatients int        `json:"numPatients,omitempty,omitzero"`
 }
 
 // SiteByIdV1 A clinic's physical or logical location—id only.
