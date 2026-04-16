@@ -1344,6 +1344,9 @@ type DataSourceV1 struct {
 	// ExpirationTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	ExpirationTime *DatetimeV1 `json:"expirationTime,omitempty"`
 
+	// LatestDataTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	LatestDataTime *DatetimeV1 `json:"latestDataTime,omitempty"`
+
 	// ModifiedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	ModifiedTime *DatetimeV1       `json:"modifiedTime,omitempty"`
 	ProviderName ProviderNameV1    `json:"providerName"`

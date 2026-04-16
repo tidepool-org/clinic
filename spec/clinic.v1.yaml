@@ -3760,6 +3760,9 @@ components:
           $ref: '#/components/schemas/datetime.v1'
         expirationTime:
           $ref: '#/components/schemas/datetime.v1'
+        latestDataTime:
+          $ref: '#/components/schemas/datetime.v1'
+          title: Time of the latest data point from this source
       required:
         - state
         - providerName
@@ -5200,7 +5203,9 @@ components:
         creator:
           $ref: '#/components/schemas/creator.v1'
         context:
-          type: string
+          type: object
+          additionalProperties: true
+          description: Generic object for storing context-specific data related to the confirmation.
         restrictions:
           $ref: '#/components/schemas/restrictions.v1'
         expiresAt:
