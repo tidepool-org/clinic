@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "sourceId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "procedureCodes": {
+    "enableSummaryReports": "49086-2"
+  },
+  "destinationIds": {
+    "flowsheet": "af394f14-b34a-464f-8d24-895f370af4c9",
+    "notes": "af394f14-b34a-464f-8d24-895f370af4c9",
+    "results": "af394f14-b34a-464f-8d24-895f370af4c9"
+  },
+  "provider": "redox",
+  "mrnIdType": "MR",
+  "scheduledReports": {
+    "cadence": "14d",
+    "onUploadEnabled": true,
+    "onUploadNoteEventType": "Replace"
+  },
+  "tags": {
+    "codes": ["PATIENT_TAGS"],
+    "separator": ","
+  },
+  "flowsheets": {
+    "icode": false
+  }
+}

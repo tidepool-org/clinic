@@ -1,0 +1,6 @@
+{
+  "inviteId": "invite-001",
+  "name": "Invited Clinician",
+  "email": "invited@example.com",
+  "roles": ["CLINIC_MEMBER"]
+}

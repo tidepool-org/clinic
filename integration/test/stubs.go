@@ -17,18 +17,20 @@ import (
 )
 
 const (
-	TestUserId               = "1234567890"
-	TestLegacyClinicUserId   = "2345678901"
-	TestServiceAccountUserId = "9999999999"
-	TestServiceAccountToken  = "service-account"
-	TestXealthUserId         = "1234567891"
-	TestXealthGuardianUserId = "1234567893"
-	TestRedoxUserId          = "1234567892"
-	TestUserToken            = "user"
-	TestLegacyClinicToken    = "clinic"
-	TestServerId             = "server"
-	TestServerToken          = "server"
-	TestRestrictedToken      = "1234567890abcdef1234567890abcdef"
+	TestUserId                = "1234567890"
+	TestLegacyClinicUserId    = "2345678901"
+	TestServiceAccountUserId  = "9999999999"
+	TestServiceAccountToken   = "service-account"
+	TestXealthUserId          = "1234567891"
+	TestXealthGuardianUserId  = "1234567893"
+	TestRedoxUserId           = "1234567892"
+	TestIntegrationUserIdA    = "1234567894"
+	TestIntegrationUserIdB    = "1234567895"
+	TestUserToken             = "user"
+	TestLegacyClinicToken     = "clinic"
+	TestServerId              = "server"
+	TestServerToken           = "server"
+	TestRestrictedToken       = "1234567890abcdef1234567890abcdef"
 )
 
 var (
@@ -59,6 +61,28 @@ var (
 		Username: "redox@tidepool.org",
 		Emails: []string{
 			"redox@tidepool.org",
+		},
+		PasswordExists: true,
+		Roles:          []string{"patient"},
+		EmailVerified:  true,
+	}
+
+	integrationUserA = shoreline.UserData{
+		UserID:   TestIntegrationUserIdA,
+		Username: "integration-a@tidepool.org",
+		Emails: []string{
+			"integration-a@tidepool.org",
+		},
+		PasswordExists: true,
+		Roles:          []string{"patient"},
+		EmailVerified:  true,
+	}
+
+	integrationUserB = shoreline.UserData{
+		UserID:   TestIntegrationUserIdB,
+		Username: "integration-b@tidepool.org",
+		Emails: []string{
+			"integration-b@tidepool.org",
 		},
 		PasswordExists: true,
 		Roles:          []string{"patient"},
@@ -152,6 +176,12 @@ func ShorelineStub() *httptest.Server {
 				w.WriteHeader(http.StatusCreated)
 			} else if user.Username == "xealth+guardian@tidepool.org" {
 				resp, _ = json.Marshal(xealthGuardianUser)
+				w.WriteHeader(http.StatusCreated)
+			} else if user.Username == "integration-a@tidepool.org" {
+				resp, _ = json.Marshal(integrationUserA)
+				w.WriteHeader(http.StatusCreated)
+			} else if user.Username == "integration-b@tidepool.org" {
+				resp, _ = json.Marshal(integrationUserB)
 				w.WriteHeader(http.StatusCreated)
 			} else {
 				w.WriteHeader(http.StatusBadRequest)
