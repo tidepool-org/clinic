@@ -34,25 +34,17 @@ var _ = Describe("UpdateDeviceIssues", func() {
 
 	It("finds patients with stale data", func() {
 		uploadPatientStaleData(*clinic.Id, patient)
+		updateDeviceIssues()
 
-		rec := httptest.NewRecorder()
-		req := prepareRequestWithBody(http.MethodPost, "/v1/device_issues", nil)
-		asServer(req)
-
-		server.ServeHTTP(rec, req)
-		Expect(rec.Result()).ToNot(BeNil())
-		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-
-		patientWithStaleData := getPatient(*clinic.Id, *patient.Id)
-
-		Expect(patientWithStaleData.DeviceIssues).ToNot(BeNil())
-		effectiveTime := effectiveTimeFromStaleData(patientWithStaleData)
-		latestDataTime := latestDataTimeByProviderId(patientWithStaleData, "dexcom")
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		effectiveTime := effectiveTimeFromStaleData(patientWithIssues)
+		latestDataTime := latestDataTimeByProviderId(patientWithIssues, "dexcom")
 		if !effectiveTime.After(latestDataTime) {
 			Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
 				latestDataTime, effectiveTime))
 		}
-		provider := patientWithStaleData.DeviceIssues.StaleData.ProviderId
+		provider := patientWithIssues.DeviceIssues.StaleData.ProviderId
 		if provider != "dexcom" {
 			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
 		}
@@ -61,24 +53,16 @@ var _ = Describe("UpdateDeviceIssues", func() {
 	It("finds patients with expired device connection invitations", func() {
 		uploadPatientExpiredDeviceConnectionInvitation(*clinic.Id, patient)
 		start := time.Now()
+		updateDeviceIssues()
 
-		rec := httptest.NewRecorder()
-		req := prepareRequestWithBody(http.MethodPost, "/v1/device_issues", nil)
-		asServer(req)
-
-		server.ServeHTTP(rec, req)
-		Expect(rec.Result()).ToNot(BeNil())
-		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-
-		patientExpired := getPatient(*clinic.Id, *patient.Id)
-
-		Expect(patientExpired.DeviceIssues).ToNot(BeNil())
-		expirationTime := effectiveTimeFromExpiredInvitation(patientExpired, "dexcom")
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		expirationTime := effectiveTimeFromExpiredInvitation(patientWithIssues, "dexcom")
 		if expirationTime.After(start) {
 			Fail(fmt.Sprintf("expected expiration after test start, got %s",
 				expirationTime))
 		}
-		provider := patientExpired.DeviceIssues.ExpiredConnectionInvitation.ProviderId
+		provider := patientWithIssues.DeviceIssues.ExpiredConnectionInvitation.ProviderId
 		if provider != "dexcom" {
 			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
 		}
@@ -87,24 +71,16 @@ var _ = Describe("UpdateDeviceIssues", func() {
 	It("finds patients with stale device connection invitations", func() {
 		uploadPatientStaleDeviceConnectionInvitation(*clinic.Id, patient)
 		start := time.Now()
+		updateDeviceIssues()
 
-		rec := httptest.NewRecorder()
-		req := prepareRequestWithBody(http.MethodPost, "/v1/device_issues", nil)
-		asServer(req)
-
-		server.ServeHTTP(rec, req)
-		Expect(rec.Result()).ToNot(BeNil())
-		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-
-		staleInvite := getPatient(*clinic.Id, *patient.Id)
-
-		Expect(staleInvite.DeviceIssues).ToNot(BeNil())
-		expirationTime := effectiveTimeFromStaleInvitationDexcom(staleInvite)
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		expirationTime := effectiveTimeFromStaleInvitationDexcom(patientWithIssues)
 		if expirationTime.After(start) {
 			Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
 				time.Now(), expirationTime))
 		}
-		provider := staleInvite.DeviceIssues.StaleConnectionInvitation.ProviderId
+		provider := patientWithIssues.DeviceIssues.StaleConnectionInvitation.ProviderId
 		if provider != "dexcom" {
 			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
 		}
@@ -113,24 +89,16 @@ var _ = Describe("UpdateDeviceIssues", func() {
 	It("finds patients with disconnected devices", func() {
 		uploadPatientDeviceDisconnected(*clinic.Id, patient)
 		start := time.Now()
+		updateDeviceIssues()
 
-		rec := httptest.NewRecorder()
-		req := prepareRequestWithBody(http.MethodPost, "/v1/device_issues", nil)
-		asServer(req)
-
-		server.ServeHTTP(rec, req)
-		Expect(rec.Result()).ToNot(BeNil())
-		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-
-		discoPatient := getPatient(*clinic.Id, *patient.Id)
-
-		Expect(discoPatient.DeviceIssues).ToNot(BeNil())
-		expirationTime := effectiveTimeFromDisconnected(discoPatient, "dexcom")
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		expirationTime := effectiveTimeFromDisconnected(patientWithIssues, "dexcom")
 		if expirationTime.After(start) {
 			Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
 				time.Now(), expirationTime))
 		}
-		provider := discoPatient.DeviceIssues.Disconnected.ProviderId
+		provider := patientWithIssues.DeviceIssues.Disconnected.ProviderId
 		if provider != "dexcom" {
 			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
 		}
@@ -139,24 +107,16 @@ var _ = Describe("UpdateDeviceIssues", func() {
 	It("finds patients with erroring devices", func() {
 		uploadPatientDeviceErroring(*clinic.Id, patient)
 		start := time.Now()
+		updateDeviceIssues()
 
-		rec := httptest.NewRecorder()
-		req := prepareRequestWithBody(http.MethodPost, "/v1/device_issues", nil)
-		asServer(req)
-
-		server.ServeHTTP(rec, req)
-		Expect(rec.Result()).ToNot(BeNil())
-		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-
-		errorPatient := getPatient(*clinic.Id, *patient.Id)
-
-		Expect(errorPatient.DeviceIssues).ToNot(BeNil())
-		expirationTime := effectiveTimeFromError(errorPatient, "dexcom")
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		expirationTime := effectiveTimeFromError(patientWithIssues, "dexcom")
 		if expirationTime.After(start) {
 			Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
 				time.Now(), expirationTime))
 		}
-		provider := errorPatient.DeviceIssues.Erroring.ProviderId
+		provider := patientWithIssues.DeviceIssues.Erroring.ProviderId
 		if provider != "dexcom" {
 			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
 		}
@@ -238,6 +198,16 @@ func parseDatetime(t client.DatetimeV1) time.Time {
 		Fail(fmt.Sprintf("expected parseable RFC3339 time, got \"%s\"", t))
 	}
 	return out
+}
+
+func updateDeviceIssues() {
+	GinkgoHelper()
+	rec := httptest.NewRecorder()
+	req := prepareRequestWithBody(http.MethodPost, "/v1/device_issues", nil)
+	asServer(req)
+	server.ServeHTTP(rec, req)
+	Expect(rec.Result()).ToNot(BeNil())
+	Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 }
 
 func uploadPatientStaleData(clinicID string, patient *client.PatientV1) {
