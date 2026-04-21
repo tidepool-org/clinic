@@ -2142,6 +2142,7 @@ func strp(s string) *string {
 }
 
 const staleDataThreshold = 48 * time.Hour
+const staleInvitationThreshold = 48 * time.Hour
 
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	models := []mongo.WriteModel{}
@@ -2422,10 +2423,17 @@ func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Contex
 	[]patients.Patient, error) {
 
 	filter := bson.M{
-		"dataSources": bson.M{
+		"patientConnectionRequests": bson.M{
 			"$elemMatch": bson.M{
 				"expirationTime": bson.M{"$lt": time.Now()},
-				"state":          bson.M{"$in": bson.A{"pending", "pending-reconnect"}},
+				// The plan is to merge the dataSources into the providerConnectionRequests,
+				// so the state that used to be in dataSources is now here in the newest of
+				// the providerConnectionRequests.
+				//
+				// Any providerConnectionRequest that isn't the newest one, is expected to
+				// have a state of "disconnected", but that's set by blip and we're not
+				// doing any validation on it.
+				"state": bson.M{"$in": bson.A{"pending", "pending-reconnect"}},
 			},
 		},
 	}
@@ -2446,27 +2454,14 @@ func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Contex
 func (r *repository) patientsWithStaleConnectionInvitations(ctx context.Context) (
 	[]patients.Patient, error) {
 
-	threshold := time.Now().Add(-48 * time.Hour)
+	now := time.Now()
 	filter := bson.M{
 		"$or": bson.A{
-			bson.M{
-				"providerConnectionRequests.abbott.createdTime": bson.M{
-					"$lt": threshold,
-				},
-			},
-			bson.M{
-				"providerConnectionRequests.dexcom.createdTime": bson.M{
-					"$lt": threshold,
-				},
-			},
-			bson.M{
-				"providerConnectionRequests.twiist.createdTime": bson.M{
-					"$lt": threshold,
-				},
-			},
+			staleConnectionInvitationProviderFilter("abbott", now),
+			staleConnectionInvitationProviderFilter("dexcom", now),
+			staleConnectionInvitationProviderFilter("twiist", now),
 		},
 	}
-
 	cur, err := r.collection.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("finding patients with stale invitations: %s", err)
@@ -2479,6 +2474,37 @@ func (r *repository) patientsWithStaleConnectionInvitations(ctx context.Context)
 		return nil, fmt.Errorf("loading patients with stale invitations: %s", err)
 	}
 	return patients, nil
+}
+
+func staleConnectionInvitationProviderFilter(provider string, t time.Time) bson.M {
+	return bson.M{
+		"providerConnectionRequests." + provider: bson.M{
+			"$all": bson.A{
+				bson.M{
+					"$elemMatch": bson.M{
+						"createdTime": bson.M{"$lt": t.Add(-staleInvitationThreshold)},
+					},
+				},
+			},
+		},
+	}
+}
+
+func staleConnectionInvitationProviderFilterOld(provider string, now time.Time) bson.M {
+	pcrCreated := fmt.Sprintf("providerConnectionRequests.%s.createdTime", provider)
+	return bson.M{
+		pcrCreated: bson.M{"$lt": now.Add(-staleInvitationThreshold)},
+		"dataSources": bson.M{
+			"$elemMatch": bson.M{
+				"providerName": provider,
+				"state": bson.M{
+					"$in": bson.A{"pending", "pending-reconnect"},
+				},
+				// If it's expired, let the expired invitation clause catch it
+				"expirationTime": bson.M{"$gt": now},
+			},
+		},
+	}
 }
 
 func (r *repository) patientsWithDisconnectedDevices(ctx context.Context) (

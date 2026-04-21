@@ -68,22 +68,42 @@ var _ = Describe("UpdateDeviceIssues", func() {
 		}
 	})
 
-	It("finds patients with stale device connection invitations", func() {
-		uploadPatientStaleDeviceConnectionInvitation(*clinic.Id, patient)
-		start := time.Now()
-		updateDeviceIssues()
+	Context("stale device connection invitations", func() {
+		It("finds patients", func() {
+			uploadPatientStaleDeviceConnectionInvitation(*clinic.Id, patient)
+			start := time.Now()
+			updateDeviceIssues()
 
-		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
-		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
-		expirationTime := effectiveTimeFromStaleInvitationDexcom(patientWithIssues)
-		if expirationTime.After(start) {
-			Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
-				time.Now(), expirationTime))
-		}
-		provider := patientWithIssues.DeviceIssues.StaleConnectionInvitation.ProviderId
-		if provider != "dexcom" {
-			Fail(fmt.Sprintf("expected dexcom, got %q", provider))
-		}
+			patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+			Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+			expirationTime := effectiveTimeFromStaleInvitationDexcom(patientWithIssues)
+			if expirationTime.After(start) {
+				Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
+					time.Now(), expirationTime))
+			}
+			provider := patientWithIssues.DeviceIssues.StaleConnectionInvitation.ProviderId
+			if provider != "dexcom" {
+				Fail(fmt.Sprintf("expected dexcom, got %q", provider))
+			}
+		})
+
+		It("finds patients using only the newest provider connection request", func() {
+			uploadMultiplePatientStaleDeviceConnectionInvitation(*clinic.Id, patient)
+			start := time.Now()
+			updateDeviceIssues()
+
+			patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+			Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+			expirationTime := effectiveTimeFromStaleInvitationDexcom(patientWithIssues)
+			if expirationTime.After(start) {
+				Fail(fmt.Sprintf("expected effective time to be after %s, got %s",
+					time.Now(), expirationTime))
+			}
+			provider := patientWithIssues.DeviceIssues.StaleConnectionInvitation.ProviderId
+			if provider != "dexcom" {
+				Fail(fmt.Sprintf("expected dexcom, got %q", provider))
+			}
+		})
 	})
 
 	It("finds patients with disconnected devices", func() {
@@ -271,6 +291,14 @@ func uploadPatientStaleDeviceConnectionInvitation(clinicID string,
 			},
 		},
 	}
+	dataSrcs := &[]patients.DataSource{
+		{
+			DataSourceId:   pointer.FromAny(primitive.NewObjectID()),
+			ExpirationTime: pointer.FromAny(time.Now().Add(time.Hour)),
+			ProviderName:   "dexcom",
+			State:          "pending",
+		},
+	}
 	clinicOID, err := primitive.ObjectIDFromHex(clinicID)
 	Expect(err).To(Succeed())
 	update := patients.PatientUpdate{
@@ -278,8 +306,54 @@ func uploadPatientStaleDeviceConnectionInvitation(clinicID string,
 		UserId:   *patient.Id,
 		Patient: patients.Patient{
 			ClinicId:                   pointer.FromAny(clinicOID),
-			UserId:                     pointer.FromAny(*patient.Id),
+			UserId:                     patient.Id,
 			ProviderConnectionRequests: pcrs,
+			DataSources:                dataSrcs,
+		},
+	}
+	_, err = patientsRepo().Update(ctx, update)
+	Expect(err).To(Succeed())
+
+	updatedPatient := getPatient(clinicID, *patient.Id)
+	if updatedPatient.ConnectionRequests == nil ||
+		len(updatedPatient.ConnectionRequests.Dexcom) < 1 {
+		Fail("expected a dexcom connection request, got none")
+	}
+}
+
+func uploadMultiplePatientStaleDeviceConnectionInvitation(clinicID string,
+	patient *client.PatientV1) {
+
+	GinkgoHelper()
+	ctx := context.Background()
+	now := time.Now()
+	created := now.Add(-60 * time.Hour)
+	pcrs := patients.ProviderConnectionRequests{
+		"dexcom": patients.ConnectionRequests{
+			{
+				ProviderName: "dexcom",
+				CreatedTime:  created,
+			},
+		},
+	}
+	dataSrcs := &[]patients.DataSource{
+		{
+			DataSourceId:   pointer.FromAny(primitive.NewObjectID()),
+			ExpirationTime: pointer.FromAny(time.Now().Add(time.Hour)),
+			ProviderName:   "dexcom",
+			State:          "pending",
+		},
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicID)
+	Expect(err).To(Succeed())
+	update := patients.PatientUpdate{
+		ClinicId: clinicID,
+		UserId:   *patient.Id,
+		Patient: patients.Patient{
+			ClinicId:                   pointer.FromAny(clinicOID),
+			UserId:                     patient.Id,
+			ProviderConnectionRequests: pcrs,
+			DataSources:                dataSrcs,
 		},
 	}
 	_, err = patientsRepo().Update(ctx, update)
