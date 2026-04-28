@@ -1524,10 +1524,9 @@ type tideCategory struct {
 // summaryFieldFilter allows defines a query on a summary field
 type summaryFieldFilter struct {
 	SummaryField string
-	// SummaryFieldComparator is the mongodb comparison operator, e.g., `$gt`, `$not`, etc used with one of the operands being [SummaryField] and the other operand [ComparatorOperandExpression].
-	SummaryFieldComparator string
-	// ComparatorOperandExpression is an expression to compare [SummaryField] against. Because it may take different forms it is of type any. This may be a simple value like an string, int32, long or an object.
-	ComparatorOperandExpression any
+
+	// [QueryPredicate] is the mongodb expression to be used to compare [SummaryField] against to see if it matches a certain category.
+	QueryPredicate bson.M
 }
 
 // availableCategories are the categories available for a TIDE report.
@@ -1538,9 +1537,8 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: -1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInVeryLowPercent",
-				SummaryFieldComparator:      "$gt",
-				ComparatorOperandExpression: 0.01,
+				SummaryField:   "timeInVeryLowPercent",
+				QueryPredicate: bson.M{"$gte": 0.01},
 			}},
 	},
 	{
@@ -1549,9 +1547,8 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: -1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInAnyLowPercent",
-				SummaryFieldComparator:      "$gt",
-				ComparatorOperandExpression: 0.04,
+				SummaryField:   "timeInAnyLowPercent",
+				QueryPredicate: bson.M{"$gte": 0.04},
 			}},
 	},
 	{
@@ -1560,9 +1557,8 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: 1, // ascending sort so that largest negative value is first
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInTargetPercentDelta",
-				SummaryFieldComparator:      "$lt",
-				ComparatorOperandExpression: -0.15,
+				SummaryField:   "timeInTargetPercentDelta",
+				QueryPredicate: bson.M{"$lte": -0.15},
 			}},
 	},
 	{
@@ -1571,9 +1567,8 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: 1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeCGMUsePercent",
-				SummaryFieldComparator:      "$lt",
-				ComparatorOperandExpression: 0.7,
+				SummaryField:   "timeCGMUsePercent",
+				QueryPredicate: bson.M{"$lte": 0.7},
 			}},
 	},
 	{
@@ -1582,9 +1577,8 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: 1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInTargetPercent",
-				SummaryFieldComparator:      "$lt",
-				ComparatorOperandExpression: 0.7,
+				SummaryField:   "timeInTargetPercent",
+				QueryPredicate: bson.M{"$lte": 0.7},
 			}},
 	},
 	{
@@ -1593,40 +1587,40 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: -1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInTargetPercent",
-				SummaryFieldComparator:      "$gte",
-				ComparatorOperandExpression: 0.7,
+				SummaryField:   "timeInTargetPercent",
+				QueryPredicate: bson.M{"$gt": 0.7},
 			},
 			{
-				SummaryField:                "timeCGMUsePercent",
-				SummaryFieldComparator:      "$gte",
-				ComparatorOperandExpression: 0.7,
+				SummaryField:   "timeCGMUsePercent",
+				QueryPredicate: bson.M{"$gte": 0.7},
 			},
-			// These "$not" expressions are because the fields may not exist in the patient summary
+			// These "$not" expressions are used because the fields may not exist in
+			// the patient summary. They are usually used when comparing for flagged
+			// conidtions as those may not exist dpending on the patient if they
+			// never spent time in that state.
+			// So that query will pass if either:
+			//   * The summary field exists and it matches the predicate.
+			//   OR
+			//   * The summary field does not exist
 			{
-				SummaryField:                "timeInAnyLowPercent",
-				SummaryFieldComparator:      "$not",
-				ComparatorOperandExpression: bson.M{"$gt": .04},
-			},
-			{
-				SummaryField:                "timeInVeryLowPercent",
-				SummaryFieldComparator:      "$not",
-				ComparatorOperandExpression: bson.M{"$gt": .01},
-			},
-			{
-				SummaryField:                "timeInAnyHighPercent",
-				SummaryFieldComparator:      "$not",
-				ComparatorOperandExpression: bson.M{"$gt": .25},
+				SummaryField:   "timeInAnyLowPercent",
+				QueryPredicate: bson.M{"$not": bson.M{"$gte": .04}},
 			},
 			{
-				SummaryField:                "timeInVeryHighPercent",
-				SummaryFieldComparator:      "$not",
-				ComparatorOperandExpression: bson.M{"$gt": .05},
+				SummaryField:   "timeInVeryLowPercent",
+				QueryPredicate: bson.M{"$not": bson.M{"$gte": .01}},
 			},
 			{
-				SummaryField:                "timeInExtremeHighPercent",
-				SummaryFieldComparator:      "$not",
-				ComparatorOperandExpression: bson.M{"$gte": .01},
+				SummaryField:   "timeInAnyHighPercent",
+				QueryPredicate: bson.M{"$not": bson.M{"$gte": .25}},
+			},
+			{
+				SummaryField:   "timeInVeryHighPercent",
+				QueryPredicate: bson.M{"$not": bson.M{"$gte": .05}},
+			},
+			{
+				SummaryField:   "timeInExtremeHighPercent",
+				QueryPredicate: bson.M{"$not": bson.M{"$gte": .01}},
 			},
 		},
 	},
@@ -1636,9 +1630,8 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: -1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInExtremeHighPercent",
-				SummaryFieldComparator:      "$gte",
-				ComparatorOperandExpression: 0.01,
+				SummaryField:   "timeInExtremeHighPercent",
+				QueryPredicate: bson.M{"$gte": 0.01},
 			}},
 	},
 	{
@@ -1647,9 +1640,8 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: -1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInVeryHighPercent",
-				SummaryFieldComparator:      "$gt",
-				ComparatorOperandExpression: 0.05,
+				SummaryField:   "timeInVeryHighPercent",
+				QueryPredicate: bson.M{"$gte": 0.05},
 			}},
 	},
 	{
@@ -1658,9 +1650,8 @@ var availableCategories = [...]tideCategory{
 		SummaryFieldSortOrder: -1,
 		SummaryFieldFilters: []summaryFieldFilter{
 			{
-				SummaryField:                "timeInAnyHighPercent",
-				SummaryFieldComparator:      "$gt",
-				ComparatorOperandExpression: 0.25,
+				SummaryField:   "timeInAnyHighPercent",
+				QueryPredicate: bson.M{"$gte": 0.25},
 			}},
 	},
 }
@@ -1754,7 +1745,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		opts.SetLimit(int64(remaining))
 
 		for _, filter := range category.SummaryFieldFilters {
-			selector["summary.cgmStats.periods."+params.Period+"."+filter.SummaryField] = bson.M{filter.SummaryFieldComparator: filter.ComparatorOperandExpression}
+			selector["summary.cgmStats.periods."+params.Period+"."+filter.SummaryField] = filter.QueryPredicate
 		}
 
 		sortKey := "summary.cgmStats.periods." + params.Period + "." + category.SummaryField
