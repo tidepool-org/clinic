@@ -395,8 +395,9 @@ func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provi
 	result := make([]ProviderConnectionRequestV1, len(requestsForProvider))
 	for i, request := range requestsForProvider {
 		result[i] = ProviderConnectionRequestV1{
-			CreatedTime:  request.CreatedTime,
-			ProviderName: ProviderId(request.ProviderName),
+			CreatedTime:    request.CreatedTime,
+			ExpirationTime: request.ExpirationTime,
+			ProviderName:   ProviderId(request.ProviderName),
 		}
 	}
 	return result
@@ -439,11 +440,6 @@ func NewPatient(dto PatientV1) patients.Patient {
 			if d.ModifiedTime != nil {
 				modifiedTime, _ := time.Parse(time.RFC3339Nano, string(*d.ModifiedTime))
 				newDataSource.ModifiedTime = &modifiedTime
-			}
-
-			if d.ExpirationTime != nil {
-				expirationTime, _ := time.Parse(time.RFC3339Nano, string(*d.ExpirationTime))
-				newDataSource.ExpirationTime = &expirationTime
 			}
 
 			if d.LatestDataTime != nil {
@@ -772,11 +768,6 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSourceV
 			if d.ModifiedTime != nil {
 				modifiedTime := DatetimeV1(d.ModifiedTime.Format(time.RFC3339Nano))
 				newDataSource.ModifiedTime = &modifiedTime
-			}
-
-			if d.ExpirationTime != nil {
-				expirationTime := DatetimeV1(d.ExpirationTime.Format(time.RFC3339Nano))
-				newDataSource.ExpirationTime = &expirationTime
 			}
 
 			if d.LatestDataTime != nil {

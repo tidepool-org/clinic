@@ -2379,6 +2379,7 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
+          readOnly: true
       required:
         - id
         - name
@@ -3738,8 +3739,6 @@ components:
           type: string
           title: Data source connection state
           enum:
-            - pending
-            - pendingReconnect
             - connected
             - disconnected
             - error
@@ -3755,8 +3754,6 @@ components:
           pattern: ^[a-f0-9]{24}$
           readOnly: true
         modifiedTime:
-          $ref: '#/components/schemas/datetime.v1'
-        expirationTime:
           $ref: '#/components/schemas/datetime.v1'
         latestDataTime:
           $ref: '#/components/schemas/datetime.v1'
@@ -4838,6 +4835,11 @@ components:
           $ref: '#/components/schemas/providerId.v1'
           x-stoplight:
             id: ej94kmuykpg1k
+        expirationTime:
+          type: string
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
       required:
         - createdTime
         - providerName

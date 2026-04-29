@@ -174,7 +174,7 @@ func RandomPermissions() patients.Permissions {
 
 func RandomDataSources() patients.DataSources {
 	return []patients.DataSource{
-		{State: test.Faker.RandomStringElement([]string{"pending", "connected"}), ProviderName: test.Faker.Company().Name()},
+		{State: test.Faker.RandomStringElement([]string{"connected"}), ProviderName: test.Faker.Company().Name()},
 	}
 }
 
