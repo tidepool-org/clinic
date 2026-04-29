@@ -1517,17 +1517,37 @@ type tideCategory struct {
 	//          0 - no sorting
 	//        > 0 - sort in ascending order
 	SummaryFieldSortOrder int
-	// SummaryFieldFilters optionally filter a category while querying.
-	SummaryFieldFilters []summaryFieldFilter
+	// [Predicates] returns an array of mongodb find predicates suitable for input to
+	// the `$and` operator - see [queryPredicates].
+	Predicates queryPredicates
 }
 
-// summaryFieldFilter allows defines a query on a summary field
-type summaryFieldFilter struct {
-	SummaryField string
+// queryPredicates is a function that, given the path prefix of the current
+// period, e.g., "summary.cgmStats.periods.14d", returns an array of mongodb
+// query predicates suitable as input into the `$and` operator for a `find`
+// operation.
+type queryPredicates func(parentFieldPath string) bson.A
 
-	// [QueryPredicate] is the mongodb expression to be used to compare [SummaryField] against to see if it matches a certain category.
-	QueryPredicate bson.M
+// roundFieldExpr is a convenience function that returns a mongoDB expression
+// that rounds the given field.
+func roundFieldExpr(field string) bson.M {
+	fieldPathExpr := field
+	if !strings.HasPrefix(fieldPathExpr, "$") {
+		fieldPathExpr = "$" + fieldPathExpr
+	}
+	return bson.M{
+		"$round": bson.A{
+			bson.M{
+				"$multiply": bson.A{
+					fieldPathExpr,
+					100,
+				},
+			},
+		},
+	}
 }
+
+const halfAPercent = 0.005
 
 // availableCategories are the categories available for a TIDE report.
 var availableCategories = [...]tideCategory{
@@ -1535,124 +1555,222 @@ var availableCategories = [...]tideCategory{
 		CategoryName:          "timeInVeryLowPercent",
 		SummaryField:          "timeInVeryLowPercent",
 		SummaryFieldSortOrder: -1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeInVeryLowPercent",
-				QueryPredicate: bson.M{"$gte": 0.01},
-			}},
+		Predicates: func(parentFieldPath string) bson.A {
+			field := parentFieldPath + "." + "timeInVeryLowPercent"
+			return bson.A{
+				// These redundant looking {"$gt": # +/- halfAPercent} predicates are
+				// used to allow an index to be (possibly) be used. This is because
+				// MongoDB does not support indexes on calculated expressions, but only
+				// fields. By including them, the index may be used for filtering or
+				// sorting, after which the rounded predicate would be rechecked. This
+				// however does require knowledge of both the boundary conditions and
+				// banker's rounding rules. The actual rounded predicate must also be
+				// present for the correct categorization calculation.
+				// The other alternative was storing the rounded results w/ the
+				// summary. I feel this requires considerably more work as it touches
+				// summary service & clinic worker & would require populating existing
+				// summary fields.
+				bson.M{field: bson.M{"$gt": 0.01 - halfAPercent}}, // > because round(0.005) = round(0.5%) = 0% so only values > 0.5% round to 1
+				bson.M{"$expr": bson.M{
+					"$gte": bson.A{
+						roundFieldExpr(field),
+						1,
+					},
+				}},
+			}
+		},
 	},
+
 	{
 		CategoryName:          "timeInAnyLowPercent",
 		SummaryField:          "timeInAnyLowPercent",
 		SummaryFieldSortOrder: -1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeInAnyLowPercent",
-				QueryPredicate: bson.M{"$gte": 0.04},
-			}},
+		Predicates: func(parentFieldPath string) bson.A {
+			field := parentFieldPath + "." + "timeInAnyLowPercent"
+			return bson.A{
+				bson.M{field: bson.M{"$gte": 0.04 - halfAPercent}}, // >= because round(0.035) = round(3.5%) = 4% so values greater than or equal to 3.5% round to 4%
+				bson.M{"$expr": bson.M{
+					"$gte": bson.A{
+						roundFieldExpr(field),
+						4,
+					},
+				}},
+			}
+		},
 	},
 	{
 		CategoryName:          "dropInTimeInTargetPercent",
 		SummaryField:          "timeInTargetPercentDelta",
 		SummaryFieldSortOrder: 1, // ascending sort so that largest negative value is first
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeInTargetPercentDelta",
-				QueryPredicate: bson.M{"$lte": -0.15},
-			}},
+		Predicates: func(parentFieldPath string) bson.A {
+			field := parentFieldPath + "." + "timeInTargetPercentDelta"
+			return bson.A{
+				bson.M{field: bson.M{"$lt": -0.15 + halfAPercent}}, // < because round(-0.145) = round(-14.5%) = 14% so values less than -14.5% rounds to -15%.
+				bson.M{"$expr": bson.M{
+					"$lte": bson.A{
+						roundFieldExpr(field),
+						-15,
+					},
+				}},
+			}
+		},
 	},
 	{
 		CategoryName:          "timeCGMUsePercent",
 		SummaryField:          "timeCGMUsePercent",
 		SummaryFieldSortOrder: 1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeCGMUsePercent",
-				QueryPredicate: bson.M{"$lte": 0.7},
-			}},
+		Predicates: func(parentFieldPath string) bson.A {
+			field := parentFieldPath + "." + "timeCGMUsePercent"
+			return bson.A{
+				bson.M{field: bson.M{"$lt": 0.70 - halfAPercent}}, // < because round(0.695) = round(69.5%) = 70% so values less than 69.5% round to < 70%.
+				bson.M{"$expr": bson.M{
+					"$lte": bson.A{
+						roundFieldExpr(field),
+						70,
+					},
+				}},
+			}
+		},
 	},
 	{
 		CategoryName:          "timeInTargetPercent",
 		SummaryField:          "timeInTargetPercent",
 		SummaryFieldSortOrder: 1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeInTargetPercent",
-				QueryPredicate: bson.M{"$lte": 0.7},
-			}},
+		Predicates: func(parentFieldPath string) bson.A {
+			field := parentFieldPath + "." + "timeInTargetPercent"
+			return bson.A{
+				bson.M{field: bson.M{"$lte": 0.70 + halfAPercent}}, // <= because round(0.705) = round(70.5%) = 70% so values less than or equal to 70.5% round to <= 70%.
+				bson.M{"$expr": bson.M{
+					"$lte": bson.A{
+						roundFieldExpr(field),
+						70,
+					},
+				}},
+			}
+		},
 	},
 	{
 		CategoryName:          "meetingTargets",
 		SummaryField:          "timeInTargetPercent",
 		SummaryFieldSortOrder: -1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeInTargetPercent",
-				QueryPredicate: bson.M{"$gt": 0.7},
-			},
-			{
-				SummaryField:   "timeCGMUsePercent",
-				QueryPredicate: bson.M{"$gte": 0.7},
-			},
-			// These "$not" expressions are used because the fields may not exist in
-			// the patient summary. They are usually used when comparing for flagged
-			// conidtions as those may not exist dpending on the patient if they
-			// never spent time in that state.
-			// So that query will pass if either:
-			//   * The summary field exists and it matches the predicate.
-			//   OR
-			//   * The summary field does not exist
-			{
-				SummaryField:   "timeInAnyLowPercent",
-				QueryPredicate: bson.M{"$not": bson.M{"$gte": .04}},
-			},
-			{
-				SummaryField:   "timeInVeryLowPercent",
-				QueryPredicate: bson.M{"$not": bson.M{"$gte": .01}},
-			},
-			{
-				SummaryField:   "timeInAnyHighPercent",
-				QueryPredicate: bson.M{"$not": bson.M{"$gte": .25}},
-			},
-			{
-				SummaryField:   "timeInVeryHighPercent",
-				QueryPredicate: bson.M{"$not": bson.M{"$gte": .05}},
-			},
-			{
-				SummaryField:   "timeInExtremeHighPercent",
-				QueryPredicate: bson.M{"$not": bson.M{"$gte": .01}},
-			},
+		Predicates: func(parentFieldPath string) bson.A {
+			timeInTargetPercent := parentFieldPath + "." + "timeInTargetPercent"
+			timeCGMUsePercent := parentFieldPath + "." + "timeCGMUsePercent"
+			timeInLowPercent := parentFieldPath + "." + "timeInLowPercent"
+			timeInVeryLowPercent := parentFieldPath + "." + "timeInVeryLowPercent"
+			timeInAnyHighPercent := parentFieldPath + "." + "timeInAnyHighPercent"
+			timeInVeryHighPercent := parentFieldPath + "." + "timeInVeryHighPercent"
+			timeInExtremeHighPercent := parentFieldPath + "." + "timeInExtremeHighPercent"
+			return bson.A{
+				bson.M{timeInTargetPercent: bson.M{"$gt": 0.70 + halfAPercent}},
+				bson.M{"$expr": bson.M{
+					"$gt": bson.A{
+						roundFieldExpr(timeInTargetPercent),
+						70,
+					},
+				}},
+				bson.M{timeCGMUsePercent: bson.M{"$gte": 0.70 - halfAPercent}},
+				bson.M{"$expr": bson.M{
+					"$gte": bson.A{
+						roundFieldExpr(timeCGMUsePercent),
+						70,
+					},
+				}},
+				// These "$not" expressions are used because the fields may not exist in
+				// the patient summary if no data was within a category's thresholds.
+				//
+				// So that query will pass if either:
+				//   * The summary field exists and it matches the predicate.
+				//   OR
+				//   * The summary field does not exist
+				bson.M{"$expr": bson.M{
+					"$not": bson.M{
+						"$gte": bson.A{
+							roundFieldExpr(timeInLowPercent),
+							4,
+						},
+					}}},
+				bson.M{"$expr": bson.M{
+					"$not": bson.M{
+						"$gte": bson.A{
+							roundFieldExpr(timeInVeryLowPercent),
+							1,
+						},
+					}}},
+				bson.M{"$expr": bson.M{
+					"$not": bson.M{
+						"$gte": bson.A{
+							roundFieldExpr(timeInAnyHighPercent),
+							25,
+						},
+					}}},
+				bson.M{"$expr": bson.M{
+					"$not": bson.M{
+						"$gte": bson.A{
+							roundFieldExpr(timeInVeryHighPercent),
+							5,
+						},
+					}}},
+				bson.M{"$expr": bson.M{
+					"$not": bson.M{
+						"$gte": bson.A{
+							roundFieldExpr(timeInExtremeHighPercent),
+							1,
+						},
+					}}},
+			}
 		},
 	},
 	{
 		CategoryName:          "timeInExtremeHighPercent",
 		SummaryField:          "timeInExtremeHighPercent",
 		SummaryFieldSortOrder: -1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeInExtremeHighPercent",
-				QueryPredicate: bson.M{"$gte": 0.01},
-			}},
+		Predicates: func(parentFieldPath string) bson.A {
+			field := parentFieldPath + "." + "timeInExtremeHighPercent"
+			return bson.A{
+				bson.M{field: bson.M{"$gt": 0.01 - halfAPercent}},
+				bson.M{"$expr": bson.M{
+					"$gte": bson.A{
+						roundFieldExpr(field),
+						1,
+					},
+				}},
+			}
+		},
 	},
 	{
 		CategoryName:          "timeInVeryHighPercent",
 		SummaryField:          "timeInVeryHighPercent",
 		SummaryFieldSortOrder: -1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeInVeryHighPercent",
-				QueryPredicate: bson.M{"$gte": 0.05},
-			}},
+		Predicates: func(parentFieldPath string) bson.A {
+			field := parentFieldPath + "." + "timeInVeryHighPercent"
+			return bson.A{
+				bson.M{field: bson.M{"$gt": 0.05 - halfAPercent}},
+				bson.M{"$expr": bson.M{
+					"$gte": bson.A{
+						roundFieldExpr(field),
+						5,
+					},
+				}},
+			}
+		},
 	},
 	{
 		CategoryName:          "timeInAnyHighPercent",
 		SummaryField:          "timeInAnyHighPercent",
 		SummaryFieldSortOrder: -1,
-		SummaryFieldFilters: []summaryFieldFilter{
-			{
-				SummaryField:   "timeInAnyHighPercent",
-				QueryPredicate: bson.M{"$gte": 0.25},
-			}},
+		Predicates: func(parentFieldPath string) bson.A {
+			field := parentFieldPath + "." + "timeInAnyHighPercent"
+			return bson.A{
+				bson.M{field: bson.M{"$gt": 0.25 - halfAPercent}},
+				bson.M{"$expr": bson.M{
+					"$gte": bson.A{
+						roundFieldExpr(field),
+						25,
+					},
+				}},
+			}
+		},
 	},
 }
 
@@ -1744,8 +1862,14 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		opts := options.Find()
 		opts.SetLimit(int64(remaining))
 
-		for _, filter := range category.SummaryFieldFilters {
-			selector["summary.cgmStats.periods."+params.Period+"."+filter.SummaryField] = filter.QueryPredicate
+		var exprs bson.A
+		parentFieldPath := "summary.cgmStats.periods." + params.Period
+		if category.Predicates != nil {
+			preds := category.Predicates(parentFieldPath)
+			exprs = append(exprs, preds...)
+		}
+		if len(exprs) > 0 {
+			selector["$and"] = exprs
 		}
 
 		sortKey := "summary.cgmStats.periods." + params.Period + "." + category.SummaryField

@@ -2160,20 +2160,40 @@ var _ = Describe("TideReport", func() {
 							TimeInAnyLowPercent:      floatp(1),
 							LastData:                 mustTime("2025-07-31T10:24:00.359Z"),
 						},
+						{
+							Patient: patients.TidePatient{
+								Email:    strp("rounded+very+low@tidepool.org"),
+								FullName: strp("Rounded Time In Very Low ≥ 1%"),
+								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-dddddddddddd"),
+								Tags:     []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+							},
+							AverageGlucoseMmol:       floatp(2.681029437218411),
+							TimeCGMUseMinutes:        intp(14070),
+							TimeCGMUsePercent:        floatp(0.8839895693808708),
+							TimeInHighPercent:        floatp(0),
+							TimeInLowPercent:         floatp(0.035),
+							TimeInTargetPercent:      floatp(0.905),
+							TimeInTargetPercentDelta: floatp(0),
+							TimeInVeryHighPercent:    floatp(0),
+							TimeInVeryLowPercent:     floatp(0.06),
+							TimeInAnyHighPercent:     floatp(0),
+							TimeInAnyLowPercent:      floatp(0.095),
+							LastData:                 mustTime("2025-07-04T14:49:07.079Z"),
+						},
 					}
 					timeInAnyLowPercentResults = []patients.TideResultPatient{
 						{
 							AverageGlucoseMmol: floatp(3.8945273631840798),
 							Patient: patients.TidePatient{
 								Email:       strp("time+in+low+4+pct@tidepool.org"),
-								FullName:    strp("Time below 3.9 mmol/L > 4%"),
+								FullName:    strp("Time below 3.9 mmol/L ≥ 4%"),
 								Id:          strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaa4444"),
 								Tags:        []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
 								Reviews:     nil,
 								DataSources: nil,
 							},
 							TimeCGMUseMinutes:        intp(14070),
-							TimeCGMUsePercent:        floatp(0.6979166666666666),
+							TimeCGMUsePercent:        floatp(0.694),
 							TimeInHighPercent:        floatp(0),
 							TimeInLowPercent:         floatp(0.05472636815920398),
 							TimeInTargetPercent:      floatp(0.945273631840796),
@@ -2183,6 +2203,28 @@ var _ = Describe("TideReport", func() {
 							TimeInAnyHighPercent:     floatp(0),
 							TimeInAnyLowPercent:      floatp(0.05472636815920398),
 							LastData:                 mustTime("2025-07-03T14:49:07.079Z"),
+						},
+						{
+							AverageGlucoseMmol: floatp(3.9782035652530548),
+							Patient: patients.TidePatient{
+								Email:       strp("time+in+rounded+low@tidepool.org"),
+								FullName:    strp("Rounded Time In Low ≥ 4%"),
+								Id:          strp("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+								Tags:        []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
+								Reviews:     nil,
+								DataSources: nil,
+							},
+							TimeCGMUseMinutes:        intp(14070),
+							TimeCGMUsePercent:        floatp(0.7625795277794299),
+							TimeInHighPercent:        floatp(0),
+							TimeInLowPercent:         floatp(0.039),
+							TimeInTargetPercent:      floatp(0.957),
+							TimeInTargetPercentDelta: floatp(0),
+							TimeInVeryHighPercent:    floatp(0),
+							TimeInVeryLowPercent:     floatp(0.004),
+							TimeInAnyHighPercent:     floatp(0),
+							TimeInAnyLowPercent:      floatp(0.043),
+							LastData:                 mustTime("2025-07-05T15:50:07.000Z"),
 						},
 					}
 					timeInVeryHighResults = []patients.TideResultPatient{
@@ -2331,7 +2373,7 @@ var _ = Describe("TideReport", func() {
 							TimeInTargetPercent:      floatp(0.976303317535545),
 							TimeInTargetPercentDelta: floatp(0.022936733994397884),
 							TimeInVeryHighPercent:    floatp(0),
-							TimeInVeryLowPercent:     floatp(0.0074831628835120975),
+							TimeInVeryLowPercent:     floatp(0.0044831628835120975),
 							TimeInAnyHighPercent:     floatp(0.001995510102269893),
 							TimeInAnyLowPercent:      floatp(0.021701172362185085),
 							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
@@ -2374,7 +2416,7 @@ var _ = Describe("TideReport", func() {
 							TimeInTargetPercent:      floatp(0.976303317535545),
 							TimeInTargetPercentDelta: floatp(0.022936733994397884),
 							TimeInVeryHighPercent:    floatp(0),
-							TimeInVeryLowPercent:     floatp(0.0074831628835120975),
+							TimeInVeryLowPercent:     floatp(0.0044831628835120975),
 							TimeInAnyHighPercent:     floatp(0.001995510102269893),
 							TimeInAnyLowPercent:      floatp(0.021701172362185085),
 							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
@@ -2389,7 +2431,7 @@ var _ = Describe("TideReport", func() {
 							AverageGlucoseMmol:       floatp(5.300278257324843),
 							TimeCGMUseMinutes:        intp(19625),
 							TimeCGMUsePercent:        floatp(0.9734623015873016),
-							TimeInHighPercent:        floatp(0.06929936305732484),
+							TimeInHighPercent:        floatp(0.02929936305732484),
 							TimeInLowPercent:         floatp(0.006878980891719746),
 							TimeInTargetPercent:      floatp(0.8991082802547771),
 							TimeInTargetPercentDelta: floatp(0.008514718886567851),
@@ -2438,8 +2480,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 8
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(11))
-					Expect(report.Metadata.SelectedPatients).To(Equal(11))
+					Expect(report.Metadata.CandidatePatients).To(Equal(13))
+					Expect(report.Metadata.SelectedPatients).To(Equal(13))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(tideResultsPatientMatcher(timeInVeryLowResults))
 
@@ -2467,8 +2509,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 8
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(11))
-					Expect(report.Metadata.SelectedPatients).To(Equal(11))
+					Expect(report.Metadata.CandidatePatients).To(Equal(13))
+					Expect(report.Metadata.SelectedPatients).To(Equal(13))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(tideResultsPatientMatcher(timeInVeryLowResults))
 
@@ -2496,8 +2538,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 7
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(9))
-					Expect(report.Metadata.SelectedPatients).To(Equal(9))
+					Expect(report.Metadata.CandidatePatients).To(Equal(11))
+					Expect(report.Metadata.SelectedPatients).To(Equal(11))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(tideResultsPatientMatcher(timeInVeryLowResults))
 
@@ -2526,8 +2568,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 2
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(3))
-					Expect(report.Metadata.SelectedPatients).To(Equal(3))
+					Expect(report.Metadata.CandidatePatients).To(Equal(4))
+					Expect(report.Metadata.SelectedPatients).To(Equal(4))
 
 					timeCGMUsePercentResults = []patients.TideResultPatient{
 						// This patient would normally be put in the "timeInAnyLowPercentResults" category if using default categories, but since there are non-empty Categories params that don't include timeInAnyLowPercentResults, that user is put in the next available
@@ -2535,14 +2577,14 @@ var _ = Describe("TideReport", func() {
 							AverageGlucoseMmol: floatp(3.8945273631840798),
 							Patient: patients.TidePatient{
 								Email:       strp("time+in+low+4+pct@tidepool.org"),
-								FullName:    strp("Time below 3.9 mmol/L > 4%"),
+								FullName:    strp("Time below 3.9 mmol/L ≥ 4%"),
 								Id:          strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaa4444"),
 								Tags:        []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
 								Reviews:     nil,
 								DataSources: nil,
 							},
 							TimeCGMUseMinutes:        intp(14070),
-							TimeCGMUsePercent:        floatp(0.6979166666666666),
+							TimeCGMUsePercent:        floatp(0.694),
 							TimeInHighPercent:        floatp(0),
 							TimeInLowPercent:         floatp(0.05472636815920398),
 							TimeInTargetPercent:      floatp(0.945273631840796),
@@ -2642,7 +2684,7 @@ var _ = Describe("TideReport", func() {
 							TimeInTargetPercent:      floatp(0.976303317535545),
 							TimeInTargetPercentDelta: floatp(0.022936733994397884),
 							TimeInVeryHighPercent:    floatp(0),
-							TimeInVeryLowPercent:     floatp(0.0074831628835120975),
+							TimeInVeryLowPercent:     floatp(0.0044831628835120975),
 							TimeInAnyHighPercent:     floatp(0.001995510102269893),
 							TimeInAnyLowPercent:      floatp(0.021701172362185085),
 							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
@@ -2657,7 +2699,7 @@ var _ = Describe("TideReport", func() {
 							AverageGlucoseMmol:       floatp(5.300278257324843),
 							TimeCGMUseMinutes:        intp(19625),
 							TimeCGMUsePercent:        floatp(0.9734623015873016),
-							TimeInHighPercent:        floatp(0.06929936305732484),
+							TimeInHighPercent:        floatp(0.02929936305732484),
 							TimeInLowPercent:         floatp(0.006878980891719746),
 							TimeInTargetPercent:      floatp(0.8991082802547771),
 							TimeInTargetPercentDelta: floatp(0.008514718886567851),
@@ -2724,7 +2766,7 @@ var _ = Describe("TideReport", func() {
 							TimeInTargetPercent:      floatp(0.976303317535545),
 							TimeInTargetPercentDelta: floatp(0.022936733994397884),
 							TimeInVeryHighPercent:    floatp(0),
-							TimeInVeryLowPercent:     floatp(0.0074831628835120975),
+							TimeInVeryLowPercent:     floatp(0.0044831628835120975),
 							TimeInAnyHighPercent:     floatp(0.001995510102269893),
 							TimeInAnyLowPercent:      floatp(0.021701172362185085),
 							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
@@ -2739,7 +2781,7 @@ var _ = Describe("TideReport", func() {
 							AverageGlucoseMmol:       floatp(5.300278257324843),
 							TimeCGMUseMinutes:        intp(19625),
 							TimeCGMUsePercent:        floatp(0.9734623015873016),
-							TimeInHighPercent:        floatp(0.06929936305732484),
+							TimeInHighPercent:        floatp(0.02929936305732484),
 							TimeInLowPercent:         floatp(0.006878980891719746),
 							TimeInTargetPercent:      floatp(0.8991082802547771),
 							TimeInTargetPercentDelta: floatp(0.008514718886567851),
@@ -2768,8 +2810,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 2
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(4))
-					Expect(report.Metadata.SelectedPatients).To(Equal(4))
+					Expect(report.Metadata.CandidatePatients).To(Equal(5))
+					Expect(report.Metadata.SelectedPatients).To(Equal(5))
 
 					meetingTargetsResults = []patients.TideResultPatient{
 						{
@@ -2807,7 +2849,7 @@ var _ = Describe("TideReport", func() {
 							TimeInTargetPercent:      floatp(0.976303317535545),
 							TimeInTargetPercentDelta: floatp(0.022936733994397884),
 							TimeInVeryHighPercent:    floatp(0),
-							TimeInVeryLowPercent:     floatp(0.0074831628835120975),
+							TimeInVeryLowPercent:     floatp(0.0044831628835120975),
 							TimeInAnyHighPercent:     floatp(0.001995510102269893),
 							TimeInAnyLowPercent:      floatp(0.021701172362185085),
 							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
@@ -2822,7 +2864,7 @@ var _ = Describe("TideReport", func() {
 							AverageGlucoseMmol:       floatp(5.300278257324843),
 							TimeCGMUseMinutes:        intp(19625),
 							TimeCGMUsePercent:        floatp(0.9734623015873016),
-							TimeInHighPercent:        floatp(0.06929936305732484),
+							TimeInHighPercent:        floatp(0.02929936305732484),
 							TimeInLowPercent:         floatp(0.006878980891719746),
 							TimeInTargetPercent:      floatp(0.8991082802547771),
 							TimeInTargetPercentDelta: floatp(0.008514718886567851),

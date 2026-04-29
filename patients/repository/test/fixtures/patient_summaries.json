@@ -3768,7 +3768,7 @@
                         "timeInVeryHighRecordsDelta": -12,
                         "timeInVeryLowMinutes": 150,
                         "timeInVeryLowMinutesDelta": 100,
-                        "timeInVeryLowPercent": 0.0074831628835120975,
+                        "timeInVeryLowPercent": 0.0044831628835120975,
                         "timeInVeryLowPercentDelta": 0.004989397297477185,
                         "timeInVeryLowRecords": 30,
                         "timeInVeryLowRecordsDelta": 20,
@@ -4178,13 +4178,13 @@
                         "timeInAnyLowRecordsDelta": 11,
                         "timeInExtremeHighMinutes": 175,
                         "timeInExtremeHighMinutesDelta": 175,
-                        "timeInExtremeHighPercent": 0.008917197452229299,
-                        "timeInExtremeHighPercentDelta": 0.008917197452229299,
+                        "timeInExtremeHighPercent": 0.002917197452229299,
+                        "timeInExtremeHighPercentDelta": 0.002917197452229299,
                         "timeInExtremeHighRecords": 35,
                         "timeInExtremeHighRecordsDelta": 35,
                         "timeInHighMinutes": 1360,
                         "timeInHighMinutesDelta": -400,
-                        "timeInHighPercent": 0.06929936305732484,
+                        "timeInHighPercent": 0.02929936305732484,
                         "timeInHighPercentDelta": -0.019231824065411574,
                         "timeInHighRecords": 272,
                         "timeInHighRecordsDelta": -80,
@@ -4579,7 +4579,7 @@
         "userId": "aaaaaaaa-bbbb-cccc-dddd-aaaaaaaa4444",
         "birthDate": "2000-01-01",
         "email": "time+in+low+4+pct@tidepool.org",
-        "fullName": "Time below 3.9 mmol/L > 4%",
+        "fullName": "Time below 3.9 mmol/L ≥ 4%",
         "mrn": null,
         "targetDevices": null,
         "tags":
@@ -4800,7 +4800,7 @@
                         "standardDeviationDelta": 0,
                         "timeCGMUseMinutes": 7035,
                         "timeCGMUseMinutesDelta": 0,
-                        "timeCGMUsePercent": 0.6979166666666666,
+                        "timeCGMUsePercent": 0.694,
                         "timeCGMUsePercentDelta": 0,
                         "timeCGMUseRecords": 1407,
                         "timeCGMUseRecordsDelta": 0,
@@ -4906,7 +4906,7 @@
                         "standardDeviationDelta": 0,
                         "timeCGMUseMinutes": 14070,
                         "timeCGMUseMinutesDelta": 0,
-                        "timeCGMUsePercent": 0.6979166666666666,
+                        "timeCGMUsePercent": 0.694,
                         "timeCGMUsePercentDelta": 0,
                         "timeCGMUseRecords": 2814,
                         "timeCGMUseRecordsDelta": 0,
@@ -5012,7 +5012,7 @@
                         "standardDeviationDelta": 0,
                         "timeCGMUseMinutes": 1005,
                         "timeCGMUseMinutesDelta": 0,
-                        "timeCGMUsePercent": 0.6979166666666666,
+                        "timeCGMUsePercent": 0.694,
                         "timeCGMUsePercentDelta": 0,
                         "timeCGMUseRecords": 201,
                         "timeCGMUseRecordsDelta": 0,
@@ -5069,7 +5069,7 @@
         "userId": "aaaaaaaa-bbbb-cccc-dddd-aaaaaa444444",
         "birthDate": "2000-01-01",
         "email": "time+in+low+4+pct+not+match+because+tags@tidepool.org",
-        "fullName": "Time below 3.9 mmol/L > 4% but not match tags",
+        "fullName": "Time below 3.9 mmol/L ≥ 4% but not match tags",
         "mrn": null,
         "targetDevices": null,
         "permissions":
@@ -7539,5 +7539,401 @@
                 }
             }
         }
+    },
+    {
+        "_id":
+        {
+            "$oid": "69f1d35dd6dc5fe5448bef46"
+        },
+        "clinicId":
+        {
+            "$oid": "cccccccccccccccccccccccc"
+        },
+        "userId": "aaaaaaaa-bbbb-cccc-dddd-dddddddddddd",
+        "birthDate": "2000-01-01",
+        "email": "rounded+very+low@tidepool.org",
+        "fullName": "Rounded Time In Very Low ≥ 1%",
+        "mrn": null,
+        "targetDevices": null,
+        "tags":
+        [
+            {
+                "$oid": "aaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+        ],
+        "permissions":
+        {
+            "custodian":
+            {},
+            "view":
+            {},
+            "upload":
+            {},
+            "note":
+            {}
+        },
+        "createdTime":
+        {
+            "$date": "2025-07-03T22:08:40.937Z"
+        },
+        "updatedTime":
+        {
+            "$date": "2025-07-31T20:19:10.393Z"
+        },
+        "invitedBy": "aaaaaaaa-bbbb-cccc-dddd-bbbbbbbbbbbb",
+        "requireUniqueMrn": false,
+        "summary":
+        {
+            "cgmStats":
+            {
+                "id": "6866ffe94e48ffa6fbd23b49",
+                "config":
+                {
+                    "highGlucoseThreshold": 10,
+                    "lowGlucoseThreshold": 3.9,
+                    "schemaVersion": 6,
+                    "veryHighGlucoseThreshold": 13.9,
+                    "veryLowGlucoseThreshold": 3
+                },
+                "dates":
+                {
+                    "firstData":
+                    {
+                        "$date": "2025-06-06T22:09:07.079Z"
+                    },
+                    "hasFirstData": true,
+                    "hasLastData": true,
+                    "hasLastUploadDate": true,
+                    "hasOutdatedSince": false,
+                    "lastData":
+                    {
+                        "$date": "2025-07-04T14:49:07.079Z"
+                    },
+                    "lastUpdatedDate":
+                    {
+                        "$date": "2025-07-21T11:49:30.706Z"
+                    },
+                    "lastUpdatedReason":
+                    [
+                        "SCHEMA_MIGRATION"
+                    ],
+                    "lastUploadDate":
+                    {
+                        "$date": "2025-07-03T22:10:50.829Z"
+                    },
+                    "outdatedReason":
+                    []
+                },
+                "periods":
+                {
+                    "14d":
+                    {
+                        "averageDailyRecords": 201,
+                        "averageDailyRecordsDelta": 0,
+                        "averageGlucoseMmol": 2.681029437218411,
+                        "averageGlucoseMmolDelta": 0,
+                        "coefficientOfVariation": 0,
+                        "coefficientOfVariationDelta": 0,
+                        "daysWithData": 14,
+                        "daysWithDataDelta": 0,
+                        "hasAverageDailyRecords": true,
+                        "hasAverageGlucoseMmol": true,
+                        "hasGlucoseManagementIndicator": false,
+                        "hasTimeCGMUseMinutes": true,
+                        "hasTimeCGMUsePercent": true,
+                        "hasTimeCGMUseRecords": true,
+                        "hasTimeInAnyHighMinutes": false,
+                        "hasTimeInAnyHighPercent": true,
+                        "hasTimeInAnyHighRecords": false,
+                        "hasTimeInAnyLowMinutes": true,
+                        "hasTimeInAnyLowPercent": true,
+                        "hasTimeInAnyLowRecords": true,
+                        "hasTimeInExtremeHighMinutes": false,
+                        "hasTimeInExtremeHighPercent": true,
+                        "hasTimeInExtremeHighRecords": false,
+                        "hasTimeInHighMinutes": false,
+                        "hasTimeInHighPercent": true,
+                        "hasTimeInHighRecords": false,
+                        "hasTimeInLowMinutes": true,
+                        "hasTimeInLowPercent": true,
+                        "hasTimeInLowRecords": true,
+                        "hasTimeInTargetMinutes": true,
+                        "hasTimeInTargetPercent": true,
+                        "hasTimeInTargetRecords": true,
+                        "hasTimeInVeryHighMinutes": false,
+                        "hasTimeInVeryHighPercent": true,
+                        "hasTimeInVeryHighRecords": false,
+                        "hasTimeInVeryLowMinutes": false,
+                        "hasTimeInVeryLowPercent": true,
+                        "hasTimeInVeryLowRecords": false,
+                        "hasTotalRecords": true,
+                        "hoursWithData": 238,
+                        "hoursWithDataDelta": 0,
+                        "max": 3.9,
+                        "maxDelta": 0,
+                        "min": 3.8,
+                        "minDelta": 0,
+                        "standardDeviation": 0,
+                        "standardDeviationDelta": 0,
+                        "timeCGMUseMinutes": 14070,
+                        "timeCGMUseMinutesDelta": 0,
+                        "timeCGMUsePercent": 0.8839895693808708,
+                        "timeCGMUsePercentDelta": 0,
+                        "timeCGMUseRecords": 2814,
+                        "timeCGMUseRecordsDelta": 0,
+                        "timeInAnyHighMinutes": 0,
+                        "timeInAnyHighMinutesDelta": 0,
+                        "timeInAnyHighPercent": 0,
+                        "timeInAnyHighPercentDelta": 0,
+                        "timeInAnyHighRecords": 0,
+                        "timeInAnyHighRecordsDelta": 0,
+                        "timeInAnyLowMinutes": 770,
+                        "timeInAnyLowMinutesDelta": 0,
+                        "timeInAnyLowPercent": 0.095,
+                        "timeInAnyLowPercentDelta": 0,
+                        "timeInAnyLowRecords": 154,
+                        "timeInAnyLowRecordsDelta": 0,
+                        "timeInExtremeHighMinutes": 0,
+                        "timeInExtremeHighMinutesDelta": 0,
+                        "timeInExtremeHighPercent": 0,
+                        "timeInExtremeHighPercentDelta": 0,
+                        "timeInExtremeHighRecords": 0,
+                        "timeInExtremeHighRecordsDelta": 0,
+                        "timeInHighMinutes": 0,
+                        "timeInHighMinutesDelta": 0,
+                        "timeInHighPercent": 0,
+                        "timeInHighPercentDelta": 0,
+                        "timeInHighRecords": 0,
+                        "timeInHighRecordsDelta": 0,
+                        "timeInLowMinutes": 770,
+                        "timeInLowMinutesDelta": 0,
+                        "timeInLowPercent": 0.035,
+                        "timeInLowPercentDelta": 0,
+                        "timeInLowRecords": 154,
+                        "timeInLowRecordsDelta": 0,
+                        "timeInTargetMinutes": 13300,
+                        "timeInTargetMinutesDelta": 0,
+                        "timeInTargetPercent": 0.905,
+                        "timeInTargetPercentDelta": 0,
+                        "timeInTargetRecords": 2660,
+                        "timeInTargetRecordsDelta": 0,
+                        "timeInVeryHighMinutes": 0,
+                        "timeInVeryHighMinutesDelta": 0,
+                        "timeInVeryHighPercent": 0,
+                        "timeInVeryHighPercentDelta": 0,
+                        "timeInVeryHighRecords": 0,
+                        "timeInVeryHighRecordsDelta": 0,
+                        "timeInVeryLowMinutes": 0,
+                        "timeInVeryLowMinutesDelta": 0,
+                        "timeInVeryLowPercent": 0.06,
+                        "timeInVeryLowPercentDelta": 0,
+                        "timeInVeryLowRecords": 0,
+                        "timeInVeryLowRecordsDelta": 0,
+                        "totalRecords": 2814,
+                        "totalRecordsDelta": 0
+                    }
+                }
+            }
+        },
+        "reviews":
+        []
+    },
+    {
+        "_id":
+        {
+            "$oid": "69f1d88968445eed4625a569"
+        },
+        "clinicId":
+        {
+            "$oid": "cccccccccccccccccccccccc"
+        },
+        "userId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        "birthDate": "2000-01-02",
+        "email": "time+in+rounded+low@tidepool.org",
+        "fullName": "Rounded Time In Low ≥ 4%",
+        "mrn": null,
+        "targetDevices": null,
+        "tags":
+        [
+            {
+                "$oid": "aaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+        ],
+        "permissions":
+        {
+            "custodian":
+            {},
+            "view":
+            {},
+            "upload":
+            {},
+            "note":
+            {}
+        },
+        "createdTime":
+        {
+            "$date": "2025-07-03T22:08:40.937Z"
+        },
+        "updatedTime":
+        {
+            "$date": "2025-07-31T20:19:10.393Z"
+        },
+        "invitedBy": "aaaaaaaa-bbbb-cccc-dddd-bbbbbbbbbbbb",
+        "requireUniqueMrn": false,
+        "summary":
+        {
+            "cgmStats":
+            {
+                "id": "6866ffe94e48ffa6fbd23b49",
+                "config":
+                {
+                    "highGlucoseThreshold": 10,
+                    "lowGlucoseThreshold": 3.9,
+                    "schemaVersion": 6,
+                    "veryHighGlucoseThreshold": 13.9,
+                    "veryLowGlucoseThreshold": 3
+                },
+                "dates":
+                {
+                    "firstData":
+                    {
+                        "$date": "2025-06-06T22:09:07.079Z"
+                    },
+                    "hasFirstData": true,
+                    "hasLastData": true,
+                    "hasLastUploadDate": true,
+                    "hasOutdatedSince": false,
+                    "lastData":
+                    {
+                        "$date": "2025-07-05T15:50:07.000Z"
+                    },
+                    "lastUpdatedDate":
+                    {
+                        "$date": "2025-07-21T11:49:30.706Z"
+                    },
+                    "lastUpdatedReason":
+                    [
+                        "SCHEMA_MIGRATION"
+                    ],
+                    "lastUploadDate":
+                    {
+                        "$date": "2025-07-03T22:10:50.829Z"
+                    },
+                    "outdatedReason":
+                    []
+                },
+                "periods":
+                {
+                    "14d":
+                    {
+                        "averageDailyRecords": 201,
+                        "averageDailyRecordsDelta": 0,
+                        "averageGlucoseMmol": 3.9782035652530548,
+                        "averageGlucoseMmolDelta": 0,
+                        "coefficientOfVariation": 0,
+                        "coefficientOfVariationDelta": 0,
+                        "daysWithData": 14,
+                        "daysWithDataDelta": 0,
+                        "hasAverageDailyRecords": true,
+                        "hasAverageGlucoseMmol": true,
+                        "hasGlucoseManagementIndicator": false,
+                        "hasTimeCGMUseMinutes": true,
+                        "hasTimeCGMUsePercent": true,
+                        "hasTimeCGMUseRecords": true,
+                        "hasTimeInAnyHighMinutes": false,
+                        "hasTimeInAnyHighPercent": true,
+                        "hasTimeInAnyHighRecords": false,
+                        "hasTimeInAnyLowMinutes": true,
+                        "hasTimeInAnyLowPercent": true,
+                        "hasTimeInAnyLowRecords": true,
+                        "hasTimeInExtremeHighMinutes": false,
+                        "hasTimeInExtremeHighPercent": true,
+                        "hasTimeInExtremeHighRecords": false,
+                        "hasTimeInHighMinutes": false,
+                        "hasTimeInHighPercent": true,
+                        "hasTimeInHighRecords": false,
+                        "hasTimeInLowMinutes": true,
+                        "hasTimeInLowPercent": true,
+                        "hasTimeInLowRecords": true,
+                        "hasTimeInTargetMinutes": true,
+                        "hasTimeInTargetPercent": true,
+                        "hasTimeInTargetRecords": true,
+                        "hasTimeInVeryHighMinutes": false,
+                        "hasTimeInVeryHighPercent": true,
+                        "hasTimeInVeryHighRecords": false,
+                        "hasTimeInVeryLowMinutes": false,
+                        "hasTimeInVeryLowPercent": true,
+                        "hasTimeInVeryLowRecords": false,
+                        "hasTotalRecords": true,
+                        "hoursWithData": 238,
+                        "hoursWithDataDelta": 0,
+                        "max": 3.9,
+                        "maxDelta": 0,
+                        "min": 3.8,
+                        "minDelta": 0,
+                        "standardDeviation": 0,
+                        "standardDeviationDelta": 0,
+                        "timeCGMUseMinutes": 14070,
+                        "timeCGMUseMinutesDelta": 0,
+                        "timeCGMUsePercent": 0.7625795277794299,
+                        "timeCGMUsePercentDelta": 0,
+                        "timeCGMUseRecords": 2814,
+                        "timeCGMUseRecordsDelta": 0,
+                        "timeInAnyHighMinutes": 0,
+                        "timeInAnyHighMinutesDelta": 0,
+                        "timeInAnyHighPercent": 0,
+                        "timeInAnyHighPercentDelta": 0,
+                        "timeInAnyHighRecords": 0,
+                        "timeInAnyHighRecordsDelta": 0,
+                        "timeInAnyLowMinutes": 770,
+                        "timeInAnyLowMinutesDelta": 0,
+                        "timeInAnyLowPercent": 0.043,
+                        "timeInAnyLowPercentDelta": 0,
+                        "timeInAnyLowRecords": 154,
+                        "timeInAnyLowRecordsDelta": 0,
+                        "timeInExtremeHighMinutes": 0,
+                        "timeInExtremeHighMinutesDelta": 0,
+                        "timeInExtremeHighPercent": 0,
+                        "timeInExtremeHighPercentDelta": 0,
+                        "timeInExtremeHighRecords": 0,
+                        "timeInExtremeHighRecordsDelta": 0,
+                        "timeInHighMinutes": 0,
+                        "timeInHighMinutesDelta": 0,
+                        "timeInHighPercent": 0,
+                        "timeInHighPercentDelta": 0,
+                        "timeInHighRecords": 0,
+                        "timeInHighRecordsDelta": 0,
+                        "timeInLowMinutes": 770,
+                        "timeInLowMinutesDelta": 0,
+                        "timeInLowPercent": 0.039,
+                        "timeInLowPercentDelta": 0,
+                        "timeInLowRecords": 154,
+                        "timeInLowRecordsDelta": 0,
+                        "timeInTargetMinutes": 13300,
+                        "timeInTargetMinutesDelta": 0,
+                        "timeInTargetPercent": 0.957,
+                        "timeInTargetPercentDelta": 0,
+                        "timeInTargetRecords": 2660,
+                        "timeInTargetRecordsDelta": 0,
+                        "timeInVeryHighMinutes": 0,
+                        "timeInVeryHighMinutesDelta": 0,
+                        "timeInVeryHighPercent": 0,
+                        "timeInVeryHighPercentDelta": 0,
+                        "timeInVeryHighRecords": 0,
+                        "timeInVeryHighRecordsDelta": 0,
+                        "timeInVeryLowMinutes": 0,
+                        "timeInVeryLowMinutesDelta": 0,
+                        "timeInVeryLowPercent": 0.004,
+                        "timeInVeryLowPercentDelta": 0,
+                        "timeInVeryLowRecords": 0,
+                        "timeInVeryLowRecordsDelta": 0,
+                        "totalRecords": 2814,
+                        "totalRecordsDelta": 0
+                    }
+                }
+            }
+        },
+        "reviews":
+        []
     }
 ]
