@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -260,10 +261,15 @@ func (h *Handler) listClinics(ec echo.Context, filter clinicians.Filter, page st
 		clinicIds = append(clinicIds, clinician.ClinicId.Hex())
 	}
 
+	// EAW: here's the bugger call, with no limit
+	if len(clinicIds) == 0 {
+		slog.Warn("listing clinics without limit, and with empty filter", "clinicIds", clinicIds, "pagination", fmt.Sprintf("%+v", store.Pagination{}))
+	}
 	clinicList, err := h.Clinics.List(ctx, &clinics.Filter{Ids: clinicIds}, store.Pagination{})
 	if err != nil {
 		return err
 	}
+
 	dtos, err := NewClinicianClinicRelationshipsDto(cliniciansList, clinicList)
 	if err != nil {
 		return err

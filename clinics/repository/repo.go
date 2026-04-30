@@ -90,6 +90,8 @@ func (r *repository) Get(ctx context.Context, id string) (*clinics.Clinic, error
 func (r *repository) annotateClinics(ctx context.Context, match bson.M) (
 	[]*clinics.Clinic, error) {
 
+	start := time.Now()
+
 	pipeline := bson.A{
 		bson.M{"$match": match},
 		// I've broken this query up to make it (hopefully) a little more tractable. MongoDB
@@ -108,6 +110,12 @@ func (r *repository) annotateClinics(ctx context.Context, match bson.M) (
 	if err := cursor.All(ctx, &clinicsList); err != nil {
 		return nil, err
 	}
+
+	r.logger.Infow("annotated clinics",
+		// "match", match, // logging this entirely is too much
+		"duration", time.Since(start),
+		// "stack", string(debug.Stack())
+	)
 
 	return clinicsList, nil
 }
@@ -283,6 +291,15 @@ func (r *repository) List(ctx context.Context, filter *clinics.Filter, paginatio
 		SetSkip(int64(pagination.Offset)).
 		SetLimit(int64(pagination.Limit))
 
+	t := time.Now()
+	defer func(t time.Time) {
+		r.logger.Infow("listing clinics defer",
+			"dur", time.Since(t),
+			"ids", filter.Ids,
+			//"stack", string(debug.Stack()),
+		)
+	}(t)
+
 	selector := bson.M{}
 	if len(filter.Ids) > 0 {
 		selector["_id"] = bson.M{"$in": store.ObjectIDSFromStringArray(filter.Ids)}
@@ -339,6 +356,11 @@ func (r *repository) List(ctx context.Context, filter *clinics.Filter, paginatio
 		clinicIDs = append(clinicIDs, *clinic.Id)
 	}
 	match := bson.M{"_id": bson.M{"$in": clinicIDs}}
+	r.logger.Infow("listing clinics post",
+		"#clinicIDs", len(clinicIDs),
+		"limit", pagination.Limit,
+		"selector", selector,
+	)
 
 	return r.annotateClinics(ctx, match)
 }
