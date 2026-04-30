@@ -65,6 +65,17 @@ func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, c
 		query.Add("bgUnits", clinic.PreferredBgUnits)
 	}
 
+	switch patient.GlycemicRanges.Type {
+	case patients.GlycemicRangeTypeCustom:
+		query.Add("glycemicRangeType", string(patients.GlycemicRangeTypeCustom))
+		for _, threshold := range patient.GlycemicRanges.Custom.Thresholds {
+			query.Add("glycemicRangeThresholds", fmt.Sprintf("name,%s,upperBound.value,%f,upperBound.units,%s,inclusive,%v", threshold.Name, threshold.UpperBound.Value, threshold.UpperBound.Units, threshold.Inclusive))
+		}
+	case patients.GlycemicRangeTypePreset:
+		query.Add("glycemicRangeType", string(patients.GlycemicRangeTypePreset))
+		query.Add("glycemicRangePreset", string(patient.GlycemicRanges.Preset))
+	}
+
 	endDate := getReportEndDate(patient)
 	startDate := getReportStartDate(endDate, defaultReportingPeriod)
 	if !startDate.IsZero() {
