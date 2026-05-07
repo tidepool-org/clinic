@@ -2906,7 +2906,7 @@ var _ = Describe("TideReport", func() {
 				})
 			})
 
-			Describe("Boundaries", func() {
+			Describe("Rounding", func() {
 				var roundedClinicID primitive.ObjectID
 				var tags []string
 				var period string
