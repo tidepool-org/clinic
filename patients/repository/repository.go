@@ -1622,7 +1622,10 @@ var availableCategories = [...]tideCategory{
 		Predicates: func(parentFieldPath string) bson.A {
 			field := parentFieldPath + "." + "timeCGMUsePercent"
 			return bson.A{
-				bson.M{field: bson.M{"$lt": 0.70 - halfAPercent}}, // < because round(0.695) = round(69.5%) = 70% so values less than 69.5% round to < 70%.
+				// patients who are flagged in the "timeCGMUsePercent" have a cgm wear
+				// time < 70%. This is one of the few fields that uses an exclusive
+				// bounds instead of inclusive.
+				bson.M{field: bson.M{"$lt": 0.70 - halfAPercent}}, // <= because round(0.695) = round(69.5%) = 70% so values less than 69.5% round to < 70%.
 				bson.M{"$expr": bson.M{
 					"$lte": bson.A{
 						roundFieldExpr(field),
