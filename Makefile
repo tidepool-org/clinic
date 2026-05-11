@@ -8,14 +8,25 @@ MOCKGEN = go tool mockgen
 REDOCLY_CLI = $(NPM_BIN)/redocly
 OPENAPI_FILTER = $(NPM_BIN)/openapi-filter
 GINKGO = go run -mod=mod github.com/onsi/ginkgo/v2/ginkgo
+OS = $(shell uname)
+ifeq ($(OS),Linux)
+  NPROC = $(shell nproc)
+else ifeq ($(OS),Darwin)
+  NPROC = $(shell sysctl -n hw.logicalcpu)
+else
+  NPROC = 1
+endif
+ifeq ($(CI),true)
+  GINKGO_COMPILERS = $(NPROC)
+else
+  GINKGO_COMPILERS ?= $(shell echo $$(( $(NPROC) / 2 )))
+endif
 
 NPM_PKG_SPECS = \
     @redocly/cli@1.34.2 \
     openapi-filter@^3.2.3
 
 PATH:=$(shell pwd)/$(TOOLS_BIN):$(PATH)
-
-OSTYPE:=$(shell echo $${OSTYPE})
 
 # Generates server files
 .PHONY: generate
@@ -46,7 +57,7 @@ service-profile:
 # Runs tests
 .PHONY: test
 test:
-	$(GINKGO) run --require-suite --compilers=2 -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
+	$(GINKGO) run --require-suite --compilers=$(GINKGO_COMPILERS) -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
 
 # Builds package
 .PHONY: build
