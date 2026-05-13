@@ -1,75 +1,65 @@
-package api
+package api_test
 
 import (
-	"reflect"
 	"testing"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/pointer"
+	"github.com/tidepool-org/clinic/test"
 )
 
-func TestParseCGMSummaryFilters(t *testing.T) {
-	type test struct {
-		Name  string
-		Input ListPatientsParams
-		Exp   patients.SummaryFilters
-		Err   error
-	}
-
-	tests := []test{
-		{
-			Name: "negative value for time in range percent delta",
-			Input: ListPatientsParams{
-				CgmTimeInTargetPercentDelta: pointer.FromAny(FloatFilter("<=-0.05")),
-			},
-			Exp: patients.SummaryFilters{
-				"timeInTargetPercentDelta": {
-					Cmp:   "<=",
-					Value: -0.05,
-				},
-			},
-			Err: nil,
-		},
-		{
-			Name: "explicitly positive value for time in range percent delta",
-			Input: ListPatientsParams{
-				CgmTimeInTargetPercentDelta: pointer.FromAny(FloatFilter("<=+0.05")),
-			},
-			Exp: patients.SummaryFilters{
-				"timeInTargetPercentDelta": {
-					Cmp:   "<=",
-					Value: 0.05,
-				},
-			},
-			Err: nil,
-		},
-		{
-			Name: "implicitly positive value for time in range percent delta",
-			Input: ListPatientsParams{
-				CgmTimeInTargetPercentDelta: pointer.FromAny(FloatFilter("<=0.05")),
-			},
-			Exp: patients.SummaryFilters{
-				"timeInTargetPercentDelta": {
-					Cmp:   "<=",
-					Value: 0.05,
-				},
-			},
-			Err: nil,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.Name, func(tt *testing.T) {
-			got, err := ParseCGMSummaryFilters(test.Input)
-			if err != nil && test.Err == nil {
-				tt.Fatalf("expected nil error, got %s", err)
-			}
-			if test.Err != nil && err == nil {
-				tt.Fatalf("expected error %s, got nil", test.Err)
-			}
-			if !reflect.DeepEqual(got, test.Exp) {
-				tt.Errorf("expected %+v, got %+v", test.Exp, got)
-			}
-		})
-	}
+func TestSuite(t *testing.T) {
+	test.Test(t)
 }
+
+var _ = DescribeTable("ParseCGMSummaryFilters",
+	func(input api.ListPatientsParams, expected patients.SummaryFilters, expectedErr error) {
+		got, err := api.ParseCGMSummaryFilters(input)
+		if expectedErr != nil {
+			Expect(err).To(MatchError(expectedErr))
+		} else {
+			Expect(err).ToNot(HaveOccurred())
+		}
+		Expect(got).To(Equal(expected))
+	},
+	Entry("negative value for time in range percent delta",
+		api.ListPatientsParams{
+			CgmTimeInTargetPercentDelta: pointer.FromAny(api.FloatFilter("<=-0.05")),
+		},
+		patients.SummaryFilters{
+			"timeInTargetPercentDelta": {
+				Cmp:   "<=",
+				Value: -0.05,
+			},
+		},
+		nil,
+	),
+	Entry("explicitly positive value for time in range percent delta",
+		api.ListPatientsParams{
+			CgmTimeInTargetPercentDelta: pointer.FromAny(api.FloatFilter("<=+0.05")),
+		},
+		patients.SummaryFilters{
+			"timeInTargetPercentDelta": {
+				Cmp:   "<=",
+				Value: 0.05,
+			},
+		},
+		nil,
+	),
+	Entry("implicitly positive value for time in range percent delta",
+		api.ListPatientsParams{
+			CgmTimeInTargetPercentDelta: pointer.FromAny(api.FloatFilter("<=0.05")),
+		},
+		patients.SummaryFilters{
+			"timeInTargetPercentDelta": {
+				Cmp:   "<=",
+				Value: 0.05,
+			},
+		},
+		nil,
+	),
+)
