@@ -515,13 +515,9 @@ func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId 
 		return err
 	}
 
-	now := time.Now()
 	request := patients.ConnectionRequest{
-		ProviderName:   provider,
-		CreatedTime:    now,
-		ExpirationTime: now.Add(patients.PendingDataSourceExpirationDuration),
+		ProviderName: provider,
 	}
-
 	err = h.Patients.AddProviderConnectionRequest(ctx, clinicId, patientId, request)
 	if err != nil {
 		return err
