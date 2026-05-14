@@ -300,7 +300,11 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *pati
 }
 
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
-	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "provider", request.ProviderName)
+	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "providerName", request.ProviderName)
+
+	now := time.Now()
+	request.CreatedTime = now
+	request.ExpirationTime = now.Add(patients.PendingDataSourceExpirationDuration)
 
 	if err := s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request); err != nil {
 		return err

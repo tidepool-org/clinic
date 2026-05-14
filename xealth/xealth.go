@@ -4,8 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
+
 	"github.com/tidepool-org/clinic/clinics"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
@@ -13,11 +20,6 @@ import (
 	"github.com/tidepool-org/platform/auth"
 	"github.com/tidepool-org/platform/log"
 	"github.com/tidepool-org/platform/log/null"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.uber.org/zap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const (
@@ -452,7 +454,6 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			for _, dataSource := range *create.DataSources {
 				if err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
 					ProviderName: dataSource.ProviderName,
-					CreatedTime:  time.Now(),
 				}); err != nil {
 					return fmt.Errorf("unable to update %s connection: %w", dataSource.ProviderName, err)
 				}
