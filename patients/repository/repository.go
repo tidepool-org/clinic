@@ -889,18 +889,11 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 		"userId":   userId,
 	}
 
-	expirationTime := request.CreatedTime.Add(patients.PendingDataSourceExpirationDuration)
 	key := "providerConnectionRequests." + request.ProviderName
 	update := bson.M{
 		"$push": bson.M{
 			key: bson.M{
-				"$each": bson.A{
-					bson.M{
-						"createdTime":    request.CreatedTime,
-						"expirationTime": expirationTime,
-						"providerName":   request.ProviderName,
-					},
-				},
+				"$each": bson.A{request},
 				// Prepend, so the most recent request is stored first
 				"$position": 0,
 			},
