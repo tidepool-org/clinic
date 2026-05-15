@@ -4840,6 +4840,7 @@ components:
           format: date-time
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
+          readOnly: true
       required:
         - createdTime
         - providerName
@@ -5014,6 +5015,7 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/dataSource.v1'
+          readOnly: true
         lastUploadReminderTime:
           type: string
           format: date-time
