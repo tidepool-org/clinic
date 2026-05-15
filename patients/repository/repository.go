@@ -883,61 +883,24 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *p
 
 func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
-	currentTime := time.Now()
-
-	// We fetch the current dexcom data source to determine if we are requesting an initial connection
-	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
-	patient, err := r.Get(ctx, clinicId, userId)
-	if err != nil {
-		return fmt.Errorf("error finding patient: %w", err)
-	}
-
-	var providerDataSource patients.DataSource
-	if patient.DataSources != nil {
-		for _, source := range *patient.DataSources {
-			if source.ProviderName == request.ProviderName {
-				providerDataSource = source
-			}
-		}
-	}
 
 	selector := bson.M{
-		"clinicId":                 clinicObjId,
-		"userId":                   userId,
-		"dataSources.providerName": request.ProviderName,
-	}
-
-	// Default update for initial connection requests
-	mongoUpdate := bson.M{
-		"$set": bson.M{
-			"updatedTime":                  currentTime,
-			"dataSources.$.expirationTime": currentTime.Add(patients.PendingDataSourceExpirationDuration),
-			"dataSources.$.state":          patients.DataSourceStatePending,
-		},
-	}
-
-	// Update for previously connected requests
-	if providerDataSource.ModifiedTime != nil {
-		mongoUpdate = bson.M{
-			"$set": bson.M{
-				"updatedTime":                  currentTime,
-				"dataSources.$.expirationTime": currentTime.Add(patients.PendingDataSourceExpirationDuration),
-				"dataSources.$.modifiedTime":   currentTime,
-				"dataSources.$.state":          patients.DataSourceStatePendingReconnect,
-			},
-		}
+		"clinicId": clinicObjId,
+		"userId":   userId,
 	}
 
 	key := "providerConnectionRequests." + request.ProviderName
-	mongoUpdate["$push"] = bson.M{
-		key: bson.M{
-			"$each": bson.A{request},
-			// Prepend, so the most recent request is stored first
-			"$position": 0,
+	update := bson.M{
+		"$push": bson.M{
+			key: bson.M{
+				"$each": bson.A{request},
+				// Prepend, so the most recent request is stored first
+				"$position": 0,
+			},
 		},
 	}
 
-	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return patients.ErrNotFound
