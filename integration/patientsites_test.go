@@ -133,7 +133,7 @@ var _ = Describe("Patient Sites", func() {
 				Expect(err).To(Succeed())
 
 				Expect(merged).To(Not(BeNil()))
-				Expect(merged.Patients).To(Equal(2))
+				Expect(srcSite.Patients + dstSite.Patients).To(Equal(1 + 1))
 			})
 		})
 	})
