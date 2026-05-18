@@ -104,9 +104,8 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 		var patientTags []PatientTagV1
 		for _, n := range c.PatientTags {
 			patientTags = append(patientTags, PatientTagV1{
-				Id:          strp(n.Id.Hex()),
-				Name:        n.Name,
-				NumPatients: n.Patients,
+				Id:   strp(n.Id.Hex()),
+				Name: n.Name,
 			})
 		}
 		dto.PatientTags = &patientTags
@@ -115,9 +114,8 @@ func NewClinicDto(c *clinics.Clinic) ClinicV1 {
 		sites := make([]SiteV1, 0, len(c.Sites))
 		for _, site := range c.Sites {
 			sites = append(sites, SiteV1{
-				Id:          site.Id.Hex(),
-				Name:        site.Name,
-				NumPatients: site.Patients,
+				Id:   site.Id.Hex(),
+				Name: site.Name,
 			})
 		}
 		dto.Sites = sites

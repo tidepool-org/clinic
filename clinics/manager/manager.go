@@ -346,7 +346,6 @@ func (c *manager) ConvertPatientTagToSite(ctx context.Context,
 		}
 		return nil, err
 	}
-	site.Patients = tag.Patients
 
 	err = c.patientsService.ConvertPatientTagToSite(ctx, clinicId, patientTagId, site)
 	if err != nil {
