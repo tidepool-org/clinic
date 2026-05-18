@@ -1,11 +1,15 @@
 package xealth
 
 import (
+	"bytes"
+	"encoding/csv"
 	"fmt"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
-	"net/url"
-	"time"
 )
 
 const (
@@ -63,6 +67,21 @@ func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, c
 	}
 	if clinic.PreferredBgUnits != "" {
 		query.Add("bgUnits", clinic.PreferredBgUnits)
+	}
+
+	switch patient.GlycemicRanges.Type {
+	case patients.GlycemicRangeTypeCustom:
+		query.Add("glycemicRangeType", string(patients.GlycemicRangeTypeCustom))
+		for _, threshold := range patient.GlycemicRanges.Custom.Thresholds {
+			name := &bytes.Buffer{}
+			w := csv.NewWriter(name)
+			w.Write([]string{threshold.Name})
+			w.Flush()
+			query.Add("glycemicRangeThresholds", fmt.Sprintf("name,%s,upperBound.value,%f,upperBound.units,%s,inclusive,%t", strings.TrimSpace(name.String()), threshold.UpperBound.Value, threshold.UpperBound.Units, threshold.Inclusive))
+		}
+	case patients.GlycemicRangeTypePreset:
+		query.Add("glycemicRangeType", string(patients.GlycemicRangeTypePreset))
+		query.Add("glycemicRangePreset", string(patient.GlycemicRanges.Preset))
 	}
 
 	endDate := getReportEndDate(patient)
