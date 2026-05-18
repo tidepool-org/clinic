@@ -346,7 +346,6 @@ func (c *manager) ConvertPatientTagToSite(ctx context.Context,
 		}
 		return nil, err
 	}
-	site.Patients = tag.Patients
 
 	err = c.patientsService.ConvertPatientTagToSite(ctx, clinicId, patientTagId, site)
 	if err != nil {
@@ -390,24 +389,7 @@ func (c *manager) MergeSite(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	// Get the updated clinic so that the site will have the correct number of patients
-	// post-merge.
-	clinic, err = c.clinicsService.Get(ctx, clinicId)
-	if err != nil {
-		return nil, err
-	}
-	var merged *sites.Site
-	for _, site := range clinic.Sites {
-		if site.Id == targetSite.Id {
-			merged = &site
-			break
-		}
-	}
-	if merged == nil {
-		return nil, fmt.Errorf("unable to find newly merged site")
-	}
-
-	return merged, nil
+	return targetSite, nil
 }
 
 // UpdateSite implements [Manager].

@@ -246,7 +246,7 @@ func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, param
 		return err
 	}
 
-	clinicIds := []string{}
+	var clinicIds []string
 	for _, patient := range list.Patients {
 		clinicIds = append(clinicIds, patient.ClinicId.Hex())
 	}

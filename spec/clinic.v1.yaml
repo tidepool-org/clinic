@@ -2379,7 +2379,6 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
-          readOnly: true
       required:
         - id
         - name
