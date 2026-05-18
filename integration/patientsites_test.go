@@ -156,9 +156,13 @@ var _ = Describe("Patient Tags", func() {
 		It("has tags that include the count of patients", func() {
 			clinic, err := th.clinics.Get(th.ctx, clinic.Id.Hex())
 			Expect(err).To(Succeed())
-			Expect(len(clinic.PatientTags) > 0).To(Equal(true))
+			if len(clinic.PatientTags) <= 0 {
+				Failf("expected >0 patient tags, got %d", len(clinic.PatientTags))
+			}
 			tag := clinic.PatientTags[0]
-			Expect(tag.Patients).To(Equal(1))
+			if tag.Patients != 1 {
+				Failf("expected 1 patient, got %d", tag.Patients)
+			}
 		})
 
 		It("has tags that keep their patient count when converted to a site", func() {
@@ -166,9 +170,16 @@ var _ = Describe("Patient Tags", func() {
 			site, err := th.manager.ConvertPatientTagToSite(th.ctx, clinic.Id.Hex(),
 				tag.Id.Hex())
 			Expect(err).To(Succeed())
-			Expect(site == nil).To(Equal(false))
-			Expect(site.Patients == 0).To(Equal(false))
-			Expect(site.Patients == tag.Patients).To(Equal(true))
+			if site == nil {
+				Fail("expected site to not be nil")
+			}
+			if site.Patients == 0 {
+				Failf("expected site.Patients to be > 0, got %d", site.Patients)
+			}
+			if site.Patients != tag.Patients {
+				Failf("expected site.Patients == tag.Patients, got %d vs %d",
+					site.Patients, tag.Patients)
+			}
 		})
 	})
 })
@@ -239,9 +250,15 @@ func (th *testHelper) randomClinic() *clinics.Clinic {
 	randomClinic := clinicsTest.RandomClinic()
 	clinic, err := th.clinics.Create(th.ctx, randomClinic)
 	Expect(err).To(Succeed())
-	Expect(len(clinic.PatientTags) > 0).To(Equal(true))
-	Expect(len(clinic.Sites) >= 2).To(Equal(true))
-	Expect(clinic.Id).ToNot(BeNil())
+	if len(clinic.PatientTags) <= 0 {
+		Failf("expected >0 patient tags, got %d", len(clinic.PatientTags))
+	}
+	if len(clinic.Sites) < 2 {
+		Failf("expected >= 2 sites, got %d", len(clinic.Sites))
+	}
+	if clinic.Id == nil {
+		Fail("expected clinic.Id to not be nil")
+	}
 	return clinic
 }
 
@@ -319,4 +336,8 @@ func newMockShareCodeGenerator() *mockShareCodeGenerator {
 
 func (m *mockShareCodeGenerator) Generate() string {
 	return test.Faker.Lorem().Word()
+}
+
+func Failf(msg string, args ...any) {
+	Fail(fmt.Sprintf(msg, args...))
 }
