@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"regexp"
 	"slices"
 	"strings"
@@ -2183,7 +2182,6 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	models = slices.Concat(models, buildErroringDeviceModels(erroringPatients))
 
 	if len(models) == 0 {
-		slog.Info("no patient device issues found")
 		r.logger.Info("no patient device issues found")
 		return nil
 	}
@@ -2192,8 +2190,6 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("bulk writing patien device issues: %s", err)
 	}
-	// slog.Info("patients modified via UpdateDeviceIssues", "num", resp.ModifiedCount,
-	// 	"models", models[0])
 
 	return nil
 }
@@ -2238,22 +2234,24 @@ func buildStaleDataModels(staleDataPatients []patients.Patient) []mongo.WriteMod
 	return keep
 }
 
-func buildExpiredConnectionInvitationModels(expiredPatients []patients.Patient) []mongo.WriteModel {
+func buildExpiredConnectionInvitationModels(expiredPatients []patients.Patient) (
+	_ []mongo.WriteModel) {
+
 	now := time.Now()
 	keep := []mongo.WriteModel{}
 	for _, patient := range expiredPatients {
-		var newest *patients.DataSource
-		for _, src := range *patient.DataSources {
-			if src.State != "pending" {
-				continue
+		var newest *patients.ConnectionRequest
+
+		for _, pcrs := range patient.ProviderConnectionRequests {
+			for _, pcr := range pcrs {
+				if pcr.ExpirationTime.IsZero() || pcr.ExpirationTime.After(now) {
+					continue
+				}
+				if newest != nil && pcr.ExpirationTime.Before(newest.ExpirationTime) {
+					continue
+				}
+				newest = &pcr
 			}
-			if src.ExpirationTime.After(now) {
-				continue
-			}
-			if newest != nil && src.ExpirationTime.Before(*newest.ExpirationTime) {
-				continue
-			}
-			newest = &src
 		}
 
 		if newest == nil {
@@ -2279,26 +2277,29 @@ func buildExpiredConnectionInvitationModels(expiredPatients []patients.Patient) 
 	return keep
 }
 
-func buildStaleConnectionInvitationModels(staleInvitePatients []patients.Patient) []mongo.WriteModel {
+func buildStaleConnectionInvitationModels(staleInvitePatients []patients.Patient) (
+	_ []mongo.WriteModel) {
+
 	keep := []mongo.WriteModel{}
 	now := time.Now()
 	for _, patient := range staleInvitePatients {
 		var newest *patients.ConnectionRequest
 
-		for _, reqs := range patient.ProviderConnectionRequests {
-			for _, req := range reqs {
-				if req.CreatedTime.Add(48 * time.Hour).After(now) {
+		for _, pcrs := range patient.ProviderConnectionRequests {
+			for _, pcr := range pcrs {
+				if pcr.CreatedTime.Add(48 * time.Hour).After(now) {
+					continue // it's not stale yet
+				}
+				if newest != nil && pcr.CreatedTime.Before(newest.CreatedTime) {
 					continue
 				}
-				if newest != nil && req.CreatedTime.Before(newest.CreatedTime) {
-					continue
-				}
-				newest = &req
+				newest = &pcr
 			}
 		}
 
 		if newest == nil {
-			// TODO is this an error?
+			// TODO: Is this an error? No, but it's strange. How did the patient get into
+			// this list?
 			continue
 		}
 
@@ -2422,19 +2423,20 @@ func (r *repository) patientsWithStaleData(ctx context.Context) (
 func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Context) (
 	[]patients.Patient, error) {
 
-	filter := bson.M{
-		"patientConnectionRequests": bson.M{
-			"$elemMatch": bson.M{
-				"expirationTime": bson.M{"$lt": time.Now()},
-				// The plan is to merge the dataSources into the providerConnectionRequests,
-				// so the state that used to be in dataSources is now here in the newest of
-				// the providerConnectionRequests.
-				//
-				// Any providerConnectionRequest that isn't the newest one, is expected to
-				// have a state of "disconnected", but that's set by blip and we're not
-				// doing any validation on it.
-				"state": bson.M{"$in": bson.A{"pending", "pending-reconnect"}},
+	allExpired := bson.M{
+		"$all": bson.A{
+			bson.M{
+				"$elemMatch": bson.M{
+					"expirationTime": bson.M{"$lt": time.Now()},
+				},
 			},
+		},
+	}
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"providerConnectionRequests.abbott": allExpired},
+			bson.M{"providerConnectionRequests.dexcom": allExpired},
+			bson.M{"providerConnectionRequests.twiist": allExpired},
 		},
 	}
 	cur, err := r.collection.Find(ctx, filter)
@@ -2485,23 +2487,6 @@ func staleConnectionInvitationProviderFilter(provider string, t time.Time) bson.
 						"createdTime": bson.M{"$lt": t.Add(-staleInvitationThreshold)},
 					},
 				},
-			},
-		},
-	}
-}
-
-func staleConnectionInvitationProviderFilterOld(provider string, now time.Time) bson.M {
-	pcrCreated := fmt.Sprintf("providerConnectionRequests.%s.createdTime", provider)
-	return bson.M{
-		pcrCreated: bson.M{"$lt": now.Add(-staleInvitationThreshold)},
-		"dataSources": bson.M{
-			"$elemMatch": bson.M{
-				"providerName": provider,
-				"state": bson.M{
-					"$in": bson.A{"pending", "pending-reconnect"},
-				},
-				// If it's expired, let the expired invitation clause catch it
-				"expirationTime": bson.M{"$gt": now},
 			},
 		},
 	}
