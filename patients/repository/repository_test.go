@@ -1864,22 +1864,17 @@ var _ = Describe("Patients Repository", func() {
 		})
 
 		Describe("Add provider connection request", func() {
-			BeforeEach(func() {
-				dataSources := patients.DataSources{{
-					ProviderName: patients.DexcomDataSourceProviderName,
-					State:        "pending",
-				}}
-				err := repo.UpdatePatientDataSources(context.Background(), *randomPatient.UserId, &dataSources)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
 			It("correctly adds multiple requests", func() {
 				request := patients.ConnectionRequest{
 					ProviderName: patients.DexcomDataSourceProviderName,
 					CreatedTime:  time.Now().Truncate(time.Millisecond),
 				}
 
-				err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				patientBefore, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
 				Expect(err).ToNot(HaveOccurred())
 
 				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
@@ -1897,6 +1892,8 @@ var _ = Describe("Patients Repository", func() {
 				Expect(dexcom[0].ProviderName).To(BeComparableTo(request.ProviderName))
 				Expect(dexcom[1].CreatedTime).To(BeComparableTo(request.CreatedTime))
 				Expect(dexcom[1].ProviderName).To(BeComparableTo(request.ProviderName))
+
+				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
 			})
 		})
 

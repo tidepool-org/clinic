@@ -891,6 +891,7 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 
 	key := "providerConnectionRequests." + request.ProviderName
 	update := bson.M{
+		"$currentDate": bson.M{"updatedTime": true},
 		"$push": bson.M{
 			key: bson.M{
 				"$each": bson.A{request},
