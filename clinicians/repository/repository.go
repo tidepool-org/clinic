@@ -245,6 +245,55 @@ func (r *Repository) UpdateAll(ctx context.Context, update *clinicians.Clinician
 	return err
 }
 
+func (r *Repository) UpdateSecurityProfile(ctx context.Context, userId string, update clinicians.SecurityProfileUpdate) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	// Apply only the fields present in this event as a field-scoped update, so
+	// concurrent events touching different fields do not clobber each other and
+	// previously stored fields are preserved. The security profile is shared per
+	// user, so the update fans out to every clinician record for the user.
+	set := bson.M{
+		"updatedTime": time.Now(),
+	}
+	unset := bson.M{}
+
+	if update.MFAEnabled != nil {
+		set["securityProfile.mfaEnabled"] = *update.MFAEnabled
+	}
+	// The MFA enabled time is only meaningful while MFA is enabled: unset it when
+	// MFA is being disabled, otherwise apply it when provided. The two branches are
+	// mutually exclusive so $set and $unset never target the same path.
+	disablingMfa := update.MFAEnabled != nil && !*update.MFAEnabled
+	if disablingMfa {
+		unset["securityProfile.mfaEnabledTime"] = ""
+	} else if update.MFAEnabledTime != nil {
+		set["securityProfile.mfaEnabledTime"] = *update.MFAEnabledTime
+	}
+	if update.IdentityProviders != nil {
+		set["securityProfile.identityProviders"] = *update.IdentityProviders
+	}
+	if update.LastLoginTime != nil {
+		set["securityProfile.lastLoginTime"] = *update.LastLoginTime
+	}
+
+	updates := bson.M{"$set": set}
+	if len(unset) > 0 {
+		updates["$unset"] = unset
+	}
+
+	result, err := r.collection.UpdateMany(ctx, selector, updates)
+	if err != nil {
+		return fmt.Errorf("error updating clinician security profile: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return clinicians.ErrNotFound
+	}
+
+	return nil
+}
+
 func (r *Repository) Delete(ctx context.Context, clinicId string, userId string, metadata deletions.Metadata) error {
 	clinician, err := r.Get(ctx, clinicId, userId)
 	if err != nil {

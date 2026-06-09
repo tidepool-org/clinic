@@ -99,6 +99,11 @@ type ClientInterface interface {
 	// EnableNewClinicExperience request
 	EnableNewClinicExperience(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpdateClinicianSecurityProfileWithBody request with any body
+	UpdateClinicianSecurityProfileWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateClinicianSecurityProfile(ctx context.Context, userId UserId, body UpdateClinicianSecurityProfileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListClinics request
 	ListClinics(ctx context.Context, params *ListClinicsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -414,6 +419,30 @@ func (c *Client) ListClinicsForClinician(ctx context.Context, userId UserId, par
 
 func (c *Client) EnableNewClinicExperience(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewEnableNewClinicExperienceRequest(c.Server, userId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClinicianSecurityProfileWithBody(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClinicianSecurityProfileRequestWithBody(c.Server, userId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClinicianSecurityProfile(ctx context.Context, userId UserId, body UpdateClinicianSecurityProfileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClinicianSecurityProfileRequest(c.Server, userId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1907,6 +1936,53 @@ func NewEnableNewClinicExperienceRequest(server string, userId string) (*http.Re
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewUpdateClinicianSecurityProfileRequest calls the generic UpdateClinicianSecurityProfile builder with application/json body
+func NewUpdateClinicianSecurityProfileRequest(server string, userId UserId, body UpdateClinicianSecurityProfileJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClinicianSecurityProfileRequestWithBody(server, userId, "application/json", bodyReader)
+}
+
+// NewUpdateClinicianSecurityProfileRequestWithBody generates requests for UpdateClinicianSecurityProfile with any type of body
+func NewUpdateClinicianSecurityProfileRequestWithBody(server string, userId UserId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "userId", runtime.ParamLocationPath, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinicians/%s/securityProfile", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -7485,6 +7561,11 @@ type ClientWithResponsesInterface interface {
 	// EnableNewClinicExperienceWithResponse request
 	EnableNewClinicExperienceWithResponse(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*EnableNewClinicExperienceResponse, error)
 
+	// UpdateClinicianSecurityProfileWithBodyWithResponse request with any body
+	UpdateClinicianSecurityProfileWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClinicianSecurityProfileResponse, error)
+
+	UpdateClinicianSecurityProfileWithResponse(ctx context.Context, userId UserId, body UpdateClinicianSecurityProfileJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClinicianSecurityProfileResponse, error)
+
 	// ListClinicsWithResponse request
 	ListClinicsWithResponse(ctx context.Context, params *ListClinicsParams, reqEditors ...RequestEditorFn) (*ListClinicsResponse, error)
 
@@ -7834,6 +7915,28 @@ func (r EnableNewClinicExperienceResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r EnableNewClinicExperienceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateClinicianSecurityProfileResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ClinicianSecurityProfileV1
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClinicianSecurityProfileResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClinicianSecurityProfileResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9463,6 +9566,23 @@ func (c *ClientWithResponses) EnableNewClinicExperienceWithResponse(ctx context.
 	return ParseEnableNewClinicExperienceResponse(rsp)
 }
 
+// UpdateClinicianSecurityProfileWithBodyWithResponse request with arbitrary body returning *UpdateClinicianSecurityProfileResponse
+func (c *ClientWithResponses) UpdateClinicianSecurityProfileWithBodyWithResponse(ctx context.Context, userId UserId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClinicianSecurityProfileResponse, error) {
+	rsp, err := c.UpdateClinicianSecurityProfileWithBody(ctx, userId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClinicianSecurityProfileResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClinicianSecurityProfileWithResponse(ctx context.Context, userId UserId, body UpdateClinicianSecurityProfileJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClinicianSecurityProfileResponse, error) {
+	rsp, err := c.UpdateClinicianSecurityProfile(ctx, userId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClinicianSecurityProfileResponse(rsp)
+}
+
 // ListClinicsWithResponse request returning *ListClinicsResponse
 func (c *ClientWithResponses) ListClinicsWithResponse(ctx context.Context, params *ListClinicsParams, reqEditors ...RequestEditorFn) (*ListClinicsResponse, error) {
 	rsp, err := c.ListClinics(ctx, params, reqEditors...)
@@ -10461,6 +10581,32 @@ func ParseEnableNewClinicExperienceResponse(rsp *http.Response) (*EnableNewClini
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ClinicV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClinicianSecurityProfileResponse parses an HTTP response from a UpdateClinicianSecurityProfileWithResponse call
+func ParseUpdateClinicianSecurityProfileResponse(rsp *http.Response) (*UpdateClinicianSecurityProfileResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClinicianSecurityProfileResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClinicianSecurityProfileV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

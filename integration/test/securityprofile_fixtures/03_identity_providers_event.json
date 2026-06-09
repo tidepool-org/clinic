@@ -1,0 +1,8 @@
+{
+  "identityProviders": [
+    {
+      "alias": "google-oidc",
+      "name": "Google"
+    }
+  ]
+}

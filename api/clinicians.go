@@ -212,6 +212,27 @@ func (h *Handler) EnableNewClinicExperience(ec echo.Context, userId string) erro
 	return ec.JSON(http.StatusOK, NewClinicDto(clinic))
 }
 
+func (h *Handler) UpdateClinicianSecurityProfile(ec echo.Context, userId UserId) error {
+	ctx := ec.Request().Context()
+
+	// The request body is a partial update: only the fields present are applied,
+	// so it binds onto the optional ClinicianSecurityProfileUpdateV1 type and is
+	// applied field-by-field by the repository (no read-modify-write).
+	dto := ClinicianSecurityProfileUpdateV1{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	update := NewSecurityProfileUpdate(dto)
+
+	err := h.Clinicians.UpdateSecurityProfile(ctx, string(userId), update)
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
+}
+
 func (h *Handler) AddServiceAccount(ec echo.Context, clinicId ClinicId) error {
 	ctx := ec.Request().Context()
 	dto := AddServiceAccountV1{}

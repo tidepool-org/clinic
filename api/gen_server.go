@@ -22,6 +22,9 @@ type ServerInterface interface {
 	// Enable Clinics
 	// (POST /v1/clinicians/{userId}/migrate)
 	EnableNewClinicExperience(ctx echo.Context, userId string) error
+	// Update Clinician Security Profile
+	// (PATCH /v1/clinicians/{userId}/securityProfile)
+	UpdateClinicianSecurityProfile(ctx echo.Context, userId UserId) error
 	// List Clinics
 	// (GET /v1/clinics)
 	ListClinics(ctx echo.Context, params ListClinicsParams) error
@@ -341,6 +344,24 @@ func (w *ServerInterfaceWrapper) EnableNewClinicExperience(ctx echo.Context) err
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.EnableNewClinicExperience(ctx, userId)
+	return err
+}
+
+// UpdateClinicianSecurityProfile converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateClinicianSecurityProfile(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdateClinicianSecurityProfile(ctx, userId)
 	return err
 }
 
@@ -2939,6 +2960,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinicians", wrapper.ListAllClinicians)
 	router.GET(baseURL+"/v1/clinicians/:userId/clinics", wrapper.ListClinicsForClinician)
 	router.POST(baseURL+"/v1/clinicians/:userId/migrate", wrapper.EnableNewClinicExperience)
+	router.PATCH(baseURL+"/v1/clinicians/:userId/securityProfile", wrapper.UpdateClinicianSecurityProfile)
 	router.GET(baseURL+"/v1/clinics", wrapper.ListClinics)
 	router.POST(baseURL+"/v1/clinics", wrapper.CreateClinic)
 	router.GET(baseURL+"/v1/clinics/share_code/:shareCode", wrapper.GetClinicByShareCode)

@@ -203,6 +203,20 @@ func (mr *MockServiceMockRecorder) UpdateAll(ctx, update any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAll", reflect.TypeOf((*MockService)(nil).UpdateAll), ctx, update)
 }
 
+// UpdateSecurityProfile mocks base method.
+func (m *MockService) UpdateSecurityProfile(ctx context.Context, userId string, update clinicians.SecurityProfileUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSecurityProfile", ctx, userId, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSecurityProfile indicates an expected call of UpdateSecurityProfile.
+func (mr *MockServiceMockRecorder) UpdateSecurityProfile(ctx, userId, update any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSecurityProfile", reflect.TypeOf((*MockService)(nil).UpdateSecurityProfile), ctx, userId, update)
+}
+
 // MockRepository is a mock of Repository interface.
 type MockRepository struct {
 	ctrl     *gomock.Controller
@@ -371,4 +385,18 @@ func (m *MockRepository) UpdateAll(ctx context.Context, update *clinicians.Clini
 func (mr *MockRepositoryMockRecorder) UpdateAll(ctx, update any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAll", reflect.TypeOf((*MockRepository)(nil).UpdateAll), ctx, update)
+}
+
+// UpdateSecurityProfile mocks base method.
+func (m *MockRepository) UpdateSecurityProfile(ctx context.Context, userId string, update clinicians.SecurityProfileUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSecurityProfile", ctx, userId, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSecurityProfile indicates an expected call of UpdateSecurityProfile.
+func (mr *MockRepositoryMockRecorder) UpdateSecurityProfile(ctx, userId, update any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSecurityProfile", reflect.TypeOf((*MockRepository)(nil).UpdateSecurityProfile), ctx, userId, update)
 }

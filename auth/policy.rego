@@ -466,6 +466,14 @@ allow {
   input.path = ["v1", "clinicians", _, "migrate"]
 }
 
+# Allow backend services to update a clinician's security profile
+# PATCH /v1/clinicians/:userId/securityProfile
+allow {
+  is_backend_service
+  input.method == "PATCH"
+  input.path = ["v1", "clinicians", _, "securityProfile"]
+}
+
 # Allow currently authenticated clinician to trigger the initial migration
 # POST /v1/clinics/:clinicId/migrate
 allow {

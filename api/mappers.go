@@ -140,15 +140,99 @@ func NewClinicsDto(clinics []*clinics.Clinic) []ClinicV1 {
 
 func NewClinicianDto(clinician *clinicians.Clinician) ClinicianV1 {
 	dto := ClinicianV1{
-		Id:          clinician.UserId,
-		InviteId:    clinician.InviteId,
-		Name:        clinician.Name,
-		Email:       pstr(clinician.Email),
-		Roles:       ClinicianRolesV1(clinician.Roles),
-		CreatedTime: &clinician.CreatedTime,
-		UpdatedTime: &clinician.UpdatedTime,
+		Id:              clinician.UserId,
+		InviteId:        clinician.InviteId,
+		Name:            clinician.Name,
+		Email:           pstr(clinician.Email),
+		Roles:           ClinicianRolesV1(clinician.Roles),
+		SecurityProfile: NewClinicianSecurityProfileDto(clinician.SecurityProfile),
+		CreatedTime:     &clinician.CreatedTime,
+		UpdatedTime:     &clinician.UpdatedTime,
 	}
 	return dto
+}
+
+// timeFromDatetime parses an optional RFC 3339 DatetimeV1 string into a time.
+// The request validator enforces the date-time format on input, so this parse
+// does not fail for API requests; it falls back to nil (never a zero time) for
+// any non-validated caller.
+//func timeFromDatetime(d *DatetimeV1) *time.Time {
+//	if d == nil {
+//		return nil
+//	}
+//	t, err := time.Parse(time.RFC3339Nano, string(*d))
+//	if err != nil {
+//		return nil
+//	}
+//	return &t
+//}
+
+func newIdentityProviderDto(p clinicians.IdentityProvider) ClinicianIdentityProviderV1 {
+	return ClinicianIdentityProviderV1{Alias: p.Alias, Name: p.Name}
+}
+
+func newIdentityProvider(p ClinicianIdentityProviderV1) clinicians.IdentityProvider {
+	return clinicians.IdentityProvider{Alias: p.Alias, Name: p.Name}
+}
+
+func NewClinicianSecurityProfileDto(profile *clinicians.SecurityProfile) *ClinicianSecurityProfileV1 {
+	if profile == nil {
+		return nil
+	}
+
+	dto := ClinicianSecurityProfileV1{}
+
+	if profile.IdentityProviders != nil {
+		providers := make([]ClinicianIdentityProviderV1, 0, len(profile.IdentityProviders))
+		for _, p := range profile.IdentityProviders {
+			providers = append(providers, newIdentityProviderDto(p))
+		}
+		dto.IdentityProviders = &providers
+	}
+
+	if profile.LastLoginTime != nil {
+		lastLoginTime := profile.LastLoginTime.Format(time.RFC3339Nano)
+		dto.LastLoginTime = &lastLoginTime
+	}
+
+	if profile.MFAEnabled != nil {
+		dto.MfaEnabled = *profile.MFAEnabled
+	}
+
+	if profile.MFAEnabledTime != nil {
+		mfaEnabledTime := profile.MFAEnabledTime.Format(time.RFC3339Nano)
+		dto.MfaEnabledTime = &mfaEnabledTime
+	}
+
+	return &dto
+}
+
+// NewSecurityProfileUpdate converts a partial-update request body into a domain
+// SecurityProfileUpdate. nil fields are left out of the update (leave unchanged).
+func NewSecurityProfileUpdate(dto ClinicianSecurityProfileUpdateV1) clinicians.SecurityProfileUpdate {
+	update := clinicians.SecurityProfileUpdate{
+		MFAEnabled: dto.MfaEnabled,
+	}
+
+	if dto.LastLoginTime != nil {
+		lastLoginTime, _ := time.Parse(time.RFC3339Nano, *dto.LastLoginTime)
+		update.LastLoginTime = &lastLoginTime
+	}
+
+	if dto.MfaEnabledTime != nil {
+		mfaEnabledTime, _ := time.Parse(time.RFC3339Nano, *dto.MfaEnabledTime)
+		update.MFAEnabledTime = &mfaEnabledTime
+	}
+
+	if dto.IdentityProviders != nil {
+		providers := make([]clinicians.IdentityProvider, 0, len(*dto.IdentityProviders))
+		for _, p := range *dto.IdentityProviders {
+			providers = append(providers, newIdentityProvider(p))
+		}
+		update.IdentityProviders = &providers
+	}
+
+	return update
 }
 
 func NewCliniciansDto(clinicians []*clinicians.Clinician) []ClinicianV1 {
