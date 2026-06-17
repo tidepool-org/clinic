@@ -425,35 +425,6 @@ func NewPatient(dto PatientV1) patients.Patient {
 		patient.Sites = &sites
 	}
 
-	if dto.DataSources != nil {
-		var dataSources []patients.DataSource
-		for _, d := range *dto.DataSources {
-
-			newDataSource := patients.DataSource{
-				ProviderName: string(d.ProviderName),
-				State:        string(d.State),
-			}
-
-			if d.DataSourceId != nil {
-				dataSourceObjectId, _ := primitive.ObjectIDFromHex(*d.DataSourceId)
-				newDataSource.DataSourceId = &dataSourceObjectId
-			}
-
-			if d.ModifiedTime != nil {
-				modifiedTime, _ := time.Parse(time.RFC3339Nano, string(*d.ModifiedTime))
-				newDataSource.ModifiedTime = &modifiedTime
-			}
-
-			if d.LatestDataTime != nil {
-				latestDataTime, _ := time.Parse(time.RFC3339Nano, string(*d.LatestDataTime))
-				newDataSource.LatestDataTime = &latestDataTime
-			}
-
-			dataSources = append(dataSources, newDataSource)
-		}
-		patient.DataSources = &dataSources
-	}
-
 	if dto.GlycemicRanges != nil {
 		patient.GlycemicRanges = NewGlycemicRanges(dto.GlycemicRanges)
 	}
