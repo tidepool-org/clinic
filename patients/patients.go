@@ -34,9 +34,6 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
-	DataSourceStatePending          = "pending"
-	DataSourceStatePendingReconnect = "pendingReconnect"
-
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,

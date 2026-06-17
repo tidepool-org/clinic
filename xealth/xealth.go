@@ -297,7 +297,7 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		return nil, fmt.Errorf("unable to obtain last viewed date: %w", err)
 	}
 
-	programs.Programs[0].Description = GetProgramDescription(summaryLastUpdated, lastViewed, patient.Permissions, patient.DataSources)
+	programs.Programs[0].Description = GetProgramDescription(summaryLastUpdated, lastViewed, patient)
 	programs.Programs[0].EnrolledDate = GetProgramEnrollmentDateFromOrder(order)
 	programs.Programs[0].HasAlert = IsProgramAlertActive(summaryLastUpdated, lastViewed)
 	programs.Programs[0].HasStatusView = HasStatusView(patient, subscription)
@@ -450,19 +450,18 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			return fmt.Errorf("unable to create new patient from order: %w", err)
 		}
 
-		if create.DataSources != nil {
-			for _, dataSource := range *create.DataSources {
-				if err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
-					ProviderName: dataSource.ProviderName,
-				}); err != nil {
-					return fmt.Errorf("unable to update %s connection: %w", dataSource.ProviderName, err)
-				}
+		providers := GetProvidersFromOrder(preorderData)
+		for _, providerName := range providers {
+			if err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
+				ProviderName: providerName,
+			}); err != nil {
+				return fmt.Errorf("unable to update %s connection: %w", providerName, err)
 			}
-			if len(*create.DataSources) > 0 {
-				match.Patient, err = d.patients.Get(ctx, create.ClinicId.Hex(), *match.Patient.UserId)
-				if err != nil {
-					return fmt.Errorf("unable to get updated patient")
-				}
+		}
+		if len(providers) > 0 {
+			match.Patient, err = d.patients.Get(ctx, create.ClinicId.Hex(), *match.Patient.UserId)
+			if err != nil {
+				return fmt.Errorf("unable to get updated patient")
 			}
 		}
 	}
@@ -532,18 +531,27 @@ func GetPatientCreateFromOrder(match MatchingResult[*xealth_client.EventNotifica
 		}
 	}
 
-	if len(providers) > 0 {
-		var dataSources []patients.DataSource
-		for _, provider := range providers {
-			dataSources = append(dataSources, patients.DataSource{
-				ProviderName: provider,
-				State:        patients.DataSourceStatePending,
-			})
-		}
-		create.DataSources = &dataSources
-	}
-
 	return &create, nil
+}
+
+func GetProvidersFromOrder(preorderData *PreorderFormData) []string {
+	providers := []string{}
+	if preorderData.Guardian != nil {
+		if preorderData.Guardian.ConnectAbbott {
+			providers = append(providers, patients.AbbottDataSourceProviderName)
+		}
+		if preorderData.Guardian.ConnectDexcom {
+			providers = append(providers, patients.DexcomDataSourceProviderName)
+		}
+	} else if preorderData.Patient != nil {
+		if preorderData.Patient.ConnectAbbott {
+			providers = append(providers, patients.AbbottDataSourceProviderName)
+		}
+		if preorderData.Patient.ConnectDexcom {
+			providers = append(providers, patients.DexcomDataSourceProviderName)
+		}
+	}
+	return providers
 }
 
 func GetSubscriptionUpdateFromOrderEvent(orderEvent OrderEvent, clinic *clinics.Clinic) (*patients.SubscriptionUpdate, error) {
