@@ -308,7 +308,7 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string,
 	}
 	err = r.deletionsRepo.Create(ctx, *patient, metadata)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	res, err := r.collection.DeleteOne(ctx, selector)

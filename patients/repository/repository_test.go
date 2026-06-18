@@ -20,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -569,6 +570,39 @@ var _ = Describe("Patients Repository", func() {
 				count, err := deletionsCollection.CountDocuments(context.Background(), bson.M{"$and": []bson.M{{"patient.userId": randomPatient.UserId}, {"patient.clinicId": randomPatient.ClinicId}}})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(count).To(BeNumerically("==", 1))
+			})
+
+			When("the deletion record cannot be created", func() {
+				const uniqueIndexName = "testUniquePatientUserId"
+
+				BeforeEach(func() {
+					// Force deletionsRepo.Create to fail by creating a unique index on
+					// patient.userId and pre-inserting a conflicting deletion record.
+					_, err := deletionsCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+						Keys:    bson.D{{Key: "patient.userId", Value: 1}},
+						Options: options.Index().SetUnique(true).SetName(uniqueIndexName),
+					})
+					Expect(err).ToNot(HaveOccurred())
+
+					_, err = deletionsCollection.InsertOne(context.Background(), bson.M{
+						"patient": bson.M{"userId": randomPatient.UserId},
+					})
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					_, err := deletionsCollection.Indexes().DropOne(context.Background(), uniqueIndexName)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("returns the error and does not remove the patient", func() {
+					err := repo.Remove(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, deletions.Metadata{})
+					Expect(err).To(HaveOccurred())
+
+					// The patient must still exist since the deletion record failed.
+					res := collection.FindOne(context.Background(), bson.M{"$and": []bson.M{{"userId": randomPatient.UserId}, {"clinicId": randomPatient.ClinicId}}})
+					Expect(res.Err()).ToNot(HaveOccurred())
+				})
 			})
 		})
 
