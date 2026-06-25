@@ -402,33 +402,43 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 
 	issues := &DeviceIssuesV1{}
 	if et := deviceIssues.StaleData.EffectiveTime; !et.IsZero() {
+		hidden := DatetimeV1(deviceIssues.StaleData.Hidden.Format(time.RFC3339Nano))
 		issues.StaleData = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.StaleData.ProviderId),
+			Hidden:        &hidden,
 		}
 	}
 	if et := deviceIssues.ExpiredConnectionInvitation.EffectiveTime; !et.IsZero() {
+		hidden := DatetimeV1(deviceIssues.ExpiredConnectionInvitation.Hidden.Format(time.RFC3339Nano))
 		issues.ExpiredConnectionInvitation = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.ExpiredConnectionInvitation.ProviderId),
+			Hidden:        &hidden,
 		}
 	}
 	if et := deviceIssues.StaleConnectionInvitation.EffectiveTime; !et.IsZero() {
+		hidden := DatetimeV1(deviceIssues.StaleConnectionInvitation.Hidden.Format(time.RFC3339Nano))
 		issues.StaleConnectionInvitation = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.StaleConnectionInvitation.ProviderId),
+			Hidden:        &hidden,
 		}
 	}
 	if et := deviceIssues.Disconnected.EffectiveTime; !et.IsZero() {
+		hidden := DatetimeV1(deviceIssues.Disconnected.Hidden.Format(time.RFC3339Nano))
 		issues.Disconnected = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.Disconnected.ProviderId),
+			Hidden:        &hidden,
 		}
 	}
 	if et := deviceIssues.Erroring.EffectiveTime; !et.IsZero() {
+		hidden := DatetimeV1(deviceIssues.Erroring.Hidden.Format(time.RFC3339Nano))
 		issues.Erroring = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.Erroring.ProviderId),
+			Hidden:        &hidden,
 		}
 	}
 

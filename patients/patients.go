@@ -152,10 +152,11 @@ func (d DeviceIssues) IsZero() bool {
 type DeviceIssue struct {
 	EffectiveTime time.Time `bson:"effectiveTime"`
 	ProviderId    string    `bson:"providerId"`
+	Hidden        time.Time `bson:"hidden,omitzero,omitempty"`
 }
 
 func (d DeviceIssue) IsZero() bool {
-	return d.EffectiveTime.IsZero() && d.ProviderId == ""
+	return d.EffectiveTime.IsZero() && d.ProviderId == "" && d.Hidden.IsZero()
 }
 
 type DiagnosisType string

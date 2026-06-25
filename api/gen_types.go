@@ -1353,8 +1353,11 @@ type DatetimeV1 = string
 // DeviceIssueV1 defines model for deviceIssue.v1.
 type DeviceIssueV1 struct {
 	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	EffectiveTime DatetimeV1   `json:"effectiveTime"`
-	ProviderId    ProviderIdV1 `json:"providerId"`
+	EffectiveTime DatetimeV1 `json:"effectiveTime"`
+
+	// Hidden [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	Hidden     *DatetimeV1  `json:"hidden,omitempty"`
+	ProviderId ProviderIdV1 `json:"providerId"`
 }
 
 // DeviceIssuesV1 defines model for deviceIssues.v1.
@@ -1616,10 +1619,11 @@ type PatientV1 struct {
 	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
-	Mrn         *string               `json:"mrn,omitempty"`
-	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
-	Reviews     []PatientReviewV1     `json:"reviews"`
-	Sites       []SiteV1              `json:"sites,omitzero"`
+	Mrn                       *string               `json:"mrn,omitempty"`
+	Permissions               *PatientPermissionsV1 `json:"permissions,omitempty"`
+	PrimaryDeviceProviderName *ProviderIdV1         `json:"primaryDeviceProviderName,omitempty"`
+	Reviews                   []PatientReviewV1     `json:"reviews"`
+	Sites                     []SiteV1              `json:"sites,omitzero"`
 
 	// Summary A summary of a patients recent data
 	Summary       *PatientSummaryV1 `json:"summary,omitempty"`
@@ -2484,8 +2488,8 @@ type ListPatientsParams struct {
 	// should be omitted.
 	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
 
-	// DeviceIssues Excludes patients not experiencing devices issues.
-	DeviceIssues *bool `form:"deviceIssues,omitempty" json:"deviceIssues,omitempty"`
+	// DeviceIssues Includes patients experiencing one or more of the device issues specified.
+	DeviceIssues *string `form:"deviceIssues,omitempty" json:"deviceIssues,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.
