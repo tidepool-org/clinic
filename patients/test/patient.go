@@ -247,5 +247,6 @@ func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"GlycemicRanges":                 Equal(patient.GlycemicRanges),
 		"DiagnosisType":                  Equal(patient.DiagnosisType),
 		"DeviceIssues":                   Equal(patient.DeviceIssues),
+		"PrimaryDeviceProviderName":      Equal(patient.PrimaryDeviceProviderName),
 	})
 }

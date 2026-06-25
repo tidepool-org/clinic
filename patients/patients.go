@@ -74,6 +74,8 @@ type Service interface {
 	MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error
 	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
 	UpdateDeviceIssues(ctx context.Context) error
+	UpdatePrimaryDeviceProviderName(ctx context.Context, userId, providerName string) error
+	ClearDeviceIssues(ctx context.Context, userId string) error
 }
 
 type Repository interface {
@@ -126,6 +128,9 @@ type Patient struct {
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
 
 	DeviceIssues DeviceIssues `bson:"deviceIssues,omitempty"`
+	// PrimaryDeviceProviderName indicates which device the backend believes is currently in
+	// use by the patient.
+	PrimaryDeviceProviderName *string `bson:"primaryDeviceProviderName,omitempty"`
 }
 
 type DeviceIssues struct {

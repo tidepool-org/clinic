@@ -306,7 +306,22 @@ func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, us
 	request.CreatedTime = now
 	request.ExpirationTime = now.Add(patients.PendingDataSourceExpirationDuration)
 
-	if err := s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request); err != nil {
+	_, err := store.WithTransaction(ctx, s.dbClient, func(txCtx mongo.SessionContext) (interface{}, error) {
+		err := s.patientsRepo.AddProviderConnectionRequest(txCtx, clinicId, userId, request)
+		if err != nil {
+			return nil, err
+		}
+		err = s.UpdatePrimaryDeviceProviderName(txCtx, userId, request.ProviderName)
+		if err != nil {
+			return nil, err
+		}
+		err = s.ClearDeviceIssues(txCtx, userId)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
 		return err
 	}
 
@@ -334,8 +349,31 @@ func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinic
 }
 
 func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *patients.DataSources) error {
-	s.logger.Infow("updating data sources for clinic patients", "userId", userId)
-	if err := s.patientsRepo.UpdatePatientDataSources(ctx, userId, dataSources); err != nil {
+
+	_, err := store.WithTransaction(ctx, s.dbClient, func(txCtx mongo.SessionContext) (interface{}, error) {
+		s.logger.Infow("updating data sources for clinic patients", "userId", userId)
+		if err := s.patientsRepo.UpdatePatientDataSources(ctx, userId, dataSources); err != nil {
+			return nil, err
+		}
+
+		for _, dataSource := range *dataSources {
+			if dataSource.State != "connected" {
+				continue
+			}
+
+			err := s.UpdatePrimaryDeviceProviderName(ctx, userId,
+				dataSource.ProviderName)
+			if err != nil {
+				return nil, err
+			}
+			err = s.ClearDeviceIssues(ctx, userId)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, nil
+	})
+	if err != nil {
 		return err
 	}
 
@@ -526,4 +564,18 @@ func deactiveAllSubscriptions(subscriptions patients.EHRSubscriptions) patients.
 
 func (s *service) UpdateDeviceIssues(ctx context.Context) error {
 	return s.patientsRepo.UpdateDeviceIssues(ctx)
+}
+
+func (s *service) UpdatePrimaryDeviceProviderName(ctx context.Context,
+	userId, providerName string) error {
+
+	s.logger.Infow("updating primary device provider name for user",
+		"userId", userId, "primaryDevice", providerName)
+	return s.patientsRepo.UpdatePrimaryDeviceProviderName(ctx, userId,
+		providerName)
+}
+
+func (s *service) ClearDeviceIssues(ctx context.Context, userId string) error {
+	s.logger.Infow("clearing device issues for user", "userId", userId)
+	return s.patientsRepo.ClearDeviceIssues(ctx, userId)
 }

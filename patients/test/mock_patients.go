@@ -87,6 +87,20 @@ func (mr *MockServiceMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockService)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
 }
 
+// ClearDeviceIssues mocks base method.
+func (m *MockService) ClearDeviceIssues(ctx context.Context, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearDeviceIssues", ctx, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearDeviceIssues indicates an expected call of ClearDeviceIssues.
+func (mr *MockServiceMockRecorder) ClearDeviceIssues(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearDeviceIssues", reflect.TypeOf((*MockService)(nil).ClearDeviceIssues), ctx, userId)
+}
+
 // ConvertPatientTagToSite mocks base method.
 func (m *MockService) ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error {
 	m.ctrl.T.Helper()
@@ -434,6 +448,20 @@ func (mr *MockServiceMockRecorder) UpdatePermissions(ctx, clinicId, userId, perm
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockService)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
 }
 
+// UpdatePrimaryDeviceProviderName mocks base method.
+func (m *MockService) UpdatePrimaryDeviceProviderName(ctx context.Context, userId, providerName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePrimaryDeviceProviderName", ctx, userId, providerName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePrimaryDeviceProviderName indicates an expected call of UpdatePrimaryDeviceProviderName.
+func (mr *MockServiceMockRecorder) UpdatePrimaryDeviceProviderName(ctx, userId, providerName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePrimaryDeviceProviderName", reflect.TypeOf((*MockService)(nil).UpdatePrimaryDeviceProviderName), ctx, userId, providerName)
+}
+
 // UpdateSites mocks base method.
 func (m *MockService) UpdateSites(ctx context.Context, clinicId, siteId string, site *sites.Site) error {
 	m.ctrl.T.Helper()
@@ -527,6 +555,20 @@ func (m *MockRepository) AssignPatientTagToClinicPatients(ctx context.Context, c
 func (mr *MockRepositoryMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicId, tagId, patientIds any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockRepository)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
+}
+
+// ClearDeviceIssues mocks base method.
+func (m *MockRepository) ClearDeviceIssues(ctx context.Context, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearDeviceIssues", ctx, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearDeviceIssues indicates an expected call of ClearDeviceIssues.
+func (mr *MockRepositoryMockRecorder) ClearDeviceIssues(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearDeviceIssues", reflect.TypeOf((*MockRepository)(nil).ClearDeviceIssues), ctx, userId)
 }
 
 // ClinicIds mocks base method.
@@ -904,6 +946,20 @@ func (m *MockRepository) UpdatePermissions(ctx context.Context, clinicId, userId
 func (mr *MockRepositoryMockRecorder) UpdatePermissions(ctx, clinicId, userId, permissions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockRepository)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
+}
+
+// UpdatePrimaryDeviceProviderName mocks base method.
+func (m *MockRepository) UpdatePrimaryDeviceProviderName(ctx context.Context, userId, providerName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePrimaryDeviceProviderName", ctx, userId, providerName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePrimaryDeviceProviderName indicates an expected call of UpdatePrimaryDeviceProviderName.
+func (mr *MockRepositoryMockRecorder) UpdatePrimaryDeviceProviderName(ctx, userId, providerName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePrimaryDeviceProviderName", reflect.TypeOf((*MockRepository)(nil).UpdatePrimaryDeviceProviderName), ctx, userId, providerName)
 }
 
 // UpdateSites mocks base method.

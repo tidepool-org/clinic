@@ -2539,3 +2539,49 @@ func (r *repository) patientsWithErroringDevices(ctx context.Context) (
 	}
 	return patients, nil
 }
+
+func (r *repository) UpdatePrimaryDeviceProviderName(ctx context.Context,
+	userId, providerName string) error {
+
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"primaryDeviceProviderName": providerName,
+		},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return patients.ErrNotFound
+		}
+		return fmt.Errorf("error updating patient primary device: %w", err)
+	}
+
+	return nil
+}
+
+func (r *repository) ClearDeviceIssues(ctx context.Context, userId string) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{
+		"$unset":       bson.M{"deviceIssues": ""},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return patients.ErrNotFound
+		}
+		return fmt.Errorf("error clearing patient device issues: %w", err)
+	}
+
+	return nil
+}

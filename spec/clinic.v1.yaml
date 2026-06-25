@@ -975,9 +975,17 @@ paths:
           in: query
         - name: deviceIssues
           description: |
-            Excludes patients not experiencing devices issues.
+            Includes patients experiencing one or more of the device issues specified.
           schema:
-            type: boolean
+            type: string
+            items:
+              type: string
+              enum:
+                - disconnected
+                - erroring
+                - expiredConnectionInvitation
+                - staleConnectionInvitation
+                - staleData
           in: query
       description: Retrieve a list of patients of a clinic
     post:
@@ -2189,6 +2197,7 @@ paths:
       responses:
         '200':
           description: OK
+      description: Get programs
       tags:
         - Clinics
         - Internal
@@ -2200,7 +2209,7 @@ paths:
       responses:
         '200':
           description: OK
-      description: ''
+      description: Get program URL
       tags:
         - Clinics
         - Internal
@@ -2212,7 +2221,7 @@ paths:
       responses:
         '200':
           description: OK
-      description: ''
+      description: Notification webhook
       tags:
         - Clinics
         - Internal
@@ -4993,8 +5002,12 @@ components:
         effectiveTime:
           $ref: '#/components/schemas/datetime.v1'
           title: Time when issue was began
+          readOnly: true
         providerId:
           $ref: '#/components/schemas/providerId.v1'
+          readOnly: true
+        hidden:
+          $ref: '#/components/schemas/datetime.v1'
       required:
         - effectiveTime
         - providerId
@@ -5014,7 +5027,6 @@ components:
           $ref: '#/components/schemas/deviceIssue.v1'
         staleData:
           $ref: '#/components/schemas/deviceIssue.v1'
-      readOnly: true
     patient.v1:
       type: object
       title: Patient
@@ -5093,6 +5105,12 @@ components:
           $ref: '#/components/schemas/diagnosisType.v1'
         deviceIssues:
           $ref: '#/components/schemas/deviceIssues.v1'
+        primaryDeviceProviderName:
+          $ref: '#/components/schemas/providerId.v1'
+          description: The device used in various dashboards, e.g. TIDE or Device Issues Dashboard.
+          nullable: true
+          x-go-type-skip-optional-pointer: true
+          readOnly: true
       required:
         - id
         - fullName
