@@ -27,6 +27,7 @@ const (
 
 var app *fx.App
 var server *echo.Echo
+var stubUsers *integrationTest.StubUsers
 var shorelineStub *httptest.Server
 var seagullStub *httptest.Server
 var authStub *httptest.Server
@@ -42,9 +43,10 @@ var _ = AfterSuite(teardownEnvironment)
 func setupEnvironment() {
 	dbTest.SetupDatabase()
 
+	stubUsers = integrationTest.NewStubUsers()
 	authStub = integrationTest.AuthStub()
-	seagullStub = integrationTest.SeagullStub()
-	shorelineStub = integrationTest.ShorelineStub()
+	seagullStub = integrationTest.SeagullStub(stubUsers)
+	shorelineStub = integrationTest.ShorelineStub(stubUsers)
 	xealthStub = xealthTest.ServerStub()
 	keycloakStub := integrationTest.KeycloakStub()
 
@@ -110,6 +112,17 @@ func asServer(req *http.Request) {
 
 func asServiceAccount(req *http.Request) {
 	req.Header.Set("x-tidepool-session-token", integrationTest.TestServiceAccountToken)
+}
+
+// asUser authenticates a request as any user registered with the stub user
+// registry, e.g. one created via stubUsers.AddUser or newStubUser.
+func asUser(userId string) func(*http.Request) {
+	return func(req *http.Request) {
+		GinkgoHelper()
+		token := stubUsers.TokenFor(userId)
+		Expect(token).ToNot(BeEmpty(), "user %s is not registered with the stub user registry", userId)
+		req.Header.Set("x-tidepool-session-token", token)
+	}
 }
 
 func asXealth(req *http.Request) {

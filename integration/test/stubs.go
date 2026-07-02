@@ -2,18 +2,20 @@ package test
 
 import (
 	"encoding/json"
-	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 	"github.com/tidepool-org/platform/auth"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"regexp"
-	"strings"
-	"time"
 )
 
 const (
@@ -87,103 +89,223 @@ var (
 		EmailVerified:  true,
 	}
 
+	// Users which are created lazily by the custodial user creation endpoint,
+	// preserving the behavior the xealth and redox specs depend on: a lookup
+	// by username returns 404 until the user has been created. The guardian
+	// user is intentionally never registered for lookups.
+	predefinedUsers = map[string]struct {
+		user     shoreline.UserData
+		register bool
+	}{
+		"xealth@tidepool.org":          {user: xealthUser, register: true},
+		"redox@tidepool.org":           {user: redoxUser, register: true},
+		"xealth+guardian@tidepool.org": {user: xealthGuardianUser, register: false},
+	}
+
 	createClinicUserUrlRegexp      = regexp.MustCompile("/v1/clinics/.+/users")
 	createRestrictedTokenUrlRegexp = regexp.MustCompile("/v1/users/(.+)/restricted_tokens")
 )
 
-func ShorelineStub() *httptest.Server {
-	xealthPatientCreated := false
-	redoxPatientCreated := false
+// StubUsers is a registry of Tidepool users backing ShorelineStub and
+// SeagullStub. It is pre-seeded with the fixed users and tokens the existing
+// specs rely on, and allows specs to register additional users so tests can
+// authenticate as arbitrary clinicians and patients or create custodial
+// accounts with arbitrary emails.
+type StubUsers struct {
+	mu         sync.Mutex
+	byId       map[string]shoreline.UserData
+	byUsername map[string]shoreline.UserData
+	tokens     map[string]shoreline.TokenData
+	tokenById  map[string]string
+	profiles   map[string]patients.Profile
+	nextId     int64
+}
+
+func NewStubUsers() *StubUsers {
+	u := &StubUsers{}
+	u.Reset()
+	return u
+}
+
+// Reset restores the registry to its initial seeded state. The suite database
+// is shared across specs, so this is not invoked automatically; specs must
+// keep their data unique instead.
+func (u *StubUsers) Reset() {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	u.byId = map[string]shoreline.UserData{}
+	u.byUsername = map[string]shoreline.UserData{}
+	u.tokens = map[string]shoreline.TokenData{}
+	u.tokenById = map[string]string{}
+	u.profiles = map[string]patients.Profile{}
+	u.nextId = 5000000000
+
+	u.registerLocked(clinicianUser, TestUserToken, false)
+	u.registerLocked(clinicUser, TestLegacyClinicToken, true)
+	u.tokens[TestServerToken] = shoreline.TokenData{UserID: TestServerId, IsServer: true}
+	u.tokens[TestServiceAccountToken] = shoreline.TokenData{UserID: TestServiceAccountUserId, IsServer: false}
+
+	clinicianName := "Clinician 1"
+	clinicName := "Clinic 1"
+	u.profiles[TestUserId] = patients.Profile{FullName: &clinicianName}
+	u.profiles[TestLegacyClinicUserId] = patients.Profile{FullName: &clinicName}
+}
+
+func (u *StubUsers) registerLocked(user shoreline.UserData, token string, isServer bool) {
+	u.byId[user.UserID] = user
+	if user.Username != "" {
+		u.byUsername[user.Username] = user
+	}
+	u.tokens[token] = shoreline.TokenData{UserID: user.UserID, IsServer: isServer}
+	u.tokenById[user.UserID] = token
+}
+
+// AddUser registers an existing Tidepool user and returns a session token
+// which authenticates as that user.
+func (u *StubUsers) AddUser(user shoreline.UserData) string {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	token := "token-" + user.UserID
+	u.registerLocked(user, token, false)
+	return token
+}
+
+// NextUserId returns a new unique 10-digit user id.
+func (u *StubUsers) NextUserId() string {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.nextId++
+	return strconv.FormatInt(u.nextId, 10)
+}
+
+// CreateUser backs the custodial account creation endpoint. Usernames of
+// already registered users return the existing user, mirroring the previous
+// stub behavior of always responding with a fixed user.
+func (u *StubUsers) CreateUser(username string) shoreline.UserData {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	if username != "" {
+		if existing, ok := u.byUsername[username]; ok {
+			return existing
+		}
+		if predefined, ok := predefinedUsers[username]; ok {
+			if predefined.register {
+				u.registerLocked(predefined.user, "token-"+predefined.user.UserID, false)
+			}
+			return predefined.user
+		}
+	}
+
+	u.nextId++
+	user := shoreline.UserData{
+		UserID:   strconv.FormatInt(u.nextId, 10),
+		Username: username,
+	}
+	if username != "" {
+		user.Emails = []string{username}
+	}
+	u.registerLocked(user, "token-"+user.UserID, false)
+	return user
+}
+
+func (u *StubUsers) User(idOrUsername string) (shoreline.UserData, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if user, ok := u.byId[idOrUsername]; ok {
+		return user, true
+	}
+	user, ok := u.byUsername[idOrUsername]
+	return user, ok
+}
+
+func (u *StubUsers) Token(token string) (shoreline.TokenData, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	data, ok := u.tokens[token]
+	return data, ok
+}
+
+// TokenFor returns the session token of a registered user, or an empty string
+// when the user is unknown.
+func (u *StubUsers) TokenFor(userId string) string {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return u.tokenById[userId]
+}
+
+// SetProfile overrides the seagull profile of a user.
+func (u *StubUsers) SetProfile(userId string, profile patients.Profile) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.profiles[userId] = profile
+}
+
+// Profile returns the explicitly set profile of a user, or a generic profile
+// for any registered user.
+func (u *StubUsers) Profile(userId string) (patients.Profile, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if profile, ok := u.profiles[userId]; ok {
+		return profile, true
+	}
+	if _, ok := u.byId[userId]; ok {
+		fullName := "User " + userId
+		return patients.Profile{FullName: &fullName}, true
+	}
+	return patients.Profile{}, false
+}
+
+func writeJSON(w http.ResponseWriter, statusCode int, v interface{}) {
+	resp, _ := json.Marshal(v)
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(statusCode)
+	_, _ = w.Write(resp)
+}
+
+func ShorelineStub(users *StubUsers) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var resp []byte
-		if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/token/%s", TestUserToken) {
-			resp, _ = json.Marshal(shoreline.TokenData{
-				UserID:   TestUserId,
-				IsServer: false,
-			})
-		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/token/%s", TestLegacyClinicToken) {
-			resp, _ = json.Marshal(shoreline.TokenData{
-				UserID:   TestLegacyClinicUserId,
-				IsServer: true,
-			})
-		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/token/%s", TestServerToken) {
-			resp, _ = json.Marshal(shoreline.TokenData{
-				UserID:   TestServerId,
-				IsServer: true,
-			})
-		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/token/%s", TestServiceAccountToken) {
-			resp, _ = json.Marshal(shoreline.TokenData{
-				UserID:   TestServiceAccountUserId,
-				IsServer: false,
-			})
-		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", TestUserId) {
-			resp, _ = json.Marshal(clinicianUser)
-		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", TestLegacyClinicUserId) {
-			resp, _ = json.Marshal(clinicUser)
-		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", "xealth@tidepool.org") {
-			if !xealthPatientCreated {
-				w.WriteHeader(http.StatusNotFound)
+		switch {
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/token/"):
+			token := strings.TrimPrefix(r.URL.Path, "/token/")
+			if data, ok := users.Token(token); ok {
+				writeJSON(w, http.StatusOK, data)
 			} else {
-				resp, _ = json.Marshal(xealthUser)
-			}
-		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/user/%s", "redox@tidepool.org") {
-			if !redoxPatientCreated {
 				w.WriteHeader(http.StatusNotFound)
-			} else {
-				resp, _ = json.Marshal(redoxUser)
 			}
-		} else if r.Method == http.MethodPost && createClinicUserUrlRegexp.MatchString(r.RequestURI) {
-			user := struct {
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/user/"):
+			idOrUsername := strings.TrimPrefix(r.URL.Path, "/user/")
+			if user, ok := users.User(idOrUsername); ok {
+				writeJSON(w, http.StatusOK, user)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		case r.Method == http.MethodPost && createClinicUserUrlRegexp.MatchString(r.URL.Path):
+			payload := struct {
 				Username string `json:"username"`
 			}{}
 			body, _ := io.ReadAll(r.Body)
-			_ = json.Unmarshal(body, &user)
-
-			if user.Username == "test@tidepool.org" {
-				resp, _ = json.Marshal(clinicianUser)
-				w.WriteHeader(http.StatusCreated)
-			} else if user.Username == "xealth@tidepool.org" {
-				xealthPatientCreated = true
-				resp, _ = json.Marshal(xealthUser)
-				w.WriteHeader(http.StatusCreated)
-			} else if user.Username == "redox@tidepool.org" {
-				redoxPatientCreated = true
-				resp, _ = json.Marshal(redoxUser)
-				w.WriteHeader(http.StatusCreated)
-			} else if user.Username == "xealth+guardian@tidepool.org" {
-				resp, _ = json.Marshal(xealthGuardianUser)
-				w.WriteHeader(http.StatusCreated)
-			} else {
-				w.WriteHeader(http.StatusBadRequest)
-			}
-		} else if r.Method == http.MethodPost && strings.HasSuffix(r.RequestURI, "/serverlogin") {
-			w.Header().Set("x-tidepool-session-token", "server")
-		} else {
+			_ = json.Unmarshal(body, &payload)
+			writeJSON(w, http.StatusCreated, users.CreateUser(payload.Username))
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/serverlogin"):
+			w.Header().Set("x-tidepool-session-token", TestServerToken)
+		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
-
-		w.Write(resp)
 	}))
 }
 
-func SeagullStub() *httptest.Server {
+func SeagullStub(users *StubUsers) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var resp []byte
-		if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/%s/profile", TestUserId) {
-			fullName := "Clinician 1"
-			resp, _ = json.Marshal(patients.Profile{
-				FullName: &fullName,
-			})
-		} else if r.Method == http.MethodGet && r.RequestURI == fmt.Sprintf("/%s/profile", TestLegacyClinicUserId) {
-			fullName := "Clinic 1"
-			resp, _ = json.Marshal(patients.Profile{
-				FullName: &fullName,
-			})
-		} else {
-			w.WriteHeader(http.StatusNotImplemented)
+		if r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/profile") {
+			userId := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/"), "/profile")
+			if profile, ok := users.Profile(userId); ok {
+				writeJSON(w, http.StatusOK, profile)
+				return
+			}
 		}
-
-		w.Write(resp)
+		w.WriteHeader(http.StatusNotImplemented)
 	}))
 }
 
