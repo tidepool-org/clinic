@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync/atomic"
 
 	"github.com/TwiN/deepmerge"
@@ -212,4 +213,151 @@ func listPatients(clinicId string, query url.Values, auth func(*http.Request)) c
 	resp := do(req)
 	expectStatus(resp, http.StatusOK)
 	return decodeAs[client.PatientsResponseV1](resp)
+}
+
+func createPatientTag(clinicId, name string, auth func(*http.Request)) client.PatientTagV1 {
+	GinkgoHelper()
+	req := prepareRequestWithBody(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/patient_tags", clinicId), jsonBody(map[string]interface{}{"name": name}))
+	auth(req)
+	resp := do(req)
+	expectStatus(resp, http.StatusOK)
+	return decodeAs[client.PatientTagV1](resp)
+}
+
+func createSite(clinicId, name string, auth func(*http.Request)) client.SiteV1 {
+	GinkgoHelper()
+	req := prepareRequestWithBody(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/sites", clinicId), jsonBody(map[string]interface{}{"name": name}))
+	auth(req)
+	resp := do(req)
+	expectStatus(resp, http.StatusOK)
+	return decodeAs[client.SiteV1](resp)
+}
+
+// addReview adds a patient review as the authenticated clinician and returns
+// the updated reviews, newest first.
+func addReview(clinicId, patientId string, auth func(*http.Request)) []client.PatientReviewV1 {
+	GinkgoHelper()
+	req := prepareRequest(http.MethodPut, fmt.Sprintf("/v1/clinics/%s/patients/%s/reviews", clinicId, patientId), "")
+	auth(req)
+	resp := do(req)
+	expectStatus(resp, http.StatusOK)
+	return decodeAs[[]client.PatientReviewV1](resp)
+}
+
+// Summary payload builders. The summary update endpoint validates request
+// bodies against the OpenAPI spec, so every required field must be present.
+
+func defaultSummaryConfig() map[string]interface{} {
+	return map[string]interface{}{
+		"schemaVersion":            2,
+		"highGlucoseThreshold":     10.0,
+		"lowGlucoseThreshold":      3.9,
+		"veryHighGlucoseThreshold": 13.9,
+		"veryLowGlucoseThreshold":  3.0,
+	}
+}
+
+// summaryDates builds a valid summary dates object. Overrides merge on top of
+// the required fields; use time.Time values formatted as RFC 3339 strings.
+func summaryDates(overrides map[string]interface{}) map[string]interface{} {
+	return applyOverrides(map[string]interface{}{
+		"hasFirstData":      false,
+		"hasLastData":       false,
+		"hasLastUploadDate": false,
+		"hasOutdatedSince":  false,
+	}, overrides)
+}
+
+var requiredCgmPeriodNumericFields = []string{
+	"coefficientOfVariation", "coefficientOfVariationDelta",
+	"daysWithData", "daysWithDataDelta",
+	"hoursWithData", "hoursWithDataDelta",
+	"max", "maxDelta", "min", "minDelta",
+	"standardDeviation", "standardDeviationDelta",
+}
+
+var requiredCgmPeriodHasFlags = []string{
+	"hasAverageDailyRecords", "hasAverageGlucoseMmol", "hasGlucoseManagementIndicator",
+	"hasTimeCGMUseMinutes", "hasTimeCGMUsePercent", "hasTimeCGMUseRecords",
+	"hasTimeInAnyHighMinutes", "hasTimeInAnyHighPercent", "hasTimeInAnyHighRecords",
+	"hasTimeInAnyLowMinutes", "hasTimeInAnyLowPercent", "hasTimeInAnyLowRecords",
+	"hasTimeInExtremeHighMinutes", "hasTimeInExtremeHighPercent", "hasTimeInExtremeHighRecords",
+	"hasTimeInHighMinutes", "hasTimeInHighPercent", "hasTimeInHighRecords",
+	"hasTimeInLowMinutes", "hasTimeInLowPercent", "hasTimeInLowRecords",
+	"hasTimeInTargetMinutes", "hasTimeInTargetPercent", "hasTimeInTargetRecords",
+	"hasTimeInVeryHighMinutes", "hasTimeInVeryHighPercent", "hasTimeInVeryHighRecords",
+	"hasTimeInVeryLowMinutes", "hasTimeInVeryLowPercent", "hasTimeInVeryLowRecords",
+	"hasTotalRecords",
+}
+
+var requiredBgmPeriodNumericFields = []string{
+	"daysWithData", "daysWithDataDelta",
+	"max", "maxDelta", "min", "minDelta",
+}
+
+var requiredBgmPeriodHasFlags = []string{
+	"hasAverageDailyRecords", "hasAverageGlucoseMmol",
+	"hasTimeInAnyHighPercent", "hasTimeInAnyHighRecords",
+	"hasTimeInAnyLowPercent", "hasTimeInAnyLowRecords",
+	"hasTimeInExtremeHighPercent", "hasTimeInExtremeHighRecords",
+	"hasTimeInHighPercent", "hasTimeInHighRecords",
+	"hasTimeInLowPercent", "hasTimeInLowRecords",
+	"hasTimeInTargetPercent", "hasTimeInTargetRecords",
+	"hasTimeInVeryHighPercent", "hasTimeInVeryHighRecords",
+	"hasTimeInVeryLowPercent", "hasTimeInVeryLowRecords",
+	"hasTotalRecords",
+}
+
+func buildPeriod(numericFields, hasFlags []string, metrics map[string]interface{}) map[string]interface{} {
+	period := map[string]interface{}{}
+	for _, f := range numericFields {
+		period[f] = 0
+	}
+	for _, f := range hasFlags {
+		period[f] = false
+	}
+	for k, v := range metrics {
+		period[k] = v
+		// Mark the corresponding has* flag when the schema defines one.
+		hasFlag := "has" + strings.ToUpper(k[:1]) + k[1:]
+		if _, ok := period[hasFlag]; ok {
+			period[hasFlag] = true
+		}
+	}
+	return period
+}
+
+// cgmPeriod builds a valid CGM summary period with the given metrics applied
+// on top of zero values; has* flags of provided metrics are set automatically.
+func cgmPeriod(metrics map[string]interface{}) map[string]interface{} {
+	return buildPeriod(requiredCgmPeriodNumericFields, requiredCgmPeriodHasFlags, metrics)
+}
+
+func bgmPeriod(metrics map[string]interface{}) map[string]interface{} {
+	return buildPeriod(requiredBgmPeriodNumericFields, requiredBgmPeriodHasFlags, metrics)
+}
+
+// summaryStats builds the body for the summary update endpoint. typ is "cgm"
+// or "bgm"; periods maps period names ("1d", "7d", "14d", "30d") to periods
+// built with cgmPeriod/bgmPeriod. Returns the stats id in the payload.
+func summaryStats(typ string, summaryId string, dates map[string]interface{}, periods map[string]interface{}) map[string]interface{} {
+	return map[string]interface{}{
+		typ + "Stats": map[string]interface{}{
+			"id":      summaryId,
+			"config":  defaultSummaryConfig(),
+			"dates":   summaryDates(dates),
+			"periods": periods,
+		},
+	}
+}
+
+// mergeSummaries combines cgm and bgm stats payloads into a single body.
+func mergeSummaries(summaries ...map[string]interface{}) map[string]interface{} {
+	merged := map[string]interface{}{}
+	for _, s := range summaries {
+		for k, v := range s {
+			merged[k] = v
+		}
+	}
+	return merged
 }
