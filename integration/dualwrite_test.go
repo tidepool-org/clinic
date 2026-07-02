@@ -401,3 +401,140 @@ var _ = Describe("Postgres Dual Writes - Clinicians", Ordered, func() {
 			clinicId, member.UserID, updated)).To(Equal(1))
 	})
 })
+
+// Verifies patient mirroring through the HTTP API: row snapshots with
+// normalized names and permission flags, bulk tag operations, site renames,
+// reviews, cross-clinic data source updates, and cascade deletes.
+var _ = Describe("Postgres Dual Writes - Patients", Ordered, func() {
+	var admin shoreline.UserData
+	var auth func(*http.Request)
+	var clinic client.ClinicV1
+
+	BeforeAll(func() {
+		admin = newStubUser()
+		auth = asUser(admin.UserID)
+		clinic = createClinic(auth)
+	})
+
+	It("mirrors custodial patients with normalized names and permission flags", func() {
+		patient := createCustodialPatient(*clinic.Id, auth, map[string]interface{}{
+			"fullName": fmt.Sprintf("Édouard Pátient %s", uniqueId()),
+		})
+
+		var mongoRecord struct {
+			Id primitive.ObjectID `bson:"_id"`
+		}
+		collection := test.GetTestDatabase().Collection("patients")
+		Expect(collection.FindOne(testCtx(), bson.M{"clinicId": mustObjectId(*clinic.Id), "userId": *patient.Id}).Decode(&mongoRecord)).To(Succeed())
+
+		Expect(pgCount("patients",
+			"id = $1 AND clinic_id = $2 AND user_id = $3 AND perm_custodian AND full_name_normalized LIKE 'edouard patient %'",
+			mongoRecord.Id.Hex(), *clinic.Id, *patient.Id)).To(Equal(1))
+	})
+
+	It("mirrors bulk tag assignment and removal", func() {
+		tag := createPatientTag(*clinic.Id, "dw-"+uniqueId(), auth)
+		first := createCustodialPatient(*clinic.Id, auth, nil)
+		createCustodialPatient(*clinic.Id, auth, nil)
+
+		// A subset of user ids targets only those patients
+		req := prepareRequestWithBody(http.MethodPost,
+			fmt.Sprintf("/v1/clinics/%s/patients/assign_tag/%s", *clinic.Id, *tag.Id),
+			jsonBody([]string{*first.Id}))
+		auth(req)
+		expectStatus(do(req), http.StatusOK)
+		Expect(pgCount("patient_tags", "tag_id = $1", *tag.Id)).To(Equal(1))
+
+		// An empty body targets every patient of the clinic
+		req = prepareRequest(http.MethodPost,
+			fmt.Sprintf("/v1/clinics/%s/patients/assign_tag/%s", *clinic.Id, *tag.Id), "")
+		auth(req)
+		expectStatus(do(req), http.StatusOK)
+		clinicPatients := pgCount("patients", "clinic_id = $1", *clinic.Id)
+		Expect(pgCount("patient_tags", "tag_id = $1", *tag.Id)).To(Equal(clinicPatients))
+
+		req = prepareRequest(http.MethodPost,
+			fmt.Sprintf("/v1/clinics/%s/patients/delete_tag/%s", *clinic.Id, *tag.Id), "")
+		auth(req)
+		expectStatus(do(req), http.StatusOK)
+		Expect(pgCount("patient_tags", "tag_id = $1", *tag.Id)).To(Equal(0))
+	})
+
+	It("mirrors site assignments and rename propagation", func() {
+		site := createSite(*clinic.Id, "dw-site-"+uniqueId(), auth)
+		patient := createCustodialPatient(*clinic.Id, auth, map[string]interface{}{
+			"sites": []map[string]interface{}{{"id": site.Id, "name": site.Name}},
+		})
+		Expect(pgCount("patient_sites", "site_id = $1 AND site_name = $2", site.Id, site.Name)).To(Equal(1))
+
+		renamed := "dw-renamed-" + uniqueId()
+		req := prepareRequestWithBody(http.MethodPut,
+			fmt.Sprintf("/v1/clinics/%s/sites/%s", *clinic.Id, site.Id),
+			jsonBody(map[string]interface{}{"id": site.Id, "name": renamed}))
+		auth(req)
+		expectStatus(do(req), http.StatusOK)
+		Expect(pgCount("patient_sites", "site_id = $1 AND site_name = $2", site.Id, renamed)).To(Equal(1))
+
+		_ = patient
+	})
+
+	It("mirrors reviews", func() {
+		patient := createCustodialPatient(*clinic.Id, auth, nil)
+		reviews := addReview(*clinic.Id, *patient.Id, auth)
+		Expect(reviews).ToNot(BeEmpty())
+
+		var mongoRecord struct {
+			Id primitive.ObjectID `bson:"_id"`
+		}
+		collection := test.GetTestDatabase().Collection("patients")
+		Expect(collection.FindOne(testCtx(), bson.M{"clinicId": mustObjectId(*clinic.Id), "userId": *patient.Id}).Decode(&mongoRecord)).To(Succeed())
+
+		Expect(pgCount("patient_reviews", "patient_id = $1 AND clinician_id = $2",
+			mongoRecord.Id.Hex(), admin.UserID)).To(Equal(1))
+	})
+
+	It("mirrors data source updates in every clinic", func() {
+		other := createClinic(auth)
+		patientUser := newStubUser()
+		createPatientFromUser(*clinic.Id, patientUser.UserID, asServer, map[string]interface{}{"birthDate": "1991-03-03"})
+		createPatientFromUser(*other.Id, patientUser.UserID, asServer, map[string]interface{}{"birthDate": "1991-03-03"})
+
+		req := prepareRequestWithBody(http.MethodPut,
+			fmt.Sprintf("/v1/patients/%s/data_sources", patientUser.UserID),
+			jsonBody([]map[string]interface{}{{
+				"providerName": "dexcom", "state": "connected",
+				"dataSourceId": primitive.NewObjectID().Hex(),
+			}}))
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount(
+			"patient_data_sources JOIN patients ON patients.id = patient_data_sources.patient_id",
+			"patients.user_id = $1 AND provider_name = 'dexcom' AND state = 'connected'",
+			patientUser.UserID)).To(Equal(2))
+	})
+
+	It("removes mirrored rows when the last permission is revoked", func() {
+		patientUser := newStubUser()
+		createPatientFromUser(*clinic.Id, patientUser.UserID, asServer, map[string]interface{}{
+			"birthDate":   "1992-04-04",
+			"permissions": map[string]interface{}{"view": map[string]interface{}{}},
+		})
+		Expect(pgCount("patients", "clinic_id = $1 AND user_id = $2", *clinic.Id, patientUser.UserID)).To(Equal(1))
+
+		// Deleting the last permission removes the patient from the clinic
+		req := prepareRequest(http.MethodDelete,
+			fmt.Sprintf("/v1/clinics/%s/patients/%s/permissions/view", *clinic.Id, patientUser.UserID), "")
+		asUser(patientUser.UserID)(req)
+		expectStatus(do(req), http.StatusNoContent)
+
+		Expect(pgCount("patients", "clinic_id = $1 AND user_id = $2", *clinic.Id, patientUser.UserID)).To(Equal(0))
+	})
+})
+
+func mustObjectId(hex string) primitive.ObjectID {
+	GinkgoHelper()
+	id, err := primitive.ObjectIDFromHex(hex)
+	Expect(err).ToNot(HaveOccurred())
+	return id
+}

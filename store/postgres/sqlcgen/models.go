@@ -157,6 +157,46 @@ type Migration struct {
 	PgSyncedAt  pgtype.Timestamptz
 }
 
+type Patient struct {
+	ID                             string
+	ClinicID                       string
+	UserID                         string
+	FullName                       pgtype.Text
+	FullNameNormalized             pgtype.Text
+	BirthDate                      pgtype.Text
+	Email                          pgtype.Text
+	Mrn                            pgtype.Text
+	RequireUniqueMrn               bool
+	IsMigrated                     bool
+	InvitedBy                      pgtype.Text
+	DiagnosisType                  pgtype.Text
+	TargetDevices                  []string
+	LegacyClinicianIds             []string
+	PermCustodian                  bool
+	PermView                       bool
+	PermUpload                     bool
+	PermNote                       bool
+	GlycemicRangesType             pgtype.Text
+	GlycemicRangesPreset           pgtype.Text
+	GlycemicRangesCustom           []byte
+	CreatedTime                    pgtype.Timestamptz
+	UpdatedTime                    pgtype.Timestamptz
+	LastUploadReminderTime         pgtype.Timestamptz
+	LastRequestedDexcomConnectTime pgtype.Timestamptz
+	PgSyncedAt                     pgtype.Timestamptz
+}
+
+type PatientDataSource struct {
+	PatientID      string
+	Ordinal        int32
+	ProviderName   string
+	State          string
+	DataSourceID   pgtype.Text
+	ModifiedTime   pgtype.Timestamptz
+	ExpirationTime pgtype.Timestamptz
+	LatestDataTime pgtype.Timestamptz
+}
+
 type PatientDeletion struct {
 	ID              string
 	DeletedTime     pgtype.Timestamptz
@@ -165,6 +205,48 @@ type PatientDeletion struct {
 	UserID          pgtype.Text
 	Payload         []byte
 	PgSyncedAt      pgtype.Timestamptz
+}
+
+type PatientEhrSubscription struct {
+	PatientID   string
+	Name        string
+	Provider    string
+	Active      bool
+	CreatedTime pgtype.Timestamptz
+	UpdatedTime pgtype.Timestamptz
+}
+
+type PatientEhrSubscriptionMatchedMessage struct {
+	PatientID        string
+	SubscriptionName string
+	Ordinal          int32
+	MessageID        string
+	DataModel        string
+	EventType        string
+}
+
+type PatientProviderConnectionRequest struct {
+	PatientID    string
+	ProviderName string
+	CreatedTime  pgtype.Timestamptz
+}
+
+type PatientReview struct {
+	PatientID   string
+	Ordinal     int32
+	ClinicianID string
+	ReviewTime  pgtype.Timestamptz
+}
+
+type PatientSite struct {
+	PatientID string
+	SiteID    string
+	SiteName  string
+}
+
+type PatientTag struct {
+	PatientID string
+	TagID     string
 }
 
 type PgsyncBackfillProgress struct {

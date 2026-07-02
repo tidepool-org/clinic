@@ -376,6 +376,10 @@ type PatientPlanExecutor struct {
 	logger *zap.SugaredLogger
 }
 
+// NewPatientPlanExecutor writes to the patients collection through a raw
+// collection handle, bypassing the patients repository and its Postgres
+// dual-write decorator. Patients moved or merged between clinics converge in
+// Postgres through `pgsync backfill patients` instead.
 func NewPatientPlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Service, db *mongo.Database) *PatientPlanExecutor {
 	return &PatientPlanExecutor{
 		clinicsService:     clinicsService,

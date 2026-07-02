@@ -11,6 +11,10 @@ import (
 )
 
 type Querier interface {
+	AddSiteToPatientsWithSite(ctx context.Context, arg AddSiteToPatientsWithSiteParams) error
+	AddSiteToPatientsWithTag(ctx context.Context, arg AddSiteToPatientsWithTagParams) error
+	AssignTagToClinicPatients(ctx context.Context, arg AssignTagToClinicPatientsParams) error
+	AssignTagToPatients(ctx context.Context, arg AssignTagToPatientsParams) error
 	DeleteAllClinicians(ctx context.Context, clinicID string) error
 	DeleteBackfillProgress(ctx context.Context, collection string) error
 	DeleteClinic(ctx context.Context, id string) error
@@ -23,6 +27,18 @@ type Querier interface {
 	DeleteClinician(ctx context.Context, arg DeleteClinicianParams) error
 	DeleteClinicianInvite(ctx context.Context, arg DeleteClinicianInviteParams) error
 	DeleteClinicianRolesUpdates(ctx context.Context, clinicianID string) error
+	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicID string) error
+	DeletePatient(ctx context.Context, arg DeletePatientParams) error
+	DeletePatientConnectionRequests(ctx context.Context, patientID string) error
+	DeletePatientDataSources(ctx context.Context, patientID string) error
+	DeletePatientEHRSubscriptions(ctx context.Context, patientID string) error
+	DeletePatientReviews(ctx context.Context, patientID string) error
+	DeletePatientSites(ctx context.Context, patientID string) error
+	DeletePatientTags(ctx context.Context, patientID string) error
+	DeletePatientsByUserId(ctx context.Context, userID string) error
+	DeleteSiteFromClinicPatients(ctx context.Context, arg DeleteSiteFromClinicPatientsParams) error
+	DeleteTagFromClinicPatients(ctx context.Context, arg DeleteTagFromClinicPatientsParams) error
+	DeleteTagFromPatients(ctx context.Context, arg DeleteTagFromPatientsParams) error
 	GetBackfillProgress(ctx context.Context, collection string) (PgsyncBackfillProgress, error)
 	InsertClinicAdmin(ctx context.Context, arg InsertClinicAdminParams) error
 	InsertClinicMembershipRestriction(ctx context.Context, arg InsertClinicMembershipRestrictionParams) error
@@ -31,7 +47,15 @@ type Querier interface {
 	InsertClinicShareCode(ctx context.Context, arg InsertClinicShareCodeParams) error
 	InsertClinicSite(ctx context.Context, arg InsertClinicSiteParams) error
 	InsertClinicianRolesUpdate(ctx context.Context, arg InsertClinicianRolesUpdateParams) error
+	InsertPatientConnectionRequest(ctx context.Context, arg InsertPatientConnectionRequestParams) error
+	InsertPatientDataSource(ctx context.Context, arg InsertPatientDataSourceParams) error
+	InsertPatientEHRSubscription(ctx context.Context, arg InsertPatientEHRSubscriptionParams) error
+	InsertPatientEHRSubscriptionMatchedMessage(ctx context.Context, arg InsertPatientEHRSubscriptionMatchedMessageParams) error
+	InsertPatientReview(ctx context.Context, arg InsertPatientReviewParams) error
+	InsertPatientSite(ctx context.Context, arg InsertPatientSiteParams) error
+	InsertPatientTag(ctx context.Context, arg InsertPatientTagParams) error
 	PruneScheduledSummaryReportsOrders(ctx context.Context, createdTime pgtype.Timestamptz) (int64, error)
+	RenameSiteForClinicPatients(ctx context.Context, arg RenameSiteForClinicPatientsParams) error
 	UpsertBackfillProgress(ctx context.Context, arg UpsertBackfillProgressParams) error
 	UpsertClinic(ctx context.Context, arg UpsertClinicParams) error
 	UpsertClinicDeletion(ctx context.Context, arg UpsertClinicDeletionParams) error
@@ -39,6 +63,7 @@ type Querier interface {
 	UpsertClinicianDeletion(ctx context.Context, arg UpsertClinicianDeletionParams) error
 	UpsertMergePlan(ctx context.Context, arg UpsertMergePlanParams) error
 	UpsertMigration(ctx context.Context, arg UpsertMigrationParams) error
+	UpsertPatient(ctx context.Context, arg UpsertPatientParams) error
 	UpsertPatientDeletion(ctx context.Context, arg UpsertPatientDeletionParams) error
 	UpsertRedoxMessage(ctx context.Context, arg UpsertRedoxMessageParams) error
 	UpsertScheduledSummaryReportsOrder(ctx context.Context, arg UpsertScheduledSummaryReportsOrderParams) error
