@@ -7,7 +7,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
@@ -120,24 +119,8 @@ func textValue(v *string) pgtype.Text {
 
 // NewBackfiller copies the clinicians collection using the same snapshot
 // upserts as the dual-write path.
-func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		collection: db.Collection(clinicians.CollectionName),
-		writer:     writer,
-	}
-}
-
-type backfiller struct {
-	collection *mongo.Collection
-	writer     *Writer
-}
-
-func (b *backfiller) Collection() string {
-	return b.collection.Name()
-}
-
-func (b *backfiller) BackfillBatch(ctx context.Context, after primitive.ObjectID, limit int) (primitive.ObjectID, int, error) {
-	return storepg.BackfillDocuments(ctx, b.collection, after, limit, func(ctx context.Context, docs []bson.M) error {
+func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
+	return storepg.NewCollectionSync(db.Collection(clinicians.CollectionName), "clinicians", func(ctx context.Context, docs []bson.M) error {
 		for _, doc := range docs {
 			raw, err := bson.Marshal(doc)
 			if err != nil {
@@ -147,7 +130,7 @@ func (b *backfiller) BackfillBatch(ctx context.Context, after primitive.ObjectID
 			if err := bson.Unmarshal(raw, clinician); err != nil {
 				return err
 			}
-			if err := b.writer.UpsertClinician(ctx, clinician); err != nil {
+			if err := writer.UpsertClinician(ctx, clinician); err != nil {
 				return err
 			}
 		}

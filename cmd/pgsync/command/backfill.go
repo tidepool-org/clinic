@@ -32,15 +32,16 @@ var (
 )
 
 // backfillers provides every registered backfiller. New domains register
-// their constructors here.
+// their constructors here. Every backfiller is also a Verifier used by the
+// verify command.
 var backfillers = fx.Provide(
-	asBackfiller(func(db *mongo.Database, writer *deletionsPostgres.Writer) storepg.Backfiller {
+	asBackfiller(func(db *mongo.Database, writer *deletionsPostgres.Writer) storepg.Verifier {
 		return deletionsPostgres.NewBackfiller(deletionsPostgres.TypePatient, db, writer)
 	}),
-	asBackfiller(func(db *mongo.Database, writer *deletionsPostgres.Writer) storepg.Backfiller {
+	asBackfiller(func(db *mongo.Database, writer *deletionsPostgres.Writer) storepg.Verifier {
 		return deletionsPostgres.NewBackfiller(deletionsPostgres.TypeClinician, db, writer)
 	}),
-	asBackfiller(func(db *mongo.Database, writer *deletionsPostgres.Writer) storepg.Backfiller {
+	asBackfiller(func(db *mongo.Database, writer *deletionsPostgres.Writer) storepg.Verifier {
 		return deletionsPostgres.NewBackfiller(deletionsPostgres.TypeClinic, db, writer)
 	}),
 	asBackfiller(migrationPostgres.NewBackfiller),
@@ -63,7 +64,7 @@ func asBackfiller(f any) any {
 type backfillParams struct {
 	fx.In
 
-	Backfillers []storepg.Backfiller `group:"backfillers"`
+	Backfillers []storepg.Verifier `group:"backfillers"`
 	Client      *storepg.Client
 	Logger      *zap.SugaredLogger
 }

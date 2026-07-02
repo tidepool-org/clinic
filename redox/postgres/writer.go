@@ -171,11 +171,9 @@ func (m *mirror) CreateMessage(ctx context.Context, envelope models.MessageEnvel
 	})
 }
 
-func NewMessageBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		collection: db.Collection(messagesCollection),
-		writer:     writer,
-		upsert: func(ctx context.Context, w *Writer, doc bson.M) error {
+func NewMessageBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
+	return storepg.NewCollectionSync(db.Collection(messagesCollection), "redox_messages", func(ctx context.Context, docs []bson.M) error {
+		for _, doc := range docs {
 			raw, err := bson.Marshal(doc)
 			if err != nil {
 				return err
@@ -184,35 +182,18 @@ func NewMessageBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller
 			if err := bson.Unmarshal(raw, envelope); err != nil {
 				return err
 			}
-			return w.UpsertMessage(ctx, envelope)
-		},
-	}
+			if err := writer.UpsertMessage(ctx, envelope); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
-func NewScheduledOrderBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		collection: db.Collection(scheduledOrdersCollection),
-		writer:     writer,
-		upsert: func(ctx context.Context, w *Writer, doc bson.M) error {
-			return w.UpsertScheduledOrder(ctx, doc)
-		},
-	}
-}
-
-type backfiller struct {
-	collection *mongo.Collection
-	writer     *Writer
-	upsert     func(ctx context.Context, w *Writer, doc bson.M) error
-}
-
-func (b *backfiller) Collection() string {
-	return b.collection.Name()
-}
-
-func (b *backfiller) BackfillBatch(ctx context.Context, after primitive.ObjectID, limit int) (primitive.ObjectID, int, error) {
-	return storepg.BackfillDocuments(ctx, b.collection, after, limit, func(ctx context.Context, docs []bson.M) error {
+func NewScheduledOrderBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
+	return storepg.NewCollectionSync(db.Collection(scheduledOrdersCollection), "scheduled_summary_reports_orders", func(ctx context.Context, docs []bson.M) error {
 		for _, doc := range docs {
-			if err := b.upsert(ctx, b.writer, doc); err != nil {
+			if err := writer.UpsertScheduledOrder(ctx, doc); err != nil {
 				return err
 			}
 		}

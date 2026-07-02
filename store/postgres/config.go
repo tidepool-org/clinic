@@ -21,14 +21,15 @@ func NewConfig() (*Config, error) {
 // doesn't connect to PostgreSQL at all and every repository operates
 // against MongoDB only.
 type Config struct {
-	Enabled       bool   `envconfig:"TIDEPOOL_POSTGRES_ENABLED" default:"false"`
-	Host          string `envconfig:"TIDEPOOL_POSTGRES_HOST" default:"localhost"`
-	Port          int    `envconfig:"TIDEPOOL_POSTGRES_PORT" default:"5432"`
-	User          string `envconfig:"TIDEPOOL_POSTGRES_USERNAME" default:"postgres"`
-	Password      string `envconfig:"TIDEPOOL_POSTGRES_PASSWORD"`
-	DatabaseName  string `envconfig:"TIDEPOOL_POSTGRES_DATABASE_NAME" default:"clinic"`
-	SslMode       string `envconfig:"TIDEPOOL_POSTGRES_SSL_MODE" default:"disable"`
-	RunMigrations bool   `envconfig:"TIDEPOOL_POSTGRES_RUN_MIGRATIONS" default:"true"`
+	Enabled               bool   `envconfig:"TIDEPOOL_POSTGRES_ENABLED" default:"false"`
+	Host                  string `envconfig:"TIDEPOOL_POSTGRES_HOST" default:"localhost"`
+	Port                  int    `envconfig:"TIDEPOOL_POSTGRES_PORT" default:"5432"`
+	User                  string `envconfig:"TIDEPOOL_POSTGRES_USERNAME" default:"postgres"`
+	Password              string `envconfig:"TIDEPOOL_POSTGRES_PASSWORD"`
+	DatabaseName          string `envconfig:"TIDEPOOL_POSTGRES_DATABASE_NAME" default:"clinic"`
+	SslMode               string `envconfig:"TIDEPOOL_POSTGRES_SSL_MODE" default:"disable"`
+	RunMigrations         bool   `envconfig:"TIDEPOOL_POSTGRES_RUN_MIGRATIONS" default:"true"`
+	ConnectTimeoutSeconds int    `envconfig:"TIDEPOOL_POSTGRES_CONNECT_TIMEOUT_SECONDS" default:"10"`
 }
 
 func (c *Config) ConnectionString() string {
@@ -47,6 +48,9 @@ func (c *Config) ConnectionString() string {
 	query := url.Values{}
 	if c.SslMode != "" {
 		query.Set("sslmode", c.SslMode)
+	}
+	if c.ConnectTimeoutSeconds > 0 {
+		query.Set("connect_timeout", fmt.Sprintf("%d", c.ConnectTimeoutSeconds))
 	}
 	u.RawQuery = query.Encode()
 	return u.String()

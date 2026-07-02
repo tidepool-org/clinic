@@ -15,7 +15,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"golang.org/x/text/runes"
@@ -396,30 +395,14 @@ func timestamptzValue(v *time.Time) pgtype.Timestamptz {
 
 // NewBackfiller copies the patients collection using the same snapshot
 // upserts as the dual-write path.
-func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		collection: db.Collection(patients.CollectionName),
-		writer:     writer,
-	}
-}
-
-type backfiller struct {
-	collection *mongo.Collection
-	writer     *Writer
-}
-
-func (b *backfiller) Collection() string {
-	return b.collection.Name()
-}
-
-func (b *backfiller) BackfillBatch(ctx context.Context, after primitive.ObjectID, limit int) (primitive.ObjectID, int, error) {
-	return storepg.BackfillDocuments(ctx, b.collection, after, limit, func(ctx context.Context, docs []bson.M) error {
+func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
+	return storepg.NewCollectionSync(db.Collection(patients.CollectionName), "patients", func(ctx context.Context, docs []bson.M) error {
 		for _, doc := range docs {
 			patient, err := unmarshalPatient(doc)
 			if err != nil {
 				return err
 			}
-			if err := b.writer.UpsertPatient(ctx, patient); err != nil {
+			if err := writer.UpsertPatient(ctx, patient); err != nil {
 				return err
 			}
 		}

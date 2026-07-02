@@ -172,26 +172,9 @@ func textValue(v *string) pgtype.Text {
 }
 
 // NewBackfiller backfills one of the deletions collections.
-func NewBackfiller(documentType string, db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		documentType: documentType,
-		collection:   db.Collection(fmt.Sprintf("%s_deletions", documentType)),
-		writer:       writer,
-	}
-}
-
-type backfiller struct {
-	documentType string
-	collection   *mongo.Collection
-	writer       *Writer
-}
-
-func (b *backfiller) Collection() string {
-	return b.collection.Name()
-}
-
-func (b *backfiller) BackfillBatch(ctx context.Context, after primitive.ObjectID, limit int) (primitive.ObjectID, int, error) {
-	return storepg.BackfillDocuments(ctx, b.collection, after, limit, func(ctx context.Context, docs []bson.M) error {
-		return b.writer.UpsertDocuments(ctx, b.documentType, docs)
+func NewBackfiller(documentType string, db *mongo.Database, writer *Writer) storepg.Verifier {
+	collection := db.Collection(fmt.Sprintf("%s_deletions", documentType))
+	return storepg.NewCollectionSync(collection, collection.Name(), func(ctx context.Context, docs []bson.M) error {
+		return writer.UpsertDocuments(ctx, documentType, docs)
 	})
 }

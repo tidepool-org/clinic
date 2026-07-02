@@ -8,7 +8,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
@@ -101,71 +100,42 @@ func marshalPayload(v interface{}) ([]byte, error) {
 // into the domain models and reuse the writer upserts, so live dual writes
 // and backfilled rows converge.
 
-func NewPreorderBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		collection: db.Collection(preorderCollection),
-		upsert: func(ctx context.Context, w *Writer, doc bson.M) error {
-			return unmarshalAndUpsert(ctx, doc, func(ctx context.Context, data *xealth.PreorderFormData) error {
-				return w.UpsertPreorder(ctx, data)
-			})
-		},
-		writer: writer,
-	}
+func NewPreorderBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
+	return storepg.NewCollectionSync(db.Collection(preorderCollection), "xealth_preorders",
+		unmarshalAndUpsert(func(ctx context.Context, data *xealth.PreorderFormData) error {
+			return writer.UpsertPreorder(ctx, data)
+		}))
 }
 
-func NewOrderBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		collection: db.Collection(orderCollection),
-		upsert: func(ctx context.Context, w *Writer, doc bson.M) error {
-			return unmarshalAndUpsert(ctx, doc, func(ctx context.Context, order *xealth.OrderEvent) error {
-				return w.UpsertOrder(ctx, order)
-			})
-		},
-		writer: writer,
-	}
+func NewOrderBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
+	return storepg.NewCollectionSync(db.Collection(orderCollection), "xealth_orders",
+		unmarshalAndUpsert(func(ctx context.Context, order *xealth.OrderEvent) error {
+			return writer.UpsertOrder(ctx, order)
+		}))
 }
 
-func NewReportViewBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		collection: db.Collection(reportViewCollection),
-		upsert: func(ctx context.Context, w *Writer, doc bson.M) error {
-			return unmarshalAndUpsert(ctx, doc, func(ctx context.Context, view *xealth.ReportView) error {
-				return w.UpsertReportView(ctx, view)
-			})
-		},
-		writer: writer,
-	}
+func NewReportViewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
+	return storepg.NewCollectionSync(db.Collection(reportViewCollection), "xealth_report_views",
+		unmarshalAndUpsert(func(ctx context.Context, view *xealth.ReportView) error {
+			return writer.UpsertReportView(ctx, view)
+		}))
 }
 
-func unmarshalAndUpsert[T any](ctx context.Context, doc bson.M, upsert func(context.Context, *T) error) error {
-	raw, err := bson.Marshal(doc)
-	if err != nil {
-		return err
-	}
-	model := new(T)
-	if err := bson.Unmarshal(raw, model); err != nil {
-		return err
-	}
-	return upsert(ctx, model)
-}
-
-type backfiller struct {
-	collection *mongo.Collection
-	upsert     func(ctx context.Context, w *Writer, doc bson.M) error
-	writer     *Writer
-}
-
-func (b *backfiller) Collection() string {
-	return b.collection.Name()
-}
-
-func (b *backfiller) BackfillBatch(ctx context.Context, after primitive.ObjectID, limit int) (primitive.ObjectID, int, error) {
-	return storepg.BackfillDocuments(ctx, b.collection, after, limit, func(ctx context.Context, docs []bson.M) error {
+func unmarshalAndUpsert[T any](upsert func(context.Context, *T) error) func(ctx context.Context, docs []bson.M) error {
+	return func(ctx context.Context, docs []bson.M) error {
 		for _, doc := range docs {
-			if err := b.upsert(ctx, b.writer, doc); err != nil {
+			raw, err := bson.Marshal(doc)
+			if err != nil {
+				return err
+			}
+			model := new(T)
+			if err := bson.Unmarshal(raw, model); err != nil {
+				return err
+			}
+			if err := upsert(ctx, model); err != nil {
 				return err
 			}
 		}
 		return nil
-	})
+	}
 }

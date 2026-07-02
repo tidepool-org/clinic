@@ -99,24 +99,8 @@ func (d *dualPlansRepository) Persist(ctx context.Context, plan merge.PlanMetada
 }
 
 // NewBackfiller backfills the merge plans collection.
-func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Backfiller {
-	return &backfiller{
-		collection: db.Collection(collectionName),
-		writer:     writer,
-	}
-}
-
-type backfiller struct {
-	collection *mongo.Collection
-	writer     *Writer
-}
-
-func (b *backfiller) Collection() string {
-	return collectionName
-}
-
-func (b *backfiller) BackfillBatch(ctx context.Context, after primitive.ObjectID, limit int) (primitive.ObjectID, int, error) {
-	return storepg.BackfillDocuments(ctx, b.collection, after, limit, func(ctx context.Context, docs []bson.M) error {
+func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
+	return storepg.NewCollectionSync(db.Collection(collectionName), collectionName, func(ctx context.Context, docs []bson.M) error {
 		for _, doc := range docs {
 			id, ok := doc["_id"].(primitive.ObjectID)
 			if !ok {
@@ -124,7 +108,7 @@ func (b *backfiller) BackfillBatch(ctx context.Context, after primitive.ObjectID
 			}
 			planId, _ := doc["planId"].(primitive.ObjectID)
 			typ, _ := doc["type"].(string)
-			if err := b.writer.UpsertPlan(ctx, id.Hex(), planId.Hex(), typ, doc["plan"]); err != nil {
+			if err := writer.UpsertPlan(ctx, id.Hex(), planId.Hex(), typ, doc["plan"]); err != nil {
 				return err
 			}
 		}
