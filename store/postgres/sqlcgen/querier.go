@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	DeleteAllClinicians(ctx context.Context, clinicID string) error
 	DeleteBackfillProgress(ctx context.Context, collection string) error
 	DeleteClinic(ctx context.Context, id string) error
 	DeleteClinicAdmins(ctx context.Context, clinicID string) error
@@ -19,6 +20,9 @@ type Querier interface {
 	DeleteClinicPhoneNumbers(ctx context.Context, clinicID string) error
 	DeleteClinicShareCodes(ctx context.Context, clinicID string) error
 	DeleteClinicSites(ctx context.Context, clinicID string) error
+	DeleteClinician(ctx context.Context, arg DeleteClinicianParams) error
+	DeleteClinicianInvite(ctx context.Context, arg DeleteClinicianInviteParams) error
+	DeleteClinicianRolesUpdates(ctx context.Context, clinicianID string) error
 	GetBackfillProgress(ctx context.Context, collection string) (PgsyncBackfillProgress, error)
 	InsertClinicAdmin(ctx context.Context, arg InsertClinicAdminParams) error
 	InsertClinicMembershipRestriction(ctx context.Context, arg InsertClinicMembershipRestrictionParams) error
@@ -26,10 +30,12 @@ type Querier interface {
 	InsertClinicPhoneNumber(ctx context.Context, arg InsertClinicPhoneNumberParams) error
 	InsertClinicShareCode(ctx context.Context, arg InsertClinicShareCodeParams) error
 	InsertClinicSite(ctx context.Context, arg InsertClinicSiteParams) error
+	InsertClinicianRolesUpdate(ctx context.Context, arg InsertClinicianRolesUpdateParams) error
 	PruneScheduledSummaryReportsOrders(ctx context.Context, createdTime pgtype.Timestamptz) (int64, error)
 	UpsertBackfillProgress(ctx context.Context, arg UpsertBackfillProgressParams) error
 	UpsertClinic(ctx context.Context, arg UpsertClinicParams) error
 	UpsertClinicDeletion(ctx context.Context, arg UpsertClinicDeletionParams) error
+	UpsertClinician(ctx context.Context, arg UpsertClinicianParams) error
 	UpsertClinicianDeletion(ctx context.Context, arg UpsertClinicianDeletionParams) error
 	UpsertMergePlan(ctx context.Context, arg UpsertMergePlanParams) error
 	UpsertMigration(ctx context.Context, arg UpsertMigrationParams) error

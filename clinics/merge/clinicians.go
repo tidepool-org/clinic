@@ -265,6 +265,10 @@ func (c *ClinicianPlanExecutor) moveClinician(ctx context.Context, plan Clinicia
 		},
 	}
 
+	// POSTGRES MIRRORING GAP: clinician moves and removals during clinic
+	// merges are raw collection writes that bypass the repository, so they
+	// are not mirrored to Postgres synchronously. The periodic
+	// `pgsync backfill clinicians` converges the clinicians table.
 	res, err := c.cliniciansCollection.UpdateOne(ctx, selector, update)
 	if err != nil {
 		return fmt.Errorf("error moving clinician: %w", err)

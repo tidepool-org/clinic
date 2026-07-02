@@ -107,6 +107,21 @@ type ClinicSite struct {
 	Name     string
 }
 
+type Clinician struct {
+	ID               string
+	ClinicID         string
+	UserID           pgtype.Text
+	Email            pgtype.Text
+	FullName         pgtype.Text
+	InviteID         pgtype.Text
+	Roles            []string
+	IsServiceAccount bool
+	CreatedTime      pgtype.Timestamptz
+	UpdatedTime      pgtype.Timestamptz
+	SearchVector     interface{}
+	PgSyncedAt       pgtype.Timestamptz
+}
+
 type ClinicianDeletion struct {
 	ID              string
 	DeletedTime     pgtype.Timestamptz
@@ -115,6 +130,13 @@ type ClinicianDeletion struct {
 	UserID          pgtype.Text
 	Payload         []byte
 	PgSyncedAt      pgtype.Timestamptz
+}
+
+type ClinicianRolesUpdate struct {
+	ClinicianID string
+	Ordinal     int32
+	Roles       []string
+	UpdatedBy   pgtype.Text
 }
 
 type MergePlan struct {

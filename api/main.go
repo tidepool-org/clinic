@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/auth"
+	cliniciansPostgres "github.com/tidepool-org/clinic/clinicians/postgres"
 	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
 	cliniciansService "github.com/tidepool-org/clinic/clinicians/service"
 	"github.com/tidepool-org/clinic/clinics"
@@ -173,6 +174,7 @@ func Dependencies() []fx.Option {
 			mergePostgres.NewWriter,
 			xealthPostgres.NewWriter,
 			clinicsPostgres.NewWriter,
+			cliniciansPostgres.NewWriter,
 			patientsRepository.NewRepository,
 			patientsService.NewCustodialService,
 			patientsService.NewService,
@@ -208,6 +210,7 @@ func Dependencies() []fx.Option {
 			mergePostgres.NewDualPlansRepository,
 			xealthPostgres.NewDualStore,
 			clinicsPostgres.NewDualRepository,
+			cliniciansPostgres.NewDualRepository,
 		),
 		fx.WithLogger(func(log *zap.Logger) fxevent.Logger {
 			return &fxevent.ZapLogger{Logger: log}

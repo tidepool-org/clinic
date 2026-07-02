@@ -13,6 +13,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	cliniciansPostgres "github.com/tidepool-org/clinic/clinicians/postgres"
 	mergePostgres "github.com/tidepool-org/clinic/clinics/merge/postgres"
 	migrationPostgres "github.com/tidepool-org/clinic/clinics/migration/postgres"
 	clinicsPostgres "github.com/tidepool-org/clinic/clinics/postgres"
@@ -49,6 +50,7 @@ var backfillers = fx.Provide(
 	asBackfiller(redoxPostgres.NewMessageBackfiller),
 	asBackfiller(redoxPostgres.NewScheduledOrderBackfiller),
 	asBackfiller(clinicsPostgres.NewBackfiller),
+	asBackfiller(cliniciansPostgres.NewBackfiller),
 	deletionsPostgres.NewWriter,
 )
 

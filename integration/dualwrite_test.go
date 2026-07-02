@@ -323,3 +323,81 @@ var _ = Describe("Postgres Dual Writes - Clinics", Ordered, func() {
 		Expect(pgCount("clinic_admins", "clinic_id = $1", *emptyClinic.Id)).To(Equal(0))
 	})
 })
+
+// Verifies clinician mirroring: memberships, the invite lifecycle and bulk
+// email updates.
+var _ = Describe("Postgres Dual Writes - Clinicians", Ordered, func() {
+	var admin shoreline.UserData
+	var auth func(*http.Request)
+	var clinicId string
+
+	BeforeAll(func() {
+		admin = newStubUser()
+		auth = asUser(admin.UserID)
+		clinicId = *createClinic(auth).Id
+	})
+
+	It("mirrors created clinicians with their roles", func() {
+		member := newStubUser()
+		clinician := createClinicianDirect(clinicId, member.UserID, "CLINIC_MEMBER")
+
+		Expect(pgCount("clinicians", "clinic_id = $1 AND user_id = $2 AND email = $3 AND roles = '{CLINIC_MEMBER}'",
+			clinicId, member.UserID, clinician.Email)).To(Equal(1))
+	})
+
+	It("mirrors the invite lifecycle", func() {
+		inviteId := fmt.Sprintf("invite-%s", uniqueId())
+		email := fmt.Sprintf("invitee+%s@integration.test", uniqueId())
+		req := prepareRequestWithBody(http.MethodPost,
+			fmt.Sprintf("/v1/clinics/%s/clinicians", clinicId),
+			jsonBody(map[string]interface{}{
+				"inviteId": inviteId,
+				"email":    email,
+				"roles":    []string{"CLINIC_MEMBER"},
+			}))
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount("clinicians", "clinic_id = $1 AND invite_id = $2 AND user_id IS NULL",
+			clinicId, inviteId)).To(Equal(1))
+
+		// Associating the invite sets the user id and unsets the invite id
+		invitee := newStubUser()
+		req = prepareRequestWithBody(http.MethodPatch,
+			fmt.Sprintf("/v1/clinics/%s/invites/clinicians/%s/clinician", clinicId, inviteId),
+			jsonBody(map[string]interface{}{"userId": invitee.UserID}))
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount("clinicians", "clinic_id = $1 AND user_id = $2 AND invite_id IS NULL",
+			clinicId, invitee.UserID)).To(Equal(1))
+	})
+
+	It("mirrors clinician deletion", func() {
+		member := newStubUser()
+		createClinicianDirect(clinicId, member.UserID, "CLINIC_MEMBER")
+		Expect(pgCount("clinicians", "clinic_id = $1 AND user_id = $2", clinicId, member.UserID)).To(Equal(1))
+
+		req := prepareRequest(http.MethodDelete,
+			fmt.Sprintf("/v1/clinics/%s/clinicians/%s", clinicId, member.UserID), "")
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount("clinicians", "clinic_id = $1 AND user_id = $2", clinicId, member.UserID)).To(Equal(0))
+	})
+
+	It("mirrors bulk email updates", func() {
+		member := newStubUser()
+		createClinicianDirect(clinicId, member.UserID, "CLINIC_MEMBER")
+
+		updated := fmt.Sprintf("updated+%s@integration.test", uniqueId())
+		req := prepareRequestWithBody(http.MethodPost,
+			fmt.Sprintf("/v1/users/%s/clinics", member.UserID),
+			jsonBody(map[string]interface{}{"email": updated}))
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount("clinicians", "clinic_id = $1 AND user_id = $2 AND email = $3",
+			clinicId, member.UserID, updated)).To(Equal(1))
+	})
+})
