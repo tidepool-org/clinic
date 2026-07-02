@@ -328,3 +328,31 @@ var _ = Describe("Redox Integration Test", Ordered, func() {
 		})
 	})
 })
+
+// Pins the Redox destination verification handshake: the verification token
+// travels in the request body (not the verification-token header used by the
+// message webhook) and a valid token echoes the challenge back.
+var _ = Describe("Redox Endpoint Verification", Ordered, func() {
+	It("echoes the challenge for a valid verification token", func() {
+		body := jsonBody(map[string]interface{}{
+			"verification-token": RedoxVerificationToken,
+			"challenge":          "challenge-" + uniqueId(),
+		})
+		req := prepareRequestWithBody(http.MethodPost, "/v1/redox/verify", body)
+		resp := do(req)
+		expectStatus(resp, http.StatusOK)
+
+		challenge := decodeAs[map[string]string](resp)
+		Expect(challenge).To(HaveKeyWithValue("challenge", HavePrefix("challenge-")))
+	})
+
+	It("rejects invalid verification tokens", func() {
+		body := jsonBody(map[string]interface{}{
+			"verification-token": "not-the-token",
+			"challenge":          "challenge-" + uniqueId(),
+		})
+		req := prepareRequestWithBody(http.MethodPost, "/v1/redox/verify", body)
+		resp := do(req)
+		expectStatus(resp, http.StatusUnauthorized)
+	})
+})
