@@ -18,6 +18,7 @@ import (
 	deletionsPostgres "github.com/tidepool-org/clinic/deletions/postgres"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
 	"github.com/tidepool-org/clinic/store/postgres/sqlcgen"
+	xealthPostgres "github.com/tidepool-org/clinic/xealth/postgres"
 )
 
 var (
@@ -40,6 +41,9 @@ var backfillers = fx.Provide(
 	}),
 	asBackfiller(migrationPostgres.NewBackfiller),
 	asBackfiller(mergePostgres.NewBackfiller),
+	asBackfiller(xealthPostgres.NewPreorderBackfiller),
+	asBackfiller(xealthPostgres.NewOrderBackfiller),
+	asBackfiller(xealthPostgres.NewReportViewBackfiller),
 	deletionsPostgres.NewWriter,
 )
 

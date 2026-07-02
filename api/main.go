@@ -40,6 +40,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/store/postgres"
 	"github.com/tidepool-org/clinic/xealth"
+	xealthPostgres "github.com/tidepool-org/clinic/xealth/postgres"
 	authClient "github.com/tidepool-org/platform/auth/client"
 	"github.com/tidepool-org/platform/client"
 	"github.com/tidepool-org/platform/platform"
@@ -168,6 +169,7 @@ func Dependencies() []fx.Option {
 			migrationPostgres.NewWriter,
 			merge.NewPlansRepository,
 			mergePostgres.NewWriter,
+			xealthPostgres.NewWriter,
 			patientsRepository.NewRepository,
 			patientsService.NewCustodialService,
 			patientsService.NewService,
@@ -199,6 +201,7 @@ func Dependencies() []fx.Option {
 		fx.Decorate(
 			migrationPostgres.NewDualRepository,
 			mergePostgres.NewDualPlansRepository,
+			xealthPostgres.NewDualStore,
 		),
 		fx.WithLogger(func(log *zap.Logger) fxevent.Logger {
 			return &fxevent.ZapLogger{Logger: log}

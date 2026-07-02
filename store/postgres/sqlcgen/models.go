@@ -60,3 +60,28 @@ type PgsyncBackfillProgress struct {
 	LastID     string
 	UpdatedAt  pgtype.Timestamptz
 }
+
+type XealthOrder struct {
+	ID         string
+	Payload    []byte
+	PgSyncedAt pgtype.Timestamptz
+}
+
+type XealthPreorder struct {
+	ID             string
+	DataTrackingID string
+	Payload        []byte
+	PgSyncedAt     pgtype.Timestamptz
+}
+
+type XealthReportView struct {
+	ID            string
+	UserID        string
+	DeploymentID  string
+	SystemLogin   pgtype.Text
+	PatientUserID string
+	ProgramID     string
+	ClinicID      string
+	CreatedTime   pgtype.Timestamptz
+	PgSyncedAt    pgtype.Timestamptz
+}

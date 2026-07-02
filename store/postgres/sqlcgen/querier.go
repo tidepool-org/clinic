@@ -17,6 +17,9 @@ type Querier interface {
 	UpsertMergePlan(ctx context.Context, arg UpsertMergePlanParams) error
 	UpsertMigration(ctx context.Context, arg UpsertMigrationParams) error
 	UpsertPatientDeletion(ctx context.Context, arg UpsertPatientDeletionParams) error
+	UpsertXealthOrder(ctx context.Context, arg UpsertXealthOrderParams) error
+	UpsertXealthPreorder(ctx context.Context, arg UpsertXealthPreorderParams) error
+	UpsertXealthReportView(ctx context.Context, arg UpsertXealthReportViewParams) error
 }
 
 var _ Querier = (*Queries)(nil)

@@ -149,3 +149,62 @@ var _ = Describe("Postgres Dual Writes", Ordered, func() {
 		}
 	})
 })
+
+// Verifies the xealth store mirroring through the HTTP API. A dedicated
+// clinic with a unique deployment/source id keeps this isolated from the
+// xealth specs, which rely on the shared fixture deployment.
+var _ = Describe("Postgres Dual Writes - Xealth", Ordered, func() {
+	var deployment string
+
+	BeforeAll(func() {
+		admin := newStubUser()
+		auth := asUser(admin.UserID)
+		clinic := createClinic(auth)
+		deployment = fmt.Sprintf("xealth-dw-%s", uniqueId())
+
+		req := prepareRequestWithBody(http.MethodPut,
+			fmt.Sprintf("/v1/clinics/%s/settings/ehr", *clinic.Id),
+			fixtureWithOverrides("./test/xealth_fixtures/02_enable_xealth.json", map[string]interface{}{
+				"sourceId": deployment,
+			}))
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+	})
+
+	It("mirrors preorder data persisted by subsequent preorder requests", func() {
+		// Preorder data is only persisted when the enrollment form is
+		// submitted (the "subsequent" preorder event); the initial event
+		// just mints the data tracking id.
+		req := prepareRequestWithBody(http.MethodPost, "/v1/xealth/preorder",
+			fixtureWithOverrides("./test/xealth_fixtures/03_initial_pre_order.json", map[string]interface{}{
+				"deployment": deployment,
+			}))
+		asXealth(req)
+		resp := do(req)
+		expectStatus(resp, http.StatusOK)
+
+		body := decodeAs[map[string]interface{}](resp)
+		trackingId, _ := body["dataTrackingId"].(string)
+		Expect(trackingId).ToNot(BeEmpty())
+
+		req = prepareRequestWithBody(http.MethodPost, "/v1/xealth/preorder",
+			fixtureWithOverrides("./test/xealth_fixtures/04_subsequent_pre_order.json", map[string]interface{}{
+				"deployment": deployment,
+				"formData": map[string]interface{}{
+					"dataTrackingId": trackingId,
+				},
+			}))
+		asXealth(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount("xealth_preorders", "data_tracking_id = $1", trackingId)).To(Equal(1))
+
+		// The mirrored row shares the identity of the Mongo document
+		var mongoRecord struct {
+			Id primitive.ObjectID `bson:"_id"`
+		}
+		collection := test.GetTestDatabase().Collection("xealth_preorder")
+		Expect(collection.FindOne(testCtx(), bson.M{"dataTrackingId": trackingId}).Decode(&mongoRecord)).To(Succeed())
+		Expect(pgCount("xealth_preorders", "id = $1", mongoRecord.Id.Hex())).To(Equal(1))
+	})
+})
