@@ -2077,6 +2077,10 @@ type RescheduleOrderPipelineParams struct {
 	targetCollection string
 }
 
+// reschedulePipeline writes its output into the target collection via $merge,
+// entirely server-side in Mongo, so these documents cannot be mirrored to
+// Postgres synchronously. The scheduled_summary_reports_orders table
+// converges through the periodic `pgsync backfill` instead.
 func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 	now := time.Now()
 	activeSubscriptionKey := fmt.Sprintf("ehrSubscriptions.%s.active", params.subscription)

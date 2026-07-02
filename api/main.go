@@ -37,6 +37,7 @@ import (
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsService "github.com/tidepool-org/clinic/patients/service"
 	"github.com/tidepool-org/clinic/redox"
+	redoxPostgres "github.com/tidepool-org/clinic/redox/postgres"
 	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/store/postgres"
 	"github.com/tidepool-org/clinic/xealth"
@@ -175,6 +176,8 @@ func Dependencies() []fx.Option {
 			patientsService.NewService,
 			redox.NewConfig,
 			redox.NewHandler,
+			redoxPostgres.NewMirror,
+			redoxPostgres.NewWriter,
 			xealth.NewStore,
 			xealth.NewHandler,
 			cliniciansRepository.NewRepository,

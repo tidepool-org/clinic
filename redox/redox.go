@@ -27,7 +27,10 @@ const (
 	verificationTokenHeader                          = "verification-token"
 	messagesCollectionName                           = "redox"
 	summaryAndReportsRescheduledOrdersCollectionName = "scheduledSummaryAndReportsOrders"
-	rescheduledMessagesExpiration                    = 90 * 24 * time.Hour
+	// RescheduledMessagesExpiration is the retention period of rescheduled
+	// summary and reports orders. It backs the Mongo TTL index and the
+	// `pgsync prune` command which replaces it in Postgres.
+	RescheduledMessagesExpiration = 90 * 24 * time.Hour
 
 	MRNPatientMatchingCriteria            = "MRN"
 	MRNAndDOBPatientMatchingCriteria      = "MRN_DOB"
@@ -60,17 +63,26 @@ type MatchResult struct {
 	Patients []*patients.Patient
 }
 
+// Mirror replicates persisted EHR messages to Postgres. Mirroring is
+// best-effort and never fails message processing; implementations handle
+// errors internally. The handler invokes it after a successful Mongo insert
+// with the envelope id generated client-side, so both stores share identity.
+type Mirror interface {
+	CreateMessage(ctx context.Context, envelope models.MessageEnvelope)
+}
+
 func NewConfig() (Config, error) {
 	cfg := Config{}
 	err := envconfig.Process("", &cfg)
 	return cfg, err
 }
-func NewHandler(config Config, clinics clinics.Service, patients patients.Service, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Redox, error) {
+func NewHandler(config Config, clinics clinics.Service, patients patients.Service, db *mongo.Database, mirror Mirror, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (Redox, error) {
 	handler := &Handler{
 		messagesCollection:                     db.Collection(messagesCollectionName),
 		rescheduledSummaryAndReportsCollection: db.Collection(summaryAndReportsRescheduledOrdersCollectionName),
 		config:                                 config,
 		logger:                                 logger,
+		mirror:                                 mirror,
 
 		clinics:  clinics,
 		patients: patients,
@@ -90,6 +102,7 @@ type Handler struct {
 	messagesCollection                     *mongo.Collection
 	rescheduledSummaryAndReportsCollection *mongo.Collection
 	logger                                 *zap.SugaredLogger
+	mirror                                 Mirror
 
 	clinics  clinics.Service
 	patients patients.Service
@@ -131,7 +144,7 @@ func (h *Handler) Initialize(ctx context.Context) error {
 				{Key: "createdTime", Value: 1},
 			},
 			Options: options.Index().
-				SetExpireAfterSeconds(int32(rescheduledMessagesExpiration.Seconds())).
+				SetExpireAfterSeconds(int32(RescheduledMessagesExpiration.Seconds())).
 				SetName("CleanupExpiredRescheduledOrdersAfter90d"),
 		},
 	})
@@ -184,6 +197,7 @@ func (h *Handler) ProcessEHRMessage(ctx context.Context, raw []byte) error {
 	}
 
 	envelope := models.MessageEnvelope{
+		Id:      primitive.NewObjectID(),
 		Meta:    message.Meta,
 		Message: bsonRaw,
 	}
@@ -200,6 +214,10 @@ func (h *Handler) ProcessEHRMessage(ctx context.Context, raw []byte) error {
 		"metadata", message.Meta,
 		"_id", res.InsertedID,
 	)
+
+	if h.mirror != nil {
+		h.mirror.CreateMessage(ctx, envelope)
+	}
 
 	return nil
 }

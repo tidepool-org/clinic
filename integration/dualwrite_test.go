@@ -187,11 +187,19 @@ var _ = Describe("Postgres Dual Writes - Xealth", Ordered, func() {
 		trackingId, _ := body["dataTrackingId"].(string)
 		Expect(trackingId).ToNot(BeEmpty())
 
+		// The enrollment email must be unique: the fixture's fixed email
+		// belongs to the user created by the xealth specs, and a duplicate
+		// yields an error form response (still 200) which skips persistence.
 		req = prepareRequestWithBody(http.MethodPost, "/v1/xealth/preorder",
 			fixtureWithOverrides("./test/xealth_fixtures/04_subsequent_pre_order.json", map[string]interface{}{
 				"deployment": deployment,
 				"formData": map[string]interface{}{
 					"dataTrackingId": trackingId,
+					"userInput": map[string]interface{}{
+						"patient": map[string]interface{}{
+							"email": fmt.Sprintf("xealth-dw+%s@integration.test", uniqueId()),
+						},
+					},
 				},
 			}))
 		asXealth(req)
@@ -206,5 +214,35 @@ var _ = Describe("Postgres Dual Writes - Xealth", Ordered, func() {
 		collection := test.GetTestDatabase().Collection("xealth_preorder")
 		Expect(collection.FindOne(testCtx(), bson.M{"dataTrackingId": trackingId}).Decode(&mongoRecord)).To(Succeed())
 		Expect(pgCount("xealth_preorders", "id = $1", mongoRecord.Id.Hex())).To(Equal(1))
+	})
+})
+
+// Verifies EHR message mirroring through the redox webhook. The message body
+// carries a unique log id so the spec can locate its own documents; message
+// processing does not depend on any clinic.
+var _ = Describe("Postgres Dual Writes - Redox", Ordered, func() {
+	It("mirrors processed EHR messages", func() {
+		logId := fmt.Sprintf("dw-log-%s", uniqueId())
+		req := prepareRequestWithBody(http.MethodPost, "/v1/redox",
+			fixtureWithOverrides("./test/redox_fixtures/04_enable_reports_order.json", map[string]interface{}{
+				"Meta": map[string]interface{}{
+					"Logs": []interface{}{
+						map[string]interface{}{"ID": logId},
+					},
+				},
+			}))
+		asRedox(req)
+		expectStatus(do(req), http.StatusOK)
+
+		// The Postgres row shares the identity of the Mongo document
+		var mongoRecord struct {
+			Id primitive.ObjectID `bson:"_id"`
+		}
+		collection := test.GetTestDatabase().Collection("redox")
+		Expect(collection.FindOne(testCtx(), bson.M{"meta.Logs.ID": logId}).Decode(&mongoRecord)).To(Succeed())
+
+		Expect(pgCount("redox_messages",
+			"id = $1 AND meta_data_model = 'Order' AND meta_event_type = 'New' AND $2 = ANY(meta_log_ids)",
+			mongoRecord.Id.Hex(), logId)).To(Equal(1))
 	})
 })

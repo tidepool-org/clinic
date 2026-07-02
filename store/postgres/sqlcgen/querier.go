@@ -6,17 +6,22 @@ package sqlcgen
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
 	DeleteBackfillProgress(ctx context.Context, collection string) error
 	GetBackfillProgress(ctx context.Context, collection string) (PgsyncBackfillProgress, error)
+	PruneScheduledSummaryReportsOrders(ctx context.Context, createdTime pgtype.Timestamptz) (int64, error)
 	UpsertBackfillProgress(ctx context.Context, arg UpsertBackfillProgressParams) error
 	UpsertClinicDeletion(ctx context.Context, arg UpsertClinicDeletionParams) error
 	UpsertClinicianDeletion(ctx context.Context, arg UpsertClinicianDeletionParams) error
 	UpsertMergePlan(ctx context.Context, arg UpsertMergePlanParams) error
 	UpsertMigration(ctx context.Context, arg UpsertMigrationParams) error
 	UpsertPatientDeletion(ctx context.Context, arg UpsertPatientDeletionParams) error
+	UpsertRedoxMessage(ctx context.Context, arg UpsertRedoxMessageParams) error
+	UpsertScheduledSummaryReportsOrder(ctx context.Context, arg UpsertScheduledSummaryReportsOrderParams) error
 	UpsertXealthOrder(ctx context.Context, arg UpsertXealthOrderParams) error
 	UpsertXealthPreorder(ctx context.Context, arg UpsertXealthPreorderParams) error
 	UpsertXealthReportView(ctx context.Context, arg UpsertXealthReportViewParams) error

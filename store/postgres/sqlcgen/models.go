@@ -61,6 +61,28 @@ type PgsyncBackfillProgress struct {
 	UpdatedAt  pgtype.Timestamptz
 }
 
+type RedoxMessage struct {
+	ID               string
+	MetaDataModel    string
+	MetaEventType    string
+	MetaSourceID     pgtype.Text
+	MetaSourceName   pgtype.Text
+	MetaFacilityCode pgtype.Text
+	MetaLogIds       []string
+	Payload          []byte
+	PgSyncedAt       pgtype.Timestamptz
+}
+
+type ScheduledSummaryReportsOrder struct {
+	ID                 string
+	ClinicID           pgtype.Text
+	UserID             pgtype.Text
+	LastMatchedOrderID pgtype.Text
+	CreatedTime        pgtype.Timestamptz
+	Payload            []byte
+	PgSyncedAt         pgtype.Timestamptz
+}
+
 type XealthOrder struct {
 	ID         string
 	Payload    []byte

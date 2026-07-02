@@ -49,7 +49,7 @@ var _ = Describe("Redox", func() {
 		clinicsService = clinicsTest.NewMockService(clinicsCtrl)
 
 		var err error
-		handler, err = redox.NewHandler(config, clinicsService, patientsService, database, zap.NewNop().Sugar(), lifecycle)
+		handler, err = redox.NewHandler(config, clinicsService, patientsService, database, nil, zap.NewNop().Sugar(), lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(handler).ToNot(BeNil())
 		lifecycle.RequireStart()
