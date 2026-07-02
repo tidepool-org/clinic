@@ -338,6 +338,7 @@ type ClinicPlanExecutor struct {
 	ClinicManager   manager.Manager
 	DBClient        *mongo.Client
 	DB              *mongo.Database
+	PlansRepo       PlansRepository
 }
 
 func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) (primitive.ObjectID, error) {
@@ -414,7 +415,6 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 	return planId, err
 }
 
-func (c *ClinicPlanExecutor) persistPlan(ctx context.Context, plan any) error {
-	_, err := c.DB.Collection(plansCollectionName).InsertOne(ctx, plan)
-	return err
+func (c *ClinicPlanExecutor) persistPlan(ctx context.Context, plan PlanMetadata) error {
+	return c.PlansRepo.Persist(ctx, plan)
 }

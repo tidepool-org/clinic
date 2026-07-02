@@ -23,10 +23,14 @@ import (
 	cliniciansService "github.com/tidepool-org/clinic/clinicians/service"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/manager"
+	"github.com/tidepool-org/clinic/clinics/merge"
+	mergePostgres "github.com/tidepool-org/clinic/clinics/merge/postgres"
 	"github.com/tidepool-org/clinic/clinics/migration"
+	migrationPostgres "github.com/tidepool-org/clinic/clinics/migration/postgres"
 	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
 	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	"github.com/tidepool-org/clinic/config"
+	deletionsPostgres "github.com/tidepool-org/clinic/deletions/postgres"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/logger"
 	"github.com/tidepool-org/clinic/patients"
@@ -160,6 +164,10 @@ func Dependencies() []fx.Option {
 			store.NewDatabase,
 			postgres.NewConfig,
 			postgres.NewClient,
+			deletionsPostgres.NewMirror,
+			migrationPostgres.NewWriter,
+			merge.NewPlansRepository,
+			mergePostgres.NewWriter,
 			patientsRepository.NewRepository,
 			patientsService.NewCustodialService,
 			patientsService.NewService,
@@ -184,6 +192,13 @@ func Dependencies() []fx.Option {
 			auth.NewRequestAuthorizer,
 			NewHealthCheck,
 			NewServer,
+		),
+		// Mirror writes to Postgres after successful Mongo writes; the
+		// decorators return the bare Mongo implementations when Postgres
+		// dual writes are disabled
+		fx.Decorate(
+			migrationPostgres.NewDualRepository,
+			mergePostgres.NewDualPlansRepository,
 		),
 		fx.WithLogger(func(log *zap.Logger) fxevent.Logger {
 			return &fxevent.ZapLogger{Logger: log}

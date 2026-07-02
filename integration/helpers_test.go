@@ -12,9 +12,11 @@ import (
 	"sync/atomic"
 
 	"github.com/TwiN/deepmerge"
+	"github.com/jackc/pgx/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/tidepool-org/clinic/client"
+	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/test"
 	"github.com/tidepool-org/go-common/clients/shoreline"
 )
@@ -360,4 +362,24 @@ func mergeSummaries(summaries ...map[string]interface{}) map[string]interface{} 
 		}
 	}
 	return merged
+}
+
+// pgQuery runs a query against the suite's postgres database for assertions
+// on rows mirrored by dual writes.
+func pgQuery(query string, args []interface{}, dest ...interface{}) error {
+	GinkgoHelper()
+	ctx := testCtx()
+	conn, err := pgx.Connect(ctx, dbTest.GetTestPostgresConfig().ConnectionString())
+	Expect(err).ToNot(HaveOccurred())
+	defer conn.Close(ctx)
+	return conn.QueryRow(ctx, query, args...).Scan(dest...)
+}
+
+// pgCount returns the number of rows in a table matching the condition.
+func pgCount(table string, where string, args ...interface{}) int {
+	GinkgoHelper()
+	count := 0
+	query := fmt.Sprintf("SELECT count(*) FROM %s WHERE %s", table, where)
+	Expect(pgQuery(query, args, &count)).To(Succeed())
+	return count
 }

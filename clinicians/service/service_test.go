@@ -61,6 +61,7 @@ var _ = Describe("Clinicians Service", func() {
 					},
 					patientsTest.NewMockUserService,
 					config.NewConfig,
+					func() deletions.Mirror { return nil },
 					clinicsRepository.NewRepository,
 					clinicsService.NewService,
 					cliniciansRepository.NewRepository,

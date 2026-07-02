@@ -27,8 +27,8 @@ import (
 // Collation to use for string fields
 var collation = options.Collation{Locale: "en", Strength: 1}
 
-func NewRepository(config *config.Config, db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (patients.Repository, error) {
-	deletionsRepo, err := deletions.NewRepository[patients.Patient]("patient", db, logger)
+func NewRepository(config *config.Config, db *mongo.Database, logger *zap.SugaredLogger, deletionsMirror deletions.Mirror, lifecycle fx.Lifecycle) (patients.Repository, error) {
+	deletionsRepo, err := deletions.NewRepositoryWithMirror[patients.Patient]("patient", db, logger, deletionsMirror)
 	if err != nil {
 		return nil, err
 	}

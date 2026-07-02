@@ -12,6 +12,11 @@ type Querier interface {
 	DeleteBackfillProgress(ctx context.Context, collection string) error
 	GetBackfillProgress(ctx context.Context, collection string) (PgsyncBackfillProgress, error)
 	UpsertBackfillProgress(ctx context.Context, arg UpsertBackfillProgressParams) error
+	UpsertClinicDeletion(ctx context.Context, arg UpsertClinicDeletionParams) error
+	UpsertClinicianDeletion(ctx context.Context, arg UpsertClinicianDeletionParams) error
+	UpsertMergePlan(ctx context.Context, arg UpsertMergePlanParams) error
+	UpsertMigration(ctx context.Context, arg UpsertMigrationParams) error
+	UpsertPatientDeletion(ctx context.Context, arg UpsertPatientDeletionParams) error
 }
 
 var _ Querier = (*Queries)(nil)

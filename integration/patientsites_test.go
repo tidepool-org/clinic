@@ -196,11 +196,10 @@ func newTestHelper(t FullGinkgoTInterface) *testHelper {
 	lifecycle := fxtest.NewLifecycle(GinkgoT())
 
 	cfg := &config.Config{ClinicDemoPatientUserId: "demo"}
-	patientsRepo, err := patientsRepository.NewRepository(cfg, database, logger,
-		lifecycle)
+	patientsRepo, err := patientsRepository.NewRepository(cfg, database, logger, nil, lifecycle)
 	Expect(err).To(Succeed())
 
-	clinicsRepo, err := clinicsRepository.NewRepository(database, logger, lifecycle)
+	clinicsRepo, err := clinicsRepository.NewRepository(database, logger, nil, lifecycle)
 	Expect(err).To(Succeed())
 
 	clinics, err := clinicsService.NewService(clinicsRepo, patientsRepo, logger)
@@ -210,7 +209,7 @@ func newTestHelper(t FullGinkgoTInterface) *testHelper {
 		logger, database.Client())
 	Expect(err).To(Succeed())
 
-	cliniciansRepo, err := cliniciansRepository.NewRepository(database, logger, lifecycle)
+	cliniciansRepo, err := cliniciansRepository.NewRepository(database, logger, nil, lifecycle)
 	Expect(err).To(Succeed())
 
 	params := manager.Params{

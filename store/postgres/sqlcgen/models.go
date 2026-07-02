@@ -8,6 +8,53 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ClinicDeletion struct {
+	ID              string
+	DeletedTime     pgtype.Timestamptz
+	DeletedByUserID pgtype.Text
+	ClinicID        pgtype.Text
+	Payload         []byte
+	PgSyncedAt      pgtype.Timestamptz
+}
+
+type ClinicianDeletion struct {
+	ID              string
+	DeletedTime     pgtype.Timestamptz
+	DeletedByUserID pgtype.Text
+	ClinicID        pgtype.Text
+	UserID          pgtype.Text
+	Payload         []byte
+	PgSyncedAt      pgtype.Timestamptz
+}
+
+type MergePlan struct {
+	ID          string
+	PlanID      string
+	Type        string
+	Payload     []byte
+	CreatedTime pgtype.Timestamptz
+	PgSyncedAt  pgtype.Timestamptz
+}
+
+type Migration struct {
+	UserID      string
+	ClinicID    string
+	Status      string
+	CreatedTime pgtype.Timestamptz
+	UpdatedTime pgtype.Timestamptz
+	PgSyncedAt  pgtype.Timestamptz
+}
+
+type PatientDeletion struct {
+	ID              string
+	DeletedTime     pgtype.Timestamptz
+	DeletedByUserID pgtype.Text
+	ClinicID        pgtype.Text
+	UserID          pgtype.Text
+	Payload         []byte
+	PgSyncedAt      pgtype.Timestamptz
+}
+
 type PgsyncBackfillProgress struct {
 	Collection string
 	LastID     string

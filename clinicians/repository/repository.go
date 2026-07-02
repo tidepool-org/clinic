@@ -18,8 +18,8 @@ import (
 	"github.com/tidepool-org/clinic/store"
 )
 
-func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, lifecycle fx.Lifecycle) (clinicians.Repository, error) {
-	deletionsRepo, err := deletions.NewRepository[clinicians.Clinician]("clinician", db, logger)
+func NewRepository(db *mongo.Database, logger *zap.SugaredLogger, deletionsMirror deletions.Mirror, lifecycle fx.Lifecycle) (clinicians.Repository, error) {
+	deletionsRepo, err := deletions.NewRepositoryWithMirror[clinicians.Clinician]("clinician", db, logger, deletionsMirror)
 	if err != nil {
 		return nil, err
 	}

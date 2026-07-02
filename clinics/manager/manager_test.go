@@ -66,15 +66,15 @@ var _ = Describe("Clinics Manager", func() {
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
 		lgr := zap.NewNop().Sugar()
 
-		cliniciansRepo, err := cliniciansRepository.NewRepository(database, lgr, lifecycle)
+		cliniciansRepo, err := cliniciansRepository.NewRepository(database, lgr, nil, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(cliniciansRepo).ToNot(BeNil())
 
-		clinicsRepo, err := clinicsRepository.NewRepository(database, zap.NewNop().Sugar(), lifecycle)
+		clinicsRepo, err := clinicsRepository.NewRepository(database, zap.NewNop().Sugar(), nil, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(clinicsRepo).ToNot(BeNil())
 
-		patientsRepo, err := patientsRepository.NewRepository(cfg, database, lgr, lifecycle)
+		patientsRepo, err := patientsRepository.NewRepository(cfg, database, lgr, nil, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(patientsRepo).ToNot(BeNil())
 
@@ -642,11 +642,11 @@ func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *c
 	db := dbTest.GetTestDatabase()
 	lifecycle := fxtest.NewLifecycle(t)
 	lgr := zap.NewNop().Sugar()
-	clinicsRepo, err := clinicsRepository.NewRepository(db, lgr, lifecycle)
+	clinicsRepo, err := clinicsRepository.NewRepository(db, lgr, nil, lifecycle)
 	if err != nil {
 		t.Fatalf("failed to create clinics repo: %s", err)
 	}
-	patientsRepo, err := patientsRepository.NewRepository(&config.Config{}, db, lgr, lifecycle)
+	patientsRepo, err := patientsRepository.NewRepository(&config.Config{}, db, lgr, nil, lifecycle)
 	if err != nil {
 		t.Fatalf("failed to create patients repo: %s", err)
 	}
@@ -654,7 +654,7 @@ func newCreateSiteTestHelper(t testing.TB) (context.Context, manager.Manager, *c
 	if err != nil {
 		t.Fatalf("failed to create clinics service: %s", err)
 	}
-	cliniciansRepo, err := cliniciansRepository.NewRepository(db, lgr, lifecycle)
+	cliniciansRepo, err := cliniciansRepository.NewRepository(db, lgr, nil, lifecycle)
 	if err != nil {
 		t.Fatalf("failed to create clinicians repo: %s", err)
 	}

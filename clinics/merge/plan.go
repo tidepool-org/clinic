@@ -23,11 +23,34 @@ type PersistentPlan[T Plan] struct {
 }
 
 func NewPersistentPlan[T Plan](planId primitive.ObjectID, typ string, p T) PersistentPlan[T] {
+	// The id is generated client-side so the document has the same identity
+	// in every store it is persisted to
+	id := primitive.NewObjectID()
 	return PersistentPlan[T]{
+		Id:     &id,
 		Plan:   p,
 		PlanId: planId,
 		Type:   typ,
 	}
+}
+
+func (p PersistentPlan[T]) PlanDocumentId() string {
+	if p.Id == nil {
+		return ""
+	}
+	return p.Id.Hex()
+}
+
+func (p PersistentPlan[T]) PlanGroupId() string {
+	return p.PlanId.Hex()
+}
+
+func (p PersistentPlan[T]) PlanType() string {
+	return p.Type
+}
+
+func (p PersistentPlan[T]) PlanPayload() any {
+	return p.Plan
 }
 
 func RunPlanners[T Plan](ctx context.Context, planners []Planner[T]) ([]T, error) {

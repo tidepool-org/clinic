@@ -33,6 +33,7 @@ import (
 	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
 	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/deletions"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
@@ -107,6 +108,8 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 			patientsService.NewCustodialService,
 			clinics.NewShareCodeGenerator,
 			manager.NewManager,
+			merge.NewPlansRepository,
+			func() deletions.Mirror { return nil },
 		),
 		fx.Invoke(func(ex merge.ClinicPlanExecutor, cliniciansSvc clinicians.Service, clinicsSvc clinics.Service, patientsSvc patients.Service, cManager manager.Manager, userSvc patients.UserService) {
 			t.cliniciansService = cliniciansSvc

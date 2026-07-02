@@ -39,7 +39,7 @@ var _ = Describe("Clinics", func() {
 		database = dbTest.GetTestDatabase()
 		lgr := zap.NewNop().Sugar()
 		lifecycle := fxtest.NewLifecycle(GinkgoT())
-		repository, err := clinicsRepository.NewRepository(database, lgr, lifecycle)
+		repository, err := clinicsRepository.NewRepository(database, lgr, nil, lifecycle)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(repository).ToNot(BeNil())
 		patientsRepoController = gomock.NewController(GinkgoT())
@@ -523,7 +523,7 @@ type repoTestHelper struct {
 func newRepoTestHelper(t FullGinkgoTInterface) (context.Context, *repoTestHelper) {
 	db := dbTest.GetTestDatabase()
 	lifecycle := fxtest.NewLifecycle(t)
-	repo, err := clinicsRepository.NewRepository(db, zap.NewNop().Sugar(), lifecycle)
+	repo, err := clinicsRepository.NewRepository(db, zap.NewNop().Sugar(), nil, lifecycle)
 	if err != nil {
 		t.Fatalf("failed to create new clinic repository: %s", err)
 	}
