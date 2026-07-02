@@ -177,6 +177,16 @@ func (d *dualRepository) UpdateSummaryInAllClinics(ctx context.Context, userId s
 	return nil
 }
 
+func (d *dualRepository) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
+	if err := d.Repository.DeleteSummaryInAllClinics(ctx, summaryId); err != nil {
+		return err
+	}
+	dualwrite.Execute(ctx, d.logger, "patients", "delete_summary", func(ctx context.Context) error {
+		return d.writer.DeleteSummariesBySummaryId(ctx, summaryId)
+	})
+	return nil
+}
+
 func (d *dualRepository) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	result, err := d.Repository.UpdateLastUploadReminderTime(ctx, update)
 	if err != nil {

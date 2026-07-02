@@ -167,6 +167,10 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 		}
 	}
 
+	if err := upsertSummaries(ctx, q, id, patient.Summary); err != nil {
+		return err
+	}
+
 	// Matched messages cascade when their subscription rows are deleted
 	if err := q.DeletePatientEHRSubscriptions(ctx, id); err != nil {
 		return err

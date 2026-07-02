@@ -3,6 +3,7 @@ package integration_test
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -538,3 +539,87 @@ func mustObjectId(hex string) primitive.ObjectID {
 	Expect(err).ToNot(HaveOccurred())
 	return id
 }
+
+// Verifies summary mirroring: summary and period rows land in every clinic
+// membership, clear with empty updates, and deletion by summary id removes
+// only the matching type.
+var _ = Describe("Postgres Dual Writes - Patient Summaries", Ordered, func() {
+	var patientUserId string
+
+	summaryBody := func(cgmId, bgmId string, lastData time.Time) map[string]interface{} {
+		return mergeSummaries(
+			summaryStats("cgm", cgmId,
+				map[string]interface{}{"lastData": lastData.Format(time.RFC3339), "hasLastData": true},
+				map[string]interface{}{
+					"14d": cgmPeriod(map[string]interface{}{"timeInTargetPercent": 0.55, "totalRecords": 777}),
+				},
+			),
+			summaryStats("bgm", bgmId,
+				map[string]interface{}{},
+				map[string]interface{}{
+					"14d": bgmPeriod(map[string]interface{}{"averageGlucoseMmol": 6.9}),
+				},
+			),
+		)
+	}
+
+	BeforeAll(func() {
+		admin := newStubUser()
+		auth := asUser(admin.UserID)
+		clinicA := createClinic(auth)
+		clinicB := createClinic(auth)
+
+		patientUser := newStubUser()
+		patientUserId = patientUser.UserID
+		createPatientFromUser(*clinicA.Id, patientUserId, asServer, map[string]interface{}{"birthDate": "1993-05-05"})
+		createPatientFromUser(*clinicB.Id, patientUserId, asServer, map[string]interface{}{"birthDate": "1993-05-05"})
+	})
+
+	It("mirrors summary and period rows in every clinic", func() {
+		cgmId := primitive.NewObjectID().Hex()
+		bgmId := primitive.NewObjectID().Hex()
+		lastData := time.Date(2026, 6, 25, 10, 0, 0, 0, time.UTC)
+		seedSummary(patientUserId, summaryBody(cgmId, bgmId, lastData))
+
+		Expect(pgCount(
+			"patient_summaries JOIN patients ON patients.id = patient_summaries.patient_id",
+			"patients.user_id = $1 AND summary_type = 'cgm' AND summary_id = $2 AND dates_has_last_data",
+			patientUserId, cgmId)).To(Equal(2))
+
+		Expect(pgCount(
+			"patient_summary_periods JOIN patients ON patients.id = patient_summary_periods.patient_id",
+			"patients.user_id = $1 AND summary_type = 'cgm' AND period = '14d'"+
+				" AND time_in_target_percent BETWEEN 0.54 AND 0.56 AND total_records = 777",
+			patientUserId)).To(Equal(2))
+
+		Expect(pgCount(
+			"patient_summary_periods JOIN patients ON patients.id = patient_summary_periods.patient_id",
+			"patients.user_id = $1 AND summary_type = 'bgm' AND period = '14d'"+
+				" AND average_glucose_mmol BETWEEN 6.89 AND 6.91",
+			patientUserId)).To(Equal(2))
+	})
+
+	It("clears mirrored rows when the summary is cleared", func() {
+		req := prepareRequestWithBody(http.MethodPost,
+			fmt.Sprintf("/v1/patients/%s/summary", patientUserId), nil)
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount(
+			"patient_summaries JOIN patients ON patients.id = patient_summaries.patient_id",
+			"patients.user_id = $1", patientUserId)).To(Equal(0))
+	})
+
+	It("removes only the matching type when deleting by summary id", func() {
+		cgmId := primitive.NewObjectID().Hex()
+		bgmId := primitive.NewObjectID().Hex()
+		seedSummary(patientUserId, summaryBody(cgmId, bgmId, time.Date(2026, 6, 26, 8, 0, 0, 0, time.UTC)))
+
+		req := prepareRequest(http.MethodDelete, fmt.Sprintf("/v1/summaries/%s/clinics", cgmId), "")
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount("patient_summaries", "summary_id = $1", cgmId)).To(Equal(0))
+		Expect(pgCount("patient_summaries", "summary_id = $1", bgmId)).To(Equal(2))
+	})
+})
