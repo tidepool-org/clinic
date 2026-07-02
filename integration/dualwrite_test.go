@@ -246,3 +246,80 @@ var _ = Describe("Postgres Dual Writes - Redox", Ordered, func() {
 			mongoRecord.Id.Hex(), logId)).To(Equal(1))
 	})
 })
+
+// Verifies the clinics aggregate mirroring: the clinics row, all child sets
+// and flattened settings converge after every API write.
+var _ = Describe("Postgres Dual Writes - Clinics", Ordered, func() {
+	var admin shoreline.UserData
+	var auth func(*http.Request)
+	var clinic client.ClinicV1
+	var clinicId string
+
+	BeforeAll(func() {
+		admin = newStubUser()
+		auth = asUser(admin.UserID)
+		clinic = createClinic(auth)
+		clinicId = *clinic.Id
+	})
+
+	It("mirrors created clinics with share codes and admins", func() {
+		Expect(pgCount("clinics", "id = $1 AND name = $2 AND canonical_share_code = $3",
+			clinicId, clinic.Name, *clinic.ShareCode)).To(Equal(1))
+		Expect(pgCount("clinic_share_codes", "clinic_id = $1 AND share_code = $2",
+			clinicId, *clinic.ShareCode)).To(Equal(1))
+		Expect(pgCount("clinic_admins", "clinic_id = $1 AND user_id = $2",
+			clinicId, admin.UserID)).To(Equal(1))
+	})
+
+	It("mirrors EHR settings as flattened columns", func() {
+		sourceId := fmt.Sprintf("clinic-dw-%s", uniqueId())
+		req := prepareRequestWithBody(http.MethodPut,
+			fmt.Sprintf("/v1/clinics/%s/settings/ehr", clinicId),
+			fixtureWithOverrides("./test/redox_fixtures/02_enable_redox.json", map[string]interface{}{
+				"sourceId": sourceId,
+			}))
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount("clinics", "id = $1 AND ehr_enabled = true AND ehr_provider = 'redox' AND ehr_source_id = $2",
+			clinicId, sourceId)).To(Equal(1))
+	})
+
+	It("mirrors patient tags and sites", func() {
+		tag := createPatientTag(clinicId, "dwtag-"+uniqueId(), auth)
+		site := createSite(clinicId, "dwsite-"+uniqueId(), auth)
+
+		Expect(pgCount("clinic_patient_tags", "id = $1 AND clinic_id = $2 AND name = $3",
+			*tag.Id, clinicId, tag.Name)).To(Equal(1))
+		Expect(pgCount("clinic_sites", "id = $1 AND clinic_id = $2 AND name = $3",
+			site.Id, clinicId, string(site.Name))).To(Equal(1))
+	})
+
+	It("mirrors site merges", func() {
+		source := createSite(clinicId, "dwsrc-"+uniqueId(), auth)
+		target := createSite(clinicId, "dwtgt-"+uniqueId(), auth)
+
+		// The path names the surviving target site; the body names the
+		// source site which is removed by the merge
+		req := prepareRequestWithBody(http.MethodPost,
+			fmt.Sprintf("/v1/clinics/%s/sites/%s/merge", clinicId, target.Id),
+			jsonBody(map[string]interface{}{"id": source.Id}))
+		asServer(req)
+		expectStatus(do(req), http.StatusOK)
+
+		Expect(pgCount("clinic_sites", "id = $1", source.Id)).To(Equal(0))
+		Expect(pgCount("clinic_sites", "id = $1", target.Id)).To(Equal(1))
+	})
+
+	It("mirrors clinic deletion", func() {
+		owner := newStubUser()
+		emptyClinic := createClinic(asUser(owner.UserID))
+
+		req := prepareRequest(http.MethodDelete, fmt.Sprintf("/v1/clinics/%s", *emptyClinic.Id), "")
+		asUser(owner.UserID)(req)
+		expectStatus(do(req), http.StatusNoContent)
+
+		Expect(pgCount("clinics", "id = $1", *emptyClinic.Id)).To(Equal(0))
+		Expect(pgCount("clinic_admins", "clinic_id = $1", *emptyClinic.Id)).To(Equal(0))
+	})
+})

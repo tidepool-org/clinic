@@ -15,6 +15,7 @@ import (
 
 	mergePostgres "github.com/tidepool-org/clinic/clinics/merge/postgres"
 	migrationPostgres "github.com/tidepool-org/clinic/clinics/migration/postgres"
+	clinicsPostgres "github.com/tidepool-org/clinic/clinics/postgres"
 	deletionsPostgres "github.com/tidepool-org/clinic/deletions/postgres"
 	redoxPostgres "github.com/tidepool-org/clinic/redox/postgres"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
@@ -47,6 +48,7 @@ var backfillers = fx.Provide(
 	asBackfiller(xealthPostgres.NewReportViewBackfiller),
 	asBackfiller(redoxPostgres.NewMessageBackfiller),
 	asBackfiller(redoxPostgres.NewScheduledOrderBackfiller),
+	asBackfiller(clinicsPostgres.NewBackfiller),
 	deletionsPostgres.NewWriter,
 )
 

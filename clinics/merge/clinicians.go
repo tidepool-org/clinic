@@ -274,6 +274,10 @@ func (c *ClinicianPlanExecutor) moveClinician(ctx context.Context, plan Clinicia
 	}
 
 	if plan.Clinician.UserId != nil {
+		// POSTGRES MIRRORING GAP: this raw collection write bypasses the
+		// clinics repository, so the admin change is not mirrored to
+		// Postgres synchronously. The periodic `pgsync backfill clinics`
+		// converges the clinics table after merges.
 		res, err = c.clinicsCollection.UpdateOne(ctx, bson.M{"_id": target.Id}, bson.M{"$addToSet": bson.M{"admins": plan.Clinician.UserId}})
 		if err != nil {
 			return fmt.Errorf("error updating clinic admins: %w", err)

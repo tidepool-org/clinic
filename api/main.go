@@ -27,6 +27,7 @@ import (
 	mergePostgres "github.com/tidepool-org/clinic/clinics/merge/postgres"
 	"github.com/tidepool-org/clinic/clinics/migration"
 	migrationPostgres "github.com/tidepool-org/clinic/clinics/migration/postgres"
+	clinicsPostgres "github.com/tidepool-org/clinic/clinics/postgres"
 	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
 	clinicsService "github.com/tidepool-org/clinic/clinics/service"
 	"github.com/tidepool-org/clinic/config"
@@ -171,6 +172,7 @@ func Dependencies() []fx.Option {
 			merge.NewPlansRepository,
 			mergePostgres.NewWriter,
 			xealthPostgres.NewWriter,
+			clinicsPostgres.NewWriter,
 			patientsRepository.NewRepository,
 			patientsService.NewCustodialService,
 			patientsService.NewService,
@@ -205,6 +207,7 @@ func Dependencies() []fx.Option {
 			migrationPostgres.NewDualRepository,
 			mergePostgres.NewDualPlansRepository,
 			xealthPostgres.NewDualStore,
+			clinicsPostgres.NewDualRepository,
 		),
 		fx.WithLogger(func(log *zap.Logger) fxevent.Logger {
 			return &fxevent.ZapLogger{Logger: log}

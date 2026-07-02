@@ -8,6 +8,66 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Clinic struct {
+	ID                                        string
+	Name                                      pgtype.Text
+	Address                                   pgtype.Text
+	City                                      pgtype.Text
+	State                                     pgtype.Text
+	PostalCode                                pgtype.Text
+	Country                                   pgtype.Text
+	ClinicType                                pgtype.Text
+	ClinicSize                                pgtype.Text
+	Website                                   pgtype.Text
+	Timezone                                  pgtype.Text
+	PreferredBgUnits                          pgtype.Text
+	CanonicalShareCode                        pgtype.Text
+	Tier                                      pgtype.Text
+	IsMigrated                                bool
+	CreatedTime                               pgtype.Timestamptz
+	UpdatedTime                               pgtype.Timestamptz
+	SuppressPatientClinicInvitation           pgtype.Bool
+	MrnRequired                               pgtype.Bool
+	MrnUnique                                 pgtype.Bool
+	EhrEnabled                                pgtype.Bool
+	EhrProvider                               pgtype.Text
+	EhrSourceID                               pgtype.Text
+	EhrMrnIDType                              pgtype.Text
+	EhrDestinationFlowsheet                   pgtype.Text
+	EhrDestinationNotes                       pgtype.Text
+	EhrDestinationResults                     pgtype.Text
+	EhrProcedureEnableSummaryReports          pgtype.Text
+	EhrProcedureDisableSummaryReports         pgtype.Text
+	EhrProcedureCreateAccount                 pgtype.Text
+	EhrProcedureCreateAccountAndEnableReports pgtype.Text
+	EhrScheduledReportsCadence                pgtype.Text
+	EhrScheduledReportsOnUploadEnabled        pgtype.Bool
+	EhrScheduledReportsOnUploadNoteEventType  pgtype.Text
+	EhrTagsCodes                              []string
+	EhrTagsSeparator                          pgtype.Text
+	EhrFlowsheetsIcode                        pgtype.Bool
+	EhrNotesIncludeGmi                        pgtype.Bool
+	PcsHardLimitPlan                          pgtype.Int4
+	PcsHardLimitStartDate                     pgtype.Timestamptz
+	PcsHardLimitEndDate                       pgtype.Timestamptz
+	PcsHardLimitLegacyPatientCount            pgtype.Int4
+	PcsSoftLimitPlan                          pgtype.Int4
+	PcsSoftLimitStartDate                     pgtype.Timestamptz
+	PcsSoftLimitEndDate                       pgtype.Timestamptz
+	PcsSoftLimitLegacyPatientCount            pgtype.Int4
+	PatientCountTotal                         pgtype.Int4
+	PatientCountDemo                          pgtype.Int4
+	PatientCountPlan                          pgtype.Int4
+	PatientCountLegacy                        pgtype.Int4
+	PatientCountProviders                     []byte
+	PgSyncedAt                                pgtype.Timestamptz
+}
+
+type ClinicAdmin struct {
+	ClinicID string
+	UserID   string
+}
+
 type ClinicDeletion struct {
 	ID              string
 	DeletedTime     pgtype.Timestamptz
@@ -15,6 +75,36 @@ type ClinicDeletion struct {
 	ClinicID        pgtype.Text
 	Payload         []byte
 	PgSyncedAt      pgtype.Timestamptz
+}
+
+type ClinicMembershipRestriction struct {
+	ClinicID    string
+	EmailDomain string
+	RequiredIdp pgtype.Text
+}
+
+type ClinicPatientTag struct {
+	ID       string
+	ClinicID string
+	Name     string
+}
+
+type ClinicPhoneNumber struct {
+	ClinicID string
+	Ordinal  int32
+	Type     pgtype.Text
+	Number   string
+}
+
+type ClinicShareCode struct {
+	ShareCode string
+	ClinicID  string
+}
+
+type ClinicSite struct {
+	ID       string
+	ClinicID string
+	Name     string
 }
 
 type ClinicianDeletion struct {
