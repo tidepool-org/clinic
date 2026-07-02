@@ -42,6 +42,7 @@ var _ = AfterSuite(teardownEnvironment)
 
 func setupEnvironment() {
 	dbTest.SetupDatabase()
+	dbTest.SetupPostgres()
 
 	stubUsers = integrationTest.NewStubUsers()
 	authStub = integrationTest.AuthStub()
@@ -52,6 +53,7 @@ func setupEnvironment() {
 
 	t := GinkgoT()
 	t.Setenv("LOG_LEVEL", "error")
+	t.Setenv("TIDEPOOL_POSTGRES_ENABLED", "true")
 	t.Setenv("TIDEPOOL_SERVER_TOKEN", integrationTest.TestServerToken)
 	t.Setenv("TIDEPOOL_AUTH_CLIENT_EXTERNAL_SERVER_SESSION_TOKEN_SECRET", integrationTest.TestServerToken)
 	t.Setenv("TIDEPOOL_AUTH_CLIENT_ADDRESS", authStub.URL)
@@ -90,6 +92,7 @@ func setupEnvironment() {
 
 func teardownEnvironment() {
 	dbTest.TeardownDatabase()
+	dbTest.TeardownPostgres()
 	shorelineStub.Close()
 	seagullStub.Close()
 

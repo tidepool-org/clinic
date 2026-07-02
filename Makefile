@@ -5,6 +5,10 @@ NPM_BIN = node_modules/.bin
 
 OAPI_CODEGEN = go tool oapi-codegen
 MOCKGEN = go tool mockgen
+# sqlc has a large dependency tree; run it via `go run` with a pinned version
+# instead of adding it to go.mod/vendor. Generated code is checked in.
+SQLC_VERSION = v1.31.1
+SQLC = go run github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION)
 REDOCLY_CLI = $(NPM_BIN)/redocly
 OPENAPI_FILTER = $(NPM_BIN)/openapi-filter
 GINKGO = go run -mod=mod github.com/onsi/ginkgo/v2/ginkgo
@@ -43,6 +47,11 @@ generate: $(REDOCLY_CLI)
 	$(OAPI_CODEGEN) -include-tags="Orders (Partner)" -package=xealth_client -generate=client -o xealth_client/gen_client.go ../TidepoolApi/reference/xealth.v2.yaml
 	go generate ./...
 	cd client && go generate ./...
+
+# Generates type-safe Go from the SQL queries in store/postgres/queries
+.PHONY: generate-sqlc
+generate-sqlc:
+	$(SQLC) generate
 
 # Generate linkerd service profile
 service-profile/profile.yaml: service-profile/clinic.v1.yaml service-profile

@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	oapiMiddleware "github.com/oapi-codegen/echo-middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -33,6 +34,7 @@ import (
 	patientsService "github.com/tidepool-org/clinic/patients/service"
 	"github.com/tidepool-org/clinic/redox"
 	"github.com/tidepool-org/clinic/store"
+	"github.com/tidepool-org/clinic/store/postgres"
 	"github.com/tidepool-org/clinic/xealth"
 	authClient "github.com/tidepool-org/platform/auth/client"
 	"github.com/tidepool-org/platform/client"
@@ -141,6 +143,7 @@ func NewServer(handler Handler, healthCheck *HealthCheck, authorizer auth.Reques
 
 	e.HTTPErrorHandler = errors.CustomHTTPErrorHandler
 	e.GET("/ready", healthCheck.Ready)
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 	RegisterHandlers(e, &handler)
 
 	return e, nil
@@ -155,6 +158,8 @@ func Dependencies() []fx.Option {
 			store.NewConfig,
 			store.NewClient,
 			store.NewDatabase,
+			postgres.NewConfig,
+			postgres.NewClient,
 			patientsRepository.NewRepository,
 			patientsService.NewCustodialService,
 			patientsService.NewService,
