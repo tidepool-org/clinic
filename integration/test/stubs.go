@@ -179,6 +179,29 @@ func (u *StubUsers) NextUserId() string {
 	return strconv.FormatInt(u.nextId, 10)
 }
 
+// UpdateUser backs the shoreline user update endpoint, which the service
+// invokes when the email of a custodial account changes.
+func (u *StubUsers) UpdateUser(userId string, username *string, emails *[]string) (shoreline.UserData, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	user, ok := u.byId[userId]
+	if !ok {
+		return shoreline.UserData{}, false
+	}
+	if username != nil {
+		delete(u.byUsername, user.Username)
+		user.Username = *username
+		if *username != "" {
+			u.byUsername[*username] = user
+		}
+	}
+	if emails != nil {
+		user.Emails = *emails
+	}
+	u.byId[userId] = user
+	return user, true
+}
+
 // CreateUser backs the custodial account creation endpoint. Usernames of
 // already registered users return the existing user, mirroring the previous
 // stub behavior of always responding with a fixed user.
@@ -277,6 +300,21 @@ func ShorelineStub(users *StubUsers) *httptest.Server {
 		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/user/"):
 			idOrUsername := strings.TrimPrefix(r.URL.Path, "/user/")
 			if user, ok := users.User(idOrUsername); ok {
+				writeJSON(w, http.StatusOK, user)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		case r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/user/"):
+			userId := strings.TrimPrefix(r.URL.Path, "/user/")
+			payload := struct {
+				Updates struct {
+					Username *string   `json:"username"`
+					Emails   *[]string `json:"emails"`
+				} `json:"updates"`
+			}{}
+			body, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(body, &payload)
+			if user, ok := users.UpdateUser(userId, payload.Updates.Username, payload.Updates.Emails); ok {
 				writeJSON(w, http.StatusOK, user)
 			} else {
 				w.WriteHeader(http.StatusNotFound)
