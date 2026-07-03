@@ -13,7 +13,7 @@ import (
 
 	"github.com/tidepool-org/clinic/clinics/migration"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
-	"github.com/tidepool-org/clinic/store/postgres/sqlcgen"
+	"github.com/tidepool-org/clinic/clinics/migration/postgres/sqlcgen"
 )
 
 const collectionName = "migrations"

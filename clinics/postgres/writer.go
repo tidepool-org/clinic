@@ -16,7 +16,7 @@ import (
 
 	"github.com/tidepool-org/clinic/clinics"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
-	"github.com/tidepool-org/clinic/store/postgres/sqlcgen"
+	"github.com/tidepool-org/clinic/clinics/postgres/sqlcgen"
 )
 
 func NewWriter(client *storepg.Client, logger *zap.SugaredLogger) *Writer {

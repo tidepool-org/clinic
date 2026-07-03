@@ -25,7 +25,7 @@ import (
 	models "github.com/tidepool-org/clinic/redox_models"
 	"github.com/tidepool-org/clinic/store/dualwrite"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
-	"github.com/tidepool-org/clinic/store/postgres/sqlcgen"
+	"github.com/tidepool-org/clinic/redox/postgres/sqlcgen"
 )
 
 const (

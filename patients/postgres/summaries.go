@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/clinic/store/postgres/sqlcgen"
+	"github.com/tidepool-org/clinic/patients/postgres/sqlcgen"
 )
 
 // upsertSummaries replaces the summary and period rows of a patient inside

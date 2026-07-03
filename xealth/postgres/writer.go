@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	storepg "github.com/tidepool-org/clinic/store/postgres"
-	"github.com/tidepool-org/clinic/store/postgres/sqlcgen"
+	"github.com/tidepool-org/clinic/xealth/postgres/sqlcgen"
 	"github.com/tidepool-org/clinic/xealth"
 )
 

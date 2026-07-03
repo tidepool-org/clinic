@@ -23,7 +23,7 @@ import (
 
 	"github.com/tidepool-org/clinic/patients"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
-	"github.com/tidepool-org/clinic/store/postgres/sqlcgen"
+	"github.com/tidepool-org/clinic/patients/postgres/sqlcgen"
 )
 
 // NormalizeFullName lowercases and strips diacritics from a patient name.

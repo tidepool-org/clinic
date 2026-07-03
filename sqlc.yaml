@@ -1,12 +1,66 @@
 version: "2"
+# One codegen block per domain so the generated models, querier and query
+# implementations live next to the corresponding Mongo repository. All blocks
+# share the schema (the goose migration stream must stay ordered and central);
+# omit_unused_structs limits every package to the tables its queries touch.
 sql:
-  - engine: "postgresql"
+  - &defaults
+    engine: "postgresql"
     schema: "store/postgres/migrations"
     queries: "store/postgres/queries"
     gen:
-      go:
+      go: &go_defaults
         package: "sqlcgen"
         out: "store/postgres/sqlcgen"
         sql_package: "pgx/v5"
         emit_interface: true
         emit_json_tags: false
+        omit_unused_structs: true
+  - <<: *defaults
+    queries: "deletions/postgres/queries"
+    gen:
+      go:
+        <<: *go_defaults
+        out: "deletions/postgres/sqlcgen"
+  - <<: *defaults
+    queries: "clinics/migration/postgres/queries"
+    gen:
+      go:
+        <<: *go_defaults
+        out: "clinics/migration/postgres/sqlcgen"
+  - <<: *defaults
+    queries: "clinics/merge/postgres/queries"
+    gen:
+      go:
+        <<: *go_defaults
+        out: "clinics/merge/postgres/sqlcgen"
+  - <<: *defaults
+    queries: "xealth/postgres/queries"
+    gen:
+      go:
+        <<: *go_defaults
+        out: "xealth/postgres/sqlcgen"
+  - <<: *defaults
+    queries: "redox/postgres/queries"
+    gen:
+      go:
+        <<: *go_defaults
+        out: "redox/postgres/sqlcgen"
+  - <<: *defaults
+    queries: "clinics/postgres/queries"
+    gen:
+      go:
+        <<: *go_defaults
+        out: "clinics/postgres/sqlcgen"
+  - <<: *defaults
+    queries: "clinicians/postgres/queries"
+    gen:
+      go:
+        <<: *go_defaults
+        out: "clinicians/postgres/sqlcgen"
+  - <<: *defaults
+    queries: "patients/postgres/queries"
+    gen:
+      go:
+        <<: *go_defaults
+        out: "patients/postgres/sqlcgen"

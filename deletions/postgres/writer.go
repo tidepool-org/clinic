@@ -16,7 +16,7 @@ import (
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/store/dualwrite"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
-	"github.com/tidepool-org/clinic/store/postgres/sqlcgen"
+	"github.com/tidepool-org/clinic/deletions/postgres/sqlcgen"
 )
 
 const (
