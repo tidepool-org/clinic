@@ -26,6 +26,7 @@ func upsertSummaries(ctx context.Context, q *sqlcgen.Queries, patientId string, 
 		if err := q.InsertPatientSummary(ctx, summaryParams(patientId, "cgm", cgm.Id, cgm.Config, cgm.Dates)); err != nil {
 			return err
 		}
+		periods := make([]sqlcgen.InsertPatientSummaryPeriodParams, 0, len(cgm.Periods))
 		for period, stats := range cgm.Periods {
 			params := sqlcgen.InsertPatientSummaryPeriodParams{
 				PatientID:   patientId,
@@ -33,7 +34,10 @@ func upsertSummaries(ctx context.Context, q *sqlcgen.Queries, patientId string, 
 				Period:      period,
 			}
 			cgmPeriodParams(stats, &params)
-			if err := q.InsertPatientSummaryPeriod(ctx, params); err != nil {
+			periods = append(periods, params)
+		}
+		if len(periods) > 0 {
+			if err := storepg.ExecBatch(q.InsertPatientSummaryPeriod(ctx, periods)); err != nil {
 				return err
 			}
 		}
@@ -43,6 +47,7 @@ func upsertSummaries(ctx context.Context, q *sqlcgen.Queries, patientId string, 
 		if err := q.InsertPatientSummary(ctx, summaryParams(patientId, "bgm", bgm.Id, bgm.Config, bgm.Dates)); err != nil {
 			return err
 		}
+		periods := make([]sqlcgen.InsertPatientSummaryPeriodParams, 0, len(bgm.Periods))
 		for period, stats := range bgm.Periods {
 			params := sqlcgen.InsertPatientSummaryPeriodParams{
 				PatientID:   patientId,
@@ -50,7 +55,10 @@ func upsertSummaries(ctx context.Context, q *sqlcgen.Queries, patientId string, 
 				Period:      period,
 			}
 			bgmPeriodParams(stats, &params)
-			if err := q.InsertPatientSummaryPeriod(ctx, params); err != nil {
+			periods = append(periods, params)
+		}
+		if len(periods) > 0 {
+			if err := storepg.ExecBatch(q.InsertPatientSummaryPeriod(ctx, periods)); err != nil {
 				return err
 			}
 		}

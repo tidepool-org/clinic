@@ -27,15 +27,15 @@ type Querier interface {
 	DeleteSummariesBySummaryId(ctx context.Context, summaryID string) error
 	DeleteTagFromClinicPatients(ctx context.Context, arg DeleteTagFromClinicPatientsParams) error
 	DeleteTagFromPatients(ctx context.Context, arg DeleteTagFromPatientsParams) error
-	InsertPatientConnectionRequest(ctx context.Context, arg InsertPatientConnectionRequestParams) error
-	InsertPatientDataSource(ctx context.Context, arg InsertPatientDataSourceParams) error
-	InsertPatientEHRSubscription(ctx context.Context, arg InsertPatientEHRSubscriptionParams) error
-	InsertPatientEHRSubscriptionMatchedMessage(ctx context.Context, arg InsertPatientEHRSubscriptionMatchedMessageParams) error
-	InsertPatientReview(ctx context.Context, arg InsertPatientReviewParams) error
-	InsertPatientSite(ctx context.Context, arg InsertPatientSiteParams) error
+	InsertPatientConnectionRequest(ctx context.Context, arg []InsertPatientConnectionRequestParams) *InsertPatientConnectionRequestBatchResults
+	InsertPatientDataSource(ctx context.Context, arg []InsertPatientDataSourceParams) *InsertPatientDataSourceBatchResults
+	InsertPatientEHRSubscription(ctx context.Context, arg []InsertPatientEHRSubscriptionParams) *InsertPatientEHRSubscriptionBatchResults
+	InsertPatientEHRSubscriptionMatchedMessage(ctx context.Context, arg []InsertPatientEHRSubscriptionMatchedMessageParams) *InsertPatientEHRSubscriptionMatchedMessageBatchResults
+	InsertPatientReview(ctx context.Context, arg []InsertPatientReviewParams) *InsertPatientReviewBatchResults
+	InsertPatientSite(ctx context.Context, arg []InsertPatientSiteParams) *InsertPatientSiteBatchResults
 	InsertPatientSummary(ctx context.Context, arg InsertPatientSummaryParams) error
-	InsertPatientSummaryPeriod(ctx context.Context, arg InsertPatientSummaryPeriodParams) error
-	InsertPatientTag(ctx context.Context, arg InsertPatientTagParams) error
+	InsertPatientSummaryPeriod(ctx context.Context, arg []InsertPatientSummaryPeriodParams) *InsertPatientSummaryPeriodBatchResults
+	InsertPatientTag(ctx context.Context, arg []InsertPatientTagParams) *InsertPatientTagBatchResults
 	RenameSiteForClinicPatients(ctx context.Context, arg RenameSiteForClinicPatientsParams) error
 	UpsertPatient(ctx context.Context, arg UpsertPatientParams) error
 }

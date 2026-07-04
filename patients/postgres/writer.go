@@ -86,11 +86,15 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 		return err
 	}
 	if patient.Tags != nil {
+		tags := make([]sqlcgen.InsertPatientTagParams, 0, len(*patient.Tags))
 		for _, tagId := range *patient.Tags {
-			if err := q.InsertPatientTag(ctx, sqlcgen.InsertPatientTagParams{
+			tags = append(tags, sqlcgen.InsertPatientTagParams{
 				PatientID: id,
 				TagID:     tagId.Hex(),
-			}); err != nil {
+			})
+		}
+		if len(tags) > 0 {
+			if err := storepg.ExecBatch(q.InsertPatientTag(ctx, tags)); err != nil {
 				return err
 			}
 		}
@@ -100,12 +104,16 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 		return err
 	}
 	if patient.Sites != nil {
+		sites := make([]sqlcgen.InsertPatientSiteParams, 0, len(*patient.Sites))
 		for _, site := range *patient.Sites {
-			if err := q.InsertPatientSite(ctx, sqlcgen.InsertPatientSiteParams{
+			sites = append(sites, sqlcgen.InsertPatientSiteParams{
 				PatientID: id,
 				SiteID:    site.Id.Hex(),
 				SiteName:  site.Name,
-			}); err != nil {
+			})
+		}
+		if len(sites) > 0 {
+			if err := storepg.ExecBatch(q.InsertPatientSite(ctx, sites)); err != nil {
 				return err
 			}
 		}
@@ -115,6 +123,7 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 		return err
 	}
 	if patient.DataSources != nil {
+		dataSources := make([]sqlcgen.InsertPatientDataSourceParams, 0, len(*patient.DataSources))
 		for i, source := range *patient.DataSources {
 			params := sqlcgen.InsertPatientDataSourceParams{
 				PatientID:      id,
@@ -128,7 +137,10 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 			if source.DataSourceId != nil {
 				params.DataSourceID = pgtype.Text{String: source.DataSourceId.Hex(), Valid: true}
 			}
-			if err := q.InsertPatientDataSource(ctx, params); err != nil {
+			dataSources = append(dataSources, params)
+		}
+		if len(dataSources) > 0 {
+			if err := storepg.ExecBatch(q.InsertPatientDataSource(ctx, dataSources)); err != nil {
 				return err
 			}
 		}
@@ -137,13 +149,17 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 	if err := q.DeletePatientReviews(ctx, id); err != nil {
 		return err
 	}
+	reviews := make([]sqlcgen.InsertPatientReviewParams, 0, len(patient.Reviews))
 	for i, review := range patient.Reviews {
-		if err := q.InsertPatientReview(ctx, sqlcgen.InsertPatientReviewParams{
+		reviews = append(reviews, sqlcgen.InsertPatientReviewParams{
 			PatientID:   id,
 			Ordinal:     int32(i),
 			ClinicianID: review.ClinicianId,
 			ReviewTime:  pgtype.Timestamptz{Time: review.Time.UTC(), Valid: true},
-		}); err != nil {
+		})
+	}
+	if len(reviews) > 0 {
+		if err := storepg.ExecBatch(q.InsertPatientReview(ctx, reviews)); err != nil {
 			return err
 		}
 	}
@@ -151,15 +167,19 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 	if err := q.DeletePatientConnectionRequests(ctx, id); err != nil {
 		return err
 	}
+	var connectionRequests []sqlcgen.InsertPatientConnectionRequestParams
 	for _, requests := range patient.ProviderConnectionRequests {
 		for _, request := range requests {
-			if err := q.InsertPatientConnectionRequest(ctx, sqlcgen.InsertPatientConnectionRequestParams{
+			connectionRequests = append(connectionRequests, sqlcgen.InsertPatientConnectionRequestParams{
 				PatientID:    id,
 				ProviderName: request.ProviderName,
 				CreatedTime:  pgtype.Timestamptz{Time: request.CreatedTime.UTC(), Valid: true},
-			}); err != nil {
-				return err
-			}
+			})
+		}
+	}
+	if len(connectionRequests) > 0 {
+		if err := storepg.ExecBatch(q.InsertPatientConnectionRequest(ctx, connectionRequests)); err != nil {
+			return err
 		}
 	}
 
@@ -171,28 +191,37 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 	if err := q.DeletePatientEHRSubscriptions(ctx, id); err != nil {
 		return err
 	}
+	subscriptions := make([]sqlcgen.InsertPatientEHRSubscriptionParams, 0, len(patient.EHRSubscriptions))
+	var matchedMessages []sqlcgen.InsertPatientEHRSubscriptionMatchedMessageParams
 	for name, subscription := range patient.EHRSubscriptions {
-		if err := q.InsertPatientEHRSubscription(ctx, sqlcgen.InsertPatientEHRSubscriptionParams{
+		subscriptions = append(subscriptions, sqlcgen.InsertPatientEHRSubscriptionParams{
 			PatientID:   id,
 			Name:        name,
 			Provider:    subscription.Provider,
 			Active:      subscription.Active,
 			CreatedTime: pgtype.Timestamptz{Time: subscription.CreatedAt.UTC(), Valid: !subscription.CreatedAt.IsZero()},
 			UpdatedTime: pgtype.Timestamptz{Time: subscription.UpdatedAt.UTC(), Valid: !subscription.UpdatedAt.IsZero()},
-		}); err != nil {
-			return err
-		}
+		})
 		for i, message := range subscription.MatchedMessages {
-			if err := q.InsertPatientEHRSubscriptionMatchedMessage(ctx, sqlcgen.InsertPatientEHRSubscriptionMatchedMessageParams{
+			matchedMessages = append(matchedMessages, sqlcgen.InsertPatientEHRSubscriptionMatchedMessageParams{
 				PatientID:        id,
 				SubscriptionName: name,
 				Ordinal:          int32(i),
 				MessageID:        message.DocumentId.Hex(),
 				DataModel:        message.DataModel,
 				EventType:        message.EventType,
-			}); err != nil {
-				return err
-			}
+			})
+		}
+	}
+	if len(subscriptions) > 0 {
+		if err := storepg.ExecBatch(q.InsertPatientEHRSubscription(ctx, subscriptions)); err != nil {
+			return err
+		}
+	}
+	// Matched-message rows require their subscription rows to exist first
+	if len(matchedMessages) > 0 {
+		if err := storepg.ExecBatch(q.InsertPatientEHRSubscriptionMatchedMessage(ctx, matchedMessages)); err != nil {
+			return err
 		}
 	}
 

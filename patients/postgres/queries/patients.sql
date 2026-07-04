@@ -50,7 +50,7 @@ DELETE FROM patients WHERE clinic_id = $1 AND NOT perm_custodian;
 -- name: DeletePatientTags :exec
 DELETE FROM patient_tags WHERE patient_id = $1;
 
--- name: InsertPatientTag :exec
+-- name: InsertPatientTag :batchexec
 INSERT INTO patient_tags (patient_id, tag_id)
 VALUES ($1, $2)
 ON CONFLICT DO NOTHING;
@@ -58,7 +58,7 @@ ON CONFLICT DO NOTHING;
 -- name: DeletePatientSites :exec
 DELETE FROM patient_sites WHERE patient_id = $1;
 
--- name: InsertPatientSite :exec
+-- name: InsertPatientSite :batchexec
 INSERT INTO patient_sites (patient_id, site_id, site_name)
 VALUES ($1, $2, $3)
 ON CONFLICT (patient_id, site_id) DO UPDATE SET site_name = EXCLUDED.site_name;
@@ -66,7 +66,7 @@ ON CONFLICT (patient_id, site_id) DO UPDATE SET site_name = EXCLUDED.site_name;
 -- name: DeletePatientDataSources :exec
 DELETE FROM patient_data_sources WHERE patient_id = $1;
 
--- name: InsertPatientDataSource :exec
+-- name: InsertPatientDataSource :batchexec
 INSERT INTO patient_data_sources (
     patient_id, ordinal, provider_name, state, data_source_id,
     modified_time, expiration_time, latest_data_time
@@ -75,14 +75,14 @@ INSERT INTO patient_data_sources (
 -- name: DeletePatientReviews :exec
 DELETE FROM patient_reviews WHERE patient_id = $1;
 
--- name: InsertPatientReview :exec
+-- name: InsertPatientReview :batchexec
 INSERT INTO patient_reviews (patient_id, ordinal, clinician_id, review_time)
 VALUES ($1, $2, $3, $4);
 
 -- name: DeletePatientConnectionRequests :exec
 DELETE FROM patient_provider_connection_requests WHERE patient_id = $1;
 
--- name: InsertPatientConnectionRequest :exec
+-- name: InsertPatientConnectionRequest :batchexec
 INSERT INTO patient_provider_connection_requests (patient_id, provider_name, created_time)
 VALUES ($1, $2, $3)
 ON CONFLICT DO NOTHING;
@@ -90,11 +90,11 @@ ON CONFLICT DO NOTHING;
 -- name: DeletePatientEHRSubscriptions :exec
 DELETE FROM patient_ehr_subscriptions WHERE patient_id = $1;
 
--- name: InsertPatientEHRSubscription :exec
+-- name: InsertPatientEHRSubscription :batchexec
 INSERT INTO patient_ehr_subscriptions (patient_id, name, provider, active, created_time, updated_time)
 VALUES ($1, $2, $3, $4, $5, $6);
 
--- name: InsertPatientEHRSubscriptionMatchedMessage :exec
+-- name: InsertPatientEHRSubscriptionMatchedMessage :batchexec
 INSERT INTO patient_ehr_subscription_matched_messages (
     patient_id, subscription_name, ordinal, message_id, data_model, event_type
 ) VALUES ($1, $2, $3, $4, $5, $6);

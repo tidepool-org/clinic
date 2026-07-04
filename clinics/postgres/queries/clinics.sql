@@ -82,7 +82,7 @@ DELETE FROM clinics WHERE id = $1;
 -- name: DeleteClinicShareCodes :exec
 DELETE FROM clinic_share_codes WHERE clinic_id = $1;
 
--- name: InsertClinicShareCode :exec
+-- name: InsertClinicShareCode :batchexec
 INSERT INTO clinic_share_codes (share_code, clinic_id)
 VALUES ($1, $2)
 ON CONFLICT (share_code) DO UPDATE SET clinic_id = EXCLUDED.clinic_id;
@@ -90,7 +90,7 @@ ON CONFLICT (share_code) DO UPDATE SET clinic_id = EXCLUDED.clinic_id;
 -- name: DeleteClinicAdmins :exec
 DELETE FROM clinic_admins WHERE clinic_id = $1;
 
--- name: InsertClinicAdmin :exec
+-- name: InsertClinicAdmin :batchexec
 INSERT INTO clinic_admins (clinic_id, user_id)
 VALUES ($1, $2)
 ON CONFLICT (clinic_id, user_id) DO NOTHING;
@@ -98,7 +98,7 @@ ON CONFLICT (clinic_id, user_id) DO NOTHING;
 -- name: DeleteClinicPhoneNumbers :exec
 DELETE FROM clinic_phone_numbers WHERE clinic_id = $1;
 
--- name: InsertClinicPhoneNumber :exec
+-- name: InsertClinicPhoneNumber :batchexec
 INSERT INTO clinic_phone_numbers (clinic_id, ordinal, type, number)
 VALUES ($1, $2, $3, $4)
 ON CONFLICT (clinic_id, ordinal) DO UPDATE SET
@@ -108,7 +108,7 @@ ON CONFLICT (clinic_id, ordinal) DO UPDATE SET
 -- name: DeleteClinicMembershipRestrictions :exec
 DELETE FROM clinic_membership_restrictions WHERE clinic_id = $1;
 
--- name: InsertClinicMembershipRestriction :exec
+-- name: InsertClinicMembershipRestriction :batchexec
 INSERT INTO clinic_membership_restrictions (clinic_id, email_domain, required_idp)
 VALUES ($1, $2, $3)
 ON CONFLICT (clinic_id, email_domain) DO UPDATE SET
@@ -117,7 +117,7 @@ ON CONFLICT (clinic_id, email_domain) DO UPDATE SET
 -- name: DeleteClinicPatientTags :exec
 DELETE FROM clinic_patient_tags WHERE clinic_id = $1;
 
--- name: InsertClinicPatientTag :exec
+-- name: InsertClinicPatientTag :batchexec
 INSERT INTO clinic_patient_tags (id, clinic_id, name)
 VALUES ($1, $2, $3)
 ON CONFLICT (id) DO UPDATE SET
@@ -127,7 +127,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- name: DeleteClinicSites :exec
 DELETE FROM clinic_sites WHERE clinic_id = $1;
 
--- name: InsertClinicSite :exec
+-- name: InsertClinicSite :batchexec
 INSERT INTO clinic_sites (id, clinic_id, name)
 VALUES ($1, $2, $3)
 ON CONFLICT (id) DO UPDATE SET

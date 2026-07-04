@@ -16,12 +16,12 @@ type Querier interface {
 	DeleteClinicPhoneNumbers(ctx context.Context, clinicID string) error
 	DeleteClinicShareCodes(ctx context.Context, clinicID string) error
 	DeleteClinicSites(ctx context.Context, clinicID string) error
-	InsertClinicAdmin(ctx context.Context, arg InsertClinicAdminParams) error
-	InsertClinicMembershipRestriction(ctx context.Context, arg InsertClinicMembershipRestrictionParams) error
-	InsertClinicPatientTag(ctx context.Context, arg InsertClinicPatientTagParams) error
-	InsertClinicPhoneNumber(ctx context.Context, arg InsertClinicPhoneNumberParams) error
-	InsertClinicShareCode(ctx context.Context, arg InsertClinicShareCodeParams) error
-	InsertClinicSite(ctx context.Context, arg InsertClinicSiteParams) error
+	InsertClinicAdmin(ctx context.Context, arg []InsertClinicAdminParams) *InsertClinicAdminBatchResults
+	InsertClinicMembershipRestriction(ctx context.Context, arg []InsertClinicMembershipRestrictionParams) *InsertClinicMembershipRestrictionBatchResults
+	InsertClinicPatientTag(ctx context.Context, arg []InsertClinicPatientTagParams) *InsertClinicPatientTagBatchResults
+	InsertClinicPhoneNumber(ctx context.Context, arg []InsertClinicPhoneNumberParams) *InsertClinicPhoneNumberBatchResults
+	InsertClinicShareCode(ctx context.Context, arg []InsertClinicShareCodeParams) *InsertClinicShareCodeBatchResults
+	InsertClinicSite(ctx context.Context, arg []InsertClinicSiteParams) *InsertClinicSiteBatchResults
 	UpsertClinic(ctx context.Context, arg UpsertClinicParams) error
 }
 

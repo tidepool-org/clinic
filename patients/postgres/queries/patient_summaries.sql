@@ -20,7 +20,7 @@ INSERT INTO patient_summaries (
     $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
 );
 
--- name: InsertPatientSummaryPeriod :exec
+-- name: InsertPatientSummaryPeriod :batchexec
 INSERT INTO patient_summary_periods (
     patient_id, summary_type, period, average_daily_records,
     average_daily_records_delta, average_glucose_mmol, average_glucose_mmol_delta, coefficient_of_variation,

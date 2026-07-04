@@ -65,11 +65,15 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 		return err
 	}
 	if clinic.ShareCodes != nil {
+		shareCodes := make([]sqlcgen.InsertClinicShareCodeParams, 0, len(*clinic.ShareCodes))
 		for _, shareCode := range *clinic.ShareCodes {
-			if err := q.InsertClinicShareCode(ctx, sqlcgen.InsertClinicShareCodeParams{
+			shareCodes = append(shareCodes, sqlcgen.InsertClinicShareCodeParams{
 				ShareCode: shareCode,
 				ClinicID:  id,
-			}); err != nil {
+			})
+		}
+		if len(shareCodes) > 0 {
+			if err := storepg.ExecBatch(q.InsertClinicShareCode(ctx, shareCodes)); err != nil {
 				return err
 			}
 		}
@@ -79,11 +83,15 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 		return err
 	}
 	if clinic.Admins != nil {
+		admins := make([]sqlcgen.InsertClinicAdminParams, 0, len(*clinic.Admins))
 		for _, userId := range *clinic.Admins {
-			if err := q.InsertClinicAdmin(ctx, sqlcgen.InsertClinicAdminParams{
+			admins = append(admins, sqlcgen.InsertClinicAdminParams{
 				ClinicID: id,
 				UserID:   userId,
-			}); err != nil {
+			})
+		}
+		if len(admins) > 0 {
+			if err := storepg.ExecBatch(q.InsertClinicAdmin(ctx, admins)); err != nil {
 				return err
 			}
 		}
@@ -93,13 +101,17 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 		return err
 	}
 	if clinic.PhoneNumbers != nil {
+		phoneNumbers := make([]sqlcgen.InsertClinicPhoneNumberParams, 0, len(*clinic.PhoneNumbers))
 		for i, phoneNumber := range *clinic.PhoneNumbers {
-			if err := q.InsertClinicPhoneNumber(ctx, sqlcgen.InsertClinicPhoneNumberParams{
+			phoneNumbers = append(phoneNumbers, sqlcgen.InsertClinicPhoneNumberParams{
 				ClinicID: id,
 				Ordinal:  int32(i),
 				Type:     storepg.TextValue(phoneNumber.Type),
 				Number:   phoneNumber.Number,
-			}); err != nil {
+			})
+		}
+		if len(phoneNumbers) > 0 {
+			if err := storepg.ExecBatch(q.InsertClinicPhoneNumber(ctx, phoneNumbers)); err != nil {
 				return err
 			}
 		}
@@ -108,12 +120,16 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 	if err := q.DeleteClinicMembershipRestrictions(ctx, id); err != nil {
 		return err
 	}
+	restrictions := make([]sqlcgen.InsertClinicMembershipRestrictionParams, 0, len(clinic.MembershipRestrictions))
 	for _, restriction := range clinic.MembershipRestrictions {
-		if err := q.InsertClinicMembershipRestriction(ctx, sqlcgen.InsertClinicMembershipRestrictionParams{
+		restrictions = append(restrictions, sqlcgen.InsertClinicMembershipRestrictionParams{
 			ClinicID:    id,
 			EmailDomain: restriction.EmailDomain,
 			RequiredIdp: pgtype.Text{String: restriction.RequiredIdp, Valid: true},
-		}); err != nil {
+		})
+	}
+	if len(restrictions) > 0 {
+		if err := storepg.ExecBatch(q.InsertClinicMembershipRestriction(ctx, restrictions)); err != nil {
 			return err
 		}
 	}
@@ -121,15 +137,19 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 	if err := q.DeleteClinicPatientTags(ctx, id); err != nil {
 		return err
 	}
+	tags := make([]sqlcgen.InsertClinicPatientTagParams, 0, len(clinic.PatientTags))
 	for _, tag := range clinic.PatientTags {
 		if tag.Id == nil {
 			return fmt.Errorf("patient tag of clinic %s has no id", id)
 		}
-		if err := q.InsertClinicPatientTag(ctx, sqlcgen.InsertClinicPatientTagParams{
+		tags = append(tags, sqlcgen.InsertClinicPatientTagParams{
 			ID:       tag.Id.Hex(),
 			ClinicID: id,
 			Name:     tag.Name,
-		}); err != nil {
+		})
+	}
+	if len(tags) > 0 {
+		if err := storepg.ExecBatch(q.InsertClinicPatientTag(ctx, tags)); err != nil {
 			return err
 		}
 	}
@@ -137,12 +157,16 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 	if err := q.DeleteClinicSites(ctx, id); err != nil {
 		return err
 	}
+	sites := make([]sqlcgen.InsertClinicSiteParams, 0, len(clinic.Sites))
 	for _, site := range clinic.Sites {
-		if err := q.InsertClinicSite(ctx, sqlcgen.InsertClinicSiteParams{
+		sites = append(sites, sqlcgen.InsertClinicSiteParams{
 			ID:       site.Id.Hex(),
 			ClinicID: id,
 			Name:     site.Name,
-		}); err != nil {
+		})
+	}
+	if len(sites) > 0 {
+		if err := storepg.ExecBatch(q.InsertClinicSite(ctx, sites)); err != nil {
 			return err
 		}
 	}
