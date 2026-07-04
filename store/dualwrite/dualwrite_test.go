@@ -16,6 +16,7 @@ var _ = Describe("Execute", func() {
 
 	BeforeEach(func() {
 		logger = zap.NewNop().Sugar()
+		dualwrite.ResetBreakerForTesting()
 	})
 
 	Context("without a queue on the context", func() {
@@ -104,5 +105,76 @@ var _ = Describe("Execute", func() {
 			queue.Flush(context.Background())
 			Expect(order).To(Equal([]int{0, 1, 2}))
 		})
+	})
+})
+
+var _ = Describe("Circuit breaker", func() {
+	logger := zap.NewNop().Sugar()
+
+	failingOp := func(ctx context.Context) error {
+		return fmt.Errorf("mirror failure")
+	}
+
+	execute := func(fn func(context.Context) error) (ran bool) {
+		dualwrite.Execute(context.Background(), logger, "test", "op", func(ctx context.Context) error {
+			ran = true
+			return fn(ctx)
+		})
+		return ran
+	}
+
+	BeforeEach(func() {
+		dualwrite.ResetBreakerForTesting()
+	})
+
+	It("opens after consecutive failures and drops operations while open", func() {
+		for i := 0; i < 5; i++ {
+			Expect(execute(failingOp)).To(BeTrue())
+		}
+		// Open: operations are dropped without running
+		Expect(execute(failingOp)).To(BeFalse())
+		Expect(execute(func(ctx context.Context) error { return nil })).To(BeFalse())
+	})
+
+	It("closes again when the half-open trial succeeds", func() {
+		for i := 0; i < 5; i++ {
+			execute(failingOp)
+		}
+		Expect(execute(failingOp)).To(BeFalse())
+
+		dualwrite.ExpireBreakerCooldownForTesting()
+		// The half-open trial runs and succeeds, closing the breaker
+		Expect(execute(func(ctx context.Context) error { return nil })).To(BeTrue())
+		Expect(execute(func(ctx context.Context) error { return nil })).To(BeTrue())
+	})
+
+	It("re-opens when the half-open trial fails", func() {
+		for i := 0; i < 5; i++ {
+			execute(failingOp)
+		}
+		dualwrite.ExpireBreakerCooldownForTesting()
+		// The trial runs but fails, re-opening the breaker
+		Expect(execute(failingOp)).To(BeTrue())
+		Expect(execute(func(ctx context.Context) error { return nil })).To(BeFalse())
+	})
+
+	It("resets the failure count on success", func() {
+		for i := 0; i < 4; i++ {
+			execute(failingOp)
+		}
+		Expect(execute(func(ctx context.Context) error { return nil })).To(BeTrue())
+		// The counter restarted; four more failures stay under the threshold
+		for i := 0; i < 4; i++ {
+			Expect(execute(failingOp)).To(BeTrue())
+		}
+	})
+
+	It("counts panics as failures", func() {
+		for i := 0; i < 5; i++ {
+			dualwrite.Execute(context.Background(), logger, "test", "op", func(ctx context.Context) error {
+				panic("mirror panic")
+			})
+		}
+		Expect(execute(func(ctx context.Context) error { return nil })).To(BeFalse())
 	})
 })

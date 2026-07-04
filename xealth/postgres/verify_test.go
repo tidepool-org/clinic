@@ -13,6 +13,7 @@ import (
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 
+	"github.com/tidepool-org/clinic/store/dualwrite"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
 	dbTest "github.com/tidepool-org/clinic/store/test"
 	"github.com/tidepool-org/clinic/xealth"
@@ -163,6 +164,12 @@ var _ = Describe("Verify", func() {
 var _ = Describe("Dual writes during a Postgres outage", func() {
 	It("never fails the Mongo write", func() {
 		ctx := context.Background()
+
+		// The intentional mirror failure below must not leak breaker state
+		// into other specs, and a breaker opened by an earlier spec must not
+		// skip this spec's mirror attempt.
+		dualwrite.ResetBreakerForTesting()
+		DeferCleanup(dualwrite.ResetBreakerForTesting)
 
 		// A port that just refused a listener is almost certainly closed
 		listener, err := net.Listen("tcp", "127.0.0.1:0")

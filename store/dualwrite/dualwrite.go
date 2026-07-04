@@ -43,6 +43,82 @@ var (
 	}, []string{"entity", "operation"})
 )
 
+const (
+	breakerThreshold = 5
+	breakerCooldown  = 10 * time.Second
+)
+
+// breaker short-circuits mirror operations while Postgres is unhealthy so an
+// outage costs requests nothing instead of executeTimeout per operation.
+// After breakerThreshold consecutive failures it opens for breakerCooldown;
+// operations arriving while open are dropped and counted with outcome
+// "skipped". After the cooldown a single trial operation is let through
+// (half-open): success closes the breaker, failure re-opens it. Skipped
+// writes converge through pgsync backfill or verify --repair.
+type breaker struct {
+	mu        sync.Mutex
+	failures  int
+	openUntil time.Time
+	halfOpen  bool
+}
+
+var sharedBreaker breaker
+
+func (b *breaker) allow(now time.Time) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.failures < breakerThreshold {
+		return true
+	}
+	if now.Before(b.openUntil) {
+		return false
+	}
+	if b.halfOpen {
+		// A trial operation is already in flight
+		return false
+	}
+	b.halfOpen = true
+	return true
+}
+
+func (b *breaker) recordSuccess() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.failures = 0
+	b.halfOpen = false
+	b.openUntil = time.Time{}
+}
+
+func (b *breaker) recordFailure(now time.Time) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.failures++
+	b.halfOpen = false
+	if b.failures >= breakerThreshold {
+		b.openUntil = now.Add(breakerCooldown)
+	}
+}
+
+// ResetBreakerForTesting restores the shared circuit breaker to its closed
+// state. Specs that intentionally fail mirror operations use it to avoid
+// leaking breaker state into other specs.
+func ResetBreakerForTesting() {
+	sharedBreaker.mu.Lock()
+	defer sharedBreaker.mu.Unlock()
+	sharedBreaker.failures = 0
+	sharedBreaker.halfOpen = false
+	sharedBreaker.openUntil = time.Time{}
+}
+
+// ExpireBreakerCooldownForTesting moves an open breaker straight to the end
+// of its cooldown so specs can exercise the half-open transition without
+// sleeping.
+func ExpireBreakerCooldownForTesting() {
+	sharedBreaker.mu.Lock()
+	defer sharedBreaker.mu.Unlock()
+	sharedBreaker.openUntil = time.Time{}
+}
+
 type queueKey struct{}
 
 // Queue buffers mirror operations enqueued during a MongoDB transaction so
@@ -109,6 +185,13 @@ func (q *Queue) Flush(ctx context.Context) {
 // completes even when the request has already returned.
 func Execute(ctx context.Context, logger *zap.SugaredLogger, entity, operation string, fn func(context.Context) error) {
 	wrapped := func(runCtx context.Context) {
+		if !sharedBreaker.allow(time.Now()) {
+			opsTotal.WithLabelValues(entity, operation, "skipped").Inc()
+			logger.Debugw("dual write skipped, circuit open",
+				"entity", entity, "operation", operation)
+			return
+		}
+
 		start := time.Now()
 		outcome := "success"
 		defer func() {
@@ -116,6 +199,11 @@ func Execute(ctx context.Context, logger *zap.SugaredLogger, entity, operation s
 				outcome = "panic"
 				logger.Errorw("dual write panicked",
 					"entity", entity, "operation", operation, "panic", r)
+			}
+			if outcome == "success" {
+				sharedBreaker.recordSuccess()
+			} else {
+				sharedBreaker.recordFailure(time.Now())
 			}
 			opsTotal.WithLabelValues(entity, operation, outcome).Inc()
 			opsDuration.WithLabelValues(entity, operation).Observe(time.Since(start).Seconds())

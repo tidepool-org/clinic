@@ -171,8 +171,12 @@ type VerificationReport struct {
 	Repaired bool
 }
 
+// HasDrift reports whether the identity diff found divergence. It relies on
+// the confirmed Missing and Phantom sets only: MongoCount and PGCount are
+// taken at different instants and inherently race with live dual writes, so
+// they are informational.
 func (r *VerificationReport) HasDrift() bool {
-	return r.MongoCount != r.PGCount || len(r.Missing) > 0 || len(r.Phantom) > 0
+	return len(r.Missing) > 0 || len(r.Phantom) > 0
 }
 
 // VerifyOptions controls reconciliation.
@@ -211,6 +215,43 @@ func VerifyCollection(ctx context.Context, pool *pgxpool.Pool, db *mongo.Databas
 	sample := newReservoir(opts.Sample)
 	if err := mergeDiff(ctx, pool, verifier, opts.BatchSize, report, sample); err != nil {
 		return nil, err
+	}
+
+	// Documents created after the Postgres id stream terminated (or whose
+	// mirror flush was still queued when the stream passed them) appear only
+	// on the Mongo side of the merge-diff; re-check candidates against
+	// Postgres so verify doesn't report drift on a healthy system under live
+	// traffic.
+	if len(report.Missing) > 0 {
+		var missing []string
+		for chunk := range chunked(report.Missing, opts.BatchSize) {
+			rows, err := pool.Query(ctx, fmt.Sprintf(`SELECT %s FROM %s WHERE %s = ANY($1)`,
+				verifier.IDColumn(), verifier.Table(), verifier.IDColumn()), chunk)
+			if err != nil {
+				return nil, fmt.Errorf("error confirming missing rows of %s: %w", verifier.Table(), err)
+			}
+			exists := make(map[string]struct{}, len(chunk))
+			for rows.Next() {
+				var id string
+				if err := rows.Scan(&id); err != nil {
+					rows.Close()
+					return nil, err
+				}
+				exists[id] = struct{}{}
+			}
+			rows.Close()
+			if err := rows.Err(); err != nil {
+				return nil, err
+			}
+			for _, id := range chunk {
+				if _, ok := exists[id]; ok {
+					report.Matched++
+				} else {
+					missing = append(missing, id)
+				}
+			}
+		}
+		report.Missing = missing
 	}
 
 	// Documents mirrored after the Mongo id stream terminated appear only on

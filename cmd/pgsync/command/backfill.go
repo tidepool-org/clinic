@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/spf13/cobra"
@@ -87,54 +88,77 @@ func runBackfill(ctx context.Context, params backfillParams) error {
 	if !params.Client.Enabled() {
 		return fmt.Errorf("postgres is not enabled, set TIDEPOOL_POSTGRES_ENABLED=true")
 	}
+	collections := make([]storepg.Backfiller, 0, len(params.Backfillers))
+	for _, backfiller := range params.Backfillers {
+		collections = append(collections, backfiller)
+	}
+	if err := validateCollections(backfillCollections, collections); err != nil {
+		return err
+	}
 	queries := sqlcgen.New(params.Client.Pool())
 
+	failed := make([]string, 0)
 	for _, backfiller := range params.Backfillers {
 		collection := backfiller.Collection()
 		if len(backfillCollections) > 0 && !slices.Contains(backfillCollections, collection) {
 			continue
 		}
 
-		cursor := primitive.NilObjectID
-		if backfillRestart {
-			if err := queries.DeleteBackfillProgress(ctx, collection); err != nil {
-				return fmt.Errorf("error resetting progress of %s: %w", collection, err)
-			}
-		} else {
-			progress, err := queries.GetBackfillProgress(ctx, collection)
-			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-				return fmt.Errorf("error reading progress of %s: %w", collection, err)
-			}
-			if err == nil && progress.LastID != "" {
-				cursor, err = primitive.ObjectIDFromHex(progress.LastID)
-				if err != nil {
-					return fmt.Errorf("invalid progress cursor %q of %s: %w", progress.LastID, collection, err)
-				}
-			}
+		if err := backfillCollection(ctx, queries, backfiller, params.Logger); err != nil {
+			// A failure in one collection must not prevent the remaining
+			// collections from being backfilled
+			params.Logger.Errorw("error backfilling collection", "collection", collection, "error", err)
+			failed = append(failed, collection)
 		}
-
-		total := 0
-		for {
-			last, n, err := backfiller.BackfillBatch(ctx, cursor, backfillBatchSize)
-			if err != nil {
-				return fmt.Errorf("error backfilling %s: %w", collection, err)
-			}
-			if n == 0 {
-				break
-			}
-			if err := queries.UpsertBackfillProgress(ctx, sqlcgen.UpsertBackfillProgressParams{
-				Collection: collection,
-				LastID:     last.Hex(),
-			}); err != nil {
-				return fmt.Errorf("error persisting progress of %s: %w", collection, err)
-			}
-			cursor = last
-			total += n
-			params.Logger.Infow("backfill progress", "collection", collection, "count", total)
-		}
-		fmt.Printf("%s: backfilled %d documents\n", collection, total)
 	}
 
+	if len(failed) > 0 {
+		return fmt.Errorf("backfill failed for %s", strings.Join(failed, ", "))
+	}
+	return nil
+}
+
+func backfillCollection(ctx context.Context, queries *sqlcgen.Queries, backfiller storepg.Verifier, logger *zap.SugaredLogger) error {
+	collection := backfiller.Collection()
+
+	cursor := primitive.NilObjectID
+	if backfillRestart {
+		if err := queries.DeleteBackfillProgress(ctx, collection); err != nil {
+			return fmt.Errorf("error resetting progress of %s: %w", collection, err)
+		}
+	} else {
+		progress, err := queries.GetBackfillProgress(ctx, collection)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("error reading progress of %s: %w", collection, err)
+		}
+		if err == nil && progress.LastID != "" {
+			cursor, err = primitive.ObjectIDFromHex(progress.LastID)
+			if err != nil {
+				return fmt.Errorf("invalid progress cursor %q of %s: %w", progress.LastID, collection, err)
+			}
+		}
+	}
+
+	total := 0
+	for {
+		last, n, err := backfiller.BackfillBatch(ctx, cursor, backfillBatchSize)
+		if err != nil {
+			return fmt.Errorf("error backfilling %s: %w", collection, err)
+		}
+		if n == 0 {
+			break
+		}
+		if err := queries.UpsertBackfillProgress(ctx, sqlcgen.UpsertBackfillProgressParams{
+			Collection: collection,
+			LastID:     last.Hex(),
+		}); err != nil {
+			return fmt.Errorf("error persisting progress of %s: %w", collection, err)
+		}
+		cursor = last
+		total += n
+		logger.Infow("backfill progress", "collection", collection, "count", total)
+	}
+	fmt.Printf("%s: backfilled %d documents\n", collection, total)
 	return nil
 }
 

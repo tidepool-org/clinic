@@ -1,24 +1,38 @@
 package postgres
 
 import (
+	"bytes"
 	"encoding/json"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // NormalizeDocument converts a value to the canonical map representation used
 // for jsonb payload columns. The value is round-tripped through BSON so typed
 // domain structs (live dual writes) and raw documents read back from Mongo
-// (backfill) produce identical JSON.
+// (backfill) produce identical JSON. Typed values are encoded honoring JSON
+// struct tags, matching the store client's BSON options — a plain
+// bson.Marshal would produce different keys than what Mongo stores for
+// fields that only carry json tags.
 func NormalizeDocument(v interface{}) (bson.M, error) {
-	raw, err := bson.Marshal(v)
+	buf := new(bytes.Buffer)
+	vw, err := bsonrw.NewBSONValueWriter(buf)
 	if err != nil {
 		return nil, err
 	}
+	encoder, err := bson.NewEncoder(vw)
+	if err != nil {
+		return nil, err
+	}
+	encoder.UseJSONStructTags()
+	if err := encoder.Encode(v); err != nil {
+		return nil, err
+	}
 	var m bson.M
-	if err := bson.Unmarshal(raw, &m); err != nil {
+	if err := bson.Unmarshal(buf.Bytes(), &m); err != nil {
 		return nil, err
 	}
 	return NormalizeValue(m).(bson.M), nil

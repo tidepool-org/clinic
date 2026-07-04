@@ -4,7 +4,22 @@ The clinic service mirrors every MongoDB write to PostgreSQL ("dual
 writes") while MongoDB remains the source of truth. Reads stay on MongoDB.
 Mirror writes are best-effort: a PostgreSQL failure is logged and counted
 but never fails a request, and inside MongoDB transactions mirror writes
-are buffered and flushed only after the transaction commits.
+are buffered and flushed only after the transaction commits. Two
+mechanisms bound the cost of a PostgreSQL outage on the request path:
+
+- **Flush budget** — a post-commit flush shares a 30 second budget across
+  all buffered operations of the transaction; operations past the budget
+  fail fast on their expired context and are counted as errors.
+- **Circuit breaker** — after 5 consecutive mirror failures the breaker
+  opens for 10 seconds and operations are dropped immediately (counted
+  with `outcome="skipped"`); a single trial operation per cooldown closes
+  it again once PostgreSQL recovers.
+
+Writes dropped by either mechanism converge through `pgsync backfill
+--restart` or `verify --repair` (new documents surface as missing rows;
+in-place updates need the `--restart` backfill, see the cursor caveat
+below). After any PostgreSQL outage, run targeted `--restart` backfills
+of the collections that took writes during the outage.
 
 ## Configuration
 
@@ -48,15 +63,18 @@ API keeps serving from MongoDB.
 6. Schedule recurring jobs (Kubernetes CronJobs):
    - `pgsync prune` daily — replaces the MongoDB TTL index by deleting
      `scheduled_summary_reports_orders` older than 90 days.
-   - `pgsync verify --repair --sample 1000` daily — converges the known
-     backfill-only write paths (below) and any operational drift.
+   - `pgsync verify --repair --sample 1000` daily — repairs missing and
+     phantom rows and converges sampled content drift. Note that in-place
+     updates on matched ids are only converged when sampled; the
+     backfill-only paths below need `--restart` backfills for prompt
+     convergence.
 
 ## pgsync commands
 
 | Command | Purpose |
 |---|---|
 | `pgsync migrate` | Apply schema migrations. |
-| `pgsync backfill [--collection a,b] [--batch-size N] [--restart]` | Copy MongoDB collections into PostgreSQL in resumable id-ordered batches. |
+| `pgsync backfill [--collection a,b] [--batch-size N] [--restart]` | Copy MongoDB collections into PostgreSQL in resumable id-ordered batches. **Cursor caveat**: progress is a max-id cursor, so a plain re-run only picks up documents with *newer ids* — it never re-copies documents that were updated in place. Use `--restart` whenever existing documents may have changed. |
 | `pgsync verify [--collection a,b] [--repair] [--sample N] [--batch-size N]` | Reconcile stores: counts, sorted identity diff (missing/phantom rows), and with `--repair` convergence through the idempotent upserts plus deletion of phantom rows. `--sample N` re-upserts N random matched documents per collection to converge content drift the identity diff cannot see. |
 | `pgsync prune` | Delete scheduled summary/report orders older than 90 days. |
 
@@ -73,12 +91,30 @@ backfill/verify instead:
    server-side (see `patients/repository`). New and updated orders appear
    in PostgreSQL on the next `backfill`/`verify --repair` run.
 2. **Clinic merges** — the merge executors mutate clinics and patients
-   through raw collection handles (admins `$addToSet`, patient moves).
-   Run `pgsync verify --repair` (or targeted backfills of `clinics`,
-   `clinicians` and `patients`) after executing a clinic merge.
+   through raw collection handles (admins `$addToSet`, patient moves that
+   keep the document id). Because these are in-place updates of existing
+   documents, neither a plain `pgsync backfill` re-run (max-id cursor, see
+   above) nor the id-based `verify` diff can see them. After executing a
+   clinic merge run:
+
+   ```sh
+   pgsync backfill --restart --collection clinics,clinicians,patients
+   ```
+
+   Large merges also enqueue one merge-plan mirror per patient in a single
+   transaction; if the 30s flush budget is exceeded (watch the
+   `outcome="error"`/`"skipped"` metrics), follow up with
+   `pgsync backfill --restart --collection merge_plans`.
 
 The `migrations` collection is reconciled by user id (its PostgreSQL
 identity) rather than by document id.
+
+One additional drift class exists by design: when a MongoDB transaction
+commit is ambiguous (the commit applied server-side but the driver
+reported an error after exhausting retries), the buffered mirror
+operations are dropped rather than risking mirroring an aborted
+transaction. The committed documents surface as missing rows on the next
+`verify --repair` or backfill run.
 
 ## Monitoring
 

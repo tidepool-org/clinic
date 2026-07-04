@@ -106,8 +106,14 @@ func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
 			if !ok {
 				return fmt.Errorf("merge plan has a non object id key")
 			}
-			planId, _ := doc["planId"].(primitive.ObjectID)
-			typ, _ := doc["type"].(string)
+			planId, ok := doc["planId"].(primitive.ObjectID)
+			if !ok {
+				return fmt.Errorf("merge plan %s has a non object id planId", id.Hex())
+			}
+			typ, ok := doc["type"].(string)
+			if !ok {
+				return fmt.Errorf("merge plan %s has a non string type", id.Hex())
+			}
 			if err := writer.UpsertPlan(ctx, id.Hex(), planId.Hex(), typ, doc["plan"]); err != nil {
 				return err
 			}

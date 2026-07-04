@@ -54,8 +54,16 @@ func runVerify(ctx context.Context, params verifyParams) error {
 	if !params.Client.Enabled() {
 		return fmt.Errorf("postgres is not enabled, set TIDEPOOL_POSTGRES_ENABLED=true")
 	}
+	collections := make([]storepg.Backfiller, 0, len(params.Verifiers))
+	for _, verifier := range params.Verifiers {
+		collections = append(collections, verifier)
+	}
+	if err := validateCollections(verifyCollections, collections); err != nil {
+		return err
+	}
 
 	drifted := make([]string, 0)
+	failed := make([]string, 0)
 	for _, verifier := range params.Verifiers {
 		collection := verifier.Collection()
 		if len(verifyCollections) > 0 && !slices.Contains(verifyCollections, collection) {
@@ -68,7 +76,11 @@ func runVerify(ctx context.Context, params verifyParams) error {
 			Repair:    verifyRepair,
 		})
 		if err != nil {
-			return fmt.Errorf("error verifying %s: %w", collection, err)
+			// A failure in one collection must not prevent the remaining
+			// collections from being verified
+			params.Logger.Errorw("error verifying collection", "collection", collection, "error", err)
+			failed = append(failed, collection)
+			continue
 		}
 
 		printReport(report)
@@ -77,8 +89,30 @@ func runVerify(ctx context.Context, params verifyParams) error {
 		}
 	}
 
+	if len(failed) > 0 {
+		return fmt.Errorf("verification failed for %s", strings.Join(failed, ", "))
+	}
 	if len(drifted) > 0 {
 		return fmt.Errorf("drift detected in %s; run with --repair to converge", strings.Join(drifted, ", "))
+	}
+	return nil
+}
+
+// validateCollections rejects unknown --collection values so a typo doesn't
+// silently verify or backfill nothing and exit 0.
+func validateCollections(requested []string, available []storepg.Backfiller) error {
+	if len(requested) == 0 {
+		return nil
+	}
+	known := make([]string, 0, len(available))
+	for _, backfiller := range available {
+		known = append(known, backfiller.Collection())
+	}
+	for _, name := range requested {
+		if !slices.Contains(known, name) {
+			slices.Sort(known)
+			return fmt.Errorf("unknown collection %q; valid collections: %s", name, strings.Join(known, ", "))
+		}
 	}
 	return nil
 }

@@ -55,22 +55,7 @@ func (w *Writer) UpsertMigration(ctx context.Context, m *migration.Migration) er
 // NewBackfiller backfills the migrations collection.
 func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
 	collection := db.Collection(collectionName)
-	upsert := func(ctx context.Context, docs []bson.M) error {
-		for _, doc := range docs {
-			raw, err := bson.Marshal(doc)
-			if err != nil {
-				return err
-			}
-			m := &migration.Migration{}
-			if err := bson.Unmarshal(raw, m); err != nil {
-				return err
-			}
-			if err := writer.UpsertMigration(ctx, m); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
+	upsert := storepg.UnmarshalAndUpsert(writer.UpsertMigration)
 	return &verifier{
 		CollectionSync: storepg.NewCollectionSync(collection, "migrations", upsert),
 		collection:     collection,
