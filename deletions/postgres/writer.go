@@ -14,9 +14,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/deletions"
+	"github.com/tidepool-org/clinic/deletions/postgres/sqlcgen"
 	"github.com/tidepool-org/clinic/store/dualwrite"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
-	"github.com/tidepool-org/clinic/deletions/postgres/sqlcgen"
 )
 
 const (
@@ -122,26 +122,26 @@ func (w *Writer) upsert(ctx context.Context, documentType string, params deletio
 		return w.queries.UpsertPatientDeletion(ctx, sqlcgen.UpsertPatientDeletionParams{
 			ID:              params.id,
 			DeletedTime:     pgtype.Timestamptz{Time: params.deletedTime, Valid: true},
-			DeletedByUserID: textValue(params.deletedByUserId),
-			ClinicID:        textValue(params.clinicId),
-			UserID:          textValue(params.userId),
+			DeletedByUserID: storepg.TextValue(params.deletedByUserId),
+			ClinicID:        storepg.TextValue(params.clinicId),
+			UserID:          storepg.TextValue(params.userId),
 			Payload:         params.payload,
 		})
 	case TypeClinician:
 		return w.queries.UpsertClinicianDeletion(ctx, sqlcgen.UpsertClinicianDeletionParams{
 			ID:              params.id,
 			DeletedTime:     pgtype.Timestamptz{Time: params.deletedTime, Valid: true},
-			DeletedByUserID: textValue(params.deletedByUserId),
-			ClinicID:        textValue(params.clinicId),
-			UserID:          textValue(params.userId),
+			DeletedByUserID: storepg.TextValue(params.deletedByUserId),
+			ClinicID:        storepg.TextValue(params.clinicId),
+			UserID:          storepg.TextValue(params.userId),
 			Payload:         params.payload,
 		})
 	case TypeClinic:
 		return w.queries.UpsertClinicDeletion(ctx, sqlcgen.UpsertClinicDeletionParams{
 			ID:              params.id,
 			DeletedTime:     pgtype.Timestamptz{Time: params.deletedTime, Valid: true},
-			DeletedByUserID: textValue(params.deletedByUserId),
-			ClinicID:        textValue(params.clinicId),
+			DeletedByUserID: storepg.TextValue(params.deletedByUserId),
+			ClinicID:        storepg.TextValue(params.clinicId),
 			Payload:         params.payload,
 		})
 	default:
@@ -162,13 +162,6 @@ func objectIdHex(v interface{}) *string {
 		return &hex
 	}
 	return stringValue(v)
-}
-
-func textValue(v *string) pgtype.Text {
-	if v == nil {
-		return pgtype.Text{}
-	}
-	return pgtype.Text{String: *v, Valid: true}
 }
 
 // NewBackfiller backfills one of the deletions collections.

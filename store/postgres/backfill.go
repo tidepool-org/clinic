@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,6 +19,45 @@ type Backfiller interface {
 	// BackfillBatch copies up to limit documents with ids greater than after
 	// and returns the last copied id and the number of copied documents.
 	BackfillBatch(ctx context.Context, after primitive.ObjectID, limit int) (primitive.ObjectID, int, error)
+}
+
+// DecodeDocument decodes a raw Mongo document into a domain model honoring
+// JSON struct tags, matching the store client's BSON options. A plain
+// bson.Unmarshal would mis-map fields that only carry json tags, such as
+// patient reviews' clinicianId.
+func DecodeDocument[T any](doc bson.M) (*T, error) {
+	raw, err := bson.Marshal(doc)
+	if err != nil {
+		return nil, err
+	}
+	decoder, err := bson.NewDecoder(bsonrw.NewBSONDocumentReader(raw))
+	if err != nil {
+		return nil, err
+	}
+	decoder.UseJSONStructTags()
+	model := new(T)
+	if err := decoder.Decode(model); err != nil {
+		return nil, err
+	}
+	return model, nil
+}
+
+// UnmarshalAndUpsert adapts a typed upsert into the raw-document batch
+// callback used by CollectionSync, decoding each document with
+// DecodeDocument.
+func UnmarshalAndUpsert[T any](upsert func(context.Context, *T) error) func(ctx context.Context, docs []bson.M) error {
+	return func(ctx context.Context, docs []bson.M) error {
+		for _, doc := range docs {
+			model, err := DecodeDocument[T](doc)
+			if err != nil {
+				return err
+			}
+			if err := upsert(ctx, model); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 }
 
 // BackfillDocuments reads a batch of raw documents ordered by id and hands

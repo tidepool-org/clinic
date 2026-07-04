@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"encoding/json"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -56,4 +57,14 @@ func NormalizeValue(v interface{}) interface{} {
 	default:
 		return v
 	}
+}
+
+// MarshalPayload normalizes a value and marshals it to the JSON stored in
+// jsonb payload columns.
+func MarshalPayload(v interface{}) ([]byte, error) {
+	normalized, err := NormalizeDocument(v)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(normalized)
 }

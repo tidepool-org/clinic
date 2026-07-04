@@ -7,6 +7,7 @@ import (
 
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/patients/postgres/sqlcgen"
+	storepg "github.com/tidepool-org/clinic/store/postgres"
 )
 
 // upsertSummaries replaces the summary and period rows of a patient inside
@@ -74,16 +75,16 @@ func summaryParams(patientId, summaryType, summaryId string, config patients.Pat
 		ConfigLowGlucoseThreshold:      config.LowGlucoseThreshold,
 		ConfigVeryHighGlucoseThreshold: config.VeryHighGlucoseThreshold,
 		ConfigVeryLowGlucoseThreshold:  config.VeryLowGlucoseThreshold,
-		DatesFirstData:                 timestamptzValue(dates.FirstData),
+		DatesFirstData:                 storepg.TimestamptzValue(dates.FirstData),
 		DatesHasFirstData:              dates.HasFirstData,
 		DatesHasLastData:               dates.HasLastData,
 		DatesHasLastUploadDate:         dates.HasLastUploadDate,
 		DatesHasOutdatedSince:          dates.HasOutdatedSince,
-		DatesLastData:                  timestamptzValue(dates.LastData),
-		DatesLastUpdatedDate:           timestamptzValue(dates.LastUpdatedDate),
-		DatesLastUploadDate:            timestamptzValue(dates.LastUploadDate),
-		DatesOutdatedSince:             timestamptzValue(dates.OutdatedSince),
-		DatesOutdatedSinceLimit:        timestamptzValue(dates.OutdatedSinceLimit),
+		DatesLastData:                  storepg.TimestamptzValue(dates.LastData),
+		DatesLastUpdatedDate:           storepg.TimestamptzValue(dates.LastUpdatedDate),
+		DatesLastUploadDate:            storepg.TimestamptzValue(dates.LastUploadDate),
+		DatesOutdatedSince:             storepg.TimestamptzValue(dates.OutdatedSince),
+		DatesOutdatedSinceLimit:        storepg.TimestamptzValue(dates.OutdatedSinceLimit),
 	}
 	if dates.LastUpdatedReason != nil {
 		params.DatesLastUpdatedReason = *dates.LastUpdatedReason

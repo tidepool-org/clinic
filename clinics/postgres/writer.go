@@ -7,16 +7,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
-	storepg "github.com/tidepool-org/clinic/store/postgres"
 	"github.com/tidepool-org/clinic/clinics/postgres/sqlcgen"
+	storepg "github.com/tidepool-org/clinic/store/postgres"
 )
 
 func NewWriter(client *storepg.Client, logger *zap.SugaredLogger) *Writer {
@@ -99,7 +97,7 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 			if err := q.InsertClinicPhoneNumber(ctx, sqlcgen.InsertClinicPhoneNumberParams{
 				ClinicID: id,
 				Ordinal:  int32(i),
-				Type:     textValue(phoneNumber.Type),
+				Type:     storepg.TextValue(phoneNumber.Type),
 				Number:   phoneNumber.Number,
 			}); err != nil {
 				return err
@@ -159,26 +157,26 @@ func (w *Writer) DeleteClinic(ctx context.Context, clinicId string) error {
 func upsertClinicParams(id string, clinic *clinics.Clinic) (*sqlcgen.UpsertClinicParams, error) {
 	params := &sqlcgen.UpsertClinicParams{
 		ID:                 id,
-		Name:               textValue(clinic.Name),
-		Address:            textValue(clinic.Address),
-		City:               textValue(clinic.City),
-		State:              textValue(clinic.State),
-		PostalCode:         textValue(clinic.PostalCode),
-		Country:            textValue(clinic.Country),
-		ClinicType:         textValue(clinic.ClinicType),
-		ClinicSize:         textValue(clinic.ClinicSize),
-		Website:            textValue(clinic.Website),
-		Timezone:           textValue(clinic.Timezone),
-		PreferredBgUnits:   nonEmptyTextValue(clinic.PreferredBgUnits),
-		CanonicalShareCode: textValue(clinic.CanonicalShareCode),
-		Tier:               nonEmptyTextValue(clinic.Tier),
+		Name:               storepg.TextValue(clinic.Name),
+		Address:            storepg.TextValue(clinic.Address),
+		City:               storepg.TextValue(clinic.City),
+		State:              storepg.TextValue(clinic.State),
+		PostalCode:         storepg.TextValue(clinic.PostalCode),
+		Country:            storepg.TextValue(clinic.Country),
+		ClinicType:         storepg.TextValue(clinic.ClinicType),
+		ClinicSize:         storepg.TextValue(clinic.ClinicSize),
+		Website:            storepg.TextValue(clinic.Website),
+		Timezone:           storepg.TextValue(clinic.Timezone),
+		PreferredBgUnits:   storepg.NonEmptyTextValue(clinic.PreferredBgUnits),
+		CanonicalShareCode: storepg.TextValue(clinic.CanonicalShareCode),
+		Tier:               storepg.NonEmptyTextValue(clinic.Tier),
 		IsMigrated:         clinic.IsMigrated,
 		CreatedTime:        pgtype.Timestamptz{Time: clinic.CreatedTime.UTC(), Valid: !clinic.CreatedTime.IsZero()},
 		UpdatedTime:        pgtype.Timestamptz{Time: clinic.UpdatedTime.UTC(), Valid: !clinic.UpdatedTime.IsZero()},
 	}
 
 	if clinic.SuppressedNotifications != nil {
-		params.SuppressPatientClinicInvitation = boolValue(clinic.SuppressedNotifications.PatientClinicInvitation)
+		params.SuppressPatientClinicInvitation = storepg.BoolValue(clinic.SuppressedNotifications.PatientClinicInvitation)
 	}
 
 	if clinic.MRNSettings != nil {
@@ -196,15 +194,15 @@ func upsertClinicParams(id string, clinic *clinics.Clinic) (*sqlcgen.UpsertClini
 			params.EhrDestinationNotes = pgtype.Text{String: ehr.DestinationIds.Notes, Valid: true}
 			params.EhrDestinationResults = pgtype.Text{String: ehr.DestinationIds.Results, Valid: true}
 		}
-		params.EhrProcedureEnableSummaryReports = textValue(ehr.ProcedureCodes.EnableSummaryReports)
-		params.EhrProcedureDisableSummaryReports = textValue(ehr.ProcedureCodes.DisableSummaryReports)
-		params.EhrProcedureCreateAccount = textValue(ehr.ProcedureCodes.CreateAccount)
-		params.EhrProcedureCreateAccountAndEnableReports = textValue(ehr.ProcedureCodes.CreateAccountAndEnableReports)
+		params.EhrProcedureEnableSummaryReports = storepg.TextValue(ehr.ProcedureCodes.EnableSummaryReports)
+		params.EhrProcedureDisableSummaryReports = storepg.TextValue(ehr.ProcedureCodes.DisableSummaryReports)
+		params.EhrProcedureCreateAccount = storepg.TextValue(ehr.ProcedureCodes.CreateAccount)
+		params.EhrProcedureCreateAccountAndEnableReports = storepg.TextValue(ehr.ProcedureCodes.CreateAccountAndEnableReports)
 		params.EhrScheduledReportsCadence = pgtype.Text{String: ehr.ScheduledReports.Cadence, Valid: true}
 		params.EhrScheduledReportsOnUploadEnabled = pgtype.Bool{Bool: ehr.ScheduledReports.OnUploadEnabled, Valid: true}
-		params.EhrScheduledReportsOnUploadNoteEventType = textValue(ehr.ScheduledReports.OnUploadNoteEventType)
+		params.EhrScheduledReportsOnUploadNoteEventType = storepg.TextValue(ehr.ScheduledReports.OnUploadNoteEventType)
 		params.EhrTagsCodes = ehr.Tags.Codes
-		params.EhrTagsSeparator = textValue(ehr.Tags.Separator)
+		params.EhrTagsSeparator = storepg.TextValue(ehr.Tags.Separator)
 		params.EhrFlowsheetsIcode = pgtype.Bool{Bool: ehr.Flowsheets.Icode, Valid: true}
 		params.EhrNotesIncludeGmi = pgtype.Bool{Bool: ehr.Notes.IncludeGMI, Valid: true}
 	}
@@ -212,15 +210,15 @@ func upsertClinicParams(id string, clinic *clinics.Clinic) (*sqlcgen.UpsertClini
 	if pcs := clinic.PatientCountSettings; pcs != nil {
 		if pcs.HardLimit != nil {
 			params.PcsHardLimitPlan = pgtype.Int4{Int32: int32(pcs.HardLimit.Plan), Valid: true}
-			params.PcsHardLimitStartDate = timestamptzValue(pcs.HardLimit.StartDate)
-			params.PcsHardLimitEndDate = timestamptzValue(pcs.HardLimit.EndDate)
-			params.PcsHardLimitLegacyPatientCount = intValue(pcs.HardLimit.PatientCount)
+			params.PcsHardLimitStartDate = storepg.TimestamptzValue(pcs.HardLimit.StartDate)
+			params.PcsHardLimitEndDate = storepg.TimestamptzValue(pcs.HardLimit.EndDate)
+			params.PcsHardLimitLegacyPatientCount = storepg.IntValue(pcs.HardLimit.PatientCount)
 		}
 		if pcs.SoftLimit != nil {
 			params.PcsSoftLimitPlan = pgtype.Int4{Int32: int32(pcs.SoftLimit.Plan), Valid: true}
-			params.PcsSoftLimitStartDate = timestamptzValue(pcs.SoftLimit.StartDate)
-			params.PcsSoftLimitEndDate = timestamptzValue(pcs.SoftLimit.EndDate)
-			params.PcsSoftLimitLegacyPatientCount = intValue(pcs.SoftLimit.PatientCount)
+			params.PcsSoftLimitStartDate = storepg.TimestamptzValue(pcs.SoftLimit.StartDate)
+			params.PcsSoftLimitEndDate = storepg.TimestamptzValue(pcs.SoftLimit.EndDate)
+			params.PcsSoftLimitLegacyPatientCount = storepg.IntValue(pcs.SoftLimit.PatientCount)
 		}
 	}
 
@@ -228,7 +226,7 @@ func upsertClinicParams(id string, clinic *clinics.Clinic) (*sqlcgen.UpsertClini
 		params.PatientCountTotal = pgtype.Int4{Int32: int32(count.Total), Valid: true}
 		params.PatientCountDemo = pgtype.Int4{Int32: int32(count.Demo), Valid: true}
 		params.PatientCountPlan = pgtype.Int4{Int32: int32(count.Plan), Valid: true}
-		params.PatientCountLegacy = intValue(count.PatientCount)
+		params.PatientCountLegacy = storepg.IntValue(count.PatientCount)
 		if count.Providers != nil {
 			providers, err := json.Marshal(count.Providers)
 			if err != nil {
@@ -241,58 +239,9 @@ func upsertClinicParams(id string, clinic *clinics.Clinic) (*sqlcgen.UpsertClini
 	return params, nil
 }
 
-func textValue(v *string) pgtype.Text {
-	if v == nil {
-		return pgtype.Text{}
-	}
-	return pgtype.Text{String: *v, Valid: true}
-}
-
-func nonEmptyTextValue(v string) pgtype.Text {
-	if v == "" {
-		return pgtype.Text{}
-	}
-	return pgtype.Text{String: v, Valid: true}
-}
-
-func boolValue(v *bool) pgtype.Bool {
-	if v == nil {
-		return pgtype.Bool{}
-	}
-	return pgtype.Bool{Bool: *v, Valid: true}
-}
-
-func intValue(v *int) pgtype.Int4 {
-	if v == nil {
-		return pgtype.Int4{}
-	}
-	return pgtype.Int4{Int32: int32(*v), Valid: true}
-}
-
-func timestamptzValue(v *time.Time) pgtype.Timestamptz {
-	if v == nil {
-		return pgtype.Timestamptz{}
-	}
-	return pgtype.Timestamptz{Time: v.UTC(), Valid: true}
-}
-
 // NewBackfiller copies the clinics collection using the same snapshot
 // upserts as the dual-write path.
 func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
-	return storepg.NewCollectionSync(db.Collection(clinics.CollectionName), "clinics", func(ctx context.Context, docs []bson.M) error {
-		for _, doc := range docs {
-			raw, err := bson.Marshal(doc)
-			if err != nil {
-				return err
-			}
-			clinic := &clinics.Clinic{}
-			if err := bson.Unmarshal(raw, clinic); err != nil {
-				return err
-			}
-			if err := writer.UpsertClinic(ctx, clinic); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	return storepg.NewCollectionSync(db.Collection(clinics.CollectionName), "clinics",
+		storepg.UnmarshalAndUpsert(writer.UpsertClinic))
 }

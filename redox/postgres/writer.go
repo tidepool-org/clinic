@@ -22,10 +22,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/redox"
+	"github.com/tidepool-org/clinic/redox/postgres/sqlcgen"
 	models "github.com/tidepool-org/clinic/redox_models"
 	"github.com/tidepool-org/clinic/store/dualwrite"
 	storepg "github.com/tidepool-org/clinic/store/postgres"
-	"github.com/tidepool-org/clinic/redox/postgres/sqlcgen"
 )
 
 const (
@@ -55,7 +55,7 @@ func (w *Writer) UpsertMessage(ctx context.Context, envelope *models.MessageEnve
 		return fmt.Errorf("message envelope has no id")
 	}
 
-	payload, err := marshalPayload(envelope)
+	payload, err := storepg.MarshalPayload(envelope)
 	if err != nil {
 		return err
 	}
@@ -140,14 +140,6 @@ func (w *Writer) PruneScheduledOrders(ctx context.Context) (int64, error) {
 	return w.queries.PruneScheduledSummaryReportsOrders(ctx, pgtype.Timestamptz{Time: cutoff, Valid: true})
 }
 
-func marshalPayload(v interface{}) ([]byte, error) {
-	normalized, err := storepg.NormalizeDocument(v)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(normalized)
-}
-
 // NewMirror adapts the writer to the redox.Mirror interface consumed by the
 // message handler. Mirroring is best-effort via dualwrite.Execute.
 func NewMirror(client *storepg.Client, logger *zap.SugaredLogger) redox.Mirror {
@@ -172,22 +164,8 @@ func (m *mirror) CreateMessage(ctx context.Context, envelope models.MessageEnvel
 }
 
 func NewMessageBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
-	return storepg.NewCollectionSync(db.Collection(messagesCollection), "redox_messages", func(ctx context.Context, docs []bson.M) error {
-		for _, doc := range docs {
-			raw, err := bson.Marshal(doc)
-			if err != nil {
-				return err
-			}
-			envelope := &models.MessageEnvelope{}
-			if err := bson.Unmarshal(raw, envelope); err != nil {
-				return err
-			}
-			if err := writer.UpsertMessage(ctx, envelope); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	return storepg.NewCollectionSync(db.Collection(messagesCollection), "redox_messages",
+		storepg.UnmarshalAndUpsert(writer.UpsertMessage))
 }
 
 func NewScheduledOrderBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {

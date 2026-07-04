@@ -6,13 +6,12 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinicians"
-	storepg "github.com/tidepool-org/clinic/store/postgres"
 	"github.com/tidepool-org/clinic/clinicians/postgres/sqlcgen"
+	storepg "github.com/tidepool-org/clinic/store/postgres"
 )
 
 func NewWriter(client *storepg.Client, logger *zap.SugaredLogger) *Writer {
@@ -59,10 +58,10 @@ func (w *Writer) UpsertClinician(ctx context.Context, clinician *clinicians.Clin
 	if err := q.UpsertClinician(ctx, sqlcgen.UpsertClinicianParams{
 		ID:               id,
 		ClinicID:         clinician.ClinicId.Hex(),
-		UserID:           textValue(clinician.UserId),
-		Email:            textValue(clinician.Email),
-		FullName:         textValue(clinician.Name),
-		InviteID:         textValue(clinician.InviteId),
+		UserID:           storepg.TextValue(clinician.UserId),
+		Email:            storepg.TextValue(clinician.Email),
+		FullName:         storepg.TextValue(clinician.Name),
+		InviteID:         storepg.TextValue(clinician.InviteId),
 		Roles:            roles,
 		IsServiceAccount: clinician.IsServiceAccount,
 		CreatedTime:      pgtype.Timestamptz{Time: clinician.CreatedTime.UTC(), Valid: !clinician.CreatedTime.IsZero()},
@@ -110,30 +109,9 @@ func (w *Writer) DeleteClinicianInvite(ctx context.Context, clinicId, inviteId s
 	})
 }
 
-func textValue(v *string) pgtype.Text {
-	if v == nil {
-		return pgtype.Text{}
-	}
-	return pgtype.Text{String: *v, Valid: true}
-}
-
 // NewBackfiller copies the clinicians collection using the same snapshot
 // upserts as the dual-write path.
 func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
-	return storepg.NewCollectionSync(db.Collection(clinicians.CollectionName), "clinicians", func(ctx context.Context, docs []bson.M) error {
-		for _, doc := range docs {
-			raw, err := bson.Marshal(doc)
-			if err != nil {
-				return err
-			}
-			clinician := &clinicians.Clinician{}
-			if err := bson.Unmarshal(raw, clinician); err != nil {
-				return err
-			}
-			if err := writer.UpsertClinician(ctx, clinician); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	return storepg.NewCollectionSync(db.Collection(clinicians.CollectionName), "clinicians",
+		storepg.UnmarshalAndUpsert(writer.UpsertClinician))
 }

@@ -9,12 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"golang.org/x/text/runes"
@@ -22,8 +19,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 
 	"github.com/tidepool-org/clinic/patients"
-	storepg "github.com/tidepool-org/clinic/store/postgres"
 	"github.com/tidepool-org/clinic/patients/postgres/sqlcgen"
+	storepg "github.com/tidepool-org/clinic/store/postgres"
 )
 
 // NormalizeFullName lowercases and strips diacritics from a patient name.
@@ -124,9 +121,9 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 				Ordinal:        int32(i),
 				ProviderName:   source.ProviderName,
 				State:          source.State,
-				ModifiedTime:   timestamptzValue(source.ModifiedTime),
-				ExpirationTime: timestamptzValue(source.ExpirationTime),
-				LatestDataTime: timestamptzValue(source.LatestDataTime),
+				ModifiedTime:   storepg.TimestamptzValue(source.ModifiedTime),
+				ExpirationTime: storepg.TimestamptzValue(source.ExpirationTime),
+				LatestDataTime: storepg.TimestamptzValue(source.LatestDataTime),
 			}
 			if source.DataSourceId != nil {
 				params.DataSourceID = pgtype.Text{String: source.DataSourceId.Hex(), Valid: true}
@@ -323,13 +320,13 @@ func upsertPatientParams(id string, patient *patients.Patient) (*sqlcgen.UpsertP
 		ID:                     id,
 		ClinicID:               patient.ClinicId.Hex(),
 		UserID:                 *patient.UserId,
-		FullName:               textValue(patient.FullName),
-		BirthDate:              textValue(patient.BirthDate),
-		Email:                  textValue(patient.Email),
-		Mrn:                    textValue(patient.Mrn),
+		FullName:               storepg.TextValue(patient.FullName),
+		BirthDate:              storepg.TextValue(patient.BirthDate),
+		Email:                  storepg.TextValue(patient.Email),
+		Mrn:                    storepg.TextValue(patient.Mrn),
 		RequireUniqueMrn:       patient.RequireUniqueMrn,
 		IsMigrated:             patient.IsMigrated,
-		InvitedBy:              textValue(patient.InvitedBy),
+		InvitedBy:              storepg.TextValue(patient.InvitedBy),
 		LegacyClinicianIds:     patient.LegacyClinicianIds,
 		CreatedTime:            pgtype.Timestamptz{Time: patient.CreatedTime.UTC(), Valid: !patient.CreatedTime.IsZero()},
 		UpdatedTime:            pgtype.Timestamptz{Time: patient.UpdatedTime.UTC(), Valid: !patient.UpdatedTime.IsZero()},
@@ -358,8 +355,8 @@ func upsertPatientParams(id string, patient *patients.Patient) (*sqlcgen.UpsertP
 	}
 
 	if ranges := patient.GlycemicRanges; !ranges.IsZero() {
-		params.GlycemicRangesType = nonEmptyTextValue(string(ranges.Type))
-		params.GlycemicRangesPreset = nonEmptyTextValue(string(ranges.Preset))
+		params.GlycemicRangesType = storepg.NonEmptyTextValue(string(ranges.Type))
+		params.GlycemicRangesPreset = storepg.NonEmptyTextValue(string(ranges.Preset))
 		if !ranges.Custom.IsZero() {
 			custom, err := json.Marshal(ranges.Custom)
 			if err != nil {
@@ -372,60 +369,9 @@ func upsertPatientParams(id string, patient *patients.Patient) (*sqlcgen.UpsertP
 	return params, nil
 }
 
-func textValue(v *string) pgtype.Text {
-	if v == nil {
-		return pgtype.Text{}
-	}
-	return pgtype.Text{String: *v, Valid: true}
-}
-
-func nonEmptyTextValue(v string) pgtype.Text {
-	if v == "" {
-		return pgtype.Text{}
-	}
-	return pgtype.Text{String: v, Valid: true}
-}
-
-func timestamptzValue(v *time.Time) pgtype.Timestamptz {
-	if v == nil {
-		return pgtype.Timestamptz{}
-	}
-	return pgtype.Timestamptz{Time: v.UTC(), Valid: true}
-}
-
 // NewBackfiller copies the patients collection using the same snapshot
 // upserts as the dual-write path.
 func NewBackfiller(db *mongo.Database, writer *Writer) storepg.Verifier {
-	return storepg.NewCollectionSync(db.Collection(patients.CollectionName), "patients", func(ctx context.Context, docs []bson.M) error {
-		for _, doc := range docs {
-			patient, err := unmarshalPatient(doc)
-			if err != nil {
-				return err
-			}
-			if err := writer.UpsertPatient(ctx, patient); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-// unmarshalPatient decodes a raw patient document honoring JSON struct tags,
-// matching the store client's BSON options. A plain bson.Unmarshal would
-// mis-map fields that only carry json tags, such as reviews' clinicianId.
-func unmarshalPatient(doc bson.M) (*patients.Patient, error) {
-	raw, err := bson.Marshal(doc)
-	if err != nil {
-		return nil, err
-	}
-	decoder, err := bson.NewDecoder(bsonrw.NewBSONDocumentReader(raw))
-	if err != nil {
-		return nil, err
-	}
-	decoder.UseJSONStructTags()
-	patient := &patients.Patient{}
-	if err := decoder.Decode(patient); err != nil {
-		return nil, err
-	}
-	return patient, nil
+	return storepg.NewCollectionSync(db.Collection(patients.CollectionName), "patients",
+		storepg.UnmarshalAndUpsert(writer.UpsertPatient))
 }
