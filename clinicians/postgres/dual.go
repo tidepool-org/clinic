@@ -61,19 +61,26 @@ func (d *dualRepository) UpdateAll(ctx context.Context, update *clinicians.Clini
 	}
 	// The bulk update doesn't return the updated records; re-read every
 	// clinician record of the user (bounded by the number of clinic
-	// memberships) and snapshot each one.
+	// memberships) page by page and snapshot each one.
 	userId := update.UserId
 	dualwrite.Execute(ctx, d.logger, "clinicians", "update_all", func(ctx context.Context) error {
-		list, err := d.Repository.List(ctx, &clinicians.Filter{UserId: &userId}, store.Pagination{Limit: 1000})
-		if err != nil {
-			return err
-		}
-		for _, clinician := range list {
-			if err := d.writer.UpsertClinician(ctx, clinician); err != nil {
+		const pageSize = 1000
+		page := store.Pagination{Limit: pageSize}
+		for {
+			list, err := d.Repository.List(ctx, &clinicians.Filter{UserId: &userId}, page)
+			if err != nil {
 				return err
 			}
+			for _, clinician := range list {
+				if err := d.writer.UpsertClinician(ctx, clinician); err != nil {
+					return err
+				}
+			}
+			if len(list) < pageSize {
+				return nil
+			}
+			page.Offset += pageSize
 		}
-		return nil
 	})
 	return nil
 }

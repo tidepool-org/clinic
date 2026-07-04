@@ -56,6 +56,27 @@ var _ = Describe("Patient Summaries Writer", func() {
 		}
 	}
 
+	It("mirrors summaries with nonstandard period keys", func() {
+		// The API accepts summaries with arbitrary period keys; a constraint
+		// rejecting them would permanently stop the whole patient row from
+		// syncing and abort backfills.
+		writer, conn, ctx := newTestWriter()
+		patient := randomPatient(primitive.NewObjectID())
+		patient.Summary = newSummary(primitive.NewObjectID().Hex(), primitive.NewObjectID().Hex(), time.Now().UTC())
+		patient.Summary.CGM.Periods["60d"] = patients.PatientCGMPeriod{
+			TimeInTargetPercent:    f64(0.5),
+			HasTimeInTargetPercent: true,
+		}
+
+		Expect(writer.UpsertPatient(ctx, patient)).To(Succeed())
+
+		var count int
+		Expect(conn.QueryRow(ctx,
+			"SELECT COUNT(*) FROM patient_summary_periods WHERE patient_id = $1 AND period = '60d'",
+			patient.Id.Hex()).Scan(&count)).To(Succeed())
+		Expect(count).To(Equal(1))
+	})
+
 	It("snapshots and replaces summary rows with the patient", func() {
 		writer, conn, ctx := newTestWriter()
 		patient := randomPatient(primitive.NewObjectID())

@@ -55,6 +55,18 @@ func (w *Writer) UpsertClinician(ctx context.Context, clinician *clinicians.Clin
 	defer tx.Rollback(ctx)
 
 	q := w.queries.WithTx(tx)
+	// Stale rows would collide with the partial unique indexes on user id,
+	// invite id or email; Mongo enforces the same uniqueness, so removing
+	// them converges the mirror.
+	if err := q.DeleteConflictingClinicians(ctx, sqlcgen.DeleteConflictingCliniciansParams{
+		ClinicID: clinician.ClinicId.Hex(),
+		ID:       id,
+		UserID:   storepg.TextValue(clinician.UserId),
+		InviteID: storepg.TextValue(clinician.InviteId),
+		Email:    storepg.TextValue(clinician.Email),
+	}); err != nil {
+		return err
+	}
 	if err := q.UpsertClinician(ctx, sqlcgen.UpsertClinicianParams{
 		ID:               id,
 		ClinicID:         clinician.ClinicId.Hex(),

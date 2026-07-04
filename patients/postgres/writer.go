@@ -78,6 +78,17 @@ func (w *Writer) UpsertPatient(ctx context.Context, patient *patients.Patient) e
 	defer tx.Rollback(ctx)
 
 	q := w.queries.WithTx(tx)
+	// A stale row (e.g. a lost delete mirror for a patient later re-created
+	// with a new id) would collide with UNIQUE(clinic_id, user_id) and wedge
+	// every subsequent mirror write; Mongo enforces the same uniqueness, so
+	// removing it converges the mirror.
+	if err := q.DeleteConflictingPatients(ctx, sqlcgen.DeleteConflictingPatientsParams{
+		ClinicID: params.ClinicID,
+		UserID:   params.UserID,
+		ID:       id,
+	}); err != nil {
+		return err
+	}
 	if err := q.UpsertPatient(ctx, *params); err != nil {
 		return err
 	}

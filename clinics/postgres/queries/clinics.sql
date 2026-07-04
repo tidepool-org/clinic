@@ -133,3 +133,15 @@ VALUES ($1, $2, $3)
 ON CONFLICT (id) DO UPDATE SET
     clinic_id = EXCLUDED.clinic_id,
     name = EXCLUDED.name;
+
+-- name: DeleteConflictingClinics :exec
+-- Removes a stale clinic row that would collide with the unique canonical
+-- share code; Mongo enforces the same uniqueness.
+DELETE FROM clinics
+WHERE canonical_share_code = $1 AND id <> $2;
+
+-- name: DeleteConflictingShareCodes :exec
+-- Removes stale share code rows owned by other clinics; share codes are
+-- globally unique in Mongo.
+DELETE FROM clinic_share_codes
+WHERE share_code = ANY($1::text[]) AND clinic_id <> $2;

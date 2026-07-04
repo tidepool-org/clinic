@@ -115,6 +115,25 @@ func (v *verifier) MongoIDs(ctx context.Context, after string, limit int) ([]str
 	return ids, nil
 }
 
+func (v *verifier) ExistingIDs(ctx context.Context, ids []string) ([]string, error) {
+	opts := options.Find().SetProjection(bson.M{"userId": 1})
+	cursor, err := v.collection.Find(ctx, bson.M{"userId": bson.M{"$in": ids}}, opts)
+	if err != nil {
+		return nil, fmt.Errorf("error listing migration user ids: %w", err)
+	}
+	var docs []struct {
+		UserId string `bson:"userId"`
+	}
+	if err := cursor.All(ctx, &docs); err != nil {
+		return nil, fmt.Errorf("error decoding migration user ids: %w", err)
+	}
+	existing := make([]string, 0, len(docs))
+	for _, doc := range docs {
+		existing = append(existing, doc.UserId)
+	}
+	return existing, nil
+}
+
 func (v *verifier) ResyncBatch(ctx context.Context, ids []string) error {
 	cursor, err := v.collection.Find(ctx, bson.M{"userId": bson.M{"$in": ids}})
 	if err != nil {

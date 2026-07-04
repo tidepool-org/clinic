@@ -25,3 +25,9 @@ SET user_id = EXCLUDED.user_id,
     clinic_id = EXCLUDED.clinic_id,
     created_time = EXCLUDED.created_time,
     pg_synced_at = now();
+
+-- name: DeleteConflictingPreorders :exec
+-- Removes stale rows that would collide with the unique data_tracking_id;
+-- Mongo enforces the same uniqueness.
+DELETE FROM xealth_preorders
+WHERE data_tracking_id = $1 AND id <> $2;

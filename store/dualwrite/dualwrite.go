@@ -17,7 +17,18 @@ import (
 	"go.uber.org/zap"
 )
 
-const executeTimeout = 5 * time.Second
+const (
+	executeTimeout = 5 * time.Second
+	// flushTimeout bounds an entire queue flush. Flushes run synchronously
+	// after a Mongo transaction commits but before the request returns, and
+	// a transaction may enqueue an unbounded number of mirror operations
+	// (e.g. one per merge plan); without an overall budget an unreachable
+	// Postgres would stall the request for len(queue) * executeTimeout.
+	// Once the budget is exhausted the remaining operations fail immediately
+	// on their expired context and are counted as errors, and backfill or
+	// verify --repair converges the skipped writes.
+	flushTimeout = 30 * time.Second
+)
 
 var (
 	opsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -69,12 +80,21 @@ func (q *Queue) Reset() {
 	q.ops = nil
 }
 
-// Flush runs all buffered operations and empties the queue.
+// Flush runs all buffered operations and empties the queue. The whole flush
+// shares a single time budget so a slow or unreachable Postgres cannot stall
+// the calling request longer than flushTimeout.
 func (q *Queue) Flush(ctx context.Context) {
 	q.mu.Lock()
 	ops := q.ops
 	q.ops = nil
 	q.mu.Unlock()
+
+	if len(ops) == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, flushTimeout)
+	defer cancel()
 
 	for _, op := range ops {
 		op(ctx)

@@ -9,10 +9,20 @@ import (
 )
 
 type Querier interface {
+	// Mongo matches every patient carrying the source site, including those
+	// already carrying the target site, so the bump uses the matched set rather
+	// than the inserted rows.
 	AddSiteToPatientsWithSite(ctx context.Context, arg AddSiteToPatientsWithSiteParams) error
 	AddSiteToPatientsWithTag(ctx context.Context, arg AddSiteToPatientsWithTagParams) error
+	// The bulk mirrors below also bump patients.updated_time over exactly the
+	// set of documents the corresponding Mongo UpdateMany matches, which $sets
+	// updatedTime alongside the array mutation.
 	AssignTagToClinicPatients(ctx context.Context, arg AssignTagToClinicPatientsParams) error
 	AssignTagToPatients(ctx context.Context, arg AssignTagToPatientsParams) error
+	// Removes stale rows (left behind e.g. by a lost delete mirror) that would
+	// collide with the UNIQUE(clinic_id, user_id) index. Mongo enforces the same
+	// uniqueness, so a row with a different id is stale by definition.
+	DeleteConflictingPatients(ctx context.Context, arg DeleteConflictingPatientsParams) error
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicID string) error
 	DeletePatient(ctx context.Context, arg DeletePatientParams) error
 	DeletePatientConnectionRequests(ctx context.Context, patientID string) error

@@ -57,6 +57,16 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 	defer tx.Rollback(ctx)
 
 	q := w.queries.WithTx(tx)
+	// Stale rows (e.g. from a lost delete mirror) would collide with the
+	// unique canonical share code or the globally unique share code rows;
+	// Mongo enforces the same uniqueness, so removing them converges the
+	// mirror.
+	if err := q.DeleteConflictingClinics(ctx, sqlcgen.DeleteConflictingClinicsParams{
+		CanonicalShareCode: params.CanonicalShareCode,
+		ID:                 id,
+	}); err != nil {
+		return err
+	}
 	if err := q.UpsertClinic(ctx, *params); err != nil {
 		return err
 	}
@@ -65,6 +75,12 @@ func (w *Writer) UpsertClinic(ctx context.Context, clinic *clinics.Clinic) error
 		return err
 	}
 	if clinic.ShareCodes != nil {
+		if err := q.DeleteConflictingShareCodes(ctx, sqlcgen.DeleteConflictingShareCodesParams{
+			Column1:  *clinic.ShareCodes,
+			ClinicID: id,
+		}); err != nil {
+			return err
+		}
 		shareCodes := make([]sqlcgen.InsertClinicShareCodeParams, 0, len(*clinic.ShareCodes))
 		for _, shareCode := range *clinic.ShareCodes {
 			shareCodes = append(shareCodes, sqlcgen.InsertClinicShareCodeParams{

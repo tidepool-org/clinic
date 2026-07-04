@@ -11,6 +11,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const deleteConflictingPreorders = `-- name: DeleteConflictingPreorders :exec
+DELETE FROM xealth_preorders
+WHERE data_tracking_id = $1 AND id <> $2
+`
+
+type DeleteConflictingPreordersParams struct {
+	DataTrackingID string
+	ID             string
+}
+
+// Removes stale rows that would collide with the unique data_tracking_id;
+// Mongo enforces the same uniqueness.
+func (q *Queries) DeleteConflictingPreorders(ctx context.Context, arg DeleteConflictingPreordersParams) error {
+	_, err := q.db.Exec(ctx, deleteConflictingPreorders, arg.DataTrackingID, arg.ID)
+	return err
+}
+
 const upsertXealthOrder = `-- name: UpsertXealthOrder :exec
 INSERT INTO xealth_orders (id, payload, pg_synced_at)
 VALUES ($1, $2, now())

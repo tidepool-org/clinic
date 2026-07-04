@@ -24,6 +24,9 @@ type Verifier interface {
 	IDColumn() string
 	// MongoIDs returns up to limit identities greater than after in byte order.
 	MongoIDs(ctx context.Context, after string, limit int) ([]string, error)
+	// ExistingIDs returns the subset of ids that exist in Mongo. It is used
+	// to confirm phantom classifications before rows are deleted.
+	ExistingIDs(ctx context.Context, ids []string) ([]string, error)
 	// ResyncBatch re-runs the idempotent upserts for the documents with the
 	// given identities, converging any content drift.
 	ResyncBatch(ctx context.Context, ids []string) error
@@ -95,6 +98,34 @@ func (s *CollectionSync) MongoIDs(ctx context.Context, after string, limit int) 
 		ids = append(ids, doc.Id.Hex())
 	}
 	return ids, nil
+}
+
+func (s *CollectionSync) ExistingIDs(ctx context.Context, ids []string) ([]string, error) {
+	objectIds := make([]primitive.ObjectID, 0, len(ids))
+	for _, id := range ids {
+		objectId, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, fmt.Errorf("invalid id %q for %s: %w", id, s.Collection(), err)
+		}
+		objectIds = append(objectIds, objectId)
+	}
+
+	opts := options.Find().SetProjection(bson.M{"_id": 1})
+	cursor, err := s.collection.Find(ctx, bson.M{"_id": bson.M{"$in": objectIds}}, opts)
+	if err != nil {
+		return nil, fmt.Errorf("error listing ids in %s: %w", s.Collection(), err)
+	}
+	var docs []struct {
+		Id primitive.ObjectID `bson:"_id"`
+	}
+	if err := cursor.All(ctx, &docs); err != nil {
+		return nil, fmt.Errorf("error decoding ids in %s: %w", s.Collection(), err)
+	}
+	existing := make([]string, 0, len(docs))
+	for _, doc := range docs {
+		existing = append(existing, doc.Id.Hex())
+	}
+	return existing, nil
 }
 
 func (s *CollectionSync) ResyncBatch(ctx context.Context, ids []string) error {
@@ -182,8 +213,45 @@ func VerifyCollection(ctx context.Context, pool *pgxpool.Pool, db *mongo.Databas
 		return nil, err
 	}
 
+	// Documents mirrored after the Mongo id stream terminated appear only on
+	// the Postgres side of the merge-diff and would be misclassified as
+	// phantoms; confirm candidates against Mongo so a repair run concurrent
+	// with live dual writes never deletes freshly mirrored rows.
+	if len(report.Phantom) > 0 {
+		var phantom []string
+		for chunk := range chunked(report.Phantom, opts.BatchSize) {
+			existing, err := verifier.ExistingIDs(ctx, chunk)
+			if err != nil {
+				return nil, fmt.Errorf("error confirming phantom rows of %s: %w", verifier.Collection(), err)
+			}
+			exists := make(map[string]struct{}, len(existing))
+			for _, id := range existing {
+				exists[id] = struct{}{}
+			}
+			for _, id := range chunk {
+				if _, ok := exists[id]; ok {
+					report.Matched++
+				} else {
+					phantom = append(phantom, id)
+				}
+			}
+		}
+		report.Phantom = phantom
+	}
+
 	if opts.Repair {
 		report.Repaired = true
+		// Phantom rows are removed first: a stale row can block the resync of
+		// a missing document through a secondary unique constraint (e.g. a
+		// patient removed and re-added with a new id colliding on
+		// (clinic_id, user_id)).
+		for chunk := range chunked(report.Phantom, opts.BatchSize) {
+			tag, err := pool.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE %s = ANY($1)`, verifier.Table(), verifier.IDColumn()), chunk)
+			if err != nil {
+				return nil, fmt.Errorf("error deleting phantom rows of %s: %w", verifier.Table(), err)
+			}
+			report.Deleted += int(tag.RowsAffected())
+		}
 		for chunk := range chunked(report.Missing, opts.BatchSize) {
 			if err := verifier.ResyncBatch(ctx, chunk); err != nil {
 				return nil, fmt.Errorf("error resyncing %s: %w", verifier.Collection(), err)
@@ -195,13 +263,6 @@ func VerifyCollection(ctx context.Context, pool *pgxpool.Pool, db *mongo.Databas
 				return nil, fmt.Errorf("error resyncing sampled documents of %s: %w", verifier.Collection(), err)
 			}
 			report.Resynced += len(chunk)
-		}
-		for chunk := range chunked(report.Phantom, opts.BatchSize) {
-			tag, err := pool.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE %s = ANY($1)`, verifier.Table(), verifier.IDColumn()), chunk)
-			if err != nil {
-				return nil, fmt.Errorf("error deleting phantom rows of %s: %w", verifier.Table(), err)
-			}
-			report.Deleted += int(tag.RowsAffected())
 		}
 	}
 

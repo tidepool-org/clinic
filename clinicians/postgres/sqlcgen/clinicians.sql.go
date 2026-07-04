@@ -57,6 +57,34 @@ func (q *Queries) DeleteClinicianRolesUpdates(ctx context.Context, clinicianID s
 	return err
 }
 
+const deleteConflictingClinicians = `-- name: DeleteConflictingClinicians :exec
+DELETE FROM clinicians
+WHERE clinic_id = $1 AND id <> $2
+  AND (user_id = $3 OR invite_id = $4 OR email = $5)
+`
+
+type DeleteConflictingCliniciansParams struct {
+	ClinicID string
+	ID       string
+	UserID   pgtype.Text
+	InviteID pgtype.Text
+	Email    pgtype.Text
+}
+
+// Removes stale rows that would collide with the partial unique indexes on
+// (clinic_id, user_id), (clinic_id, invite_id) or (clinic_id, email). Mongo
+// enforces the same uniqueness; NULL comparisons match nothing.
+func (q *Queries) DeleteConflictingClinicians(ctx context.Context, arg DeleteConflictingCliniciansParams) error {
+	_, err := q.db.Exec(ctx, deleteConflictingClinicians,
+		arg.ClinicID,
+		arg.ID,
+		arg.UserID,
+		arg.InviteID,
+		arg.Email,
+	)
+	return err
+}
+
 const insertClinicianRolesUpdate = `-- name: InsertClinicianRolesUpdate :exec
 INSERT INTO clinician_roles_updates (clinician_id, ordinal, roles, updated_by)
 VALUES ($1, $2, $3, $4)

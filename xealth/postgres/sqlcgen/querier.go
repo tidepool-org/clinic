@@ -9,6 +9,9 @@ import (
 )
 
 type Querier interface {
+	// Removes stale rows that would collide with the unique data_tracking_id;
+	// Mongo enforces the same uniqueness.
+	DeleteConflictingPreorders(ctx context.Context, arg DeleteConflictingPreordersParams) error
 	UpsertXealthOrder(ctx context.Context, arg UpsertXealthOrderParams) error
 	UpsertXealthPreorder(ctx context.Context, arg UpsertXealthPreorderParams) error
 	UpsertXealthReportView(ctx context.Context, arg UpsertXealthReportViewParams) error

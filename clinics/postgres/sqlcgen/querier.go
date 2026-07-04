@@ -16,6 +16,12 @@ type Querier interface {
 	DeleteClinicPhoneNumbers(ctx context.Context, clinicID string) error
 	DeleteClinicShareCodes(ctx context.Context, clinicID string) error
 	DeleteClinicSites(ctx context.Context, clinicID string) error
+	// Removes a stale clinic row that would collide with the unique canonical
+	// share code; Mongo enforces the same uniqueness.
+	DeleteConflictingClinics(ctx context.Context, arg DeleteConflictingClinicsParams) error
+	// Removes stale share code rows owned by other clinics; share codes are
+	// globally unique in Mongo.
+	DeleteConflictingShareCodes(ctx context.Context, arg DeleteConflictingShareCodesParams) error
 	InsertClinicAdmin(ctx context.Context, arg []InsertClinicAdminParams) *InsertClinicAdminBatchResults
 	InsertClinicMembershipRestriction(ctx context.Context, arg []InsertClinicMembershipRestrictionParams) *InsertClinicMembershipRestrictionBatchResults
 	InsertClinicPatientTag(ctx context.Context, arg []InsertClinicPatientTagParams) *InsertClinicPatientTagBatchResults

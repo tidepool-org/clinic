@@ -12,61 +12,82 @@ import (
 )
 
 const addSiteToPatientsWithSite = `-- name: AddSiteToPatientsWithSite :exec
-INSERT INTO patient_sites (patient_id, site_id, site_name)
-SELECT ps.patient_id, $1, $2
-FROM patient_sites ps
-JOIN patients p ON p.id = ps.patient_id
-WHERE p.clinic_id = $3 AND ps.site_id = $4
-ON CONFLICT (patient_id, site_id) DO NOTHING
+WITH affected AS (
+    SELECT ps.patient_id
+    FROM patient_sites ps
+    JOIN patients p ON p.id = ps.patient_id
+    WHERE p.clinic_id = $1 AND ps.site_id = $2
+), inserted AS (
+    INSERT INTO patient_sites (patient_id, site_id, site_name)
+    SELECT patient_id, $3, $4 FROM affected
+    ON CONFLICT (patient_id, site_id) DO NOTHING
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM affected)
 `
 
 type AddSiteToPatientsWithSiteParams struct {
-	TargetSiteID   string
-	TargetSiteName string
 	ClinicID       string
 	SourceSiteID   string
+	TargetSiteID   string
+	TargetSiteName string
 }
 
+// Mongo matches every patient carrying the source site, including those
+// already carrying the target site, so the bump uses the matched set rather
+// than the inserted rows.
 func (q *Queries) AddSiteToPatientsWithSite(ctx context.Context, arg AddSiteToPatientsWithSiteParams) error {
 	_, err := q.db.Exec(ctx, addSiteToPatientsWithSite,
-		arg.TargetSiteID,
-		arg.TargetSiteName,
 		arg.ClinicID,
 		arg.SourceSiteID,
+		arg.TargetSiteID,
+		arg.TargetSiteName,
 	)
 	return err
 }
 
 const addSiteToPatientsWithTag = `-- name: AddSiteToPatientsWithTag :exec
-INSERT INTO patient_sites (patient_id, site_id, site_name)
-SELECT pt.patient_id, $1, $2
-FROM patient_tags pt
-JOIN patients p ON p.id = pt.patient_id
-WHERE p.clinic_id = $3 AND pt.tag_id = $4
-ON CONFLICT (patient_id, site_id) DO NOTHING
+WITH affected AS (
+    SELECT pt.patient_id
+    FROM patient_tags pt
+    JOIN patients p ON p.id = pt.patient_id
+    WHERE p.clinic_id = $1 AND pt.tag_id = $2
+), inserted AS (
+    INSERT INTO patient_sites (patient_id, site_id, site_name)
+    SELECT patient_id, $3, $4 FROM affected
+    ON CONFLICT (patient_id, site_id) DO NOTHING
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM affected)
 `
 
 type AddSiteToPatientsWithTagParams struct {
-	SiteID   string
-	SiteName string
 	ClinicID string
 	TagID    string
+	SiteID   string
+	SiteName string
 }
 
 func (q *Queries) AddSiteToPatientsWithTag(ctx context.Context, arg AddSiteToPatientsWithTagParams) error {
 	_, err := q.db.Exec(ctx, addSiteToPatientsWithTag,
-		arg.SiteID,
-		arg.SiteName,
 		arg.ClinicID,
 		arg.TagID,
+		arg.SiteID,
+		arg.SiteName,
 	)
 	return err
 }
 
 const assignTagToClinicPatients = `-- name: AssignTagToClinicPatients :exec
-INSERT INTO patient_tags (patient_id, tag_id)
-SELECT id, $2 FROM patients WHERE clinic_id = $1
-ON CONFLICT DO NOTHING
+
+WITH inserted AS (
+    INSERT INTO patient_tags (patient_id, tag_id)
+    SELECT p.id, $2 FROM patients p WHERE p.clinic_id = $1
+    ON CONFLICT DO NOTHING
+    RETURNING patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM inserted)
 `
 
 type AssignTagToClinicPatientsParams struct {
@@ -74,16 +95,24 @@ type AssignTagToClinicPatientsParams struct {
 	TagID    string
 }
 
+// The bulk mirrors below also bump patients.updated_time over exactly the
+// set of documents the corresponding Mongo UpdateMany matches, which $sets
+// updatedTime alongside the array mutation.
 func (q *Queries) AssignTagToClinicPatients(ctx context.Context, arg AssignTagToClinicPatientsParams) error {
 	_, err := q.db.Exec(ctx, assignTagToClinicPatients, arg.ClinicID, arg.TagID)
 	return err
 }
 
 const assignTagToPatients = `-- name: AssignTagToPatients :exec
-INSERT INTO patient_tags (patient_id, tag_id)
-SELECT id, $1 FROM patients
-WHERE clinic_id = $2 AND user_id = ANY($3::text[])
-ON CONFLICT DO NOTHING
+WITH inserted AS (
+    INSERT INTO patient_tags (patient_id, tag_id)
+    SELECT p.id, $1 FROM patients p
+    WHERE p.clinic_id = $2 AND p.user_id = ANY($3::text[])
+    ON CONFLICT DO NOTHING
+    RETURNING patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM inserted)
 `
 
 type AssignTagToPatientsParams struct {
@@ -94,6 +123,25 @@ type AssignTagToPatientsParams struct {
 
 func (q *Queries) AssignTagToPatients(ctx context.Context, arg AssignTagToPatientsParams) error {
 	_, err := q.db.Exec(ctx, assignTagToPatients, arg.TagID, arg.ClinicID, arg.UserIds)
+	return err
+}
+
+const deleteConflictingPatients = `-- name: DeleteConflictingPatients :exec
+DELETE FROM patients
+WHERE clinic_id = $1 AND user_id = $2 AND id <> $3
+`
+
+type DeleteConflictingPatientsParams struct {
+	ClinicID string
+	UserID   string
+	ID       string
+}
+
+// Removes stale rows (left behind e.g. by a lost delete mirror) that would
+// collide with the UNIQUE(clinic_id, user_id) index. Mongo enforces the same
+// uniqueness, so a row with a different id is stale by definition.
+func (q *Queries) DeleteConflictingPatients(ctx context.Context, arg DeleteConflictingPatientsParams) error {
+	_, err := q.db.Exec(ctx, deleteConflictingPatients, arg.ClinicID, arg.UserID, arg.ID)
 	return err
 }
 
@@ -184,11 +232,16 @@ func (q *Queries) DeletePatientsByUserId(ctx context.Context, userID string) err
 }
 
 const deleteSiteFromClinicPatients = `-- name: DeleteSiteFromClinicPatients :exec
-DELETE FROM patient_sites
-USING patients
-WHERE patient_sites.patient_id = patients.id
-  AND patients.clinic_id = $1
-  AND patient_sites.site_id = $2
+WITH deleted AS (
+    DELETE FROM patient_sites
+    USING patients p
+    WHERE patient_sites.patient_id = p.id
+      AND p.clinic_id = $1
+      AND patient_sites.site_id = $2
+    RETURNING patient_sites.patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM deleted)
 `
 
 type DeleteSiteFromClinicPatientsParams struct {
@@ -202,11 +255,16 @@ func (q *Queries) DeleteSiteFromClinicPatients(ctx context.Context, arg DeleteSi
 }
 
 const deleteTagFromClinicPatients = `-- name: DeleteTagFromClinicPatients :exec
-DELETE FROM patient_tags
-USING patients
-WHERE patient_tags.patient_id = patients.id
-  AND patients.clinic_id = $1
-  AND patient_tags.tag_id = $2
+WITH deleted AS (
+    DELETE FROM patient_tags
+    USING patients p
+    WHERE patient_tags.patient_id = p.id
+      AND p.clinic_id = $1
+      AND patient_tags.tag_id = $2
+    RETURNING patient_tags.patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM deleted)
 `
 
 type DeleteTagFromClinicPatientsParams struct {
@@ -220,12 +278,17 @@ func (q *Queries) DeleteTagFromClinicPatients(ctx context.Context, arg DeleteTag
 }
 
 const deleteTagFromPatients = `-- name: DeleteTagFromPatients :exec
-DELETE FROM patient_tags
-USING patients
-WHERE patient_tags.patient_id = patients.id
-  AND patients.clinic_id = $1
-  AND patient_tags.tag_id = $2
-  AND patients.user_id = ANY($3::text[])
+WITH deleted AS (
+    DELETE FROM patient_tags
+    USING patients p
+    WHERE patient_tags.patient_id = p.id
+      AND p.clinic_id = $1
+      AND patient_tags.tag_id = $2
+      AND p.user_id = ANY($3::text[])
+    RETURNING patient_tags.patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM deleted)
 `
 
 type DeleteTagFromPatientsParams struct {
@@ -240,11 +303,16 @@ func (q *Queries) DeleteTagFromPatients(ctx context.Context, arg DeleteTagFromPa
 }
 
 const renameSiteForClinicPatients = `-- name: RenameSiteForClinicPatients :exec
-UPDATE patient_sites SET site_name = $3
-FROM patients
-WHERE patient_sites.patient_id = patients.id
-  AND patients.clinic_id = $1
-  AND patient_sites.site_id = $2
+WITH renamed AS (
+    UPDATE patient_sites SET site_name = $3
+    FROM patients p
+    WHERE patient_sites.patient_id = p.id
+      AND p.clinic_id = $1
+      AND patient_sites.site_id = $2
+    RETURNING patient_sites.patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM renamed)
 `
 
 type RenameSiteForClinicPatientsParams struct {

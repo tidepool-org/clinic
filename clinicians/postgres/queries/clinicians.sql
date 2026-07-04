@@ -35,3 +35,11 @@ DELETE FROM clinicians WHERE clinic_id = $1;
 
 -- name: DeleteClinicianInvite :exec
 DELETE FROM clinicians WHERE clinic_id = $1 AND invite_id = $2;
+
+-- name: DeleteConflictingClinicians :exec
+-- Removes stale rows that would collide with the partial unique indexes on
+-- (clinic_id, user_id), (clinic_id, invite_id) or (clinic_id, email). Mongo
+-- enforces the same uniqueness; NULL comparisons match nothing.
+DELETE FROM clinicians
+WHERE clinic_id = $1 AND id <> $2
+  AND (user_id = $3 OR invite_id = $4 OR email = $5);

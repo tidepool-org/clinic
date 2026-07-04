@@ -99,58 +99,114 @@ INSERT INTO patient_ehr_subscription_matched_messages (
     patient_id, subscription_name, ordinal, message_id, data_model, event_type
 ) VALUES ($1, $2, $3, $4, $5, $6);
 
+-- The bulk mirrors below also bump patients.updated_time over exactly the
+-- set of documents the corresponding Mongo UpdateMany matches, which $sets
+-- updatedTime alongside the array mutation.
+
 -- name: AssignTagToClinicPatients :exec
-INSERT INTO patient_tags (patient_id, tag_id)
-SELECT id, $2 FROM patients WHERE clinic_id = $1
-ON CONFLICT DO NOTHING;
+WITH inserted AS (
+    INSERT INTO patient_tags (patient_id, tag_id)
+    SELECT p.id, $2 FROM patients p WHERE p.clinic_id = $1
+    ON CONFLICT DO NOTHING
+    RETURNING patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM inserted);
 
 -- name: AssignTagToPatients :exec
-INSERT INTO patient_tags (patient_id, tag_id)
-SELECT id, sqlc.arg(tag_id) FROM patients
-WHERE clinic_id = sqlc.arg(clinic_id) AND user_id = ANY(sqlc.arg(user_ids)::text[])
-ON CONFLICT DO NOTHING;
+WITH inserted AS (
+    INSERT INTO patient_tags (patient_id, tag_id)
+    SELECT p.id, sqlc.arg(tag_id) FROM patients p
+    WHERE p.clinic_id = sqlc.arg(clinic_id) AND p.user_id = ANY(sqlc.arg(user_ids)::text[])
+    ON CONFLICT DO NOTHING
+    RETURNING patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM inserted);
 
 -- name: DeleteTagFromClinicPatients :exec
-DELETE FROM patient_tags
-USING patients
-WHERE patient_tags.patient_id = patients.id
-  AND patients.clinic_id = $1
-  AND patient_tags.tag_id = $2;
+WITH deleted AS (
+    DELETE FROM patient_tags
+    USING patients p
+    WHERE patient_tags.patient_id = p.id
+      AND p.clinic_id = $1
+      AND patient_tags.tag_id = $2
+    RETURNING patient_tags.patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM deleted);
 
 -- name: DeleteTagFromPatients :exec
-DELETE FROM patient_tags
-USING patients
-WHERE patient_tags.patient_id = patients.id
-  AND patients.clinic_id = sqlc.arg(clinic_id)
-  AND patient_tags.tag_id = sqlc.arg(tag_id)
-  AND patients.user_id = ANY(sqlc.arg(user_ids)::text[]);
+WITH deleted AS (
+    DELETE FROM patient_tags
+    USING patients p
+    WHERE patient_tags.patient_id = p.id
+      AND p.clinic_id = sqlc.arg(clinic_id)
+      AND patient_tags.tag_id = sqlc.arg(tag_id)
+      AND p.user_id = ANY(sqlc.arg(user_ids)::text[])
+    RETURNING patient_tags.patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM deleted);
 
 -- name: DeleteSiteFromClinicPatients :exec
-DELETE FROM patient_sites
-USING patients
-WHERE patient_sites.patient_id = patients.id
-  AND patients.clinic_id = $1
-  AND patient_sites.site_id = $2;
+WITH deleted AS (
+    DELETE FROM patient_sites
+    USING patients p
+    WHERE patient_sites.patient_id = p.id
+      AND p.clinic_id = $1
+      AND patient_sites.site_id = $2
+    RETURNING patient_sites.patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM deleted);
 
 -- name: RenameSiteForClinicPatients :exec
-UPDATE patient_sites SET site_name = $3
-FROM patients
-WHERE patient_sites.patient_id = patients.id
-  AND patients.clinic_id = $1
-  AND patient_sites.site_id = $2;
+WITH renamed AS (
+    UPDATE patient_sites SET site_name = $3
+    FROM patients p
+    WHERE patient_sites.patient_id = p.id
+      AND p.clinic_id = $1
+      AND patient_sites.site_id = $2
+    RETURNING patient_sites.patient_id
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM renamed);
 
 -- name: AddSiteToPatientsWithSite :exec
-INSERT INTO patient_sites (patient_id, site_id, site_name)
-SELECT ps.patient_id, sqlc.arg(target_site_id), sqlc.arg(target_site_name)
-FROM patient_sites ps
-JOIN patients p ON p.id = ps.patient_id
-WHERE p.clinic_id = sqlc.arg(clinic_id) AND ps.site_id = sqlc.arg(source_site_id)
-ON CONFLICT (patient_id, site_id) DO NOTHING;
+-- Mongo matches every patient carrying the source site, including those
+-- already carrying the target site, so the bump uses the matched set rather
+-- than the inserted rows.
+WITH affected AS (
+    SELECT ps.patient_id
+    FROM patient_sites ps
+    JOIN patients p ON p.id = ps.patient_id
+    WHERE p.clinic_id = sqlc.arg(clinic_id) AND ps.site_id = sqlc.arg(source_site_id)
+), inserted AS (
+    INSERT INTO patient_sites (patient_id, site_id, site_name)
+    SELECT patient_id, sqlc.arg(target_site_id), sqlc.arg(target_site_name) FROM affected
+    ON CONFLICT (patient_id, site_id) DO NOTHING
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM affected);
 
 -- name: AddSiteToPatientsWithTag :exec
-INSERT INTO patient_sites (patient_id, site_id, site_name)
-SELECT pt.patient_id, sqlc.arg(site_id), sqlc.arg(site_name)
-FROM patient_tags pt
-JOIN patients p ON p.id = pt.patient_id
-WHERE p.clinic_id = sqlc.arg(clinic_id) AND pt.tag_id = sqlc.arg(tag_id)
-ON CONFLICT (patient_id, site_id) DO NOTHING;
+WITH affected AS (
+    SELECT pt.patient_id
+    FROM patient_tags pt
+    JOIN patients p ON p.id = pt.patient_id
+    WHERE p.clinic_id = sqlc.arg(clinic_id) AND pt.tag_id = sqlc.arg(tag_id)
+), inserted AS (
+    INSERT INTO patient_sites (patient_id, site_id, site_name)
+    SELECT patient_id, sqlc.arg(site_id), sqlc.arg(site_name) FROM affected
+    ON CONFLICT (patient_id, site_id) DO NOTHING
+)
+UPDATE patients SET updated_time = now()
+WHERE id IN (SELECT patient_id FROM affected);
+
+-- name: DeleteConflictingPatients :exec
+-- Removes stale rows (left behind e.g. by a lost delete mirror) that would
+-- collide with the UNIQUE(clinic_id, user_id) index. Mongo enforces the same
+-- uniqueness, so a row with a different id is stale by definition.
+DELETE FROM patients
+WHERE clinic_id = $1 AND user_id = $2 AND id <> $3;

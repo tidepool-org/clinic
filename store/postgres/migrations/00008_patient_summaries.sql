@@ -34,7 +34,11 @@ CREATE INDEX patient_summaries_last_data_idx ON patient_summaries (summary_type,
 CREATE TABLE patient_summary_periods (
     patient_id text NOT NULL,
     summary_type text NOT NULL,
-    period text NOT NULL CHECK (period IN ('1d', '7d', '14d', '30d')),
+    -- No CHECK on the period keys: the API accepts summaries with arbitrary
+    -- period keys (the spec's period maps allow additional properties), and a
+    -- constraint violation here would permanently stop the whole patient row
+    -- from syncing and abort backfills.
+    period text NOT NULL,
     average_daily_records double precision,
     average_daily_records_delta double precision,
     average_glucose_mmol double precision,

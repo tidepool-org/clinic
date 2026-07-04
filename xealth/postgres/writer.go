@@ -45,6 +45,14 @@ func (w *Writer) UpsertPreorder(ctx context.Context, data *xealth.PreorderFormDa
 	if err != nil {
 		return err
 	}
+	// A stale row would collide with the unique data_tracking_id; Mongo
+	// enforces the same uniqueness, so removing it converges the mirror.
+	if err := w.queries.DeleteConflictingPreorders(ctx, sqlcgen.DeleteConflictingPreordersParams{
+		DataTrackingID: data.DataTrackingId,
+		ID:             data.Id.Hex(),
+	}); err != nil {
+		return err
+	}
 	return w.queries.UpsertXealthPreorder(ctx, sqlcgen.UpsertXealthPreorderParams{
 		ID:             data.Id.Hex(),
 		DataTrackingID: data.DataTrackingId,

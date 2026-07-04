@@ -74,6 +74,40 @@ func (q *Queries) DeleteClinicSites(ctx context.Context, clinicID string) error 
 	return err
 }
 
+const deleteConflictingClinics = `-- name: DeleteConflictingClinics :exec
+DELETE FROM clinics
+WHERE canonical_share_code = $1 AND id <> $2
+`
+
+type DeleteConflictingClinicsParams struct {
+	CanonicalShareCode pgtype.Text
+	ID                 string
+}
+
+// Removes a stale clinic row that would collide with the unique canonical
+// share code; Mongo enforces the same uniqueness.
+func (q *Queries) DeleteConflictingClinics(ctx context.Context, arg DeleteConflictingClinicsParams) error {
+	_, err := q.db.Exec(ctx, deleteConflictingClinics, arg.CanonicalShareCode, arg.ID)
+	return err
+}
+
+const deleteConflictingShareCodes = `-- name: DeleteConflictingShareCodes :exec
+DELETE FROM clinic_share_codes
+WHERE share_code = ANY($1::text[]) AND clinic_id <> $2
+`
+
+type DeleteConflictingShareCodesParams struct {
+	Column1  []string
+	ClinicID string
+}
+
+// Removes stale share code rows owned by other clinics; share codes are
+// globally unique in Mongo.
+func (q *Queries) DeleteConflictingShareCodes(ctx context.Context, arg DeleteConflictingShareCodesParams) error {
+	_, err := q.db.Exec(ctx, deleteConflictingShareCodes, arg.Column1, arg.ClinicID)
+	return err
+}
+
 const upsertClinic = `-- name: UpsertClinic :exec
 INSERT INTO clinics (
     id, name, address, city, state, postal_code, country, clinic_type,

@@ -13,6 +13,10 @@ type Querier interface {
 	DeleteClinician(ctx context.Context, arg DeleteClinicianParams) error
 	DeleteClinicianInvite(ctx context.Context, arg DeleteClinicianInviteParams) error
 	DeleteClinicianRolesUpdates(ctx context.Context, clinicianID string) error
+	// Removes stale rows that would collide with the partial unique indexes on
+	// (clinic_id, user_id), (clinic_id, invite_id) or (clinic_id, email). Mongo
+	// enforces the same uniqueness; NULL comparisons match nothing.
+	DeleteConflictingClinicians(ctx context.Context, arg DeleteConflictingCliniciansParams) error
 	InsertClinicianRolesUpdate(ctx context.Context, arg InsertClinicianRolesUpdateParams) error
 	UpsertClinician(ctx context.Context, arg UpsertClinicianParams) error
 }
