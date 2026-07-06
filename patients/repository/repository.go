@@ -1092,6 +1092,197 @@ func (r *repository) DeletePatientTagFromClinicPatients(ctx context.Context, cli
 	return nil
 }
 
+func coalesce(field string, defaultValue any) bson.M {
+	return bson.M{
+		"$ifNull": bson.A{
+			field,
+			defaultValue,
+		},
+	}
+}
+
+func toMongoString(field string, defaultValue string) bson.M {
+	return bson.M{
+		"$convert": bson.M{
+			"input":   field,
+			"to":      "string",
+			"onError": defaultValue,
+			"onNull":  defaultValue,
+		},
+	}
+}
+
+func (r *repository) ListExportedPatients(ctx context.Context, clinicId, period string) ([]patients.ExportedPatient, error) {
+	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return nil, fmt.Errorf(`error converting workspace id string to ObjectId: %w`, err)
+	}
+	matchStage := bson.D{
+		{"$match", bson.M{
+			"clinicId": clinicObjId,
+		}},
+	}
+
+	cgmPathPrefix := fmt.Sprintf("$summary.cgmStats.periods.%s", period)
+	addCGMFieldsStage := bson.D{
+		{"$addFields", bson.M{
+			"cgmLastDataDate":      "$summary.cgmStats.dates.lastData",
+			"cgmActiveWearTime":    cgmPathPrefix + ".timeCGMUsePercent",
+			"cgmDaysWithData":      cgmPathPrefix + ".daysWithData",
+			"cgmHoursWithData":     cgmPathPrefix + ".hoursWithData",
+			"cgmAverageGlucose":    cgmPathPrefix + ".averageGlucoseMmol",
+			"cgmGmi":               cgmPathPrefix + ".glucoseManagementIndicator",
+			"cgmStdDev":            cgmPathPrefix + ".standardDeviation",
+			"cgmCV":                cgmPathPrefix + ".coefficientOfVariation",
+			"cgmTimeInLevel2Hypo":  cgmPathPrefix + ".timeInVeryLowPercent",
+			"cgmTimeInLevel1Hypo":  cgmPathPrefix + ".timeInLowPercent",
+			"cgmTimeInTarget":      cgmPathPrefix + ".timeInTargetPercent",
+			"cgmTimeInLevel2Hyper": cgmPathPrefix + ".timeInVeryHighPercent",
+			"cgmTimeInLevel1Hyper": cgmPathPrefix + ".timeInHighPercent",
+		}},
+	}
+
+	bgmPathPrefix := fmt.Sprintf("$summary.bgmStats.periods.%s", period)
+	addBGMFieldsStage := bson.D{
+		{"$addFields", bson.M{
+			"bgmLastDataDate":   "$summary.bgmStats.dates.lastData",
+			"bgmAverageGlucose": bgmPathPrefix + ".averageGlucoseMmol",
+			"bgmReadingsPerDay": bson.M{
+				"$divide": bson.A{
+					bgmPathPrefix + ".totalRecords",                            // no null check for numerator so that if field is null/missing result is missing as intended
+					bson.M{"$max": bson.A{bgmPathPrefix + ".daysWithData", 1}}, // default value for denominator to prevent divide by 0's
+				},
+			},
+			"bgmTotalReadings": bgmPathPrefix + ".totalRecords",
+			"bgmLowEvents":     bgmPathPrefix + ".timeInLowRecords",
+			"bgmHighEvents":    bgmPathPrefix + ".timeInHighRecords",
+		}},
+	}
+
+	addSiteNamesStage := bson.D{
+		{"$addFields", bson.M{
+			"clinicSiteNames": bson.M{
+				"$map": bson.M{
+					"input": coalesce("$sites", bson.A{}),
+					"as":    "site",
+					"in":    "$$site.name",
+				},
+			},
+		}},
+	}
+
+	addTagIdsStage := bson.D{
+		{"$addFields", bson.M{
+			"tagIds": bson.M{
+				"$map": bson.M{
+					"input": coalesce("$tags", bson.A{}),
+					"as":    "tag",
+					"in":    bson.M{"$toString": "$$tag"},
+				},
+			},
+		}},
+	}
+
+	// extract individual data provider sources to their own field
+	addNamedProviders := bson.D{
+		{"$addFields", bson.M{
+			"dexcomDataSource": bson.M{
+				"$first": bson.M{
+					"$filter": bson.M{
+						"input": "$dataSources",
+						"as":    "dataSource",
+						"cond": bson.M{
+							"$eq": bson.A{"$$dataSource.providerName", patients.DexcomDataSourceProviderName},
+						},
+					},
+				},
+			},
+			"abbottDataSource": bson.M{
+				"$first": bson.M{
+					"$filter": bson.M{
+						"input": "$dataSources",
+						"as":    "dataSource",
+						"cond": bson.M{
+							"$eq": bson.A{"$$dataSource.providerName", patients.AbbottDataSourceProviderName},
+						},
+					},
+				},
+			},
+			"twiistDataSource": bson.M{
+				"$first": bson.M{
+					"$filter": bson.M{
+						"input": "$dataSources",
+						"as":    "dataSource",
+						"cond": bson.M{
+							"$eq": bson.A{"$$dataSource.providerName", patients.TwiistDataSourceProviderName},
+						},
+					},
+				},
+			},
+		}},
+	}
+
+	// Finally, explicitly list fields that we're exporting as they may be renamed and we are interested in only a small subset of them
+	projectStage := bson.D{
+		{"$project", bson.M{
+			"_id":                  0,
+			"fullName":             1,
+			"userId":               1,
+			"mrn":                  1,
+			"birthDate":            1,
+			"email":                1,
+			"permissions":          1,
+			"createdTime":          1,
+			"invitedBy":            1,
+			"clinicSiteNames":      1,
+			"tagIds":               1,
+			"glycemicRanges":       1,
+			"diagnosisType":        1,
+			"dexcomDataSource":     1,
+			"abbottDataSource":     1,
+			"twiistDataSource":     1,
+			"cgmLastDataDate":      1,
+			"cgmActiveWearTime":    1,
+			"cgmDaysWithData":      1,
+			"cgmHoursWithData":     1,
+			"cgmAverageGlucose":    1,
+			"cgmGmi":               1,
+			"cgmStdDev":            1,
+			"cgmCV":                1,
+			"cgmTimeInLevel2Hypo":  1,
+			"cgmTimeInLevel1Hypo":  1,
+			"cgmTimeInTarget":      1,
+			"cgmTimeInLevel2Hyper": 1,
+			"cgmTimeInLevel1Hyper": 1,
+			"bgmLastDataDate":      1,
+			"bgmAverageGlucose":    1,
+			"bgmReadingsPerDay":    1,
+			"bgmTotalReadings":     1,
+			"bgmLowEvents":         1,
+			"bgmHighEvents":        1,
+		}},
+	}
+	stages := mongo.Pipeline{
+		matchStage,
+		addNamedProviders,
+		addSiteNamesStage,
+		addTagIdsStage,
+		addCGMFieldsStage,
+		addBGMFieldsStage,
+		projectStage,
+	}
+	cursor, err := r.collection.Aggregate(ctx, stages)
+	if err != nil {
+		return nil, fmt.Errorf(`unable to get aggregation cursor for patients export: %w`, err)
+	}
+	var rows []patients.ExportedPatient
+	if err := cursor.All(ctx, &rows); err != nil {
+		return nil, fmt.Errorf(`unable to read from aggregation cursor for patients export: %w`, err)
+	}
+
+	return rows, nil
+}
+
 func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *patients.DataSources) error {
 	selector := bson.M{
 		"userId": userId,
