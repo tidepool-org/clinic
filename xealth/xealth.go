@@ -4,9 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/ehr"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/xealth_client"
@@ -15,9 +20,6 @@ import (
 	"github.com/tidepool-org/platform/log/null"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const (
@@ -350,7 +352,79 @@ func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.
 		)
 	}
 
+	// Push the patient's summary statistics to Xealth's FHIR store. This is
+	// best-effort: failures are logged but never block the report URL response.
+	if err := d.sendSummaryStatsObservation(ctx, event, *match.Clinic, *match.Patient); err != nil {
+		d.logger.Warnw(
+			"xealth summary-stats writeback failed", "error", err,
+			"clinicId", match.Clinic.Id.Hex(),
+			"patientId", *match.Patient.UserId,
+		)
+	}
+
 	return response, nil
+}
+
+const xealthWritebackTimeout = 10 * time.Second
+
+// sendSummaryStatsObservation computes the patient's summary statistics and
+// writes them back to Xealth's FHIR store as a single General Observation, one
+// component per available metric. The Observation is tied to the patient's
+// active Xealth order via basedOn (ServiceRequest/<orderId>).
+func (d *defaultHandler) sendSummaryStatsObservation(ctx context.Context, event xealth_client.GetProgramUrlRequest, clinic clinics.Clinic, patient patients.Patient) error {
+	subscription, ok := patient.EHRSubscriptions[patients.SubscriptionXealthReports]
+	if !ok || subscription.Provider != clinics.EHRProviderXealth || !subscription.Active || len(subscription.MatchedMessages) == 0 {
+		d.logger.Infow("skipping summary-stats writeback: no active xealth subscription",
+			"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId)
+		return nil
+	}
+
+	lastMatchedMessage := subscription.MatchedMessages[len(subscription.MatchedMessages)-1]
+	order, err := d.store.GetOrder(ctx, lastMatchedMessage.DocumentId.Hex())
+	if err != nil {
+		return fmt.Errorf("unable to retrieve order for writeback: %w", err)
+	}
+
+	orderId := order.OrderData.OrderInfo.OrderId
+	if orderId == "" {
+		d.logger.Infow("skipping summary-stats writeback: order has no id",
+			"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId)
+		return nil
+	}
+
+	if patient.Summary == nil {
+		d.logger.Infow("skipping summary-stats writeback: patient has no summary",
+			"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId)
+		return nil
+	}
+
+	icode := false
+	if clinic.EHRSettings != nil {
+		icode = clinic.EHRSettings.Flowsheets.Icode
+	}
+	stats := ehr.Compute(patient.Summary, ehr.GlucoseUnits(clinic.PreferredBgUnits), icode)
+	observation := NewSummaryStatsObservation(stats, orderId, patient.Summary.GetLastUpdatedDate())
+	if len(observation.Component) == 0 {
+		d.logger.Infow("skipping summary-stats writeback: no observations available",
+			"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId)
+		return nil
+	}
+
+	postCtx, cancel := context.WithTimeout(ctx, xealthWritebackTimeout)
+	defer cancel()
+
+	response, err := d.client.PostPartnerFhirR4DeploymentObservationWithResponse(postCtx, event.Deployment, nil, observation)
+	if err != nil {
+		return fmt.Errorf("posting summary-stats observation: %w", err)
+	}
+
+	if status := response.StatusCode(); status < http.StatusOK || status >= http.StatusMultipleChoices {
+		return fmt.Errorf("unexpected response posting summary-stats observation: %d", status)
+	}
+
+	d.logger.Infow("summary-stats writeback succeeded",
+		"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId, "orderId", orderId)
+	return nil
 }
 
 func (d *defaultHandler) getLastViewedDate(ctx context.Context, event xealth_client.GetProgramsRequest, programId string, clinic clinics.Clinic, patient patients.Patient) (lastViewed time.Time, err error) {

@@ -89,6 +89,22 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// PostPartnerFhirR4DeploymentDocumentReferenceWithBody request with any body
+	PostPartnerFhirR4DeploymentDocumentReferenceWithBody(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostPartnerFhirR4DeploymentDocumentReference(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, body PostPartnerFhirR4DeploymentDocumentReferenceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirId request
+	GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirId(ctx context.Context, deployment string, documentReferenceFhirId string, params *GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostPartnerFhirR4DeploymentObservationWithBody request with any body
+	PostPartnerFhirR4DeploymentObservationWithBody(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostPartnerFhirR4DeploymentObservation(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, body PostPartnerFhirR4DeploymentObservationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPartnerFhirR4DeploymentObservationObservationFhirId request
+	GetPartnerFhirR4DeploymentObservationObservationFhirId(ctx context.Context, deployment string, observationFhirId string, params *GetPartnerFhirR4DeploymentObservationObservationFhirIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId request
 	GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId(ctx context.Context, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -107,6 +123,78 @@ type ClientInterface interface {
 	PutPartnerWriteOrderDeploymentOrderIdWithBody(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PutPartnerWriteOrderDeploymentOrderId(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, body PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) PostPartnerFhirR4DeploymentDocumentReferenceWithBody(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPartnerFhirR4DeploymentDocumentReferenceRequestWithBody(c.Server, deployment, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostPartnerFhirR4DeploymentDocumentReference(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, body PostPartnerFhirR4DeploymentDocumentReferenceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPartnerFhirR4DeploymentDocumentReferenceRequest(c.Server, deployment, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirId(ctx context.Context, deployment string, documentReferenceFhirId string, params *GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdRequest(c.Server, deployment, documentReferenceFhirId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostPartnerFhirR4DeploymentObservationWithBody(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPartnerFhirR4DeploymentObservationRequestWithBody(c.Server, deployment, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostPartnerFhirR4DeploymentObservation(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, body PostPartnerFhirR4DeploymentObservationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostPartnerFhirR4DeploymentObservationRequest(c.Server, deployment, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPartnerFhirR4DeploymentObservationObservationFhirId(ctx context.Context, deployment string, observationFhirId string, params *GetPartnerFhirR4DeploymentObservationObservationFhirIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPartnerFhirR4DeploymentObservationObservationFhirIdRequest(c.Server, deployment, observationFhirId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId(ctx context.Context, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -191,6 +279,234 @@ func (c *Client) PutPartnerWriteOrderDeploymentOrderId(ctx context.Context, depl
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewPostPartnerFhirR4DeploymentDocumentReferenceRequest calls the generic PostPartnerFhirR4DeploymentDocumentReference builder with application/json body
+func NewPostPartnerFhirR4DeploymentDocumentReferenceRequest(server string, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, body PostPartnerFhirR4DeploymentDocumentReferenceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostPartnerFhirR4DeploymentDocumentReferenceRequestWithBody(server, deployment, params, "application/json", bodyReader)
+}
+
+// NewPostPartnerFhirR4DeploymentDocumentReferenceRequestWithBody generates requests for PostPartnerFhirR4DeploymentDocumentReference with any type of body
+func NewPostPartnerFhirR4DeploymentDocumentReferenceRequestWithBody(server string, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "deployment", runtime.ParamLocationPath, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/partner/fhir/R4/%s/DocumentReference", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Authorization", runtime.ParamLocationHeader, params.Authorization)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdRequest generates requests for GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirId
+func NewGetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdRequest(server string, deployment string, documentReferenceFhirId string, params *GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "deployment", runtime.ParamLocationPath, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "documentReferenceFhirId", runtime.ParamLocationPath, documentReferenceFhirId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/partner/fhir/R4/%s/DocumentReference/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Authorization", runtime.ParamLocationHeader, params.Authorization)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewPostPartnerFhirR4DeploymentObservationRequest calls the generic PostPartnerFhirR4DeploymentObservation builder with application/json body
+func NewPostPartnerFhirR4DeploymentObservationRequest(server string, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, body PostPartnerFhirR4DeploymentObservationJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostPartnerFhirR4DeploymentObservationRequestWithBody(server, deployment, params, "application/json", bodyReader)
+}
+
+// NewPostPartnerFhirR4DeploymentObservationRequestWithBody generates requests for PostPartnerFhirR4DeploymentObservation with any type of body
+func NewPostPartnerFhirR4DeploymentObservationRequestWithBody(server string, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "deployment", runtime.ParamLocationPath, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/partner/fhir/R4/%s/Observation", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Authorization", runtime.ParamLocationHeader, params.Authorization)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewGetPartnerFhirR4DeploymentObservationObservationFhirIdRequest generates requests for GetPartnerFhirR4DeploymentObservationObservationFhirId
+func NewGetPartnerFhirR4DeploymentObservationObservationFhirIdRequest(server string, deployment string, observationFhirId string, params *GetPartnerFhirR4DeploymentObservationObservationFhirIdParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "deployment", runtime.ParamLocationPath, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "observationFhirId", runtime.ParamLocationPath, observationFhirId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/partner/fhir/R4/%s/Observation/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Authorization", runtime.ParamLocationHeader, params.Authorization)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Authorization", headerParam0)
+
+	}
+
+	return req, nil
 }
 
 // NewGetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdRequest generates requests for GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId
@@ -525,6 +841,22 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// PostPartnerFhirR4DeploymentDocumentReferenceWithBodyWithResponse request with any body
+	PostPartnerFhirR4DeploymentDocumentReferenceWithBodyWithResponse(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPartnerFhirR4DeploymentDocumentReferenceResponse, error)
+
+	PostPartnerFhirR4DeploymentDocumentReferenceWithResponse(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, body PostPartnerFhirR4DeploymentDocumentReferenceJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPartnerFhirR4DeploymentDocumentReferenceResponse, error)
+
+	// GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdWithResponse request
+	GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdWithResponse(ctx context.Context, deployment string, documentReferenceFhirId string, params *GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdParams, reqEditors ...RequestEditorFn) (*GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse, error)
+
+	// PostPartnerFhirR4DeploymentObservationWithBodyWithResponse request with any body
+	PostPartnerFhirR4DeploymentObservationWithBodyWithResponse(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPartnerFhirR4DeploymentObservationResponse, error)
+
+	PostPartnerFhirR4DeploymentObservationWithResponse(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, body PostPartnerFhirR4DeploymentObservationJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPartnerFhirR4DeploymentObservationResponse, error)
+
+	// GetPartnerFhirR4DeploymentObservationObservationFhirIdWithResponse request
+	GetPartnerFhirR4DeploymentObservationObservationFhirIdWithResponse(ctx context.Context, deployment string, observationFhirId string, params *GetPartnerFhirR4DeploymentObservationObservationFhirIdParams, reqEditors ...RequestEditorFn) (*GetPartnerFhirR4DeploymentObservationObservationFhirIdResponse, error)
+
 	// GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse request
 	GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse(ctx context.Context, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams, reqEditors ...RequestEditorFn) (*GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse, error)
 
@@ -543,6 +875,104 @@ type ClientWithResponsesInterface interface {
 	PutPartnerWriteOrderDeploymentOrderIdWithBodyWithResponse(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutPartnerWriteOrderDeploymentOrderIdResponse, error)
 
 	PutPartnerWriteOrderDeploymentOrderIdWithResponse(ctx context.Context, deployment string, orderId string, params *PutPartnerWriteOrderDeploymentOrderIdParams, body PutPartnerWriteOrderDeploymentOrderIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutPartnerWriteOrderDeploymentOrderIdResponse, error)
+}
+
+type PostPartnerFhirR4DeploymentDocumentReferenceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *struct {
+		Error string `json:"error"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r PostPartnerFhirR4DeploymentDocumentReferenceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostPartnerFhirR4DeploymentDocumentReferenceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON400      *struct {
+		Error string `json:"error"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostPartnerFhirR4DeploymentObservationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *struct {
+		Error string `json:"error"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r PostPartnerFhirR4DeploymentObservationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostPartnerFhirR4DeploymentObservationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPartnerFhirR4DeploymentObservationObservationFhirIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+	JSON400      *struct {
+		Error string `json:"error"`
+	}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPartnerFhirR4DeploymentObservationObservationFhirIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPartnerFhirR4DeploymentObservationObservationFhirIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse struct {
@@ -712,6 +1142,58 @@ func (r PutPartnerWriteOrderDeploymentOrderIdResponse) StatusCode() int {
 	return 0
 }
 
+// PostPartnerFhirR4DeploymentDocumentReferenceWithBodyWithResponse request with arbitrary body returning *PostPartnerFhirR4DeploymentDocumentReferenceResponse
+func (c *ClientWithResponses) PostPartnerFhirR4DeploymentDocumentReferenceWithBodyWithResponse(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPartnerFhirR4DeploymentDocumentReferenceResponse, error) {
+	rsp, err := c.PostPartnerFhirR4DeploymentDocumentReferenceWithBody(ctx, deployment, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPartnerFhirR4DeploymentDocumentReferenceResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostPartnerFhirR4DeploymentDocumentReferenceWithResponse(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentDocumentReferenceParams, body PostPartnerFhirR4DeploymentDocumentReferenceJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPartnerFhirR4DeploymentDocumentReferenceResponse, error) {
+	rsp, err := c.PostPartnerFhirR4DeploymentDocumentReference(ctx, deployment, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPartnerFhirR4DeploymentDocumentReferenceResponse(rsp)
+}
+
+// GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdWithResponse request returning *GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse
+func (c *ClientWithResponses) GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdWithResponse(ctx context.Context, deployment string, documentReferenceFhirId string, params *GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdParams, reqEditors ...RequestEditorFn) (*GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse, error) {
+	rsp, err := c.GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirId(ctx, deployment, documentReferenceFhirId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse(rsp)
+}
+
+// PostPartnerFhirR4DeploymentObservationWithBodyWithResponse request with arbitrary body returning *PostPartnerFhirR4DeploymentObservationResponse
+func (c *ClientWithResponses) PostPartnerFhirR4DeploymentObservationWithBodyWithResponse(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostPartnerFhirR4DeploymentObservationResponse, error) {
+	rsp, err := c.PostPartnerFhirR4DeploymentObservationWithBody(ctx, deployment, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPartnerFhirR4DeploymentObservationResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostPartnerFhirR4DeploymentObservationWithResponse(ctx context.Context, deployment string, params *PostPartnerFhirR4DeploymentObservationParams, body PostPartnerFhirR4DeploymentObservationJSONRequestBody, reqEditors ...RequestEditorFn) (*PostPartnerFhirR4DeploymentObservationResponse, error) {
+	rsp, err := c.PostPartnerFhirR4DeploymentObservation(ctx, deployment, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostPartnerFhirR4DeploymentObservationResponse(rsp)
+}
+
+// GetPartnerFhirR4DeploymentObservationObservationFhirIdWithResponse request returning *GetPartnerFhirR4DeploymentObservationObservationFhirIdResponse
+func (c *ClientWithResponses) GetPartnerFhirR4DeploymentObservationObservationFhirIdWithResponse(ctx context.Context, deployment string, observationFhirId string, params *GetPartnerFhirR4DeploymentObservationObservationFhirIdParams, reqEditors ...RequestEditorFn) (*GetPartnerFhirR4DeploymentObservationObservationFhirIdResponse, error) {
+	rsp, err := c.GetPartnerFhirR4DeploymentObservationObservationFhirId(ctx, deployment, observationFhirId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPartnerFhirR4DeploymentObservationObservationFhirIdResponse(rsp)
+}
+
 // GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse request returning *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse
 func (c *ClientWithResponses) GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse(ctx context.Context, deployment string, batchFileSchemaId string, params *GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams, reqEditors ...RequestEditorFn) (*GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse, error) {
 	rsp, err := c.GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId(ctx, deployment, batchFileSchemaId, params, reqEditors...)
@@ -771,6 +1253,132 @@ func (c *ClientWithResponses) PutPartnerWriteOrderDeploymentOrderIdWithResponse(
 		return nil, err
 	}
 	return ParsePutPartnerWriteOrderDeploymentOrderIdResponse(rsp)
+}
+
+// ParsePostPartnerFhirR4DeploymentDocumentReferenceResponse parses an HTTP response from a PostPartnerFhirR4DeploymentDocumentReferenceWithResponse call
+func ParsePostPartnerFhirR4DeploymentDocumentReferenceResponse(rsp *http.Response) (*PostPartnerFhirR4DeploymentDocumentReferenceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostPartnerFhirR4DeploymentDocumentReferenceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse parses an HTTP response from a GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdWithResponse call
+func ParseGetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse(rsp *http.Response) (*GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostPartnerFhirR4DeploymentObservationResponse parses an HTTP response from a PostPartnerFhirR4DeploymentObservationWithResponse call
+func ParsePostPartnerFhirR4DeploymentObservationResponse(rsp *http.Response) (*PostPartnerFhirR4DeploymentObservationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostPartnerFhirR4DeploymentObservationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPartnerFhirR4DeploymentObservationObservationFhirIdResponse parses an HTTP response from a GetPartnerFhirR4DeploymentObservationObservationFhirIdWithResponse call
+func ParseGetPartnerFhirR4DeploymentObservationObservationFhirIdResponse(rsp *http.Response) (*GetPartnerFhirR4DeploymentObservationObservationFhirIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPartnerFhirR4DeploymentObservationObservationFhirIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdResponse parses an HTTP response from a GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdWithResponse call

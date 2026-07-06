@@ -39,8 +39,8 @@ generate: $(REDOCLY_CLI)
 	$(OAPI_CODEGEN) -exclude-tags=Confirmations -package=client -generate=client -o client/client.go spec/clinic.v1.yaml
 	$(REDOCLY_CLI) bundle ../TidepoolApi/reference/redox.v1.yaml -o ./spec/redox.v1.yaml
 	$(OAPI_CODEGEN) -package=redox_models -generate=types -o redox_models/gen_types.go spec/redox.v1.yaml
-	$(OAPI_CODEGEN) -include-tags="Orders (Partner)",Webhooks -package=xealth_client -generate=types,skip-prune -o xealth_client/gen_types.go ../TidepoolApi/reference/xealth.v2.yaml
-	$(OAPI_CODEGEN) -include-tags="Orders (Partner)" -package=xealth_client -generate=client -o xealth_client/gen_client.go ../TidepoolApi/reference/xealth.v2.yaml
+	$(OAPI_CODEGEN) -include-tags="Orders (Partner)",Webhooks,FHIR -package=xealth_client -generate=types,skip-prune -o xealth_client/gen_types.go ../TidepoolApi/reference/xealth.v2.yaml
+	$(OAPI_CODEGEN) -include-tags="Orders (Partner)",FHIR -package=xealth_client -generate=client -o xealth_client/gen_client.go ../TidepoolApi/reference/xealth.v2.yaml
 	go generate ./...
 	cd client && go generate ./...
 

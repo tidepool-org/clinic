@@ -18,6 +18,7 @@ import (
 	"github.com/tidepool-org/clinic/client"
 	integrationTest "github.com/tidepool-org/clinic/integration/test"
 	"github.com/tidepool-org/clinic/test"
+	"github.com/tidepool-org/clinic/xealth"
 	xealthTest "github.com/tidepool-org/clinic/xealth/test"
 	"github.com/tidepool-org/clinic/xealth_client"
 )
@@ -171,6 +172,47 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 		})
 	})
 
+	Describe("Get patient flowsheet", func() {
+		It("returns ordered, formatted CGM observations", func() {
+			endpoint := fmt.Sprintf("/v1/clinics/%s/patients/%s/flowsheet", *clinic.Id, *patient.Id)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet, endpoint, "")
+			asServer(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			body, err := io.ReadAll(rec.Result().Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			var observations []client.FlowsheetObservationV1
+			Expect(json.Unmarshal(body, &observations)).To(Succeed())
+			Expect(observations).ToNot(BeEmpty())
+
+			// Order is significant: the CGM block leads. The summary fixture has
+			// no BGM data, so no SMBG observations are present.
+			Expect(observations[0].Code).To(Equal("REPORTING_PERIOD_START_CGM"))
+			for _, o := range observations {
+				Expect(o.Code).ToNot(ContainSubstring("SMBG"))
+				Expect(o.DateTime).ToNot(BeEmpty())
+			}
+
+			byCode := map[string]client.FlowsheetObservationV1{}
+			for _, o := range observations {
+				byCode[o.Code] = o
+			}
+
+			// Percentages carry "%" units; glucose carries the clinic's mg/dL units.
+			Expect(byCode).To(HaveKey("TIME_IN_RANGE_CGM"))
+			Expect(byCode["TIME_IN_RANGE_CGM"].ValueType).To(Equal(client.Numeric))
+			Expect(byCode["TIME_IN_RANGE_CGM"].Units).To(PointTo(Equal("%")))
+			Expect(byCode).To(HaveKey("AVERAGE_CGM"))
+			Expect(byCode["AVERAGE_CGM"].Units).To(PointTo(Equal("mg/dL")))
+			Expect(byCode["REPORTING_PERIOD_START_CGM"].ValueType).To(Equal(client.DateTime))
+		})
+	})
+
 	Describe("Send get programs request after data upload", func() {
 		It("Succeeds", func() {
 			response := getPrograms(server)
@@ -192,6 +234,8 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 
 	Describe("Send get program url request", func() {
 		It("Succeeds", func() {
+			xealthStub.ResetObservations()
+
 			rec := httptest.NewRecorder()
 			req := prepareRequest(http.MethodPut, "/v1/xealth/program", "./test/xealth_fixtures/08_get_program_url.json")
 			asXealth(req)
@@ -215,6 +259,79 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(reportUrl.Query().Get("clinicId")).To(Equal(*clinic.Id))
 			Expect(reportUrl.Query().Get("patientId")).To(Equal(*patient.Id))
 			Expect(reportUrl.Query().Get("restricted_token")).To(Equal(integrationTest.TestRestrictedToken))
+		})
+
+		It("writes the summary statistics back to Xealth as a FHIR Observation", func() {
+			// The summary statistics writeback fires synchronously from the
+			// get program url handler.
+			captured := xealthStub.Observations()
+			Expect(captured).To(HaveLen(1))
+
+			observation := xealth_client.GeneralObservation{}
+			Expect(json.Unmarshal(captured[0], &observation)).To(Succeed())
+
+			Expect(observation.ResourceType).To(Equal("Observation"))
+			Expect(observation.Status).To(Equal("final"))
+			Expect(observation.Meta.Profile).To(ConsistOf(xealth.XealthObservationGeneralProfile))
+			Expect(observation.BasedOn).To(HaveLen(1))
+			Expect(observation.BasedOn[0].Reference).To(Equal("ServiceRequest/" + XealthAdultOrderId))
+			Expect(observation.EffectiveDateTime).ToNot(BeZero())
+			Expect(observation.Component).ToNot(BeEmpty())
+
+			// The ehr-order-id extension carries the raw order id alongside basedOn.
+			Expect(observation.Extension).ToNot(BeNil())
+			Expect(*observation.Extension).To(ConsistOf(xealth_client.ObservationExtension{
+				Url:         xealth.XealthEHROrderIdExtension,
+				ValueString: XealthAdultOrderId,
+			}))
+
+			byCode := map[string]xealth_client.ObservationComponent{}
+			for _, c := range observation.Component {
+				Expect(c.Code.Coding).ToNot(BeNil())
+				Expect(*c.Code.Coding).To(HaveLen(1))
+				coding := (*c.Code.Coding)[0]
+				Expect(coding.System).To(Equal(xealth.TidepoolObservationSystem))
+				byCode[coding.Code] = c
+				// The summary fixture has no BGM data.
+				Expect(coding.Code).ToNot(ContainSubstring("SMBG"))
+			}
+
+			Expect(byCode).To(HaveKey("TIME_IN_RANGE_CGM"))
+			Expect(byCode["TIME_IN_RANGE_CGM"].ValueQuantity).To(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Unit":   PointTo(Equal("%")),
+				"System": BeNil(),
+			})))
+			Expect(byCode).To(HaveKey("AVERAGE_CGM"))
+			Expect(byCode["AVERAGE_CGM"].ValueQuantity).To(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Unit": PointTo(Equal("mg/dL")),
+			})))
+			Expect(byCode).To(HaveKey("REPORTING_PERIOD_START_CGM"))
+			Expect(byCode["REPORTING_PERIOD_START_CGM"].ValueDateTime).ToNot(BeNil())
+		})
+
+		It("still returns the report url when the writeback is rejected by Xealth", func() {
+			xealthStub.ResetObservations()
+			xealthStub.SetObservationStatus(http.StatusBadRequest)
+			defer xealthStub.SetObservationStatus(0)
+
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodPut, "/v1/xealth/program", "./test/xealth_fixtures/08_get_program_url.json")
+			asXealth(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			body, err := io.ReadAll(rec.Result().Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			response := xealth_client.GetProgramUrlResponse{}
+			Expect(json.Unmarshal(body, &response)).To(Succeed())
+			Expect(response.Url).ToNot(BeEmpty())
+
+			// The observation was posted and rejected, but the failure did not
+			// break the report url response.
+			Expect(xealthStub.Observations()).To(HaveLen(1))
 		})
 	})
 

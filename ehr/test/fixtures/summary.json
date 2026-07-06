@@ -1,0 +1,51 @@
+{
+  "cgmStats": {
+    "dates": {
+      "firstData": "2023-04-14T00:00:00Z",
+      "lastData": "2023-04-23T17:44:09Z",
+      "lastUpdatedDate": "2023-06-22T23:44:16Z"
+    },
+    "periods": {
+      "14d": {
+        "averageGlucoseMmol": 7.921203,
+        "glucoseManagementIndicator": 6.720553,
+        "timeCGMUsePercent": 0.5012618398294717,
+        "coefficientOfVariation": 0.2003709853643661,
+        "standardDeviation": 1.4696946965192512,
+        "daysWithData": 2,
+        "hoursWithData": 28,
+        "timeInVeryLowPercent": 0.0504950495049505,
+        "timeInLowPercent": 0.08613861386138613,
+        "timeInTargetPercent": 0.5628712871287128,
+        "timeInHighPercent": 0.25643564356435644,
+        "timeInVeryHighPercent": 0.04405940594059406
+      }
+    }
+  },
+  "bgmStats": {
+    "dates": {
+      "firstData": "2023-03-26T06:00:00Z",
+      "lastData": "2023-04-25T00:57:11Z",
+      "lastUpdatedDate": "2023-06-22T23:16:31Z"
+    },
+    "periods": {
+      "14d": {
+        "averageGlucoseMmol": 9.563426,
+        "standardDeviation": 1.4697946965192512,
+        "min": 2.98888,
+        "max": 15.55556,
+        "averageDailyRecords": 4.928571428571429,
+        "coefficientOfVariation": 0.2004709853643661,
+        "daysWithData": 3,
+        "totalRecords": 69,
+        "timeInVeryLowRecords": 4,
+        "timeInVeryHighRecords": 13,
+        "timeInVeryLowPercent": 0.057971014492753624,
+        "timeInLowPercent": 0.07246376811594203,
+        "timeInTargetPercent": 0.4492753623188406,
+        "timeInHighPercent": 0.2318840579710145,
+        "timeInVeryHighPercent": 0.18840579710144928
+      }
+    }
+  }
+}

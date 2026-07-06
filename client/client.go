@@ -247,6 +247,9 @@ type ClientInterface interface {
 	// ConnectProvider request
 	ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetPatientFlowsheet request
+	GetPatientFlowsheet(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdatePatientPermissionsWithBody request with any body
 	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1074,6 +1077,18 @@ func (c *Client) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId
 
 func (c *Client) ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectProviderRequest(c.Server, clinicId, patientId, providerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPatientFlowsheet(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPatientFlowsheetRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -5753,6 +5768,47 @@ func NewConnectProviderRequest(server string, clinicId ClinicId, patientId Patie
 	return req, nil
 }
 
+// NewGetPatientFlowsheetRequest generates requests for GetPatientFlowsheet
+func NewGetPatientFlowsheetRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/flowsheet", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdatePatientPermissionsRequest calls the generic UpdatePatientPermissions builder with application/json body
 func NewUpdatePatientPermissionsRequest(server string, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7633,6 +7689,9 @@ type ClientWithResponsesInterface interface {
 	// ConnectProviderWithResponse request
 	ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error)
 
+	// GetPatientFlowsheetWithResponse request
+	GetPatientFlowsheetWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*GetPatientFlowsheetResponse, error)
+
 	// UpdatePatientPermissionsWithBodyWithResponse request with any body
 	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientPermissionsResponse, error)
 
@@ -8661,6 +8720,28 @@ func (r ConnectProviderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetPatientFlowsheetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]FlowsheetObservationV1
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPatientFlowsheetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPatientFlowsheetResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9939,6 +10020,15 @@ func (c *ClientWithResponses) ConnectProviderWithResponse(ctx context.Context, c
 		return nil, err
 	}
 	return ParseConnectProviderResponse(rsp)
+}
+
+// GetPatientFlowsheetWithResponse request returning *GetPatientFlowsheetResponse
+func (c *ClientWithResponses) GetPatientFlowsheetWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*GetPatientFlowsheetResponse, error) {
+	rsp, err := c.GetPatientFlowsheet(ctx, clinicId, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPatientFlowsheetResponse(rsp)
 }
 
 // UpdatePatientPermissionsWithBodyWithResponse request with arbitrary body returning *UpdatePatientPermissionsResponse
@@ -11352,6 +11442,32 @@ func ParseConnectProviderResponse(rsp *http.Response) (*ConnectProviderResponse,
 	response := &ConnectProviderResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetPatientFlowsheetResponse parses an HTTP response from a GetPatientFlowsheetWithResponse call
+func ParseGetPatientFlowsheetResponse(rsp *http.Response) (*GetPatientFlowsheetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPatientFlowsheetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []FlowsheetObservationV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil
