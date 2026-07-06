@@ -506,6 +506,10 @@ func (s *service) TideReport(ctx context.Context, clinicId string, params patien
 	return s.patientsRepo.TideReport(ctx, clinicId, params)
 }
 
+func (s *service) ListExportedPatients(ctx context.Context, clinicId, period string) ([]patients.ExportedPatient, error) {
+	return s.patientsRepo.ListExportedPatients(ctx, clinicId, period)
+}
+
 func mrnChanged(existing patients.Patient, updated patients.Patient) bool {
 	return (existing.Mrn == nil && updated.Mrn != nil) ||
 		(existing.Mrn != nil && updated.Mrn == nil) ||

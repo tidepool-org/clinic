@@ -426,6 +426,14 @@ allow {
   input.path = ["v1", "clinics", _, "patients", _]
 }
 
+# Allow currently authenticated clinician to get patient list export
+# GET /v1/clinics/:clinicId/export/patients
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "export", "patients"]
+  clinician_has_read_access
+}
+
 # Allow backend services to create a patient from existing user
 # POST /v1/clinics/:clinicId/patients/:patientId
 allow {

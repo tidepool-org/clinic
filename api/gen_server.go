@@ -58,6 +58,9 @@ type ServerInterface interface {
 	// Sync EHR Data
 	// (POST /v1/clinics/{clinicId}/ehr/sync)
 	SyncEHRData(ctx echo.Context, clinicId ClinicId) error
+	// Export Patient List CSV
+	// (GET /v1/clinics/{clinicId}/export/patients)
+	ExportPatientList(ctx echo.Context, clinicId ClinicId, params ExportPatientListParams) error
 	// Delete Invited Clinician
 	// (DELETE /v1/clinics/{clinicId}/invites/clinicians/{inviteId}/clinician)
 	DeleteInvitedClinician(ctx echo.Context, clinicId ClinicId, inviteId InviteId) error
@@ -648,6 +651,33 @@ func (w *ServerInterfaceWrapper) SyncEHRData(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.SyncEHRData(ctx, clinicId)
+	return err
+}
+
+// ExportPatientList converts echo context to params.
+func (w *ServerInterfaceWrapper) ExportPatientList(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ExportPatientListParams
+	// ------------- Required query parameter "period" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "period", ctx.QueryParams(), &params.Period)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter period: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ExportPatientList(ctx, clinicId, params)
 	return err
 }
 
@@ -2951,6 +2981,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.GetClinician)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.UpdateClinician)
 	router.POST(baseURL+"/v1/clinics/:clinicId/ehr/sync", wrapper.SyncEHRData)
+	router.GET(baseURL+"/v1/clinics/:clinicId/export/patients", wrapper.ExportPatientList)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.DeleteInvitedClinician)
 	router.GET(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.GetInvitedClinician)
 	router.PATCH(baseURL+"/v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician", wrapper.AssociateClinicianToUser)

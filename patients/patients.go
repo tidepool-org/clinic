@@ -70,6 +70,7 @@ type Service interface {
 	ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
+	ListExportedPatients(ctx context.Context, clinicId, period string) ([]ExportedPatient, error)
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error
 	RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error
 	RescheduleLastSubscriptionOrderForPatient(ctx context.Context, clinicIds []string, userId, subscription, ordersCollection, targetCollection string) error
