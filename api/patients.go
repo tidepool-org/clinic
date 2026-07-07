@@ -544,6 +544,16 @@ func (h *Handler) ExportPatientList(ec echo.Context, clinicId ClinicId, params E
 			Message: "expected user access token",
 		}
 	}
+	clinic, err := h.Clinics.Get(ctx, clinicId)
+	if err != nil {
+		return err
+	}
+	if !clinic.CanExportPatientList() {
+		return &echo.HTTPError{
+			Code:    http.StatusForbidden,
+			Message: "cannot export patient list",
+		}
+	}
 
 	filter := export.Params{
 		Period:              params.Period,
