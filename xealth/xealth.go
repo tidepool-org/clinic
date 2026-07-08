@@ -365,7 +365,7 @@ func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.
 	return response, nil
 }
 
-const xealthWritebackTimeout = 10 * time.Second
+const xealthWritebackTimeout = 90 * time.Second
 
 // sendSummaryStatsObservation computes the patient's summary statistics and
 // writes them back to Xealth's FHIR store as a single General Observation, one
