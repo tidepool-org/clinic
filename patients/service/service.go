@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
+	"github.com/tidepool-org/clinic/audit"
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
@@ -27,11 +28,12 @@ type service struct {
 	clinicsService   clinics.Service
 	custodialService CustodialService
 	patientsRepo     patients.Repository
+	auditer          audit.AuditEventRecorder
 }
 
 var _ patients.Service = &service{}
 
-func NewService(config *config.Config, repo patients.Repository, clinics clinics.Service, custodialService CustodialService, logger *zap.SugaredLogger, dbClient *mongo.Client) (patients.Service, error) {
+func NewService(config *config.Config, repo patients.Repository, clinics clinics.Service, custodialService CustodialService, auditer audit.AuditEventRecorder, logger *zap.SugaredLogger, dbClient *mongo.Client) (patients.Service, error) {
 	return &service{
 		config:           config,
 		dbClient:         dbClient,
@@ -39,6 +41,7 @@ func NewService(config *config.Config, repo patients.Repository, clinics clinics
 		clinicsService:   clinics,
 		custodialService: custodialService,
 		patientsRepo:     repo,
+		auditer:          auditer,
 	}, nil
 }
 
@@ -506,8 +509,17 @@ func (s *service) TideReport(ctx context.Context, clinicId string, params patien
 	return s.patientsRepo.TideReport(ctx, clinicId, params)
 }
 
-func (s *service) ListExportedPatients(ctx context.Context, clinicId, period string) ([]patients.ExportedPatient, error) {
-	return s.patientsRepo.ListExportedPatients(ctx, clinicId, period)
+func (s *service) ListExportedPatients(ctx context.Context, params patients.ExportParams) ([]patients.ExportedPatient, error) {
+	auditEvent := audit.AuditEvent{
+		ClinicianID: params.ExporterClinicianID,
+		ClinicID:    params.WorkspaceID,
+		EventName:   audit.ExportPatientListEvent,
+	}
+	if err := s.auditer.Create(ctx, auditEvent); err != nil {
+		s.logger.Errorf("Error logging patient list export to audit log", "workspaceId", params.WorkspaceID, "error", err)
+		return nil, err
+	}
+	return s.patientsRepo.ListExportedPatients(ctx, params)
 }
 
 func mrnChanged(existing patients.Patient, updated patients.Patient) bool {

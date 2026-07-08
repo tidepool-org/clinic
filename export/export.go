@@ -14,13 +14,6 @@ import (
 	"github.com/tidepool-org/clinic/store"
 )
 
-type Params struct {
-	Period              string
-	ExporterClinicianID string
-	WorkspaceID         string
-	ReportDate          time.Time
-}
-
 type exporter struct {
 	clinicSvc    clinics.Service
 	clinicianSvc clinicians.Service
@@ -30,7 +23,7 @@ type exporter struct {
 	tagNamesById           map[string]string
 	clinicianNamesByUserId map[string]string
 	exportingClinician     *clinicians.Clinician
-	params                 Params
+	params                 patients.ExportParams
 	days                   int
 }
 
@@ -72,7 +65,7 @@ func (e *exporter) toCSVRow(p *patients.ExportedPatient) []string {
 	}
 }
 
-func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianSvc clinicians.Service, patientSvc patients.Service, params Params) (*exporter, error) {
+func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianSvc clinicians.Service, patientSvc patients.Service, params patients.ExportParams) (*exporter, error) {
 	days, err := periodToDays(params.Period)
 	if err != nil {
 		return nil, err
@@ -123,7 +116,7 @@ func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianS
 }
 
 func (e *exporter) Write(ctx context.Context, w io.Writer) error {
-	ps, err := e.patientSvc.ListExportedPatients(ctx, e.params.WorkspaceID, e.params.Period)
+	ps, err := e.patientSvc.ListExportedPatients(ctx, e.params)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,13 @@ import (
 	"time"
 )
 
+type ExportParams struct {
+	Period              string
+	ExporterClinicianID string
+	WorkspaceID         string
+	ReportDate          time.Time
+}
+
 // ExportedPatient is an intermediate representation of the fields needed by a
 // patient export list. It has some looked up fields where simpler / more
 // convenient to do it in mongo and other that can be calculated from its

@@ -17,6 +17,7 @@ import (
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
 
+	"github.com/tidepool-org/clinic/audit"
 	"github.com/tidepool-org/clinic/auth"
 	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
 	cliniciansService "github.com/tidepool-org/clinic/clinicians/service"
@@ -156,6 +157,7 @@ func Dependencies() []fx.Option {
 			store.NewClient,
 			store.NewDatabase,
 			patientsRepository.NewRepository,
+			audit.NewRepository,
 			patientsService.NewCustodialService,
 			patientsService.NewService,
 			redox.NewConfig,

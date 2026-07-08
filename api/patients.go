@@ -545,7 +545,7 @@ func (h *Handler) ExportPatientList(ec echo.Context, clinicId ClinicId, params E
 		}
 	}
 
-	filter := export.Params{
+	filter := patients.ExportParams{
 		Period:              params.Period,
 		ExporterClinicianID: authData.SubjectId,
 		WorkspaceID:         clinicId,

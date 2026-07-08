@@ -1112,8 +1112,8 @@ func toMongoString(field string, defaultValue string) bson.M {
 	}
 }
 
-func (r *repository) ListExportedPatients(ctx context.Context, clinicId, period string) ([]patients.ExportedPatient, error) {
-	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
+func (r *repository) ListExportedPatients(ctx context.Context, params patients.ExportParams) ([]patients.ExportedPatient, error) {
+	clinicObjId, err := primitive.ObjectIDFromHex(params.WorkspaceID)
 	if err != nil {
 		return nil, fmt.Errorf(`error converting workspace id string to ObjectId: %w`, err)
 	}
@@ -1123,7 +1123,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, clinicId, period 
 		}},
 	}
 
-	cgmPathPrefix := fmt.Sprintf("$summary.cgmStats.periods.%s", period)
+	cgmPathPrefix := fmt.Sprintf("$summary.cgmStats.periods.%s", params.Period)
 	addCGMFieldsStage := bson.D{
 		{"$addFields", bson.M{
 			"cgmLastDataDate":      "$summary.cgmStats.dates.lastData",
@@ -1142,7 +1142,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, clinicId, period 
 		}},
 	}
 
-	bgmPathPrefix := fmt.Sprintf("$summary.bgmStats.periods.%s", period)
+	bgmPathPrefix := fmt.Sprintf("$summary.bgmStats.periods.%s", params.Period)
 	addBGMFieldsStage := bson.D{
 		{"$addFields", bson.M{
 			"bgmLastDataDate":   "$summary.bgmStats.dates.lastData",
