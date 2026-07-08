@@ -2,6 +2,7 @@ package xealth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -423,8 +424,23 @@ func (d *defaultHandler) sendSummaryStatsObservation(ctx context.Context, event 
 	}
 
 	d.logger.Infow("summary-stats writeback succeeded",
-		"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId, "orderId", orderId)
+		"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId, "orderId", orderId,
+		"observationId", createdObservationId(response.Body))
 	return nil
+}
+
+// createdObservationId extracts the id Xealth assigned to the created FHIR
+// Observation (the create response returns the created resource), so it can be
+// retrieved later via GET /partner/fhir/R4/{deployment}/Observation/{id}.
+// Returns an empty string when the response carries no id.
+func createdObservationId(body []byte) string {
+	observation := struct {
+		Id string `json:"id"`
+	}{}
+	if err := json.Unmarshal(body, &observation); err != nil {
+		return ""
+	}
+	return observation.Id
 }
 
 func (d *defaultHandler) getLastViewedDate(ctx context.Context, event xealth_client.GetProgramsRequest, programId string, clinic clinics.Clinic, patient patients.Patient) (lastViewed time.Time, err error) {

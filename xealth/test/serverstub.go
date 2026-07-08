@@ -16,6 +16,11 @@ const (
 	XealthClientId     = "client-id"
 	XealthClientSecret = "client-secret"
 	TokenEndpoint      = "/oauth2/token"
+
+	// XealthObservationId is the id the stub assigns to created FHIR
+	// Observations, mirroring the real API which returns the created resource
+	// with a server-assigned id.
+	XealthObservationId = "3f2b9105-b1a4-41ea-9f13-6f622c821c3d"
 )
 
 type XealthServer struct {
@@ -67,6 +72,22 @@ func (x *XealthServer) recordObservation(body []byte) int {
 	return http.StatusCreated
 }
 
+// withObservationId returns the created resource as the real API does: the
+// posted observation decorated with a server-assigned id.
+func withObservationId(body []byte) []byte {
+	observation := map[string]interface{}{}
+	if err := json.Unmarshal(body, &observation); err != nil {
+		return body
+	}
+	observation["id"] = XealthObservationId
+
+	created, err := json.Marshal(observation)
+	if err != nil {
+		return body
+	}
+	return created
+}
+
 func ServerStub() *XealthServer {
 	xealth := &XealthServer{}
 	xealth.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +105,7 @@ func ServerStub() *XealthServer {
 			status := xealth.recordObservation(body)
 			w.Header().Add("content-type", "application/json")
 			w.WriteHeader(status)
-			w.Write(body)
+			w.Write(withObservationId(body))
 		} else if r.Method == http.MethodPost && r.RequestURI == TokenEndpoint {
 			token := map[string]interface{}{
 				"access_token": XealthOauth2Token,
