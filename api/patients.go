@@ -555,7 +555,7 @@ func (h *Handler) ExportPatientList(ec echo.Context, clinicId ClinicId, params E
 	if err != nil {
 		return err
 	}
-	disposition := fmt.Sprintf("attachment; filename=patients.csv", time.Now().Unix())
+	disposition := fmt.Sprintf("attachment; filename=patients-%d.csv", time.Now().Unix())
 	ec.Response().Header().Set(echo.HeaderContentDisposition, disposition)
 	ec.Response().Header().Set(echo.HeaderContentType, "text/csv")
 	ec.Response().WriteHeader(http.StatusOK)
