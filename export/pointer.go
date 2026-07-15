@@ -23,7 +23,7 @@ func pint(i *int) string {
 	if i == nil {
 		return ""
 	}
-	return ""
+	return fmt.Sprintf("%v", *i)
 }
 
 func ptomgdl(valMmolL *float64) string {
