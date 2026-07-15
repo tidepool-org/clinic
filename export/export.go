@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 	"time"
 
@@ -12,6 +13,10 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
+)
+
+const (
+	timeFormat = "2006-01-02 03:04 PM"
 )
 
 type Params struct {
@@ -22,9 +27,7 @@ type Params struct {
 }
 
 type exporter struct {
-	clinicSvc    clinics.Service
-	clinicianSvc clinicians.Service
-	patientSvc   patients.Service
+	patientSvc patients.Service
 
 	clinic                 *clinics.Clinic
 	tagNamesById           map[string]string
@@ -34,7 +37,7 @@ type exporter struct {
 	days                   int
 }
 
-func (e *exporter) toCSVRow(p *patients.ExportedPatient) []string {
+func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 	return []string{
 		pstr(p.FullName),
 		pstr(p.UserId),
@@ -59,6 +62,9 @@ func (e *exporter) toCSVRow(p *patients.ExportedPatient) []string {
 		pint(p.CgmDaysWithData),
 		pint(p.CgmHoursWithData),
 		ptomgdl(p.CgmAverageGlucose),
+		ppct(p.CgmGmi, 0),
+		ppct(p.CgmStdDev, 0),
+		ppct(p.CgmCV, 0),
 		ppct(p.CgmTimeInLevel2Hypo, 0),
 		ppct(p.CgmTimeInLevel1Hypo, 0),
 		ppct(p.CgmTimeInTarget, 0),
@@ -66,6 +72,7 @@ func (e *exporter) toCSVRow(p *patients.ExportedPatient) []string {
 		ppct(p.CgmTimeInLevel1Hyper, 0),
 		ptime(p.BgmLastDataDate, "2006-01-02"),
 		ptomgdl(p.BgmAverageGlucose),
+		pfloat(p.BgmReadingsPerDay, 0),
 		pint(p.BgmTotalReadings),
 		pint(p.BgmLowEvents),
 		pint(p.BgmHighEvents),
@@ -73,10 +80,6 @@ func (e *exporter) toCSVRow(p *patients.ExportedPatient) []string {
 }
 
 func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianSvc clinicians.Service, patientSvc patients.Service, params Params) (*exporter, error) {
-	days, err := periodToDays(params.Period)
-	if err != nil {
-		return nil, err
-	}
 	clinic, err := clinicSvc.Get(ctx, params.WorkspaceID)
 	if err != nil {
 		return nil, err
@@ -87,6 +90,14 @@ func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianS
 		ClinicId: &params.WorkspaceID,
 	}
 	cs, err := clinicianSvc.List(ctx, filter, pagination)
+	if err != nil {
+		return nil, err
+	}
+	return NewPatientExportClinic(clinic, cs, patientSvc, params)
+}
+
+func NewPatientExportClinic(clinic *clinics.Clinic, cs []*clinicians.Clinician, patientSvc patients.Service, params Params) (*exporter, error) {
+	days, err := periodToDays(params.Period)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +121,6 @@ func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianS
 		return nil, fmt.Errorf(`no clinician "%v" found.`, params.ExporterClinicianID)
 	}
 	return &exporter{
-		clinicSvc:              clinicSvc,
-		clinicianSvc:           clinicianSvc,
 		patientSvc:             patientSvc,
 		clinic:                 clinic,
 		exportingClinician:     exportingClinician,
@@ -138,7 +147,7 @@ func (e *exporter) Write(ctx context.Context, w io.Writer) error {
 		"Total Patients",
 	}
 	metadata := []string{
-		e.params.ReportDate.Format("2006-01-02 03:04 PM"),
+		fmtClinicTime(e.params.ReportDate, e.clinic),
 		pstr(e.exportingClinician.Name),
 		pstr(e.exportingClinician.Email),
 		pstr(e.clinic.Name),
@@ -197,7 +206,7 @@ func (e *exporter) Write(ctx context.Context, w io.Writer) error {
 		return err
 	}
 	for _, patient := range ps {
-		row := e.toCSVRow(&patient)
+		row := e.ToCSVRow(&patient)
 		if err := writer.Write(row); err != nil {
 			return err
 		}
@@ -220,7 +229,7 @@ func fmtDataSourceLastDataDate(ds *patients.DataSource) string {
 	if ds == nil || ds.LatestDataTime == nil {
 		return ""
 	}
-	return ds.LatestDataTime.Format("2006-01-02")
+	return ds.LatestDataTime.Format(time.DateOnly)
 }
 
 func fmtDataSourceStatus(ds *patients.DataSource, now time.Time) string {
@@ -228,14 +237,36 @@ func fmtDataSourceStatus(ds *patients.DataSource, now time.Time) string {
 		return "NA"
 	}
 	inactiveCutoff := now.Add(-time.Hour * 24 * 2)
-	expiredCutoff := now.Add(-time.Hour * 24 * 30)
+	expiredCutoff := now.Add(-time.Duration(math.Abs(float64(patients.PendingDataSourceExpirationDuration))))
 	if (ds.State == patients.DataSourceStatePending || ds.State == patients.DataSourceStatePendingReconnect) && ds.ExpirationTime != nil && ds.ExpirationTime.Before(expiredCutoff) {
-		return "inactive"
+		return "expired"
 	}
 	if ds.State == "connected" && ds.LatestDataTime != nil && ds.LatestDataTime.Before(inactiveCutoff) {
 		return "inactive"
 	}
 	return ds.State
+}
+
+func fmtClinicTime(t time.Time, clinic *clinics.Clinic) string {
+	if clinic.Timezone == nil || *clinic.Timezone == "" {
+		return t.Format(timeFormat)
+	}
+	loc, err := time.LoadLocation(*clinic.Timezone)
+	if err != nil {
+		return t.Format(timeFormat)
+	}
+	return t.In(loc).Format(timeFormat)
+}
+
+func fmtClinicDate(t time.Time, clinic *clinics.Clinic) string {
+	if clinic.Timezone == nil || *clinic.Timezone == "" {
+		return t.Format(time.DateOnly)
+	}
+	loc, err := time.LoadLocation(*clinic.Timezone)
+	if err != nil {
+		return t.Format(time.DateOnly)
+	}
+	return t.In(loc).Format(time.DateOnly)
 }
 
 func fmtBool(b bool, valIfTrue string, valIfFalse string) string {
@@ -259,25 +290,24 @@ func fmtPatientTags(tagIds *[]string, tagNamesById map[string]string) string {
 	if tagIds == nil || len(*tagIds) == 0 {
 		return ""
 	}
-	var tagNames []string
-	for _, tagId := range *tagIds {
+	tagNames := make([]string, len(*tagIds))
+	for i, tagId := range *tagIds {
 		if name, ok := tagNamesById[tagId]; ok {
-			tagNames = append(tagNames, name)
+			tagNames[i] = name
 		}
 	}
-	return strings.Join(tagNames, ", ")
+	return strings.Join(tagNames, ",")
 }
 
 func fmtBirthdate(birthDate *string) string {
-	if birthDate == nil {
+	if birthDate == nil || *birthDate == "" {
 		return ""
 	}
-	dateFormat := "2006-01-02"
-	t, err := time.Parse(dateFormat, *birthDate)
+	t, err := time.Parse(time.DateOnly, *birthDate)
 	if err != nil || t.IsZero() {
 		return ""
 	}
-	return t.Format(dateFormat)
+	return t.Format(time.DateOnly)
 }
 
 func periodToDays(period string) (days int, err error) {
