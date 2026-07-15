@@ -28,12 +28,6 @@ const (
 var (
 	EHRProviderRedox  = "redox"
 	EHRProviderXealth = "xealth"
-
-	patientExportSupportedTiers = map[string]bool{
-		"tier0200": true,
-		"tier0300": true,
-		"tier0400": true,
-	}
 )
 
 var ErrNotFound = fmt.Errorf("clinic %w", errors.NotFound)
@@ -160,10 +154,6 @@ func (c Clinic) IsTierDefault() bool {
 // As of 10/31/2025, only US default tier clinics have patient count settings enabled.
 func (c Clinic) DoesClinicRequirePatientCountSettings() bool {
 	return c.IsCountryCodeUS() && c.IsTierDefault()
-}
-
-func (c Clinic) CanExportPatientList() bool {
-	return patientExportSupportedTiers[c.Tier]
 }
 
 // If patient count settings are enabled, return them. Otherwise, unlimited.
