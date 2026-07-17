@@ -56,7 +56,7 @@ var _ = Describe("Export", func() {
 				Id:          &clinicOID,
 				PatientTags: patientTags,
 			}
-			params := export.Params{
+			params := patients.ExportParams{
 				Period:              "1d",
 				ExporterClinicianID: clinicianID,
 				WorkspaceID:         clinicID,

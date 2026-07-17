@@ -48,3 +48,10 @@ type ExportedPatient struct {
 	BgmLowEvents      *int       `bson:"bgmLowEvents,omitempty"`
 	BgmHighEvents     *int       `bson:"bgmHighEvents,omitempty"`
 }
+
+type ExportParams struct {
+	Period              string
+	ExporterClinicianID string
+	WorkspaceID         string
+	ReportDate          time.Time
+}

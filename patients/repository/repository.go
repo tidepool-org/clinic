@@ -1112,7 +1112,9 @@ func toMongoString(field string, defaultValue string) bson.M {
 	}
 }
 
-func (r *repository) ListExportedPatients(ctx context.Context, clinicId, period string) ([]patients.ExportedPatient, error) {
+func (r *repository) ListExportedPatients(ctx context.Context, params patients.ExportParams) ([]patients.ExportedPatient, error) {
+	clinicId := params.WorkspaceID
+	period := params.Period
 	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
 	if err != nil {
 		return nil, fmt.Errorf(`error converting workspace id string to ObjectId: %w`, err)
