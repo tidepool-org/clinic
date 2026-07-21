@@ -425,45 +425,6 @@ func NewPatient(dto PatientV1) patients.Patient {
 		patient.Sites = &sites
 	}
 
-	if dto.DataSources != nil {
-		var dataSources []patients.DataSource
-		for _, d := range *dto.DataSources {
-
-			newDataSource := patients.DataSource{
-				ProviderName: string(d.ProviderName),
-				State:        string(d.State),
-			}
-
-			if d.DataSourceId != nil {
-				dataSourceObjectId, _ := primitive.ObjectIDFromHex(*d.DataSourceId)
-				newDataSource.DataSourceId = &dataSourceObjectId
-			}
-
-			if d.CreatedTime != nil {
-				createdTime, _ := time.Parse(time.RFC3339Nano, string(*d.CreatedTime))
-				newDataSource.CreatedTime = &createdTime
-			}
-
-			if d.ModifiedTime != nil {
-				modifiedTime, _ := time.Parse(time.RFC3339Nano, string(*d.ModifiedTime))
-				newDataSource.ModifiedTime = &modifiedTime
-			}
-
-			if d.ExpirationTime != nil {
-				expirationTime, _ := time.Parse(time.RFC3339Nano, string(*d.ExpirationTime))
-				newDataSource.ExpirationTime = &expirationTime
-			}
-
-			if d.LatestDataTime != nil {
-				latestDataTime, _ := time.Parse(time.RFC3339Nano, string(*d.LatestDataTime))
-				newDataSource.LatestDataTime = &latestDataTime
-			}
-
-			dataSources = append(dataSources, newDataSource)
-		}
-		patient.DataSources = &dataSources
-	}
-
 	if dto.GlycemicRanges != nil {
 		patient.GlycemicRanges = NewGlycemicRanges(dto.GlycemicRanges)
 	}
@@ -785,11 +746,6 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSourceV
 			if d.ModifiedTime != nil {
 				modifiedTime := DatetimeV1(d.ModifiedTime.Format(time.RFC3339Nano))
 				newDataSource.ModifiedTime = &modifiedTime
-			}
-
-			if d.ExpirationTime != nil {
-				expirationTime := DatetimeV1(d.ExpirationTime.Format(time.RFC3339Nano))
-				newDataSource.ExpirationTime = &expirationTime
 			}
 
 			if d.LatestDataTime != nil {

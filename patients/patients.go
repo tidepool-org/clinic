@@ -34,9 +34,6 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
-	DataSourceStatePending          = "pending"
-	DataSourceStatePendingReconnect = "pendingReconnect"
-
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,
@@ -357,7 +354,6 @@ type DataSource struct {
 	DataSourceId   *primitive.ObjectID `bson:"dataSourceId,omitempty"`
 	CreatedTime    *time.Time          `bson:"createdTime,omitempty"`
 	ModifiedTime   *time.Time          `bson:"modifiedTime,omitempty"`
-	ExpirationTime *time.Time          `bson:"expirationTime,omitempty"`
 	ProviderName   string              `bson:"providerName"`
 	State          string              `bson:"state"`
 	LatestDataTime *time.Time          `bson:"latestDataTime,omitempty"`
