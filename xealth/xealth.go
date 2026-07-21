@@ -452,7 +452,6 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 			for _, dataSource := range *create.DataSources {
 				if err = d.patients.AddProviderConnectionRequest(ctx, create.ClinicId.Hex(), *match.Patient.UserId, patients.ConnectionRequest{
 					ProviderName: dataSource.ProviderName,
-					CreatedTime:  time.Now(),
 				}); err != nil {
 					return fmt.Errorf("unable to update %s connection: %w", dataSource.ProviderName, err)
 				}

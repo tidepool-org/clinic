@@ -3863,8 +3863,6 @@ components:
           $ref: '#/components/schemas/datetime.v1'
         modifiedTime:
           $ref: '#/components/schemas/datetime.v1'
-        expirationTime:
-          $ref: '#/components/schemas/datetime.v1'
         latestDataTime:
           $ref: '#/components/schemas/datetime.v1'
           title: Time of the latest data point from this source
@@ -4959,6 +4957,12 @@ components:
           $ref: '#/components/schemas/providerId.v1'
           x-stoplight:
             id: ej94kmuykpg1k
+        expirationTime:
+          type: string
+          format: date-time
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+          readOnly: true
       required:
         - createdTime
         - providerName
