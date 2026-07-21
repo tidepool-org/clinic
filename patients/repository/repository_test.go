@@ -2315,11 +2315,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   nil,
-										ModifiedTime:   nil,
-										ExpirationTime: mustTime("2025-10-30T20:49:05.465Z"),
-										ProviderName:   "dexcom",
-										State:          "connected",
+										DataSourceId: nil,
+										ModifiedTime: nil,
+										ProviderName: "dexcom",
+										State:        "connected",
 									},
 								},
 							},
@@ -2368,11 +2367,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   mustObjectID("686c054cbea00653fd4fcf8b"),
-										ModifiedTime:   mustTime("2025-07-07T17:41:13Z"),
-										ExpirationTime: nil,
-										ProviderName:   "dexcom",
-										State:          "disconnected",
+										DataSourceId: mustObjectID("686c054cbea00653fd4fcf8b"),
+										ModifiedTime: mustTime("2025-07-07T17:41:13Z"),
+										ProviderName: "dexcom",
+										State:        "disconnected",
 									},
 								},
 							},
@@ -2615,11 +2613,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   nil,
-										ModifiedTime:   nil,
-										ExpirationTime: mustTime("2025-10-30T20:49:05.465Z"),
-										ProviderName:   "dexcom",
-										State:          "connected",
+										DataSourceId: nil,
+										ModifiedTime: nil,
+										ProviderName: "dexcom",
+										State:        "connected",
 									},
 								},
 							},

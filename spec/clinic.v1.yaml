@@ -3741,8 +3741,6 @@ components:
           type: string
           title: Data source connection state
           enum:
-            - pending
-            - pendingReconnect
             - connected
             - disconnected
             - error
@@ -3758,8 +3756,6 @@ components:
           pattern: ^[a-f0-9]{24}$
           readOnly: true
         modifiedTime:
-          $ref: '#/components/schemas/datetime.v1'
-        expirationTime:
           $ref: '#/components/schemas/datetime.v1'
         latestDataTime:
           $ref: '#/components/schemas/datetime.v1'
@@ -5033,6 +5029,7 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/dataSource.v1'
+          readOnly: true
         lastUploadReminderTime:
           type: string
           format: date-time

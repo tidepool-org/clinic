@@ -637,11 +637,9 @@ const (
 
 // Defines values for DataSourceV1State.
 const (
-	Connected        DataSourceV1State = "connected"
-	Disconnected     DataSourceV1State = "disconnected"
-	Error            DataSourceV1State = "error"
-	Pending          DataSourceV1State = "pending"
-	PendingReconnect DataSourceV1State = "pendingReconnect"
+	Connected    DataSourceV1State = "connected"
+	Disconnected DataSourceV1State = "disconnected"
+	Error        DataSourceV1State = "error"
 )
 
 // Defines values for DiagnosisTypeV1.
@@ -1333,9 +1331,6 @@ type CreatePatientV1 struct {
 type DataSourceV1 struct {
 	// DataSourceId String representation of a resource id
 	DataSourceId *string `json:"dataSourceId,omitempty"`
-
-	// ExpirationTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	ExpirationTime *DatetimeV1 `json:"expirationTime,omitempty"`
 
 	// LatestDataTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	LatestDataTime *DatetimeV1 `json:"latestDataTime,omitempty"`
