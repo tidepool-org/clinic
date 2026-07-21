@@ -224,8 +224,9 @@ type ProviderConnectionRequests map[string]ConnectionRequests
 type ConnectionRequests []ConnectionRequest
 
 type ConnectionRequest struct {
-	ProviderName string    `bson:"providerName"`
-	CreatedTime  time.Time `bson:"createdTime"`
+	ProviderName   string    `bson:"providerName"`
+	CreatedTime    time.Time `bson:"createdTime"`
+	ExpirationTime time.Time `bson:"expirationTime,omitempty"`
 }
 
 type SubscriptionUpdate struct {
