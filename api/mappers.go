@@ -397,8 +397,9 @@ func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provi
 	result := make([]ProviderConnectionRequestV1, len(requestsForProvider))
 	for i, request := range requestsForProvider {
 		result[i] = ProviderConnectionRequestV1{
-			CreatedTime:  request.CreatedTime,
-			ProviderName: ProviderId(request.ProviderName),
+			CreatedTime:    request.CreatedTime,
+			ExpirationTime: request.ExpirationTime,
+			ProviderName:   ProviderId(request.ProviderName),
 		}
 	}
 	return result

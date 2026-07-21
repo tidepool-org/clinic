@@ -1749,8 +1749,9 @@ type PostalCodeV1 = string
 
 // ProviderConnectionRequestV1 defines model for providerConnectionRequest.v1.
 type ProviderConnectionRequestV1 struct {
-	CreatedTime  time.Time    `json:"createdTime"`
-	ProviderName ProviderIdV1 `json:"providerName"`
+	CreatedTime    time.Time    `json:"createdTime"`
+	ExpirationTime time.Time    `json:"expirationTime,omitempty,omitzero"`
+	ProviderName   ProviderIdV1 `json:"providerName"`
 }
 
 // ProviderConnectionRequestsV1 defines model for providerConnectionRequests.v1.
