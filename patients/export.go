@@ -23,6 +23,8 @@ type ExportedPatient struct {
 	GlycemicRanges  *GlycemicRanges `bson:"glycemicRanges,omitempty"`
 	DiagnosisType   *string         `bson:"diagnosisType,omitempty"`
 
+	ProviderConnectionRequests ProviderConnectionRequests `bson:"providerConnectionRequests,omitempty"`
+
 	DexcomDataSource *DataSource `bson:"dexcomDataSource,omitempty"`
 	AbbottDataSource *DataSource `bson:"abbottDataSource,omitempty"`
 	TwiistDataSource *DataSource `bson:"twiistDataSource,omitempty"`
