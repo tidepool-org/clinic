@@ -176,7 +176,7 @@ func RandomDataSources() patients.DataSources {
 	createdTime := time.Now().UTC().Truncate(time.Millisecond)
 	return []patients.DataSource{
 		{
-			State:        test.Faker.RandomStringElement([]string{"pending", "connected"}),
+			State:        test.Faker.RandomStringElement([]string{"connected"}),
 			ProviderName: test.Faker.Company().Name(),
 			CreatedTime:  &createdTime,
 		},

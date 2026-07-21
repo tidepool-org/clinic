@@ -1918,6 +1918,36 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("List exported patients", func() {
+			It("includes provider connection requests", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *randomPatient.UserId
+				request := patients.ConnectionRequest{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					CreatedTime:  time.Now().Truncate(time.Millisecond),
+				}
+				Expect(repo.AddProviderConnectionRequest(ctx, clinicId, userId, request)).
+					To(Succeed())
+
+				rows, err := repo.ListExportedPatients(ctx, patients.ExportParams{
+					Period:      "14d",
+					WorkspaceID: clinicId,
+				})
+				Expect(err).ToNot(HaveOccurred())
+
+				idx := slices.IndexFunc(rows, func(row patients.ExportedPatient) bool {
+					return row.UserId != nil && *row.UserId == userId
+				})
+				Expect(idx).To(BeNumerically(">=", 0))
+				requests := rows[idx].ProviderConnectionRequests
+				Expect(requests).To(HaveKey(patients.DexcomDataSourceProviderName))
+				dexcom := requests[patients.DexcomDataSourceProviderName]
+				Expect(dexcom).To(HaveLen(1))
+				Expect(dexcom[0].CreatedTime).To(BeTemporally("==", request.CreatedTime))
+			})
+		})
+
 		Describe("DeleteSites", func() {
 			var patientWithSites patients.Patient
 
@@ -2336,11 +2366,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   nil,
-										ModifiedTime:   nil,
-										ExpirationTime: mustTime("2025-10-30T20:49:05.465Z"),
-										ProviderName:   "dexcom",
-										State:          "connected",
+										DataSourceId: nil,
+										ModifiedTime: nil,
+										ProviderName: "dexcom",
+										State:        "connected",
 									},
 								},
 							},
@@ -2389,11 +2418,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   mustObjectID("686c054cbea00653fd4fcf8b"),
-										ModifiedTime:   mustTime("2025-07-07T17:41:13Z"),
-										ExpirationTime: nil,
-										ProviderName:   "dexcom",
-										State:          "disconnected",
+										DataSourceId: mustObjectID("686c054cbea00653fd4fcf8b"),
+										ModifiedTime: mustTime("2025-07-07T17:41:13Z"),
+										ProviderName: "dexcom",
+										State:        "disconnected",
 									},
 								},
 							},
@@ -2636,11 +2664,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   nil,
-										ModifiedTime:   nil,
-										ExpirationTime: mustTime("2025-10-30T20:49:05.465Z"),
-										ProviderName:   "dexcom",
-										State:          "connected",
+										DataSourceId: nil,
+										ModifiedTime: nil,
+										ProviderName: "dexcom",
+										State:        "connected",
 									},
 								},
 							},

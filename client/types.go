@@ -637,11 +637,9 @@ const (
 
 // Defines values for DataSourceV1State.
 const (
-	Connected        DataSourceV1State = "connected"
-	Disconnected     DataSourceV1State = "disconnected"
-	Error            DataSourceV1State = "error"
-	Pending          DataSourceV1State = "pending"
-	PendingReconnect DataSourceV1State = "pendingReconnect"
+	Connected    DataSourceV1State = "connected"
+	Disconnected DataSourceV1State = "disconnected"
+	Error        DataSourceV1State = "error"
 )
 
 // Defines values for DiagnosisTypeV1.
