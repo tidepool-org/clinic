@@ -44,11 +44,11 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 		fmtPatientTags(p.TagIds, e.tagNamesById),
 		fmtGlycemicRanges(p.GlycemicRanges),
 		pstrd(p.DiagnosisType, "Other"),
-		fmtDataSourceStatus(p.DexcomDataSource, e.params.ReportDate),
+		fmtProviderStatus(p, "dexcom", e.params.ReportDate),
 		fmtDataSourceLastDataDate(p.DexcomDataSource),
-		fmtDataSourceStatus(p.AbbottDataSource, e.params.ReportDate),
+		fmtProviderStatus(p, "abbott", e.params.ReportDate),
 		fmtDataSourceLastDataDate(p.AbbottDataSource),
-		fmtDataSourceStatus(p.TwiistDataSource, e.params.ReportDate),
+		fmtProviderStatus(p, "twiist", e.params.ReportDate),
 		fmtDataSourceLastDataDate(p.TwiistDataSource),
 		ptime(p.CgmLastDataDate, "2006-01-02"),
 		ppctunrounded(p.CgmActiveWearTime),
@@ -225,19 +225,65 @@ func fmtDataSourceLastDataDate(ds *patients.DataSource) string {
 	return ds.LatestDataTime.Format(time.DateOnly)
 }
 
+func fmtProviderStatus(patient *patients.ExportedPatient, providerName string,
+	now time.Time) string {
+
+	cr := newestCR(patient.ProviderConnectionRequests[providerName])
+	var ds *patients.DataSource
+	switch providerName {
+	case "abbott":
+		ds = patient.AbbottDataSource
+	case "dexcom":
+		ds = patient.DexcomDataSource
+	case "twiist":
+		ds = patient.TwiistDataSource
+	}
+
+	if requestIsNewer(cr, ds) {
+		return fmtProviderConnectionRequestStatus(cr, now)
+	}
+	return fmtDataSourceStatus(ds, now)
+}
+
+func requestIsNewer(cr *patients.ConnectionRequest, ds *patients.DataSource) bool {
+	if cr == nil {
+		return false
+	}
+	if ds == nil || ds.CreatedTime == nil {
+		return true
+	}
+	return cr.CreatedTime.After(*ds.CreatedTime)
+}
+
+func fmtProviderConnectionRequestStatus(cr *patients.ConnectionRequest,
+	now time.Time) string {
+
+	if cr.ExpiresAt().Before(now) {
+		return "expired"
+	}
+	return "pending"
+}
+
 func fmtDataSourceStatus(ds *patients.DataSource, now time.Time) string {
 	if ds == nil || ds.State == "" {
 		return "NA"
 	}
 	inactiveCutoff := now.Add(-time.Hour * 24 * 2)
-	expiredCutoff := now
-	if (ds.State == patients.DataSourceStatePending || ds.State == patients.DataSourceStatePendingReconnect) && ds.ExpirationTime != nil && ds.ExpirationTime.Before(expiredCutoff) {
-		return "expired"
-	}
+
 	if ds.State == "connected" && ds.LatestDataTime != nil && ds.LatestDataTime.Before(inactiveCutoff) {
 		return "inactive"
 	}
 	return ds.State
+}
+
+func newestCR(crs patients.ConnectionRequests) *patients.ConnectionRequest {
+	var newest *patients.ConnectionRequest
+	for _, cr := range crs {
+		if newest == nil || cr.CreatedTime.After(newest.CreatedTime) {
+			newest = &cr
+		}
+	}
+	return newest
 }
 
 func fmtClinicTime(t time.Time, clinic *clinics.Clinic) string {
