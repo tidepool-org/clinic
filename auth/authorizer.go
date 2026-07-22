@@ -78,14 +78,16 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 		in["clinician"] = clinicianStruct.Map()
 	}
 
-	clinic, err := e.getClinicRecord(ctx, input)
-	if err != nil {
-		return err
-	}
-	if clinic != nil {
-		clinicStruct := structs.New(*clinic)
-		clinicStruct.TagName = "bson"
-		in["clinic"] = clinicStruct.Map()
+	if input.RequestValidationInput.PathParams[clinicIdPathParameter] != "" && strings.HasSuffix(input.RequestValidationInput.Route.Path, "/export/patients") {
+		clinic, err := e.getClinicRecord(ctx, input)
+		if err != nil {
+			return err
+		}
+		if clinic != nil {
+			clinicStruct := structs.New(*clinic)
+			clinicStruct.TagName = "bson"
+			in["clinic"] = clinicStruct.Map()
+		}
 	}
 
 	return e.EvaluatePolicy(ctx, in)
