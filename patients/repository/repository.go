@@ -1128,7 +1128,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 	cgmPathPrefix := fmt.Sprintf("$summary.cgmStats.periods.%s", period)
 	addCGMFieldsStage := bson.D{
 		{"$addFields", bson.M{
-			"cgmLastDataDate":      "$summary.cgmStats.dates.lastData",
+			"cgmLastData":          "$summary.cgmStats.dates.lastData",
 			"cgmActiveWearTime":    cgmPathPrefix + ".timeCGMUsePercent",
 			"cgmDaysWithData":      cgmPathPrefix + ".daysWithData",
 			"cgmHoursWithData":     cgmPathPrefix + ".hoursWithData",
@@ -1147,7 +1147,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 	bgmPathPrefix := fmt.Sprintf("$summary.bgmStats.periods.%s", period)
 	addBGMFieldsStage := bson.D{
 		{"$addFields", bson.M{
-			"bgmLastDataDate":   "$summary.bgmStats.dates.lastData",
+			"bgmLastData":       "$summary.bgmStats.dates.lastData",
 			"bgmAverageGlucose": bgmPathPrefix + ".averageGlucoseMmol",
 			"bgmReadingsPerDay": bson.M{
 				"$divide": bson.A{
@@ -1243,7 +1243,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 			"dexcomDataSource":     1,
 			"abbottDataSource":     1,
 			"twiistDataSource":     1,
-			"cgmLastDataDate":      1,
+			"cgmLastData":          1,
 			"cgmActiveWearTime":    1,
 			"cgmDaysWithData":      1,
 			"cgmHoursWithData":     1,
@@ -1256,7 +1256,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 			"cgmTimeInTarget":      1,
 			"cgmTimeInLevel2Hyper": 1,
 			"cgmTimeInLevel1Hyper": 1,
-			"bgmLastDataDate":      1,
+			"bgmLastData":          1,
 			"bgmAverageGlucose":    1,
 			"bgmReadingsPerDay":    1,
 			"bgmTotalReadings":     1,
