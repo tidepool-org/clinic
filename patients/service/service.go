@@ -508,11 +508,15 @@ func (s *service) TideReport(ctx context.Context, clinicId string, params patien
 
 func (s *service) ListExportedPatients(ctx context.Context, params patients.ExportParams) ([]patients.ExportedPatient, error) {
 	ps, err := s.patientsRepo.ListExportedPatients(ctx, params)
-	s.logger.Infow("ListExportedPatients invoked",
+	args := []any{
 		"clinicId", params.WorkspaceID,
 		"clinicianId", params.ExporterClinicianID,
 		"patientCount", len(ps),
-		"error", err)
+	}
+	if err != nil {
+		args = append(args, "error", err)
+	}
+	s.logger.Infow("ListExportedPatients invoked", args...)
 
 	return ps, err
 }
