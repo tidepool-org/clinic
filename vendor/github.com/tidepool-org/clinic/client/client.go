@@ -7924,7 +7924,6 @@ func (r EnableNewClinicExperienceResponse) StatusCode() int {
 type UpdateClinicianSecurityProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ClinicianSecurityProfileV1
 }
 
 // Status returns HTTPResponse.Status
@@ -10602,16 +10601,6 @@ func ParseUpdateClinicianSecurityProfileResponse(rsp *http.Response) (*UpdateCli
 	response := &UpdateClinicianSecurityProfileResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ClinicianSecurityProfileV1
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
 	}
 
 	return response, nil

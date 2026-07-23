@@ -152,21 +152,6 @@ func NewClinicianDto(clinician *clinicians.Clinician) ClinicianV1 {
 	return dto
 }
 
-// timeFromDatetime parses an optional RFC 3339 DatetimeV1 string into a time.
-// The request validator enforces the date-time format on input, so this parse
-// does not fail for API requests; it falls back to nil (never a zero time) for
-// any non-validated caller.
-//func timeFromDatetime(d *DatetimeV1) *time.Time {
-//	if d == nil {
-//		return nil
-//	}
-//	t, err := time.Parse(time.RFC3339Nano, string(*d))
-//	if err != nil {
-//		return nil
-//	}
-//	return &t
-//}
-
 func newIdentityProviderDto(p clinicians.IdentityProvider) ClinicianIdentityProviderV1 {
 	return ClinicianIdentityProviderV1{Alias: p.Alias, Name: p.Name}
 }
