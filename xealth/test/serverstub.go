@@ -30,6 +30,8 @@ type XealthServer struct {
 	mu                sync.Mutex
 	observations      [][]byte
 	observationStatus int
+	rejectSubstring   string
+	rejectStatus      int
 }
 
 func (x *XealthServer) AddOrder(deployment, orderId string, orderBody []byte) {
@@ -46,6 +48,17 @@ func (x *XealthServer) SetObservationStatus(status int) {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 	x.observationStatus = status
+}
+
+// RejectObservationsMatching overrides the HTTP status returned for FHIR
+// Observation POSTs whose body contains substr. Use it to simulate Xealth
+// rejecting some of the observations of a batch. Pass an empty substr to
+// clear the override.
+func (x *XealthServer) RejectObservationsMatching(substr string, status int) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	x.rejectSubstring = substr
+	x.rejectStatus = status
 }
 
 // Observations returns the bodies of all captured FHIR Observation POSTs.
@@ -66,6 +79,9 @@ func (x *XealthServer) recordObservation(body []byte) int {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 	x.observations = append(x.observations, body)
+	if x.rejectSubstring != "" && strings.Contains(string(body), x.rejectSubstring) {
+		return x.rejectStatus
+	}
 	if x.observationStatus != 0 {
 		return x.observationStatus
 	}

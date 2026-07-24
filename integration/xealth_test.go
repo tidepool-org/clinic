@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/TwiN/deepmerge"
@@ -309,10 +310,8 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(byCode["REPORTING_PERIOD_START_CGM"].ValueDateTime).ToNot(BeNil())
 		})
 
-		It("still returns the report url when the writeback is rejected by Xealth", func() {
+		It("does not resend stats that were already written back", func() {
 			xealthStub.ResetObservations()
-			xealthStub.SetObservationStatus(http.StatusBadRequest)
-			defer xealthStub.SetObservationStatus(0)
 
 			rec := httptest.NewRecorder()
 			req := prepareRequest(http.MethodPut, "/v1/xealth/program", "./test/xealth_fixtures/08_get_program_url.json")
@@ -329,9 +328,9 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(json.Unmarshal(body, &response)).To(Succeed())
 			Expect(response.Url).ToNot(BeEmpty())
 
-			// The observation was posted and rejected, but the failure did not
-			// break the report url response.
-			Expect(xealthStub.Observations()).To(HaveLen(1))
+			// The previous view recorded the stats as written back, and the
+			// summary has not been updated since.
+			Expect(xealthStub.Observations()).To(BeEmpty())
 		})
 	})
 
@@ -370,6 +369,96 @@ var _ = Describe("Xealth Integration Test", Ordered, func() {
 			Expect(program.ProgramId).To(PointTo(Equal("100")))
 			Expect(program.Status).To(BeNil())
 			Expect(program.Title).To(PointTo(Equal("Tidepool")))
+		})
+	})
+
+	Describe("Update summary with CGM and BGM stats", func() {
+		It("Succeeds", func() {
+			endpoint := fmt.Sprintf("/v1/patients/%s/summary", *patient.Id)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodPost, endpoint, "./test/xealth_fixtures/14_update_summary_with_bgm.json")
+			asServer(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+
+	Describe("Send get program url request after summary update", func() {
+		// The stats last updated dates from 14_update_summary_with_bgm.json
+		cgmLastUpdated := time.Date(2024, 1, 19, 9, 44, 11, 170000000, time.UTC)
+		bgmLastUpdated := time.Date(2024, 1, 18, 9, 44, 11, 170000000, time.UTC)
+
+		getProgramUrl := func() {
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodPut, "/v1/xealth/program", "./test/xealth_fixtures/08_get_program_url.json")
+			asXealth(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			body, err := io.ReadAll(rec.Result().Body)
+			Expect(err).ToNot(HaveOccurred())
+
+			response := xealth_client.GetProgramUrlResponse{}
+			Expect(json.Unmarshal(body, &response)).To(Succeed())
+			Expect(response.Url).ToNot(BeEmpty())
+		}
+
+		It("pushes each updated stats block as a separate observation", func() {
+			xealthStub.ResetObservations()
+			// Reject only the BGM observation to simulate a partial failure. The
+			// failure must not break the report url response.
+			xealthStub.RejectObservationsMatching("SMBG", http.StatusBadRequest)
+			defer xealthStub.RejectObservationsMatching("", 0)
+
+			getProgramUrl()
+
+			captured := xealthStub.Observations()
+			Expect(captured).To(HaveLen(2))
+
+			var cgmObservation, bgmObservation *xealth_client.GeneralObservation
+			for _, body := range captured {
+				observation := xealth_client.GeneralObservation{}
+				Expect(json.Unmarshal(body, &observation)).To(Succeed())
+				if strings.Contains(string(body), "SMBG") {
+					bgmObservation = &observation
+				} else {
+					cgmObservation = &observation
+				}
+			}
+			Expect(cgmObservation).ToNot(BeNil())
+			Expect(bgmObservation).ToNot(BeNil())
+
+			// Each observation carries the effective time of its own stats block
+			Expect(cgmObservation.EffectiveDateTime).To(BeTemporally("==", cgmLastUpdated))
+			Expect(bgmObservation.EffectiveDateTime).To(BeTemporally("==", bgmLastUpdated))
+		})
+
+		It("retries only the rejected stats block on the next view", func() {
+			xealthStub.ResetObservations()
+
+			getProgramUrl()
+
+			// The CGM stats were successfully written back by the previous view,
+			// so only the rejected BGM stats are resent
+			captured := xealthStub.Observations()
+			Expect(captured).To(HaveLen(1))
+			Expect(string(captured[0])).To(ContainSubstring("SMBG"))
+
+			observation := xealth_client.GeneralObservation{}
+			Expect(json.Unmarshal(captured[0], &observation)).To(Succeed())
+			Expect(observation.EffectiveDateTime).To(BeTemporally("==", bgmLastUpdated))
+		})
+
+		It("does not resend stats after all blocks have been written back", func() {
+			xealthStub.ResetObservations()
+
+			getProgramUrl()
+
+			Expect(xealthStub.Observations()).To(BeEmpty())
 		})
 	})
 

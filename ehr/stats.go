@@ -85,18 +85,33 @@ func Compute(summary *patients.Summary, dest GlucoseUnits, icode bool) []Statist
 	if summary == nil {
 		return nil
 	}
+
+	stats := ComputeCGM(summary.CGM, dest, icode)
+	return append(stats, ComputeBGM(summary.BGM, dest, icode)...)
+}
+
+// ComputeCGM returns the fully-formatted CGM statistics block, or nil when the
+// CGM summary is absent or carries no last-updated and last-data dates.
+func ComputeCGM(cgm *patients.PatientCGMStats, dest GlucoseUnits, icode bool) []Statistic {
+	if cgm == nil || !summaryDatesAvailable(cgm.Dates) {
+		return nil
+	}
 	if dest == "" {
 		dest = MmolL
 	}
+	return computeCGM(cgm, dest, icode)
+}
 
-	var stats []Statistic
-	if cgm := summary.CGM; cgm != nil && summaryDatesAvailable(cgm.Dates) {
-		stats = append(stats, computeCGM(cgm, dest, icode)...)
+// ComputeBGM returns the fully-formatted BGM statistics block, or nil when the
+// BGM summary is absent or carries no last-updated and last-data dates.
+func ComputeBGM(bgm *patients.PatientBGMStats, dest GlucoseUnits, icode bool) []Statistic {
+	if bgm == nil || !summaryDatesAvailable(bgm.Dates) {
+		return nil
 	}
-	if bgm := summary.BGM; bgm != nil && summaryDatesAvailable(bgm.Dates) {
-		stats = append(stats, computeBGM(bgm, dest, icode)...)
+	if dest == "" {
+		dest = MmolL
 	}
-	return stats
+	return computeBGM(bgm, dest, icode)
 }
 
 func computeCGM(stats *patients.PatientCGMStats, dest GlucoseUnits, icode bool) []Statistic {

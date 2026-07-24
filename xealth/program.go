@@ -102,6 +102,35 @@ func GetSummaryLastUpdatedDate(patient *patients.Patient) (result time.Time) {
 	return
 }
 
+func GetCGMStatsLastUpdatedDate(summary *patients.Summary) *time.Time {
+	if summary == nil || summary.CGM == nil {
+		return nil
+	}
+	return summary.CGM.Dates.LastUpdatedDate
+}
+
+func GetBGMStatsLastUpdatedDate(summary *patients.Summary) *time.Time {
+	if summary == nil || summary.BGM == nil {
+		return nil
+	}
+	return summary.BGM.Dates.LastUpdatedDate
+}
+
+// StatsUpdatedSinceViewed reports whether a stats block should be written back
+// to the EHR, given the block's current last updated date and the date the most
+// recent report view recorded for it. A block should be written back when it
+// has stats which no view has recorded yet, or when its stats were updated
+// after the most recent view.
+func StatsUpdatedSinceViewed(lastUpdated *time.Time, viewedLastUpdated *time.Time) bool {
+	if lastUpdated == nil || lastUpdated.IsZero() {
+		return false
+	}
+	if viewedLastUpdated == nil {
+		return true
+	}
+	return lastUpdated.After(*viewedLastUpdated)
+}
+
 func GetProgramEnrollmentDateFromOrder(order *OrderEvent) *string {
 	if order == nil {
 		return nil
