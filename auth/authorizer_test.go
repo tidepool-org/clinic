@@ -17,12 +17,20 @@ var clinicMember = map[string]interface{}{
 	"roles": []string{"CLINIC_MEMBER"},
 }
 
+var freeTierClinic = map[string]interface{}{
+	"tier": "tier0100",
+}
+
+var standardTierClinic = map[string]interface{}{
+	"tier": "tier0200",
+}
+
 var _ = Describe("Request Authorizer", func() {
 	var authorizer auth.RequestAuthorizer
 
 	BeforeEach(func() {
 		var err error
-		authorizer, err = auth.NewRequestAuthorizer(nil, zap.NewNop().Sugar())
+		authorizer, err = auth.NewRequestAuthorizer(nil, nil, zap.NewNop().Sugar())
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -182,6 +190,78 @@ var _ = Describe("Request Authorizer", func() {
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("allow clinic admins of supported tiers to export a patient list", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "999999999",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+				"clinic":    standardTierClinic,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("allow clinic members of supported tiers to export a patient list", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "999999999",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+				"clinic":    standardTierClinic,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("prevents clinicians in unsupported tiers from generating a patient list export", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "999999999",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+				"clinic":    freeTierClinic,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents users from generating a patient list export", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "999999999",
+					"serverAccess": false,
+				},
+				"clinic": standardTierClinic,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents users to migrate patients to a clinic", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "999999999",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
 		It("prevents users to migrate patients to a clinic", func() {
