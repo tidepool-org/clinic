@@ -671,6 +671,60 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
+		It("allows backend services to suppress notifications", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "suppressed_notifications"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "clinic-worker",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("allows clinic admins to suppress notifications", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "suppressed_notifications"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("prevents clinic members from suppressing notifications", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "suppressed_notifications"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents users from suppressing notifications", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "suppressed_notifications"},
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
 		It("prevents users from triggering deletion", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "users", "1234567890", "clinics"},
