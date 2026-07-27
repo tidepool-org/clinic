@@ -206,12 +206,20 @@ allow {
   input.path = ["v1", "clinics", _, "reports", "merge"]
 }
 
-# Allow backend services to update clinic tiers
+# Allow currently authenticated clinician to suppress notifications
 # POST /v1/clinics/:clinicId/suppressed_notifications
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "suppressed_notifications"]
   clinician_has_write_access
+}
+
+# Allow backend services to suppress notifications
+# POST /v1/clinics/:clinicId/suppressed_notifications
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "suppressed_notifications"]
 }
 
 # Allow backend services to add service accounts to clinics
