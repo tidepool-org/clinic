@@ -155,10 +155,6 @@ func (e *embeddedOpaAuthorizer) getClinicRecord(ctx context.Context, input *open
 	if clinicId == "" {
 		return nil, nil
 	}
-	authData := GetAuthData(input.RequestValidationInput.Request.Context())
-	if authData == nil {
-		return nil, nil
-	}
 	clinic, err := e.clinics.Get(ctx, clinicId)
 	if err != nil && !errors.Is(err, clinics.ErrNotFound) {
 		return nil, err

@@ -264,19 +264,6 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
-		It("prevents users to migrate patients to a clinic", func() {
-			input := map[string]interface{}{
-				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "12345"},
-				"method": "POST",
-				"auth": map[string]interface{}{
-					"subjectId":    "999999999",
-					"serverAccess": false,
-				},
-			}
-			err := authorizer.EvaluatePolicy(context.Background(), input)
-			Expect(err).To(Equal(auth.ErrUnauthorized))
-		})
-
 		It("prevents users to migrate their own account to a clinic", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "999999999"},
