@@ -62,8 +62,8 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 		pint(p.CgmDaysWithData),
 		pint(p.CgmHoursWithData),
 		ptomgdl(p.CgmAverageGlucose),
-		ppct(p.CgmGmi, 0),
-		ppct(p.CgmStdDev, 0),
+		pfloat(p.CgmGmi, 2),
+		fmtPreferredUnits(p.CgmStdDev, e.clinic.PreferredBgUnits, 1),
 		ppct(p.CgmCV, 0),
 		ppct(p.CgmTimeInLevel2Hypo, 0),
 		ppct(p.CgmTimeInLevel1Hypo, 0),
@@ -139,8 +139,8 @@ func (e *exporter) Write(ctx context.Context, w io.Writer) error {
 	writer := csv.NewWriter(w)
 	metadataTitles := []string{
 		"Report Date Time",
-		"Exported By", // name
-		"Exported By", // email
+		"Exported By",
+		"Exported By",
 		"Clinic Name",
 		"Workspace ID",
 		"Days of CGM Data Summarized",
@@ -321,4 +321,19 @@ func periodToDays(period string) (days int, err error) {
 		return 0, fmt.Errorf(`no days for given period, "%v"`, period)
 	}
 	return days, nil
+}
+
+func fmtFloat(f float64, precision int) string {
+	shift := math.Pow(10, float64(precision))
+	return fmt.Sprintf("%v", math.RoundToEven(f*shift*100)/shift)
+}
+
+func fmtPreferredUnits(valMmolL *float64, preferredBgUnits string, precision int) string {
+	if valMmolL == nil {
+		return ""
+	}
+	if strings.ToLower(preferredBgUnits) == "mg/dl" {
+		return fmtFloat(toMgDl(*valMmolL), precision)
+	}
+	return fmtFloat(*valMmolL, precision)
 }
