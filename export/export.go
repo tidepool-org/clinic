@@ -237,7 +237,7 @@ func fmtDataSourceStatus(ds *patients.DataSource, now time.Time) string {
 		return "NA"
 	}
 	inactiveCutoff := now.Add(-time.Hour * 24 * 2)
-	expiredCutoff := now.Add(-time.Duration(math.Abs(float64(patients.PendingDataSourceExpirationDuration))))
+	expiredCutoff := now
 	if (ds.State == patients.DataSourceStatePending || ds.State == patients.DataSourceStatePendingReconnect) && ds.ExpirationTime != nil && ds.ExpirationTime.Before(expiredCutoff) {
 		return "expired"
 	}
