@@ -1,20 +1,13 @@
 package api_test
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/pointer"
-	"github.com/tidepool-org/clinic/test"
 )
-
-func TestSuite(t *testing.T) {
-	test.Test(t)
-}
 
 var _ = DescribeTable("ParseCGMSummaryFilters",
 	func(input api.ListPatientsParams, expected patients.SummaryFilters, expectedErr error) {
