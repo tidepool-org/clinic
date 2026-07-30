@@ -2125,6 +2125,49 @@ var _ = Describe("TideReport", func() {
 		})
 	})
 
+	Context("NoData", func() {
+		AfterEach(func() {
+			database := dbTest.GetTestDatabase()
+			patients := database.Collection("patients")
+			_, err := patients.DeleteMany(context.Background(), primitive.M{})
+			Expect(err).To(Succeed())
+		})
+
+		It("does not report a patient in both a glycemic category and noData", func() {
+			// A patient with recent data and a disconnected dexcom data source
+			// matches both the timeInVeryLowPercent selector and the noData
+			// selector's dexcom arm.
+			var dexcomUserId string
+			disconnectedDexcom := func(i int, p *patients.Patient) {
+				if i == 0 {
+					p.DataSources = &[]patients.DataSource{{
+						ProviderName: patients.DexcomDataSourceProviderName,
+						State:        "pendingReconnection",
+					}}
+					dexcomUserId = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 1}, 3, disconnectedDexcom)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			ids := func(results []patients.TideResultPatient) []string {
+				out := make([]string, 0, len(results))
+				for _, result := range results {
+					Expect(result.Patient.Id).ToNot(BeNil())
+					out = append(out, *result.Patient.Id)
+				}
+				return out
+			}
+			Expect(ids(tide.Results["timeInVeryLowPercent"])).To(ContainElement(dexcomUserId))
+			Expect(ids(tide.Results["noData"])).ToNot(ContainElement(dexcomUserId))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(4))
+			Expect(tide.Metadata.SelectedPatients).To(Equal(4))
+		})
+	})
+
 	Describe("TideResults", func() {
 		var cfg *config.Config
 		var repo patients.Repository
@@ -2386,37 +2429,9 @@ var _ = Describe("TideReport", func() {
 							TimeInAnyLowPercent:      floatp(0.013888888888888888),
 							LastData:                 mustTime("2025-06-25T16:04:07.079Z"),
 						},
-						{
-							AverageGlucoseMmol:         floatp(4.366742521825891),
-							GlucoseManagementIndicator: floatp(5.2),
-							Patient: patients.TidePatient{
-								Email:    strp("disconnected+user@tidepool.org"),
-								FullName: strp("Disconnected User"),
-								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaadcdc"),
-								Tags:     []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-								Reviews:  nil,
-								DataSources: &[]patients.DataSource{
-									{
-										DataSourceId:   mustObjectID("686c054cbea00653fd4fcf8b"),
-										ModifiedTime:   mustTime("2025-07-07T17:41:13Z"),
-										ExpirationTime: nil,
-										ProviderName:   "dexcom",
-										State:          "disconnected",
-									},
-								},
-							},
-							TimeCGMUseMinutes:        intp(20045),
-							TimeCGMUsePercent:        floatp(0.9942956349206349),
-							TimeInHighPercent:        floatp(0.001995510102269893),
-							TimeInLowPercent:         floatp(0.014218009478672985),
-							TimeInTargetPercent:      floatp(0.976303317535545),
-							TimeInTargetPercentDelta: floatp(0.022936733994397884),
-							TimeInVeryHighPercent:    floatp(0),
-							TimeInVeryLowPercent:     floatp(0.0044831628835120975),
-							TimeInAnyHighPercent:     floatp(0.001995510102269893),
-							TimeInAnyLowPercent:      floatp(0.021701172362185085),
-							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
-						},
+						// The "Disconnected User" patient also matches the noData
+						// selector's dexcom arm, but is reported only in the
+						// higher-priority meetingTargets category.
 					}
 
 					meetingTargetsResults = []patients.TideResultPatient{
@@ -2519,8 +2534,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 8
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(13))
-					Expect(report.Metadata.SelectedPatients).To(Equal(13))
+					Expect(report.Metadata.CandidatePatients).To(Equal(12))
+					Expect(report.Metadata.SelectedPatients).To(Equal(12))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(matchTIDEPatients(timeInVeryLowResults))
 
@@ -2548,8 +2563,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 8
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(13))
-					Expect(report.Metadata.SelectedPatients).To(Equal(13))
+					Expect(report.Metadata.CandidatePatients).To(Equal(12))
+					Expect(report.Metadata.SelectedPatients).To(Equal(12))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(matchTIDEPatients(timeInVeryLowResults))
 
@@ -2766,8 +2781,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 2
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(5))
-					Expect(report.Metadata.SelectedPatients).To(Equal(5))
+					Expect(report.Metadata.CandidatePatients).To(Equal(4))
+					Expect(report.Metadata.SelectedPatients).To(Equal(4))
 
 					meetingTargetsResults = []patients.TideResultPatient{
 						{
@@ -3575,8 +3590,12 @@ var _ = Describe("TideReport", func() {
 	})
 })
 
-func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutData int) (
-	context.Context, *repoTestHelper) {
+// testPatientOption customizes the i-th seeded patient. Patients with data
+// are indexed 0..withData-1, patients without data continue from withData.
+type testPatientOption func(i int, p *patients.Patient)
+
+func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutData int,
+	opts ...testPatientOption) (context.Context, *repoTestHelper) {
 
 	t.Helper()
 	cfg := &config.Config{ClinicDemoPatientUserId: DemoPatientId}
@@ -3615,13 +3634,19 @@ func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutDa
 		}
 		patient.ClinicId = &clinicId
 		patient.Tags = &[]primitive.ObjectID{tagId}
+		for _, opt := range opts {
+			opt(i, &patient)
+		}
 		allPatients = append(allPatients, patient)
 	}
-	for range withoutData {
+	for j := range withoutData {
 		patient := patientsTest.RandomPatient()
 
 		patient.ClinicId = &clinicId
 		patient.Tags = &[]primitive.ObjectID{tagId}
+		for _, opt := range opts {
+			opt(withData+j, &patient)
+		}
 		allPatients = append(allPatients, patient)
 	}
 	result, err := collection.InsertMany(ctx, allPatients)
