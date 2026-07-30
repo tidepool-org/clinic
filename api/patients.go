@@ -544,7 +544,7 @@ func (h *Handler) ExportPatientList(ec echo.Context, clinicId ClinicId, params E
 			Message: "expected user access token",
 		}
 	}
-	filter := export.Params{
+	filter := patients.ExportParams{
 		Period:              params.Period,
 		ExporterClinicianID: authData.SubjectId,
 		WorkspaceID:         clinicId,

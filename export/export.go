@@ -19,13 +19,6 @@ const (
 	timeFormat = "2006-01-02 03:04 PM"
 )
 
-type Params struct {
-	Period              string
-	ExporterClinicianID string
-	WorkspaceID         string
-	ReportDate          time.Time
-}
-
 type exporter struct {
 	patientSvc patients.Service
 
@@ -33,7 +26,7 @@ type exporter struct {
 	tagNamesById           map[string]string
 	clinicianNamesByUserId map[string]string
 	exportingClinician     *clinicians.Clinician
-	params                 Params
+	params                 patients.ExportParams
 	days                   int
 }
 
@@ -79,7 +72,7 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 	}
 }
 
-func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianSvc clinicians.Service, patientSvc patients.Service, params Params) (*exporter, error) {
+func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianSvc clinicians.Service, patientSvc patients.Service, params patients.ExportParams) (*exporter, error) {
 	clinic, err := clinicSvc.Get(ctx, params.WorkspaceID)
 	if err != nil {
 		return nil, err
@@ -96,7 +89,7 @@ func NewPatientExport(ctx context.Context, clinicSvc clinics.Service, clinicianS
 	return NewPatientExportClinic(clinic, cs, patientSvc, params)
 }
 
-func NewPatientExportClinic(clinic *clinics.Clinic, cs []*clinicians.Clinician, patientSvc patients.Service, params Params) (*exporter, error) {
+func NewPatientExportClinic(clinic *clinics.Clinic, cs []*clinicians.Clinician, patientSvc patients.Service, params patients.ExportParams) (*exporter, error) {
 	days, err := periodToDays(params.Period)
 	if err != nil {
 		return nil, err
@@ -132,7 +125,7 @@ func NewPatientExportClinic(clinic *clinics.Clinic, cs []*clinicians.Clinician, 
 }
 
 func (e *exporter) Write(ctx context.Context, w io.Writer) error {
-	ps, err := e.patientSvc.ListExportedPatients(ctx, e.params.WorkspaceID, e.params.Period)
+	ps, err := e.patientSvc.ListExportedPatients(ctx, e.params)
 	if err != nil {
 		return err
 	}

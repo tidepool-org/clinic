@@ -263,18 +263,18 @@ func (mr *MockServiceMockRecorder) List(ctx, filter, pagination, sort any) *gomo
 }
 
 // ListExportedPatients mocks base method.
-func (m *MockService) ListExportedPatients(ctx context.Context, clinicId, period string) ([]patients.ExportedPatient, error) {
+func (m *MockService) ListExportedPatients(ctx context.Context, params patients.ExportParams) ([]patients.ExportedPatient, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListExportedPatients", ctx, clinicId, period)
+	ret := m.ctrl.Call(m, "ListExportedPatients", ctx, params)
 	ret0, _ := ret[0].([]patients.ExportedPatient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListExportedPatients indicates an expected call of ListExportedPatients.
-func (mr *MockServiceMockRecorder) ListExportedPatients(ctx, clinicId, period any) *gomock.Call {
+func (mr *MockServiceMockRecorder) ListExportedPatients(ctx, params any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListExportedPatients", reflect.TypeOf((*MockService)(nil).ListExportedPatients), ctx, clinicId, period)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListExportedPatients", reflect.TypeOf((*MockService)(nil).ListExportedPatients), ctx, params)
 }
 
 // MergeSites mocks base method.
@@ -736,18 +736,18 @@ func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination, sort any) *g
 }
 
 // ListExportedPatients mocks base method.
-func (m *MockRepository) ListExportedPatients(ctx context.Context, clinicId, period string) ([]patients.ExportedPatient, error) {
+func (m *MockRepository) ListExportedPatients(ctx context.Context, params patients.ExportParams) ([]patients.ExportedPatient, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListExportedPatients", ctx, clinicId, period)
+	ret := m.ctrl.Call(m, "ListExportedPatients", ctx, params)
 	ret0, _ := ret[0].([]patients.ExportedPatient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListExportedPatients indicates an expected call of ListExportedPatients.
-func (mr *MockRepositoryMockRecorder) ListExportedPatients(ctx, clinicId, period any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) ListExportedPatients(ctx, params any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListExportedPatients", reflect.TypeOf((*MockRepository)(nil).ListExportedPatients), ctx, clinicId, period)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListExportedPatients", reflect.TypeOf((*MockRepository)(nil).ListExportedPatients), ctx, params)
 }
 
 // MergeSites mocks base method.
