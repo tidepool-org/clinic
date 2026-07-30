@@ -627,9 +627,18 @@ func NewTideReportParams(params TideReportParams) patients.TideReportParams {
 	for _, cat := range params.Categories {
 		categories = append(categories, string(cat))
 	}
+	var siteIds []string
+	if params.Sites != nil {
+		for _, siteId := range params.Sites {
+			if siteId != "" {
+				siteIds = append(siteIds, siteId)
+			}
+		}
+	}
 	return patients.TideReportParams{
 		Period:         params.Period,
 		Tags:           params.Tags,
+		Sites:          siteIds,
 		LastDataCutoff: params.LastDataCutoff,
 		Categories:     categories,
 		ExcludeNoData:  params.ExcludeNoData,
@@ -656,6 +665,9 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 			ExtremeHighGlucoseThreshold: &tide.Config.ExtremeHighGlucoseThreshold,
 		},
 		Results: TideResultsV1{},
+	}
+	if len(tide.Config.Sites) > 0 {
+		tideResult.Config.Sites = &tide.Config.Sites
 	}
 
 	for category, tidePatients := range tide.Results {

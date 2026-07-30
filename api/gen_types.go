@@ -1582,6 +1582,9 @@ type NameV1 = string
 // ObjectIdV1 String representation of a resource id
 type ObjectIdV1 = string
 
+// ObjectIdOrZeroV1 A resource id, or the underscore sentinel `_` meaning "records with none assigned".
+type ObjectIdOrZeroV1 = string
+
 // ObjectidV1 String representation of a resource id
 type ObjectidV1 = string
 
@@ -1806,6 +1809,9 @@ type SiteCreationV1 struct {
 // SiteIdV1 defines model for siteId.v1.
 type SiteIdV1 = string
 
+// SiteIdsV1 defines model for siteIds.v1.
+type SiteIdsV1 = []SiteIdV1
+
 // SiteNameV1 The site's name.
 type SiteNameV1 = string
 
@@ -1902,6 +1908,7 @@ type TideConfigV1 struct {
 
 	// SchemaVersion TIDE schema version
 	SchemaVersion int              `json:"schemaVersion"`
+	Sites         *SiteIdsV1       `json:"sites,omitempty,omitzero"`
 	Tags          *PatientTagIdsV1 `json:"tags"`
 
 	// VeryHighGlucoseThreshold Minimum exclusive threshold in mmol/L for categorizing if a glucose value is very high as established by the AACE.
@@ -2477,11 +2484,11 @@ type ListPatientsParams struct {
 	// BgmLastDataTo Exclusive
 	BgmLastDataTo *time.Time `form:"bgm.lastDataTo,omitempty" json:"bgm.lastDataTo,omitempty"`
 
-	// Tags Comma-separated list of patient tag IDs
-	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+	// Tags Comma-separated list of patient tag IDs. The single value `_` filters for patients without any tags assigned; combining `_` with tag IDs is rejected.
+	Tags *[]ObjectIdOrZeroV1 `form:"tags,omitempty" json:"tags,omitempty"`
 
-	// Sites Comma-separated list of clinic site IDs
-	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
+	// Sites Comma-separated list of clinic site IDs. The single value `_` filters for patients without any sites assigned; combining `_` with site IDs is rejected.
+	Sites *[]ObjectIdOrZeroV1 `form:"sites,omitempty" json:"sites,omitempty"`
 
 	// OmitNonStandardRanges Whether patients whose glycemic ranges selection is *not*
 	// the ADA standard ranges (e.g. as used by the TIDE report)
@@ -2505,6 +2512,9 @@ type TideReportParams struct {
 
 	// ExcludeNoData If true, then exclude / omit patients with no data in the TIDE report.
 	ExcludeNoData bool `form:"excludeNoData,omitempty" json:"excludeNoData,omitempty"`
+
+	// Sites Comma-separated list of clinic site IDs. If provided, only patients assigned to at least one of the given sites are included in the report. An empty value is ignored, as if the parameter were omitted.
+	Sites []ObjectIdV1 `form:"sites,omitempty" json:"sites,omitempty"`
 }
 
 // TideReportParamsCategories defines parameters for TideReport.
