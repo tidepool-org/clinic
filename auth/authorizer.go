@@ -10,6 +10,7 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/tidepool-org/clinic/clinicians"
+	"github.com/tidepool-org/clinic/clinics"
 	internalErrs "github.com/tidepool-org/clinic/errors"
 	"go.uber.org/zap"
 
@@ -36,7 +37,7 @@ type RequestAuthorizer interface {
 	EvaluatePolicy(context.Context, map[string]interface{}) error
 }
 
-func NewRequestAuthorizer(clinicians clinicians.Service, logger *zap.SugaredLogger) (RequestAuthorizer, error) {
+func NewRequestAuthorizer(clinicians clinicians.Service, clinics clinics.Service, logger *zap.SugaredLogger) (RequestAuthorizer, error) {
 	compiler, err := ast.CompileModules(map[string]string{
 		"policy.rego": authzPolicy,
 	})
@@ -46,6 +47,7 @@ func NewRequestAuthorizer(clinicians clinicians.Service, logger *zap.SugaredLogg
 
 	return &embeddedOpaAuthorizer{
 		clinicians: clinicians,
+		clinics:    clinics,
 		logger:     logger,
 		policy:     compiler,
 	}, nil
@@ -53,6 +55,7 @@ func NewRequestAuthorizer(clinicians clinicians.Service, logger *zap.SugaredLogg
 
 type embeddedOpaAuthorizer struct {
 	clinicians clinicians.Service
+	clinics    clinics.Service
 	logger     *zap.SugaredLogger
 	policy     *ast.Compiler
 }
@@ -73,6 +76,18 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 		clinicianStruct := structs.New(*clinician)
 		clinicianStruct.TagName = "bson"
 		in["clinician"] = clinicianStruct.Map()
+	}
+
+	if input.RequestValidationInput.PathParams[clinicIdPathParameter] != "" && strings.HasSuffix(input.RequestValidationInput.Route.Path, "/export/patients") {
+		clinic, err := e.getClinicRecord(ctx, input)
+		if err != nil {
+			return err
+		}
+		if clinic != nil {
+			clinicStruct := structs.New(*clinic)
+			clinicStruct.TagName = "bson"
+			in["clinic"] = clinicStruct.Map()
+		}
 	}
 
 	return e.EvaluatePolicy(ctx, in)
@@ -133,4 +148,17 @@ func (e *embeddedOpaAuthorizer) getClinicianRecord(ctx context.Context, input *o
 	}
 
 	return clinician, nil
+}
+
+func (e *embeddedOpaAuthorizer) getClinicRecord(ctx context.Context, input *openapi3filter.AuthenticationInput) (*clinics.Clinic, error) {
+	clinicId := input.RequestValidationInput.PathParams[clinicIdPathParameter]
+	if clinicId == "" {
+		return nil, nil
+	}
+	clinic, err := e.clinics.Get(ctx, clinicId)
+	if err != nil && !errors.Is(err, clinics.ErrNotFound) {
+		return nil, err
+	}
+
+	return clinic, nil
 }
