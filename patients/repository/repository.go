@@ -1915,6 +1915,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		//    - Have no data within the cutoff, typically the period length being looked at, subtracted from now
 		//    - Have a dexcom session, and it is not successfully connected
 		selector := bson.M{
+			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
 			"$or": bson.A{
