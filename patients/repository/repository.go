@@ -323,7 +323,11 @@ func (r *repository) Remove(ctx context.Context, clinicId string, userId string,
 }
 
 func (r *repository) Count(ctx context.Context, filter *patients.Filter) (int, error) {
-	count, err := r.collection.CountDocuments(ctx, r.generateListFilterQuery(filter))
+	selector, err := r.generateListFilterQuery(filter)
+	if err != nil {
+		return 0, err
+	}
+	count, err := r.collection.CountDocuments(ctx, selector)
 	if err != nil {
 		return 0, err
 	}
@@ -412,10 +416,14 @@ func (r *repository) Counts(ctx context.Context, clinicId string) (*patients.Cou
 }
 
 func (r *repository) List(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sorts []*store.Sort) (*patients.ListResult, error) {
+	selector, err := r.generateListFilterQuery(filter)
+	if err != nil {
+		return nil, err
+	}
 	// We use an aggregation pipeline with facet in order to get the count
 	// and the patients from a single query
 	pipeline := []bson.M{
-		{"$match": r.generateListFilterQuery(filter)},
+		{"$match": selector},
 	}
 	if filter.ExcludeSummaryExceptFieldsInMergeReports {
 		pipeline = append(pipeline, excludeSummaryExceptFieldsInMergeReports()...)
@@ -1165,7 +1173,34 @@ func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patien
 	return nil
 }
 
-func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
+// ZeroValuesSentinel in a patient-list id filter selects patients with no values assigned.
+const ZeroValuesSentinel = "_"
+
+// parseListFilterIds interprets a patient-list id filter.
+//
+// Each value must be a 24-hex ObjectID, or ZeroValuesSentinel meaning "patients with none
+// assigned". Mixing ids with the sentinel, or any other value, is rejected. An empty input
+// yields no filter.
+func parseListFilterIds(values []string) (ids []primitive.ObjectID, zero bool, err error) {
+	for _, value := range values {
+		if value == ZeroValuesSentinel {
+			zero = true
+			continue
+		}
+		id, err := primitive.ObjectIDFromHex(value)
+		if err != nil {
+			return nil, false, fmt.Errorf("%w: invalid id %q", errors2.BadRequest, value)
+		}
+		ids = append(ids, id)
+	}
+	if zero && len(ids) > 0 {
+		msg := "%w: cannot combine id values with the %q sentinel"
+		return nil, false, fmt.Errorf(msg, errors2.BadRequest, ZeroValuesSentinel)
+	}
+	return ids, zero, nil
+}
+
+func (r *repository) generateListFilterQuery(filter *patients.Filter) (bson.M, error) {
 	selector := bson.M{}
 	orSelectors := bson.A{}
 	if filter.ClinicId != nil {
@@ -1258,34 +1293,36 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 	}
 
 	if filter.Tags != nil {
-		ids := store.ObjectIDSFromStringArray(*filter.Tags)
-		if len(ids) > 0 {
-			selector["tags"] = bson.M{"$all": ids}
-		} else {
-			// filter.Tags wasn't nil, but the values provided were not ObjectIDs, which
-			// indicates a search for patients WITHOUT any tags assigned.
+		ids, zero, err := parseListFilterIds(*filter.Tags)
+		if err != nil {
+			return nil, fmt.Errorf("tags filter: %w", err)
+		}
+		if zero {
 			orSelectors = append(orSelectors, bson.A{
 				bson.M{"tags": bson.M{"$size": 0}},
 				bson.M{"tags": bson.M{"$exists": 0}},
 			})
+		} else if len(ids) > 0 {
+			selector["tags"] = bson.M{"$all": ids}
 		}
 	}
 
 	if filter.Sites != nil {
-		ids := store.ObjectIDSFromStringArray(*filter.Sites)
-		if len(ids) > 0 {
+		ids, zero, err := parseListFilterIds(*filter.Sites)
+		if err != nil {
+			return nil, fmt.Errorf("sites filter: %w", err)
+		}
+		if zero {
+			orSelectors = append(orSelectors, bson.A{
+				bson.M{"sites": bson.M{"$size": 0}},
+				bson.M{"sites": bson.M{"$exists": 0}},
+			})
+		} else if len(ids) > 0 {
 			selector["sites"] = bson.M{
 				"$elemMatch": bson.M{
 					"id": bson.M{"$in": ids},
 				},
 			}
-		} else {
-			// filter.Sites wasn't nil, but the values provided were not ObjectIDs, which
-			// indicates a search for patients WITHOUT any sites assigned.
-			orSelectors = append(orSelectors, bson.A{
-				bson.M{"sites": bson.M{"$size": 0}},
-				bson.M{"sites": bson.M{"$exists": 0}},
-			})
 		}
 	}
 
@@ -1352,7 +1389,7 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 		selector["$and"] = or
 	}
 
-	return selector
+	return selector, nil
 }
 
 func MaybeApplyNumericFilter(selector bson.M, period string, typ string, field string, pair patients.FilterPair) {
@@ -1817,6 +1854,17 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 
 	tags := store.ObjectIDSFromStringArray(params.Tags)
+	seenSites := make(map[primitive.ObjectID]struct{}, len(params.Sites))
+	siteIds := make([]primitive.ObjectID, 0, len(params.Sites))
+	uniqueSites := make([]string, 0, len(params.Sites))
+	for _, id := range store.ObjectIDSFromStringArray(params.Sites) {
+		if _, ok := seenSites[id]; ok {
+			continue
+		}
+		seenSites[id] = struct{}{}
+		siteIds = append(siteIds, id)               // for mongo filtering
+		uniqueSites = append(uniqueSites, id.Hex()) // for the Tide.Config
+	}
 
 	if params.LastDataCutoff.IsZero() {
 		return nil, fmt.Errorf("%w: no lastDataCutoff provided", errors2.BadRequest)
@@ -1846,6 +1894,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 			LowGlucoseThreshold:         patients.LowGlucoseThreshold,
 			Period:                      params.Period,
 			SchemaVersion:               patients.TideSchemaVersion,
+			Sites:                       uniqueSites,
 			Tags:                        params.Tags,
 			VeryHighGlucoseThreshold:    patients.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:     patients.VeryLowGlucoseThreshold,
@@ -1861,6 +1910,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 			"tags":                            bson.M{"$all": tags},
 			"summary.cgmStats.dates.lastData": bson.M{"$gte": params.LastDataCutoff},
 		}
+		applySitesFilter(selector, siteIds)
 
 		opts := options.Find()
 		opts.SetLimit(int64(remaining))
@@ -1929,6 +1979,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 				}},
 			},
 		}
+		applySitesFilter(selector, siteIds)
 
 		opts := options.Find()
 		opts.SetLimit(int64(TideReportNoDataPatientLimit))
@@ -2175,4 +2226,10 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 
 func strp(s string) *string {
 	return &s
+}
+
+func applySitesFilter(selector bson.M, siteIds []primitive.ObjectID) {
+	if len(siteIds) > 0 {
+		selector["sites.id"] = bson.M{"$in": siteIds}
+	}
 }
