@@ -635,9 +635,15 @@ func NewTideReportParams(params TideReportParams) patients.TideReportParams {
 			}
 		}
 	}
+	tagIds := make([]string, 0, len(params.Tags))
+	for _, tagId := range params.Tags {
+		if tagId != "" {
+			tagIds = append(tagIds, tagId)
+		}
+	}
 	return patients.TideReportParams{
 		Period:         params.Period,
-		Tags:           params.Tags,
+		Tags:           tagIds,
 		Sites:          siteIds,
 		LastDataCutoff: params.LastDataCutoff,
 		Categories:     categories,

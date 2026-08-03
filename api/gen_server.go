@@ -2549,9 +2549,9 @@ func (w *ServerInterfaceWrapper) TideReport(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter period: %s", err))
 	}
 
-	// ------------- Required query parameter "tags" -------------
+	// ------------- Optional query parameter "tags" -------------
 
-	err = runtime.BindQueryParameter("form", false, true, "tags", ctx.QueryParams(), &params.Tags)
+	err = runtime.BindQueryParameter("form", false, false, "tags", ctx.QueryParams(), &params.Tags)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tags: %s", err))
 	}

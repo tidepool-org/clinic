@@ -2501,8 +2501,8 @@ type TideReportParams struct {
 	// Period Time Period to display
 	Period string `form:"period" json:"period"`
 
-	// Tags Comma-separated list of patient tag IDs
-	Tags []ObjectIdV1 `form:"tags" json:"tags"`
+	// Tags Comma-separated list of patient tag IDs. If provided, only patients tagged with all of the given tags are included in the report. An empty value is ignored, as if the parameter were omitted, and patients are included regardless of their tags.
+	Tags []ObjectIdV1 `form:"tags,omitempty" json:"tags,omitempty"`
 
 	// LastDataCutoff Inclusive minimum of date of last data from a patient.
 	LastDataCutoff time.Time `form:"lastDataCutoff" json:"lastDataCutoff"`

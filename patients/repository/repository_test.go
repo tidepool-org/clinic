@@ -2326,6 +2326,15 @@ var _ = Describe("TideReport", func() {
 	})
 
 	Context("NoData", func() {
+		ids := func(results []patients.TideResultPatient) []string {
+			out := make([]string, 0, len(results))
+			for _, result := range results {
+				Expect(result.Patient.Id).ToNot(BeNil())
+				out = append(out, *result.Patient.Id)
+			}
+			return out
+		}
+
 		AfterEach(func() {
 			database := dbTest.GetTestDatabase()
 			patients := database.Collection("patients")
@@ -2342,7 +2351,7 @@ var _ = Describe("TideReport", func() {
 				if i == 0 {
 					p.DataSources = &[]patients.DataSource{{
 						ProviderName: patients.DexcomDataSourceProviderName,
-						State:        "pendingReconnection",
+						State:        patients.DataSourceStatePendingReconnect,
 					}}
 					dexcomUserId = *p.UserId
 				}
@@ -2353,18 +2362,92 @@ var _ = Describe("TideReport", func() {
 			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
 			Expect(err).To(Succeed())
 
-			ids := func(results []patients.TideResultPatient) []string {
-				out := make([]string, 0, len(results))
-				for _, result := range results {
-					Expect(result.Patient.Id).ToNot(BeNil())
-					out = append(out, *result.Patient.Id)
-				}
-				return out
-			}
 			Expect(ids(tide.Results["timeInVeryLowPercent"])).To(ContainElement(dexcomUserId))
 			Expect(ids(tide.Results["noData"])).ToNot(ContainElement(dexcomUserId))
 			Expect(tide.Metadata.CandidatePatients).To(Equal(4))
 			Expect(tide.Metadata.SelectedPatients).To(Equal(4))
+		})
+
+		It("excludes patients whose dataSources are null or empty", func() {
+			var withSources string
+			setDataSources := func(i int, p *patients.Patient) {
+				switch i {
+				case 0:
+					p.DataSources = nil
+				case 1:
+					p.DataSources = &[]patients.DataSource{}
+				case 2:
+					withSources = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{}, 3, setDataSources)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(ids(tide.Results["noData"])).To(ConsistOf(withSources))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(1))
+		})
+	})
+
+	Context("Tags", func() {
+		ids := func(results []patients.TideResultPatient) []string {
+			out := make([]string, 0, len(results))
+			for _, result := range results {
+				Expect(result.Patient.Id).ToNot(BeNil())
+				out = append(out, *result.Patient.Id)
+			}
+			return out
+		}
+
+		AfterEach(func() {
+			database := dbTest.GetTestDatabase()
+			patients := database.Collection("patients")
+			_, err := patients.DeleteMany(context.Background(), primitive.M{})
+			Expect(err).To(Succeed())
+		})
+
+		It("returns patients regardless of tags when no tags are given", func() {
+			var otherTagWithData, untaggedNoData string
+			retag := func(i int, p *patients.Patient) {
+				switch i {
+				case 0:
+					p.Tags = &[]primitive.ObjectID{primitive.NewObjectID()}
+					otherTagWithData = *p.UserId
+				case 2:
+					p.Tags = nil
+					untaggedNoData = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 2}, 2, retag)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+			params.Tags = nil
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(tide.Metadata.CandidatePatients).To(Equal(4))
+			Expect(ids(tide.Results["timeInVeryLowPercent"])).To(ContainElement(otherTagWithData))
+			Expect(ids(tide.Results["noData"])).To(ContainElement(untaggedNoData))
+		})
+
+		It("filters patients by tags when tags are given", func() {
+			var otherTagWithData string
+			retag := func(i int, p *patients.Patient) {
+				if i == 0 {
+					p.Tags = &[]primitive.ObjectID{primitive.NewObjectID()}
+					otherTagWithData = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 2}, 2, retag)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(tide.Metadata.CandidatePatients).To(Equal(3))
+			Expect(ids(tide.Results["timeInVeryLowPercent"])).ToNot(ContainElement(otherTagWithData))
 		})
 	})
 
