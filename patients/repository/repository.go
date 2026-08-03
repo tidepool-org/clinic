@@ -2094,6 +2094,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 			"summary.cgmStats.dates.lastData": bson.M{"$gte": params.LastDataCutoff},
 		}
 		applySitesFilter(selector, siteIds)
+		applyDemoFilter(selector, r.config.ClinicDemoPatientUserId)
 
 		opts := options.Find()
 		opts.SetLimit(int64(remaining))
@@ -2163,6 +2164,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 			},
 		}
 		applySitesFilter(selector, siteIds)
+		applyDemoFilter(selector, r.config.ClinicDemoPatientUserId)
 
 		opts := options.Find()
 		opts.SetLimit(int64(TideReportNoDataPatientLimit))
@@ -2414,5 +2416,11 @@ func strp(s string) *string {
 func applySitesFilter(selector bson.M, siteIds []primitive.ObjectID) {
 	if len(siteIds) > 0 {
 		selector["sites.id"] = bson.M{"$in": siteIds}
+	}
+}
+
+func applyDemoFilter(selector bson.M, demoPatientUserId string) {
+	if demoPatientUserId != "" {
+		selector["userId"] = bson.M{"$ne": demoPatientUserId}
 	}
 }
