@@ -1712,9 +1712,11 @@ func PatientsToTideResult(patientsList []*patients.Patient, period string, exclu
 	for _, patient := range patientsList {
 		*exclusions = append(*exclusions, *patient.Id)
 
-		var patientTags []string
-		for _, tag := range *patient.Tags {
-			patientTags = append(patientTags, tag.Hex())
+		patientTags := make([]string, 0)
+		if patient.Tags != nil {
+			for _, tag := range *patient.Tags {
+				patientTags = append(patientTags, tag.Hex())
+			}
 		}
 
 		resultPatient := patients.TideResultPatient{
@@ -2119,9 +2121,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		selector := bson.M{
 			"_id":                             bson.M{"$nin": exclusions},
 			"clinicId":                        clinicObjId,
-			"tags":                            bson.M{"$all": tags},
 			"summary.cgmStats.dates.lastData": bson.M{"$gte": params.LastDataCutoff},
 		}
+		applyTagsFilter(selector, tags)
 		applySitesFilter(selector, siteIds)
 		applyDemoFilter(selector, r.config.ClinicDemoPatientUserId)
 
@@ -2180,7 +2182,6 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		selector := bson.M{
 			"_id":      bson.M{"$nin": exclusions},
 			"clinicId": clinicObjId,
-			"tags":     bson.M{"$all": tags},
 			"$or": bson.A{
 				bson.M{"summary.cgmStats.dates.lastData": nil},
 				bson.M{"$and": bson.A{
@@ -2192,6 +2193,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 				}},
 			},
 		}
+		applyTagsFilter(selector, tags)
 		applySitesFilter(selector, siteIds)
 		applyDemoFilter(selector, r.config.ClinicDemoPatientUserId)
 
@@ -2445,6 +2447,12 @@ func strp(s string) *string {
 func applySitesFilter(selector bson.M, siteIds []primitive.ObjectID) {
 	if len(siteIds) > 0 {
 		selector["sites.id"] = bson.M{"$in": siteIds}
+	}
+}
+
+func applyTagsFilter(selector bson.M, tagIds []primitive.ObjectID) {
+	if len(tagIds) > 0 {
+		selector["tags"] = bson.M{"$all": tagIds}
 	}
 }
 
