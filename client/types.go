@@ -1326,7 +1326,7 @@ type CreatePatientV1 struct {
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
 	Sites       []SiteV1              `json:"sites,omitzero"`
-	Tags        *PatientTagIdsV1      `json:"tags"`
+	Tags        *PatientTagIdsV1      `json:"tags,omitempty,omitzero"`
 }
 
 // DataSourceV1 defines model for dataSource.v1.
@@ -1614,7 +1614,7 @@ type PatientV1 struct {
 
 	// Summary A summary of a patients recent data
 	Summary *PatientSummaryV1 `json:"summary,omitempty"`
-	Tags    *PatientTagIdsV1  `json:"tags"`
+	Tags    *PatientTagIdsV1  `json:"tags,omitempty,omitzero"`
 
 	// TargetDevices When uploading data, the user selects a target device (typically
 	// make and model) of their data source (i.e. meter or pump) from a
@@ -1909,7 +1909,7 @@ type TideConfigV1 struct {
 	// SchemaVersion TIDE schema version
 	SchemaVersion int              `json:"schemaVersion"`
 	Sites         *SiteIdsV1       `json:"sites,omitempty,omitzero"`
-	Tags          *PatientTagIdsV1 `json:"tags"`
+	Tags          *PatientTagIdsV1 `json:"tags,omitempty,omitzero"`
 
 	// VeryHighGlucoseThreshold Minimum exclusive threshold in mmol/L for categorizing if a glucose value is very high as established by the AACE.
 	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold"`
@@ -1941,7 +1941,7 @@ type TidePatientV1 struct {
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id      *Tidepooluserid   `json:"id,omitempty"`
 	Reviews []PatientReviewV1 `json:"reviews"`
-	Tags    *PatientTagIdsV1  `json:"tags"`
+	Tags    *PatientTagIdsV1  `json:"tags,omitempty,omitzero"`
 }
 
 // TideResponseV1 Report of at-risk patients based on specific grouping criteria
@@ -2501,8 +2501,8 @@ type TideReportParams struct {
 	// Period Time Period to display
 	Period string `form:"period" json:"period"`
 
-	// Tags Comma-separated list of patient tag IDs
-	Tags []ObjectIdV1 `form:"tags" json:"tags"`
+	// Tags Comma-separated list of patient tag IDs. If provided, only patients tagged with all of the given tags are included in the report. An empty value is ignored, as if the parameter were omitted, and patients are included regardless of their tags.
+	Tags []ObjectIdV1 `form:"tags,omitempty" json:"tags,omitempty"`
 
 	// LastDataCutoff Inclusive minimum of date of last data from a patient.
 	LastDataCutoff time.Time `form:"lastDataCutoff" json:"lastDataCutoff"`

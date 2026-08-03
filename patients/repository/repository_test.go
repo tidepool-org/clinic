@@ -2346,6 +2346,50 @@ var _ = Describe("TideReport", func() {
 		})
 	})
 
+	Context("Tags", func() {
+		It("returns patients regardless of tags when no tags are given", func() {
+			var otherTagWithData, untaggedNoData string
+			retag := func(i int, p *patients.Patient) {
+				switch i {
+				case 0:
+					p.Tags = &[]primitive.ObjectID{primitive.NewObjectID()}
+					otherTagWithData = *p.UserId
+				case 2:
+					p.Tags = nil
+					untaggedNoData = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 2}, 2, retag)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+			params.Tags = nil
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(tide.Metadata.CandidatePatients).To(Equal(4))
+			Expect(resultIds(tide.Results["timeInVeryLowPercent"])).To(ContainElement(otherTagWithData))
+			Expect(resultIds(tide.Results["noData"])).To(ContainElement(untaggedNoData))
+		})
+
+		It("filters patients by tags when tags are given", func() {
+			var otherTagWithData string
+			retag := func(i int, p *patients.Patient) {
+				if i == 0 {
+					p.Tags = &[]primitive.ObjectID{primitive.NewObjectID()}
+					otherTagWithData = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 2}, 2, retag)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(tide.Metadata.CandidatePatients).To(Equal(3))
+			Expect(resultIds(tide.Results["timeInVeryLowPercent"])).ToNot(ContainElement(otherTagWithData))
+		})
+	})
+
 	Context("Demo", func() {
 		It("excludes the demo patient", func() {
 			makeDemo := func(i int, p *patients.Patient) {
