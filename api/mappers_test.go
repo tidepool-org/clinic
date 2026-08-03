@@ -29,10 +29,9 @@ var _ = Describe("Mappers", func() {
 			Expect(params.Sites).To(Equal([]string{siteId}))
 		})
 
-		It("maps missing tags to an empty, non-nil slice", func() {
+		It("keeps nil tags nil", func() {
 			params := api.NewTideReportParams(api.TideReportParams{})
-			Expect(params.Tags).ToNot(BeNil())
-			Expect(params.Tags).To(BeEmpty())
+			Expect(params.Tags).To(BeNil())
 		})
 
 		It("drops empty tag ids, so an empty ?tags= value means no filter", func() {

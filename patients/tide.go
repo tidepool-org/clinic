@@ -26,7 +26,7 @@ type TideConfig struct {
 	Period                      string      `json:"period"`
 	SchemaVersion               int         `json:"schemaVersion"`
 	Sites                       []string    `json:"sites,omitempty,omitzero"`
-	Tags                        []string    `json:"tags"`
+	Tags                        []string    `json:"tags,omitempty,omitzero"`
 	VeryHighGlucoseThreshold    float64     `json:"veryHighGlucoseThreshold"`
 	VeryLowGlucoseThreshold     float64     `json:"veryLowGlucoseThreshold"`
 	ExtremeHighGlucoseThreshold float64     `json:"extremeHighGlucoseThreshold"`

@@ -1885,7 +1885,7 @@ type TideConfigV1 struct {
 	// SchemaVersion TIDE schema version
 	SchemaVersion int              `json:"schemaVersion"`
 	Sites         *SiteIdsV1       `json:"sites,omitempty,omitzero"`
-	Tags          *PatientTagIdsV1 `json:"tags"`
+	Tags          *PatientTagIdsV1 `json:"tags,omitempty,omitzero"`
 
 	// VeryHighGlucoseThreshold Minimum exclusive threshold in mmol/L for categorizing if a glucose value is very high as established by the AACE.
 	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold"`
@@ -2490,7 +2490,7 @@ type TideReportParams struct {
 	ExcludeNoData bool `form:"excludeNoData,omitempty" json:"excludeNoData,omitempty"`
 
 	// Sites Comma-separated list of clinic site IDs. If provided, only patients assigned to at least one of the given sites are included in the report. An empty value is ignored, as if the parameter were omitted.
-	Sites *[]ObjectIdV1 `form:"sites,omitempty" json:"sites,omitempty"`
+	Sites []ObjectIdV1 `form:"sites,omitempty" json:"sites,omitempty"`
 }
 
 // TideReportParamsCategories defines parameters for TideReport.

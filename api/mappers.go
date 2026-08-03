@@ -627,26 +627,25 @@ func NewTideReportParams(params TideReportParams) patients.TideReportParams {
 	for _, cat := range params.Categories {
 		categories = append(categories, string(cat))
 	}
-	var siteIds []string
-	for _, siteId := range params.Sites {
-		if siteId != "" {
-			siteIds = append(siteIds, siteId)
-		}
-	}
-	tagIds := make([]string, 0, len(params.Tags))
-	for _, tagId := range params.Tags {
-		if tagId != "" {
-			tagIds = append(tagIds, tagId)
-		}
-	}
 	return patients.TideReportParams{
 		Period:         params.Period,
-		Tags:           tagIds,
-		Sites:          siteIds,
+		Tags:           compactIds(params.Tags),
+		Sites:          compactIds(params.Sites),
 		LastDataCutoff: params.LastDataCutoff,
 		Categories:     categories,
 		ExcludeNoData:  params.ExcludeNoData,
 	}
+}
+
+// compactIds drops empty ids, so that an empty ?tags= or ?sites= value means no filter.
+func compactIds(ids []ObjectIdV1) []string {
+	var out []string
+	for _, id := range ids {
+		if id != "" {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 func NewTideDto(tide *patients.Tide) *TideResponseV1 {
@@ -663,12 +662,14 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 			LowGlucoseThreshold:         tide.Config.LowGlucoseThreshold,
 			Period:                      tide.Config.Period,
 			SchemaVersion:               tide.Config.SchemaVersion,
-			Tags:                        &tide.Config.Tags,
 			VeryHighGlucoseThreshold:    tide.Config.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:     tide.Config.VeryLowGlucoseThreshold,
 			ExtremeHighGlucoseThreshold: &tide.Config.ExtremeHighGlucoseThreshold,
 		},
 		Results: TideResultsV1{},
+	}
+	if len(tide.Config.Tags) > 0 {
+		tideResult.Config.Tags = &tide.Config.Tags
 	}
 	if len(tide.Config.Sites) > 0 {
 		tideResult.Config.Sites = &tide.Config.Sites

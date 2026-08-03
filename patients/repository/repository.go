@@ -1855,18 +1855,8 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 	}
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 
-	tags := store.ObjectIDSFromStringArray(params.Tags)
-	seenSites := make(map[primitive.ObjectID]struct{}, len(params.Sites))
-	siteIds := make([]primitive.ObjectID, 0, len(params.Sites))
-	uniqueSites := make([]string, 0, len(params.Sites))
-	for _, id := range store.ObjectIDSFromStringArray(params.Sites) {
-		if _, ok := seenSites[id]; ok {
-			continue
-		}
-		seenSites[id] = struct{}{}
-		siteIds = append(siteIds, id)               // for mongo filtering
-		uniqueSites = append(uniqueSites, id.Hex()) // for the Tide.Config
-	}
+	tagIds, uniqueTags := uniqueObjectIds(params.Tags)
+	siteIds, uniqueSites := uniqueObjectIds(params.Sites)
 
 	if params.LastDataCutoff.IsZero() {
 		return nil, fmt.Errorf("%w: no lastDataCutoff provided", errors2.BadRequest)
@@ -1897,7 +1887,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 			Period:                      params.Period,
 			SchemaVersion:               patients.TideSchemaVersion,
 			Sites:                       uniqueSites,
-			Tags:                        params.Tags,
+			Tags:                        uniqueTags,
 			VeryHighGlucoseThreshold:    patients.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:     patients.VeryLowGlucoseThreshold,
 			ExtremeHighGlucoseThreshold: patients.ExtremeHighGlucoseThreshold,
@@ -1911,7 +1901,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 			"clinicId":                        clinicObjId,
 			"summary.cgmStats.dates.lastData": bson.M{"$gte": params.LastDataCutoff},
 		}
-		applyTagsFilter(selector, tags)
+		applyTagsFilter(selector, tagIds)
 		applySitesFilter(selector, siteIds)
 		applyDemoFilter(selector, r.config.ClinicDemoPatientUserId)
 
@@ -1992,7 +1982,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 				},
 			},
 		}
-		applyTagsFilter(selector, tags)
+		applyTagsFilter(selector, tagIds)
 		applySitesFilter(selector, siteIds)
 		applyDemoFilter(selector, r.config.ClinicDemoPatientUserId)
 
@@ -2259,4 +2249,21 @@ func applyDemoFilter(selector bson.M, demoPatientUserId string) {
 	if demoPatientUserId != "" {
 		selector["userId"] = bson.M{"$ne": demoPatientUserId}
 	}
+}
+
+// uniqueObjectIds parses hex ids (dropping invalid ones) and deduplicates them,
+// returning both mongo ids for filtering and hex strings for the Tide.Config echo.
+func uniqueObjectIds(ids []string) ([]primitive.ObjectID, []string) {
+	seen := make(map[primitive.ObjectID]struct{}, len(ids))
+	objIds := make([]primitive.ObjectID, 0, len(ids))
+	hexIds := make([]string, 0, len(ids))
+	for _, id := range store.ObjectIDSFromStringArray(ids) {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		objIds = append(objIds, id)
+		hexIds = append(hexIds, id.Hex())
+	}
+	return objIds, hexIds
 }

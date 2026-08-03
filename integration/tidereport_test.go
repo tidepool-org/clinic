@@ -60,8 +60,8 @@ var _ = Describe("TIDE Report Integration Test", Ordered, func() {
 
 			var report client.TideResponseV1
 			Expect(json.NewDecoder(rec.Result().Body).Decode(&report)).To(Succeed())
-			// config.tags is required to be an array, even when no tags are given.
-			Expect(report.Config.Tags).ToNot(BeNil())
+			Expect(report.Config.Tags).To(BeNil())
+
 		})
 
 		It("Succeeds with an empty tags parameter", func() {
@@ -69,6 +69,17 @@ var _ = Describe("TIDE Report Integration Test", Ordered, func() {
 			query.Set("tags", "")
 			rec := tideReport(query)
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+		})
+
+		When("no sites are provided", func() {
+			It("has no sites in the returned config", func() {
+				rec := tideReport(tideQuery())
+				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+				var report client.TideResponseV1
+				Expect(json.NewDecoder(rec.Result().Body).Decode(&report)).To(Succeed())
+				Expect(report.Config.Sites).To(BeNil())
+			})
 		})
 	})
 })
