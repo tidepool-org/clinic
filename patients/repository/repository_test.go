@@ -2449,6 +2449,27 @@ var _ = Describe("TideReport", func() {
 			Expect(tide.Metadata.CandidatePatients).To(Equal(3))
 			Expect(ids(tide.Results["timeInVeryLowPercent"])).ToNot(ContainElement(otherTagWithData))
 		})
+
+		It("echoes the requested tags in the config", func() {
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 1}, 0)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Config.Tags).To(Equal(params.Tags))
+		})
+
+		It("deduplicates repeated tag ids in the config", func() {
+			// config.tags is published as patientTagIds.v1, which requires unique items.
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 1}, 0)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+			params.Tags = []string{th.tagId.Hex(), th.tagId.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Config.Tags).To(Equal([]string{th.tagId.Hex()}))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(1))
+		})
 	})
 
 	Describe("TideResults", func() {

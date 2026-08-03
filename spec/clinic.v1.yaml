@@ -330,6 +330,7 @@ paths:
           allowEmptyValue: true
           schema:
             type: array
+            x-go-type-skip-optional-pointer: true
             x-omitempty: true
             x-omitzero: true
             items:
@@ -3717,7 +3718,10 @@ components:
           type: number
           x-go-type: float64
         tags:
-          $ref: '#/components/schemas/patientTagIds.v1'
+          allOf:
+            - $ref: '#/components/schemas/patientTagIds.v1'
+          x-omitempty: true
+          x-omitzero: true
         sites:
           $ref: '#/components/schemas/siteIds.v1'
         filters:
@@ -3731,7 +3735,6 @@ components:
         - veryHighGlucoseThreshold
         - lowGlucoseThreshold
         - veryLowGlucoseThreshold
-        - tags
         - filters
     patientReview.v1:
       type: object

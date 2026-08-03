@@ -16,7 +16,7 @@ var _ = Describe("Mappers", func() {
 
 		It("drops empty site ids, so an empty ?sites= value means no filter", func() {
 			params := api.NewTideReportParams(api.TideReportParams{
-				Sites: &[]api.ObjectIdV1{""},
+				Sites: []api.ObjectIdV1{""},
 			})
 			Expect(params.Sites).To(BeEmpty())
 		})
@@ -24,15 +24,14 @@ var _ = Describe("Mappers", func() {
 		It("keeps non-empty site ids while dropping empty ones", func() {
 			siteId := "68a1b2c3d4e5f6a7b8c9d0e1"
 			params := api.NewTideReportParams(api.TideReportParams{
-				Sites: &[]api.ObjectIdV1{"", siteId, ""},
+				Sites: []api.ObjectIdV1{"", siteId, ""},
 			})
 			Expect(params.Sites).To(Equal([]string{siteId}))
 		})
 
-		It("maps missing tags to an empty, non-nil slice", func() {
+		It("keeps nil tags nil", func() {
 			params := api.NewTideReportParams(api.TideReportParams{})
-			Expect(params.Tags).ToNot(BeNil())
-			Expect(params.Tags).To(BeEmpty())
+			Expect(params.Tags).To(BeNil())
 		})
 
 		It("drops empty tag ids, so an empty ?tags= value means no filter", func() {
