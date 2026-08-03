@@ -71,6 +71,13 @@ var _ = Describe("TIDE Report Integration Test", Ordered, func() {
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 		})
 
+		It("Succeeds when a valid tag id follows an empty element", func() {
+			query := tideQuery()
+			query.Set("tags", ",68a1b2c3d4e5f6a7b8c9d0e1")
+			rec := tideReport(query)
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+		})
+
 		When("no sites are provided", func() {
 			It("has no sites in the returned config", func() {
 				rec := tideReport(tideQuery())

@@ -1903,6 +1903,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		}
 		applyTagsFilter(selector, tagIds)
 		applySitesFilter(selector, siteIds)
+		applyDemoFilter(selector, r.config.ClinicDemoPatientUserId)
 
 		opts := options.Find()
 		opts.SetLimit(int64(remaining))
@@ -1973,6 +1974,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		}
 		applyTagsFilter(selector, tagIds)
 		applySitesFilter(selector, siteIds)
+		applyDemoFilter(selector, r.config.ClinicDemoPatientUserId)
 
 		opts := options.Find()
 		opts.SetLimit(int64(TideReportNoDataPatientLimit))
@@ -2230,6 +2232,12 @@ func applySitesFilter(selector bson.M, siteIds []primitive.ObjectID) {
 func applyTagsFilter(selector bson.M, tagIds []primitive.ObjectID) {
 	if len(tagIds) > 0 {
 		selector["tags"] = bson.M{"$all": tagIds}
+	}
+}
+
+func applyDemoFilter(selector bson.M, demoPatientUserId string) {
+	if demoPatientUserId != "" {
+		selector["userId"] = bson.M{"$ne": demoPatientUserId}
 	}
 }
 
