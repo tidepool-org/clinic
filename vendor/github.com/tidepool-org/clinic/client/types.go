@@ -637,9 +637,9 @@ const (
 
 // Defines values for DataSourceV1State.
 const (
-	Connected    DataSourceV1State = "connected"
-	Disconnected DataSourceV1State = "disconnected"
-	Error        DataSourceV1State = "error"
+	DataSourceV1StateConnected    DataSourceV1State = "connected"
+	DataSourceV1StateDisconnected DataSourceV1State = "disconnected"
+	DataSourceV1StateError        DataSourceV1State = "error"
 )
 
 // Defines values for DiagnosisTypeV1.
@@ -740,6 +740,15 @@ const (
 	Tier0200 TierV1 = "tier0200"
 	Tier0300 TierV1 = "tier0300"
 	Tier0400 TierV1 = "tier0400"
+)
+
+// Defines values for ListPatientsParamsDeviceIssues.
+const (
+	ListPatientsParamsDeviceIssuesDisconnected                ListPatientsParamsDeviceIssues = "disconnected"
+	ListPatientsParamsDeviceIssuesErroring                    ListPatientsParamsDeviceIssues = "erroring"
+	ListPatientsParamsDeviceIssuesExpiredConnectionInvitation ListPatientsParamsDeviceIssues = "expiredConnectionInvitation"
+	ListPatientsParamsDeviceIssuesStaleConnectionInvitation   ListPatientsParamsDeviceIssues = "staleConnectionInvitation"
+	ListPatientsParamsDeviceIssuesStaleData                   ListPatientsParamsDeviceIssues = "staleData"
 )
 
 // Defines values for TideReportParamsCategories.
@@ -2504,7 +2513,13 @@ type ListPatientsParams struct {
 	// the ADA standard ranges (e.g. as used by the TIDE report)
 	// should be omitted.
 	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
+
+	// DeviceIssues Includes patients experiencing one or more of the device issues specified.
+	DeviceIssues *[]ListPatientsParamsDeviceIssues `form:"deviceIssues,omitempty" json:"deviceIssues,omitempty"`
 }
+
+// ListPatientsParamsDeviceIssues defines parameters for ListPatients.
+type ListPatientsParamsDeviceIssues string
 
 // TideReportParams defines parameters for TideReport.
 type TideReportParams struct {

@@ -308,6 +308,8 @@ type Filter struct {
 	LastReviewed *time.Time
 	// Sites to which the patient must be assigned to be included.
 	Sites *[]string
+	// DeviceIssues to limit the patients to those with any of the given issues.
+	DeviceIssues *[]string
 
 	HasSubscription *bool
 	HasMRN          *bool

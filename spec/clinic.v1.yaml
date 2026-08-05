@@ -973,6 +973,22 @@ paths:
           schema:
             type: boolean
           in: query
+        - name: deviceIssues
+          description: |
+            Includes patients experiencing one or more of the device issues specified.
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - disconnected
+                - erroring
+                - expiredConnectionInvitation
+                - staleConnectionInvitation
+                - staleData
+          in: query
+          style: form
+          explode: false
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
