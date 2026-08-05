@@ -2179,6 +2179,13 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	}
 	models = slices.Concat(models, buildDisconnectedDeviceModels(disconnectedPatients))
 
+	erroringPatients, err := r.patientsWithErroringDevices(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with erroring devices", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildErroringDeviceModels(erroringPatients))
+
 	if len(models) == 0 {
 		r.logger.Info("no patient device issues found")
 		return nil
@@ -2198,6 +2205,7 @@ func (r *repository) removeResolvedDeviceIssues(ctx context.Context) error {
 		state string
 	}{
 		{issue: "disconnected", state: "disconnected"},
+		{issue: "erroring", state: "error"},
 	}
 	for _, res := range resolved {
 		filter := bson.M{
@@ -2416,6 +2424,47 @@ func buildDisconnectedDeviceModels(expiredPatients []patients.Patient) []mongo.W
 	return keep
 }
 
+func buildErroringDeviceModels(expiredPatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
+	for _, patient := range expiredPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if src.State != "error" {
+				continue
+			}
+			if src.ModifiedTime == nil {
+				continue
+			}
+			if newest != nil && src.ModifiedTime.Before(*newest.ModifiedTime) {
+				continue
+			}
+			newest = &src
+		}
+
+		if newest == nil {
+			continue
+		}
+		if patient.PrimaryDeviceProviderName != nil &&
+			*patient.PrimaryDeviceProviderName != newest.ProviderName {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.erroring.effectiveTime": newest.ModifiedTime,
+				"deviceIssues.erroring.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
 func (r *repository) patientsWithStaleData(ctx context.Context) (
 	[]patients.Patient, error) {
 
@@ -2530,6 +2579,30 @@ func (r *repository) patientsWithDisconnectedDevices(ctx context.Context) (
 	err = cur.All(ctx, &patients)
 	if err != nil {
 		return nil, fmt.Errorf("loading patients with disconnected devices: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) patientsWithErroringDevices(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	filter := bson.M{
+		"dataSources": bson.M{
+			"$elemMatch": bson.M{
+				"state": "error",
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with erroring devices: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	// TODO consider iterating through the cursor to minimize mem usage if needed.
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with erroring devices: %s", err)
 	}
 	return patients, nil
 }
