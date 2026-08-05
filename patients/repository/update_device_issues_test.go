@@ -293,6 +293,26 @@ var _ = Describe("UpdateDeviceIssues (resolved issues removal)", func() {
 		Expect(updated.DeviceIssues.Disconnected.IsZero()).To(BeTrue())
 	})
 
+	It("removes deviceIssues.erroring when the device has recovered", func() {
+		now := time.Now()
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "connected", ModifiedTime: &now, LatestDataTime: &now},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Erroring: patients.DeviceIssue{
+				EffectiveTime: now.Add(-24 * time.Hour),
+				ProviderId:    "dexcom",
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Erroring.IsZero()).To(BeTrue())
+	})
+
 	It("does not remove deviceIssues.disconnected while any device remains disconnected", func() {
 		now := time.Now()
 		modTime := now.Add(-time.Hour)
@@ -387,6 +407,47 @@ var _ = Describe("UpdateDeviceIssues (resolved issues removal)", func() {
 
 		updated := f.fetchPatient(id)
 		Expect(updated.DeviceIssues.StaleData.ProviderId).To(Equal("dexcom"))
+	})
+})
+
+var _ = Describe("UpdateDeviceIssues (general behavior)", func() {
+	var f *updateDeviceIssuesTestHelper
+
+	BeforeEach(func() { f = newUpdateDeviceIssuesTestHelper() })
+	AfterEach(func() { f.cleanup() })
+
+	It("leaves a patient with no detectable issues untouched", func() {
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "connected", LatestDataTime: pointerTime(time.Now())},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.IsZero()).To(BeTrue())
+	})
+
+	It("records multiple distinct issue types on a single patient in one pass", func() {
+		disconnectedMod := time.Now().Add(-time.Hour)
+		staleLatest := time.Now().Add(-1000 * time.Hour)
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "disconnected", ModifiedTime: &disconnectedMod},
+			{ProviderName: "abbott", State: "connected", LatestDataTime: &staleLatest},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Disconnected.ProviderId).To(Equal("dexcom"))
+		Expect(updated.DeviceIssues.Disconnected.EffectiveTime).
+			To(BeTemporally("~", disconnectedMod, time.Millisecond))
+		Expect(updated.DeviceIssues.StaleData.ProviderId).To(Equal("abbott"))
+		Expect(updated.DeviceIssues.StaleData.EffectiveTime).
+			To(BeTemporally("~", staleLatest.Add(48*time.Hour), time.Millisecond))
 	})
 })
 
