@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,14 +12,39 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/fx/fxtest"
 
 	"github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
 	patientsrepo "github.com/tidepool-org/clinic/patients/repository"
+	"github.com/tidepool-org/clinic/pointer"
 	storetest "github.com/tidepool-org/clinic/store/test"
 )
+
+var _ = Describe("UpdateDeviceIssues", func() {
+	var clinic *client.ClinicV1
+	var patient *client.PatientV1
+
+	BeforeEach(func() {
+		clinic = createClinic()
+		patient = createPatient(*clinic.Id)
+	})
+
+	It("finds patients with stale data", func() {
+		uploadPatientStaleData(*clinic.Id, patient)
+		updateDeviceIssues()
+
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		effectiveTime := effectiveTimeFromStaleData(patientWithIssues)
+		latestDataTime := latestDataTimeByProviderId(patientWithIssues, "dexcom")
+		Expect(effectiveTime.After(latestDataTime)).To(BeTrue())
+		Expect(patientWithIssues.DeviceIssues.StaleData.ProviderId).
+			To(Equal(client.Dexcom))
+	})
+})
 
 func createClinic() *client.ClinicV1 {
 	GinkgoHelper()
@@ -107,6 +133,28 @@ func updateDeviceIssues() {
 	Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 }
 
+func uploadPatientStaleData(clinicID string, patient *client.PatientV1) {
+	GinkgoHelper()
+	ctx := context.Background()
+	now := time.Now()
+	sources := &patients.DataSources{
+		{
+			DataSourceId:   pointer.FromAny(primitive.NewObjectID()),
+			ModifiedTime:   pointer.FromAny(now.Add(-time.Hour)),
+			ProviderName:   "dexcom",
+			State:          "connected",
+			LatestDataTime: pointer.FromAny(now.Add(-1000 * time.Hour)),
+		},
+	}
+	err := patientsRepo().UpdatePatientDataSources(ctx, *patient.Id, sources)
+	Expect(err).To(Succeed())
+
+	updatedPatient := getPatient(clinicID, *patient.Id)
+	if updatedPatient.DataSources == nil || len(*updatedPatient.DataSources) < 1 {
+		Fail("expected a data source, got none")
+	}
+}
+
 func patientsRepo() patients.Repository {
 	GinkgoHelper()
 	logger := testLogger()
@@ -117,4 +165,23 @@ func patientsRepo() patients.Repository {
 	repo, err := patientsrepo.NewRepository(cfg, database, logger, lifecycle)
 	Expect(err).To(Succeed())
 	return repo
+}
+
+func latestDataTimeByProviderId(patient *client.PatientV1, providerId string) time.Time {
+	GinkgoHelper()
+
+	for _, dataSource := range *patient.DataSources {
+		if dataSource.ProviderName == providerId {
+			if dataSource.LatestDataTime == nil {
+				Fail(fmt.Sprintf("expected latest data time to not be nil"))
+			}
+			return parseDatetime(*dataSource.LatestDataTime)
+		}
+	}
+	Fail(fmt.Sprintf("no data source found for providerId %q", providerId))
+	return time.Time{}
+}
+
+func effectiveTimeFromStaleData(patient *client.PatientV1) time.Time {
+	return parseDatetime(patient.DeviceIssues.StaleData.EffectiveTime)
 }
