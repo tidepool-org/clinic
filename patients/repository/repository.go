@@ -1261,6 +1261,16 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 		})
 	}
 
+	if filter.DeviceIssues != nil && len(*filter.DeviceIssues) > 0 {
+		issues := bson.A{}
+		for _, issue := range *filter.DeviceIssues {
+			issues = append(issues, bson.M{"deviceIssues." + issue: bson.M{
+				"$exists": true,
+			}})
+		}
+		orSelectors = append(orSelectors, issues)
+	}
+
 	if filter.LastReviewed != nil {
 		selector["reviews.0.time"] = bson.M{"$lte": filter.LastReviewed}
 	}

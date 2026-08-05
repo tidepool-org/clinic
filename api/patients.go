@@ -57,6 +57,14 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	filter.OmitNonStandardRanges = params.OmitNonStandardRanges != nil &&
 		*params.OmitNonStandardRanges
 
+	if params.DeviceIssues != nil && len(*params.DeviceIssues) > 0 {
+		issues := make([]string, 0, len(*params.DeviceIssues))
+		for _, deviceIssue := range *params.DeviceIssues {
+			issues = append(issues, string(deviceIssue))
+		}
+		filter.DeviceIssues = &issues
+	}
+
 	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
 	if err != nil {
 		return err

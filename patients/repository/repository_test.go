@@ -1719,6 +1719,113 @@ var _ = Describe("Patients Repository", func() {
 
 				Expect(found).To(BeTrue())
 			})
+
+			Context("with patients having distinct device issues", func() {
+				var clinicId string
+				var disconnectedPatientId primitive.ObjectID
+				var erroringPatientId primitive.ObjectID
+				var staleDataPatientId primitive.ObjectID
+
+				BeforeEach(func() {
+					clinicId = randomPatient.ClinicId.Hex()
+
+					disconnected := patientsTest.RandomPatient()
+					disconnected.ClinicId = randomPatient.ClinicId
+					disconnected.DeviceIssues = patients.DeviceIssues{
+						Disconnected: patients.DeviceIssue{
+							EffectiveTime: time.Now(),
+							ProviderId:    "dexcom",
+						},
+					}
+					created, err := repo.Create(context.Background(), disconnected)
+					Expect(err).To(Succeed())
+					disconnectedPatientId = *created.Id
+
+					erroring := patientsTest.RandomPatient()
+					erroring.ClinicId = randomPatient.ClinicId
+					erroring.DeviceIssues = patients.DeviceIssues{
+						Erroring: patients.DeviceIssue{
+							EffectiveTime: time.Now(),
+							ProviderId:    "dexcom",
+						},
+					}
+					created, err = repo.Create(context.Background(), erroring)
+					Expect(err).To(Succeed())
+					erroringPatientId = *created.Id
+
+					staleData := patientsTest.RandomPatient()
+					staleData.ClinicId = randomPatient.ClinicId
+					staleData.DeviceIssues = patients.DeviceIssues{
+						StaleData: patients.DeviceIssue{
+							EffectiveTime: time.Now(),
+							ProviderId:    "abbott",
+						},
+					}
+					created, err = repo.Create(context.Background(), staleData)
+					Expect(err).To(Succeed())
+					staleDataPatientId = *created.Id
+				})
+
+				AfterEach(func() {
+					selector := bson.M{"_id": bson.M{"$in": bson.A{
+						disconnectedPatientId, erroringPatientId, staleDataPatientId,
+					}}}
+					_, err := collection.DeleteMany(context.Background(), selector)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("returns only patients with a disconnected device issue when filtering by disconnected", func() {
+					deviceIssues := []string{"disconnected"}
+					filter := patients.Filter{
+						ClinicId:     &clinicId,
+						DeviceIssues: &deviceIssues,
+					}
+					pagination := store.DefaultPagination()
+					result, err := repo.List(context.Background(), &filter, pagination, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result.Patients).To(HaveLen(1))
+					Expect(result.Patients[0].Id.Hex()).To(Equal(disconnectedPatientId.Hex()))
+					Expect(result.Patients[0].DeviceIssues.Disconnected.EffectiveTime).ToNot(BeZero())
+					Expect(result.Patients[0].DeviceIssues.Erroring.IsZero()).To(BeTrue())
+					Expect(result.Patients[0].DeviceIssues.StaleData.IsZero()).To(BeTrue())
+				})
+
+				It("returns only patients with an erroring device issue when filtering by erroring", func() {
+					deviceIssues := []string{"erroring"}
+					filter := patients.Filter{
+						ClinicId:     &clinicId,
+						DeviceIssues: &deviceIssues,
+					}
+					pagination := store.DefaultPagination()
+					result, err := repo.List(context.Background(), &filter, pagination, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result.Patients).To(HaveLen(1))
+					Expect(result.Patients[0].Id.Hex()).To(Equal(erroringPatientId.Hex()))
+					Expect(result.Patients[0].DeviceIssues.Erroring.EffectiveTime).ToNot(BeZero())
+					Expect(result.Patients[0].DeviceIssues.Disconnected).To(BeZero())
+					Expect(result.Patients[0].DeviceIssues.StaleData).To(BeZero())
+				})
+
+				It("returns patients matching any of the requested device issue types", func() {
+					deviceIssues := []string{"disconnected", "erroring"}
+					filter := patients.Filter{
+						ClinicId:     &clinicId,
+						DeviceIssues: &deviceIssues,
+					}
+					pagination := store.DefaultPagination()
+					result, err := repo.List(context.Background(), &filter, pagination, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result.Patients).To(HaveLen(2))
+
+					returnedIds := map[string]bool{}
+					for _, patient := range result.Patients {
+						returnedIds[patient.Id.Hex()] = true
+					}
+					Expect(returnedIds).To(HaveKey(disconnectedPatientId.Hex()))
+					Expect(returnedIds).To(HaveKey(erroringPatientId.Hex()))
+					Expect(returnedIds).ToNot(HaveKey(staleDataPatientId.Hex()))
+				})
+			})
 		})
 
 		Describe("Update Permissions", func() {
