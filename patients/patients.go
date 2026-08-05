@@ -92,6 +92,8 @@ type Repository interface {
 
 	ClinicIds(ctx context.Context, userId string) ([]string, error)
 	Counts(ctx context.Context, clinicId string) (*Counts, error)
+	RemoveDeviceIssue(ctx context.Context, userId, issue string) error
+	CreateDeviceIssue(ctx context.Context, userId, providerName, issue string) error
 }
 
 type ProviderCounts struct {

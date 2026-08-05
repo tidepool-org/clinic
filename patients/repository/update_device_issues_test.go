@@ -372,6 +372,71 @@ var _ = Describe("UpdateDeviceIssues (resolved issues removal)", func() {
 	})
 })
 
+var _ = Describe("RemoveDeviceIssue", func() {
+	var th *updateDeviceIssuesTestHelper
+
+	BeforeEach(func() { th = newUpdateDeviceIssuesTestHelper() })
+	AfterEach(func() { th.cleanup() })
+
+	It("removes only the given issue, from all of the user's patient records", func() {
+		now := time.Now()
+		issues := patients.DeviceIssues{
+			Disconnected: patients.DeviceIssue{
+				EffectiveTime: now.Add(-24 * time.Hour),
+				ProviderId:    "dexcom",
+			},
+			Erroring: patients.DeviceIssue{
+				EffectiveTime: now.Add(-12 * time.Hour),
+				ProviderId:    "dexcom",
+			},
+		}
+		patient := patientsTest.RandomPatient()
+		patient.DeviceIssues = issues
+		other := patientsTest.RandomPatient()
+		other.UserId = patient.UserId
+		other.DeviceIssues = issues
+		id := th.insertPatient(patient)
+		otherId := th.insertPatient(other)
+
+		err := th.repo.RemoveDeviceIssue(th.ctx, *patient.UserId, patients.DeviceIssueErroring)
+		Expect(err).ToNot(HaveOccurred())
+
+		for _, updatedId := range []primitive.ObjectID{id, otherId} {
+			updated := th.fetchPatient(updatedId)
+			Expect(updated.DeviceIssues.Erroring.IsZero()).To(BeTrue())
+			Expect(updated.DeviceIssues.Disconnected.ProviderId).To(Equal("dexcom"))
+		}
+	})
+
+	It("is idempotent", func() {
+		patient := patientsTest.RandomPatient()
+		patient.DeviceIssues = patients.DeviceIssues{
+			Erroring: patients.DeviceIssue{
+				EffectiveTime: time.Now().Add(-12 * time.Hour),
+				ProviderId:    "dexcom",
+			},
+		}
+		id := th.insertPatient(patient)
+
+		for range 2 {
+			err := th.repo.RemoveDeviceIssue(th.ctx, *patient.UserId, patients.DeviceIssueErroring)
+			Expect(err).ToNot(HaveOccurred())
+		}
+
+		Expect(th.fetchPatient(id).DeviceIssues.Erroring.IsZero()).To(BeTrue())
+	})
+
+	It("succeeds for an unknown user", func() {
+		err := th.repo.RemoveDeviceIssue(th.ctx, "no-such-user", patients.DeviceIssueErroring)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("rejects an unknown issue key", func() {
+		err := th.repo.RemoveDeviceIssue(th.ctx, "1234567890", "staleData; $where")
+		Expect(err).To(HaveOccurred())
+	})
+})
+
 var _ = Describe("UpdateDeviceIssues (general behavior)", func() {
 	var f *updateDeviceIssuesTestHelper
 

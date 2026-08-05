@@ -2654,3 +2654,69 @@ func (r *repository) ClearDeviceIssues(ctx context.Context, userId string) error
 
 	return nil
 }
+
+var validDeviceIssues = []string{
+	patients.DeviceIssueDisconnected,
+	patients.DeviceIssueErroring,
+}
+
+func (r *repository) RemoveDeviceIssue(ctx context.Context,
+	userId string, issue string) error {
+
+	if !slices.Contains(validDeviceIssues, issue) {
+		return fmt.Errorf("invalid device issue: %q", issue)
+	}
+
+	key := "deviceIssues." + issue
+	selector := bson.M{
+		"userId": userId,
+		key:      bson.M{"$exists": true},
+	}
+
+	update := bson.M{
+		"$unset":       bson.M{key: ""},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	// Yes, we're updating all of this user's patient records, regardless of clinic.
+	// Matching no records isn't an error, so that removal is idempotent.
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return fmt.Errorf("error removing patient device issue: %w", err)
+	}
+
+	return nil
+}
+
+func (r *repository) CreateDeviceIssue(ctx context.Context,
+	userId, providerName, issue string) error {
+
+	if !slices.Contains(validDeviceIssues, issue) {
+		return fmt.Errorf("invalid device issue: %q", issue)
+	}
+
+	key := "deviceIssues." + issue
+	selector := bson.M{
+		"userId": userId,
+		key:      bson.M{"$exists": false},
+	}
+
+	deviceIssue := patients.DeviceIssue{
+		EffectiveTime: time.Now(),
+		ProviderId:    providerName,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			key: deviceIssue,
+		},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	// Yes, we're updating all of this user's patient records, regardless of clinic.
+	// Matching no records isn't an error, so that removal is idempotent.
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return fmt.Errorf("error creating patient device issue: %w", err)
+	}
+
+	return nil
+}
