@@ -622,6 +622,14 @@ func deactiveAllSubscriptions(subscriptions patients.EHRSubscriptions) patients.
 	return subscriptions
 }
 
+func (s *service) UpdateDeviceIssues(ctx context.Context) error {
+	defer func(start time.Time) {
+		dur := time.Since(start)
+		s.logger.Infow("updating device issues", "dur", fmt.Sprintf("%s", dur))
+	}(time.Now())
+	return s.patientsRepo.UpdateDeviceIssues(ctx)
+}
+
 func (s *service) UpdatePrimaryDeviceProviderName(ctx context.Context,
 	userId, providerName string) error {
 

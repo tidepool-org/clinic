@@ -3,17 +3,19 @@ package test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/google/uuid"
-	"github.com/tidepool-org/clinic/patients"
-	"github.com/tidepool-org/go-common/clients/shoreline"
-	"github.com/tidepool-org/platform/auth"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
+
+	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/go-common/clients/shoreline"
+	"github.com/tidepool-org/platform/auth"
 )
 
 const (
@@ -24,6 +26,7 @@ const (
 	TestXealthUserId         = "1234567891"
 	TestXealthGuardianUserId = "1234567893"
 	TestRedoxUserId          = "1234567892"
+	TestDeviceIssuesUserId   = "1234567894"
 	TestUserToken            = "user"
 	TestLegacyClinicToken    = "clinic"
 	TestServerId             = "server"
@@ -87,6 +90,17 @@ var (
 		EmailVerified:  true,
 	}
 
+	deviceIssuesUser = shoreline.UserData{
+		UserID:   TestDeviceIssuesUserId,
+		Username: "samwise@example.com",
+		Emails: []string{
+			"samewise@example.com",
+		},
+		PasswordExists: true,
+		Roles:          []string{"patient"},
+		EmailVerified:  true,
+	}
+
 	createClinicUserUrlRegexp      = regexp.MustCompile("/v1/clinics/.+/users")
 	createRestrictedTokenUrlRegexp = regexp.MustCompile("/v1/users/(.+)/restricted_tokens")
 	updateUserUrlRegexp            = regexp.MustCompile("^/user/.+")
@@ -147,12 +161,16 @@ func ShorelineStub() *httptest.Server {
 				xealthPatientCreated = true
 				resp, _ = json.Marshal(xealthUser)
 				w.WriteHeader(http.StatusCreated)
+
 			} else if user.Username == "redox@tidepool.org" {
 				redoxPatientCreated = true
 				resp, _ = json.Marshal(redoxUser)
 				w.WriteHeader(http.StatusCreated)
 			} else if user.Username == "xealth+guardian@tidepool.org" {
 				resp, _ = json.Marshal(xealthGuardianUser)
+				w.WriteHeader(http.StatusCreated)
+			} else if user.Username == "samwise@example.com" {
+				resp, _ = json.Marshal(deviceIssuesUser)
 				w.WriteHeader(http.StatusCreated)
 			} else {
 				w.WriteHeader(http.StatusBadRequest)

@@ -362,6 +362,20 @@ func (mr *MockServiceMockRecorder) Update(ctx, update any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockService)(nil).Update), ctx, update)
 }
 
+// UpdateDeviceIssues mocks base method.
+func (m *MockService) UpdateDeviceIssues(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDeviceIssues", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDeviceIssues indicates an expected call of UpdateDeviceIssues.
+func (mr *MockServiceMockRecorder) UpdateDeviceIssues(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeviceIssues", reflect.TypeOf((*MockService)(nil).UpdateDeviceIssues), ctx)
+}
+
 // UpdateEHRSubscription mocks base method.
 func (m *MockService) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {
 	m.ctrl.T.Helper()
@@ -846,6 +860,20 @@ func (m *MockRepository) Update(ctx context.Context, update patients.PatientUpda
 func (mr *MockRepositoryMockRecorder) Update(ctx, update any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepository)(nil).Update), ctx, update)
+}
+
+// UpdateDeviceIssues mocks base method.
+func (m *MockRepository) UpdateDeviceIssues(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDeviceIssues", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDeviceIssues indicates an expected call of UpdateDeviceIssues.
+func (mr *MockRepositoryMockRecorder) UpdateDeviceIssues(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeviceIssues", reflect.TypeOf((*MockRepository)(nil).UpdateDeviceIssues), ctx)
 }
 
 // UpdateEHRSubscription mocks base method.

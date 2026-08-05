@@ -73,6 +73,7 @@ type Service interface {
 	DeleteSites(ctx context.Context, clinicId string, siteId string) error
 	MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error
 	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
+	UpdateDeviceIssues(ctx context.Context) error
 	UpdatePrimaryDeviceProviderName(ctx context.Context, userId, providerName string) error
 	ClearDeviceIssues(ctx context.Context, userId string) error
 }

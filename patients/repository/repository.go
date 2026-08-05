@@ -2140,6 +2140,22 @@ func strp(s string) *string {
 	return &s
 }
 
+func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
+	models := []mongo.WriteModel{}
+
+	if len(models) == 0 {
+		r.logger.Info("no patient device issues found")
+		return nil
+	}
+
+	_, err := r.collection.BulkWrite(ctx, models)
+	if err != nil {
+		return fmt.Errorf("bulk writing patien device issues: %s", err)
+	}
+
+	return nil
+}
+
 func (r *repository) UpdatePrimaryDeviceProviderName(ctx context.Context,
 	userId, providerName string) error {
 
