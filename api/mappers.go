@@ -219,6 +219,11 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		dto.DiagnosisType = NewDiagnosisTypeDto(string(*patient.DiagnosisType))
 	}
 
+	if patient.PrimaryDeviceProviderName != nil {
+		primaryDeviceProviderName := ProviderIdV1(*patient.PrimaryDeviceProviderName)
+		dto.PrimaryDeviceProviderName = &primaryDeviceProviderName
+	}
+
 	return dto
 }
 

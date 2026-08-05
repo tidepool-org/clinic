@@ -306,7 +306,22 @@ func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, us
 	request.CreatedTime = now
 	request.ExpirationTime = now.Add(patients.PendingDataSourceExpirationDuration)
 
-	if err := s.patientsRepo.AddProviderConnectionRequest(ctx, clinicId, userId, request); err != nil {
+	_, err := store.WithTransaction(ctx, s.dbClient, func(txCtx mongo.SessionContext) (interface{}, error) {
+		err := s.patientsRepo.AddProviderConnectionRequest(txCtx, clinicId, userId, request)
+		if err != nil {
+			return nil, err
+		}
+		err = s.UpdatePrimaryDeviceProviderName(txCtx, userId, request.ProviderName)
+		if err != nil {
+			return nil, err
+		}
+		err = s.ClearDeviceIssues(txCtx, userId)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
 		return err
 	}
 
@@ -334,8 +349,30 @@ func (s *service) DeletePatientTagFromClinicPatients(ctx context.Context, clinic
 }
 
 func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, dataSources *patients.DataSources) error {
-	s.logger.Infow("updating data sources for clinic patients", "userId", userId)
-	if err := s.patientsRepo.UpdatePatientDataSources(ctx, userId, dataSources); err != nil {
+
+	_, err := store.WithTransaction(ctx, s.dbClient, func(txCtx mongo.SessionContext) (interface{}, error) {
+		s.logger.Infow("updating data sources for clinic patients", "userId", userId)
+
+		prior, err := s.priorPatient(txCtx, userId)
+		if err != nil {
+			return nil, err
+		}
+		if prior == nil {
+			return nil, fmt.Errorf("unable to find patient with userId %q", userId)
+		}
+
+		if newest := newestConnectingDataSource(prior, *dataSources); newest != nil {
+			if err := s.updatePrimaryDevice(txCtx, userId, *newest); err != nil {
+				return nil, err
+			}
+		}
+
+		if err := s.patientsRepo.UpdatePatientDataSources(txCtx, userId, dataSources); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
 		return err
 	}
 
@@ -356,6 +393,67 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 	}
 
 	return nil
+}
+
+func (s *service) priorPatient(ctx context.Context, userId string) (
+	*patients.Patient, error) {
+
+	res, err := s.patientsRepo.List(ctx, &patients.Filter{UserId: &userId},
+		store.Pagination{Limit: 1, Offset: 0}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(res.Patients) == 0 {
+		return nil, nil
+	}
+	return res.Patients[0], nil
+}
+
+func newestConnectingDataSource(prior *patients.Patient, updated patients.DataSources) (
+	_ *patients.DataSource) {
+
+	previous := map[string]patients.DataSource{}
+	if prior != nil && prior.DataSources != nil {
+		for _, src := range *prior.DataSources {
+			previous[src.ProviderName] = src
+		}
+	}
+
+	var newest *patients.DataSource
+	for _, dataSource := range updated {
+		if dataSource.State != "connected" {
+			continue
+		}
+		prev, found := previous[dataSource.ProviderName]
+		if found && prev.State == "connected" {
+			continue
+		}
+		if newest == nil ||
+			modifiedTimeOrZero(dataSource).After(modifiedTimeOrZero(*newest)) {
+
+			newest = &dataSource
+		}
+	}
+
+	return newest
+}
+
+func modifiedTimeOrZero(dataSource patients.DataSource) time.Time {
+	if dataSource.ModifiedTime == nil {
+		return time.Time{}
+	}
+	return *dataSource.ModifiedTime
+}
+
+func (s *service) updatePrimaryDevice(ctx context.Context,
+	userId string, dataSource patients.DataSource) error {
+
+	err := s.UpdatePrimaryDeviceProviderName(ctx, userId, dataSource.ProviderName)
+	if err != nil {
+		return err
+	}
+
+	return s.ClearDeviceIssues(ctx, userId)
 }
 
 func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {
@@ -522,4 +620,18 @@ func deactiveAllSubscriptions(subscriptions patients.EHRSubscriptions) patients.
 		subscriptions[name] = sub
 	}
 	return subscriptions
+}
+
+func (s *service) UpdatePrimaryDeviceProviderName(ctx context.Context,
+	userId, providerName string) error {
+
+	s.logger.Infow("updating primary device provider name for patient",
+		"userId", userId, "primaryDevice", providerName)
+	return s.patientsRepo.UpdatePrimaryDeviceProviderName(ctx, userId,
+		providerName)
+}
+
+func (s *service) ClearDeviceIssues(ctx context.Context, userId string) error {
+	s.logger.Infow("clearing device issues for user", "userId", userId)
+	return s.patientsRepo.ClearDeviceIssues(ctx, userId)
 }

@@ -1918,6 +1918,53 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("UpdatePrimaryDeviceProviderName", func() {
+			It("sets the primary device provider name and bumps updatedTime", func() {
+				patientBefore, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = repo.UpdatePrimaryDeviceProviderName(context.Background(),
+					*randomPatient.UserId, "dexcom")
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.PrimaryDeviceProviderName).ToNot(BeNil())
+				Expect(*patient.PrimaryDeviceProviderName).To(Equal("dexcom"))
+				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			It("updates every patient record of a user in multiple clinics", func() {
+				otherClinicPatient := patientsTest.RandomPatient()
+				otherClinicPatient.UserId = randomPatient.UserId
+
+				result, err := collection.InsertOne(context.Background(), otherClinicPatient)
+				Expect(err).ToNot(HaveOccurred())
+				allPatientIds = append(allPatientIds, result.InsertedID)
+				count += 1
+
+				err = repo.UpdatePrimaryDeviceProviderName(context.Background(),
+					*randomPatient.UserId, "dexcom")
+				Expect(err).ToNot(HaveOccurred())
+
+				for _, id := range []primitive.ObjectID{*randomPatient.ClinicId, *otherClinicPatient.ClinicId} {
+					patient, err := repo.Get(context.Background(),
+						id.Hex(), *randomPatient.UserId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(patient.PrimaryDeviceProviderName).ToNot(BeNil())
+					Expect(*patient.PrimaryDeviceProviderName).To(Equal("dexcom"))
+				}
+			})
+
+			It("returns ErrNotFound for an unknown user", func() {
+				err := repo.UpdatePrimaryDeviceProviderName(context.Background(),
+					"nonexistent-user", "dexcom")
+				Expect(err).To(MatchError(patients.ErrNotFound))
+			})
+		})
+
 		Describe("DeleteSites", func() {
 			var patientWithSites patients.Patient
 

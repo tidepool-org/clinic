@@ -1602,10 +1602,11 @@ type PatientV1 struct {
 	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
-	Mrn         *string               `json:"mrn,omitempty"`
-	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
-	Reviews     []PatientReviewV1     `json:"reviews"`
-	Sites       []SiteV1              `json:"sites,omitzero"`
+	Mrn                       *string               `json:"mrn,omitempty"`
+	Permissions               *PatientPermissionsV1 `json:"permissions,omitempty"`
+	PrimaryDeviceProviderName *ProviderIdV1         `json:"primaryDeviceProviderName,omitempty"`
+	Reviews                   []PatientReviewV1     `json:"reviews"`
+	Sites                     []SiteV1              `json:"sites,omitzero"`
 
 	// Summary A summary of a patients recent data
 	Summary *PatientSummaryV1 `json:"summary,omitempty"`
