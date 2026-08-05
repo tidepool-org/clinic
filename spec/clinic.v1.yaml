@@ -5060,6 +5060,12 @@ components:
           $ref: '#/components/schemas/glycemicRanges.v1'
         diagnosisType:
           $ref: '#/components/schemas/diagnosisType.v1'
+        primaryDeviceProviderName:
+          $ref: '#/components/schemas/providerId.v1'
+          description: The device used in various dashboards, e.g. TIDE or Device Issues Dashboard.
+          nullable: true
+          x-go-type-skip-optional-pointer: true
+          readOnly: true
       required:
         - id
         - fullName

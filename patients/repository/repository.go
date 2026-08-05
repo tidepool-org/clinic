@@ -2139,3 +2139,51 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 func strp(s string) *string {
 	return &s
 }
+
+func (r *repository) UpdatePrimaryDeviceProviderName(ctx context.Context,
+	userId, providerName string) error {
+
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"primaryDeviceProviderName": providerName,
+		},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	// Yes, we're updating all of this user's patient records, regardless of clinic.
+	res, err := r.collection.UpdateMany(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error updating patient primary device: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return patients.ErrNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) ClearDeviceIssues(ctx context.Context, userId string) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{
+		"$unset":       bson.M{"deviceIssues": ""},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	// Yes, we're updating all of this user's patient records, regardless of clinic.
+	res, err := r.collection.UpdateMany(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error clearing patient device issues: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return patients.ErrNotFound
+	}
+
+	return nil
+}
