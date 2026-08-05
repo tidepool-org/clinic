@@ -146,12 +146,18 @@ type DeviceIssues struct {
 	StaleData                   DeviceIssue `bson:"staleData,omitempty"`
 	ExpiredConnectionInvitation DeviceIssue `bson:"expiredConnectionInvitation,omitempty"`
 	StaleConnectionInvitation   DeviceIssue `bson:"staleConnectionInvitation,omitempty"`
+	Disconnected                DeviceIssue `bson:"disconnected,omitempty"`
 }
+
+const (
+	DeviceIssueDisconnected = "disconnected"
+)
 
 func (d DeviceIssues) IsZero() bool {
 	return d.StaleData.IsZero() &&
 		d.ExpiredConnectionInvitation.IsZero() &&
-		d.StaleConnectionInvitation.IsZero()
+		d.StaleConnectionInvitation.IsZero() &&
+		d.Disconnected.IsZero()
 }
 
 type DeviceIssue struct {

@@ -86,6 +86,37 @@ var _ = Describe("UpdateDeviceIssues", func() {
 			Expect(provider).To(Equal(client.Dexcom))
 		})
 	})
+
+	It("finds patients with disconnected devices", func() {
+		uploadPatientDeviceDisconnected(*clinic.Id, patient)
+		start := time.Now()
+		updateDeviceIssues()
+
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		effectiveTime := effectiveTimeFromDisconnected(patientWithIssues, "dexcom")
+		Expect(effectiveTime.Before(start)).To(BeTrue())
+		provider := patientWithIssues.DeviceIssues.Disconnected.ProviderId
+		Expect(provider).To(Equal(client.Dexcom))
+	})
+
+	It("removes the disconnected issue when the device reconnects", func() {
+		uploadPatientDeviceDisconnected(*clinic.Id, patient)
+		updateDeviceIssues()
+
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		Expect(patientWithIssues.DeviceIssues.Disconnected.ProviderId).
+			To(Equal(client.Dexcom))
+
+		uploadPatientDeviceConnected(*clinic.Id, patient)
+		updateDeviceIssues()
+
+		reconnected := getPatient(*clinic.Id, *patient.Id)
+		if reconnected.DeviceIssues != nil {
+			Expect(reconnected.DeviceIssues.Disconnected).To(BeZero())
+		}
+	})
 })
 
 func createClinic() *client.ClinicV1 {
@@ -312,6 +343,51 @@ func uploadMultiplePatientStaleDeviceConnectionInvitation(clinicID string,
 	Expect(len(updatedPatient.ConnectionRequests.Dexcom) > 0).To(BeTrue())
 }
 
+func uploadPatientDeviceDisconnected(clinicID string, patient *client.PatientV1) {
+	GinkgoHelper()
+	ctx := context.Background()
+	now := time.Now()
+	sources := &patients.DataSources{
+		{
+			DataSourceId: pointer.FromAny(primitive.NewObjectID()),
+			ModifiedTime: pointer.FromAny(now.Add(-time.Hour)),
+			ProviderName: "dexcom",
+			State:        "disconnected",
+		},
+	}
+	err := patientsRepo().UpdatePatientDataSources(ctx, *patient.Id, sources)
+	Expect(err).To(Succeed())
+
+	updatedPatient := getPatient(clinicID, *patient.Id)
+	if updatedPatient.DataSources == nil || len(*updatedPatient.DataSources) < 1 {
+		Fail("expected a data source, got none")
+	}
+}
+
+// uploadPatientDeviceConnected moves the patient's dexcom data source into the
+// connected state, with data recent enough that no staleData issue applies.
+func uploadPatientDeviceConnected(clinicID string, patient *client.PatientV1) {
+	GinkgoHelper()
+	ctx := context.Background()
+	now := time.Now()
+	sources := &patients.DataSources{
+		{
+			DataSourceId:   pointer.FromAny(primitive.NewObjectID()),
+			ModifiedTime:   pointer.FromAny(now),
+			ProviderName:   "dexcom",
+			State:          "connected",
+			LatestDataTime: pointer.FromAny(now),
+		},
+	}
+	err := patientsRepo().UpdatePatientDataSources(ctx, *patient.Id, sources)
+	Expect(err).To(Succeed())
+
+	updatedPatient := getPatient(clinicID, *patient.Id)
+	if updatedPatient.DataSources == nil || len(*updatedPatient.DataSources) < 1 {
+		Fail("expected a data source, got none")
+	}
+}
+
 func patientsRepo() patients.Repository {
 	GinkgoHelper()
 	logger := testLogger()
@@ -365,5 +441,22 @@ func effectiveTimeFromStaleInvitationDexcom(patient *client.PatientV1) time.Time
 		return req.CreatedTime
 	}
 	Fail(fmt.Sprintf("no device connection request found for providerId dexcom"))
+	return time.Time{}
+}
+
+func effectiveTimeFromDisconnected(patient *client.PatientV1, providerId string) (
+	_ time.Time) {
+
+	GinkgoHelper()
+
+	for _, dataSource := range *patient.DataSources {
+		if dataSource.ProviderName == providerId {
+			if dataSource.ModifiedTime == nil {
+				Fail(fmt.Sprintf("expected modified time to not be nil"))
+			}
+			return parseDatetime(*dataSource.ModifiedTime)
+		}
+	}
+	Fail(fmt.Sprintf("no data source found for providerId %q", providerId))
 	return time.Time{}
 }
