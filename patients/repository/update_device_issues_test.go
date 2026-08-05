@@ -163,6 +163,69 @@ var _ = Describe("UpdateDeviceIssues (stale data)", func() {
 	})
 })
 
+var _ = Describe("UpdateDeviceIssues (expired connection invitations)", func() {
+	var f *updateDeviceIssuesTestHelper
+
+	BeforeEach(func() { f = newUpdateDeviceIssuesTestHelper() })
+	AfterEach(func() { f.cleanup() })
+
+	It("sets expiredConnectionInvitation for a request whose expiration is in the past", func() {
+		expiration := time.Now().Add(-time.Hour)
+		patient := patientsTest.RandomPatient()
+		patient.ProviderConnectionRequests = patients.ProviderConnectionRequests{
+			"dexcom": patients.ConnectionRequests{
+				{ProviderName: "dexcom", CreatedTime: time.Now().Add(-2 * time.Hour), ExpirationTime: expiration},
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.ExpiredConnectionInvitation.ProviderId).To(Equal("dexcom"))
+		Expect(updated.DeviceIssues.ExpiredConnectionInvitation.EffectiveTime).
+			To(BeTemporally("~", expiration, time.Millisecond))
+	})
+
+	It("does not set expiredConnectionInvitation for a request expiring in the future", func() {
+		patient := patientsTest.RandomPatient()
+		patient.ProviderConnectionRequests = patients.ProviderConnectionRequests{
+			"dexcom": patients.ConnectionRequests{
+				{ProviderName: "dexcom", CreatedTime: time.Now(), ExpirationTime: time.Now().Add(time.Hour)},
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.ExpiredConnectionInvitation.IsZero()).To(BeTrue())
+	})
+
+	It("picks the most-recently-expired invitation across providers", func() {
+		olderExp := time.Now().Add(-10 * time.Hour)
+		newerExp := time.Now().Add(-time.Hour)
+		created := time.Now().Add(-2 * time.Hour)
+		patient := patientsTest.RandomPatient()
+		patient.ProviderConnectionRequests = patients.ProviderConnectionRequests{
+			"dexcom": patients.ConnectionRequests{
+				{ProviderName: "dexcom", CreatedTime: created, ExpirationTime: olderExp},
+			},
+			"abbott": patients.ConnectionRequests{
+				{ProviderName: "abbott", CreatedTime: created, ExpirationTime: newerExp},
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.ExpiredConnectionInvitation.ProviderId).To(Equal("abbott"))
+		Expect(updated.DeviceIssues.ExpiredConnectionInvitation.EffectiveTime).
+			To(BeTemporally("~", newerExp, time.Millisecond))
+	})
+})
+
 var _ = Describe("UpdateDeviceIssues (resolved issues removal)", func() {
 	var f *updateDeviceIssuesTestHelper
 

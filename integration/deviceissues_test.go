@@ -44,6 +44,20 @@ var _ = Describe("UpdateDeviceIssues", func() {
 		Expect(patientWithIssues.DeviceIssues.StaleData.ProviderId).
 			To(Equal(client.Dexcom))
 	})
+
+	It("finds patients with expired device connection invitations", func() {
+		uploadPatientExpiredDeviceConnectionInvitation(*clinic.Id, patient)
+		start := time.Now()
+		updateDeviceIssues()
+
+		patientWithIssues := getPatient(*clinic.Id, *patient.Id)
+		Expect(len(patientWithIssues.ConnectionRequests.Dexcom) > 0).To(BeTrue())
+		effectiveTime := effectiveTimeFromExpiredInvitation(patientWithIssues, "dexcom")
+		Expect(effectiveTime.Before(start)).To(BeTrue())
+		Expect(patientWithIssues.DeviceIssues).ToNot(BeNil())
+		Expect(patientWithIssues.DeviceIssues.ExpiredConnectionInvitation.ProviderId).
+			To(Equal(client.Dexcom))
+	})
 })
 
 func createClinic() *client.ClinicV1 {
@@ -155,6 +169,44 @@ func uploadPatientStaleData(clinicID string, patient *client.PatientV1) {
 	}
 }
 
+func uploadPatientExpiredDeviceConnectionInvitation(clinicID string,
+	patient *client.PatientV1) {
+
+	GinkgoHelper()
+	ctx := context.Background()
+	now := time.Now()
+	sources := []patients.DataSource{}
+	pcrs := patients.ProviderConnectionRequests{
+		"dexcom": []patients.ConnectionRequest{
+			{
+				ProviderName:   "dexcom",
+				CreatedTime:    now.Add(-32 * 24 * time.Hour),
+				ExpirationTime: now.Add(-time.Hour),
+			},
+		},
+	}
+	clinicOID, err := primitive.ObjectIDFromHex(clinicID)
+	Expect(err).To(Succeed())
+
+	update := patients.PatientUpdate{
+		ClinicId: clinicID,
+		UserId:   *patient.Id,
+		Patient: patients.Patient{
+			ClinicId:                   pointer.FromAny(clinicOID),
+			UserId:                     patient.Id,
+			ProviderConnectionRequests: pcrs,
+			DataSources:                &sources,
+		},
+	}
+	_, err = patientsRepo().Update(ctx, update)
+	Expect(err).To(Succeed())
+	updatedPatient, err := patientsRepo().Update(ctx, update)
+	Expect(err).To(Succeed())
+	tx := func(i *[]patients.DataSource) []patients.DataSource { return *i }
+	Expect(updatedPatient.DataSources).To(Or(BeNil(), WithTransform(tx, HaveLen(0))))
+	Expect(updatedPatient.ProviderConnectionRequests["dexcom"]).ToNot(BeNil())
+}
+
 func patientsRepo() patients.Repository {
 	GinkgoHelper()
 	logger := testLogger()
@@ -184,4 +236,17 @@ func latestDataTimeByProviderId(patient *client.PatientV1, providerId string) ti
 
 func effectiveTimeFromStaleData(patient *client.PatientV1) time.Time {
 	return parseDatetime(patient.DeviceIssues.StaleData.EffectiveTime)
+}
+
+func effectiveTimeFromExpiredInvitation(patient *client.PatientV1, providerId string) (
+	_ time.Time) {
+
+	GinkgoHelper()
+
+	Expect(providerId).To(Equal("dexcom"))
+	pcrs := patient.ConnectionRequests.Dexcom
+	Expect(len(pcrs) == 1).To(BeTrue(), "len(pcrs) should be 1")
+	Expect(pcrs[0].ExpirationTime.IsZero()).To(BeFalse(),
+		"expiration time should exist: "+fmt.Sprintf("%+v", pcrs[0]))
+	return pcrs[0].ExpirationTime
 }

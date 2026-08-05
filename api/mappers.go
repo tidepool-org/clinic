@@ -409,6 +409,13 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 		}
 	}
 
+	if et := deviceIssues.ExpiredConnectionInvitation.EffectiveTime; !et.IsZero() {
+		issues.ExpiredConnectionInvitation = DeviceIssueV1{
+			EffectiveTime: et.Format(time.RFC3339Nano),
+			ProviderId:    ProviderIdV1(deviceIssues.ExpiredConnectionInvitation.ProviderId),
+		}
+	}
+
 	return issues
 }
 

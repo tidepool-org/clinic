@@ -2157,6 +2157,13 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	}
 	models = slices.Concat(models, buildStaleDataModels(staleDataPatients))
 
+	expiredPatients, err := r.patientsWithExpiredConnectionInvitations(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with expired invitations", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildExpiredConnectionInvitationModels(expiredPatients))
+
 	if len(models) == 0 {
 		r.logger.Info("no patient device issues found")
 		return nil
@@ -2239,6 +2246,50 @@ func buildStaleDataModels(staleDataPatients []patients.Patient) []mongo.WriteMod
 	return keep
 }
 
+func buildExpiredConnectionInvitationModels(expiredPatients []patients.Patient) (
+	_ []mongo.WriteModel) {
+
+	now := time.Now()
+	keep := []mongo.WriteModel{}
+	for _, patient := range expiredPatients {
+		var newest *patients.ConnectionRequest
+
+		for _, pcrs := range patient.ProviderConnectionRequests {
+			for _, pcr := range pcrs {
+				if pcr.ExpirationTime.IsZero() || pcr.ExpirationTime.After(now) {
+					continue
+				}
+				if newest != nil && pcr.ExpirationTime.Before(newest.ExpirationTime) {
+					continue
+				}
+				newest = &pcr
+			}
+		}
+
+		if newest == nil {
+			continue
+		}
+		if patient.PrimaryDeviceProviderName != nil &&
+			*patient.PrimaryDeviceProviderName != newest.ProviderName {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.expiredConnectionInvitation.effectiveTime": newest.ExpirationTime,
+				"deviceIssues.expiredConnectionInvitation.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
 func (r *repository) patientsWithStaleData(ctx context.Context) (
 	[]patients.Patient, error) {
 
@@ -2289,6 +2340,36 @@ func (r *repository) patientsWithStaleData(ctx context.Context) (
 	err = cur.All(ctx, &patients)
 	if err != nil {
 		return nil, fmt.Errorf("loading patients with stale data: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	allExpired := bson.M{
+		"$all": bson.A{
+			bson.M{
+				"$elemMatch": bson.M{
+					"expirationTime": bson.M{"$lt": time.Now()},
+				},
+			},
+		},
+	}
+	orSelectors := bson.A{}
+	for _, provider := range patients.DataSourceProviderNames {
+		orSelectors = append(orSelectors, bson.M{"providerConnectionRequests." + provider: allExpired})
+	}
+	filter := bson.M{"$or": orSelectors}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with expired invitations: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with expired invitations: %s", err)
 	}
 	return patients, nil
 }
