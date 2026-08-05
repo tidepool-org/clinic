@@ -145,11 +145,13 @@ type Patient struct {
 type DeviceIssues struct {
 	StaleData                   DeviceIssue `bson:"staleData,omitempty"`
 	ExpiredConnectionInvitation DeviceIssue `bson:"expiredConnectionInvitation,omitempty"`
+	StaleConnectionInvitation   DeviceIssue `bson:"staleConnectionInvitation,omitempty"`
 }
 
 func (d DeviceIssues) IsZero() bool {
 	return d.StaleData.IsZero() &&
-		d.ExpiredConnectionInvitation.IsZero()
+		d.ExpiredConnectionInvitation.IsZero() &&
+		d.StaleConnectionInvitation.IsZero()
 }
 
 type DeviceIssue struct {

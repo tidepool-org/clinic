@@ -2141,6 +2141,7 @@ func strp(s string) *string {
 }
 
 const staleDataThreshold = 48 * time.Hour
+const staleInvitationThreshold = 48 * time.Hour
 
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	if err := r.removeResolvedStaleDataDeviceIssues(ctx); err != nil {
@@ -2163,6 +2164,13 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 		return err // TODO logging or erroring?
 	}
 	models = slices.Concat(models, buildExpiredConnectionInvitationModels(expiredPatients))
+
+	staleInvitePatients, err := r.patientsWithStaleConnectionInvitations(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with stale invitations", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildStaleConnectionInvitationModels(staleInvitePatients))
 
 	if len(models) == 0 {
 		r.logger.Info("no patient device issues found")
@@ -2290,6 +2298,50 @@ func buildExpiredConnectionInvitationModels(expiredPatients []patients.Patient) 
 	return keep
 }
 
+func buildStaleConnectionInvitationModels(staleInvitePatients []patients.Patient) (
+	_ []mongo.WriteModel) {
+
+	keep := []mongo.WriteModel{}
+	now := time.Now()
+	for _, patient := range staleInvitePatients {
+		var newest *patients.ConnectionRequest
+
+		for _, pcrs := range patient.ProviderConnectionRequests {
+			for _, pcr := range pcrs {
+				if pcr.CreatedTime.Add(staleInvitationThreshold).After(now) {
+					continue // it's not stale yet
+				}
+				if newest != nil && pcr.CreatedTime.Before(newest.CreatedTime) {
+					continue
+				}
+				newest = &pcr
+			}
+		}
+
+		if newest == nil {
+			continue
+		}
+		if patient.PrimaryDeviceProviderName != nil &&
+			*patient.PrimaryDeviceProviderName != newest.ProviderName {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.staleConnectionInvitation.effectiveTime": newest.CreatedTime.Add(staleInvitationThreshold),
+				"deviceIssues.staleConnectionInvitation.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
 func (r *repository) patientsWithStaleData(ctx context.Context) (
 	[]patients.Patient, error) {
 
@@ -2372,6 +2424,42 @@ func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Contex
 		return nil, fmt.Errorf("loading patients with expired invitations: %s", err)
 	}
 	return patients, nil
+}
+
+func (r *repository) patientsWithStaleConnectionInvitations(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	now := time.Now()
+	orSelectors := bson.A{}
+	for _, provider := range patients.DataSourceProviderNames {
+		orSelectors = append(orSelectors, staleConnectionInvitationProviderFilter(provider, now))
+	}
+	filter := bson.M{"$or": orSelectors}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with stale invitations: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with stale invitations: %s", err)
+	}
+	return patients, nil
+}
+
+func staleConnectionInvitationProviderFilter(provider string, t time.Time) bson.M {
+	return bson.M{
+		"providerConnectionRequests." + provider: bson.M{
+			"$all": bson.A{
+				bson.M{
+					"$elemMatch": bson.M{
+						"createdTime": bson.M{"$lt": t.Add(-staleInvitationThreshold)},
+					},
+				},
+			},
+		},
+	}
 }
 
 func (r *repository) UpdatePrimaryDeviceProviderName(ctx context.Context,

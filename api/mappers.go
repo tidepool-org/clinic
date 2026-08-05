@@ -416,6 +416,13 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 		}
 	}
 
+	if et := deviceIssues.StaleConnectionInvitation.EffectiveTime; !et.IsZero() {
+		issues.StaleConnectionInvitation = DeviceIssueV1{
+			EffectiveTime: et.Format(time.RFC3339Nano),
+			ProviderId:    ProviderIdV1(deviceIssues.StaleConnectionInvitation.ProviderId),
+		}
+	}
+
 	return issues
 }
 
