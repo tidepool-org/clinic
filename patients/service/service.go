@@ -367,6 +367,23 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 			}
 		}
 
+		if issue := resolvedPrimaryDeviceIssue(prior, *dataSources); issue != "" {
+			s.logger.Infow("removing resolved device issue for patient",
+				"userId", userId, "issue", issue)
+			if err := s.patientsRepo.RemoveDeviceIssue(txCtx, userId, issue); err != nil {
+				return nil, err
+			}
+		}
+		if issue := triggerredPrimaryDeviceIssue(prior, *dataSources); issue != "" {
+			s.logger.Infow("creating device issue for patient",
+				"userId", userId, "issue", issue)
+			err := s.patientsRepo.CreateDeviceIssue(txCtx, userId,
+				*prior.PrimaryDeviceProviderName, issue)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		if err := s.patientsRepo.UpdatePatientDataSources(txCtx, userId, dataSources); err != nil {
 			return nil, err
 		}
@@ -438,11 +455,89 @@ func newestConnectingDataSource(prior *patients.Patient, updated patients.DataSo
 	return newest
 }
 
+// resolvedPrimaryDeviceIssue returns the key of the device issue resolved by the updated
+// data sources, or "".
+//
+// Only the primary device (as indicated by the patient's primaryDeviceProviderName) is
+// considered, because device issues are only reported for the primary device.
+func resolvedPrimaryDeviceIssue(prior *patients.Patient, updated patients.DataSources) (
+	_ string) {
+
+	if prior == nil || prior.PrimaryDeviceProviderName == nil {
+		return ""
+	}
+
+	var priorState string
+	if prior.DataSources != nil {
+		for _, src := range *prior.DataSources {
+			if src.ProviderName == *prior.PrimaryDeviceProviderName {
+				priorState = src.State
+				break
+			}
+		}
+	}
+
+	for _, dataSource := range updated {
+		if dataSource.ProviderName != *prior.PrimaryDeviceProviderName {
+			continue
+		}
+		switch {
+		case priorState == "error" && dataSource.State != "error" &&
+			!prior.DeviceIssues.Erroring.IsZero():
+			return patients.DeviceIssueErroring
+		case priorState == "disconnected" && dataSource.State != "disconnected" &&
+			!prior.DeviceIssues.Disconnected.IsZero():
+			return patients.DeviceIssueDisconnected
+		}
+	}
+
+	return ""
+}
+
 func modifiedTimeOrZero(dataSource patients.DataSource) time.Time {
 	if dataSource.ModifiedTime == nil {
 		return time.Time{}
 	}
 	return *dataSource.ModifiedTime
+}
+
+// triggerredPrimaryDeviceIssue returns the key of the device issue triggered by the updated
+// data sources, or "".
+//
+// Only the primary device (as indicated by the patient's primaryDeviceProviderName) is
+// considered, because device issues are only reported for the primary device.
+func triggerredPrimaryDeviceIssue(prior *patients.Patient, updated patients.DataSources) (
+	_ string) {
+
+	if prior == nil || prior.PrimaryDeviceProviderName == nil {
+		return ""
+	}
+
+	var priorState string
+	if prior.DataSources != nil {
+		for _, src := range *prior.DataSources {
+			if src.ProviderName == *prior.PrimaryDeviceProviderName {
+				priorState = src.State
+				break
+			}
+		}
+	}
+
+	for _, dataSource := range updated {
+		if dataSource.ProviderName != *prior.PrimaryDeviceProviderName {
+			continue
+		}
+		switch {
+		case priorState != "error" && dataSource.State == "error" &&
+			prior.DeviceIssues.Erroring.IsZero():
+			return patients.DeviceIssueErroring
+		case priorState != "disconnected" && dataSource.State == "disconnected" &&
+			prior.DeviceIssues.Disconnected.IsZero():
+			return patients.DeviceIssueDisconnected
+		}
+	}
+
+	return ""
 }
 
 func (s *service) updatePrimaryDevice(ctx context.Context,

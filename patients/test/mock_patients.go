@@ -645,6 +645,20 @@ func (mr *MockRepositoryMockRecorder) Create(ctx, patient any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepository)(nil).Create), ctx, patient)
 }
 
+// CreateDeviceIssue mocks base method.
+func (m *MockRepository) CreateDeviceIssue(ctx context.Context, userId, providerName, issue string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateDeviceIssue", ctx, userId, providerName, issue)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateDeviceIssue indicates an expected call of CreateDeviceIssue.
+func (mr *MockRepositoryMockRecorder) CreateDeviceIssue(ctx, userId, providerName, issue any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDeviceIssue", reflect.TypeOf((*MockRepository)(nil).CreateDeviceIssue), ctx, userId, providerName, issue)
+}
+
 // DeleteFromAllClinics mocks base method.
 func (m *MockRepository) DeleteFromAllClinics(ctx context.Context, userId string, metadata deletions.Metadata) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -802,6 +816,20 @@ func (m *MockRepository) Remove(ctx context.Context, clinicId, userId string, me
 func (mr *MockRepositoryMockRecorder) Remove(ctx, clinicId, userId, metadata any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockRepository)(nil).Remove), ctx, clinicId, userId, metadata)
+}
+
+// RemoveDeviceIssue mocks base method.
+func (m *MockRepository) RemoveDeviceIssue(ctx context.Context, userId, issue string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveDeviceIssue", ctx, userId, issue)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveDeviceIssue indicates an expected call of RemoveDeviceIssue.
+func (mr *MockRepositoryMockRecorder) RemoveDeviceIssue(ctx, userId, issue any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeviceIssue", reflect.TypeOf((*MockRepository)(nil).RemoveDeviceIssue), ctx, userId, issue)
 }
 
 // RescheduleLastSubscriptionOrderForAllPatients mocks base method.
