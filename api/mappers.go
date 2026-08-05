@@ -423,6 +423,13 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 		}
 	}
 
+	if et := deviceIssues.Disconnected.EffectiveTime; !et.IsZero() {
+		issues.Disconnected = DeviceIssueV1{
+			EffectiveTime: et.Format(time.RFC3339Nano),
+			ProviderId:    ProviderIdV1(deviceIssues.Disconnected.ProviderId),
+		}
+	}
+
 	return issues
 }
 

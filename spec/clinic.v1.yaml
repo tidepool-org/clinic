@@ -5013,6 +5013,8 @@ components:
     deviceIssues.v1:
       type: object
       properties:
+        disconnected:
+          $ref: '#/components/schemas/deviceIssue.v1'
         expiredConnectionInvitation:
           $ref: '#/components/schemas/deviceIssue.v1'
         staleConnectionInvitation:

@@ -2144,7 +2144,7 @@ const staleDataThreshold = 48 * time.Hour
 const staleInvitationThreshold = 48 * time.Hour
 
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
-	if err := r.removeResolvedStaleDataDeviceIssues(ctx); err != nil {
+	if err := r.removeResolvedDeviceIssues(ctx); err != nil {
 		r.logger.Errorw("unable to remove resolved device issues", "error", err)
 		return err
 	}
@@ -2172,6 +2172,13 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	}
 	models = slices.Concat(models, buildStaleConnectionInvitationModels(staleInvitePatients))
 
+	disconnectedPatients, err := r.patientsWithDisconnectedDevices(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with disconnected devices", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildDisconnectedDeviceModels(disconnectedPatients))
+
 	if len(models) == 0 {
 		r.logger.Info("no patient device issues found")
 		return nil
@@ -2183,6 +2190,32 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *repository) removeResolvedDeviceIssues(ctx context.Context) error {
+	resolved := []struct {
+		issue string
+		state string
+	}{
+		{issue: "disconnected", state: "disconnected"},
+	}
+	for _, res := range resolved {
+		filter := bson.M{
+			"deviceIssues." + res.issue: bson.M{"$exists": true},
+			"dataSources": bson.M{
+				"$not": bson.M{"$elemMatch": bson.M{"state": res.state}},
+			},
+		}
+		update := bson.M{"$unset": bson.M{"deviceIssues." + res.issue: ""}}
+		if _, err := r.collection.UpdateMany(ctx, filter, update); err != nil {
+			return fmt.Errorf("removing resolved %s device issues: %w", res.issue, err)
+		}
+	}
+
+	// The removal of stale data device issues is, and should be, handled when the data
+	// source is updated, but until there are problems with the runtime of the
+	// UpdateDeviceIssues endpoint, we can check here as well for extra safety.
+	return r.removeResolvedStaleDataDeviceIssues(ctx)
 }
 
 func (r *repository) removeResolvedStaleDataDeviceIssues(ctx context.Context) error {
@@ -2342,6 +2375,47 @@ func buildStaleConnectionInvitationModels(staleInvitePatients []patients.Patient
 	return keep
 }
 
+func buildDisconnectedDeviceModels(expiredPatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
+	for _, patient := range expiredPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if src.State != "disconnected" {
+				continue
+			}
+			if src.ModifiedTime == nil {
+				continue
+			}
+			if newest != nil && src.ModifiedTime.Before(*newest.ModifiedTime) {
+				continue
+			}
+			newest = &src
+		}
+
+		if newest == nil {
+			continue
+		}
+		if patient.PrimaryDeviceProviderName != nil &&
+			*patient.PrimaryDeviceProviderName != newest.ProviderName {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.disconnected.effectiveTime": newest.ModifiedTime,
+				"deviceIssues.disconnected.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
 func (r *repository) patientsWithStaleData(ctx context.Context) (
 	[]patients.Patient, error) {
 
@@ -2434,6 +2508,30 @@ func staleConnectionInvitationProviderFilter(provider string, t time.Time) bson.
 			},
 		},
 	}
+}
+
+func (r *repository) patientsWithDisconnectedDevices(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	filter := bson.M{
+		"dataSources": bson.M{
+			"$elemMatch": bson.M{
+				"state": "disconnected",
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with disconnected devices: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	// TODO consider iterating through the cursor to minimize mem usage if needed.
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with disconnected devices: %s", err)
+	}
+	return patients, nil
 }
 
 func (r *repository) UpdatePrimaryDeviceProviderName(ctx context.Context,

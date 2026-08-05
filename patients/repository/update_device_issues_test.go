@@ -235,6 +235,52 @@ var _ = Describe("UpdateDeviceIssues (resolved issues removal)", func() {
 	BeforeEach(func() { f = newUpdateDeviceIssuesTestHelper() })
 	AfterEach(func() { f.cleanup() })
 
+	It("removes deviceIssues.disconnected when the device has reconnected", func() {
+		now := time.Now()
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "connected", ModifiedTime: &now, LatestDataTime: &now},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Disconnected: patients.DeviceIssue{
+				EffectiveTime: now.Add(-24 * time.Hour),
+				ProviderId:    "dexcom",
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Disconnected.IsZero()).To(BeTrue())
+	})
+
+	It("does not remove deviceIssues.disconnected while any device remains disconnected", func() {
+		now := time.Now()
+		modTime := now.Add(-time.Hour)
+		patient := patientsTest.RandomPatient()
+		// dexcom reconnected, but abbott is still disconnected: the issue is
+		// re-pointed at abbott rather than removed.
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "connected", ModifiedTime: &now, LatestDataTime: &now},
+			{ProviderName: "abbott", State: "disconnected", ModifiedTime: &modTime},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Disconnected: patients.DeviceIssue{
+				EffectiveTime: now.Add(-24 * time.Hour),
+				ProviderId:    "dexcom",
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Disconnected.ProviderId).To(Equal("abbott"))
+		Expect(updated.DeviceIssues.Disconnected.EffectiveTime).
+			To(BeTemporally("~", modTime, time.Millisecond))
+	})
+
 	It("removes deviceIssues.staleData when the primary device's data is no longer stale", func() {
 		now := time.Now()
 		latest := now.Add(-time.Hour)
