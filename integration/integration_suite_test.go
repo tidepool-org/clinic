@@ -4,20 +4,22 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/labstack/echo/v4"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/tidepool-org/clinic/api"
-	integrationTest "github.com/tidepool-org/clinic/integration/test"
-	dbTest "github.com/tidepool-org/clinic/store/test"
-	"github.com/tidepool-org/clinic/test"
-	xealthTest "github.com/tidepool-org/clinic/xealth/test"
-	"go.uber.org/fx"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
+
+	"github.com/labstack/echo/v4"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"go.uber.org/fx"
+
+	"github.com/tidepool-org/clinic/api"
+	integrationTest "github.com/tidepool-org/clinic/integration/test"
+	dbTest "github.com/tidepool-org/clinic/store/test"
+	"github.com/tidepool-org/clinic/test"
+	xealthTest "github.com/tidepool-org/clinic/xealth/test"
 )
 
 const (
