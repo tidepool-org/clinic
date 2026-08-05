@@ -2140,20 +2140,129 @@ func strp(s string) *string {
 	return &s
 }
 
+const staleDataThreshold = 48 * time.Hour
+
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
+	if err := r.removeResolvedStaleDataDeviceIssues(ctx); err != nil {
+		r.logger.Errorw("unable to remove resolved device issues", "error", err)
+		return err
+	}
+
 	models := []mongo.WriteModel{}
+
+	staleDataPatients, err := r.patientsWithStaleData(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with stale data", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildStaleDataModels(staleDataPatients))
 
 	if len(models) == 0 {
 		r.logger.Info("no patient device issues found")
 		return nil
 	}
 
-	_, err := r.collection.BulkWrite(ctx, models)
+	_, err = r.collection.BulkWrite(ctx, models)
 	if err != nil {
 		return fmt.Errorf("bulk writing patien device issues: %s", err)
 	}
 
 	return nil
+}
+
+func (r *repository) removeResolvedStaleDataDeviceIssues(ctx context.Context) error {
+	filter := bson.M{
+		"deviceIssues.staleData": bson.M{"$exists": true},
+		"$expr": bson.M{
+			"$anyElementTrue": bson.M{
+				"$map": bson.M{
+					"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+					"as":    "ds",
+					"in": bson.M{
+						"$and": bson.A{
+							bson.M{"$eq": bson.A{"$$ds.providerName", "$primaryDeviceProviderName"}},
+							bson.M{"$gt": bson.A{"$$ds.latestDataTime", time.Now().Add(-staleDataThreshold)}},
+						},
+					},
+				},
+			},
+		},
+	}
+	update := bson.M{"$unset": bson.M{"deviceIssues.staleData": ""}}
+	if _, err := r.collection.UpdateMany(ctx, filter, update); err != nil {
+		return fmt.Errorf("removing resolved staleData device issues: %w", err)
+	}
+	return nil
+}
+
+func buildStaleDataModels(staleDataPatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
+	for _, patient := range staleDataPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if patient.PrimaryDeviceProviderName != nil &&
+				src.ProviderName != *patient.PrimaryDeviceProviderName {
+				continue
+			}
+			if src.State != "connected" {
+				continue
+			}
+			if src.LatestDataTime == nil {
+				continue
+			}
+			if src.LatestDataTime.After(time.Now().Add(-staleDataThreshold)) {
+				continue
+			}
+			if newest != nil && src.LatestDataTime.Before(*newest.LatestDataTime) {
+				continue
+			}
+			newest = &src
+		}
+
+		if newest == nil {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.staleData.effectiveTime": newest.LatestDataTime.Add(staleDataThreshold),
+				"deviceIssues.staleData.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
+func (r *repository) patientsWithStaleData(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	// modify this (and the other similar methods) to include a match on the primary device
+	filter := bson.M{
+		"dataSources": bson.M{
+			"$elemMatch": bson.M{
+				"latestDataTime": bson.M{"$lt": time.Now().Add(-staleDataThreshold)},
+				"state":          "connected",
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with stale data: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	// TODO consider iterating through the cursor to minimize mem usage if needed.
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with stale data: %s", err)
+	}
+	return patients, nil
 }
 
 func (r *repository) UpdatePrimaryDeviceProviderName(ctx context.Context,

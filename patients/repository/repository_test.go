@@ -1897,6 +1897,64 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("ClearDeviceIssues", func() {
+			It("removes an existing device issues subdocument and bumps updatedTime", func() {
+				patientBefore, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = collection.UpdateOne(context.Background(),
+					bson.M{"userId": *randomPatient.UserId},
+					bson.M{"$set": bson.M{
+						"deviceIssues.disconnected.effectiveTime": time.Now(),
+						"deviceIssues.disconnected.providerId":    "dexcom",
+					}})
+				Expect(err).ToNot(HaveOccurred())
+
+				err = repo.ClearDeviceIssues(context.Background(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.DeviceIssues.IsZero()).To(BeTrue())
+				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			It("clears device issues from every patient record of a user in multiple clinics", func() {
+				otherClinicPatient := patientsTest.RandomPatient()
+				otherClinicPatient.UserId = randomPatient.UserId
+
+				result, err := collection.InsertOne(context.Background(), otherClinicPatient)
+				Expect(err).ToNot(HaveOccurred())
+				allPatientIds = append(allPatientIds, result.InsertedID)
+				count += 1
+
+				_, err = collection.UpdateMany(context.Background(),
+					bson.M{"userId": *randomPatient.UserId},
+					bson.M{"$set": bson.M{
+						"deviceIssues.disconnected.effectiveTime": time.Now(),
+						"deviceIssues.disconnected.providerId":    "dexcom",
+					}})
+				Expect(err).ToNot(HaveOccurred())
+
+				err = repo.ClearDeviceIssues(context.Background(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				for _, id := range []primitive.ObjectID{*randomPatient.ClinicId, *otherClinicPatient.ClinicId} {
+					patient, err := repo.Get(context.Background(),
+						id.Hex(), *randomPatient.UserId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(patient.DeviceIssues.IsZero()).To(BeTrue())
+				}
+			})
+
+			It("returns ErrNotFound for an unknown user", func() {
+				err := repo.ClearDeviceIssues(context.Background(), "nonexistent-user")
+				Expect(err).To(MatchError(patients.ErrNotFound))
+			})
+		})
+
 		Describe("UpdatePrimaryDeviceProviderName", func() {
 			It("sets the primary device provider name and bumps updatedTime", func() {
 				patientBefore, err := repo.Get(context.Background(),

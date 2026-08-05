@@ -199,6 +199,7 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		},
 		Sites:          NewSitesDto(patient.Sites),
 		GlycemicRanges: NewGlycemicRangesDto(patient.GlycemicRanges),
+		DeviceIssues:   NewDeviceIssuesDto(patient.DeviceIssues),
 	}
 	if patient.BirthDate != nil && strtodatep(patient.BirthDate) != nil {
 		dto.BirthDate = *strtodatep(patient.BirthDate)
@@ -392,6 +393,23 @@ func newGlycemicRangesCustomThresholds(thresholds []GlycemicRangesThresholdV1) (
 		})
 	}
 	return out
+}
+
+func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
+	if deviceIssues.IsZero() {
+		return nil
+	}
+
+	issues := &DeviceIssuesV1{}
+
+	if et := deviceIssues.StaleData.EffectiveTime; !et.IsZero() {
+		issues.StaleData = DeviceIssueV1{
+			EffectiveTime: et.Format(time.RFC3339Nano),
+			ProviderId:    ProviderIdV1(deviceIssues.StaleData.ProviderId),
+		}
+	}
+
+	return issues
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {

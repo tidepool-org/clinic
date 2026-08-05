@@ -4997,6 +4997,24 @@ components:
         - notApplicable
         - ''
       example: type1
+    deviceIssue.v1:
+      type: object
+      properties:
+        effectiveTime:
+          $ref: '#/components/schemas/datetime.v1'
+        providerId:
+          $ref: '#/components/schemas/providerId.v1'
+      required:
+        - effectiveTime
+        - providerId
+      x-go-type-skip-optional-pointer: true
+      x-omitzero: true
+      x-omitempty: true
+    deviceIssues.v1:
+      type: object
+      properties:
+        staleData:
+          $ref: '#/components/schemas/deviceIssue.v1'
     patient.v1:
       type: object
       title: Patient
@@ -5071,6 +5089,8 @@ components:
           $ref: '#/components/schemas/glycemicRanges.v1'
         diagnosisType:
           $ref: '#/components/schemas/diagnosisType.v1'
+        deviceIssues:
+          $ref: '#/components/schemas/deviceIssues.v1'
         primaryDeviceProviderName:
           $ref: '#/components/schemas/providerId.v1'
           description: The device used in various dashboards, e.g. TIDE or Device Issues Dashboard.

@@ -52,6 +52,7 @@ func RandomPatient() patients.Patient {
 		GlycemicRanges:   RandomGlycemicRanges(),
 		DiagnosisType:    RandomDiagnosisType(),
 		UpdatedTime:      test.Faker.Time().TimeBetween(time.Now().Add(-time.Hour), time.Now().Add(-time.Minute)),
+		DeviceIssues:     patients.DeviceIssues{},
 	}
 }
 
@@ -246,6 +247,7 @@ func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"Sites":                          Equal(patient.Sites),
 		"GlycemicRanges":                 Equal(patient.GlycemicRanges),
 		"DiagnosisType":                  Equal(patient.DiagnosisType),
+		"DeviceIssues":                   Equal(patient.DeviceIssues),
 		"PrimaryDeviceProviderName":      Equal(patient.PrimaryDeviceProviderName),
 	})
 }

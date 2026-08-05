@@ -127,9 +127,27 @@ type Patient struct {
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
 
+	DeviceIssues DeviceIssues `bson:"deviceIssues,omitempty"`
 	// PrimaryDeviceProviderName indicates which device the backend believes is currently in
 	// use by the patient.
 	PrimaryDeviceProviderName *string `bson:"primaryDeviceProviderName,omitempty"`
+}
+
+type DeviceIssues struct {
+	StaleData DeviceIssue `bson:"staleData,omitempty"`
+}
+
+func (d DeviceIssues) IsZero() bool {
+	return d.StaleData.IsZero()
+}
+
+type DeviceIssue struct {
+	EffectiveTime time.Time `bson:"effectiveTime"`
+	ProviderId    string    `bson:"providerId"`
+}
+
+func (d DeviceIssue) IsZero() bool {
+	return d.EffectiveTime.IsZero() && d.ProviderId == ""
 }
 
 type DiagnosisType string
