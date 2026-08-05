@@ -1928,6 +1928,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter deviceIssues: %s", err))
 	}
 
+	// ------------- Optional query parameter "omitHiddenDeviceIssues" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "omitHiddenDeviceIssues", ctx.QueryParams(), &params.OmitHiddenDeviceIssues)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter omitHiddenDeviceIssues: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.ListPatients(ctx, clinicId, params)
 	return err

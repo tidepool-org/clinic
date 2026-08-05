@@ -840,6 +840,7 @@ var _ = Describe("Patients Service", func() {
 			Expect(err).To(BeNil())
 		})
 	})
+
 	Describe("UpdatePatientDataSources", func() {
 		var userId string
 		var clinicId string
@@ -1234,6 +1235,7 @@ var _ = Describe("Patients Service", func() {
 			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
 			Expect(err).ToNot(HaveOccurred())
 		})
+
 	})
 })
 

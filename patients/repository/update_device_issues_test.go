@@ -68,6 +68,180 @@ func (f *updateDeviceIssuesTestHelper) cleanup() {
 	Expect(err).ToNot(HaveOccurred())
 }
 
+var _ = Describe("UpdateDeviceIssues (erroring devices)", func() {
+	var f *updateDeviceIssuesTestHelper
+
+	BeforeEach(func() { f = newUpdateDeviceIssuesTestHelper() })
+	AfterEach(func() { f.cleanup() })
+
+	It("does not update deviceIssues.erroring when it is hidden for the same provider", func() {
+		modTime := time.Now().Add(-time.Hour)
+		originalET := time.Now().Add(-24 * time.Hour)
+		hiddenT := time.Now().Add(-30 * time.Minute)
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "error", ModifiedTime: &modTime},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Erroring: patients.DeviceIssue{
+				EffectiveTime: originalET,
+				ProviderId:    "dexcom",
+				Hidden:        hiddenT,
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Erroring.ProviderId).To(Equal("dexcom"))
+		Expect(updated.DeviceIssues.Erroring.EffectiveTime).
+			To(BeTemporally("~", originalET, time.Millisecond))
+		Expect(updated.DeviceIssues.Erroring.Hidden).
+			To(BeTemporally("~", hiddenT, time.Millisecond))
+	})
+
+	It("updates deviceIssues.erroring when the existing issue is not hidden", func() {
+		modTime := time.Now().Add(-time.Hour)
+		originalET := time.Now().Add(-24 * time.Hour)
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "error", ModifiedTime: &modTime},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Erroring: patients.DeviceIssue{
+				EffectiveTime: originalET,
+				ProviderId:    "dexcom",
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Erroring.ProviderId).To(Equal("dexcom"))
+		Expect(updated.DeviceIssues.Erroring.EffectiveTime).
+			To(BeTemporally("~", modTime, time.Millisecond))
+	})
+
+	It("updates deviceIssues.erroring using another erroring dataSource whose provider is not hidden", func() {
+		olderMod := time.Now().Add(-2 * time.Hour)
+		newerMod := time.Now().Add(-30 * time.Minute)
+		originalET := time.Now().Add(-24 * time.Hour)
+		hiddenT := time.Now().Add(-time.Hour)
+		patient := patientsTest.RandomPatient()
+		// dexcom is hidden; abbott is not hidden. buildErroringDeviceModels
+		// picks the newest erroring dataSource — abbott — and updates the
+		// device issue to point to it.
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "error", ModifiedTime: &olderMod},
+			{ProviderName: "abbott", State: "error", ModifiedTime: &newerMod},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Erroring: patients.DeviceIssue{
+				EffectiveTime: originalET,
+				ProviderId:    "dexcom",
+				Hidden:        hiddenT,
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Erroring.ProviderId).To(Equal("abbott"))
+		Expect(updated.DeviceIssues.Erroring.EffectiveTime).
+			To(BeTemporally("~", newerMod, time.Millisecond))
+	})
+})
+
+var _ = Describe("UpdateDeviceIssues (disconnected devices)", func() {
+	var f *updateDeviceIssuesTestHelper
+
+	BeforeEach(func() { f = newUpdateDeviceIssuesTestHelper() })
+	AfterEach(func() { f.cleanup() })
+
+	It("does not update deviceIssues.disconnected when it is hidden for the same provider", func() {
+		modTime := time.Now().Add(-time.Hour)
+		originalET := time.Now().Add(-24 * time.Hour)
+		hiddenT := time.Now().Add(-30 * time.Minute)
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "disconnected", ModifiedTime: &modTime},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Disconnected: patients.DeviceIssue{
+				EffectiveTime: originalET,
+				ProviderId:    "dexcom",
+				Hidden:        hiddenT,
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Disconnected.ProviderId).To(Equal("dexcom"))
+		Expect(updated.DeviceIssues.Disconnected.EffectiveTime).
+			To(BeTemporally("~", originalET, time.Millisecond))
+		Expect(updated.DeviceIssues.Disconnected.Hidden).
+			To(BeTemporally("~", hiddenT, time.Millisecond))
+	})
+
+	It("updates deviceIssues.disconnected when the existing issue is not hidden", func() {
+		modTime := time.Now().Add(-time.Hour)
+		originalET := time.Now().Add(-24 * time.Hour)
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "disconnected", ModifiedTime: &modTime},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Disconnected: patients.DeviceIssue{
+				EffectiveTime: originalET,
+				ProviderId:    "dexcom",
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Disconnected.ProviderId).To(Equal("dexcom"))
+		Expect(updated.DeviceIssues.Disconnected.EffectiveTime).
+			To(BeTemporally("~", modTime, time.Millisecond))
+	})
+
+	It("updates deviceIssues.disconnected using another disconnected dataSource whose provider is not hidden", func() {
+		olderMod := time.Now().Add(-2 * time.Hour)
+		newerMod := time.Now().Add(-30 * time.Minute)
+		originalET := time.Now().Add(-24 * time.Hour)
+		hiddenT := time.Now().Add(-time.Hour)
+		patient := patientsTest.RandomPatient()
+		// dexcom is hidden; abbott is not hidden. buildDisconnectedDeviceModels
+		// picks the newest disconnected dataSource — abbott — and updates the
+		// device issue to point to it.
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "disconnected", ModifiedTime: &olderMod},
+			{ProviderName: "abbott", State: "disconnected", ModifiedTime: &newerMod},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Disconnected: patients.DeviceIssue{
+				EffectiveTime: originalET,
+				ProviderId:    "dexcom",
+				Hidden:        hiddenT,
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Disconnected.ProviderId).To(Equal("abbott"))
+		Expect(updated.DeviceIssues.Disconnected.EffectiveTime).
+			To(BeTemporally("~", newerMod, time.Millisecond))
+	})
+})
+
 var _ = Describe("UpdateDeviceIssues (stale data)", func() {
 	var f *updateDeviceIssuesTestHelper
 
@@ -123,6 +297,37 @@ var _ = Describe("UpdateDeviceIssues (stale data)", func() {
 			To(BeTemporally("~", newer.Add(48*time.Hour), time.Millisecond))
 	})
 
+	It("updates staleData even when the existing issue is hidden (unlike disconnected/erroring)", func() {
+		// This characterizes a deliberate asymmetry: the disconnected/erroring
+		// detectors skip a same-provider issue that is hidden, but the staleData
+		// detector re-detects and overwrites effectiveTime/providerId while only
+		// preserving the hidden dismissal.
+		latest := time.Now().Add(-1000 * time.Hour)
+		originalET := time.Now()
+		hiddenT := time.Now().Add(-time.Hour)
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "connected", LatestDataTime: &latest},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			StaleData: patients.DeviceIssue{
+				EffectiveTime: originalET,
+				ProviderId:    "dexcom",
+				Hidden:        hiddenT,
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.StaleData.EffectiveTime).
+			To(BeTemporally("~", latest.Add(48*time.Hour), time.Millisecond))
+		Expect(updated.DeviceIssues.StaleData.EffectiveTime).
+			ToNot(BeTemporally("~", originalET, time.Second))
+		Expect(updated.DeviceIssues.StaleData.Hidden).
+			To(BeTemporally("~", hiddenT, time.Millisecond))
+	})
 })
 
 var _ = Describe("UpdateDeviceIssues (expired connection invitations)", func() {
@@ -245,6 +450,30 @@ var _ = Describe("UpdateDeviceIssues (resolved issues removal)", func() {
 			Disconnected: patients.DeviceIssue{
 				EffectiveTime: now.Add(-24 * time.Hour),
 				ProviderId:    "dexcom",
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.Disconnected.IsZero()).To(BeTrue())
+	})
+
+	It("removes a hidden deviceIssues.disconnected when the device has reconnected", func() {
+		// A dismissal is moot once the issue is resolved; removing the whole
+		// issue ensures a future disconnection surfaces as a fresh, un-hidden
+		// issue.
+		now := time.Now()
+		patient := patientsTest.RandomPatient()
+		patient.DataSources = &[]patients.DataSource{
+			{ProviderName: "dexcom", State: "connected", ModifiedTime: &now, LatestDataTime: &now},
+		}
+		patient.DeviceIssues = patients.DeviceIssues{
+			Disconnected: patients.DeviceIssue{
+				EffectiveTime: now.Add(-24 * time.Hour),
+				ProviderId:    "dexcom",
+				Hidden:        now.Add(-time.Hour),
 			},
 		}
 		id := f.insertPatient(patient)

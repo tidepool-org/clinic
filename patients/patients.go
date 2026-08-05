@@ -168,9 +168,12 @@ func (d DeviceIssues) IsZero() bool {
 type DeviceIssue struct {
 	EffectiveTime time.Time `bson:"effectiveTime"`
 	ProviderId    string    `bson:"providerId"`
+	Hidden        time.Time `bson:"hidden,omitempty"`
 }
 
 func (d DeviceIssue) IsZero() bool {
+	// Hidden doesn't count, because without effective time and provider id, there's no
+	// issue to hide.
 	return d.EffectiveTime.IsZero() && d.ProviderId == ""
 }
 
@@ -310,6 +313,8 @@ type Filter struct {
 	Sites *[]string
 	// DeviceIssues to limit the patients to those with any of the given issues.
 	DeviceIssues *[]string
+	// OmitHiddenDeviceIssues to remove device issues marked hidden.
+	OmitHiddenDeviceIssues *bool
 
 	HasSubscription *bool
 	HasMRN          *bool

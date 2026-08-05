@@ -1362,8 +1362,11 @@ type DatetimeV1 = string
 // DeviceIssueV1 defines model for deviceIssue.v1.
 type DeviceIssueV1 struct {
 	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
-	EffectiveTime DatetimeV1   `json:"effectiveTime"`
-	ProviderId    ProviderIdV1 `json:"providerId"`
+	EffectiveTime DatetimeV1 `json:"effectiveTime"`
+
+	// Hidden [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	Hidden     *DatetimeV1  `json:"hidden,omitempty"`
+	ProviderId ProviderIdV1 `json:"providerId"`
 }
 
 // DeviceIssuesV1 defines model for deviceIssues.v1.
@@ -2513,6 +2516,9 @@ type ListPatientsParams struct {
 
 	// DeviceIssues Includes patients experiencing one or more of the device issues specified.
 	DeviceIssues *[]ListPatientsParamsDeviceIssues `form:"deviceIssues,omitempty" json:"deviceIssues,omitempty"`
+
+	// OmitHiddenDeviceIssues Exclude any devices issues marked as hidden.
+	OmitHiddenDeviceIssues *bool `form:"omitHiddenDeviceIssues,omitempty" json:"omitHiddenDeviceIssues,omitempty"`
 }
 
 // ListPatientsParamsDeviceIssues defines parameters for ListPatients.
