@@ -408,12 +408,20 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 			ProviderId:    ProviderIdV1(deviceIssues.StaleData.ProviderId),
 		}
 	}
+	if !deviceIssues.StaleData.Hidden.IsZero() {
+		hidden := DatetimeV1(deviceIssues.StaleData.Hidden.Format(time.RFC3339Nano))
+		issues.StaleData.Hidden = &hidden
+	}
 
 	if et := deviceIssues.ExpiredConnectionInvitation.EffectiveTime; !et.IsZero() {
 		issues.ExpiredConnectionInvitation = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.ExpiredConnectionInvitation.ProviderId),
 		}
+	}
+	if !deviceIssues.ExpiredConnectionInvitation.Hidden.IsZero() {
+		hidden := DatetimeV1(deviceIssues.ExpiredConnectionInvitation.Hidden.Format(time.RFC3339Nano))
+		issues.ExpiredConnectionInvitation.Hidden = &hidden
 	}
 
 	if et := deviceIssues.StaleConnectionInvitation.EffectiveTime; !et.IsZero() {
@@ -422,6 +430,10 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 			ProviderId:    ProviderIdV1(deviceIssues.StaleConnectionInvitation.ProviderId),
 		}
 	}
+	if !deviceIssues.StaleConnectionInvitation.Hidden.IsZero() {
+		hidden := DatetimeV1(deviceIssues.StaleConnectionInvitation.Hidden.Format(time.RFC3339Nano))
+		issues.StaleConnectionInvitation.Hidden = &hidden
+	}
 
 	if et := deviceIssues.Disconnected.EffectiveTime; !et.IsZero() {
 		issues.Disconnected = DeviceIssueV1{
@@ -429,12 +441,20 @@ func NewDeviceIssuesDto(deviceIssues patients.DeviceIssues) *DeviceIssuesV1 {
 			ProviderId:    ProviderIdV1(deviceIssues.Disconnected.ProviderId),
 		}
 	}
+	if !deviceIssues.Disconnected.Hidden.IsZero() {
+		hidden := DatetimeV1(deviceIssues.Disconnected.Hidden.Format(time.RFC3339Nano))
+		issues.Disconnected.Hidden = &hidden
+	}
 
 	if et := deviceIssues.Erroring.EffectiveTime; !et.IsZero() {
 		issues.Erroring = DeviceIssueV1{
 			EffectiveTime: et.Format(time.RFC3339Nano),
 			ProviderId:    ProviderIdV1(deviceIssues.Erroring.ProviderId),
 		}
+	}
+	if !deviceIssues.Erroring.Hidden.IsZero() {
+		hidden := DatetimeV1(deviceIssues.Erroring.Hidden.Format(time.RFC3339Nano))
+		issues.Erroring.Hidden = &hidden
 	}
 
 	return issues
@@ -483,8 +503,42 @@ func NewPatient(dto PatientV1) patients.Patient {
 		dt := patients.DiagnosisType(*dto.DiagnosisType)
 		patient.DiagnosisType = &dt
 	}
+	if dto.DeviceIssues != nil {
+		patient.DeviceIssues = NewDeviceIssues(*dto.DeviceIssues)
+	}
 
 	return patient
+}
+
+func NewDeviceIssues(dto DeviceIssuesV1) patients.DeviceIssues {
+	di := patients.DeviceIssues{}
+
+	if dto.Disconnected.Hidden != nil {
+		ht, _ := time.Parse(time.RFC3339, *dto.Disconnected.Hidden)
+		di.Disconnected.Hidden = ht
+	}
+
+	if dto.Erroring.Hidden != nil {
+		ht, _ := time.Parse(time.RFC3339, *dto.Erroring.Hidden)
+		di.Erroring.Hidden = ht
+	}
+
+	if dto.ExpiredConnectionInvitation.Hidden != nil {
+		ht, _ := time.Parse(time.RFC3339, *dto.ExpiredConnectionInvitation.Hidden)
+		di.ExpiredConnectionInvitation.Hidden = ht
+	}
+
+	if dto.StaleConnectionInvitation.Hidden != nil {
+		ht, _ := time.Parse(time.RFC3339, *dto.StaleConnectionInvitation.Hidden)
+		di.StaleConnectionInvitation.Hidden = ht
+	}
+
+	if dto.StaleData.Hidden != nil {
+		ht, _ := time.Parse(time.RFC3339, *dto.StaleData.Hidden)
+		di.StaleData.Hidden = ht
+	}
+
+	return di
 }
 
 func NewPatientFromCreate(dto CreatePatientV1, clinicSites []sites.Site) patients.Patient {

@@ -178,7 +178,7 @@ func ShorelineStub() *httptest.Server {
 		} else if r.Method == http.MethodPost && strings.HasSuffix(r.RequestURI, "/serverlogin") {
 			w.Header().Set("x-tidepool-session-token", "server")
 		} else if r.Method == http.MethodPut && updateUserUrlRegexp.MatchString(r.RequestURI) {
-			// Custodial account update; the shoreline client only checks for a 200 status
+			w.WriteHeader(http.StatusOK)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}

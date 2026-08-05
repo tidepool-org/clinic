@@ -57,6 +57,8 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	filter.OmitNonStandardRanges = params.OmitNonStandardRanges != nil &&
 		*params.OmitNonStandardRanges
 
+	filter.OmitHiddenDeviceIssues = params.OmitHiddenDeviceIssues
+
 	if params.DeviceIssues != nil && len(*params.DeviceIssues) > 0 {
 		issues := make([]string, 0, len(*params.DeviceIssues))
 		for _, deviceIssue := range *params.DeviceIssues {

@@ -420,6 +420,16 @@ func (r *repository) List(ctx context.Context, filter *patients.Filter, paginati
 	if filter.ExcludeSummaryExceptFieldsInMergeReports {
 		pipeline = append(pipeline, excludeSummaryExceptFieldsInMergeReports()...)
 	}
+	if filter.OmitHiddenDeviceIssues != nil && *filter.OmitHiddenDeviceIssues {
+		pipeline = append(pipeline, omitHiddenDeviceIssues())
+	}
+	if filter.DeviceIssues != nil && len(*filter.DeviceIssues) > 0 {
+		// In generateListFilterQuery, we removed patients without any devices issues, then
+		// in omitHiddenDeviceIssues, we redacted those device issues that are hidden, but
+		// now we need another pass to remove patients that no longer have any device issues
+		// after the redaction performed in omitHiddenDeviceIssues.
+		pipeline = append(pipeline, matchDeviceIssues(*filter.DeviceIssues))
+	}
 	pipeline = append(pipeline, bson.M{"$sort": generateListSortStage(sorts)})
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
@@ -475,6 +485,38 @@ func excludeSummaryExceptFieldsInMergeReports() []bson.M {
 	}})
 	out = append(out, bson.M{"$unset": []string{"__tmp_bgm__", "__tmp_cgm__"}})
 	return out
+}
+
+func matchDeviceIssues(deviceIssues []string) bson.M {
+	issues := bson.A{}
+	for _, issue := range deviceIssues {
+		issues = append(issues, bson.M{"deviceIssues." + issue: bson.M{
+			"$exists": true,
+		}})
+	}
+	return bson.M{
+		"$match": bson.M{"$or": issues},
+	}
+}
+
+func omitHiddenDeviceIssues() bson.M {
+	return bson.M{
+		"$redact": bson.M{
+			"$cond": bson.M{
+				"if": bson.M{
+					"$and": bson.A{
+						// Use providerID and effectiveId to ensure that we don't prune some
+						// random other subdocument that happens to have a hidden property.
+						bson.M{"$gt": bson.A{"$hidden", time.Unix(0, 0)}},
+						bson.M{"$ne": bson.A{"$providerId", ""}},
+						bson.M{"$ne": bson.A{"$effectiveTime", time.Unix(0, 0)}},
+					},
+				},
+				"then": "$$PRUNE",
+				"else": "$$DESCEND",
+			},
+		},
+	}
 }
 
 func (r *repository) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
@@ -2379,6 +2421,9 @@ func buildStaleConnectionInvitationModels(staleInvitePatients []patients.Patient
 
 		filter := bson.M{"_id": *patient.Id}
 		update := bson.M{
+			// Set individual fields rather than the whole subdocument so that an
+			// existing "hidden" dismissal is preserved when the same issue is
+			// re-detected.
 			"$set": bson.M{
 				"deviceIssues.staleConnectionInvitation.effectiveTime": newest.CreatedTime.Add(staleInvitationThreshold),
 				"deviceIssues.staleConnectionInvitation.providerId":    newest.ProviderName,
@@ -2599,9 +2644,24 @@ func (r *repository) patientsWithDisconnectedDevices(ctx context.Context) (
 	[]patients.Patient, error) {
 
 	filter := bson.M{
-		"dataSources": bson.M{
-			"$elemMatch": bson.M{
-				"state": "disconnected",
+		"$expr": bson.M{
+			"$anyElementTrue": bson.M{
+				"$map": bson.M{
+					"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+					"as":    "ds",
+					"in": bson.M{
+						"$and": bson.A{
+							bson.M{"$eq": bson.A{"$$ds.state", "disconnected"}},
+							bson.M{"$or": bson.A{
+								bson.M{"$ne": bson.A{"$deviceIssues.disconnected.providerId", "$$ds.providerName"}},
+								bson.M{"$lte": bson.A{
+									bson.M{"$ifNull": bson.A{"$deviceIssues.disconnected.hidden", time.Unix(0, 0)}},
+									time.Unix(0, 0),
+								}},
+							}},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -2622,9 +2682,24 @@ func (r *repository) patientsWithErroringDevices(ctx context.Context) (
 	[]patients.Patient, error) {
 
 	filter := bson.M{
-		"dataSources": bson.M{
-			"$elemMatch": bson.M{
-				"state": "error",
+		"$expr": bson.M{
+			"$anyElementTrue": bson.M{
+				"$map": bson.M{
+					"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+					"as":    "ds",
+					"in": bson.M{
+						"$and": bson.A{
+							bson.M{"$eq": bson.A{"$$ds.state", "error"}},
+							bson.M{"$or": bson.A{
+								bson.M{"$ne": bson.A{"$deviceIssues.erroring.providerId", "$$ds.providerName"}},
+								bson.M{"$lte": bson.A{
+									bson.M{"$ifNull": bson.A{"$deviceIssues.erroring.hidden", time.Unix(0, 0)}},
+									time.Unix(0, 0),
+								}},
+							}},
+						},
+					},
+				},
 			},
 		},
 	}

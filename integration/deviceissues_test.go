@@ -15,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/fx/fxtest"
 
+	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/client"
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/patients"
@@ -22,6 +23,86 @@ import (
 	"github.com/tidepool-org/clinic/pointer"
 	storetest "github.com/tidepool-org/clinic/store/test"
 )
+
+var _ = Describe("Patients Service", func() {
+	var clinic *client.ClinicV1
+	var patient *client.PatientV1
+
+	BeforeEach(func() {
+		clinic = createClinic()
+		patient = createPatient(*clinic.Id)
+	})
+
+	var _ = Describe("Update", func() {
+		It("marks device issues hidden", func() {
+			uploadPatientStaleData(*clinic.Id, patient)
+			updateDeviceIssues()
+			withIssues := getPatient(*clinic.Id, *patient.Id)
+			origET := parseDatetime(withIssues.DeviceIssues.StaleData.EffectiveTime)
+			origProv := withIssues.DeviceIssues.StaleData.ProviderId
+			hidden := time.Now().Round(time.Millisecond)
+			hideStaleDataDeviceIssue(*clinic.Id, withIssues, hidden)
+
+			updated := getPatient(*clinic.Id, *patient.Id)
+			Expect(updated.DeviceIssues).ToNot(BeNil())
+			ht := parseDatetime(*updated.DeviceIssues.StaleData.Hidden)
+			Expect(ht).To(BeTemporally("==", hidden))
+			afterET := parseDatetime(updated.DeviceIssues.StaleData.EffectiveTime)
+			Expect(origET).To(BeTemporally("==", afterET))
+			Expect(origProv).To(Equal(updated.DeviceIssues.StaleData.ProviderId))
+		})
+
+		It("marks hidden device issues as visible", func() {
+			uploadPatientStaleData(*clinic.Id, patient)
+			updateDeviceIssues()
+			withIssues := getPatient(*clinic.Id, *patient.Id)
+			origET := parseDatetime(withIssues.DeviceIssues.StaleData.EffectiveTime)
+			origProv := withIssues.DeviceIssues.StaleData.ProviderId
+			hidden := time.Now().Round(time.Millisecond)
+			hideStaleDataDeviceIssue(*clinic.Id, withIssues, hidden)
+
+			updated := getPatient(*clinic.Id, *patient.Id)
+			Expect(updated.DeviceIssues).ToNot(BeNil())
+			ht := parseDatetime(*updated.DeviceIssues.StaleData.Hidden)
+			Expect(ht).To(BeTemporally("==", hidden))
+			afterET := parseDatetime(updated.DeviceIssues.StaleData.EffectiveTime)
+			Expect(origET).To(BeTemporally("==", afterET))
+			Expect(origProv).To(Equal(updated.DeviceIssues.StaleData.ProviderId))
+
+			unhideStaleDataDeviceIssue(*clinic.Id, withIssues, hidden)
+			updated = getPatient(*clinic.Id, *patient.Id)
+			Expect(updated.DeviceIssues).ToNot(BeNil())
+			Expect(updated.DeviceIssues.StaleData.Hidden).To(BeNil())
+		})
+
+		It("can't change a device issue's effective time", func() {
+			uploadPatientStaleData(*clinic.Id, patient)
+			updateDeviceIssues()
+			withIssues := getPatient(*clinic.Id, *patient.Id)
+			before := parseDatetime(withIssues.DeviceIssues.StaleData.EffectiveTime)
+			mod := time.Now()
+			modifyStaleDataEffectiveTime(*clinic.Id, withIssues, mod)
+
+			updated := getPatient(*clinic.Id, *patient.Id)
+			Expect(updated.DeviceIssues).ToNot(BeNil())
+			et := parseDatetime(updated.DeviceIssues.StaleData.EffectiveTime)
+			Expect(et).To(BeTemporally("==", before.Round(time.Millisecond)))
+		})
+
+		It("can't change a device issue's provider", func() {
+			uploadPatientStaleData(*clinic.Id, patient)
+			updateDeviceIssues()
+			withIssues := getPatient(*clinic.Id, *patient.Id)
+			before := parseDatetime(withIssues.DeviceIssues.StaleData.EffectiveTime)
+			modifyStaleDataProviderId(*clinic.Id, withIssues, "abbott")
+
+			updated := getPatient(*clinic.Id, *patient.Id)
+			Expect(updated.DeviceIssues).ToNot(BeNil())
+			et := parseDatetime(updated.DeviceIssues.StaleData.EffectiveTime)
+			Expect(et).To(BeTemporally("==", before.Round(time.Millisecond)))
+		})
+	})
+})
 
 var _ = Describe("UpdateDeviceIssues", func() {
 	var clinic *client.ClinicV1
@@ -466,18 +547,6 @@ func effectiveTimeFromExpiredInvitation(patient *client.PatientV1, providerId st
 	return pcrs[0].ExpirationTime
 }
 
-func effectiveTimeFromStaleInvitationDexcom(patient *client.PatientV1) time.Time {
-	GinkgoHelper()
-	for _, req := range patient.ConnectionRequests.Dexcom {
-		if req.CreatedTime.IsZero() {
-			Fail(fmt.Sprintf("expected created time to not be Zero"))
-		}
-		return req.CreatedTime
-	}
-	Fail(fmt.Sprintf("no device connection request found for providerId dexcom"))
-	return time.Time{}
-}
-
 func effectiveTimeFromDisconnected(patient *client.PatientV1, providerId string) (
 	_ time.Time) {
 
@@ -510,4 +579,128 @@ func effectiveTimeFromError(patient *client.PatientV1, providerId string) (
 	}
 	Fail(fmt.Sprintf("no data source found for providerId %q", providerId))
 	return time.Time{}
+}
+
+func effectiveTimeFromStaleInvitationDexcom(patient *client.PatientV1) time.Time {
+	GinkgoHelper()
+	for _, req := range patient.ConnectionRequests.Dexcom {
+		if req.CreatedTime.IsZero() {
+			Fail(fmt.Sprintf("expected created time to not be Zero"))
+		}
+		return req.CreatedTime
+	}
+	Fail(fmt.Sprintf("no device connection request found for providerId dexcom"))
+	return time.Time{}
+}
+
+func updatePatientDeviceIssues(clinicID, userID string, patient *client.PatientV1) {
+	GinkgoHelper()
+	ctx := context.Background()
+
+	j, err := json.Marshal(patient)
+	Expect(err).To(Succeed())
+	pv := &api.PatientV1{}
+	err = json.Unmarshal(j, pv)
+	Expect(err).To(Succeed())
+	updated, err := patientsRepo().Update(ctx, patients.PatientUpdate{
+		Patient:  api.NewPatient(*pv),
+		ClinicId: clinicID,
+		UserId:   userID,
+	})
+	Expect(err).To(Succeed())
+	Expect(updated.DeviceIssues).ToNot(BeNil())
+	Expect(updated.DeviceIssues.Disconnected.EffectiveTime).ToNot(BeZero(), fmt.Sprintf("%+v", updated.DeviceIssues.Disconnected))
+}
+
+func hideStaleDataDeviceIssue(clinicID string, patient *client.PatientV1, t time.Time) {
+	GinkgoHelper()
+
+	Expect(patient.DeviceIssues).ToNot(BeNil(), "device issues is nil")
+	et := parseDatetime(patient.DeviceIssues.StaleData.EffectiveTime)
+	deviceIssues := patients.DeviceIssues{
+		StaleData: patients.DeviceIssue{
+			EffectiveTime: et,
+			ProviderId:    string(patient.DeviceIssues.StaleData.ProviderId),
+			Hidden:        t,
+		},
+	}
+
+	clinicOID, _ := primitive.ObjectIDFromHex(clinicID)
+	update := patients.PatientUpdate{
+		ClinicId: clinicID,
+		UserId:   *patient.Id,
+		Patient: patients.Patient{
+			ClinicId:     &clinicOID,
+			UserId:       patient.Id,
+			DeviceIssues: deviceIssues,
+		},
+	}
+	_, err := patientsRepo().Update(context.Background(), update)
+	Expect(err).To(Succeed())
+}
+
+func unhideStaleDataDeviceIssue(clinicID string, patient *client.PatientV1, t time.Time) {
+	GinkgoHelper()
+
+	Expect(patient.DeviceIssues).ToNot(BeNil(), "device issues is nil")
+	et := parseDatetime(patient.DeviceIssues.StaleData.EffectiveTime)
+	deviceIssues := patients.DeviceIssues{
+		StaleData: patients.DeviceIssue{
+			EffectiveTime: et,
+			ProviderId:    string(patient.DeviceIssues.StaleData.ProviderId),
+			Hidden:        time.Time{},
+		},
+	}
+
+	clinicOID, _ := primitive.ObjectIDFromHex(clinicID)
+	update := patients.PatientUpdate{
+		ClinicId: clinicID,
+		UserId:   *patient.Id,
+		Patient: patients.Patient{
+			ClinicId:     &clinicOID,
+			UserId:       patient.Id,
+			DeviceIssues: deviceIssues,
+		},
+	}
+	_, err := patientsRepo().Update(context.Background(), update)
+	Expect(err).To(Succeed())
+}
+
+func modifyStaleDataEffectiveTime(clinicID string, patient *client.PatientV1, t time.Time) {
+	GinkgoHelper()
+
+	Expect(patient.DeviceIssues).ToNot(BeNil(), "device issues is nil")
+	effectiveTime := client.DatetimeV1(t.Format(time.RFC3339Nano))
+	patient.DeviceIssues.StaleData.EffectiveTime = effectiveTime
+
+	body := &bytes.Buffer{}
+	err := json.NewEncoder(body).Encode(patient)
+	Expect(err).To(Succeed())
+
+	endpoint := fmt.Sprintf("/v1/clinics/%s/patients/%s", clinicID, *patient.Id)
+	rec := httptest.NewRecorder()
+	req := prepareRequestWithBody(http.MethodPut, endpoint, body)
+	asClinician(req)
+	server.ServeHTTP(rec, req)
+	Expect(rec.Result()).ToNot(BeNil())
+	Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+}
+
+func modifyStaleDataProviderId(clinicID string, patient *client.PatientV1, id string) {
+	GinkgoHelper()
+
+	Expect(patient.DeviceIssues).ToNot(BeNil(), "device issues is nil")
+	patient.DeviceIssues.StaleData.ProviderId = client.ProviderIdV1(id)
+
+	body := &bytes.Buffer{}
+	err := json.NewEncoder(body).Encode(patient)
+	Expect(err).To(Succeed())
+
+	endpoint := fmt.Sprintf("/v1/clinics/%s/patients/%s", clinicID, *patient.Id)
+	rec := httptest.NewRecorder()
+	req := prepareRequestWithBody(http.MethodPut, endpoint, body)
+	asClinician(req)
+	server.ServeHTTP(rec, req)
+	Expect(rec.Result()).ToNot(BeNil())
+	Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 }

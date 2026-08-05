@@ -989,6 +989,11 @@ paths:
           in: query
           style: form
           explode: false
+        - name: omitHiddenDeviceIssues
+          description: Exclude any devices issues marked as hidden.
+          schema:
+            type: boolean
+          in: query
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
@@ -5022,6 +5027,11 @@ components:
           $ref: '#/components/schemas/datetime.v1'
         providerId:
           $ref: '#/components/schemas/providerId.v1'
+        hidden:
+          $ref: '#/components/schemas/datetime.v1'
+          description: |
+            Set this value to indicate that clinicians no longer wish to see
+            this issue in their device issues dashboard.
       required:
         - effectiveTime
         - providerId
