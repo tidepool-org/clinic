@@ -5015,6 +5015,8 @@ components:
       properties:
         expiredConnectionInvitation:
           $ref: '#/components/schemas/deviceIssue.v1'
+        staleConnectionInvitation:
+          $ref: '#/components/schemas/deviceIssue.v1'
         staleData:
           $ref: '#/components/schemas/deviceIssue.v1'
     patient.v1:

@@ -188,6 +188,47 @@ var _ = Describe("UpdateDeviceIssues (expired connection invitations)", func() {
 	})
 })
 
+var _ = Describe("UpdateDeviceIssues (stale connection invitations)", func() {
+	var f *updateDeviceIssuesTestHelper
+
+	BeforeEach(func() { f = newUpdateDeviceIssuesTestHelper() })
+	AfterEach(func() { f.cleanup() })
+
+	It("sets staleConnectionInvitation for a request created more than the threshold ago", func() {
+		created := time.Now().Add(-60 * time.Hour)
+		patient := patientsTest.RandomPatient()
+		patient.ProviderConnectionRequests = patients.ProviderConnectionRequests{
+			"dexcom": patients.ConnectionRequests{
+				// Future expiration so this is stale, not expired.
+				{ProviderName: "dexcom", CreatedTime: created, ExpirationTime: time.Now().Add(time.Hour)},
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.StaleConnectionInvitation.ProviderId).To(Equal("dexcom"))
+		Expect(updated.DeviceIssues.StaleConnectionInvitation.EffectiveTime).
+			To(BeTemporally("~", created.Add(48*time.Hour), time.Millisecond))
+	})
+
+	It("does not set staleConnectionInvitation for a recently created request", func() {
+		patient := patientsTest.RandomPatient()
+		patient.ProviderConnectionRequests = patients.ProviderConnectionRequests{
+			"dexcom": patients.ConnectionRequests{
+				{ProviderName: "dexcom", CreatedTime: time.Now().Add(-time.Hour), ExpirationTime: time.Now().Add(time.Hour)},
+			},
+		}
+		id := f.insertPatient(patient)
+
+		Expect(f.repo.UpdateDeviceIssues(f.ctx)).To(Succeed())
+
+		updated := f.fetchPatient(id)
+		Expect(updated.DeviceIssues.StaleConnectionInvitation.IsZero()).To(BeTrue())
+	})
+})
+
 var _ = Describe("UpdateDeviceIssues (resolved issues removal)", func() {
 	var f *updateDeviceIssuesTestHelper
 
