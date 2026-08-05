@@ -34,6 +34,15 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
+	// DataSourceProviderNames is the canonical set of device data source
+	// providers. Add new providers here so device-issue detection picks them up
+	// automatically.
+	DataSourceProviderNames = []string{
+		AbbottDataSourceProviderName,
+		DexcomDataSourceProviderName,
+		TwiistDataSourceProviderName,
+	}
+
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,
@@ -134,11 +143,13 @@ type Patient struct {
 }
 
 type DeviceIssues struct {
-	StaleData DeviceIssue `bson:"staleData,omitempty"`
+	StaleData                   DeviceIssue `bson:"staleData,omitempty"`
+	ExpiredConnectionInvitation DeviceIssue `bson:"expiredConnectionInvitation,omitempty"`
 }
 
 func (d DeviceIssues) IsZero() bool {
-	return d.StaleData.IsZero()
+	return d.StaleData.IsZero() &&
+		d.ExpiredConnectionInvitation.IsZero()
 }
 
 type DeviceIssue struct {

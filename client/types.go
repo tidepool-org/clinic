@@ -1359,7 +1359,8 @@ type DeviceIssueV1 struct {
 
 // DeviceIssuesV1 defines model for deviceIssues.v1.
 type DeviceIssuesV1 struct {
-	StaleData DeviceIssueV1 `json:"staleData,omitempty,omitzero"`
+	ExpiredConnectionInvitation DeviceIssueV1 `json:"expiredConnectionInvitation,omitempty,omitzero"`
+	StaleData                   DeviceIssueV1 `json:"staleData,omitempty,omitzero"`
 }
 
 // DiagnosisTypeV1 defines model for diagnosisType.v1.
