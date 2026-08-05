@@ -207,7 +207,7 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("allow clinic members of supported tiers to export a patient list", func() {
+		It("prevents clinic members of supported tiers from generating a patient list export", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
 				"method": "GET",
@@ -219,10 +219,25 @@ var _ = Describe("Request Authorizer", func() {
 				"clinic":    standardTierClinic,
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
-		It("prevents clinicians in unsupported tiers from generating a patient list export", func() {
+		It("prevents clinic admins in unsupported tiers from generating a patient list export", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "999999999",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+				"clinic":    freeTierClinic,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents clinic members in unsupported tiers from generating a patient list export", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
 				"method": "GET",
@@ -237,7 +252,7 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
-		It("prevents users from generating a patient list export", func() {
+		It("prevents users in a supported tier from generating a patient list export", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
 				"method": "GET",
@@ -246,6 +261,20 @@ var _ = Describe("Request Authorizer", func() {
 					"serverAccess": false,
 				},
 				"clinic": standardTierClinic,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents users in an unsupported tier from generating a patient list export", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "export", "patients"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "999999999",
+					"serverAccess": false,
+				},
+				"clinic": freeTierClinic,
 			}
 			err := authorizer.EvaluatePolicy(context.Background(), input)
 			Expect(err).To(Equal(auth.ErrUnauthorized))
