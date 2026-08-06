@@ -223,6 +223,12 @@ type ClientInterface interface {
 
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListBulkCreatePatientsWithBody request with any body
+	ListBulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkCreatePatientsWithBody request with any body
+	BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeletePatientTagFromClinicPatientsWithBody request with any body
 	DeletePatientTagFromClinicPatientsWithBody(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -966,6 +972,30 @@ func (c *Client) AssignPatientTagToClinicPatientsWithBody(ctx context.Context, c
 
 func (c *Client) AssignPatientTagToClinicPatients(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAssignPatientTagToClinicPatientsRequest(c.Server, clinicId, patientTagId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListBulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListBulkCreatePatientsRequestWithBody(c.Server, clinicId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkCreatePatientsRequestWithBody(c.Server, clinicId, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5461,6 +5491,78 @@ func NewAssignPatientTagToClinicPatientsRequestWithBody(server string, clinicId 
 	return req, nil
 }
 
+// NewListBulkCreatePatientsRequestWithBody generates requests for ListBulkCreatePatients with any type of body
+func NewListBulkCreatePatientsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/bulk", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkCreatePatientsRequestWithBody generates requests for BulkCreatePatients with any type of body
+func NewBulkCreatePatientsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/bulk", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewDeletePatientTagFromClinicPatientsRequest calls the generic DeletePatientTagFromClinicPatients builder with application/json body
 func NewDeletePatientTagFromClinicPatientsRequest(server string, clinicId ClinicId, patientTagId PatientTagId, body DeletePatientTagFromClinicPatientsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7609,6 +7711,12 @@ type ClientWithResponsesInterface interface {
 
 	AssignPatientTagToClinicPatientsWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, body AssignPatientTagToClinicPatientsJSONRequestBody, reqEditors ...RequestEditorFn) (*AssignPatientTagToClinicPatientsResponse, error)
 
+	// ListBulkCreatePatientsWithBodyWithResponse request with any body
+	ListBulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ListBulkCreatePatientsResponse, error)
+
+	// BulkCreatePatientsWithBodyWithResponse request with any body
+	BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error)
+
 	// DeletePatientTagFromClinicPatientsWithBodyWithResponse request with any body
 	DeletePatientTagFromClinicPatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientTagId PatientTagId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeletePatientTagFromClinicPatientsResponse, error)
 
@@ -8532,6 +8640,48 @@ func (r AssignPatientTagToClinicPatientsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r AssignPatientTagToClinicPatientsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListBulkCreatePatientsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ListBulkCreatePatientsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListBulkCreatePatientsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkCreatePatientsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkCreatePatientsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkCreatePatientsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9861,6 +10011,24 @@ func (c *ClientWithResponses) AssignPatientTagToClinicPatientsWithResponse(ctx c
 		return nil, err
 	}
 	return ParseAssignPatientTagToClinicPatientsResponse(rsp)
+}
+
+// ListBulkCreatePatientsWithBodyWithResponse request with arbitrary body returning *ListBulkCreatePatientsResponse
+func (c *ClientWithResponses) ListBulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ListBulkCreatePatientsResponse, error) {
+	rsp, err := c.ListBulkCreatePatientsWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListBulkCreatePatientsResponse(rsp)
+}
+
+// BulkCreatePatientsWithBodyWithResponse request with arbitrary body returning *BulkCreatePatientsResponse
+func (c *ClientWithResponses) BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error) {
+	rsp, err := c.BulkCreatePatientsWithBody(ctx, clinicId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkCreatePatientsResponse(rsp)
 }
 
 // DeletePatientTagFromClinicPatientsWithBodyWithResponse request with arbitrary body returning *DeletePatientTagFromClinicPatientsResponse
@@ -11224,6 +11392,38 @@ func ParseAssignPatientTagToClinicPatientsResponse(rsp *http.Response) (*AssignP
 	}
 
 	response := &AssignPatientTagToClinicPatientsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseListBulkCreatePatientsResponse parses an HTTP response from a ListBulkCreatePatientsWithResponse call
+func ParseListBulkCreatePatientsResponse(rsp *http.Response) (*ListBulkCreatePatientsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListBulkCreatePatientsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseBulkCreatePatientsResponse parses an HTTP response from a BulkCreatePatientsWithResponse call
+func ParseBulkCreatePatientsResponse(rsp *http.Response) (*BulkCreatePatientsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkCreatePatientsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
