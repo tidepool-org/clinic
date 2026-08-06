@@ -437,12 +437,12 @@ allow {
   input.path = ["v1", "clinics", _, "patients", _]
 }
 
-# Allow currently authenticated clinician to get patient list export
+# Allow currently authenticated clinic admin to get patient list export
 # GET /v1/clinics/:clinicId/export/patients
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "export", "patients"]
-  clinician_has_read_access
+  clinician_has_write_access
   clinic_tier_supports_patient_export
 }
 

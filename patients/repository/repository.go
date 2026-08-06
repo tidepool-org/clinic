@@ -1101,17 +1101,6 @@ func coalesce(field string, defaultValue any) bson.M {
 	}
 }
 
-func toMongoString(field string, defaultValue string) bson.M {
-	return bson.M{
-		"$convert": bson.M{
-			"input":   field,
-			"to":      "string",
-			"onError": defaultValue,
-			"onNull":  defaultValue,
-		},
-	}
-}
-
 func (r *repository) ListExportedPatients(ctx context.Context, params patients.ExportParams) ([]patients.ExportedPatient, error) {
 	clinicId := params.WorkspaceID
 	period := params.Period
@@ -1122,6 +1111,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 	matchStage := bson.D{
 		{"$match", bson.M{
 			"clinicId": clinicObjId,
+			"userId":   bson.M{"$ne": r.config.ClinicDemoPatientUserId},
 		}},
 	}
 
