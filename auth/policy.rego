@@ -17,6 +17,13 @@ write_access_roles := {
   "CLINIC_ADMIN"
 }
 
+patient_export_supported_tiers := {
+	"tier0200",
+	"tier0300",
+	"tier0400",
+}
+clinic_tier := { input.clinic.tier }
+
 # convert clinician roles to set
 clinician_roles := { x | x = input.clinician.roles[_] }
 
@@ -26,6 +33,10 @@ clinician_has_read_access {
 
 clinician_has_write_access {
   count(clinician_roles & write_access_roles) > 0
+}
+
+clinic_tier_supports_patient_export {
+  count(clinic_tier & patient_export_supported_tiers) > 0
 }
 
 default allow = false
@@ -432,6 +443,15 @@ allow {
   is_backend_service
   input.method == "GET"
   input.path = ["v1", "clinics", _, "patients", _]
+}
+
+# Allow currently authenticated clinic admin to get patient list export
+# GET /v1/clinics/:clinicId/export/patients
+allow {
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "export", "patients"]
+  clinician_has_write_access
+  clinic_tier_supports_patient_export
 }
 
 # Allow backend services to create a patient from existing user

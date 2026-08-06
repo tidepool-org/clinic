@@ -15,6 +15,7 @@ import (
 
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/export"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -526,4 +527,35 @@ func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId 
 	}
 
 	return ec.NoContent(http.StatusNoContent)
+}
+
+func (h *Handler) ExportPatientList(ec echo.Context, clinicId ClinicId, params ExportPatientListParams) error {
+	ctx := ec.Request().Context()
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+	filter := patients.ExportParams{
+		Period:              params.Period,
+		ExporterClinicianID: authData.SubjectId,
+		WorkspaceID:         clinicId,
+		ReportDate:          time.Now(),
+	}
+	exporter, err := export.NewPatientExport(ctx, h.Clinics, h.Clinicians, h.Patients, filter)
+	if err != nil {
+		return err
+	}
+	disposition := fmt.Sprintf("attachment; filename=patients-%d.csv", time.Now().Unix())
+	ec.Response().Header().Set(echo.HeaderContentDisposition, disposition)
+	ec.Response().Header().Set(echo.HeaderContentType, "text/csv")
+	return exporter.Write(ctx, ec.Response())
 }
