@@ -15,54 +15,65 @@ import (
 
 var _ = Describe("Export", func() {
 	Describe("ToCSVRow", func() {
-		It("matches expected columns", func() {
-			clinicianID := "a578d15f-73b6-4e25-9295-95707fca3520"
-			patientTagID := "6a5794ac4762b6efdb48aaaa"
-			patientTagOID, _ := primitive.ObjectIDFromHex(patientTagID)
-			clinicID := "6a5794ac4762b6efdb48aaab"
-			clinicOID, _ := primitive.ObjectIDFromHex(clinicID)
-			patientID := "7ce10e4c-8930-4770-8323-c8305db09c61"
-			reportDate := time.Date(2026, time.July, 13, 19, 0, 0, 0, time.UTC)
+		var clinicianID string
+		var patientTagID string
+		var patientTagOID primitive.ObjectID
+		var clinicID string
+		var clinicOID primitive.ObjectID
+		var patientID string
+		var reportDate time.Time
+		var inactiveDataSource patients.DataSource
+		var expiredDataSource patients.DataSource
+		var connectedDataSource patients.DataSource
+		var patientTags []clinics.PatientTag
+		var cs []*clinicians.Clinician
+		var params patients.ExportParams
+		var patient *patients.ExportedPatient
 
-			inactiveDataSource := patients.DataSource{
+		BeforeEach(func() {
+			clinicianID = "a578d15f-73b6-4e25-9295-95707fca3520"
+			patientTagID = "6a5794ac4762b6efdb48aaaa"
+			patientTagOID, _ = primitive.ObjectIDFromHex(patientTagID)
+			clinicID = "6a5794ac4762b6efdb48aaab"
+			clinicOID, _ = primitive.ObjectIDFromHex(clinicID)
+			patientID = "7ce10e4c-8930-4770-8323-c8305db09c61"
+			reportDate = time.Date(2026, time.July, 13, 19, 0, 0, 0, time.UTC)
+
+			inactiveDataSource = patients.DataSource{
 				ProviderName:   "dexcom",
 				State:          "connected",
 				LatestDataTime: timep(time.Date(2026, time.July, 9, 0, 0, 0, 0, time.UTC)),
 			}
-			expiredDataSource := patients.DataSource{
+			expiredDataSource = patients.DataSource{
 				ExpirationTime: timep(time.Date(2025, time.January, 2, 3, 0, 0, 0, time.UTC)),
 				ProviderName:   "abbott",
 				State:          "pending",
 			}
-			connectedDataSource := patients.DataSource{
+			connectedDataSource = patients.DataSource{
 				ProviderName:   "twiist",
 				State:          "connected",
 				LatestDataTime: timep(time.Date(2026, time.July, 12, 20, 0, 0, 0, time.UTC)),
 			}
-			patientTags := []clinics.PatientTag{
+			patientTags = []clinics.PatientTag{
 				{
 					Id:       &patientTagOID,
 					Name:     "Some Tag",
 					Patients: 1,
 				},
 			}
-			cs := []*clinicians.Clinician{
+			cs = []*clinicians.Clinician{
 				{
 					UserId: &clinicianID,
 					Name:   strp("Some Clinician"),
 				},
 			}
-			clinic := &clinics.Clinic{
-				Id:          &clinicOID,
-				PatientTags: patientTags,
-			}
-			params := patients.ExportParams{
+			params = patients.ExportParams{
 				Period:              "1d",
 				ExporterClinicianID: clinicianID,
 				WorkspaceID:         clinicID,
 				ReportDate:          reportDate,
 			}
-			patient := &patients.ExportedPatient{
+			patient = &patients.ExportedPatient{
 				FullName:         strp("Some Patient"),
 				UserId:           &patientID,
 				MRN:              strp("123456789"),
@@ -85,6 +96,7 @@ var _ = Describe("Export", func() {
 				CgmDaysWithData:     intp(13),
 				CgmHoursWithData:    intp(238),
 				CgmAverageGlucose:   floatp(5.131),
+				CgmStdDev:           floatp(2.3),
 				CgmTimeInLevel2Hypo: floatp(0.02134),
 				CgmTimeInLevel1Hypo: floatp(0.06013),
 				CgmTimeInTarget:     floatp(0.82333),
@@ -95,7 +107,14 @@ var _ = Describe("Export", func() {
 				BgmLowEvents:        intp(3),
 				BgmHighEvents:       intp(1),
 			}
+		})
 
+		It("matches preferred units of mmol/L", func() {
+			clinic := &clinics.Clinic{
+				Id:               &clinicOID,
+				PatientTags:      patientTags,
+				PreferredBgUnits: "mmol/L",
+			}
 			e, err := export.NewPatientExportClinic(clinic, cs, nil, params)
 			Expect(err).ToNot(HaveOccurred())
 			row := e.ToCSVRow(patient)
@@ -124,7 +143,58 @@ var _ = Describe("Export", func() {
 				"238",
 				"92",
 				"",
+				"0.2",
 				"",
+				"2",
+				"6",
+				"82",
+				"",
+				"",
+				"2026-07-10",
+				"112",
+				"2",
+				"5",
+				"3",
+				"1",
+			}
+			Expect(row).To(Equal(expectedRow))
+		})
+
+		It("matches preferred units of mg/dL", func() {
+			clinic := &clinics.Clinic{
+				Id:               &clinicOID,
+				PatientTags:      patientTags,
+				PreferredBgUnits: "mg/dL",
+			}
+			e, err := export.NewPatientExportClinic(clinic, cs, nil, params)
+			Expect(err).ToNot(HaveOccurred())
+			row := e.ToCSVRow(patient)
+			expectedRow := []string{
+				"Some Patient",
+				patientID,
+				"123456789",
+				"2000-01-02",
+				"patient@tidepool.org",
+				"Claimed",
+				"2003-04-05",
+				"Some Clinician",
+				"Site1,Site2",
+				`Some Tag,`,
+				"",
+				"type1",
+				"inactive",
+				"2026-07-09",
+				"expired",
+				"",
+				"connected",
+				"2026-07-12",
+				"2026-07-13",
+				"71",
+				"13",
+				"238",
+				"92",
+				"",
+				"4.1",
 				"",
 				"2",
 				"6",

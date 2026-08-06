@@ -316,9 +316,10 @@ func periodToDays(period string) (days int, err error) {
 	return days, nil
 }
 
+// fmtFloat returns a number as a string with precision digits to the right of the decimal point after banker's rounding.
 func fmtFloat(f float64, precision int) string {
 	shift := math.Pow(10, float64(precision))
-	return fmt.Sprintf("%v", math.RoundToEven(f*shift*100)/shift)
+	return fmt.Sprintf("%v", math.RoundToEven(f)/shift)
 }
 
 func fmtPreferredUnits(valMmolL *float64, preferredBgUnits string, precision int) string {
