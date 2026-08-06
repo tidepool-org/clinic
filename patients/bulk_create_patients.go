@@ -106,7 +106,6 @@ func ParsePotentialCsvPatients(ctx context.Context, patientSvc Service, userSvc 
 	outputHeader[OutputColEmailed] = "Emailed?"
 	outputRows = append(outputRows, outputHeader)
 
-	// First pass, general sanity check that invidual patient data isn't bad/malformed/missing.
 	for _, record := range csvRecords[1:] {
 		outputRow := make([]string, NumOutputCols)
 		copy(outputRow, record)
@@ -223,7 +222,7 @@ func NewPatientFromColumns(record []string, clinicId primitive.ObjectID, types V
 		email = strings.TrimSpace(record[ColEmail])
 		if email != "" {
 			if _, err := mail.ParseAddress(email); err != nil {
-				return nil, fmt.Errorf(`%w: %s is not a valid email address`, ErrCsvPatientInvalidEmail, email)
+				return nil, ErrCsvPatientInvalidEmail
 			}
 		}
 	}
