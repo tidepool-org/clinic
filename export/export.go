@@ -51,16 +51,16 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 		fmtDataSourceStatus(p.TwiistDataSource, e.params.ReportDate),
 		fmtDataSourceLastDataDate(p.TwiistDataSource),
 		ptime(p.CgmLastDataDate, "2006-01-02"),
-		ppct(p.CgmActiveWearTime, 0),
+		ppctunrounded(p.CgmActiveWearTime),
 		pint(p.CgmDaysWithData),
 		pint(p.CgmHoursWithData),
 		ptomgdl(p.CgmAverageGlucose),
 		pfloat(p.CgmGmi, 2),
 		fmtPreferredUnits(p.CgmStdDev, e.clinic.PreferredBgUnits, 1),
 		ppct(p.CgmCV, 0),
-		ppct(p.CgmTimeInLevel2Hypo, 0),
-		ppct(p.CgmTimeInLevel1Hypo, 0),
-		ppct(p.CgmTimeInTarget, 0),
+		ppctunrounded(p.CgmTimeInLevel2Hypo),
+		ppctunrounded(p.CgmTimeInLevel1Hypo),
+		ppctunrounded(p.CgmTimeInTarget),
 		ppct(p.CgmTimeInLevel1Hyper, 0),
 		ppct(p.CgmTimeInLevel2Hyper, 0),
 		ptime(p.BgmLastDataDate, "2006-01-02"),
@@ -249,17 +249,6 @@ func fmtClinicTime(t time.Time, clinic *clinics.Clinic) string {
 		return t.Format(timeFormat)
 	}
 	return t.In(loc).Format(timeFormat)
-}
-
-func fmtClinicDate(t time.Time, clinic *clinics.Clinic) string {
-	if clinic.Timezone == nil || *clinic.Timezone == "" {
-		return t.Format(time.DateOnly)
-	}
-	loc, err := time.LoadLocation(*clinic.Timezone)
-	if err != nil {
-		return t.Format(time.DateOnly)
-	}
-	return t.In(loc).Format(time.DateOnly)
 }
 
 func fmtBool(b bool, valIfTrue string, valIfFalse string) string {
