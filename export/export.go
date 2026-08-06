@@ -65,7 +65,7 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 		ppct(p.CgmTimeInLevel2Hyper, 0),
 		ptime(p.BgmLastDataDate, "2006-01-02"),
 		ptomgdl(p.BgmAverageGlucose),
-		pfloat(p.BgmReadingsPerDay, 0),
+		pfloattrunc(p.BgmReadingsPerDay),
 		pint(p.BgmTotalReadings),
 		pint(p.BgmLowEvents),
 		pint(p.BgmHighEvents),

@@ -19,6 +19,13 @@ func pfloat(f *float64, precision int) string {
 	return fmt.Sprintf("%v", math.RoundToEven(*f*shift)/shift)
 }
 
+func pfloattrunc(f *float64) string {
+	if f == nil {
+		return ""
+	}
+	return fmt.Sprintf("%v", int(*f))
+}
+
 func ppctunrounded(f *float64) string {
 	if f == nil {
 		return ""
