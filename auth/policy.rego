@@ -437,7 +437,7 @@ allow {
   input.path = ["v1", "clinics", _, "patients", _]
 }
 
-# Allow currently authenticated clinician to get patient list export
+# Allow currently authenticated clinic admin to get patient list export
 # GET /v1/clinics/:clinicId/export/patients
 allow {
   input.method == "GET"
