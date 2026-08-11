@@ -2574,7 +2574,7 @@ components:
         $ref: '#/components/schemas/patientReview.v1'
     FloatFilter:
       type: string
-      pattern: ^(>=|>|<=|<)[+-]?((\d+(\.\d*)?)|(\.\d+))$
+      pattern: ^(>=|>|<=|<)[+-]?((\d{1,10}(\.\d{0,10})?)|(\.\d{1,10}))$
       example: '>=5.5'
     IntFilter:
       type: string
