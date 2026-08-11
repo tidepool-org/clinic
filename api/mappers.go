@@ -1762,7 +1762,7 @@ func stringToClinicType(s *string) *ClinicV1ClinicType {
 	return &size
 }
 
-var rangeFilterRegex = regexp.MustCompile("^(<|<=|>|>=)([+-]?\\d\\.\\d?\\d?)$")
+var rangeFilterRegex = regexp.MustCompile(`^(<|<=|>|>=)([+-]?(\d{1,10}(\.\d{0,10})?|\.\d{1,10}))$`)
 
 func parseRangeFilter(filters patients.SummaryFilters, field string, filter *string) (err error) {
 	if filter == nil || *filter == "" {
@@ -1770,7 +1770,7 @@ func parseRangeFilter(filters patients.SummaryFilters, field string, filter *str
 	}
 
 	matches := rangeFilterRegex.FindStringSubmatch(*filter)
-	if len(matches) != 3 {
+	if len(matches) < 3 {
 		err = fmt.Errorf("%w: couldn't parse range filter", errors.BadRequest)
 		return
 	}
