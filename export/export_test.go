@@ -14,6 +14,21 @@ import (
 )
 
 var _ = Describe("Export", func() {
+	Describe("Format and conversion functions", func() {
+		DescribeTable("FmtFloat",
+			func(val float64, precision int, expected string) {
+
+			},
+			Entry("0 precision", 2.45, 0, "2"),
+			Entry("0 precision round to even downwards", 2.5, 0, "2"),
+			Entry("0 precision round to even upwards", 3.5, 0, "3"),
+			Entry("1 precision round upwards", 3.67, 1, "3.7"),
+			Entry("1 precision round downwards", 3.44, 1, "3.4"),
+			Entry("1 precision round to even upwards", 3.5, 1, "4.0"),
+			Entry("1 precision round to even download", 4.5, 1, "4.0"),
+		)
+	})
+
 	Describe("ToCSVRow", func() {
 		var clinicianID string
 		var patientTagID string
@@ -137,25 +152,25 @@ var _ = Describe("Export", func() {
 				"",
 				"connected",
 				"2026-07-12",
-				"2026-07-13",
-				"71.428",
-				"13",
-				"238",
-				"92",
-				"",
-				"0.2",
-				"",
-				"2.1340000000000003",
-				"6.013",
-				"82.333",
-				"",
-				"",
-				"2026-07-10",
-				"112",
-				"2",
-				"5",
-				"3",
-				"1",
+				"2026-07-13",         // cgm last data date
+				"71.428",             // cgm active wear time
+				"13",                 // cgm days w/ data
+				"238",                // cgm hours w/ data
+				"92",                 // avg glucose mg/dL
+				"",                   // cgm gmi %
+				"2.3",                // cgm stdev in clnic preferred units
+				"",                   // cbm cv %
+				"2.1340000000000003", // time in level 2 hypo %
+				"6.013",              //  time in level 1 hypo %
+				"82.333",             // cgm time in target %
+				"",                   // cgm time in level 1 hyper %
+				"",                   //  cgm time in level 2 hyper %
+				"2026-07-10",         // bgm last data date
+				"112",                // bgm avg glucose mg/dL
+				"2",                  // bgm readings / day
+				"5",                  // bgm total readings
+				"3",                  // bgm # low events
+				"1",                  // bgm # high events
 			}
 			Expect(row).To(Equal(expectedRow))
 		})
@@ -188,25 +203,25 @@ var _ = Describe("Export", func() {
 				"",
 				"connected",
 				"2026-07-12",
-				"2026-07-13",
-				"71.428",
-				"13",
-				"238",
-				"92",
-				"",
-				"4.1",
-				"",
-				"2.1340000000000003",
-				"6.013",
-				"82.333",
-				"",
-				"",
-				"2026-07-10",
-				"112",
-				"2",
-				"5",
-				"3",
-				"1",
+				"2026-07-13",         // cgm last data date
+				"71.428",             // cgm active wear time
+				"13",                 // cgm days w/ data
+				"238",                // cgm hours w/ data
+				"92",                 // avg glucose mg/dL
+				"",                   // cgm gmi %
+				"41.4",               // cgm stdev in clnic preferred units
+				"",                   // cbm cv %
+				"2.1340000000000003", // time in level 2 hypo %
+				"6.013",              //  time in level 1 hypo %
+				"82.333",             // cgm time in target %
+				"",                   // cgm time in level 1 hyper %
+				"",                   //  cgm time in level 2 hyper %
+				"2026-07-10",         // bgm last data date
+				"112",                // bgm avg glucose mg/dL
+				"2",                  // bgm readings / day
+				"5",                  // bgm total readings
+				"3",                  // bgm # low events
+				"1",                  // bgm # high events
 			}
 			Expect(row).To(Equal(expectedRow))
 		})
