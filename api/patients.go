@@ -566,18 +566,20 @@ func (h *Handler) BulkCreatePatients(ec echo.Context, clinicId ClinicId) error {
 	if err != nil {
 		return err
 	}
-	records, err := csv.NewReader(ec.Request().Body).ReadAll()
+	reader := csv.NewReader(ec.Request().Body)
+	reader.FieldsPerRecord = -1
+	records, err := reader.ReadAll()
 	if err != nil {
 		return &echo.HTTPError{
 			Code:    http.StatusBadRequest,
 			Message: fmt.Sprintf(`error reading input csv: %v`, err),
 		}
 	}
-	_, csvHeader, potentialPatients, err := patients.ParsePotentialCsvPatients(ctx, h.Patients, h.Users, records, clinicObjId, validCsvTypes)
+	_, csvHeader, potentialPatients, err := patients.ParsePotentialCSVPatients(ctx, h.Patients, h.Users, records, clinicObjId, validCsvTypes)
 	if err != nil {
 		return err
 	}
-	outputRecords, _ := patients.CreateCsvPatients(ctx, h.Patients, csvHeader, potentialPatients)
+	outputRecords := patients.CreateCSVPatients(ctx, h.Patients, csvHeader, potentialPatients)
 	res := ec.Response()
 	res.Header().Set(echo.HeaderContentType, "text/csv")
 	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=bulk-creation-result-%d.csv", time.Now().Unix()))
