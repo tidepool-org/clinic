@@ -20,7 +20,7 @@ var _ = Describe("Bulk Account Creation", func() {
 	var patientSvc *patientsTest.MockService
 	var userSvc *patientsTest.MockUserService
 
-	var types patients.ValidCsvPatientValues
+	var types patients.ValidCSVPatientValues
 	var err error
 	var clinicId primitive.ObjectID
 
@@ -29,7 +29,7 @@ var _ = Describe("Bulk Account Creation", func() {
 		DeferCleanup(ctrl.Finish)
 		patientSvc = patientsTest.NewMockService(ctrl)
 		userSvc = patientsTest.NewMockUserService(ctrl)
-		types = patients.ValidCsvPatientValues{
+		types = patients.ValidCSVPatientValues{
 			ValidDiagnoses: []string{"gestational", "lada", "mody", "other", "prediabetes", "type1", "type2", "type3c"},
 			ValidPresets:   []string{"adaHighRisk", "adaPregnancyType1", "adaPregnancyType2", "adaStandard"},
 			DefaultPreset:  "adaStandard",
@@ -38,15 +38,15 @@ var _ = Describe("Bulk Account Creation", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	Describe("ParsePotentialCsvPatients", func() {
+	Describe("ParsePotentialCSVPatients", func() {
 		It("returns a fatal blocking error if input CSV does not have the necessary number of columns", func() {
 			ctx := context.Background()
 			records := [][]string{
 				{"Name", "Birthdate"},
 				{"George Washington", "1950-01-02"},
 			}
-			_, _, _, err := patients.ParsePotentialCsvPatients(ctx, patientSvc, userSvc, records, clinicId, types)
-			Expect(err).To(MatchError(patients.ErrCsvNotEnoughColumns))
+			_, _, _, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, types)
+			Expect(err).To(MatchError(patients.ErrCSVNotEnoughColumns))
 		})
 
 		It("returns correct fields and errors depending on criteria", func() {
@@ -99,7 +99,7 @@ var _ = Describe("Bulk Account Creation", func() {
 					}).
 				AnyTimes()
 
-			outputRecords, header, parsedPatients, err := patients.ParsePotentialCsvPatients(ctx, patientSvc, userSvc, records, clinicId, types)
+			outputRecords, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, types)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(parsedPatients)).To(Equal(10))
 			Expect(header).To(Equal(expectedOutput[0]))
@@ -107,7 +107,7 @@ var _ = Describe("Bulk Account Creation", func() {
 		})
 	})
 
-	Describe("CreateCsvPatients", func() {
+	Describe("CreateCSVPatients", func() {
 		It("creates an account for each valid patient and returns an updated CSV of the emailed status", func() {
 			ctx := context.Background()
 			records := [][]string{
@@ -148,10 +148,10 @@ var _ = Describe("Bulk Account Creation", func() {
 				Return(&patients.Patient{}, nil).
 				Times(1)
 
-			_, header, parsedPatients, err := patients.ParsePotentialCsvPatients(ctx, patientSvc, userSvc, records, clinicId, types)
+			_, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, types)
 			Expect(len(parsedPatients)).To(Equal(3))
 			Expect(err).ToNot(HaveOccurred())
-			outputRecords, _ := patients.CreateCsvPatients(ctx, patientSvc, header, parsedPatients)
+			outputRecords := patients.CreateCSVPatients(ctx, patientSvc, header, parsedPatients)
 			Expect(outputRecords).To(Equal(expectedOutput))
 		})
 	})

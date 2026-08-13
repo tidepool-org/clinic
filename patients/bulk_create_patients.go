@@ -16,12 +16,14 @@ import (
 )
 
 var (
-	ErrCsvNotEnoughColumns        = errors.New("not enough columns in input CSV")
-	ErrCsvPatientMissingName      = errors.New("missing name")
-	ErrCsvPatientMissingBirthdate = errors.New("missing birthdate")
-	ErrCsvPatientMissingMrn       = errors.New("missing mrn")
-	ErrCsvPatientInvalidEmail     = errors.New("invalid email")
-	ErrCsvPatientDuplicateMrn     = errors.New("duplicate mrn")
+	ErrCSVNoRows                  = errors.New("no rows in input records")
+	ErrCSVNoPatientRows           = errors.New("no patient rows")
+	ErrCSVNotEnoughColumns        = errors.New("not enough columns in input CSV")
+	ErrCSVPatientMissingName      = errors.New("missing name")
+	ErrCSVPatientMissingBirthdate = errors.New("missing birthdate")
+	ErrCSVPatientMissingMrn       = errors.New("missing mrn")
+	ErrCSVPatientInvalidEmail     = errors.New("invalid email")
+	ErrCSVPatientDuplicateMrn     = errors.New("duplicate mrn")
 )
 
 const (
@@ -52,33 +54,33 @@ const (
 
 func ValidateCSVHeader(records [][]string) error {
 	if len(records) == 0 {
-		return fmt.Errorf("no rows in input records.")
+		return ErrCSVNoRows
 	}
 	if len(records) == 1 {
-		return fmt.Errorf(`Only found header in input records.`)
+		return ErrCSVNoPatientRows
 	}
 	header := records[0]
 	if len(header) < int(NumRequiredColumns) {
-		return fmt.Errorf(`%w: only have %d columns`, ErrCsvNotEnoughColumns, len(header))
+		return fmt.Errorf(`%w: only have %d columns`, ErrCSVNotEnoughColumns, len(header))
 	}
 	return nil
 }
 
-// ValidCsvPatientValues is a struct of valid values for diagnoses and presets
+// ValidCSVPatientValues is a struct of valid values for diagnoses and presets
 // for patients bulk created from a CSV. This is because whether the types are
 // defined in the patients/model layer or api, it will need to be duplicated /
 // mapped from one type to the other but I'm open to other suggestions.
-type ValidCsvPatientValues struct {
+type ValidCSVPatientValues struct {
 	ValidDiagnoses []string
 	ValidPresets   []string
 	DefaultPreset  string
 }
 
-// ParsedCsvPatient represents the potential patient to be created from a Csv
-// row along with a copy of the original input csv row with added information
+// ParsedCSVPatient represents the potential patient to be created from a CSV
+// row along with a copy of the original input CSV row with added information
 // in [Columns]. Patient may be nil if there is an error with the patient,
 // which would be noted in [OutputColStatus] of [Columns]
-type ParsedCsvPatient struct {
+type ParsedCSVPatient struct {
 	Columns []string
 	// Err is the associated errors of a patient used to check if a specific
 	// issued occurred.
@@ -86,27 +88,27 @@ type ParsedCsvPatient struct {
 	Patient *Patient
 }
 
-// ParsePotentialCsvPatients takes an input of slices of string slices (from a
+// ParsePotentialCSVPatients takes an input of slices of string slices (from a
 // CSV or otherwise) representing data for a patient in a predefined order and
-// returns the updated csv to be used for output as well as the patients to
+// returns the updated CSV to be used for output as well as the patients to
 // be created along with their row information in parsedPatients. Individual
 // errors that would prevent a patient from being created but that would NOT
 // stop other patients from being created, if any, are outputed in the "reason"
 // column defined as the slice index [OutputColStatus] in
-// [ParsedCsvPatient.Columns] in which case [ParsedCsvPatient.Patient] would be
+// [ParsedCSVPatient.Columns] in which case [ParsedCSVPatient.Patient] would be
 // empty.
-func ParsePotentialCsvPatients(ctx context.Context, patientSvc Service, userSvc UserService, csvRecords [][]string, clinicId primitive.ObjectID, types ValidCsvPatientValues) (outputRows [][]string, outputHeader []string, parsedPatients []ParsedCsvPatient, err error) {
-	if err := ValidateCSVHeader(csvRecords); err != nil {
+func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, CSVRecords [][]string, clinicId primitive.ObjectID, types ValidCSVPatientValues) (outputRows [][]string, outputHeader []string, parsedPatients []ParsedCSVPatient, err error) {
+	if err := ValidateCSVHeader(CSVRecords); err != nil {
 		return nil, nil, nil, err
 	}
-	header := csvRecords[0]
+	header := CSVRecords[0]
 	outputHeader = make([]string, NumOutputCols)
 	copy(outputHeader, header)
 	outputHeader[OutputColStatus] = "Reason"
 	outputHeader[OutputColEmailed] = "Emailed?"
 	outputRows = append(outputRows, outputHeader)
 
-	for _, record := range csvRecords[1:] {
+	for _, record := range CSVRecords[1:] {
 		outputRow := make([]string, NumOutputCols)
 		copy(outputRow, record)
 		var patientErr error
@@ -134,7 +136,7 @@ func ParsePotentialCsvPatients(ctx context.Context, patientSvc Service, userSvc 
 				issues = append(issues, fmt.Sprintf(`system error checking mrn: %v`, err))
 			} else if res != nil && res.MatchingCount > 0 {
 				issues = append(issues, `duplicate MRN`)
-				patientErr = errors.Join(patientErr, ErrCsvPatientDuplicateMrn)
+				patientErr = errors.Join(patientErr, ErrCSVPatientDuplicateMrn)
 			}
 			if pstr(patient.Email) != "" {
 				user, err := userSvc.GetUser(*patient.Email)
@@ -149,7 +151,7 @@ func ParsePotentialCsvPatients(ctx context.Context, patientSvc Service, userSvc 
 				patient = nil
 			}
 		}
-		parsedPatients = append(parsedPatients, ParsedCsvPatient{
+		parsedPatients = append(parsedPatients, ParsedCSVPatient{
 			Columns: outputRow,
 			Patient: patient,
 			Err:     patientErr,
@@ -159,19 +161,18 @@ func ParsePotentialCsvPatients(ctx context.Context, patientSvc Service, userSvc 
 	return outputRows, outputHeader, parsedPatients, nil
 }
 
-// CreateCsvPatients takes in a slice of ParsedCsvPatient and creates a patient
+// CreateCSVPatients takes in a slice of ParsedCSVPatient and creates a patient
 // for each one. It returns a slice of errors corresponding to the patient at
 // each slice index as failure to create a single patient doesn't prevent other
 // patients from being created. It also returns updated CSV output columns as
 // some errors (db-related, system related, etc) can only surface during
 // creation time.
-func CreateCsvPatients(ctx context.Context, patientSvc Service, header []string, patients []ParsedCsvPatient) (outputRows [][]string, errs []error) {
+func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string, patients []ParsedCSVPatient) (outputRows [][]string) {
 	outputRows = make([][]string, 0, len(patients)+1)
 	outputRows = append(outputRows, header)
-	errs = make([]error, len(patients))
-	for i, parsedPatient := range patients {
+	for _, parsedPatient := range patients {
 		if parsedPatient.Patient == nil {
-			if errors.Is(parsedPatient.Err, ErrCsvPatientInvalidEmail) {
+			if errors.Is(parsedPatient.Err, ErrCSVPatientInvalidEmail) {
 				parsedPatient.Columns[OutputColEmailed] = "N (invalid email)"
 			} else {
 				parsedPatient.Columns[OutputColEmailed] = "N"
@@ -179,7 +180,6 @@ func CreateCsvPatients(ctx context.Context, patientSvc Service, header []string,
 		} else {
 			_, err := patientSvc.Create(ctx, *parsedPatient.Patient)
 			if err != nil {
-				errs[i] = err
 				status := parsedPatient.Columns[OutputColStatus]
 				if status != "" {
 					status += ", "
@@ -193,36 +193,37 @@ func CreateCsvPatients(ctx context.Context, patientSvc Service, header []string,
 		}
 		outputRows = append(outputRows, parsedPatient.Columns)
 	}
-	return outputRows, errs
+	return outputRows
 }
 
 // NewPatientFromColumns instantiates a Patient object suitable for actual
 // creation given a row of text columns.
-func NewPatientFromColumns(record []string, clinicId primitive.ObjectID, types ValidCsvPatientValues) (*Patient, error) {
+func NewPatientFromColumns(record []string, clinicId primitive.ObjectID, types ValidCSVPatientValues) (*Patient, error) {
 	if len(record) < int(NumRequiredColumns) {
 		return nil, fmt.Errorf(`Row has fewer than the minimum required columns: %v`, record)
 	}
 	fullName := strings.TrimSpace(record[ColName])
 	if fullName == "" {
-		return nil, ErrCsvPatientMissingName
+		return nil, ErrCSVPatientMissingName
 	}
-	if record[ColBirthdate] == "" {
-		return nil, ErrCsvPatientMissingBirthdate
+	birthdateRaw := strings.TrimSpace(record[ColBirthdate])
+	if birthdateRaw == "" {
+		return nil, ErrCSVPatientMissingBirthdate
 	}
-	birthDate, err := time.Parse(time.DateOnly, record[ColBirthdate])
+	birthDate, err := time.Parse(time.DateOnly, birthdateRaw)
 	if err != nil {
-		return nil, fmt.Errorf(`error parsing column "%s" as date: %w`, record[ColBirthdate], err)
+		return nil, fmt.Errorf(`error parsing column "%s" as date: %w`, birthdateRaw, err)
 	}
 	mrn := strings.TrimSpace(record[ColMrn])
 	if mrn == "" {
-		return nil, ErrCsvPatientMissingMrn
+		return nil, ErrCSVPatientMissingMrn
 	}
 	var email string
 	if len(record) > ColEmail {
 		email = strings.TrimSpace(record[ColEmail])
 		if email != "" {
 			if _, err := mail.ParseAddress(email); err != nil {
-				return nil, ErrCsvPatientInvalidEmail
+				return nil, ErrCSVPatientInvalidEmail
 			}
 		}
 	}
