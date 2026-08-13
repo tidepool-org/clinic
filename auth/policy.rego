@@ -854,6 +854,9 @@ allow {
   input.path = ["v1", "clinics", _, "patients", "bulk"]
   clinician_has_write_access
 }
+
+# Allow backend services to perform bulk account creation.
+# POST /v1/clinics/:clinicId/patients/bulk
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients", "bulk"]
