@@ -45,7 +45,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	stdLog "log"
 	"net"
 	"net/http"
@@ -60,6 +59,7 @@ import (
 	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/http2"
+	//lint:ignore SA1019 h2c is required until v4 is supported (end of 2026)
 	"golang.org/x/net/http2/h2c"
 )
 
@@ -91,10 +91,6 @@ type Echo struct {
 	Listener         net.Listener
 	TLSListener      net.Listener
 	AutoTLSManager   autocert.Manager
-	DisableHTTP2     bool
-	Debug            bool
-	HideBanner       bool
-	HidePort         bool
 	HTTPErrorHandler HTTPErrorHandler
 	Binder           Binder
 	JSONSerializer   JSONSerializer
@@ -106,6 +102,21 @@ type Echo struct {
 
 	// OnAddRouteHandler is called when Echo adds new route to specific host router.
 	OnAddRouteHandler func(host string, route Route, handler HandlerFunc, middleware []MiddlewareFunc)
+	DisableHTTP2      bool
+	Debug             bool
+	HideBanner        bool
+	HidePort          bool
+
+	// EnablePathUnescapingStaticFiles enables path parameter (param: *) unescaping for Static/StaticFS methods.
+	// Default false (safe): encoded slashes (%2f) in the wildcard param are NOT decoded,
+	// preventing ACL bypass where /admin%2fprivate.txt bypasses a /admin/* route guard by
+	// not matching that route but having its wildcard param decoded to admin/private.txt.
+	// Set to true only when serving files whose names contain URL-encoded characters
+	// (e.g. "hello world.txt" via /hello%20world.txt) and you are not relying on
+	// route-based ACL guards to restrict access.
+	// If you are enabling this option, make sure you understand the security implications.
+	// See: https://github.com/labstack/echo/security/advisories/GHSA-vfp3-v2gw-7wfq
+	EnablePathUnescapingStaticFiles bool
 }
 
 // Route contains a handler and information for matching against requests.
@@ -117,9 +128,9 @@ type Route struct {
 
 // HTTPError represents an error that occurred while handling a request.
 type HTTPError struct {
-	Code     int         `json:"-"`
-	Message  interface{} `json:"message"`
 	Internal error       `json:"-"` // Stores the error returned by an external dependency
+	Message  interface{} `json:"message"`
+	Code     int         `json:"-"`
 }
 
 // MiddlewareFunc defines a function to process middleware.
@@ -140,11 +151,6 @@ type Validator interface {
 type JSONSerializer interface {
 	Serialize(c Context, i interface{}, indent string) error
 	Deserialize(c Context, i interface{}) error
-}
-
-// Renderer is the interface that wraps the Render function.
-type Renderer interface {
-	Render(io.Writer, string, interface{}, Context) error
 }
 
 // Map defines a generic map of type `map[string]interface{}`.
@@ -238,9 +244,12 @@ const (
 	HeaderXCorrelationID      = "X-Correlation-Id"
 	HeaderXRequestedWith      = "X-Requested-With"
 	HeaderServer              = "Server"
-	HeaderOrigin              = "Origin"
-	HeaderCacheControl        = "Cache-Control"
-	HeaderConnection          = "Connection"
+
+	// HeaderOrigin request header indicates the origin (scheme, hostname, and port) that caused the request.
+	// See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin
+	HeaderOrigin       = "Origin"
+	HeaderCacheControl = "Cache-Control"
+	HeaderConnection   = "Connection"
 
 	// Access control
 	HeaderAccessControlRequestMethod    = "Access-Control-Request-Method"
@@ -261,11 +270,16 @@ const (
 	HeaderContentSecurityPolicyReportOnly = "Content-Security-Policy-Report-Only"
 	HeaderXCSRFToken                      = "X-CSRF-Token"
 	HeaderReferrerPolicy                  = "Referrer-Policy"
+
+	// HeaderSecFetchSite fetch metadata request header indicates the relationship between a request initiator's
+	// origin and the origin of the requested resource.
+	// See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Fetch-Site
+	HeaderSecFetchSite = "Sec-Fetch-Site"
 )
 
 const (
 	// Version of Echo
-	Version = "4.12.0"
+	Version = "4.15.4"
 	website = "https://echo.labstack.com"
 	// http://patorjk.com/software/taag/#p=display&f=Small%20Slant&t=Echo
 	banner = `
@@ -843,6 +857,7 @@ func (e *Echo) StartH2CServer(address string, h2s *http2.Server) error {
 	s.Addr = address
 	e.colorer.SetOutput(e.Logger.Output())
 	s.ErrorLog = e.StdLogger
+	//lint:ignore SA1019 h2c is required until v4 is supported (end of 2026)
 	s.Handler = h2c.NewHandler(e, h2s)
 	if e.Debug {
 		e.Logger.SetLevel(log.DEBUG)

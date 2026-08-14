@@ -80,7 +80,7 @@ func SetReady(healthCheck *HealthCheck, db *mongo.Database, lifecycle fx.Lifecyc
 func NewServer(handler Handler, healthCheck *HealthCheck, authorizer auth.RequestAuthorizer, authenticator auth.Authenticator, logger *zap.Logger) (*echo.Echo, error) {
 	e := echo.New()
 	logger.Info("Starting Main Loop")
-	swagger, err := GetSwagger()
+	swagger, err := GetSpec()
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -69,7 +69,7 @@ func NewRouter(doc *openapi3.T) (routers.Router, error) {
 		for method := range operations {
 			methods = append(methods, method)
 		}
-		sort.Strings(methods)
+		slices.Sort(methods)
 
 		for _, s := range servers {
 			muxRoute := muxRouter.Path(s.base + path).Methods(methods...)
@@ -104,7 +104,7 @@ func (r *Router) FindRoute(req *http.Request) (*routers.Route, map[string]string
 	for i, m := range r.muxes {
 		var match mux.RouteMatch
 		if m.muxRoute.Match(req, &match) {
-			if err := match.MatchErr; err != nil {
+			if err := match.MatchErr; err != nil { //nolint:staticcheck
 				// What then?
 			}
 			vars := match.Vars
@@ -180,7 +180,7 @@ func makeServers(in openapi3.Servers) ([]srv, error) {
 func newSrv(serverURL string, server *openapi3.Server, varsUpdater varsf) (srv, error) {
 	var schemes []string
 	if strings.Contains(serverURL, "://") {
-		scheme0 := strings.Split(serverURL, "://")[0]
+		scheme0, _, _ := strings.Cut(serverURL, "://")
 		schemes = permutePart(scheme0, server)
 		serverURL = strings.Replace(serverURL, scheme0+"://", schemes[0]+"://", 1)
 	}
@@ -207,13 +207,13 @@ func newSrv(serverURL string, server *openapi3.Server, varsUpdater varsf) (srv, 
 var blURL, brURL = strings.Repeat("-", 50), strings.Repeat("_", 50)
 
 func bEncode(s string) string {
-	s = strings.Replace(s, "{", blURL, -1)
-	s = strings.Replace(s, "}", brURL, -1)
+	s = strings.ReplaceAll(s, "{", blURL)
+	s = strings.ReplaceAll(s, "}", brURL)
 	return s
 }
 func bDecode(s string) string {
-	s = strings.Replace(s, blURL, "{", -1)
-	s = strings.Replace(s, brURL, "}", -1)
+	s = strings.ReplaceAll(s, blURL, "{")
+	s = strings.ReplaceAll(s, brURL, "}")
 	return s
 }
 
@@ -240,6 +240,7 @@ func permutePart(part0 string, srv *openapi3.Server) []string {
 		for value := range m {
 			s = append(s, value)
 		}
+		slices.Sort(s)
 		var2val[name] = mapAndSlice{m: m, s: s}
 	}
 	if len(var2val) == 0 {
@@ -250,7 +251,7 @@ func permutePart(part0 string, srv *openapi3.Server) []string {
 	for i := 0; i < max; i++ {
 		part := part0
 		for name, mas := range var2val {
-			part = strings.Replace(part, name, mas.s[i%len(mas.s)], -1)
+			part = strings.ReplaceAll(part, name, mas.s[i%len(mas.s)])
 		}
 		partsMap[part] = struct{}{}
 	}
@@ -258,6 +259,6 @@ func permutePart(part0 string, srv *openapi3.Server) []string {
 	for part := range partsMap {
 		parts = append(parts, part)
 	}
-	sort.Strings(parts)
+	slices.Sort(parts)
 	return parts
 }
