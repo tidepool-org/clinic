@@ -45,7 +45,7 @@ func (h *Handler) XealthPreorder(ec echo.Context) error {
 	}
 
 	switch eventMeta.EventContext {
-	case string(xealth_client.Initial):
+	case string(xealth_client.PreorderFormRequest0EventContextInitial):
 		initial, err := request.AsPreorderFormRequest0()
 		if err != nil {
 			return err
@@ -56,7 +56,7 @@ func (h *Handler) XealthPreorder(ec echo.Context) error {
 			return err
 		}
 		return ec.JSON(http.StatusOK, response)
-	case string(xealth_client.Subsequent):
+	case string(xealth_client.PreorderFormRequest1EventContextSubsequent):
 		subsequent, err := request.AsPreorderFormRequest1()
 		if err != nil {
 			return err

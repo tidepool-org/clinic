@@ -10,7 +10,7 @@ help:
 	@echo "    tidy         tidy go mod"
 
 $(GOBIN)/golangci-lint:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.59.0
+	curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(GOBIN) v2.12.2
 
 .PHONY: tools
 tools: $(GOBIN)/golangci-lint
@@ -19,7 +19,7 @@ lint: tools
 	$(GOBIN)/golangci-lint run ./...
 
 lint-ci: tools
-	$(GOBIN)/golangci-lint run ./... --out-format=github-actions --timeout=5m
+	$(GOBIN)/golangci-lint run ./... --output.text.path=stdout --timeout=5m
 
 generate:
 	go generate ./...
@@ -30,3 +30,6 @@ test:
 tidy:
 	@echo "tidy..."
 	go mod tidy
+
+# the CI scripts require a rule by this name
+tidy-ci: tidy
