@@ -287,4 +287,41 @@ var _ = Describe("Program", func() {
 		})
 	})
 
+	Describe("StatsUpdatedSinceViewed", func() {
+		var lastUpdated time.Time
+
+		BeforeEach(func() {
+			lastUpdated = time.Now()
+		})
+
+		It("is false when the stats have no last updated date", func() {
+			Expect(xealth.StatsUpdatedSinceViewed(nil, nil)).To(BeFalse())
+			Expect(xealth.StatsUpdatedSinceViewed(nil, &lastUpdated)).To(BeFalse())
+		})
+
+		It("is false when the last updated date is zero", func() {
+			zero := time.Time{}
+			Expect(xealth.StatsUpdatedSinceViewed(&zero, nil)).To(BeFalse())
+		})
+
+		It("is true when no view recorded the stats yet", func() {
+			Expect(xealth.StatsUpdatedSinceViewed(&lastUpdated, nil)).To(BeTrue())
+		})
+
+		It("is true when the stats were updated after the most recent view", func() {
+			viewed := lastUpdated.Add(-time.Hour)
+			Expect(xealth.StatsUpdatedSinceViewed(&lastUpdated, &viewed)).To(BeTrue())
+		})
+
+		It("is false when the stats did not change since the most recent view", func() {
+			viewed := lastUpdated
+			Expect(xealth.StatsUpdatedSinceViewed(&lastUpdated, &viewed)).To(BeFalse())
+		})
+
+		It("is false when the view recorded a newer date", func() {
+			viewed := lastUpdated.Add(time.Hour)
+			Expect(xealth.StatsUpdatedSinceViewed(&lastUpdated, &viewed)).To(BeFalse())
+		})
+	})
+
 })

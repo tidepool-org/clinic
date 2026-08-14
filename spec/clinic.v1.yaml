@@ -1189,6 +1189,29 @@ paths:
       description: Deletes patient from a clinic. Requires the request to be made by a clinic admin or the currently authenticated user id to match the patient id.
       tags:
         - Clinics
+  /v1/clinics/{clinicId}/patients/{patientId}/flowsheet:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    get:
+      summary: Get Patient Flowsheet
+      operationId: GetPatientFlowsheet
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
+      description: Returns the patient's summary statistics as an ordered list of fully-formatted, Redox-ready flowsheet observations. Used internally to populate EHR flowsheets without duplicating the metric computation, unit conversion and formatting logic. Order is significant and must be preserved by consumers; not-available metrics are omitted.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/flowsheetObservation.v1'
+        '404':
+          description: Not Found
   /v1/clinics/{clinicId}/patient_tags/{patientTagId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -2183,6 +2206,7 @@ paths:
       responses:
         '200':
           description: OK
+      description: Get programs
       tags:
         - Clinics
         - Internal
@@ -2194,7 +2218,7 @@ paths:
       responses:
         '200':
           description: OK
-      description: ''
+      description: Get program URL
       tags:
         - Clinics
         - Internal
@@ -2206,7 +2230,7 @@ paths:
       responses:
         '200':
           description: OK
-      description: ''
+      description: Notification webhook
       tags:
         - Clinics
         - Internal
@@ -5059,6 +5083,38 @@ components:
           $ref: '#/components/schemas/objectid.v1'
       required:
         - id
+    flowsheetObservation.v1:
+      title: Flowsheet Observation
+      type: object
+      description: A single, fully-formatted summary-statistic observation ready to be written to an EHR flowsheet. The clinic service performs all value computation, unit conversion and formatting; consumers map these entries onto a flowsheet with no further formatting. Order is significant and must be preserved.
+      properties:
+        code:
+          type: string
+          description: Internal metric code (e.g. TIME_IN_RANGE_CGM).
+        value:
+          type: string
+          description: The formatted observation value.
+        valueType:
+          type: string
+          enum:
+            - Numeric
+            - DateTime
+          description: The type of the value.
+        units:
+          type: string
+          description: The unit of the value, when applicable.
+        description:
+          type: string
+          description: Human-readable description of the metric.
+        dateTime:
+          type: string
+          description: The reporting time of the observation, in RFC3339 format.
+      required:
+        - code
+        - value
+        - valueType
+        - description
+        - dateTime
     emailaddress.v1:
       title: Email Address
       description: An email address, as specified by [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322).

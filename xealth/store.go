@@ -44,6 +44,17 @@ type ReportView struct {
 	ProgramId     string              `bson:"programId"`
 	ClinicId      primitive.ObjectID  `bson:"clinicId"`
 	CreatedTime   time.Time           `bson:"createdTime"`
+
+	ReportViewStats `bson:",inline"`
+}
+
+// ReportViewStats are the last updated dates of the patient's CGM and BGM
+// summary stats that have been written back to the EHR as of the view. Stats
+// blocks which fail to write back carry the dates recorded by the previous
+// view, so they are retried on the next view.
+type ReportViewStats struct {
+	CgmLastUpdated *time.Time `bson:"cgmLastUpdated,omitempty"`
+	BgmLastUpdated *time.Time `bson:"bgmLastUpdated,omitempty"`
 }
 
 type ReportViewFilter struct {
@@ -51,7 +62,8 @@ type ReportViewFilter struct {
 	DeploymentId  string             `bson:"deployment"`
 	PatientUserId string             `bson:"patientUserId"`
 	ProgramId     string             `bson:"programId"`
-	UserId        string             `bson:"userId"`
+	// UserId is optional - when empty, views by any user are matched
+	UserId string `bson:"userId,omitempty"`
 }
 
 type defaultStore struct {

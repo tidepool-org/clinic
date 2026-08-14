@@ -687,6 +687,12 @@ const (
 	Xealth EhrSettingsV1Provider = "xealth"
 )
 
+// Defines values for FlowsheetObservationV1ValueType.
+const (
+	DateTime FlowsheetObservationV1ValueType = "DateTime"
+	Numeric  FlowsheetObservationV1ValueType = "Numeric"
+)
+
 // Defines values for GlycemicRangesV1Type.
 const (
 	Custom GlycemicRangesV1Type = "custom"
@@ -1471,6 +1477,30 @@ type ErrorV1 struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
+
+// FlowsheetObservationV1 A single, fully-formatted summary-statistic observation ready to be written to an EHR flowsheet. The clinic service performs all value computation, unit conversion and formatting; consumers map these entries onto a flowsheet with no further formatting. Order is significant and must be preserved.
+type FlowsheetObservationV1 struct {
+	// Code Internal metric code (e.g. TIME_IN_RANGE_CGM).
+	Code string `json:"code"`
+
+	// DateTime The reporting time of the observation, in RFC3339 format.
+	DateTime string `json:"dateTime"`
+
+	// Description Human-readable description of the metric.
+	Description string `json:"description"`
+
+	// Units The unit of the value, when applicable.
+	Units *string `json:"units,omitempty"`
+
+	// Value The formatted observation value.
+	Value string `json:"value"`
+
+	// ValueType The type of the value.
+	ValueType FlowsheetObservationV1ValueType `json:"valueType"`
+}
+
+// FlowsheetObservationV1ValueType The type of the value.
+type FlowsheetObservationV1ValueType string
 
 // GenerateMergeReportV1 defines model for generateMergeReport.v1.
 type GenerateMergeReportV1 struct {

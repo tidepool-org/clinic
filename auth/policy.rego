@@ -327,6 +327,14 @@ allow {
   clinician_has_write_access
 }
 
+# Allow backend services to fetch a patient's EHR flowsheet (summary statistics)
+# GET /v1/clinics/:clinicId/patients/:patientId/flowsheet
+allow {
+  is_backend_service
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "patients", _, "flowsheet"]
+}
+
 # Allow backend services to fetch, update and delete invites
 # GET /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician
 # PATCH /v1/clinics/:clinicId/invites/clinicians/:inviteId/clinician

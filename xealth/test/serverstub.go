@@ -3,9 +3,11 @@ package test
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 )
 
 const (
@@ -14,11 +16,22 @@ const (
 	XealthClientId     = "client-id"
 	XealthClientSecret = "client-secret"
 	TokenEndpoint      = "/oauth2/token"
+
+	// XealthObservationId is the id the stub assigns to created FHIR
+	// Observations, mirroring the real API which returns the created resource
+	// with a server-assigned id.
+	XealthObservationId = "3f2b9105-b1a4-41ea-9f13-6f622c821c3d"
 )
 
 type XealthServer struct {
 	*httptest.Server
 	orders map[string][]byte
+
+	mu                sync.Mutex
+	observations      [][]byte
+	observationStatus int
+	rejectSubstring   string
+	rejectStatus      int
 }
 
 func (x *XealthServer) AddOrder(deployment, orderId string, orderBody []byte) {
@@ -27,6 +40,68 @@ func (x *XealthServer) AddOrder(deployment, orderId string, orderBody []byte) {
 	}
 	orderPath := fmt.Sprintf("%s/%s", deployment, orderId)
 	x.orders[orderPath] = orderBody
+}
+
+// SetObservationStatus overrides the HTTP status returned for FHIR Observation
+// POSTs (default 201). Use it to simulate Xealth rejecting an observation.
+func (x *XealthServer) SetObservationStatus(status int) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	x.observationStatus = status
+}
+
+// RejectObservationsMatching overrides the HTTP status returned for FHIR
+// Observation POSTs whose body contains substr. Use it to simulate Xealth
+// rejecting some of the observations of a batch. Pass an empty substr to
+// clear the override.
+func (x *XealthServer) RejectObservationsMatching(substr string, status int) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	x.rejectSubstring = substr
+	x.rejectStatus = status
+}
+
+// Observations returns the bodies of all captured FHIR Observation POSTs.
+func (x *XealthServer) Observations() [][]byte {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	return append([][]byte(nil), x.observations...)
+}
+
+// ResetObservations clears the captured FHIR Observation POSTs.
+func (x *XealthServer) ResetObservations() {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	x.observations = nil
+}
+
+func (x *XealthServer) recordObservation(body []byte) int {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	x.observations = append(x.observations, body)
+	if x.rejectSubstring != "" && strings.Contains(string(body), x.rejectSubstring) {
+		return x.rejectStatus
+	}
+	if x.observationStatus != 0 {
+		return x.observationStatus
+	}
+	return http.StatusCreated
+}
+
+// withObservationId returns the created resource as the real API does: the
+// posted observation decorated with a server-assigned id.
+func withObservationId(body []byte) []byte {
+	observation := map[string]interface{}{}
+	if err := json.Unmarshal(body, &observation); err != nil {
+		return body
+	}
+	observation["id"] = XealthObservationId
+
+	created, err := json.Marshal(observation)
+	if err != nil {
+		return body
+	}
+	return created
 }
 
 func ServerStub() *XealthServer {
@@ -41,6 +116,12 @@ func ServerStub() *XealthServer {
 			} else {
 				w.WriteHeader(http.StatusNotFound)
 			}
+		} else if r.Method == http.MethodPost && strings.HasPrefix(r.RequestURI, "/partner/fhir/R4/") && strings.HasSuffix(r.RequestURI, "/Observation") {
+			body, _ := io.ReadAll(r.Body)
+			status := xealth.recordObservation(body)
+			w.Header().Add("content-type", "application/json")
+			w.WriteHeader(status)
+			w.Write(withObservationId(body))
 		} else if r.Method == http.MethodPost && r.RequestURI == TokenEndpoint {
 			token := map[string]interface{}{
 				"access_token": XealthOauth2Token,

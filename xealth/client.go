@@ -3,13 +3,14 @@ package xealth
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"sync"
+	"time"
+
 	"github.com/tidepool-org/clinic/xealth_client"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
-	"net/http"
-	"sync"
-	"time"
 )
 
 const gracePeriod = time.Second * 30

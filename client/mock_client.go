@@ -1001,6 +1001,26 @@ func (mr *MockClientInterfaceMockRecorder) GetPatientCountSettings(ctx, clinicId
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPatientCountSettings", reflect.TypeOf((*MockClientInterface)(nil).GetPatientCountSettings), varargs...)
 }
 
+// GetPatientFlowsheet mocks base method.
+func (m *MockClientInterface) GetPatientFlowsheet(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetPatientFlowsheet", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPatientFlowsheet indicates an expected call of GetPatientFlowsheet.
+func (mr *MockClientInterfaceMockRecorder) GetPatientFlowsheet(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPatientFlowsheet", reflect.TypeOf((*MockClientInterface)(nil).GetPatientFlowsheet), varargs...)
+}
+
 // ListAllClinicians mocks base method.
 func (m *MockClientInterface) ListAllClinicians(ctx context.Context, params *ListAllCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3203,6 +3223,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) GetPatientCountWithRespo
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPatientCountWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetPatientCountWithResponse), varargs...)
+}
+
+// GetPatientFlowsheetWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) GetPatientFlowsheetWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*GetPatientFlowsheetResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetPatientFlowsheetWithResponse", varargs...)
+	ret0, _ := ret[0].(*GetPatientFlowsheetResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPatientFlowsheetWithResponse indicates an expected call of GetPatientFlowsheetWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) GetPatientFlowsheetWithResponse(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPatientFlowsheetWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GetPatientFlowsheetWithResponse), varargs...)
 }
 
 // GetPatientWithResponse mocks base method.

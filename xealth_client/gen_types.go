@@ -4699,6 +4699,65 @@ type GeneralDatasetsMaternityPregnancyEpicV1ChildrenType string
 // GeneralDatasetsMaternityPregnancyEpicV1Pregnant Indicates whether patient is currently pregnant
 type GeneralDatasetsMaternityPregnancyEpicV1Pregnant string
 
+// GeneralObservation A FHIR Observation conforming to the Xealth General Observation profile (https://fhir.xealth.io/StructureDefinition/xealth-observation-general), used for EHR data writeback of discrete clinical data. Each summary statistic is sent as one component. Field shapes are reconciled against the upstream Xealth Provider API General Observation request branch.
+type GeneralObservation struct {
+	BasedOn           []ObservationReference     `json:"basedOn"`
+	Code              ObservationCodeableConcept `json:"code"`
+	Component         []ObservationComponent     `json:"component"`
+	EffectiveDateTime time.Time                  `json:"effectiveDateTime"`
+
+	// Extension Observation-level extensions. Tidepool sends the extension-ehr-order-id extension (valueString = Xealth order id), mirroring the upstream General Observation example which carries it alongside basedOn.
+	Extension    *[]ObservationExtension `json:"extension,omitempty"`
+	Meta         ObservationMeta         `json:"meta"`
+	ResourceType string                  `json:"resourceType"`
+	Status       string                  `json:"status"`
+}
+
+// ObservationReference defines model for .
+type ObservationReference struct {
+	Reference string `json:"reference"`
+}
+
+// ObservationCoding defines model for .
+type ObservationCoding struct {
+	Code    string  `json:"code"`
+	Display *string `json:"display,omitempty"`
+	System  string  `json:"system"`
+}
+
+// ObservationCodeableConcept defines model for .
+type ObservationCodeableConcept struct {
+	Coding *[]ObservationCoding `json:"coding,omitempty"`
+	Text   *string              `json:"text,omitempty"`
+}
+
+// ObservationQuantity defines model for .
+type ObservationQuantity struct {
+	Code   *string `json:"code,omitempty"`
+	System *string `json:"system,omitempty"`
+	Unit   *string `json:"unit,omitempty"`
+	Value  float64 `json:"value"`
+}
+
+// ObservationComponent defines model for .
+type ObservationComponent struct {
+	Code          ObservationCodeableConcept `json:"code"`
+	ValueDateTime *string                    `json:"valueDateTime,omitempty"`
+	ValueInteger  *int                       `json:"valueInteger,omitempty"`
+	ValueQuantity *ObservationQuantity       `json:"valueQuantity,omitempty"`
+}
+
+// ObservationExtension defines model for .
+type ObservationExtension struct {
+	Url         string `json:"url"`
+	ValueString string `json:"valueString"`
+}
+
+// ObservationMeta defines model for .
+type ObservationMeta struct {
+	Profile []string `json:"profile"`
+}
+
 // GetProgramUrlRequest Detail information related to notification event
 type GetProgramUrlRequest struct {
 	// Datasets Health system data configured for the subscriber sourced via webservice or FHIR requests.
@@ -10796,6 +10855,66 @@ type CreateOrderBadRequestError struct {
 	Error string `json:"error"`
 }
 
+// PostPartnerFhirR4DeploymentDocumentReferenceJSONBody defines parameters for PostPartnerFhirR4DeploymentDocumentReference.
+type PostPartnerFhirR4DeploymentDocumentReferenceJSONBody struct {
+	union json.RawMessage
+}
+
+// PostPartnerFhirR4DeploymentDocumentReferenceParams defines parameters for PostPartnerFhirR4DeploymentDocumentReference.
+type PostPartnerFhirR4DeploymentDocumentReferenceParams struct {
+	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
+	Authorization string `json:"Authorization"`
+}
+
+// PostPartnerFhirR4DeploymentDocumentReferenceJSONBody0 defines parameters for PostPartnerFhirR4DeploymentDocumentReference.
+type PostPartnerFhirR4DeploymentDocumentReferenceJSONBody0 struct {
+	Content []struct {
+		Attachment struct {
+			ContentType string    `json:"contentType"`
+			Creation    time.Time `json:"creation"`
+			Data        string    `json:"data"`
+			Title       string    `json:"title"`
+		} `json:"attachment"`
+	} `json:"content"`
+	Context struct {
+		Related []struct {
+			Reference string `json:"reference"`
+		} `json:"related"`
+	} `json:"context"`
+	Date      string `json:"date"`
+	DocStatus string `json:"docStatus"`
+	Meta      struct {
+		Profile []string `json:"profile"`
+	} `json:"meta"`
+	ResourceType string `json:"resourceType"`
+	Status       string `json:"status"`
+	Type         struct {
+		Coding []struct {
+			Code    string `json:"code"`
+			Display string `json:"display"`
+			System  string `json:"system"`
+		} `json:"coding"`
+	} `json:"type"`
+}
+
+// GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdParams defines parameters for GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirId.
+type GetPartnerFhirR4DeploymentDocumentReferenceDocumentReferenceFhirIdParams struct {
+	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
+	Authorization string `json:"Authorization"`
+}
+
+// PostPartnerFhirR4DeploymentObservationParams defines parameters for PostPartnerFhirR4DeploymentObservation.
+type PostPartnerFhirR4DeploymentObservationParams struct {
+	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
+	Authorization string `json:"Authorization"`
+}
+
+// GetPartnerFhirR4DeploymentObservationObservationFhirIdParams defines parameters for GetPartnerFhirR4DeploymentObservationObservationFhirId.
+type GetPartnerFhirR4DeploymentObservationObservationFhirIdParams struct {
+	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
+	Authorization string `json:"Authorization"`
+}
+
 // GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams defines parameters for GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaId.
 type GetPartnerReadBatchFileSchemaDeploymentBatchFileSchemaIdParams struct {
 	// Authorization OAuth2 bearer token retrieved from the Xealth Authorization Server
@@ -10871,6 +10990,12 @@ type PutPartnerWriteOrderDeploymentOrderIdParams struct {
 
 // PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus defines parameters for PutPartnerWriteOrderDeploymentOrderId.
 type PutPartnerWriteOrderDeploymentOrderIdJSONBodyPartnerOrderUpdateProgramStatus string
+
+// PostPartnerFhirR4DeploymentDocumentReferenceJSONRequestBody defines body for PostPartnerFhirR4DeploymentDocumentReference for application/json ContentType.
+type PostPartnerFhirR4DeploymentDocumentReferenceJSONRequestBody PostPartnerFhirR4DeploymentDocumentReferenceJSONBody
+
+// PostPartnerFhirR4DeploymentObservationJSONRequestBody defines body for PostPartnerFhirR4DeploymentObservation for application/json ContentType.
+type PostPartnerFhirR4DeploymentObservationJSONRequestBody = GeneralObservation
 
 // PostPartnerWriteOrderDeploymentJSONRequestBody defines body for PostPartnerWriteOrderDeployment for application/json ContentType.
 type PostPartnerWriteOrderDeploymentJSONRequestBody PostPartnerWriteOrderDeploymentJSONBody

@@ -2,11 +2,18 @@ package xealth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/tidepool-org/clinic/clinics"
+	"github.com/tidepool-org/clinic/ehr"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/xealth_client"
@@ -15,9 +22,6 @@ import (
 	"github.com/tidepool-org/platform/log/null"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const (
@@ -27,6 +31,8 @@ const (
 
 	eventNewOrder    = "order:new"
 	eventCancelOrder = "order:cancel"
+
+	xealthWritebackTimeout = 90 * time.Second
 )
 
 type ModuleConfig struct {
@@ -290,9 +296,16 @@ func (d *defaultHandler) GetPrograms(ctx context.Context, event xealth_client.Ge
 		return nil, fmt.Errorf("programId is required")
 	}
 
-	lastViewed, err := d.getLastViewedDate(ctx, event, *programId, *match.Clinic, *match.Patient)
-	if err != nil {
-		return nil, fmt.Errorf("unable to obtain last viewed date: %w", err)
+	var lastViewed time.Time
+	if event.Datasets != nil && event.Datasets.EhrUserV1 != nil && event.Datasets.EhrUserV1.UserId != nil {
+		userId := event.Datasets.EhrUserV1.UserId
+		view, err := d.getMostRecentReportView(ctx, event.Deployment, *programId, userId, *match.Clinic, *match.Patient)
+		if err != nil {
+			return nil, fmt.Errorf("unable to obtain last viewed date: %w", err)
+		}
+		if view != nil {
+			lastViewed = view.CreatedTime
+		}
 	}
 
 	programs.Programs[0].Description = GetProgramDescription(summaryLastUpdated, lastViewed, patient.Permissions, patient.DataSources)
@@ -342,7 +355,21 @@ func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.
 		Url: url.String(),
 	}
 
-	if err := d.updateLastViewedDate(ctx, event, *match.Clinic, *match.Patient); err != nil {
+	// Push the patient's summary statistics to Xealth's FHIR store. This is
+	// best-effort: failures are logged but never block the report URL response.
+	// Only the CGM and BGM stats updated since the most recent report view are
+	// pushed. The view records the last updated dates of the stats which have
+	// been written back, so blocks which fail to push are retried on the next view.
+	viewStats, err := d.sendSummaryStatsObservation(ctx, event, *match.Clinic, *match.Patient)
+	if err != nil {
+		d.logger.Errorw(
+			"xealth summary-stats writeback failed", "error", err,
+			"clinicId", match.Clinic.Id.Hex(),
+			"patientId", *match.Patient.UserId,
+		)
+	}
+
+	if err := d.updateLastViewedDate(ctx, event, viewStats, *match.Clinic, *match.Patient); err != nil {
 		d.logger.Errorw(
 			"unable to update report last viewed date", "error", err,
 			"clinicId", match.Clinic.Id.Hex(),
@@ -353,30 +380,169 @@ func (d *defaultHandler) GetProgramUrl(ctx context.Context, event xealth_client.
 	return response, nil
 }
 
-func (d *defaultHandler) getLastViewedDate(ctx context.Context, event xealth_client.GetProgramsRequest, programId string, clinic clinics.Clinic, patient patients.Patient) (lastViewed time.Time, err error) {
-	if event.Datasets == nil || event.Datasets.EhrUserV1 == nil || event.Datasets.EhrUserV1.UserId == nil {
-		return
+// sendSummaryStatsObservation computes the patient's summary statistics and
+// writes them back to Xealth's FHIR store as a General Observation per stats
+// type (CGM, BGM), one component per available metric, with the block's last
+// updated date as the effective time. Each Observation is tied to the
+// patient's active Xealth order via basedOn (ServiceRequest/<orderId>).
+//
+// It returns the stats dates to record with the current view: the last
+// updated dates of the blocks that have been successfully written back, now
+// or previously. Blocks which fail to write back keep the previously recorded
+// dates, so they are retried on the next view.
+func (d *defaultHandler) sendSummaryStatsObservation(ctx context.Context, event xealth_client.GetProgramUrlRequest, clinic clinics.Clinic, patient patients.Patient) (viewStats ReportViewStats, err error) {
+	// The most recent report view (by any EHR user) records the last updated
+	// dates of the stats blocks that have already been written back. Only the
+	// blocks updated since then are pushed.
+	view, err := d.getMostRecentReportView(ctx, event.Deployment, event.ProgramId, nil, clinic, patient)
+	if err != nil {
+		return viewStats, fmt.Errorf("unable to obtain most recent report view: %w", err)
+	}
+	if view != nil {
+		viewStats = view.ReportViewStats
 	}
 
-	report, err := d.store.GetMostRecentReportView(ctx, ReportViewFilter{
-		ClinicId:      *clinic.Id,
-		DeploymentId:  event.Deployment,
-		PatientUserId: *patient.UserId,
-		ProgramId:     programId,
-		UserId:        *event.Datasets.EhrUserV1.UserId,
-	})
-	if errors.Is(err, errs.NotFound) {
-		err = nil
-		return
-	} else if err != nil {
-		return
+	subscription, ok := patient.EHRSubscriptions[patients.SubscriptionXealthReports]
+	if !ok || subscription.Provider != clinics.EHRProviderXealth || !subscription.Active || len(subscription.MatchedMessages) == 0 {
+		d.logger.Infow("skipping summary-stats writeback: no active xealth subscription",
+			"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId)
+		return viewStats, nil
 	}
 
-	lastViewed = report.CreatedTime
-	return
+	lastMatchedMessage := subscription.MatchedMessages[len(subscription.MatchedMessages)-1]
+	order, err := d.store.GetOrder(ctx, lastMatchedMessage.DocumentId.Hex())
+	if err != nil {
+		return viewStats, fmt.Errorf("unable to retrieve order for writeback: %w", err)
+	}
+
+	orderId := order.OrderData.OrderInfo.OrderId
+	if orderId == "" {
+		d.logger.Infow("skipping summary-stats writeback: order has no id",
+			"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId)
+		return viewStats, nil
+	}
+
+	if patient.Summary == nil {
+		d.logger.Infow("skipping summary-stats writeback: patient has no summary",
+			"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId)
+		return viewStats, nil
+	}
+
+	icode := false
+	if clinic.EHRSettings != nil {
+		icode = clinic.EHRSettings.Flowsheets.Icode
+	}
+	units := ehr.GlucoseUnits(clinic.PreferredBgUnits)
+
+	// The CGM and BGM stats are pushed as separate observations, because the
+	// blocks are recalculated independently and carry different effective times
+	var cgmObservation, bgmObservation *xealth_client.GeneralObservation
+	if lastUpdated := GetCGMStatsLastUpdatedDate(patient.Summary); StatsUpdatedSinceViewed(lastUpdated, viewStats.CgmLastUpdated) {
+		stats := ehr.ComputeCGM(patient.Summary.CGM, units, icode)
+		if observation := NewSummaryStatsObservation(stats, orderId, *lastUpdated); len(observation.Component) > 0 {
+			cgmObservation = &observation
+		}
+	}
+	if lastUpdated := GetBGMStatsLastUpdatedDate(patient.Summary); StatsUpdatedSinceViewed(lastUpdated, viewStats.BgmLastUpdated) {
+		stats := ehr.ComputeBGM(patient.Summary.BGM, units, icode)
+		if observation := NewSummaryStatsObservation(stats, orderId, *lastUpdated); len(observation.Component) > 0 {
+			bgmObservation = &observation
+		}
+	}
+
+	if cgmObservation == nil && bgmObservation == nil {
+		d.logger.Infow("skipping summary-stats writeback: no stats updated since the most recent report view",
+			"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId,
+			"viewedCgmLastUpdated", viewStats.CgmLastUpdated, "viewedBgmLastUpdated", viewStats.BgmLastUpdated)
+		return viewStats, nil
+	}
+
+	postCtx, cancel := context.WithTimeout(ctx, xealthWritebackTimeout)
+	defer cancel()
+
+	var cgmErr, bgmErr error
+	wg := sync.WaitGroup{}
+	if cgmObservation != nil {
+		wg.Go(func() {
+			cgmErr = d.postSummaryStatsObservation(postCtx, event.Deployment, orderId, *cgmObservation, clinic, patient)
+		})
+	}
+	if bgmObservation != nil {
+		wg.Go(func() {
+			bgmErr = d.postSummaryStatsObservation(postCtx, event.Deployment, orderId, *bgmObservation, clinic, patient)
+		})
+	}
+	wg.Wait()
+
+	// Successfully pushed blocks advance the recorded dates. Failed blocks keep
+	// the previously recorded dates, so they are retried on the next view.
+	if cgmObservation != nil && cgmErr == nil {
+		viewStats.CgmLastUpdated = &cgmObservation.EffectiveDateTime
+	}
+	if bgmObservation != nil && bgmErr == nil {
+		viewStats.BgmLastUpdated = &bgmObservation.EffectiveDateTime
+	}
+
+	return viewStats, errors.Join(cgmErr, bgmErr)
 }
 
-func (d *defaultHandler) updateLastViewedDate(ctx context.Context, event xealth_client.GetProgramUrlRequest, clinic clinics.Clinic, patient patients.Patient) error {
+// postSummaryStatsObservation writes a single stats observation to Xealth's
+// FHIR store.
+func (d *defaultHandler) postSummaryStatsObservation(ctx context.Context, deploymentId, orderId string, observation xealth_client.GeneralObservation, clinic clinics.Clinic, patient patients.Patient) error {
+	response, err := d.client.PostPartnerFhirR4DeploymentObservationWithResponse(ctx, deploymentId, nil, observation)
+	if err != nil {
+		return fmt.Errorf("posting summary-stats observation: %w", err)
+	}
+
+	if status := response.StatusCode(); status < http.StatusOK || status >= http.StatusMultipleChoices {
+		return fmt.Errorf("unexpected response posting summary-stats observation: %d", status)
+	}
+
+	d.logger.Infow("summary-stats writeback succeeded",
+		"clinicId", clinic.Id.Hex(), "patientId", *patient.UserId, "orderId", orderId,
+		"observationId", createdObservationId(response.Body))
+	return nil
+}
+
+// createdObservationId extracts the id Xealth assigned to the created FHIR
+// Observation (the create response returns the created resource), so it can be
+// retrieved later via GET /partner/fhir/R4/{deployment}/Observation/{id}.
+// Returns an empty string when the response carries no id.
+func createdObservationId(body []byte) string {
+	observation := struct {
+		Id string `json:"id"`
+	}{}
+	if err := json.Unmarshal(body, &observation); err != nil {
+		return ""
+	}
+	return observation.Id
+}
+
+// getMostRecentReportView returns the most recent report view for the patient
+// and program, or nil if the report was never viewed. When userId is nil,
+// views by any user are matched.
+func (d *defaultHandler) getMostRecentReportView(ctx context.Context, deploymentId, programId string, userId *string, clinic clinics.Clinic, patient patients.Patient) (*ReportView, error) {
+	filter := ReportViewFilter{
+		ClinicId:      *clinic.Id,
+		DeploymentId:  deploymentId,
+		PatientUserId: *patient.UserId,
+		ProgramId:     programId,
+	}
+	if userId != nil {
+		filter.UserId = *userId
+	}
+
+	report, err := d.store.GetMostRecentReportView(ctx, filter)
+	if errors.Is(err, errs.NotFound) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return report, nil
+}
+
+func (d *defaultHandler) updateLastViewedDate(ctx context.Context, event xealth_client.GetProgramUrlRequest, viewStats ReportViewStats, clinic clinics.Clinic, patient patients.Patient) error {
 	if event.Datasets == nil || event.Datasets.EhrUserV1 == nil || event.Datasets.EhrUserV1.UserId == nil {
 		return nil
 	}
@@ -390,6 +556,8 @@ func (d *defaultHandler) updateLastViewedDate(ctx context.Context, event xealth_
 		ProgramId:     event.ProgramId,
 		ClinicId:      *clinic.Id,
 		CreatedTime:   time.Now(),
+
+		ReportViewStats: viewStats,
 	}
 	_, err := d.store.CreateReportView(ctx, view)
 	if err != nil {
