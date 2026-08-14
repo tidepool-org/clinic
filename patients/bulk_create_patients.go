@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/mail"
-	"slices"
 	"strings"
 	"time"
 
@@ -66,16 +65,6 @@ func ValidateCSVHeader(records [][]string) error {
 	return nil
 }
 
-// ValidCSVPatientValues is a struct of valid values for diagnoses and presets
-// for patients bulk created from a CSV. This is because whether the types are
-// defined in the patients/model layer or api, it will need to be duplicated /
-// mapped from one type to the other but I'm open to other suggestions.
-type ValidCSVPatientValues struct {
-	ValidDiagnoses []string
-	ValidPresets   []string
-	DefaultPreset  string
-}
-
 // ParsedCSVPatient represents the potential patient to be created from a CSV
 // row along with a copy of the original input CSV row with added information
 // in [Columns]. Patient may be nil if there is an error with the patient,
@@ -97,7 +86,7 @@ type ParsedCSVPatient struct {
 // column defined as the slice index [OutputColStatus] in
 // [ParsedCSVPatient.Columns] in which case [ParsedCSVPatient.Patient] would be
 // empty.
-func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, CSVRecords [][]string, clinicId primitive.ObjectID, types ValidCSVPatientValues) (outputRows [][]string, outputHeader []string, parsedPatients []ParsedCSVPatient, err error) {
+func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, CSVRecords [][]string, clinicId primitive.ObjectID) (outputRows [][]string, outputHeader []string, parsedPatients []ParsedCSVPatient, err error) {
 	if err := ValidateCSVHeader(CSVRecords); err != nil {
 		return nil, nil, nil, err
 	}
@@ -112,7 +101,7 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 		outputRow := make([]string, NumOutputCols)
 		copy(outputRow, record)
 		var patientErr error
-		patient, err := NewPatientFromColumns(record, clinicId, types)
+		patient, err := NewPatientFromColumns(record, clinicId)
 		if err != nil {
 			outputRow[OutputColStatus] = err.Error()
 			patientErr = errors.Join(patientErr, err)
@@ -198,7 +187,7 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 
 // NewPatientFromColumns instantiates a Patient object suitable for actual
 // creation given a row of text columns.
-func NewPatientFromColumns(record []string, clinicId primitive.ObjectID, types ValidCSVPatientValues) (*Patient, error) {
+func NewPatientFromColumns(record []string, clinicId primitive.ObjectID) (*Patient, error) {
 	if len(record) < int(NumRequiredColumns) {
 		return nil, fmt.Errorf(`Row has fewer than the minimum required columns: %v`, record)
 	}
@@ -229,21 +218,21 @@ func NewPatientFromColumns(record []string, clinicId primitive.ObjectID, types V
 	}
 	var diagnosisType *DiagnosisType
 	if len(record) > ColDiagnosisType {
-		diagnosisRaw := strings.TrimSpace(record[ColDiagnosisType])
-		// Only add the diagnosis type if valid
-		if slices.Contains(types.ValidDiagnoses, diagnosisRaw) {
-			dt := DiagnosisType(diagnosisRaw)
+		raw := strings.TrimSpace(record[ColDiagnosisType])
+		if raw != "" {
+			dt, err := ParseDiagnosisType(record[ColDiagnosisType])
+			if err != nil {
+				return nil, err
+			}
 			diagnosisType = &dt
 		}
 	}
-	var preset string
+	var preset GlycemicRangesPreset
 	if len(record) > ColGlycemicPreset {
-		preset = strings.TrimSpace(record[ColGlycemicPreset])
+		presetRaw := strings.TrimSpace(record[ColGlycemicPreset])
+		preset = ParseGlycemicRangesPreset(presetRaw, DefaultGlycemicPreset)
 	}
-	if preset == "" || !slices.Contains(types.ValidPresets, preset) {
-		// Set to Standard if empty or not one of the recognized ones.
-		preset = types.DefaultPreset
-	}
+
 	patient := Patient{
 		FullName:      &fullName,
 		ClinicId:      &clinicId,

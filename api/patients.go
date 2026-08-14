@@ -22,14 +22,6 @@ import (
 
 var defaultPeriod = "14d"
 
-var (
-	validCsvTypes = patients.ValidCsvPatientValues{
-		ValidDiagnoses: []string{string(DiagnosisTypeV1Gestational), string(DiagnosisTypeV1Lada), string(DiagnosisTypeV1Mody), string(DiagnosisTypeV1Other), string(DiagnosisTypeV1Prediabetes), string(DiagnosisTypeV1Type1), string(DiagnosisTypeV1Type2), string(DiagnosisTypeV1Type3c)},
-		ValidPresets:   []string{string(ADAHighRisk), string(ADAPregnancyType1), string(ADAPregnancyType2), string(ADAStandard)},
-		DefaultPreset:  string(ADAStandard),
-	}
-)
-
 func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPatientsParams) (err error) {
 	ctx := ec.Request().Context()
 	page := pagination(params.Offset, params.Limit)
@@ -543,14 +535,16 @@ func (h *Handler) ListBulkCreatePatients(ec echo.Context, clinicId ClinicId) err
 	if err != nil {
 		return err
 	}
-	records, err := csv.NewReader(ec.Request().Body).ReadAll()
+	reader := csv.NewReader(ec.Request().Body)
+	reader.FieldsPerRecord = -1
+	records, err := reader.ReadAll()
 	if err != nil {
 		return &echo.HTTPError{
 			Code:    http.StatusBadRequest,
 			Message: fmt.Sprintf(`error reading input csv: %v`, err),
 		}
 	}
-	outputRecords, _, _, err := patients.ParsePotentialCsvPatients(ctx, h.Patients, h.Users, records, clinicObjId, validCsvTypes)
+	outputRecords, _, _, err := patients.ParsePotentialCSVPatients(ctx, h.Patients, h.Users, records, clinicObjId)
 	if err != nil {
 		return err
 	}
@@ -575,7 +569,7 @@ func (h *Handler) BulkCreatePatients(ec echo.Context, clinicId ClinicId) error {
 			Message: fmt.Sprintf(`error reading input csv: %v`, err),
 		}
 	}
-	_, csvHeader, potentialPatients, err := patients.ParsePotentialCSVPatients(ctx, h.Patients, h.Users, records, clinicObjId, validCsvTypes)
+	_, csvHeader, potentialPatients, err := patients.ParsePotentialCSVPatients(ctx, h.Patients, h.Users, records, clinicObjId)
 	if err != nil {
 		return err
 	}

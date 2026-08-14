@@ -2,7 +2,9 @@ package patients
 
 import (
 	"context"
+	errs "errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
@@ -21,12 +23,13 @@ const (
 )
 
 var (
-	ErrNotFound           = fmt.Errorf("patient %w", errors.NotFound)
-	ErrSummaryNotFound    = fmt.Errorf("summary %w", errors.NoChange)
-	ErrPermissionNotFound = fmt.Errorf("permission %w", errors.NotFound)
-	ErrDuplicatePatient   = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
-	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
-	ErrReviewNotOwner     = fmt.Errorf("%w: cannot revert review from another clinician", errors.Conflict)
+	ErrNotFound             = fmt.Errorf("patient %w", errors.NotFound)
+	ErrSummaryNotFound      = fmt.Errorf("summary %w", errors.NoChange)
+	ErrPermissionNotFound   = fmt.Errorf("permission %w", errors.NotFound)
+	ErrDuplicatePatient     = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
+	ErrDuplicateEmail       = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
+	ErrReviewNotOwner       = fmt.Errorf("%w: cannot revert review from another clinician", errors.Conflict)
+	ErrInvalidDiagnosisType = errs.New("invalid diagnosis type")
 
 	PendingDataSourceExpirationDuration = time.Hour * 24 * 30
 
@@ -44,6 +47,36 @@ var (
 		Upload:    &permission,
 		Note:      &permission,
 	}
+
+	// ValidDiagnosisTypes is the authoritative source for data model patient
+	// diagnosis types. This MUST stay in sync with the API DiagnosisTypeV1 enum
+	// values defined in the clinic client/schema.
+	ValidDiagnosisTypes = map[DiagnosisType]struct{}{
+		"gestational":   {},
+		"lada":          {},
+		"mody":          {},
+		"notApplicable": {},
+		"other":         {},
+		"prediabetes":   {},
+		"type1":         {},
+		"type2":         {},
+		"type3c":        {},
+	}
+
+	// ValidGlycemicRangesPresets is the authoritative source for data model
+	// patient non-custom glycemic ranges presets. This MUST stay in sync with
+	// the API GlycemicRangesPresetV1 enum values defined in the clinic
+	// client/schema.
+	ValidGlycemicRangesPresets = map[GlycemicRangesPreset]struct{}{
+		"adaHighRisk":       {},
+		"adaPregnancyType1": {},
+		"adaPregnancyType2": {},
+		"adaStandard":       {},
+	}
+
+	// DefaultGlycemicPreset is the preferred default preset to return when no
+	// preset is given or the preset is invalid.
+	DefaultGlycemicPreset = GlycemicRangesPreset("adaStandard")
 )
 
 //go:generate go tool mockgen -source=./patients.go -destination=./test/mock_patients.go -package test
@@ -375,3 +408,21 @@ const (
 	GlycemicRangeTypePreset GlycemicRangeType = "preset"
 	GlycemicRangeTypeCustom GlycemicRangeType = "custom"
 )
+
+func ParseDiagnosisType(raw string) (DiagnosisType, error) {
+	dt := DiagnosisType(strings.TrimSpace(raw))
+	if _, ok := ValidDiagnosisTypes[dt]; !ok {
+		return "", fmt.Errorf(`%w: %q`, ErrInvalidDiagnosisType, raw)
+	}
+	return dt, nil
+}
+
+// ParseGlycemicRangesPreset parses a string into a non-custom
+// GlycemicRangesPreset. It never returns an error.
+func ParseGlycemicRangesPreset(raw string, defaultPreset GlycemicRangesPreset) GlycemicRangesPreset {
+	preset := GlycemicRangesPreset(strings.TrimSpace(raw))
+	if _, ok := ValidGlycemicRangesPresets[preset]; !ok {
+		return defaultPreset
+	}
+	return preset
+}
