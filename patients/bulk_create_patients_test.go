@@ -20,7 +20,6 @@ var _ = Describe("Bulk Account Creation", func() {
 	var patientSvc *patientsTest.MockService
 	var userSvc *patientsTest.MockUserService
 
-	var types patients.ValidCSVPatientValues
 	var err error
 	var clinicId primitive.ObjectID
 
@@ -29,11 +28,6 @@ var _ = Describe("Bulk Account Creation", func() {
 		DeferCleanup(ctrl.Finish)
 		patientSvc = patientsTest.NewMockService(ctrl)
 		userSvc = patientsTest.NewMockUserService(ctrl)
-		types = patients.ValidCSVPatientValues{
-			ValidDiagnoses: []string{"gestational", "lada", "mody", "other", "prediabetes", "type1", "type2", "type3c"},
-			ValidPresets:   []string{"adaHighRisk", "adaPregnancyType1", "adaPregnancyType2", "adaStandard"},
-			DefaultPreset:  "adaStandard",
-		}
 		clinicId, err = primitive.ObjectIDFromHex("6a73255ba61db3fae2d878c2")
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -45,7 +39,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Name", "Birthdate"},
 				{"George Washington", "1950-01-02"},
 			}
-			_, _, _, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, types)
+			_, _, _, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId)
 			Expect(err).To(MatchError(patients.ErrCSVNotEnoughColumns))
 		})
 
@@ -99,7 +93,7 @@ var _ = Describe("Bulk Account Creation", func() {
 					}).
 				AnyTimes()
 
-			outputRecords, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, types)
+			outputRecords, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(parsedPatients)).To(Equal(10))
 			Expect(header).To(Equal(expectedOutput[0]))
@@ -148,7 +142,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				Return(&patients.Patient{}, nil).
 				Times(1)
 
-			_, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, types)
+			_, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId)
 			Expect(len(parsedPatients)).To(Equal(3))
 			Expect(err).ToNot(HaveOccurred())
 			outputRecords := patients.CreateCSVPatients(ctx, patientSvc, header, parsedPatients)
