@@ -89,6 +89,7 @@ var (
 
 	createClinicUserUrlRegexp      = regexp.MustCompile("/v1/clinics/.+/users")
 	createRestrictedTokenUrlRegexp = regexp.MustCompile("/v1/users/(.+)/restricted_tokens")
+	updateUserUrlRegexp            = regexp.MustCompile("^/user/.+")
 )
 
 func ShorelineStub() *httptest.Server {
@@ -158,6 +159,8 @@ func ShorelineStub() *httptest.Server {
 			}
 		} else if r.Method == http.MethodPost && strings.HasSuffix(r.RequestURI, "/serverlogin") {
 			w.Header().Set("x-tidepool-session-token", "server")
+		} else if r.Method == http.MethodPut && updateUserUrlRegexp.MatchString(r.RequestURI) {
+			// Custodial account update; the shoreline client only checks for a 200 status
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
