@@ -17,15 +17,16 @@ var _ = Describe("Export", func() {
 	Describe("Format and conversion functions", func() {
 		DescribeTable("FmtFloat",
 			func(val float64, precision int, expected string) {
-
+				formatted := export.FmtFloat(val, precision)
+				Expect(formatted).To(Equal(expected))
 			},
 			Entry("0 precision", 2.45, 0, "2"),
 			Entry("0 precision round to even downwards", 2.5, 0, "2"),
-			Entry("0 precision round to even upwards", 3.5, 0, "3"),
+			Entry("0 precision round to even upwards", 3.5, 0, "4"),
 			Entry("1 precision round upwards", 3.67, 1, "3.7"),
 			Entry("1 precision round downwards", 3.44, 1, "3.4"),
-			Entry("1 precision round to even upwards", 3.5, 1, "4.0"),
-			Entry("1 precision round to even download", 4.5, 1, "4.0"),
+			Entry("1 precision round to even upwards", 3.35, 1, "3.4"),
+			Entry("1 precision round to even download", 8.65, 1, "8.6"),
 		)
 	})
 
