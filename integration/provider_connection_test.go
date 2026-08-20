@@ -61,6 +61,23 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			Expect(rec.Result()).ToNot(BeNil())
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 		})
+
+		It("Returns the created time of each data source", func() {
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet, fmt.Sprintf("/v1/clinics/%s/patients/%s", *clinic.Id, *patient.Id), "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			dec := json.NewDecoder(rec.Result().Body)
+			Expect(dec.Decode(&patient)).To(Succeed())
+			Expect(patient.DataSources).To(PointTo(HaveLen(2)))
+			for _, dataSource := range *patient.DataSources {
+				Expect(dataSource.CreatedTime).To(PointTo(Equal(api.DatetimeV1("2025-01-01T00:00:00Z"))))
+			}
+		})
 	})
 
 	Describe("Send Dexcom Connection Request", func() {
