@@ -1863,6 +1863,27 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("Update patient data sources", func() {
+			It("persists the created time of the data source", func() {
+				id := primitive.NewObjectID()
+				createdTime := time.Now().UTC().Truncate(time.Millisecond)
+				dataSources := patients.DataSources{{
+					DataSourceId: &id,
+					CreatedTime:  &createdTime,
+					ProviderName: patients.DexcomDataSourceProviderName,
+					State:        "connected",
+				}}
+				err := repo.UpdatePatientDataSources(context.Background(), *randomPatient.UserId, &dataSources)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.DataSources).ToNot(BeNil())
+				Expect(*patient.DataSources).To(HaveLen(1))
+				Expect((*patient.DataSources)[0].CreatedTime).To(PointTo(Equal(createdTime)))
+			})
+		})
+
 		Describe("Add provider connection request", func() {
 			BeforeEach(func() {
 				dataSources := patients.DataSources{{

@@ -3757,6 +3757,8 @@ components:
           maxLength: 24
           pattern: ^[a-f0-9]{24}$
           readOnly: true
+        createdTime:
+          $ref: '#/components/schemas/datetime.v1'
         modifiedTime:
           $ref: '#/components/schemas/datetime.v1'
         expirationTime:
