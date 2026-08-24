@@ -1331,6 +1331,9 @@ type CreatePatientV1 struct {
 
 // DataSourceV1 defines model for dataSource.v1.
 type DataSourceV1 struct {
+	// CreatedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	CreatedTime *DatetimeV1 `json:"createdTime,omitempty"`
+
 	// DataSourceId String representation of a resource id
 	DataSourceId *string `json:"dataSourceId,omitempty"`
 

@@ -438,6 +438,11 @@ func NewPatient(dto PatientV1) patients.Patient {
 				newDataSource.DataSourceId = &dataSourceObjectId
 			}
 
+			if d.CreatedTime != nil {
+				createdTime, _ := time.Parse(time.RFC3339Nano, string(*d.CreatedTime))
+				newDataSource.CreatedTime = &createdTime
+			}
+
 			if d.ModifiedTime != nil {
 				modifiedTime, _ := time.Parse(time.RFC3339Nano, string(*d.ModifiedTime))
 				newDataSource.ModifiedTime = &modifiedTime
@@ -769,6 +774,11 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSourceV
 			if d.DataSourceId != nil {
 				dataSourceId := d.DataSourceId.Hex()
 				newDataSource.DataSourceId = &dataSourceId
+			}
+
+			if d.CreatedTime != nil {
+				createdTime := DatetimeV1(d.CreatedTime.Format(time.RFC3339Nano))
+				newDataSource.CreatedTime = &createdTime
 			}
 
 			if d.ModifiedTime != nil {

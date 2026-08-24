@@ -354,6 +354,7 @@ func (s *Summary) GetLastUpdatedDate() time.Time {
 type DataSources []DataSource
 type DataSource struct {
 	DataSourceId   *primitive.ObjectID `bson:"dataSourceId,omitempty"`
+	CreatedTime    *time.Time          `bson:"createdTime,omitempty"`
 	ModifiedTime   *time.Time          `bson:"modifiedTime,omitempty"`
 	ExpirationTime *time.Time          `bson:"expirationTime,omitempty"`
 	ProviderName   string              `bson:"providerName"`
