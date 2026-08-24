@@ -973,6 +973,27 @@ paths:
           schema:
             type: boolean
           in: query
+        - name: deviceIssues
+          description: |
+            Includes patients experiencing one or more of the device issues specified.
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - disconnected
+                - erroring
+                - expiredConnectionInvitation
+                - staleConnectionInvitation
+                - staleData
+          in: query
+          style: form
+          explode: false
+        - name: omitHiddenDeviceIssues
+          description: Exclude any devices issues marked as hidden.
+          schema:
+            type: boolean
+          in: query
       description: Retrieve a list of patients of a clinic
     post:
       summary: Create Patient Account
@@ -2329,6 +2350,17 @@ paths:
         - Clinics
         - Internal
       description: Send a new request to the patient to connect a data provider
+  /v1/device_issues:
+    post:
+      summary: Update device issues
+      description: Endpoint used to trigger an update of each patients' device issues.
+      operationId: UpdateDeviceIssues
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Clinics
+        - Internal
 components:
   schemas:
     clinics.v1:
@@ -4988,6 +5020,37 @@ components:
         - notApplicable
         - ''
       example: type1
+    deviceIssue.v1:
+      type: object
+      properties:
+        effectiveTime:
+          $ref: '#/components/schemas/datetime.v1'
+        providerId:
+          $ref: '#/components/schemas/providerId.v1'
+        hidden:
+          $ref: '#/components/schemas/datetime.v1'
+          description: |
+            Set this value to indicate that clinicians no longer wish to see
+            this issue in their device issues dashboard.
+      required:
+        - effectiveTime
+        - providerId
+      x-go-type-skip-optional-pointer: true
+      x-omitzero: true
+      x-omitempty: true
+    deviceIssues.v1:
+      type: object
+      properties:
+        disconnected:
+          $ref: '#/components/schemas/deviceIssue.v1'
+        erroring:
+          $ref: '#/components/schemas/deviceIssue.v1'
+        expiredConnectionInvitation:
+          $ref: '#/components/schemas/deviceIssue.v1'
+        staleConnectionInvitation:
+          $ref: '#/components/schemas/deviceIssue.v1'
+        staleData:
+          $ref: '#/components/schemas/deviceIssue.v1'
     patient.v1:
       type: object
       title: Patient
@@ -5062,6 +5125,14 @@ components:
           $ref: '#/components/schemas/glycemicRanges.v1'
         diagnosisType:
           $ref: '#/components/schemas/diagnosisType.v1'
+        deviceIssues:
+          $ref: '#/components/schemas/deviceIssues.v1'
+        primaryDeviceProviderName:
+          $ref: '#/components/schemas/providerId.v1'
+          description: The device used in various dashboards, e.g. TIDE or Device Issues Dashboard.
+          nullable: true
+          x-go-type-skip-optional-pointer: true
+          readOnly: true
       required:
         - id
         - fullName

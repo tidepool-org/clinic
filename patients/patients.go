@@ -34,6 +34,15 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
+	// DataSourceProviderNames is the canonical set of device data source
+	// providers. Add new providers here so device-issue detection picks them up
+	// automatically.
+	DataSourceProviderNames = []string{
+		AbbottDataSourceProviderName,
+		DexcomDataSourceProviderName,
+		TwiistDataSourceProviderName,
+	}
+
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,
@@ -73,6 +82,9 @@ type Service interface {
 	DeleteSites(ctx context.Context, clinicId string, siteId string) error
 	MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error
 	UpdateSites(ctx context.Context, clinicId string, siteId string, site *sites.Site) error
+	UpdateDeviceIssues(ctx context.Context) error
+	UpdatePrimaryDeviceProviderName(ctx context.Context, userId, providerName string) error
+	ClearDeviceIssues(ctx context.Context, userId string) error
 }
 
 type Repository interface {
@@ -80,6 +92,8 @@ type Repository interface {
 
 	ClinicIds(ctx context.Context, userId string) ([]string, error)
 	Counts(ctx context.Context, clinicId string) (*Counts, error)
+	RemoveDeviceIssue(ctx context.Context, userId, issue string) error
+	CreateDeviceIssue(ctx context.Context, userId, providerName, issue string) error
 }
 
 type ProviderCounts struct {
@@ -123,6 +137,44 @@ type Patient struct {
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+
+	DeviceIssues DeviceIssues `bson:"deviceIssues,omitempty"`
+	// PrimaryDeviceProviderName indicates which device the backend believes is currently in
+	// use by the patient.
+	PrimaryDeviceProviderName *string `bson:"primaryDeviceProviderName,omitempty"`
+}
+
+type DeviceIssues struct {
+	StaleData                   DeviceIssue `bson:"staleData,omitempty"`
+	ExpiredConnectionInvitation DeviceIssue `bson:"expiredConnectionInvitation,omitempty"`
+	StaleConnectionInvitation   DeviceIssue `bson:"staleConnectionInvitation,omitempty"`
+	Disconnected                DeviceIssue `bson:"disconnected,omitempty"`
+	Erroring                    DeviceIssue `bson:"erroring,omitempty"`
+}
+
+const (
+	DeviceIssueDisconnected = "disconnected"
+	DeviceIssueErroring     = "erroring"
+)
+
+func (d DeviceIssues) IsZero() bool {
+	return d.StaleData.IsZero() &&
+		d.ExpiredConnectionInvitation.IsZero() &&
+		d.StaleConnectionInvitation.IsZero() &&
+		d.Disconnected.IsZero() &&
+		d.Erroring.IsZero()
+}
+
+type DeviceIssue struct {
+	EffectiveTime time.Time `bson:"effectiveTime"`
+	ProviderId    string    `bson:"providerId"`
+	Hidden        time.Time `bson:"hidden,omitempty"`
+}
+
+func (d DeviceIssue) IsZero() bool {
+	// Hidden doesn't count, because without effective time and provider id, there's no
+	// issue to hide.
+	return d.EffectiveTime.IsZero() && d.ProviderId == ""
 }
 
 type DiagnosisType string
@@ -259,6 +311,10 @@ type Filter struct {
 	LastReviewed *time.Time
 	// Sites to which the patient must be assigned to be included.
 	Sites *[]string
+	// DeviceIssues to limit the patients to those with any of the given issues.
+	DeviceIssues *[]string
+	// OmitHiddenDeviceIssues to remove device issues marked hidden.
+	OmitHiddenDeviceIssues *bool
 
 	HasSubscription *bool
 	HasMRN          *bool

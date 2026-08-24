@@ -840,6 +840,403 @@ var _ = Describe("Patients Service", func() {
 			Expect(err).To(BeNil())
 		})
 	})
+
+	Describe("UpdatePatientDataSources", func() {
+		var userId string
+		var clinicId string
+		var olderT, newerT time.Time
+
+		expectPriorPatient := func(prior patients.Patient) {
+			prior.UserId = &userId
+			repo.EXPECT().
+				List(gomock.Any(), gomock.Eq(&patients.Filter{UserId: &userId}),
+					gomock.Any(), gomock.Any()).
+				Return(&patients.ListResult{
+					Patients:      []*patients.Patient{&prior},
+					MatchingCount: 1,
+				}, nil)
+		}
+
+		expectPriorDataSources := func(prior patients.DataSources) {
+			expectPriorPatient(patients.Patient{
+				DataSources: (*[]patients.DataSource)(&prior),
+			})
+		}
+
+		BeforeEach(func() {
+			userId = "1234567890"
+			clinicId = "60d1dc0eac5285751add8f82"
+			olderT = time.Now().Add(-2 * time.Hour)
+			newerT = time.Now().Add(-time.Hour)
+			repo.EXPECT().
+				ClinicIds(gomock.Any(), gomock.Eq(userId)).
+				Return([]string{clinicId}, nil)
+			clinicsService.EXPECT().
+				RefreshPatientCount(gomock.Any(), gomock.Eq(clinicId)).
+				Return(nil)
+		})
+
+		It("updates the primary device and clears issues when a source connects", func() {
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", LatestDataTime: &newerT},
+			}
+			gomock.InOrder(
+				repo.EXPECT().
+					List(gomock.Any(), gomock.Eq(&patients.Filter{UserId: &userId}),
+						gomock.Any(), gomock.Any()).
+					Return(&patients.ListResult{
+						Patients: []*patients.Patient{
+							{UserId: &userId, DataSources: &[]patients.DataSource{
+								{
+									ProviderName:   "dexcom",
+									State:          "disconnected",
+									LatestDataTime: &olderT,
+								},
+							}},
+						},
+						MatchingCount: 1,
+					}, nil),
+				repo.EXPECT().
+					UpdatePrimaryDeviceProviderName(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom")).
+					Return(nil),
+				repo.EXPECT().
+					ClearDeviceIssues(gomock.Any(), gomock.Eq(userId)).
+					Return(nil),
+				repo.EXPECT().
+					UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+					Return(nil),
+			)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("does not update the primary device or clear issues for a non-connected data source", func() {
+			expectPriorDataSources(patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", LatestDataTime: &olderT},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "disconnected"},
+			}
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("updates the primary device only for the newly connected source in a mixed set", func() {
+			expectPriorDataSources(patients.DataSources{
+				{ProviderName: "dexcom", State: "disconnected", LatestDataTime: &olderT},
+				{ProviderName: "abbott", State: "error"},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", LatestDataTime: &newerT},
+				{ProviderName: "abbott", State: "error"},
+			}
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePrimaryDeviceProviderName(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom")).
+				Return(nil)
+			repo.EXPECT().
+				ClearDeviceIssues(gomock.Any(), gomock.Eq(userId)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("skips a source that was already connected", func() {
+			expectPriorDataSources(patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", LatestDataTime: &olderT},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", LatestDataTime: &newerT},
+			}
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("updates the primary device to the newest connecting device", func() {
+			expectPriorDataSources(patients.DataSources{
+				{ProviderName: "dexcom", State: "disconnected"},
+				{ProviderName: "abbott", State: "disconnected"},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", ModifiedTime: &olderT},
+				{ProviderName: "abbott", State: "connected", ModifiedTime: &newerT},
+			}
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePrimaryDeviceProviderName(gomock.Any(), gomock.Eq(userId), gomock.Eq("abbott")).
+				Return(nil)
+			repo.EXPECT().
+				ClearDeviceIssues(gomock.Any(), gomock.Eq(userId)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("treats a source that was not previously present as a first-time connection", func() {
+			expectPriorPatient(patients.Patient{})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", LatestDataTime: &newerT},
+			}
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePrimaryDeviceProviderName(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom")).
+				Return(nil)
+			repo.EXPECT().
+				ClearDeviceIssues(gomock.Any(), gomock.Eq(userId)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("removes the erroring issue when the primary device transitions out of error", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("dexcom"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "dexcom", State: "error"},
+				},
+				DeviceIssues: patients.DeviceIssues{
+					Erroring: patients.DeviceIssue{EffectiveTime: olderT, ProviderId: "dexcom"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "disconnected"},
+			}
+			repo.EXPECT().
+				RemoveDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq(patients.DeviceIssueErroring)).
+				Return(nil)
+			repo.EXPECT().
+				CreateDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom"),
+					gomock.Eq(patients.DeviceIssueDisconnected)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("removes the disconnected issue when the primary device transitions out of disconnected", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("dexcom"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "dexcom", State: "disconnected"},
+				},
+				DeviceIssues: patients.DeviceIssues{
+					Disconnected: patients.DeviceIssue{EffectiveTime: olderT, ProviderId: "dexcom"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "error"},
+			}
+			repo.EXPECT().
+				RemoveDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq(patients.DeviceIssueDisconnected)).
+				Return(nil)
+			repo.EXPECT().
+				CreateDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom"),
+					gomock.Eq(patients.DeviceIssueErroring)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("does not remove issues when a non-primary device transitions out of error", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("abbott"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "abbott", State: "connected"},
+					{ProviderName: "dexcom", State: "error"},
+				},
+				DeviceIssues: patients.DeviceIssues{
+					Erroring: patients.DeviceIssue{EffectiveTime: olderT, ProviderId: "dexcom"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "abbott", State: "connected"},
+				{ProviderName: "dexcom", State: "disconnected"},
+			}
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("does not remove an issue the patient doesn't have", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("dexcom"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "dexcom", State: "error"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "disconnected"},
+			}
+			repo.EXPECT().
+				CreateDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom"),
+					gomock.Eq(patients.DeviceIssueDisconnected)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("removes the disconnected issue and clears all issues when the primary device reconnects", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("dexcom"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "dexcom", State: "disconnected"},
+				},
+				DeviceIssues: patients.DeviceIssues{
+					Disconnected: patients.DeviceIssue{EffectiveTime: olderT, ProviderId: "dexcom"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", ModifiedTime: &newerT},
+			}
+			repo.EXPECT().
+				UpdatePrimaryDeviceProviderName(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom")).
+				Return(nil)
+			repo.EXPECT().
+				ClearDeviceIssues(gomock.Any(), gomock.Eq(userId)).
+				Return(nil)
+			repo.EXPECT().
+				RemoveDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq(patients.DeviceIssueDisconnected)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("creates an erroring issue when the primary device transitions from connected to error", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("dexcom"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "dexcom", State: "connected"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "error"},
+			}
+			repo.EXPECT().
+				CreateDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom"),
+					gomock.Eq(patients.DeviceIssueErroring)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("creates a disconnected issue when the primary device transitions from connected to disconnected", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("dexcom"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "dexcom", State: "connected"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "disconnected"},
+			}
+			repo.EXPECT().
+				CreateDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom"),
+					gomock.Eq(patients.DeviceIssueDisconnected)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("does not create a device issue that already exists", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("dexcom"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "dexcom", State: "disconnected"},
+				},
+				DeviceIssues: patients.DeviceIssues{
+					Erroring:     patients.DeviceIssue{EffectiveTime: olderT, ProviderId: "dexcom"},
+					Disconnected: patients.DeviceIssue{EffectiveTime: olderT, ProviderId: "dexcom"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "error"},
+			}
+			repo.EXPECT().
+				RemoveDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq(patients.DeviceIssueDisconnected)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("removes the erroring issue and clears all issues when the primary device reconnects", func() {
+			expectPriorPatient(patients.Patient{
+				PrimaryDeviceProviderName: Ptr("dexcom"),
+				DataSources: &[]patients.DataSource{
+					{ProviderName: "dexcom", State: "error"},
+				},
+				DeviceIssues: patients.DeviceIssues{
+					Erroring: patients.DeviceIssue{EffectiveTime: olderT, ProviderId: "dexcom"},
+				},
+			})
+			dataSources := &patients.DataSources{
+				{ProviderName: "dexcom", State: "connected", ModifiedTime: &newerT},
+			}
+			repo.EXPECT().
+				UpdatePrimaryDeviceProviderName(gomock.Any(), gomock.Eq(userId), gomock.Eq("dexcom")).
+				Return(nil)
+			repo.EXPECT().
+				ClearDeviceIssues(gomock.Any(), gomock.Eq(userId)).
+				Return(nil)
+			repo.EXPECT().
+				RemoveDeviceIssue(gomock.Any(), gomock.Eq(userId), gomock.Eq(patients.DeviceIssueErroring)).
+				Return(nil)
+			repo.EXPECT().
+				UpdatePatientDataSources(gomock.Any(), gomock.Eq(userId), gomock.Eq(dataSources)).
+				Return(nil)
+
+			err := service.UpdatePatientDataSources(context.Background(), userId, dataSources)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+	})
 })
 
 func patientSitesMatch(expectedSites []sites.Site) func(patients.PatientUpdate) bool {

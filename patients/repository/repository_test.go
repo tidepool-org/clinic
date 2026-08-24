@@ -30,6 +30,7 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/pointer"
 	"github.com/tidepool-org/clinic/sites"
 	sitesTest "github.com/tidepool-org/clinic/sites/test"
 	"github.com/tidepool-org/clinic/store"
@@ -1719,6 +1720,229 @@ var _ = Describe("Patients Repository", func() {
 
 				Expect(found).To(BeTrue())
 			})
+
+			Context("with a patient that has device issues", func() {
+				var clinicId string
+				BeforeEach(func() {
+					clinicId = randomPatient.ClinicId.Hex()
+					withIssue := patientsTest.RandomPatient()
+					withIssue.ClinicId = randomPatient.ClinicId
+					withIssue.DeviceIssues = patients.DeviceIssues{
+						Disconnected: patients.DeviceIssue{
+							EffectiveTime: time.Now(),
+							ProviderId:    "dexcom",
+							Hidden:        time.Now(),
+						},
+						StaleData: patients.DeviceIssue{
+							EffectiveTime: time.Now(),
+							ProviderId:    "abbott",
+						},
+					}
+					_, err := repo.Create(context.Background(), withIssue)
+					Expect(err).To(Succeed())
+				})
+
+				AfterEach(func() {
+					selector := primitive.M{
+						"$or": bson.A{
+							bson.M{"deviceIssues.disconnected": bson.M{"$exists": true}},
+							bson.M{"deviceIssues.staleData": bson.M{"$exists": true}},
+						},
+					}
+					result, err := collection.DeleteMany(context.Background(), selector)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(int(result.DeletedCount)).To(Equal(1))
+				})
+
+				It("supports filtering by device issue name", func() {
+					deviceIssues := []string{"staleData"}
+					filter := patients.Filter{
+						ClinicId:     &clinicId,
+						DeviceIssues: &deviceIssues,
+					}
+					pagination := store.Pagination{
+						Offset: 0,
+						Limit:  count * 2,
+					}
+					result, err := repo.List(context.Background(), &filter, pagination, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result.Patients).To(HaveLen(1))
+
+					for _, patient := range result.Patients {
+						Expect(patient.DeviceIssues).ToNot(BeNil())
+						Expect(patient.DeviceIssues.StaleData.EffectiveTime).ToNot(BeZero())
+					}
+				})
+
+				It("omits hidden issues, when specified", func() {
+					deviceIssues := []string{
+						"disconnected", "staleData",
+					}
+					filter := patients.Filter{
+						ClinicId:               &clinicId,
+						DeviceIssues:           &deviceIssues,
+						OmitHiddenDeviceIssues: pointer.FromAny(true),
+					}
+					pagination := store.Pagination{
+						Offset: 0,
+						Limit:  count * 2,
+					}
+					result, err := repo.List(context.Background(), &filter, pagination, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result.Patients).To(HaveLen(1))
+
+					for _, patient := range result.Patients {
+						Expect(patient.DeviceIssues).ToNot(BeNil())
+						Expect(patient.DeviceIssues.Disconnected.EffectiveTime).To(BeZero())
+						Expect(patient.DeviceIssues.StaleData.EffectiveTime).ToNot(BeZero())
+					}
+				})
+
+				Context("when omitting hidden device issues", func() {
+					It("excludes patients whose device issue is hidden", func() {
+						// With OmitHiddenDeviceIssues=true, the redaction pass prunes that
+						// issue and the subsequent match on deviceIssues.disconnected
+						// removes the patient entirely.
+						deviceIssues := []string{"disconnected"}
+						filter := patients.Filter{
+							ClinicId:               &clinicId,
+							DeviceIssues:           &deviceIssues,
+							OmitHiddenDeviceIssues: pointer.FromAny(true),
+						}
+						pagination := store.DefaultPagination()
+						result, err := repo.List(context.Background(), &filter, pagination,
+							nil)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(result.Patients).To(BeEmpty())
+					})
+				})
+
+				Context("when NOT omitting hidden device issues", func() {
+					It("includes patients whose device issue is hidden", func() {
+						deviceIssues := []string{"disconnected"}
+						filter := patients.Filter{
+							ClinicId:     &clinicId,
+							DeviceIssues: &deviceIssues,
+						}
+						pagination := store.DefaultPagination()
+						result, err := repo.List(context.Background(), &filter, pagination,
+							nil)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(result.Patients).To(HaveLen(1))
+						Expect(result.Patients[0].DeviceIssues.Disconnected.EffectiveTime).
+							ToNot(BeZero())
+						Expect(result.Patients[0].DeviceIssues.Disconnected.Hidden.IsZero()).
+							To(BeFalse())
+					})
+				})
+			})
+
+			Context("with patients having distinct device issues", func() {
+				var clinicId string
+				var disconnectedPatientId primitive.ObjectID
+				var erroringPatientId primitive.ObjectID
+				var staleDataPatientId primitive.ObjectID
+
+				BeforeEach(func() {
+					clinicId = randomPatient.ClinicId.Hex()
+
+					disconnected := patientsTest.RandomPatient()
+					disconnected.ClinicId = randomPatient.ClinicId
+					disconnected.DeviceIssues = patients.DeviceIssues{
+						Disconnected: patients.DeviceIssue{
+							EffectiveTime: time.Now(),
+							ProviderId:    "dexcom",
+						},
+					}
+					created, err := repo.Create(context.Background(), disconnected)
+					Expect(err).To(Succeed())
+					disconnectedPatientId = *created.Id
+
+					erroring := patientsTest.RandomPatient()
+					erroring.ClinicId = randomPatient.ClinicId
+					erroring.DeviceIssues = patients.DeviceIssues{
+						Erroring: patients.DeviceIssue{
+							EffectiveTime: time.Now(),
+							ProviderId:    "dexcom",
+						},
+					}
+					created, err = repo.Create(context.Background(), erroring)
+					Expect(err).To(Succeed())
+					erroringPatientId = *created.Id
+
+					staleData := patientsTest.RandomPatient()
+					staleData.ClinicId = randomPatient.ClinicId
+					staleData.DeviceIssues = patients.DeviceIssues{
+						StaleData: patients.DeviceIssue{
+							EffectiveTime: time.Now(),
+							ProviderId:    "abbott",
+						},
+					}
+					created, err = repo.Create(context.Background(), staleData)
+					Expect(err).To(Succeed())
+					staleDataPatientId = *created.Id
+				})
+
+				AfterEach(func() {
+					selector := bson.M{"_id": bson.M{"$in": bson.A{
+						disconnectedPatientId, erroringPatientId, staleDataPatientId,
+					}}}
+					_, err := collection.DeleteMany(context.Background(), selector)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("returns only patients with a disconnected device issue when filtering by disconnected", func() {
+					deviceIssues := []string{"disconnected"}
+					filter := patients.Filter{
+						ClinicId:     &clinicId,
+						DeviceIssues: &deviceIssues,
+					}
+					pagination := store.DefaultPagination()
+					result, err := repo.List(context.Background(), &filter, pagination, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result.Patients).To(HaveLen(1))
+					Expect(result.Patients[0].Id.Hex()).To(Equal(disconnectedPatientId.Hex()))
+					Expect(result.Patients[0].DeviceIssues.Disconnected.EffectiveTime).ToNot(BeZero())
+					Expect(result.Patients[0].DeviceIssues.Erroring.IsZero()).To(BeTrue())
+					Expect(result.Patients[0].DeviceIssues.StaleData.IsZero()).To(BeTrue())
+				})
+
+				It("returns only patients with an erroring device issue when filtering by erroring", func() {
+					deviceIssues := []string{"erroring"}
+					filter := patients.Filter{
+						ClinicId:     &clinicId,
+						DeviceIssues: &deviceIssues,
+					}
+					pagination := store.DefaultPagination()
+					result, err := repo.List(context.Background(), &filter, pagination, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result.Patients).To(HaveLen(1))
+					Expect(result.Patients[0].Id.Hex()).To(Equal(erroringPatientId.Hex()))
+					Expect(result.Patients[0].DeviceIssues.Erroring.EffectiveTime).ToNot(BeZero())
+					Expect(result.Patients[0].DeviceIssues.Disconnected).To(BeZero())
+					Expect(result.Patients[0].DeviceIssues.StaleData).To(BeZero())
+				})
+
+				It("returns patients matching any of the requested device issue types", func() {
+					deviceIssues := []string{"disconnected", "erroring"}
+					filter := patients.Filter{
+						ClinicId:     &clinicId,
+						DeviceIssues: &deviceIssues,
+					}
+					pagination := store.DefaultPagination()
+					result, err := repo.List(context.Background(), &filter, pagination, nil)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result.Patients).To(HaveLen(2))
+
+					returnedIds := map[string]bool{}
+					for _, patient := range result.Patients {
+						returnedIds[patient.Id.Hex()] = true
+					}
+					Expect(returnedIds).To(HaveKey(disconnectedPatientId.Hex()))
+					Expect(returnedIds).To(HaveKey(erroringPatientId.Hex()))
+					Expect(returnedIds).ToNot(HaveKey(staleDataPatientId.Hex()))
+				})
+			})
 		})
 
 		Describe("Update Permissions", func() {
@@ -1915,6 +2139,164 @@ var _ = Describe("Patients Repository", func() {
 				Expect(dexcom[1].ProviderName).To(BeComparableTo(request.ProviderName))
 
 				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			It("adds a request for a provider the patient has no data source for", func() {
+				request := patients.ConnectionRequest{
+					ProviderName: patients.AbbottDataSourceProviderName,
+					CreatedTime:  time.Now().Truncate(time.Millisecond),
+				}
+
+				err := repo.AddProviderConnectionRequest(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.ProviderConnectionRequests).To(HaveKey("abbott"))
+				Expect(patient.ProviderConnectionRequests["abbott"]).To(HaveLen(1))
+			})
+
+			It("returns ErrNotFound for a non-existent patient", func() {
+				request := patients.ConnectionRequest{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					CreatedTime:  time.Now().Truncate(time.Millisecond),
+				}
+
+				err := repo.AddProviderConnectionRequest(context.Background(),
+					randomPatient.ClinicId.Hex(), "nonexistent-user", request)
+				Expect(err).To(MatchError(patients.ErrNotFound))
+			})
+
+			It("prepends the most recent request", func() {
+				older := patients.ConnectionRequest{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					CreatedTime:  time.Now().Add(-time.Hour).Truncate(time.Millisecond),
+				}
+				newer := patients.ConnectionRequest{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					CreatedTime:  time.Now().Truncate(time.Millisecond),
+				}
+
+				Expect(repo.AddProviderConnectionRequest(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId, older)).To(Succeed())
+				Expect(repo.AddProviderConnectionRequest(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId, newer)).To(Succeed())
+
+				patient, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				dexcom := patient.ProviderConnectionRequests["dexcom"]
+				Expect(dexcom).To(HaveLen(2))
+				// $position: 0 stores the most recently pushed request first.
+				Expect(dexcom[0].CreatedTime).To(BeTemporally("~", newer.CreatedTime, time.Millisecond))
+				Expect(dexcom[1].CreatedTime).To(BeTemporally("~", older.CreatedTime, time.Millisecond))
+			})
+		})
+
+		Describe("ClearDeviceIssues", func() {
+			It("removes an existing device issues subdocument and bumps updatedTime", func() {
+				patientBefore, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = collection.UpdateOne(context.Background(),
+					bson.M{"userId": *randomPatient.UserId},
+					bson.M{"$set": bson.M{
+						"deviceIssues.disconnected.effectiveTime": time.Now(),
+						"deviceIssues.disconnected.providerId":    "dexcom",
+					}})
+				Expect(err).ToNot(HaveOccurred())
+
+				err = repo.ClearDeviceIssues(context.Background(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.DeviceIssues.IsZero()).To(BeTrue())
+				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			It("clears device issues from every patient record of a user in multiple clinics", func() {
+				otherClinicPatient := patientsTest.RandomPatient()
+				otherClinicPatient.UserId = randomPatient.UserId
+
+				result, err := collection.InsertOne(context.Background(), otherClinicPatient)
+				Expect(err).ToNot(HaveOccurred())
+				allPatientIds = append(allPatientIds, result.InsertedID)
+				count += 1
+
+				_, err = collection.UpdateMany(context.Background(),
+					bson.M{"userId": *randomPatient.UserId},
+					bson.M{"$set": bson.M{
+						"deviceIssues.disconnected.effectiveTime": time.Now(),
+						"deviceIssues.disconnected.providerId":    "dexcom",
+					}})
+				Expect(err).ToNot(HaveOccurred())
+
+				err = repo.ClearDeviceIssues(context.Background(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				for _, id := range []primitive.ObjectID{*randomPatient.ClinicId, *otherClinicPatient.ClinicId} {
+					patient, err := repo.Get(context.Background(),
+						id.Hex(), *randomPatient.UserId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(patient.DeviceIssues.IsZero()).To(BeTrue())
+				}
+			})
+
+			It("returns ErrNotFound for an unknown user", func() {
+				err := repo.ClearDeviceIssues(context.Background(), "nonexistent-user")
+				Expect(err).To(MatchError(patients.ErrNotFound))
+			})
+		})
+
+		Describe("UpdatePrimaryDeviceProviderName", func() {
+			It("sets the primary device provider name and bumps updatedTime", func() {
+				patientBefore, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = repo.UpdatePrimaryDeviceProviderName(context.Background(),
+					*randomPatient.UserId, "dexcom")
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.PrimaryDeviceProviderName).ToNot(BeNil())
+				Expect(*patient.PrimaryDeviceProviderName).To(Equal("dexcom"))
+				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			It("updates every patient record of a user in multiple clinics", func() {
+				otherClinicPatient := patientsTest.RandomPatient()
+				otherClinicPatient.UserId = randomPatient.UserId
+
+				result, err := collection.InsertOne(context.Background(), otherClinicPatient)
+				Expect(err).ToNot(HaveOccurred())
+				allPatientIds = append(allPatientIds, result.InsertedID)
+				count += 1
+
+				err = repo.UpdatePrimaryDeviceProviderName(context.Background(),
+					*randomPatient.UserId, "dexcom")
+				Expect(err).ToNot(HaveOccurred())
+
+				for _, id := range []primitive.ObjectID{*randomPatient.ClinicId, *otherClinicPatient.ClinicId} {
+					patient, err := repo.Get(context.Background(),
+						id.Hex(), *randomPatient.UserId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(patient.PrimaryDeviceProviderName).ToNot(BeNil())
+					Expect(*patient.PrimaryDeviceProviderName).To(Equal("dexcom"))
+				}
+			})
+
+			It("returns ErrNotFound for an unknown user", func() {
+				err := repo.UpdatePrimaryDeviceProviderName(context.Background(),
+					"nonexistent-user", "dexcom")
+				Expect(err).To(MatchError(patients.ErrNotFound))
 			})
 		})
 

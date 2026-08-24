@@ -87,6 +87,20 @@ func (mr *MockServiceMockRecorder) AssignPatientTagToClinicPatients(ctx, clinicI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockService)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
 }
 
+// ClearDeviceIssues mocks base method.
+func (m *MockService) ClearDeviceIssues(ctx context.Context, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearDeviceIssues", ctx, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearDeviceIssues indicates an expected call of ClearDeviceIssues.
+func (mr *MockServiceMockRecorder) ClearDeviceIssues(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearDeviceIssues", reflect.TypeOf((*MockService)(nil).ClearDeviceIssues), ctx, userId)
+}
+
 // ConvertPatientTagToSite mocks base method.
 func (m *MockService) ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error {
 	m.ctrl.T.Helper()
@@ -348,6 +362,20 @@ func (mr *MockServiceMockRecorder) Update(ctx, update any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockService)(nil).Update), ctx, update)
 }
 
+// UpdateDeviceIssues mocks base method.
+func (m *MockService) UpdateDeviceIssues(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDeviceIssues", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDeviceIssues indicates an expected call of UpdateDeviceIssues.
+func (mr *MockServiceMockRecorder) UpdateDeviceIssues(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeviceIssues", reflect.TypeOf((*MockService)(nil).UpdateDeviceIssues), ctx)
+}
+
 // UpdateEHRSubscription mocks base method.
 func (m *MockService) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {
 	m.ctrl.T.Helper()
@@ -418,6 +446,20 @@ func (m *MockService) UpdatePermissions(ctx context.Context, clinicId, userId st
 func (mr *MockServiceMockRecorder) UpdatePermissions(ctx, clinicId, userId, permissions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockService)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
+}
+
+// UpdatePrimaryDeviceProviderName mocks base method.
+func (m *MockService) UpdatePrimaryDeviceProviderName(ctx context.Context, userId, providerName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePrimaryDeviceProviderName", ctx, userId, providerName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePrimaryDeviceProviderName indicates an expected call of UpdatePrimaryDeviceProviderName.
+func (mr *MockServiceMockRecorder) UpdatePrimaryDeviceProviderName(ctx, userId, providerName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePrimaryDeviceProviderName", reflect.TypeOf((*MockService)(nil).UpdatePrimaryDeviceProviderName), ctx, userId, providerName)
 }
 
 // UpdateSites mocks base method.
@@ -515,6 +557,20 @@ func (mr *MockRepositoryMockRecorder) AssignPatientTagToClinicPatients(ctx, clin
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignPatientTagToClinicPatients", reflect.TypeOf((*MockRepository)(nil).AssignPatientTagToClinicPatients), ctx, clinicId, tagId, patientIds)
 }
 
+// ClearDeviceIssues mocks base method.
+func (m *MockRepository) ClearDeviceIssues(ctx context.Context, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearDeviceIssues", ctx, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearDeviceIssues indicates an expected call of ClearDeviceIssues.
+func (mr *MockRepositoryMockRecorder) ClearDeviceIssues(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearDeviceIssues", reflect.TypeOf((*MockRepository)(nil).ClearDeviceIssues), ctx, userId)
+}
+
 // ClinicIds mocks base method.
 func (m *MockRepository) ClinicIds(ctx context.Context, userId string) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -587,6 +643,20 @@ func (m *MockRepository) Create(ctx context.Context, patient patients.Patient) (
 func (mr *MockRepositoryMockRecorder) Create(ctx, patient any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepository)(nil).Create), ctx, patient)
+}
+
+// CreateDeviceIssue mocks base method.
+func (m *MockRepository) CreateDeviceIssue(ctx context.Context, userId, providerName, issue string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateDeviceIssue", ctx, userId, providerName, issue)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateDeviceIssue indicates an expected call of CreateDeviceIssue.
+func (mr *MockRepositoryMockRecorder) CreateDeviceIssue(ctx, userId, providerName, issue any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDeviceIssue", reflect.TypeOf((*MockRepository)(nil).CreateDeviceIssue), ctx, userId, providerName, issue)
 }
 
 // DeleteFromAllClinics mocks base method.
@@ -748,6 +818,20 @@ func (mr *MockRepositoryMockRecorder) Remove(ctx, clinicId, userId, metadata any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockRepository)(nil).Remove), ctx, clinicId, userId, metadata)
 }
 
+// RemoveDeviceIssue mocks base method.
+func (m *MockRepository) RemoveDeviceIssue(ctx context.Context, userId, issue string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveDeviceIssue", ctx, userId, issue)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveDeviceIssue indicates an expected call of RemoveDeviceIssue.
+func (mr *MockRepositoryMockRecorder) RemoveDeviceIssue(ctx, userId, issue any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeviceIssue", reflect.TypeOf((*MockRepository)(nil).RemoveDeviceIssue), ctx, userId, issue)
+}
+
 // RescheduleLastSubscriptionOrderForAllPatients mocks base method.
 func (m *MockRepository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {
 	m.ctrl.T.Helper()
@@ -804,6 +888,20 @@ func (m *MockRepository) Update(ctx context.Context, update patients.PatientUpda
 func (mr *MockRepositoryMockRecorder) Update(ctx, update any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepository)(nil).Update), ctx, update)
+}
+
+// UpdateDeviceIssues mocks base method.
+func (m *MockRepository) UpdateDeviceIssues(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDeviceIssues", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDeviceIssues indicates an expected call of UpdateDeviceIssues.
+func (mr *MockRepositoryMockRecorder) UpdateDeviceIssues(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeviceIssues", reflect.TypeOf((*MockRepository)(nil).UpdateDeviceIssues), ctx)
 }
 
 // UpdateEHRSubscription mocks base method.
@@ -876,6 +974,20 @@ func (m *MockRepository) UpdatePermissions(ctx context.Context, clinicId, userId
 func (mr *MockRepositoryMockRecorder) UpdatePermissions(ctx, clinicId, userId, permissions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePermissions", reflect.TypeOf((*MockRepository)(nil).UpdatePermissions), ctx, clinicId, userId, permissions)
+}
+
+// UpdatePrimaryDeviceProviderName mocks base method.
+func (m *MockRepository) UpdatePrimaryDeviceProviderName(ctx context.Context, userId, providerName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePrimaryDeviceProviderName", ctx, userId, providerName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePrimaryDeviceProviderName indicates an expected call of UpdatePrimaryDeviceProviderName.
+func (mr *MockRepositoryMockRecorder) UpdatePrimaryDeviceProviderName(ctx, userId, providerName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePrimaryDeviceProviderName", reflect.TypeOf((*MockRepository)(nil).UpdatePrimaryDeviceProviderName), ctx, userId, providerName)
 }
 
 // UpdateSites mocks base method.

@@ -420,6 +420,16 @@ func (r *repository) List(ctx context.Context, filter *patients.Filter, paginati
 	if filter.ExcludeSummaryExceptFieldsInMergeReports {
 		pipeline = append(pipeline, excludeSummaryExceptFieldsInMergeReports()...)
 	}
+	if filter.OmitHiddenDeviceIssues != nil && *filter.OmitHiddenDeviceIssues {
+		pipeline = append(pipeline, omitHiddenDeviceIssues())
+	}
+	if filter.DeviceIssues != nil && len(*filter.DeviceIssues) > 0 {
+		// In generateListFilterQuery, we removed patients without any devices issues, then
+		// in omitHiddenDeviceIssues, we redacted those device issues that are hidden, but
+		// now we need another pass to remove patients that no longer have any device issues
+		// after the redaction performed in omitHiddenDeviceIssues.
+		pipeline = append(pipeline, matchDeviceIssues(*filter.DeviceIssues))
+	}
 	pipeline = append(pipeline, bson.M{"$sort": generateListSortStage(sorts)})
 	pipeline = append(pipeline, generatePaginationFacetStages(pagination)...)
 
@@ -475,6 +485,38 @@ func excludeSummaryExceptFieldsInMergeReports() []bson.M {
 	}})
 	out = append(out, bson.M{"$unset": []string{"__tmp_bgm__", "__tmp_cgm__"}})
 	return out
+}
+
+func matchDeviceIssues(deviceIssues []string) bson.M {
+	issues := bson.A{}
+	for _, issue := range deviceIssues {
+		issues = append(issues, bson.M{"deviceIssues." + issue: bson.M{
+			"$exists": true,
+		}})
+	}
+	return bson.M{
+		"$match": bson.M{"$or": issues},
+	}
+}
+
+func omitHiddenDeviceIssues() bson.M {
+	return bson.M{
+		"$redact": bson.M{
+			"$cond": bson.M{
+				"if": bson.M{
+					"$and": bson.A{
+						// Use providerID and effectiveId to ensure that we don't prune some
+						// random other subdocument that happens to have a hidden property.
+						bson.M{"$gt": bson.A{"$hidden", time.Unix(0, 0)}},
+						bson.M{"$ne": bson.A{"$providerId", ""}},
+						bson.M{"$ne": bson.A{"$effectiveTime", time.Unix(0, 0)}},
+					},
+				},
+				"then": "$$PRUNE",
+				"else": "$$DESCEND",
+			},
+		},
+	}
 }
 
 func (r *repository) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
@@ -1259,6 +1301,16 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 			// adaStandard is the default glycemicRanges---include patients with no setting
 			bson.M{"glycemicRanges": bson.M{"$exists": 0}},
 		})
+	}
+
+	if filter.DeviceIssues != nil && len(*filter.DeviceIssues) > 0 {
+		issues := bson.A{}
+		for _, issue := range *filter.DeviceIssues {
+			issues = append(issues, bson.M{"deviceIssues." + issue: bson.M{
+				"$exists": true,
+			}})
+		}
+		orSelectors = append(orSelectors, issues)
 	}
 
 	if filter.LastReviewed != nil {
@@ -2138,4 +2190,642 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 
 func strp(s string) *string {
 	return &s
+}
+
+const staleDataThreshold = 48 * time.Hour
+const staleInvitationThreshold = 48 * time.Hour
+
+func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
+	if err := r.removeResolvedDeviceIssues(ctx); err != nil {
+		r.logger.Errorw("unable to remove resolved device issues", "error", err)
+		return err
+	}
+
+	models := []mongo.WriteModel{}
+
+	staleDataPatients, err := r.patientsWithStaleData(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with stale data", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildStaleDataModels(staleDataPatients))
+
+	expiredPatients, err := r.patientsWithExpiredConnectionInvitations(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with expired invitations", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildExpiredConnectionInvitationModels(expiredPatients))
+
+	staleInvitePatients, err := r.patientsWithStaleConnectionInvitations(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with stale invitations", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildStaleConnectionInvitationModels(staleInvitePatients))
+
+	disconnectedPatients, err := r.patientsWithDisconnectedDevices(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with disconnected devices", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildDisconnectedDeviceModels(disconnectedPatients))
+
+	erroringPatients, err := r.patientsWithErroringDevices(ctx)
+	if err != nil {
+		r.logger.Errorw("unable to find patients with erroring devices", "error", err)
+		return err // TODO logging or erroring?
+	}
+	models = slices.Concat(models, buildErroringDeviceModels(erroringPatients))
+
+	if len(models) == 0 {
+		r.logger.Info("no patient device issues found")
+		return nil
+	}
+
+	_, err = r.collection.BulkWrite(ctx, models)
+	if err != nil {
+		return fmt.Errorf("bulk writing patien device issues: %s", err)
+	}
+
+	return nil
+}
+
+func (r *repository) removeResolvedDeviceIssues(ctx context.Context) error {
+	resolved := []struct {
+		issue string
+		state string
+	}{
+		{issue: "disconnected", state: "disconnected"},
+		{issue: "erroring", state: "error"},
+	}
+	for _, res := range resolved {
+		filter := bson.M{
+			"deviceIssues." + res.issue: bson.M{"$exists": true},
+			"dataSources": bson.M{
+				"$not": bson.M{"$elemMatch": bson.M{"state": res.state}},
+			},
+		}
+		update := bson.M{"$unset": bson.M{"deviceIssues." + res.issue: ""}}
+		if _, err := r.collection.UpdateMany(ctx, filter, update); err != nil {
+			return fmt.Errorf("removing resolved %s device issues: %w", res.issue, err)
+		}
+	}
+
+	// The removal of stale data device issues is, and should be, handled when the data
+	// source is updated, but until there are problems with the runtime of the
+	// UpdateDeviceIssues endpoint, we can check here as well for extra safety.
+	return r.removeResolvedStaleDataDeviceIssues(ctx)
+}
+
+func (r *repository) removeResolvedStaleDataDeviceIssues(ctx context.Context) error {
+	filter := bson.M{
+		"deviceIssues.staleData": bson.M{"$exists": true},
+		"$expr": bson.M{
+			"$anyElementTrue": bson.M{
+				"$map": bson.M{
+					"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+					"as":    "ds",
+					"in": bson.M{
+						"$and": bson.A{
+							bson.M{"$eq": bson.A{"$$ds.providerName", "$primaryDeviceProviderName"}},
+							bson.M{"$gt": bson.A{"$$ds.latestDataTime", time.Now().Add(-staleDataThreshold)}},
+						},
+					},
+				},
+			},
+		},
+	}
+	update := bson.M{"$unset": bson.M{"deviceIssues.staleData": ""}}
+	if _, err := r.collection.UpdateMany(ctx, filter, update); err != nil {
+		return fmt.Errorf("removing resolved staleData device issues: %w", err)
+	}
+	return nil
+}
+
+func buildStaleDataModels(staleDataPatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
+	for _, patient := range staleDataPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if patient.PrimaryDeviceProviderName != nil &&
+				src.ProviderName != *patient.PrimaryDeviceProviderName {
+				continue
+			}
+			if src.State != "connected" {
+				continue
+			}
+			if src.LatestDataTime == nil {
+				continue
+			}
+			if src.LatestDataTime.After(time.Now().Add(-staleDataThreshold)) {
+				continue
+			}
+			if newest != nil && src.LatestDataTime.Before(*newest.LatestDataTime) {
+				continue
+			}
+			newest = &src
+		}
+
+		if newest == nil {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.staleData.effectiveTime": newest.LatestDataTime.Add(staleDataThreshold),
+				"deviceIssues.staleData.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
+func buildExpiredConnectionInvitationModels(expiredPatients []patients.Patient) (
+	_ []mongo.WriteModel) {
+
+	now := time.Now()
+	keep := []mongo.WriteModel{}
+	for _, patient := range expiredPatients {
+		var newest *patients.ConnectionRequest
+
+		for _, pcrs := range patient.ProviderConnectionRequests {
+			for _, pcr := range pcrs {
+				if pcr.ExpirationTime.IsZero() || pcr.ExpirationTime.After(now) {
+					continue
+				}
+				if newest != nil && pcr.ExpirationTime.Before(newest.ExpirationTime) {
+					continue
+				}
+				newest = &pcr
+			}
+		}
+
+		if newest == nil {
+			continue
+		}
+		if patient.PrimaryDeviceProviderName != nil &&
+			*patient.PrimaryDeviceProviderName != newest.ProviderName {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.expiredConnectionInvitation.effectiveTime": newest.ExpirationTime,
+				"deviceIssues.expiredConnectionInvitation.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
+func buildStaleConnectionInvitationModels(staleInvitePatients []patients.Patient) (
+	_ []mongo.WriteModel) {
+
+	keep := []mongo.WriteModel{}
+	now := time.Now()
+	for _, patient := range staleInvitePatients {
+		var newest *patients.ConnectionRequest
+
+		for _, pcrs := range patient.ProviderConnectionRequests {
+			for _, pcr := range pcrs {
+				if pcr.CreatedTime.Add(staleInvitationThreshold).After(now) {
+					continue // it's not stale yet
+				}
+				if newest != nil && pcr.CreatedTime.Before(newest.CreatedTime) {
+					continue
+				}
+				newest = &pcr
+			}
+		}
+
+		if newest == nil {
+			continue
+		}
+		if patient.PrimaryDeviceProviderName != nil &&
+			*patient.PrimaryDeviceProviderName != newest.ProviderName {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			// Set individual fields rather than the whole subdocument so that an
+			// existing "hidden" dismissal is preserved when the same issue is
+			// re-detected.
+			"$set": bson.M{
+				"deviceIssues.staleConnectionInvitation.effectiveTime": newest.CreatedTime.Add(staleInvitationThreshold),
+				"deviceIssues.staleConnectionInvitation.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
+func buildDisconnectedDeviceModels(expiredPatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
+	for _, patient := range expiredPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if src.State != "disconnected" {
+				continue
+			}
+			if src.ModifiedTime == nil {
+				continue
+			}
+			if newest != nil && src.ModifiedTime.Before(*newest.ModifiedTime) {
+				continue
+			}
+			newest = &src
+		}
+
+		if newest == nil {
+			continue
+		}
+		if patient.PrimaryDeviceProviderName != nil &&
+			*patient.PrimaryDeviceProviderName != newest.ProviderName {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.disconnected.effectiveTime": newest.ModifiedTime,
+				"deviceIssues.disconnected.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
+func buildErroringDeviceModels(expiredPatients []patients.Patient) []mongo.WriteModel {
+	keep := []mongo.WriteModel{}
+	for _, patient := range expiredPatients {
+		var newest *patients.DataSource
+		for _, src := range *patient.DataSources {
+			if src.State != "error" {
+				continue
+			}
+			if src.ModifiedTime == nil {
+				continue
+			}
+			if newest != nil && src.ModifiedTime.Before(*newest.ModifiedTime) {
+				continue
+			}
+			newest = &src
+		}
+
+		if newest == nil {
+			continue
+		}
+		if patient.PrimaryDeviceProviderName != nil &&
+			*patient.PrimaryDeviceProviderName != newest.ProviderName {
+			continue
+		}
+
+		filter := bson.M{"_id": *patient.Id}
+		update := bson.M{
+			"$set": bson.M{
+				"deviceIssues.erroring.effectiveTime": newest.ModifiedTime,
+				"deviceIssues.erroring.providerId":    newest.ProviderName,
+			},
+		}
+		keep = append(keep, &mongo.UpdateOneModel{
+			Filter: filter,
+			Update: update,
+		})
+	}
+
+	return keep
+}
+
+func (r *repository) patientsWithStaleData(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	cutoff := time.Now().Add(-staleDataThreshold)
+	filter := bson.M{
+		"$or": bson.A{
+			// Patients without a primary device match on any stale connected data source.
+			bson.M{
+				"primaryDeviceProviderName": nil,
+				"dataSources": bson.M{
+					"$elemMatch": bson.M{
+						"latestDataTime": bson.M{"$lt": cutoff},
+						"state":          "connected",
+					},
+				},
+			},
+			// Patients with a primary device match only on that device's data source.
+			bson.M{
+				"primaryDeviceProviderName": bson.M{"$ne": nil},
+				"$expr": bson.M{
+					"$anyElementTrue": bson.M{
+						"$map": bson.M{
+							"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+							"as":    "ds",
+							"in": bson.M{
+								"$and": bson.A{
+									bson.M{"$eq": bson.A{"$$ds.providerName", "$primaryDeviceProviderName"}},
+									bson.M{"$eq": bson.A{"$$ds.state", "connected"}},
+									// Unlike the query operator $lt above, the aggregation
+									// $lt considers a missing latestDataTime to be less
+									// than any date, so guard on the type.
+									bson.M{"$eq": bson.A{bson.M{"$type": "$$ds.latestDataTime"}, "date"}},
+									bson.M{"$lt": bson.A{"$$ds.latestDataTime", cutoff}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with stale data: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with stale data: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) patientsWithExpiredConnectionInvitations(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	allExpired := bson.M{
+		"$all": bson.A{
+			bson.M{
+				"$elemMatch": bson.M{
+					"expirationTime": bson.M{"$lt": time.Now()},
+				},
+			},
+		},
+	}
+	orSelectors := bson.A{}
+	for _, provider := range patients.DataSourceProviderNames {
+		orSelectors = append(orSelectors, bson.M{"providerConnectionRequests." + provider: allExpired})
+	}
+	filter := bson.M{"$or": orSelectors}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with expired invitations: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with expired invitations: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) patientsWithStaleConnectionInvitations(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	now := time.Now()
+	orSelectors := bson.A{}
+	for _, provider := range patients.DataSourceProviderNames {
+		orSelectors = append(orSelectors, staleConnectionInvitationProviderFilter(provider, now))
+	}
+	filter := bson.M{"$or": orSelectors}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with stale invitations: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with stale invitations: %s", err)
+	}
+	return patients, nil
+}
+
+func staleConnectionInvitationProviderFilter(provider string, t time.Time) bson.M {
+	return bson.M{
+		"providerConnectionRequests." + provider: bson.M{
+			"$all": bson.A{
+				bson.M{
+					"$elemMatch": bson.M{
+						"createdTime": bson.M{"$lt": t.Add(-staleInvitationThreshold)},
+					},
+				},
+			},
+		},
+	}
+}
+
+func (r *repository) patientsWithDisconnectedDevices(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	filter := bson.M{
+		"$expr": bson.M{
+			"$anyElementTrue": bson.M{
+				"$map": bson.M{
+					"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+					"as":    "ds",
+					"in": bson.M{
+						"$and": bson.A{
+							bson.M{"$eq": bson.A{"$$ds.state", "disconnected"}},
+							bson.M{"$or": bson.A{
+								bson.M{"$ne": bson.A{"$deviceIssues.disconnected.providerId", "$$ds.providerName"}},
+								bson.M{"$lte": bson.A{
+									bson.M{"$ifNull": bson.A{"$deviceIssues.disconnected.hidden", time.Unix(0, 0)}},
+									time.Unix(0, 0),
+								}},
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with disconnected devices: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with disconnected devices: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) patientsWithErroringDevices(ctx context.Context) (
+	[]patients.Patient, error) {
+
+	filter := bson.M{
+		"$expr": bson.M{
+			"$anyElementTrue": bson.M{
+				"$map": bson.M{
+					"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+					"as":    "ds",
+					"in": bson.M{
+						"$and": bson.A{
+							bson.M{"$eq": bson.A{"$$ds.state", "error"}},
+							bson.M{"$or": bson.A{
+								bson.M{"$ne": bson.A{"$deviceIssues.erroring.providerId", "$$ds.providerName"}},
+								bson.M{"$lte": bson.A{
+									bson.M{"$ifNull": bson.A{"$deviceIssues.erroring.hidden", time.Unix(0, 0)}},
+									time.Unix(0, 0),
+								}},
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("finding patients with erroring devices: %s", err)
+	}
+	defer cur.Close(ctx)
+	patients := []patients.Patient{}
+	err = cur.All(ctx, &patients)
+	if err != nil {
+		return nil, fmt.Errorf("loading patients with erroring devices: %s", err)
+	}
+	return patients, nil
+}
+
+func (r *repository) UpdatePrimaryDeviceProviderName(ctx context.Context,
+	userId, providerName string) error {
+
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"primaryDeviceProviderName": providerName,
+		},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	// Yes, we're updating all of this user's patient records, regardless of clinic.
+	res, err := r.collection.UpdateMany(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error updating patient primary device: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return patients.ErrNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) ClearDeviceIssues(ctx context.Context, userId string) error {
+	selector := bson.M{
+		"userId": userId,
+	}
+
+	update := bson.M{
+		"$unset":       bson.M{"deviceIssues": ""},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	// Yes, we're updating all of this user's patient records, regardless of clinic.
+	res, err := r.collection.UpdateMany(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error clearing patient device issues: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return patients.ErrNotFound
+	}
+
+	return nil
+}
+
+var validDeviceIssues = []string{
+	patients.DeviceIssueDisconnected,
+	patients.DeviceIssueErroring,
+}
+
+func (r *repository) RemoveDeviceIssue(ctx context.Context,
+	userId string, issue string) error {
+
+	if !slices.Contains(validDeviceIssues, issue) {
+		return fmt.Errorf("invalid device issue: %q", issue)
+	}
+
+	key := "deviceIssues." + issue
+	selector := bson.M{
+		"userId": userId,
+		key:      bson.M{"$exists": true},
+	}
+
+	update := bson.M{
+		"$unset":       bson.M{key: ""},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	// Yes, we're updating all of this user's patient records, regardless of clinic.
+	// Matching no records isn't an error, so that removal is idempotent.
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return fmt.Errorf("error removing patient device issue: %w", err)
+	}
+
+	return nil
+}
+
+func (r *repository) CreateDeviceIssue(ctx context.Context,
+	userId, providerName, issue string) error {
+
+	if !slices.Contains(validDeviceIssues, issue) {
+		return fmt.Errorf("invalid device issue: %q", issue)
+	}
+
+	key := "deviceIssues." + issue
+	selector := bson.M{
+		"userId": userId,
+		key:      bson.M{"$exists": false},
+	}
+
+	deviceIssue := patients.DeviceIssue{
+		EffectiveTime: time.Now(),
+		ProviderId:    providerName,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			key: deviceIssue,
+		},
+		"$currentDate": bson.M{"updatedTime": true},
+	}
+
+	// Yes, we're updating all of this user's patient records, regardless of clinic.
+	// Matching no records isn't an error, so that removal is idempotent.
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return fmt.Errorf("error creating patient device issue: %w", err)
+	}
+
+	return nil
 }

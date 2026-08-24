@@ -329,6 +329,9 @@ type ClientInterface interface {
 
 	UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateTierJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpdateDeviceIssues request
+	UpdateDeviceIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// FindPatients request
 	FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1446,6 +1449,18 @@ func (c *Client) UpdateTierWithBody(ctx context.Context, clinicId ClinicId, cont
 
 func (c *Client) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateTierJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateTierRequest(c.Server, clinicId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateDeviceIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateDeviceIssuesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -5349,6 +5364,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
+		if params.DeviceIssues != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "deviceIssues", runtime.ParamLocationQuery, *params.DeviceIssues); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OmitHiddenDeviceIssues != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "omitHiddenDeviceIssues", runtime.ParamLocationQuery, *params.OmitHiddenDeviceIssues); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -6705,6 +6752,33 @@ func NewUpdateTierRequestWithBody(server string, clinicId ClinicId, contentType 
 	return req, nil
 }
 
+// NewUpdateDeviceIssuesRequest generates requests for UpdateDeviceIssues
+func NewUpdateDeviceIssuesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/device_issues")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewFindPatientsRequest generates requests for FindPatients
 func NewFindPatientsRequest(server string, params *FindPatientsParams) (*http.Request, error) {
 	var err error
@@ -7714,6 +7788,9 @@ type ClientWithResponsesInterface interface {
 	UpdateTierWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTierResponse, error)
 
 	UpdateTierWithResponse(ctx context.Context, clinicId ClinicId, body UpdateTierJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTierResponse, error)
+
+	// UpdateDeviceIssuesWithResponse request
+	UpdateDeviceIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateDeviceIssuesResponse, error)
 
 	// FindPatientsWithResponse request
 	FindPatientsWithResponse(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*FindPatientsResponse, error)
@@ -9097,6 +9174,27 @@ func (r UpdateTierResponse) StatusCode() int {
 	return 0
 }
 
+type UpdateDeviceIssuesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateDeviceIssuesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateDeviceIssuesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type FindPatientsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -10207,6 +10305,15 @@ func (c *ClientWithResponses) UpdateTierWithResponse(ctx context.Context, clinic
 		return nil, err
 	}
 	return ParseUpdateTierResponse(rsp)
+}
+
+// UpdateDeviceIssuesWithResponse request returning *UpdateDeviceIssuesResponse
+func (c *ClientWithResponses) UpdateDeviceIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateDeviceIssuesResponse, error) {
+	rsp, err := c.UpdateDeviceIssues(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateDeviceIssuesResponse(rsp)
 }
 
 // FindPatientsWithResponse request returning *FindPatientsResponse
@@ -11770,6 +11877,22 @@ func ParseUpdateTierResponse(rsp *http.Response) (*UpdateTierResponse, error) {
 	}
 
 	response := &UpdateTierResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseUpdateDeviceIssuesResponse parses an HTTP response from a UpdateDeviceIssuesWithResponse call
+func ParseUpdateDeviceIssuesResponse(rsp *http.Response) (*UpdateDeviceIssuesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateDeviceIssuesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

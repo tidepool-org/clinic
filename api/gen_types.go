@@ -637,9 +637,9 @@ const (
 
 // Defines values for DataSourceV1State.
 const (
-	Connected    DataSourceV1State = "connected"
-	Disconnected DataSourceV1State = "disconnected"
-	Error        DataSourceV1State = "error"
+	DataSourceV1StateConnected    DataSourceV1State = "connected"
+	DataSourceV1StateDisconnected DataSourceV1State = "disconnected"
+	DataSourceV1StateError        DataSourceV1State = "error"
 )
 
 // Defines values for DiagnosisTypeV1.
@@ -740,6 +740,15 @@ const (
 	Tier0200 TierV1 = "tier0200"
 	Tier0300 TierV1 = "tier0300"
 	Tier0400 TierV1 = "tier0400"
+)
+
+// Defines values for ListPatientsParamsDeviceIssues.
+const (
+	ListPatientsParamsDeviceIssuesDisconnected                ListPatientsParamsDeviceIssues = "disconnected"
+	ListPatientsParamsDeviceIssuesErroring                    ListPatientsParamsDeviceIssues = "erroring"
+	ListPatientsParamsDeviceIssuesExpiredConnectionInvitation ListPatientsParamsDeviceIssues = "expiredConnectionInvitation"
+	ListPatientsParamsDeviceIssuesStaleConnectionInvitation   ListPatientsParamsDeviceIssues = "staleConnectionInvitation"
+	ListPatientsParamsDeviceIssuesStaleData                   ListPatientsParamsDeviceIssues = "staleData"
 )
 
 // Defines values for TideReportParamsCategories.
@@ -1353,6 +1362,25 @@ type DataSourcesV1 = []DataSourceV1
 // DatetimeV1 [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 type DatetimeV1 = string
 
+// DeviceIssueV1 defines model for deviceIssue.v1.
+type DeviceIssueV1 struct {
+	// EffectiveTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	EffectiveTime DatetimeV1 `json:"effectiveTime"`
+
+	// Hidden [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	Hidden     *DatetimeV1  `json:"hidden,omitempty"`
+	ProviderId ProviderIdV1 `json:"providerId"`
+}
+
+// DeviceIssuesV1 defines model for deviceIssues.v1.
+type DeviceIssuesV1 struct {
+	Disconnected                DeviceIssueV1 `json:"disconnected,omitempty,omitzero"`
+	Erroring                    DeviceIssueV1 `json:"erroring,omitempty,omitzero"`
+	ExpiredConnectionInvitation DeviceIssueV1 `json:"expiredConnectionInvitation,omitempty,omitzero"`
+	StaleConnectionInvitation   DeviceIssueV1 `json:"staleConnectionInvitation,omitempty,omitzero"`
+	StaleData                   DeviceIssueV1 `json:"staleData,omitempty,omitzero"`
+}
+
 // DiagnosisTypeV1 defines model for diagnosisType.v1.
 type DiagnosisTypeV1 string
 
@@ -1590,6 +1618,7 @@ type PatientV1 struct {
 	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
 	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
 	DataSources          *[]DataSourceV1               `json:"dataSources"`
+	DeviceIssues         *DeviceIssuesV1               `json:"deviceIssues,omitempty"`
 	DiagnosisType        *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
 	Email                *string                       `json:"email,omitempty"`
 
@@ -1602,10 +1631,11 @@ type PatientV1 struct {
 	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
-	Mrn         *string               `json:"mrn,omitempty"`
-	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
-	Reviews     []PatientReviewV1     `json:"reviews"`
-	Sites       []SiteV1              `json:"sites,omitzero"`
+	Mrn                       *string               `json:"mrn,omitempty"`
+	Permissions               *PatientPermissionsV1 `json:"permissions,omitempty"`
+	PrimaryDeviceProviderName *ProviderIdV1         `json:"primaryDeviceProviderName,omitempty"`
+	Reviews                   []PatientReviewV1     `json:"reviews"`
+	Sites                     []SiteV1              `json:"sites,omitzero"`
 
 	// Summary A summary of a patients recent data
 	Summary *PatientSummaryV1 `json:"summary,omitempty"`
@@ -2486,7 +2516,16 @@ type ListPatientsParams struct {
 	// the ADA standard ranges (e.g. as used by the TIDE report)
 	// should be omitted.
 	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
+
+	// DeviceIssues Includes patients experiencing one or more of the device issues specified.
+	DeviceIssues *[]ListPatientsParamsDeviceIssues `form:"deviceIssues,omitempty" json:"deviceIssues,omitempty"`
+
+	// OmitHiddenDeviceIssues Exclude any devices issues marked as hidden.
+	OmitHiddenDeviceIssues *bool `form:"omitHiddenDeviceIssues,omitempty" json:"omitHiddenDeviceIssues,omitempty"`
 }
+
+// ListPatientsParamsDeviceIssues defines parameters for ListPatients.
+type ListPatientsParamsDeviceIssues string
 
 // TideReportParams defines parameters for TideReport.
 type TideReportParams struct {

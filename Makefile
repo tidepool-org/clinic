@@ -8,6 +8,7 @@ MOCKGEN = go tool mockgen
 REDOCLY_CLI = $(NPM_BIN)/redocly
 OPENAPI_FILTER = $(NPM_BIN)/openapi-filter
 GINKGO = go run -mod=mod github.com/onsi/ginkgo/v2/ginkgo
+GINKGO_PACKAGES ?= ./...
 OS = $(shell uname)
 ifeq ($(OS),Linux)
   NPROC = $(shell nproc)
@@ -57,7 +58,7 @@ service-profile:
 # Runs tests
 .PHONY: test
 test:
-	$(GINKGO) run --require-suite --compilers=$(GINKGO_COMPILERS) -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going ./...
+	$(GINKGO) run --require-suite --compilers=$(GINKGO_COMPILERS) -r --randomize-suites --randomize-all --succinct --fail-on-pending --trace --race --poll-progress-after=10s --poll-progress-interval=20s --keep-going $(GINKGO_PACKAGES)
 
 # Builds package
 .PHONY: build
