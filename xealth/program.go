@@ -2,53 +2,80 @@ package xealth
 
 import (
 	"fmt"
-	"github.com/tidepool-org/clinic/patients"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"slices"
 	"strings"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
+	"github.com/tidepool-org/clinic/patients"
 )
 
 const (
 	ProgramTitle = "Tidepool"
 )
 
-func GetProgramDescription(lastUpload time.Time, lastViewed time.Time, permissions *patients.Permissions, dataSources *[]patients.DataSource) *string {
+func GetProgramDescription(lastUpload time.Time, lastViewed time.Time, patient *patients.Patient) *string {
 	items := []string{
 		fmt.Sprintf("Last Upload: %s", formatDateForDescription(lastUpload)),
 		fmt.Sprintf("Last Viewed by You: %s", formatDateForDescription(lastViewed)),
-		fmt.Sprintf("Claimed Account?: %s", formatBoolean(permissions.IsClaimed())),
-		fmt.Sprintf("Cloud Connections: %s", GetCloudConnections(dataSources)),
+		fmt.Sprintf("Claimed Account?: %s", formatBoolean(patient.Permissions.IsClaimed())),
+		fmt.Sprintf("Cloud Connections: %s", GetCloudConnections(patient)),
 	}
 	description := strings.Join(items, " | ")
 	return &description
 }
 
-func GetCloudConnections(dataSources *[]patients.DataSource) string {
+type connection struct {
+	DataSource        *patients.DataSource
+	ConnectionRequest *patients.ConnectionRequest
+}
+
+func GetCloudConnections(patient *patients.Patient) string {
 	// build a map with the most recently modified data sources for each provider
-	mostRecentDataSourceByProvider := map[string]patients.DataSource{}
-	if dataSources != nil {
-		for _, dataSource := range *dataSources {
+	mostRecentByProvider := map[string]connection{}
+	if patient.DataSources != nil {
+		for _, dataSource := range *patient.DataSources {
 			newModifiedTime := time.Time{}
 			if dataSource.ModifiedTime != nil {
 				newModifiedTime = *dataSource.ModifiedTime
 			}
 			existingModifiedTime := time.Time{}
-			if existing, ok := mostRecentDataSourceByProvider[dataSource.ProviderName]; ok {
-				if existing.ModifiedTime != nil {
-					existingModifiedTime = *existing.ModifiedTime
+			if existing, ok := mostRecentByProvider[dataSource.ProviderName]; ok {
+				if existing.DataSource.ModifiedTime != nil {
+					existingModifiedTime = *existing.DataSource.ModifiedTime
 				}
 			}
 			if existingModifiedTime.IsZero() || newModifiedTime.After(existingModifiedTime) {
-				mostRecentDataSourceByProvider[dataSource.ProviderName] = dataSource
+				mostRecentByProvider[dataSource.ProviderName] = connection{
+					DataSource: &dataSource,
+				}
 			}
 		}
 	}
 
-	result := make([]string, 0, len(mostRecentDataSourceByProvider))
-	for _, dataSource := range mostRecentDataSourceByProvider {
-		result = append(result, fmt.Sprintf("%s (%s)", formatDataSourceProviderName(dataSource.ProviderName), formatDataSourceState(dataSource.State)))
+	for providerName, pcrs := range patient.ProviderConnectionRequests {
+		if len(pcrs) == 0 {
+			continue
+		}
+		pcr := pcrs[0]
+
+		var conn connection
+		var found bool
+		if conn, found = mostRecentByProvider[providerName]; !found {
+			conn = connection{}
+		}
+
+		conn.ConnectionRequest = &pcr
+		mostRecentByProvider[providerName] = conn
+	}
+
+	result := make([]string, 0, len(mostRecentByProvider))
+	for providerName, conn := range mostRecentByProvider {
+		formattedName := formatDataSourceProviderName(providerName)
+		formattedState := formatDataSourceState(conn)
+		result = append(result, fmt.Sprintf("%s (%s)", formattedName, formattedState))
 	}
 	slices.Sort(result)
 
@@ -59,11 +86,15 @@ func GetCloudConnections(dataSources *[]patients.DataSource) string {
 	return strings.Join(result, ", ")
 }
 
-func formatDataSourceState(state string) string {
-	if state == patients.DataSourceStatePendingReconnect {
+func formatDataSourceState(conn connection) string {
+	if conn.DataSource == nil {
+		return "pending"
+	}
+	if conn.DataSource.ModifiedTime != nil &&
+		conn.ConnectionRequest.CreatedTime.After(*conn.DataSource.ModifiedTime) {
 		return "pending reconnect"
 	}
-	return strings.ToLower(state)
+	return strings.ToLower(conn.DataSource.State)
 }
 
 func formatDataSourceProviderName(name string) string {

@@ -1885,50 +1885,17 @@ var _ = Describe("Patients Repository", func() {
 		})
 
 		Describe("Add provider connection request", func() {
-			BeforeEach(func() {
-				dataSources := patients.DataSources{{
-					ProviderName: patients.DexcomDataSourceProviderName,
-					State:        "pending",
-				}}
-				err := repo.UpdatePatientDataSources(context.Background(), *randomPatient.UserId, &dataSources)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("correctly updates the datasource to pending reconnect when the data source already exists", func() {
-				id := primitive.NewObjectID()
-				modifiedTime := time.Now()
-				dataSources := patients.DataSources{{
-					DataSourceId: &id,
-					ModifiedTime: &modifiedTime,
-					ProviderName: patients.DexcomDataSourceProviderName,
-					State:        "pending",
-				}}
-				err := repo.UpdatePatientDataSources(context.Background(), *randomPatient.UserId, &dataSources)
-				Expect(err).ToNot(HaveOccurred())
-
-				request := patients.ConnectionRequest{
-					ProviderName: patients.DexcomDataSourceProviderName,
-					CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
-				}
-
-				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
-				Expect(err).ToNot(HaveOccurred())
-
-				patient, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(patient).ToNot(BeNil())
-				Expect(patient.DataSources).ToNot(BeNil())
-				Expect(*patient.DataSources).To(HaveLen(1))
-				Expect((*patient.DataSources)[0].State).To(Equal("pendingReconnect"))
-			})
-
 			It("correctly adds multiple requests", func() {
 				request := patients.ConnectionRequest{
 					ProviderName: patients.DexcomDataSourceProviderName,
 					CreatedTime:  time.Now().Truncate(time.Millisecond),
 				}
 
-				err := repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
+				patientBefore, err := repo.Get(context.Background(),
+					randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
 				Expect(err).ToNot(HaveOccurred())
 
 				err = repo.AddProviderConnectionRequest(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId, request)
@@ -1942,8 +1909,12 @@ var _ = Describe("Patients Repository", func() {
 
 				dexcom := patient.ProviderConnectionRequests["dexcom"]
 				Expect(dexcom).To(HaveLen(2))
-				Expect(dexcom[0]).To(BeComparableTo(request))
-				Expect(dexcom[1]).To(BeComparableTo(request))
+				Expect(dexcom[0].CreatedTime).To(BeComparableTo(request.CreatedTime))
+				Expect(dexcom[0].ProviderName).To(BeComparableTo(request.ProviderName))
+				Expect(dexcom[1].CreatedTime).To(BeComparableTo(request.CreatedTime))
+				Expect(dexcom[1].ProviderName).To(BeComparableTo(request.ProviderName))
+
+				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
 			})
 		})
 
@@ -2365,11 +2336,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   nil,
-										ModifiedTime:   nil,
-										ExpirationTime: mustTime("2025-10-30T20:49:05.465Z"),
-										ProviderName:   "dexcom",
-										State:          "connected",
+										DataSourceId: nil,
+										ModifiedTime: nil,
+										ProviderName: "dexcom",
+										State:        "connected",
 									},
 								},
 							},
@@ -2418,11 +2388,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   mustObjectID("686c054cbea00653fd4fcf8b"),
-										ModifiedTime:   mustTime("2025-07-07T17:41:13Z"),
-										ExpirationTime: nil,
-										ProviderName:   "dexcom",
-										State:          "disconnected",
+										DataSourceId: mustObjectID("686c054cbea00653fd4fcf8b"),
+										ModifiedTime: mustTime("2025-07-07T17:41:13Z"),
+										ProviderName: "dexcom",
+										State:        "disconnected",
 									},
 								},
 							},
@@ -2665,11 +2634,10 @@ var _ = Describe("TideReport", func() {
 								Reviews:  nil,
 								DataSources: &[]patients.DataSource{
 									{
-										DataSourceId:   nil,
-										ModifiedTime:   nil,
-										ExpirationTime: mustTime("2025-10-30T20:49:05.465Z"),
-										ProviderName:   "dexcom",
-										State:          "connected",
+										DataSourceId: nil,
+										ModifiedTime: nil,
+										ProviderName: "dexcom",
+										State:        "connected",
 									},
 								},
 							},

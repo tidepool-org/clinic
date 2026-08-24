@@ -517,9 +517,7 @@ func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId 
 
 	request := patients.ConnectionRequest{
 		ProviderName: provider,
-		CreatedTime:  time.Now(),
 	}
-
 	err = h.Patients.AddProviderConnectionRequest(ctx, clinicId, patientId, request)
 	if err != nil {
 		return err
