@@ -40,36 +40,46 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"George Washington", "1950-01-02"},
 			}
 			_, _, _, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId)
-			Expect(err).To(MatchError(patients.ErrCSVNotEnoughColumns))
+			Expect(err).To(MatchError(patients.ErrCSVHeaderMissingCols))
 		})
 
 		It("returns correct fields and errors depending on criteria", func() {
 			ctx := context.Background()
 			records := [][]string{
 				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target"},
-				{"George Washington", "1950-01-02", "123456789", "duplicate@tidepool.org"},
+				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
 				{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org"},
-				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "duplicate@tidepool.org"},
+				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "existing+email@tidepool.org"},
 				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org"},
 				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk"},
-				{"Invalid Email", "1960-01-02", "123456791", "invalid+email", "type2", ""},
+				{"Invalid Email", "1960-01-02", "123456792", "invalid+email", "type2", ""},
 				{"Missing Required Field Mrn", "1955-01-02", ""},
 				{"Missing Required Field DOB", "", "123456"},
-				{"Default Invalid Glycemic Target To Default", "1955-01-02", "123456791", "dev@tidepool.org", "", "Some Glycemic Target"},
-				{"Diabetes Type", "1955-01-02", "123456791", "dev@tidepool.org", "type1"},
+				{"Default Invalid Glycemic Target To Default", "1955-01-02", "123456793", "dev@tidepool.org", "", "Some Glycemic Target"},
+				{"Diabetes Type", "1955-01-02", "123456794", "diabetes+type@tidepool.org", "type1"},
+				{"Test extra input columns are not included in output", "1960-02-03", "88888888", "extra+columns@tidepool.org", "type1", "adaStandard", "Extra column 1", "Extra column 2", "Extra column 3"},
+				{"Person 1 duplicate MRN within CSV", "1999-12-10", "55555555", "duplicate+mrn1@tidepool.org", "type1", "adaStandard"},
+				{"Person 2 duplicate MRN within CSV", "2000-10-10", "55555555", "duplicate+mrn2@tidepool.org", "type1", "adaStandard"},
+				{"Person 1 duplicate email within CSV", "1999-12-10", "55555556", "duplicate+email@tidepool.org", "type1", "adaStandard"},
+				{"Person 2 duplicate email within CSV", "2000-10-10", "55555557", "duplicate+email@tidepool.org", "type1", "adaStandard"},
 			}
 			expectedOutput := [][]string{
 				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
-				{"George Washington", "1950-01-02", "123456789", "duplicate@tidepool.org", "", "adaStandard", "duplicate email", ""},
+				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", ""},
 				{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", ""},
-				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "duplicate@tidepool.org", "", "adaStandard", "duplicate MRN, duplicate email", ""},
+				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "existing+email@tidepool.org", "", "adaStandard", "duplicate MRN, duplicate email", ""},
 				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org", "", "adaStandard", "", ""},
 				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk", "", ""},
-				{"Invalid Email", "1960-01-02", "123456791", "invalid+email", "type2", "", "invalid email", ""},
-				{"Missing Required Field Mrn", "1955-01-02", "", "", "", "", "missing mrn", ""},
+				{"Invalid Email", "1960-01-02", "123456792", "invalid+email", "type2", "", "invalid email", ""},
+				{"Missing Required Field Mrn", "1955-01-02", "", "", "", "", "missing MRN", ""},
 				{"Missing Required Field DOB", "", "123456", "", "", "", "missing birthdate", ""},
-				{"Default Invalid Glycemic Target To Default", "1955-01-02", "123456791", "dev@tidepool.org", "", "adaStandard", "", ""},
-				{"Diabetes Type", "1955-01-02", "123456791", "dev@tidepool.org", "type1", "adaStandard", "", ""},
+				{"Default Invalid Glycemic Target To Default", "1955-01-02", "123456793", "dev@tidepool.org", "", "adaStandard", "", ""},
+				{"Diabetes Type", "1955-01-02", "123456794", "diabetes+type@tidepool.org", "type1", "adaStandard", "", ""},
+				{"Test extra input columns are not included in output", "1960-02-03", "88888888", "extra+columns@tidepool.org", "type1", "adaStandard", "", ""},
+				{"Person 1 duplicate MRN within CSV", "1999-12-10", "55555555", "duplicate+mrn1@tidepool.org", "type1", "adaStandard", "duplicate MRN", ""},
+				{"Person 2 duplicate MRN within CSV", "2000-10-10", "55555555", "duplicate+mrn2@tidepool.org", "type1", "adaStandard", "duplicate MRN", ""},
+				{"Person 1 duplicate email within CSV", "1999-12-10", "55555556", "duplicate+email@tidepool.org", "type1", "adaStandard", "duplicate email", ""},
+				{"Person 2 duplicate email within CSV", "2000-10-10", "55555557", "duplicate+email@tidepool.org", "type1", "adaStandard", "duplicate email", ""},
 			}
 
 			patientSvc.EXPECT().
@@ -86,8 +96,8 @@ var _ = Describe("Bulk Account Creation", func() {
 				GetUser(gomock.Any()).
 				DoAndReturn(
 					func(userId string) (*shoreline.UserData, error) {
-						if userId == "duplicate@tidepool.org" {
-							return &shoreline.UserData{Username: "duplicate@tidepool.org"}, nil
+						if userId == "existing+email@tidepool.org" {
+							return &shoreline.UserData{Username: "existing+email@tidepool.org"}, nil
 						}
 						return nil, clinicErrs.NotFound
 					}).
@@ -95,7 +105,7 @@ var _ = Describe("Bulk Account Creation", func() {
 
 			outputRecords, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(parsedPatients)).To(Equal(10))
+			Expect(len(parsedPatients)).To(Equal(len(expectedOutput) - 1))
 			Expect(header).To(Equal(expectedOutput[0]))
 			Expect(outputRecords).To(Equal(expectedOutput))
 		})
@@ -106,15 +116,15 @@ var _ = Describe("Bulk Account Creation", func() {
 			ctx := context.Background()
 			records := [][]string{
 				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target"},
-				{"George Washington", "1950-01-02", "123456789", "duplicate@tidepool.org"},
+				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
 				{"Invalid Email", "1960-01-02", "123456791", "invalid+email", "type2", ""},
-				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk"},
+				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk"},
 			}
 			expectedOutput := [][]string{
 				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
-				{"George Washington", "1950-01-02", "123456789", "duplicate@tidepool.org", "", "adaStandard", "duplicate email", "N"},
+				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
 				{"Invalid Email", "1960-01-02", "123456791", "invalid+email", "type2", "", "invalid email", "N (invalid email)"},
-				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y"},
+				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y"},
 			}
 
 			patientSvc.EXPECT().
@@ -131,8 +141,8 @@ var _ = Describe("Bulk Account Creation", func() {
 				GetUser(gomock.Any()).
 				DoAndReturn(
 					func(userId string) (*shoreline.UserData, error) {
-						if userId == "duplicate@tidepool.org" {
-							return &shoreline.UserData{Username: "duplicate@tidepool.org"}, nil
+						if userId == "existing+email@tidepool.org" {
+							return &shoreline.UserData{Username: "existing+email@tidepool.org"}, nil
 						}
 						return nil, clinicErrs.NotFound
 					}).

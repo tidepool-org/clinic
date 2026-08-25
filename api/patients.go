@@ -583,6 +583,7 @@ func (h *Handler) ListBulkCreatePatients(ec echo.Context, clinicId ClinicId) err
 	res := ec.Response()
 	res.Header().Set(echo.HeaderContentType, "text/csv")
 	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=bulk-creation-result-%d.csv", time.Now().Unix()))
+	res.WriteHeader(http.StatusCreated)
 	return csv.NewWriter(res.Writer).WriteAll(outputRecords)
 }
 
@@ -609,5 +610,6 @@ func (h *Handler) BulkCreatePatients(ec echo.Context, clinicId ClinicId) error {
 	res := ec.Response()
 	res.Header().Set(echo.HeaderContentType, "text/csv")
 	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=bulk-creation-result-%d.csv", time.Now().Unix()))
+	res.WriteHeader(http.StatusCreated)
 	return csv.NewWriter(res.Writer).WriteAll(outputRecords)
 }
