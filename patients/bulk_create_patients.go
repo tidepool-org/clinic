@@ -15,14 +15,16 @@ import (
 )
 
 var (
-	ErrCSVNoRows                  = errors.New("no rows in input records")
+	ErrCSVHeaderEmpty             = errors.New("header is empty")
+	ErrCSVHeaderMissingCols       = errors.New("header is missing columns")
+	ErrCSVEmpty                   = errors.New("no rows in input records")
 	ErrCSVNoPatientRows           = errors.New("no patient rows")
-	ErrCSVNotEnoughColumns        = errors.New("not enough columns in input CSV")
 	ErrCSVPatientMissingName      = errors.New("missing name")
 	ErrCSVPatientMissingBirthdate = errors.New("missing birthdate")
-	ErrCSVPatientMissingMrn       = errors.New("missing mrn")
+	ErrCSVPatientMissingMrn       = errors.New("missing MRN")
 	ErrCSVPatientInvalidEmail     = errors.New("invalid email")
-	ErrCSVPatientDuplicateMrn     = errors.New("duplicate mrn")
+	ErrCSVPatientDuplicateMRN     = errors.New("duplicate MRN")
+	ErrCSVPatientDuplicateEmail   = errors.New("duplicate email")
 )
 
 const (
@@ -51,16 +53,12 @@ const (
 	NumOutputCols
 )
 
-func ValidateCSVHeader(records [][]string) error {
-	if len(records) == 0 {
-		return ErrCSVNoRows
+func ValidateCSVHeader(header []string) error {
+	if len(header) == 0 {
+		return ErrCSVHeaderEmpty
 	}
-	if len(records) == 1 {
-		return ErrCSVNoPatientRows
-	}
-	header := records[0]
 	if len(header) < int(NumRequiredColumns) {
-		return fmt.Errorf(`%w: only have %d columns`, ErrCSVNotEnoughColumns, len(header))
+		return fmt.Errorf(`%w: only have %d columns, wanted %d`, ErrCSVHeaderMissingCols, len(header), NumRequiredColumns)
 	}
 	return nil
 }
@@ -71,10 +69,24 @@ func ValidateCSVHeader(records [][]string) error {
 // which would be noted in [OutputColStatus] of [Columns]
 type ParsedCSVPatient struct {
 	Columns []string
-	// Err is the associated errors of a patient used to check if a specific
-	// issued occurred.
-	Err     error
+	// Errs is an accumulated slice of errors that have been encountered while
+	// parsing or creating a patient.
+	Errs    []error
 	Patient *Patient
+}
+
+// Err returns the accumulated errors encountered for a patient
+func (p *ParsedCSVPatient) Err() error {
+	return errors.Join(p.Errs...)
+}
+
+func (p *ParsedCSVPatient) AppendErr(err error) {
+	if err == nil {
+		return
+	}
+	if !errors.Is(p.Err(), err) {
+		p.Errs = append(p.Errs, err)
+	}
 }
 
 // ParsePotentialCSVPatients takes an input of slices of string slices (from a
@@ -85,26 +97,39 @@ type ParsedCSVPatient struct {
 // stop other patients from being created, if any, are outputed in the "reason"
 // column defined as the slice index [OutputColStatus] in
 // [ParsedCSVPatient.Columns] in which case [ParsedCSVPatient.Patient] would be
-// empty.
-func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, CSVRecords [][]string, clinicId primitive.ObjectID) (outputRows [][]string, outputHeader []string, parsedPatients []ParsedCSVPatient, err error) {
-	if err := ValidateCSVHeader(CSVRecords); err != nil {
+// empty. The CSV header is ALWAYS expected.
+func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, csvRecords [][]string, clinicId primitive.ObjectID) (outputRows [][]string, outputHeader []string, parsedPatients []*ParsedCSVPatient, err error) {
+	if len(csvRecords) == 0 {
+		return nil, nil, nil, ErrCSVEmpty
+	}
+	header := csvRecords[0]
+	if err := ValidateCSVHeader(header); err != nil {
 		return nil, nil, nil, err
 	}
-	header := CSVRecords[0]
 	outputHeader = make([]string, NumOutputCols)
 	copy(outputHeader, header)
 	outputHeader[OutputColStatus] = "Reason"
 	outputHeader[OutputColEmailed] = "Emailed?"
 	outputRows = append(outputRows, outputHeader)
+	// Track if an MRN or email was repeated within the CSV rows themselves (as
+	// opposed to being duplicated with an existing patient) as this requires 2
+	// passes.
+	// 1. to collect duplicate mrns and emails.
+	// 2. To re-iterate over the patients to see if they had a duplicate MRN as
+	// checking the count as we iterate in the first pass would only pick up
+	// duplicates AFTER the first encounter of a duplicate MRN
+	encounteredMRNCounts := map[string]int{}
+	encounteredEmailCounts := map[string]int{}
 
-	for _, record := range CSVRecords[1:] {
+	for _, record := range csvRecords[1:] {
 		outputRow := make([]string, NumOutputCols)
-		copy(outputRow, record)
-		var patientErr error
+		copy(outputRow[:MaxInputColumns], record)
 		patient, err := NewPatientFromColumns(record, clinicId)
+		parsedPatient := &ParsedCSVPatient{
+			Patient: patient,
+		}
 		if err != nil {
-			outputRow[OutputColStatus] = err.Error()
-			patientErr = errors.Join(patientErr, err)
+			parsedPatient.AppendErr(err)
 		} else {
 			if !patient.GlycemicRanges.IsZero() {
 				outputRow[ColGlycemicPreset] = string(patient.GlycemicRanges.Preset)
@@ -114,38 +139,71 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 			}
 			// No error from column data, now check for issues with mrn / email of
 			// which there can be multiple.
-			var issues []string
 			page := store.Pagination{Limit: 1, Offset: 0}
-			filter := Filter{
-				ClinicId: strp(string(clinicId.Hex())),
-				Mrn:      patient.Mrn,
-			}
-			res, err := patientSvc.List(ctx, &filter, page, nil)
-			if err != nil {
-				issues = append(issues, fmt.Sprintf(`system error checking mrn: %v`, err))
-			} else if res != nil && res.MatchingCount > 0 {
-				issues = append(issues, `duplicate MRN`)
-				patientErr = errors.Join(patientErr, ErrCSVPatientDuplicateMrn)
-			}
-			if pstr(patient.Email) != "" {
-				user, err := userSvc.GetUser(*patient.Email)
-				if err != nil && !errors.Is(err, clinicErrs.NotFound) {
-					issues = append(issues, fmt.Sprintf(`system error checking email: %v`, err))
-				} else if user != nil {
-					issues = append(issues, `duplicate email`)
+			duplicateMRN := false
+			encounteredMRNCounts[*patient.Mrn]++
+			if encounteredMRNCounts[*patient.Mrn] > 1 {
+				duplicateMRN = true
+			} else {
+				filter := Filter{
+					ClinicId: strp(string(clinicId.Hex())),
+					Mrn:      patient.Mrn,
+				}
+				res, err := patientSvc.List(ctx, &filter, page, nil)
+				if err != nil {
+					parsedPatient.AppendErr(fmt.Errorf(`system error checking mrn: %w`, err))
+				} else if res != nil && res.MatchingCount > 0 {
+					duplicateMRN = true
 				}
 			}
-			if len(issues) > 0 {
-				outputRow[OutputColStatus] = strings.Join(issues, ", ")
-				patient = nil
+			if duplicateMRN {
+				parsedPatient.AppendErr(ErrCSVPatientDuplicateMRN)
+			}
+			if email := pstr(patient.Email); email != "" {
+				duplicateEmail := false
+				encounteredEmailCounts[email]++
+				if encounteredEmailCounts[email] > 1 {
+					duplicateEmail = true
+				} else {
+					user, err := userSvc.GetUser(email)
+					if err != nil && !errors.Is(err, clinicErrs.NotFound) {
+						parsedPatient.AppendErr(fmt.Errorf(`system error checking email: %w`, err))
+					} else if user != nil {
+						duplicateEmail = true
+					}
+				}
+				if duplicateEmail {
+					parsedPatient.AppendErr(ErrCSVPatientDuplicateEmail)
+				}
 			}
 		}
-		parsedPatients = append(parsedPatients, ParsedCSVPatient{
-			Columns: outputRow,
-			Patient: patient,
-			Err:     patientErr,
-		})
+		parsedPatient.Columns = outputRow
+		parsedPatients = append(parsedPatients, parsedPatient)
 		outputRows = append(outputRows, outputRow)
+	}
+	// Reiterate through patients to handle first instance of any individually
+	// repeated MRN or email within the CSV itself (e.g., multiple cases of
+	// email "dev@tidepool.org" within the CSV but not associated with an
+	// existing patient.)
+	for _, pp := range parsedPatients {
+		if pp.Patient != nil && encounteredMRNCounts[*pp.Patient.Mrn] > 1 {
+			pp.AppendErr(ErrCSVPatientDuplicateMRN)
+		}
+
+		if pp.Patient != nil {
+			if email := pstr(pp.Patient.Email); email != "" && encounteredEmailCounts[email] > 1 {
+				pp.AppendErr(ErrCSVPatientDuplicateEmail)
+			}
+		}
+		if len(pp.Errs) > 0 {
+			errs := make([]string, 0, len(pp.Errs))
+			for _, err := range pp.Errs {
+				errs = append(errs, err.Error())
+			}
+			pp.Columns[OutputColStatus] = strings.Join(errs, ", ")
+			// set Patient to nil to indicate no further action to be done on patient
+			pp.Patient = nil
+		}
 	}
 	return outputRows, outputHeader, parsedPatients, nil
 }
@@ -156,12 +214,12 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 // patients from being created. It also returns updated CSV output columns as
 // some errors (db-related, system related, etc) can only surface during
 // creation time.
-func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string, patients []ParsedCSVPatient) (outputRows [][]string) {
+func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string, patients []*ParsedCSVPatient) (outputRows [][]string) {
 	outputRows = make([][]string, 0, len(patients)+1)
 	outputRows = append(outputRows, header)
 	for _, parsedPatient := range patients {
 		if parsedPatient.Patient == nil {
-			if errors.Is(parsedPatient.Err, ErrCSVPatientInvalidEmail) {
+			if errors.Is(parsedPatient.Err(), ErrCSVPatientInvalidEmail) {
 				parsedPatient.Columns[OutputColEmailed] = "N (invalid email)"
 			} else {
 				parsedPatient.Columns[OutputColEmailed] = "N"
@@ -176,8 +234,13 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 				status += err.Error()
 				parsedPatient.Columns[OutputColStatus] = status
 				parsedPatient.Columns[OutputColEmailed] = "N"
-			} else {
+			} else if parsedPatient.Patient.Email != nil && *parsedPatient.Patient.Email != "" {
+				// Since the actual emaling is done outside the clinic service by
+				// hydrophone, we assume any patients with emails that were
+				// successfully created to have been emailed.
 				parsedPatient.Columns[OutputColEmailed] = "Y"
+			} else {
+				parsedPatient.Columns[OutputColEmailed] = "N"
 			}
 		}
 		outputRows = append(outputRows, parsedPatient.Columns)
@@ -227,7 +290,7 @@ func NewPatientFromColumns(record []string, clinicId primitive.ObjectID) (*Patie
 			diagnosisType = &dt
 		}
 	}
-	var preset GlycemicRangesPreset
+	preset := DefaultGlycemicPreset
 	if len(record) > ColGlycemicPreset {
 		presetRaw := strings.TrimSpace(record[ColGlycemicPreset])
 		preset = ParseGlycemicRangesPreset(presetRaw, DefaultGlycemicPreset)
