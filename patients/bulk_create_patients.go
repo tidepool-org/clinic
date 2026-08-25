@@ -111,15 +111,27 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 	outputHeader[OutputColStatus] = "Reason"
 	outputHeader[OutputColEmailed] = "Emailed?"
 	outputRows = append(outputRows, outputHeader)
-	// Track if an MRN or email was repeated within the CSV rows themselves (as
-	// opposed to being duplicated with an existing patient) as this requires 2
-	// passes.
-	// 1. to collect duplicate mrns and emails.
-	// 2. To re-iterate over the patients to see if they had a duplicate MRN as
-	// checking the count as we iterate in the first pass would only pick up
-	// duplicates AFTER the first encounter of a duplicate MRN
-	encounteredMRNCounts := map[string]int{}
-	encounteredEmailCounts := map[string]int{}
+
+	filter := Filter{
+		ClinicId: strp(string(clinicId.Hex())),
+	}
+	page := store.Pagination{Limit: 50_000, Offset: 0}
+	res, err := patientSvc.List(ctx, &filter, page, nil)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf(`error fetching patients from clinic: %w`, err)
+	}
+	// Track duplicate MRNs/emails among the CSV rows itself (e.g., having the
+	// same MRN in the CSV multiple times) and existing patients.
+	mrnCounts := map[string]int{}
+	emailCounts := map[string]int{}
+	for _, p := range res.Patients {
+		if mrn := pstr(p.Mrn); mrn != "" {
+			mrnCounts[mrn]++
+		}
+		// Note emails of patients in clinic does not include all user who have a
+		// specific email so a check for the email should be done via the user
+		// service.
+	}
 
 	for _, record := range csvRecords[1:] {
 		outputRow := make([]string, NumOutputCols)
@@ -139,35 +151,19 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 			}
 			// No error from column data, now check for issues with mrn / email of
 			// which there can be multiple.
-			page := store.Pagination{Limit: 1, Offset: 0}
-			duplicateMRN := false
-			encounteredMRNCounts[*patient.Mrn]++
-			if encounteredMRNCounts[*patient.Mrn] > 1 {
-				duplicateMRN = true
-			} else {
-				filter := Filter{
-					ClinicId: strp(string(clinicId.Hex())),
-					Mrn:      patient.Mrn,
-				}
-				res, err := patientSvc.List(ctx, &filter, page, nil)
-				if err != nil {
-					parsedPatient.AppendErr(fmt.Errorf(`system error checking mrn: %w`, err))
-				} else if res != nil && res.MatchingCount > 0 {
-					duplicateMRN = true
-				}
-			}
-			if duplicateMRN {
+			mrnCounts[*patient.Mrn]++
+			if mrnCounts[*patient.Mrn] > 1 {
 				parsedPatient.AppendErr(ErrCSVPatientDuplicateMRN)
 			}
-			if email := pstr(patient.Email); email != "" {
+			if email := strings.ToLower(pstr(patient.Email)); email != "" {
 				duplicateEmail := false
-				encounteredEmailCounts[email]++
-				if encounteredEmailCounts[email] > 1 {
+				emailCounts[email]++
+				if emailCounts[email] > 1 {
 					duplicateEmail = true
 				} else {
 					user, err := userSvc.GetUser(email)
 					if err != nil && !errors.Is(err, clinicErrs.NotFound) {
-						parsedPatient.AppendErr(fmt.Errorf(`system error checking email: %w`, err))
+						return nil, nil, nil, fmt.Errorf(`system error checking email: %w`, err)
 					} else if user != nil {
 						duplicateEmail = true
 					}
@@ -186,12 +182,12 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 	// email "dev@tidepool.org" within the CSV but not associated with an
 	// existing patient.)
 	for _, pp := range parsedPatients {
-		if pp.Patient != nil && encounteredMRNCounts[*pp.Patient.Mrn] > 1 {
+		if pp.Patient != nil && mrnCounts[*pp.Patient.Mrn] > 1 {
 			pp.AppendErr(ErrCSVPatientDuplicateMRN)
 		}
 
 		if pp.Patient != nil {
-			if email := pstr(pp.Patient.Email); email != "" && encounteredEmailCounts[email] > 1 {
+			if email := pstr(pp.Patient.Email); email != "" && emailCounts[email] > 1 {
 				pp.AppendErr(ErrCSVPatientDuplicateEmail)
 			}
 		}
