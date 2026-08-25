@@ -86,10 +86,14 @@ var _ = Describe("Bulk Account Creation", func() {
 				List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				DoAndReturn(
 					func(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sort []*store.Sort) (*patients.ListResult, error) {
-						if filter != nil && filter.Mrn != nil && *filter.Mrn == "DUPLICATEMRN" {
-							return &patients.ListResult{MatchingCount: 1}, nil
-						}
-						return &patients.ListResult{MatchingCount: 0}, nil
+						return &patients.ListResult{
+							Patients: []*patients.Patient{
+								{
+									Mrn: strp("DUPLICATEMRN"),
+								},
+							},
+							MatchingCount: 1,
+						}, nil
 					}).
 				AnyTimes()
 			userSvc.EXPECT().
@@ -131,10 +135,14 @@ var _ = Describe("Bulk Account Creation", func() {
 				List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				DoAndReturn(
 					func(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sort []*store.Sort) (*patients.ListResult, error) {
-						if filter != nil && filter.Mrn != nil && *filter.Mrn == "DUPLICATEMRN" {
-							return &patients.ListResult{MatchingCount: 1}, nil
-						}
-						return &patients.ListResult{MatchingCount: 0}, nil
+						return &patients.ListResult{
+							Patients: []*patients.Patient{
+								{
+									Mrn: strp("DUPLICATEMRN"),
+								},
+							},
+							MatchingCount: 1,
+						}, nil
 					}).
 				AnyTimes()
 			userSvc.EXPECT().
@@ -160,3 +168,7 @@ var _ = Describe("Bulk Account Creation", func() {
 		})
 	})
 })
+
+func strp(s string) *string {
+	return &s
+}
