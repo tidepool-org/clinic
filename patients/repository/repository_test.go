@@ -540,6 +540,31 @@ var _ = Describe("Patients Repository", func() {
 		})
 
 		Describe("UpdateSummaryInAllClinics", func() {
+			newSummary := func(lastUpdatedDate *time.Time) *patients.Summary {
+				return &patients.Summary{
+					CGM: &patients.PatientCGMStats{
+						Id:    primitive.NewObjectID().Hex(),
+						Dates: patients.PatientSummaryDates{LastUpdatedDate: lastUpdatedDate},
+					},
+					BGM: &patients.PatientBGMStats{
+						Id:    primitive.NewObjectID().Hex(),
+						Dates: patients.PatientSummaryDates{LastUpdatedDate: lastUpdatedDate},
+					},
+				}
+			}
+
+			getSummary := func() *patients.Summary {
+				updated, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				return updated.Summary
+			}
+
+			var calculated time.Time
+
+			BeforeEach(func() {
+				calculated = time.Now().UTC().Truncate(time.Millisecond)
+			})
+
 			It("updates the patient's updatedTime", func() {
 				err := repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, nil)
 				Expect(err).ToNot(HaveOccurred())
@@ -547,6 +572,84 @@ var _ = Describe("Patients Repository", func() {
 				updated, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(updated.UpdatedTime).To(BeTemporally(">", randomPatient.UpdatedTime))
+			})
+
+			It("stores the summary of a patient without one", func() {
+				summary := newSummary(&calculated)
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+
+				stored := getSummary()
+				Expect(stored).ToNot(BeNil())
+				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
+				Expect(stored.BGM.Id).To(Equal(summary.BGM.Id))
+			})
+
+			It("replaces stats calculated before the update", func() {
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(&calculated))).To(Succeed())
+
+				later := calculated.Add(time.Minute)
+				summary := newSummary(&later)
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+
+				stored := getSummary()
+				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
+				Expect(stored.BGM.Id).To(Equal(summary.BGM.Id))
+			})
+
+			It("replaces stats calculated at the same time", func() {
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(&calculated))).To(Succeed())
+
+				summary := newSummary(&calculated)
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+
+				stored := getSummary()
+				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
+				Expect(stored.BGM.Id).To(Equal(summary.BGM.Id))
+			})
+
+			// A reporter delivering at least once with no ordering guarantee can deliver an older
+			// report after a newer one; applying it would regress the stats until the next calculation
+			It("keeps stats calculated after the update", func() {
+				newest := newSummary(&calculated)
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newest)).To(Succeed())
+
+				earlier := calculated.Add(-time.Minute)
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(&earlier))).To(Succeed())
+
+				stored := getSummary()
+				Expect(stored.CGM.Id).To(Equal(newest.CGM.Id))
+				Expect(stored.BGM.Id).To(Equal(newest.BGM.Id))
+			})
+
+			It("keeps stats without a calculation date away from a report without one", func() {
+				newest := newSummary(&calculated)
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newest)).To(Succeed())
+
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(nil))).To(Succeed())
+
+				stored := getSummary()
+				Expect(stored.CGM.Id).To(Equal(newest.CGM.Id))
+				Expect(stored.BGM.Id).To(Equal(newest.BGM.Id))
+			})
+
+			It("replaces or keeps the stats of each type independently", func() {
+				first := newSummary(&calculated)
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, first)).To(Succeed())
+
+				later := calculated.Add(time.Minute)
+				earlier := calculated.Add(-time.Minute)
+				summary := newSummary(&later)
+				summary.BGM.Dates.LastUpdatedDate = &earlier
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+
+				stored := getSummary()
+				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
+				Expect(stored.BGM.Id).To(Equal(first.BGM.Id))
+			})
+
+			It("returns an error for a user who is not a patient of any clinic", func() {
+				err := repo.UpdateSummaryInAllClinics(context.Background(), test.Faker.UUID().V4(), newSummary(&calculated))
+				Expect(err).To(MatchError(patients.ErrSummaryNotFound))
 			})
 		})
 
