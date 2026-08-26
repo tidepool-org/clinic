@@ -2328,7 +2328,7 @@ var _ = Describe("TideReport", func() {
 				if i == 0 {
 					p.DataSources = &[]patients.DataSource{{
 						ProviderName: patients.DexcomDataSourceProviderName,
-						State:        "pendingReconnection",
+						State:        patients.DataSourceStatePendingReconnect,
 					}}
 					dexcomUserId = *p.UserId
 				}
@@ -2343,6 +2343,33 @@ var _ = Describe("TideReport", func() {
 			Expect(resultIds(tide.Results["noData"])).ToNot(ContainElement(dexcomUserId))
 			Expect(tide.Metadata.CandidatePatients).To(Equal(4))
 			Expect(tide.Metadata.SelectedPatients).To(Equal(4))
+		})
+
+		It("includes only patients with a dexcom data source", func() {
+			var withDexcom string
+			setDataSources := func(i int, p *patients.Patient) {
+				switch i {
+				case 0:
+					p.DataSources = nil
+				case 1:
+					p.DataSources = &[]patients.DataSource{}
+				case 2:
+					p.DataSources = &[]patients.DataSource{{
+						ProviderName: patients.TwiistDataSourceProviderName,
+						State:        "disconnected",
+					}}
+				case 3:
+					withDexcom = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{}, 4, setDataSources)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(resultIds(tide.Results["noData"])).To(ConsistOf(withDexcom))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(1))
 		})
 	})
 
@@ -3874,6 +3901,7 @@ func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutDa
 		}
 		patient.ClinicId = &clinicId
 		patient.Tags = &[]primitive.ObjectID{tagId}
+		patient.DataSources = dexcomDataSources()
 		for _, opt := range opts {
 			opt(i, &patient)
 		}
@@ -3884,6 +3912,7 @@ func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutDa
 
 		patient.ClinicId = &clinicId
 		patient.Tags = &[]primitive.ObjectID{tagId}
+		patient.DataSources = dexcomDataSources()
 		for _, opt := range opts {
 			opt(withData+j, &patient)
 		}
@@ -3898,6 +3927,15 @@ func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutDa
 		tagId:    tagId,
 		repo:     repo,
 	}
+}
+
+// dexcomDataSources returns a connected Dexcom data source, the default for patients seeded
+// by newTestRepo, so that they are eligible for the TIDE report's noData category.
+func dexcomDataSources() *[]patients.DataSource {
+	return &[]patients.DataSource{{
+		ProviderName: patients.DexcomDataSourceProviderName,
+		State:        "connected",
+	}}
 }
 
 type patientDataCounts struct {

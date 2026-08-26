@@ -1960,25 +1960,36 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 	}
 
 	if !params.ExcludeNoData {
-		// This specifically catches users who:
-		// -  Have never had cgm data, resulting in a missing lastData field
-		// OR
-		// - Have no data within the last 8h
-		//    AND either of the following:
-		//    - Have no data within the cutoff, typically the period length being looked at, subtracted from now
-		//    - Have a dexcom session, and it is not successfully connected
+		// The "noData" category. A patient qualifies when they have a Dexcom data source
+		// (in any state), have not already been reported in one of the glycemic categories
+		// above, and at least one of the following holds:
+		//
+		//   1. They have never had CGM data, so summary lastData is missing or null.
+		//   2. Their last CGM data is more than 8 hours old, AND either:
+		//      a. it is also older than params.LastDataCutoff (normally now minus the
+		//         report period), i.e. there is no data at all within the period; or
+		//      b. a Dexcom data source of theirs is in any state other than "connected", so
+		//         the recent gap is most likely a broken connection rather than a lapse in
+		//         sensor wear.
+		//
+		// The clinic, tags, sites and demo-patient filters are applied on top of this,
+		// exactly as for the glycemic categories.
 		selector := bson.M{
-			"_id":      bson.M{"$nin": exclusions},
-			"clinicId": clinicObjId,
+			"_id":                      bson.M{"$nin": exclusions},
+			"clinicId":                 clinicObjId,
+			"dataSources.providerName": patients.DexcomDataSourceProviderName,
 			"$or": bson.A{
 				bson.M{"summary.cgmStats.dates.lastData": nil},
-				bson.M{"$and": bson.A{
-					bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": time.Now().UTC().Add(-8 * time.Hour)}},
-					bson.M{"$or": bson.A{
+				bson.M{
+					"summary.cgmStats.dates.lastData": bson.M{"$lt": time.Now().UTC().Add(-8 * time.Hour)},
+					"$or": bson.A{
 						bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": params.LastDataCutoff}},
-						bson.M{"dataSources": bson.M{"$elemMatch": bson.M{"providerName": "dexcom", "state": bson.M{"$ne": "connected"}}}},
-					}},
-				}},
+						bson.M{"dataSources": bson.M{"$elemMatch": bson.M{
+							"providerName": patients.DexcomDataSourceProviderName,
+							"state":        bson.M{"$ne": "connected"},
+						}}},
+					},
+				},
 			},
 		}
 		applyTagsFilter(selector, tags)
