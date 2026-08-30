@@ -437,8 +437,9 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 		return fmt.Errorf("unable to create subscription update: %w", err)
 	}
 
+	var create *patients.Patient
 	if match.Patient == nil {
-		create, err := GetPatientCreateFromOrder(match, preorderData)
+		create, err = GetPatientCreateFromOrder(match, preorderData)
 		if err != nil {
 			return fmt.Errorf("unable to create patient create: %w", err)
 		}
@@ -462,6 +463,22 @@ func (d *defaultHandler) handleNewOrder(ctx context.Context, documentId string) 
 				if err != nil {
 					return fmt.Errorf("unable to get updated patient")
 				}
+			}
+		}
+	}
+
+	// Update the email of custodial patients if it's missing
+	if match.Patient != nil && match.Patient.IsCustodial() && match.Patient.Email == nil && create != nil && create.Email != nil {
+		match.Patient.Email = create.Email
+		if _, err := d.patients.Update(ctx, patients.PatientUpdate{
+			ClinicId: match.Patient.ClinicId.Hex(),
+			UserId:   *match.Patient.UserId,
+			Patient:  *match.Patient,
+		}); err != nil {
+			if errors.Is(err, patients.ErrDuplicateEmail) {
+				d.logger.Warnw("custodial account email is already taken", "clinicId", match.Patient.ClinicId.Hex(), "userId", *match.Patient.UserId)
+			} else {
+				return fmt.Errorf("unable to update patient: %w", err)
 			}
 		}
 	}
