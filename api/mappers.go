@@ -629,11 +629,23 @@ func NewTideReportParams(params TideReportParams) patients.TideReportParams {
 	}
 	return patients.TideReportParams{
 		Period:         params.Period,
-		Tags:           params.Tags,
+		Tags:           compactIds(params.Tags),
+		Sites:          compactIds(params.Sites),
 		LastDataCutoff: params.LastDataCutoff,
 		Categories:     categories,
 		ExcludeNoData:  params.ExcludeNoData,
 	}
+}
+
+// compactIds drops empty ids, so that an empty ?tags= or ?sites= value means no filter.
+func compactIds(ids []ObjectIdV1) []string {
+	var out []string
+	for _, id := range ids {
+		if id != "" {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 func NewTideDto(tide *patients.Tide) *TideResponseV1 {
@@ -650,12 +662,17 @@ func NewTideDto(tide *patients.Tide) *TideResponseV1 {
 			LowGlucoseThreshold:         tide.Config.LowGlucoseThreshold,
 			Period:                      tide.Config.Period,
 			SchemaVersion:               tide.Config.SchemaVersion,
-			Tags:                        &tide.Config.Tags,
 			VeryHighGlucoseThreshold:    tide.Config.VeryHighGlucoseThreshold,
 			VeryLowGlucoseThreshold:     tide.Config.VeryLowGlucoseThreshold,
 			ExtremeHighGlucoseThreshold: &tide.Config.ExtremeHighGlucoseThreshold,
 		},
 		Results: TideResultsV1{},
+	}
+	if len(tide.Config.Tags) > 0 {
+		tideResult.Config.Tags = &tide.Config.Tags
+	}
+	if len(tide.Config.Sites) > 0 {
+		tideResult.Config.Sites = &tide.Config.Sites
 	}
 
 	for category, tidePatients := range tide.Results {
@@ -1677,7 +1694,7 @@ func stringToClinicType(s *string) *ClinicV1ClinicType {
 	return &size
 }
 
-var rangeFilterRegex = regexp.MustCompile("^(<|<=|>|>=)(\\d\\.\\d?\\d?)$")
+var rangeFilterRegex = regexp.MustCompile(`^(<|<=|>|>=)([+-]?(\d{1,10}(\.\d{0,10})?|\.\d{1,10}))$`)
 
 func parseRangeFilter(filters patients.SummaryFilters, field string, filter *string) (err error) {
 	if filter == nil || *filter == "" {
@@ -1685,7 +1702,7 @@ func parseRangeFilter(filters patients.SummaryFilters, field string, filter *str
 	}
 
 	matches := rangeFilterRegex.FindStringSubmatch(*filter)
-	if len(matches) != 3 {
+	if len(matches) < 3 {
 		err = fmt.Errorf("%w: couldn't parse range filter", errors.BadRequest)
 		return
 	}
