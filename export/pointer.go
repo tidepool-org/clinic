@@ -19,6 +19,20 @@ func pfloat(f *float64, precision int) string {
 	return fmt.Sprintf("%v", math.RoundToEven(*f*shift)/shift)
 }
 
+func pfloattrunc(f *float64) string {
+	if f == nil {
+		return ""
+	}
+	return fmt.Sprintf("%v", int(*f))
+}
+
+func ppctunrounded(f *float64) string {
+	if f == nil {
+		return ""
+	}
+	return fmt.Sprintf("%v", *f*100)
+}
+
 func pint(i *int) string {
 	if i == nil {
 		return ""
@@ -34,6 +48,7 @@ func ptomgdl(valMmolL *float64) string {
 	return pfloat(&val, 0)
 }
 
+// ppct takes a number ≤ 1.0 and returns a number as a string ≤ 100 with precision digits to the right of the decimal point after banker's rounding.
 func ppct(f *float64, precision int) string {
 	if f == nil {
 		return ""
@@ -45,12 +60,6 @@ func ppct(f *float64, precision int) string {
 func ptime(t *time.Time, layout string) string {
 	if t == nil || t.IsZero() {
 		return ""
-	}
-	return t.Format(layout)
-}
-func ptimed(t *time.Time, layout, defaultVal string) string {
-	if t == nil || t.IsZero() {
-		return defaultVal
 	}
 	return t.Format(layout)
 }
@@ -68,10 +77,6 @@ func pstrd(p *string, defaultVal string) string {
 	}
 
 	return *p
-}
-
-func strp(s string) *string {
-	return &s
 }
 
 func toMgDl(valMmolL float64) float64 {

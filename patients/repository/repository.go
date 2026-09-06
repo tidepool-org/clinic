@@ -1146,8 +1146,8 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 				},
 			},
 			"bgmTotalReadings": bgmPathPrefix + ".totalRecords",
-			"bgmLowEvents":     bgmPathPrefix + ".timeInLowRecords",
-			"bgmHighEvents":    bgmPathPrefix + ".timeInHighRecords",
+			"bgmLowEvents":     bgmPathPrefix + ".timeInVeryLowRecords",  // BGM Low Events are a count of readings below 54 mg/dL hence using the very low threshold count
+			"bgmHighEvents":    bgmPathPrefix + ".timeInVeryHighRecords", // BGM High Events are a count of readings above 250 mg/dL.
 		}},
 	}
 
