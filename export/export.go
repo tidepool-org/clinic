@@ -51,21 +51,21 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 		fmtDataSourceStatus(p.TwiistDataSource, e.params.ReportDate),
 		fmtDataSourceLastDataDate(p.TwiistDataSource),
 		ptime(p.CgmLastDataDate, "2006-01-02"),
-		ppct(p.CgmActiveWearTime, 0),
+		ppctunrounded(p.CgmActiveWearTime),
 		pint(p.CgmDaysWithData),
 		pint(p.CgmHoursWithData),
 		ptomgdl(p.CgmAverageGlucose),
 		pfloat(p.CgmGmi, 2),
 		fmtPreferredUnits(p.CgmStdDev, e.clinic.PreferredBgUnits, 1),
 		ppct(p.CgmCV, 0),
-		ppct(p.CgmTimeInLevel2Hypo, 0),
-		ppct(p.CgmTimeInLevel1Hypo, 0),
-		ppct(p.CgmTimeInTarget, 0),
+		ppctunrounded(p.CgmTimeInLevel2Hypo),
+		ppctunrounded(p.CgmTimeInLevel1Hypo),
+		ppctunrounded(p.CgmTimeInTarget),
 		ppct(p.CgmTimeInLevel1Hyper, 0),
 		ppct(p.CgmTimeInLevel2Hyper, 0),
 		ptime(p.BgmLastDataDate, "2006-01-02"),
 		ptomgdl(p.BgmAverageGlucose),
-		pfloat(p.BgmReadingsPerDay, 0),
+		pfloattrunc(p.BgmReadingsPerDay),
 		pint(p.BgmTotalReadings),
 		pint(p.BgmLowEvents),
 		pint(p.BgmHighEvents),
@@ -251,17 +251,6 @@ func fmtClinicTime(t time.Time, clinic *clinics.Clinic) string {
 	return t.In(loc).Format(timeFormat)
 }
 
-func fmtClinicDate(t time.Time, clinic *clinics.Clinic) string {
-	if clinic.Timezone == nil || *clinic.Timezone == "" {
-		return t.Format(time.DateOnly)
-	}
-	loc, err := time.LoadLocation(*clinic.Timezone)
-	if err != nil {
-		return t.Format(time.DateOnly)
-	}
-	return t.In(loc).Format(time.DateOnly)
-}
-
 func fmtBool(b bool, valIfTrue string, valIfFalse string) string {
 	if b {
 		return valIfTrue
@@ -316,9 +305,10 @@ func periodToDays(period string) (days int, err error) {
 	return days, nil
 }
 
-func fmtFloat(f float64, precision int) string {
+// FmtFloat returns a number as a string with precision digits to the right of the decimal point after banker's rounding.
+func FmtFloat(f float64, precision int) string {
 	shift := math.Pow(10, float64(precision))
-	return fmt.Sprintf("%v", math.RoundToEven(f*shift*100)/shift)
+	return fmt.Sprintf("%v", math.RoundToEven(f*shift)/shift)
 }
 
 func fmtPreferredUnits(valMmolL *float64, preferredBgUnits string, precision int) string {
@@ -326,7 +316,7 @@ func fmtPreferredUnits(valMmolL *float64, preferredBgUnits string, precision int
 		return ""
 	}
 	if strings.ToLower(preferredBgUnits) == "mg/dl" {
-		return fmtFloat(toMgDl(*valMmolL), precision)
+		return FmtFloat(toMgDl(*valMmolL), precision)
 	}
-	return fmtFloat(*valMmolL, precision)
+	return FmtFloat(*valMmolL, precision)
 }
