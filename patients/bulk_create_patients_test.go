@@ -39,7 +39,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Name", "Birthdate"},
 				{"George Washington", "1950-01-02"},
 			}
-			_, _, _, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId)
+			_, _, _, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, nil)
 			Expect(err).To(MatchError(patients.ErrCSVHeaderMissingCols))
 		})
 
@@ -50,6 +50,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
 				{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org"},
 				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "existing+email@tidepool.org"},
+				{"Existing Email Case Insensitive Check", "1959-01-02", "444455555", "EXISTING+email@tidepool.org"},
 				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org"},
 				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk"},
 				{"Invalid Email", "1960-01-02", "123456792", "invalid+email", "type2", ""},
@@ -62,12 +63,14 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Person 2 duplicate MRN within CSV", "2000-10-10", "55555555", "duplicate+mrn2@tidepool.org", "type1", "adaStandard"},
 				{"Person 1 duplicate email within CSV", "1999-12-10", "55555556", "duplicate+email@tidepool.org", "type1", "adaStandard"},
 				{"Person 2 duplicate email within CSV", "2000-10-10", "55555557", "duplicate+email@tidepool.org", "type1", "adaStandard"},
+				{"Person 3 duplicate email within CSV ignoring case", "2000-11-12", "55555558", "DUPLICATE+EMAIL@tidepool.org", "type1", "adaStandard"},
 			}
 			expectedOutput := [][]string{
 				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", ""},
 				{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", ""},
 				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "existing+email@tidepool.org", "", "adaStandard", "duplicate MRN, duplicate email", ""},
+				{"Existing Email Case Insensitive Check", "1959-01-02", "444455555", "EXISTING+email@tidepool.org", "", "adaStandard", "duplicate email", ""},
 				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org", "", "adaStandard", "", ""},
 				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk", "", ""},
 				{"Invalid Email", "1960-01-02", "123456792", "invalid+email", "type2", "", "invalid email", ""},
@@ -80,6 +83,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Person 2 duplicate MRN within CSV", "2000-10-10", "55555555", "duplicate+mrn2@tidepool.org", "type1", "adaStandard", "duplicate MRN", ""},
 				{"Person 1 duplicate email within CSV", "1999-12-10", "55555556", "duplicate+email@tidepool.org", "type1", "adaStandard", "duplicate email", ""},
 				{"Person 2 duplicate email within CSV", "2000-10-10", "55555557", "duplicate+email@tidepool.org", "type1", "adaStandard", "duplicate email", ""},
+				{"Person 3 duplicate email within CSV ignoring case", "2000-11-12", "55555558", "DUPLICATE+EMAIL@tidepool.org", "type1", "adaStandard", "duplicate email", ""},
 			}
 
 			patientSvc.EXPECT().
@@ -107,7 +111,7 @@ var _ = Describe("Bulk Account Creation", func() {
 					}).
 				AnyTimes()
 
-			outputRecords, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId)
+			outputRecords, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(parsedPatients)).To(Equal(len(expectedOutput) - 1))
 			Expect(header).To(Equal(expectedOutput[0]))
@@ -118,6 +122,7 @@ var _ = Describe("Bulk Account Creation", func() {
 	Describe("CreateCSVPatients", func() {
 		It("creates an account for each valid patient and returns an updated CSV of the emailed status", func() {
 			ctx := context.Background()
+			invitedBy := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 			records := [][]string{
 				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
@@ -160,7 +165,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				Return(&patients.Patient{}, nil).
 				Times(1)
 
-			_, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId)
+			_, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, &invitedBy)
 			Expect(len(parsedPatients)).To(Equal(3))
 			Expect(err).ToNot(HaveOccurred())
 			outputRecords := patients.CreateCSVPatients(ctx, patientSvc, header, parsedPatients)

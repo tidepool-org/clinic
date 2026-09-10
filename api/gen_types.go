@@ -2140,6 +2140,12 @@ type ListClinicsParams struct {
 	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
 }
 
+// ListBulkCreatePatientsTextBody defines parameters for ListBulkCreatePatients.
+type ListBulkCreatePatientsTextBody = string
+
+// BulkCreatePatientsTextBody defines parameters for BulkCreatePatients.
+type BulkCreatePatientsTextBody = string
+
 // ListCliniciansParams defines parameters for ListClinicians.
 type ListCliniciansParams struct {
 	// Search Full text search query
@@ -2597,6 +2603,12 @@ type CreateClinicJSONRequestBody = ClinicV1
 
 // UpdateClinicJSONRequestBody defines body for UpdateClinic for application/json ContentType.
 type UpdateClinicJSONRequestBody = ClinicV1
+
+// ListBulkCreatePatientsTextRequestBody defines body for ListBulkCreatePatients for text/plain ContentType.
+type ListBulkCreatePatientsTextRequestBody = ListBulkCreatePatientsTextBody
+
+// BulkCreatePatientsTextRequestBody defines body for BulkCreatePatients for text/plain ContentType.
+type BulkCreatePatientsTextRequestBody = BulkCreatePatientsTextBody
 
 // CreateClinicianJSONRequestBody defines body for CreateClinician for application/json ContentType.
 type CreateClinicianJSONRequestBody = ClinicianV1
