@@ -239,6 +239,32 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
+		It("allows backend services to update a clinician's security profile", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinicians", "999999999", "securityProfile"},
+				"method": "PATCH",
+				"auth": map[string]interface{}{
+					"subjectId":    "keycloak",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("prevents users from updating a clinician's security profile", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "clinicians", "999999999", "securityProfile"},
+				"method": "PATCH",
+				"auth": map[string]interface{}{
+					"subjectId":    "999999999",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
 		It("prevents clinic members from changing patient permissions", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "999999999", "permissions"},

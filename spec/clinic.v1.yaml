@@ -1544,6 +1544,23 @@ paths:
       parameters:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
+  /v1/clinicians/{userId}/securityProfile:
+    parameters:
+      - $ref: '#/components/parameters/userId'
+    patch:
+      summary: Update Clinician Security Profile
+      operationId: UpdateClinicianSecurityProfile
+      responses:
+        '204':
+          description: No content
+      description: Partially update the security profile of a clinician. Only the fields present in the request body are modified; omitted fields are left unchanged. Intended to be called by an event-based external system.
+      tags:
+        - Clinics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clinicianSecurityProfileUpdate.v1'
   /v1/clinics/{clinicId}/migrations:
     parameters:
       - schema:
@@ -2364,6 +2381,26 @@ components:
       required:
         - id
         - name
+    clinicianSecurityProfileUpdate.v1:
+      title: Clinician Security Profile Update
+      description: A partial update to a clinician's security profile, applied by an event-based external system. Only the fields present in the request are modified; omitted fields are left unchanged. Typically a single event updates one group of fields, e.g. multi-factor authentication status, last login time, or linked identity providers.
+      type: object
+      properties:
+        mfaEnabled:
+          type: boolean
+          description: Whether multi-factor (two-factor) authentication is enabled for the clinician.
+          example: true
+        mfaEnabledTime:
+          $ref: '#/components/schemas/datetime.v1'
+          description: The time at which multi-factor (two-factor) authentication was enabled for the clinician.
+        identityProviders:
+          type: array
+          description: The external identity providers linked to the clinician account.
+          items:
+            $ref: '#/components/schemas/identityprovider.v1'
+        lastLoginTime:
+          $ref: '#/components/schemas/datetime.v1'
+          description: The time of the clinician's most recent successful login.
     dataSources.v1:
       type: array
       items:
@@ -3564,6 +3601,53 @@ components:
           - CLINIC_ADMIN
           - CLINIC_MEMBER
           - PRESCRIBER
+    datetime.v1:
+      title: Date/Time
+      description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
+      type: string
+      format: date-time
+      example: '2017-02-06T02:37:46Z'
+      x-go-type: string
+    identityprovider.v1:
+      title: Identity Provider
+      description: An external identity provider linked to the user account.
+      type: object
+      properties:
+        alias:
+          type: string
+          description: The unique alias identifying the identity provider configuration.
+          minLength: 1
+          example: google
+        name:
+          type: string
+          description: The display name of the identity provider.
+          minLength: 1
+          example: Google
+      required:
+        - alias
+        - name
+    clinicianSecurityProfile.v1:
+      title: Clinician Security Profile
+      description: Security-related metadata for a clinician account, including multi-factor authentication status, linked identity providers, and last login time.
+      type: object
+      properties:
+        mfaEnabled:
+          type: boolean
+          description: Whether multi-factor (two-factor) authentication is enabled for the clinician.
+          example: true
+        mfaEnabledTime:
+          $ref: '#/components/schemas/datetime.v1'
+          description: The time at which multi-factor (two-factor) authentication was enabled for the clinician.
+        identityProviders:
+          type: array
+          description: The external identity providers linked to the clinician account.
+          items:
+            $ref: '#/components/schemas/identityprovider.v1'
+        lastLoginTime:
+          $ref: '#/components/schemas/datetime.v1'
+          description: The time of the clinician's most recent successful login.
+      required:
+        - mfaEnabled
     clinician.v1:
       title: Clinician
       description: The `id` may be empty if the clinician invite has not been accepted.
@@ -3584,6 +3668,10 @@ components:
           minLength: 1
         roles:
           $ref: '#/components/schemas/clinicianRoles.v1'
+        securityProfile:
+          allOf:
+            - $ref: '#/components/schemas/clinicianSecurityProfile.v1'
+          readOnly: true
         createdTime:
           type: string
           format: date-time
@@ -3726,13 +3814,6 @@ components:
       minLength: 1
       maxLength: 100
       example: dexcom
-    datetime.v1:
-      title: Date/Time
-      description: '[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information'
-      type: string
-      format: date-time
-      example: '2017-02-06T02:37:46Z'
-      x-go-type: string
     dataSource.v1:
       type: object
       title: Patient data source

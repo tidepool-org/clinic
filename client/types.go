@@ -1279,9 +1279,10 @@ type ClinicianV1 struct {
 	InviteId *string `json:"inviteId,omitempty"`
 
 	// Name The name of the clinician
-	Name        *string          `json:"name,omitempty"`
-	Roles       ClinicianRolesV1 `json:"roles"`
-	UpdatedTime *time.Time       `json:"updatedTime,omitempty"`
+	Name            *string                     `json:"name,omitempty"`
+	Roles           ClinicianRolesV1            `json:"roles"`
+	SecurityProfile *ClinicianSecurityProfileV1 `json:"securityProfile,omitempty"`
+	UpdatedTime     *time.Time                  `json:"updatedTime,omitempty"`
 }
 
 // ClinicianClinicRelationshipV1 defines model for clinicianClinicRelationship.v1.
@@ -1298,6 +1299,36 @@ type ClinicianClinicRelationshipsV1 = []ClinicianClinicRelationshipV1
 
 // ClinicianRolesV1 defines model for clinicianRoles.v1.
 type ClinicianRolesV1 = []string
+
+// ClinicianSecurityProfileV1 Security-related metadata for a clinician account, including multi-factor authentication status, linked identity providers, and last login time.
+type ClinicianSecurityProfileV1 struct {
+	// IdentityProviders The external identity providers linked to the clinician account.
+	IdentityProviders *[]IdentityproviderV1 `json:"identityProviders,omitempty"`
+
+	// LastLoginTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	LastLoginTime *DatetimeV1 `json:"lastLoginTime,omitempty"`
+
+	// MfaEnabled Whether multi-factor (two-factor) authentication is enabled for the clinician.
+	MfaEnabled bool `json:"mfaEnabled"`
+
+	// MfaEnabledTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	MfaEnabledTime *DatetimeV1 `json:"mfaEnabledTime,omitempty"`
+}
+
+// ClinicianSecurityProfileUpdateV1 A partial update to a clinician's security profile, applied by an event-based external system. Only the fields present in the request are modified; omitted fields are left unchanged. Typically a single event updates one group of fields, e.g. multi-factor authentication status, last login time, or linked identity providers.
+type ClinicianSecurityProfileUpdateV1 struct {
+	// IdentityProviders The external identity providers linked to the clinician account.
+	IdentityProviders *[]IdentityproviderV1 `json:"identityProviders,omitempty"`
+
+	// LastLoginTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	LastLoginTime *DatetimeV1 `json:"lastLoginTime,omitempty"`
+
+	// MfaEnabled Whether multi-factor (two-factor) authentication is enabled for the clinician.
+	MfaEnabled *bool `json:"mfaEnabled,omitempty"`
+
+	// MfaEnabledTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	MfaEnabledTime *DatetimeV1 `json:"mfaEnabledTime,omitempty"`
+}
 
 // CliniciansV1 defines model for clinicians.v1.
 type CliniciansV1 = []ClinicianV1
@@ -1512,6 +1543,15 @@ type GlycemicRangesThresholdUpperBoundV1 struct {
 
 // GlycemicRangesThresholdUpperBoundV1Units defines model for GlycemicRangesThresholdUpperBoundV1.Units.
 type GlycemicRangesThresholdUpperBoundV1Units string
+
+// IdentityproviderV1 An external identity provider linked to the user account.
+type IdentityproviderV1 struct {
+	// Alias The unique alias identifying the identity provider configuration.
+	Alias string `json:"alias"`
+
+	// Name The display name of the identity provider.
+	Name string `json:"name"`
+}
 
 // MembershipRestrictionV1 A user joining a clinic must match all of the defined restrictions
 type MembershipRestrictionV1 struct {
@@ -2542,6 +2582,9 @@ type ViewPDFReportParams struct {
 	PatientId       string `form:"patientId" json:"patientId"`
 	RestrictedToken string `form:"restricted_token" json:"restricted_token"`
 }
+
+// UpdateClinicianSecurityProfileJSONRequestBody defines body for UpdateClinicianSecurityProfile for application/json ContentType.
+type UpdateClinicianSecurityProfileJSONRequestBody = ClinicianSecurityProfileUpdateV1
 
 // CreateClinicJSONRequestBody defines body for CreateClinic for application/json ContentType.
 type CreateClinicJSONRequestBody = ClinicV1

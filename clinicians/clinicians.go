@@ -37,6 +37,7 @@ type Service interface {
 	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
 	DeleteInvite(ctx context.Context, clinicId, inviteId string) error
 	AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error)
+	UpdateSecurityProfile(ctx context.Context, userId string, update SecurityProfileUpdate) error
 }
 
 type Repository interface {
@@ -50,6 +51,7 @@ type Repository interface {
 	GetInvite(ctx context.Context, clinicId, inviteId string) (*Clinician, error)
 	DeleteInvite(ctx context.Context, clinicId, inviteId string) error
 	AssociateInvite(ctx context.Context, associate AssociateInvite) (*Clinician, error)
+	UpdateSecurityProfile(ctx context.Context, userId string, update SecurityProfileUpdate) error
 }
 
 type AssociateInvite struct {
@@ -82,8 +84,31 @@ type Clinician struct {
 	Roles            []string            `bson:"roles"`
 	RolesUpdates     []RolesUpdate       `bson:"rolesUpdates,omitempty"`
 	IsServiceAccount bool                `bson:"isServiceAccount,omitempty"`
+	SecurityProfile  *SecurityProfile    `bson:"securityProfile,omitempty"`
 	CreatedTime      time.Time           `bson:"createdTime"`
 	UpdatedTime      time.Time           `bson:"updatedTime"`
+}
+
+type SecurityProfile struct {
+	MFAEnabled        *bool              `bson:"mfaEnabled,omitempty"`
+	MFAEnabledTime    *time.Time         `bson:"mfaEnabledTime,omitempty"`
+	IdentityProviders []IdentityProvider `bson:"identityProviders,omitempty"`
+	LastLoginTime     *time.Time         `bson:"lastLoginTime,omitempty"`
+}
+
+type IdentityProvider struct {
+	Alias string `bson:"alias"`
+	Name  string `bson:"name"`
+}
+
+// SecurityProfileUpdate is a partial, event-based update to a clinician's
+// security profile. Only the non-nil fields are applied; nil fields are left
+// unchanged in the stored profile.
+type SecurityProfileUpdate struct {
+	MFAEnabled        *bool
+	MFAEnabledTime    *time.Time
+	IdentityProviders *[]IdentityProvider
+	LastLoginTime     *time.Time
 }
 
 type RolesUpdate struct {
