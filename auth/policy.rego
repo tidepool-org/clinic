@@ -841,6 +841,9 @@ allow {
   input.path = ["v1", "clinics", _, "patients", "bulk"]
   clinician_has_write_access
 }
+
+# Allow backend services to view patients that would be created from bulk account creation.
+# GET /v1/clinics/:clinicId/patients/bulk
 allow {
   input.method == "GET"
   input.path = ["v1", "clinics", _, "patients", "bulk"]

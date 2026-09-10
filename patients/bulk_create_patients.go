@@ -98,7 +98,7 @@ func (p *ParsedCSVPatient) AppendErr(err error) {
 // column defined as the slice index [OutputColStatus] in
 // [ParsedCSVPatient.Columns] in which case [ParsedCSVPatient.Patient] would be
 // empty. The CSV header is ALWAYS expected.
-func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, csvRecords [][]string, clinicId primitive.ObjectID) (outputRows [][]string, outputHeader []string, parsedPatients []*ParsedCSVPatient, err error) {
+func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, csvRecords [][]string, clinicId primitive.ObjectID, invitedBy *string) (outputRows [][]string, outputHeader []string, parsedPatients []*ParsedCSVPatient, err error) {
 	if len(csvRecords) == 0 {
 		return nil, nil, nil, ErrCSVEmpty
 	}
@@ -113,7 +113,8 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 	outputRows = append(outputRows, outputHeader)
 
 	filter := Filter{
-		ClinicId: strp(string(clinicId.Hex())),
+		ClinicId:                                 strp(string(clinicId.Hex())),
+		ExcludeSummaryExceptFieldsInMergeReports: true,
 	}
 	page := store.Pagination{Limit: 50_000, Offset: 0}
 	res, err := patientSvc.List(ctx, &filter, page, nil)
@@ -136,7 +137,7 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 	for _, record := range csvRecords[1:] {
 		outputRow := make([]string, NumOutputCols)
 		copy(outputRow[:MaxInputColumns], record)
-		patient, err := NewPatientFromColumns(record, clinicId)
+		patient, err := NewPatientFromColumns(record, clinicId, invitedBy)
 		parsedPatient := &ParsedCSVPatient{
 			Patient: patient,
 		}
@@ -187,7 +188,7 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 		}
 
 		if pp.Patient != nil {
-			if email := pstr(pp.Patient.Email); email != "" && emailCounts[email] > 1 {
+			if email := strings.ToLower(pstr(pp.Patient.Email)); email != "" && emailCounts[email] > 1 {
 				pp.AppendErr(ErrCSVPatientDuplicateEmail)
 			}
 		}
@@ -245,8 +246,10 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 }
 
 // NewPatientFromColumns instantiates a Patient object suitable for actual
-// creation given a row of text columns.
-func NewPatientFromColumns(record []string, clinicId primitive.ObjectID) (*Patient, error) {
+// creation given a row of text columns. Optionally, [Patient.InvitedBy] will
+// be set to the user id invitedBy if it is non-nil the string value is
+// non-zero.
+func NewPatientFromColumns(record []string, clinicId primitive.ObjectID, invitedBy *string) (*Patient, error) {
 	if len(record) < int(NumRequiredColumns) {
 		return nil, fmt.Errorf(`Row has fewer than the minimum required columns: %v`, record)
 	}
@@ -288,7 +291,7 @@ func NewPatientFromColumns(record []string, clinicId primitive.ObjectID) (*Patie
 	}
 	preset := DefaultGlycemicPreset
 	if len(record) > ColGlycemicPreset {
-		presetRaw := strings.TrimSpace(record[ColGlycemicPreset])
+		presetRaw := record[ColGlycemicPreset]
 		preset = ParseGlycemicRangesPreset(presetRaw, DefaultGlycemicPreset)
 	}
 
@@ -299,6 +302,7 @@ func NewPatientFromColumns(record []string, clinicId primitive.ObjectID) (*Patie
 		Mrn:           &mrn,
 		Email:         strpnotzero(email),
 		DiagnosisType: diagnosisType,
+		InvitedBy:     invitedBy,
 		GlycemicRanges: GlycemicRanges{
 			Type:   GlycemicRangeTypePreset,
 			Preset: GlycemicRangesPreset(preset),

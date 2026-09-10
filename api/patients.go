@@ -535,6 +535,12 @@ func (h *Handler) ListBulkCreatePatients(ec echo.Context, clinicId ClinicId) err
 	if err != nil {
 		return err
 	}
+	var invitedBy *string = nil
+	authData := auth.GetAuthData(ctx)
+	if authData != nil && authData.SubjectId != "" {
+		inviterId := authData.SubjectId
+		invitedBy = &inviterId
+	}
 	reader := csv.NewReader(ec.Request().Body)
 	reader.FieldsPerRecord = -1
 	records, err := reader.ReadAll()
@@ -544,14 +550,14 @@ func (h *Handler) ListBulkCreatePatients(ec echo.Context, clinicId ClinicId) err
 			Message: fmt.Sprintf(`error reading input csv: %v`, err),
 		}
 	}
-	outputRecords, _, _, err := patients.ParsePotentialCSVPatients(ctx, h.Patients, h.Users, records, clinicObjId)
+	outputRecords, _, _, err := patients.ParsePotentialCSVPatients(ctx, h.Patients, h.Users, records, clinicObjId, invitedBy)
 	if err != nil {
 		return err
 	}
 	res := ec.Response()
 	res.Header().Set(echo.HeaderContentType, "text/csv")
 	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=bulk-creation-result-%d.csv", time.Now().Unix()))
-	res.WriteHeader(http.StatusCreated)
+	res.WriteHeader(http.StatusOK)
 	return csv.NewWriter(res.Writer).WriteAll(outputRecords)
 }
 
@@ -561,6 +567,13 @@ func (h *Handler) BulkCreatePatients(ec echo.Context, clinicId ClinicId) error {
 	if err != nil {
 		return err
 	}
+	var invitedBy *string = nil
+	authData := auth.GetAuthData(ctx)
+	if authData != nil && authData.SubjectId != "" {
+		inviterId := authData.SubjectId
+		invitedBy = &inviterId
+	}
+
 	reader := csv.NewReader(ec.Request().Body)
 	reader.FieldsPerRecord = -1
 	records, err := reader.ReadAll()
@@ -570,7 +583,7 @@ func (h *Handler) BulkCreatePatients(ec echo.Context, clinicId ClinicId) error {
 			Message: fmt.Sprintf(`error reading input csv: %v`, err),
 		}
 	}
-	_, csvHeader, potentialPatients, err := patients.ParsePotentialCSVPatients(ctx, h.Patients, h.Users, records, clinicObjId)
+	_, csvHeader, potentialPatients, err := patients.ParsePotentialCSVPatients(ctx, h.Patients, h.Users, records, clinicObjId, invitedBy)
 	if err != nil {
 		return err
 	}
