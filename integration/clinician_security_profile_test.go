@@ -17,7 +17,7 @@ import (
 var _ = Describe("Clinician Security Profile Integration Test", Ordered, func() {
 	var clinic client.ClinicV1
 
-	googleProvider := client.ClinicianIdentityProviderV1{Alias: "google-oidc", Name: "Google"}
+	googleProvider := client.IdentityproviderV1{Alias: "google-oidc", Name: "Google"}
 	endpoint := fmt.Sprintf("/v1/clinicians/%s/securityProfile", test.TestUserId)
 
 	patch := func(fixture string) *http.Response {

@@ -152,11 +152,11 @@ func NewClinicianDto(clinician *clinicians.Clinician) ClinicianV1 {
 	return dto
 }
 
-func newIdentityProviderDto(p clinicians.IdentityProvider) ClinicianIdentityProviderV1 {
-	return ClinicianIdentityProviderV1{Alias: p.Alias, Name: p.Name}
+func newIdentityProviderDto(p clinicians.IdentityProvider) IdentityproviderV1 {
+	return IdentityproviderV1{Alias: p.Alias, Name: p.Name}
 }
 
-func newIdentityProvider(p ClinicianIdentityProviderV1) clinicians.IdentityProvider {
+func newIdentityProvider(p IdentityproviderV1) clinicians.IdentityProvider {
 	return clinicians.IdentityProvider{Alias: p.Alias, Name: p.Name}
 }
 
@@ -168,7 +168,7 @@ func NewClinicianSecurityProfileDto(profile *clinicians.SecurityProfile) *Clinic
 	dto := ClinicianSecurityProfileV1{}
 
 	if profile.IdentityProviders != nil {
-		providers := make([]ClinicianIdentityProviderV1, 0, len(profile.IdentityProviders))
+		providers := make([]IdentityproviderV1, 0, len(profile.IdentityProviders))
 		for _, p := range profile.IdentityProviders {
 			providers = append(providers, newIdentityProviderDto(p))
 		}
