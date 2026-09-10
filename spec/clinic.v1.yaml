@@ -5062,6 +5062,11 @@ components:
           $ref: '#/components/schemas/glycemicRanges.v1'
         diagnosisType:
           $ref: '#/components/schemas/diagnosisType.v1'
+        primaryIssueProvider:
+          description: The third-party data provider whose connection is the patient's primary issue, if any. Managed by Tidepool and cannot be set through this API.
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/providerId.v1'
       required:
         - id
         - fullName

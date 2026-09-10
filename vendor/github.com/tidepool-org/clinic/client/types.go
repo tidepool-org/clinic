@@ -1604,8 +1604,11 @@ type PatientV1 struct {
 	// Mrn The medical record number of the patient
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
-	Reviews     []PatientReviewV1     `json:"reviews"`
-	Sites       []SiteV1              `json:"sites,omitzero"`
+
+	// PrimaryIssueProvider The third-party data provider whose connection is the patient's primary issue, if any. Managed by Tidepool and cannot be set through this API.
+	PrimaryIssueProvider *ProviderIdV1     `json:"primaryIssueProvider,omitempty"`
+	Reviews              []PatientReviewV1 `json:"reviews"`
+	Sites                []SiteV1          `json:"sites,omitzero"`
 
 	// Summary A summary of a patients recent data
 	Summary *PatientSummaryV1 `json:"summary,omitempty"`

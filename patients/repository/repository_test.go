@@ -316,6 +316,40 @@ var _ = Describe("Patients Repository", func() {
 				Expect(got.DiagnosisType).To(Equal(patient.DiagnosisType))
 			})
 
+			It("stores the primary issue provider", func() {
+				ctx := context.Background()
+				provider := patients.AbbottDataSourceProviderName
+				patient.PrimaryIssueProvider = &provider
+				result, err := repo.Create(ctx, patient)
+				Expect(err).To(Succeed())
+				patient.Id = result.Id
+
+				got, err := repo.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
+				Expect(err).To(Succeed())
+				Expect(got.PrimaryIssueProvider).To(PointTo(Equal(provider)))
+			})
+
+			It("does not change the primary issue provider on update", func() {
+				ctx := context.Background()
+				provider := patients.DexcomDataSourceProviderName
+				patient.PrimaryIssueProvider = &provider
+				result, err := repo.Create(ctx, patient)
+				Expect(err).To(Succeed())
+				patient.Id = result.Id
+
+				// Client-driven updates never carry the field; it must survive the $set.
+				update := patientsTest.RandomPatientUpdate()
+				update.ClinicId = patient.ClinicId.Hex()
+				update.UserId = *patient.UserId
+				Expect(update.Patient.PrimaryIssueProvider).To(BeNil())
+				_, err = repo.Update(ctx, update)
+				Expect(err).To(Succeed())
+
+				got, err := repo.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
+				Expect(err).To(Succeed())
+				Expect(got.PrimaryIssueProvider).To(PointTo(Equal(provider)))
+			})
+
 			It("stores preset glycemic ranges", func() {
 				patient.GlycemicRanges = patientsTest.RandomGlycemicRangesPreset()
 				ctx := context.Background()
@@ -395,22 +429,23 @@ var _ = Describe("Patients Repository", func() {
 			BeforeEach(func() {
 				update = patientsTest.RandomPatientUpdate()
 				expected := patients.Patient{
-					Id:               randomPatient.Id,
-					ClinicId:         randomPatient.ClinicId,
-					UserId:           randomPatient.UserId,
-					BirthDate:        update.Patient.BirthDate,
-					Email:            update.Patient.Email,
-					FullName:         update.Patient.FullName,
-					Mrn:              update.Patient.Mrn,
-					Tags:             update.Patient.Tags,
-					TargetDevices:    update.Patient.TargetDevices,
-					Permissions:      update.Patient.Permissions,
-					IsMigrated:       randomPatient.IsMigrated,
-					DataSources:      update.Patient.DataSources,
-					EHRSubscriptions: update.Patient.EHRSubscriptions,
-					Sites:            update.Patient.Sites,
-					GlycemicRanges:   update.Patient.GlycemicRanges,
-					DiagnosisType:    update.Patient.DiagnosisType,
+					Id:                   randomPatient.Id,
+					ClinicId:             randomPatient.ClinicId,
+					UserId:               randomPatient.UserId,
+					BirthDate:            update.Patient.BirthDate,
+					Email:                update.Patient.Email,
+					FullName:             update.Patient.FullName,
+					Mrn:                  update.Patient.Mrn,
+					Tags:                 update.Patient.Tags,
+					TargetDevices:        update.Patient.TargetDevices,
+					Permissions:          update.Patient.Permissions,
+					IsMigrated:           randomPatient.IsMigrated,
+					DataSources:          update.Patient.DataSources,
+					EHRSubscriptions:     update.Patient.EHRSubscriptions,
+					Sites:                update.Patient.Sites,
+					GlycemicRanges:       update.Patient.GlycemicRanges,
+					DiagnosisType:        update.Patient.DiagnosisType,
+					PrimaryIssueProvider: randomPatient.PrimaryIssueProvider,
 				}
 				matchPatientFields = patientsTest.PatientFieldsMatcher(expected)
 			})
@@ -461,22 +496,23 @@ var _ = Describe("Patients Repository", func() {
 			BeforeEach(func() {
 				update = patientsTest.RandomPatientUpdate()
 				expected := patients.Patient{
-					Id:               randomPatient.Id,
-					ClinicId:         randomPatient.ClinicId,
-					UserId:           randomPatient.UserId,
-					BirthDate:        randomPatient.BirthDate,
-					Email:            update.Patient.Email,
-					FullName:         randomPatient.FullName,
-					Mrn:              randomPatient.Mrn,
-					Tags:             randomPatient.Tags,
-					TargetDevices:    randomPatient.TargetDevices,
-					Permissions:      randomPatient.Permissions,
-					IsMigrated:       randomPatient.IsMigrated,
-					DataSources:      randomPatient.DataSources,
-					EHRSubscriptions: randomPatient.EHRSubscriptions,
-					Sites:            randomPatient.Sites,
-					GlycemicRanges:   randomPatient.GlycemicRanges,
-					DiagnosisType:    randomPatient.DiagnosisType,
+					Id:                   randomPatient.Id,
+					ClinicId:             randomPatient.ClinicId,
+					UserId:               randomPatient.UserId,
+					BirthDate:            randomPatient.BirthDate,
+					Email:                update.Patient.Email,
+					FullName:             randomPatient.FullName,
+					Mrn:                  randomPatient.Mrn,
+					Tags:                 randomPatient.Tags,
+					TargetDevices:        randomPatient.TargetDevices,
+					Permissions:          randomPatient.Permissions,
+					IsMigrated:           randomPatient.IsMigrated,
+					DataSources:          randomPatient.DataSources,
+					EHRSubscriptions:     randomPatient.EHRSubscriptions,
+					Sites:                randomPatient.Sites,
+					GlycemicRanges:       randomPatient.GlycemicRanges,
+					DiagnosisType:        randomPatient.DiagnosisType,
+					PrimaryIssueProvider: randomPatient.PrimaryIssueProvider,
 				}
 				matchPatientFields = patientsTest.PatientFieldsMatcher(expected)
 			})

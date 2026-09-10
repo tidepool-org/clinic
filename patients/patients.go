@@ -120,6 +120,11 @@ type Patient struct {
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
 	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
 	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
+	// PrimaryIssueProvider tracks the most recently connected provider device (if
+	// any). This value is used to determine if other patient issues should be exposed
+	// through the connections issue dashboard. Its value is set by the backend and is
+	// read-only from the API.
+	PrimaryIssueProvider *string `bson:"primaryIssueProvider,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
