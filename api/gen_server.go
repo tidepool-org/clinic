@@ -43,6 +43,12 @@ type ServerInterface interface {
 	// Update Clinic
 	// (PUT /v1/clinics/{clinicId})
 	UpdateClinic(ctx echo.Context, clinicId ClinicId) error
+	// List patients that would be bulk created from input CSV.
+	// (GET /v1/clinics/{clinicId}/bulk/patients)
+	ListBulkCreatePatients(ctx echo.Context, clinicId ClinicId) error
+	// Create multiple patients in one request from input CSV.
+	// (POST /v1/clinics/{clinicId}/bulk/patients)
+	BulkCreatePatients(ctx echo.Context, clinicId ClinicId) error
 	// List Clinicians
 	// (GET /v1/clinics/{clinicId}/clinicians)
 	ListClinicians(ctx echo.Context, clinicId ClinicId, params ListCliniciansParams) error
@@ -121,12 +127,6 @@ type ServerInterface interface {
 	// Assign Patient Tag To Clinic Patients
 	// (POST /v1/clinics/{clinicId}/patients/assign_tag/{patientTagId})
 	AssignPatientTagToClinicPatients(ctx echo.Context, clinicId ClinicId, patientTagId PatientTagId) error
-	// List patients that would be bulk created from input CSV.
-	// (GET /v1/clinics/{clinicId}/patients/bulk)
-	ListBulkCreatePatients(ctx echo.Context, clinicId ClinicId) error
-	// Create multiple patients in one request from input CSV.
-	// (POST /v1/clinics/{clinicId}/patients/bulk)
-	BulkCreatePatients(ctx echo.Context, clinicId ClinicId) error
 	// Delete Patient Tag From Clinic Patients
 	// (POST /v1/clinics/{clinicId}/patients/delete_tag/{patientTagId})
 	DeletePatientTagFromClinicPatients(ctx echo.Context, clinicId ClinicId, patientTagId PatientTagId) error
@@ -506,6 +506,42 @@ func (w *ServerInterfaceWrapper) UpdateClinic(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.UpdateClinic(ctx, clinicId)
+	return err
+}
+
+// ListBulkCreatePatients converts echo context to params.
+func (w *ServerInterfaceWrapper) ListBulkCreatePatients(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListBulkCreatePatients(ctx, clinicId)
+	return err
+}
+
+// BulkCreatePatients converts echo context to params.
+func (w *ServerInterfaceWrapper) BulkCreatePatients(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.BulkCreatePatients(ctx, clinicId)
 	return err
 }
 
@@ -1994,42 +2030,6 @@ func (w *ServerInterfaceWrapper) AssignPatientTagToClinicPatients(ctx echo.Conte
 	return err
 }
 
-// ListBulkCreatePatients converts echo context to params.
-func (w *ServerInterfaceWrapper) ListBulkCreatePatients(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "clinicId" -------------
-	var clinicId ClinicId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
-	}
-
-	ctx.Set(SessionTokenScopes, []string{})
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ListBulkCreatePatients(ctx, clinicId)
-	return err
-}
-
-// BulkCreatePatients converts echo context to params.
-func (w *ServerInterfaceWrapper) BulkCreatePatients(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "clinicId" -------------
-	var clinicId ClinicId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
-	}
-
-	ctx.Set(SessionTokenScopes, []string{})
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.BulkCreatePatients(ctx, clinicId)
-	return err
-}
-
 // DeletePatientTagFromClinicPatients converts echo context to params.
 func (w *ServerInterfaceWrapper) DeletePatientTagFromClinicPatients(ctx echo.Context) error {
 	var err error
@@ -3009,6 +3009,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId", wrapper.DeleteClinic)
 	router.GET(baseURL+"/v1/clinics/:clinicId", wrapper.GetClinic)
 	router.PUT(baseURL+"/v1/clinics/:clinicId", wrapper.UpdateClinic)
+	router.GET(baseURL+"/v1/clinics/:clinicId/bulk/patients", wrapper.ListBulkCreatePatients)
+	router.POST(baseURL+"/v1/clinics/:clinicId/bulk/patients", wrapper.BulkCreatePatients)
 	router.GET(baseURL+"/v1/clinics/:clinicId/clinicians", wrapper.ListClinicians)
 	router.POST(baseURL+"/v1/clinics/:clinicId/clinicians", wrapper.CreateClinician)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/clinicians/:clinicianId", wrapper.DeleteClinician)
@@ -3035,8 +3037,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients", wrapper.ListPatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients", wrapper.CreatePatientAccount)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/assign_tag/:patientTagId", wrapper.AssignPatientTagToClinicPatients)
-	router.GET(baseURL+"/v1/clinics/:clinicId/patients/bulk", wrapper.ListBulkCreatePatients)
-	router.POST(baseURL+"/v1/clinics/:clinicId/patients/bulk", wrapper.BulkCreatePatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/delete_tag/:patientTagId", wrapper.DeletePatientTagFromClinicPatients)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.DeletePatient)
 	router.GET(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.GetPatient)
