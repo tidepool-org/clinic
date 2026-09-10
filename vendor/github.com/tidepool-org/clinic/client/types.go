@@ -1605,7 +1605,7 @@ type PatientV1 struct {
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
 
-	// PrimaryIssueProvider The third-party data provider whose connection is the patient's primary issue, if any. Managed by Tidepool and cannot be set through this API.
+	// PrimaryIssueProvider The provider of the patient's newest connection request, if any. When requests share a createdTime, twiist takes precedence over dexcom, which takes precedence over abbott. Derived by the service and cannot be set through this API.
 	PrimaryIssueProvider *ProviderIdV1     `json:"primaryIssueProvider,omitempty"`
 	Reviews              []PatientReviewV1 `json:"reviews"`
 	Sites                []SiteV1          `json:"sites,omitzero"`

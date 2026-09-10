@@ -34,6 +34,15 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
+	// PrimaryIssueProviderPrecedence orders providers from lowest to highest priority. It
+	// breaks ties between connection requests that share a createdTime when deciding a
+	// patient's primary issue provider.
+	PrimaryIssueProviderPrecedence = []string{
+		AbbottDataSourceProviderName, // lowest priority
+		DexcomDataSourceProviderName,
+		TwiistDataSourceProviderName, // highest priority
+	}
+
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,
@@ -120,14 +129,24 @@ type Patient struct {
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
 	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
 	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
-	// PrimaryIssueProvider tracks the most recently connected provider device (if
-	// any). This value is used to determine if other patient issues should be exposed
-	// through the connections issue dashboard. Its value is set by the backend and is
-	// read-only from the API.
-	PrimaryIssueProvider *string `bson:"primaryIssueProvider,omitempty"`
+	// PrimaryIssue tracks the most recently connected provider device (if any). This
+	// value is used to determine if other patient issues should be exposed through the
+	// connections issue dashboard. Its value is set by the backend and is read-only from
+	// the API.
+	PrimaryIssue *PrimaryIssue `bson:"primaryIssue,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
+}
+
+// PrimaryIssue records the provider of the connection request that most recently became the
+// patient's primary issue, and when that request was created.
+//
+// CreatedTime is denormalized from the providerConnectionRequest to make later comparisons
+// simpler.
+type PrimaryIssue struct {
+	ProviderName string    `bson:"providerName"`
+	CreatedTime  time.Time `bson:"createdTime"`
 }
 
 type DiagnosisType string

@@ -36,23 +36,23 @@ func RandomPatient() patients.Patient {
 	dataSources := RandomDataSources()
 	mrn := test.Faker.UUID().V4()
 	return patients.Patient{
-		ClinicId:             &clinicId,
-		UserId:               strp(test.Faker.UUID().V4()),
-		BirthDate:            strp(test.Faker.Time().ISO8601(time.Now())[:10]),
-		Email:                strp(test.Faker.Internet().Email()),
-		FullName:             strp(test.Faker.Person().Name()),
-		Mrn:                  strp(test.Faker.RandomStringElement([]string{mrn, strings.ToUpper(mrn)})),
-		Tags:                 &tags,
-		TargetDevices:        &devices,
-		Permissions:          &permissions,
-		IsMigrated:           test.Faker.Bool(),
-		DataSources:          (*[]patients.DataSource)(&dataSources),
-		EHRSubscriptions:     RandomSubscriptions(),
-		Sites:                &[]sites.Site{},
-		GlycemicRanges:       RandomGlycemicRanges(),
-		DiagnosisType:        RandomDiagnosisType(),
-		PrimaryIssueProvider: RandomPrimaryIssueProvider(),
-		UpdatedTime:          test.Faker.Time().TimeBetween(time.Now().Add(-time.Hour), time.Now().Add(-time.Minute)),
+		ClinicId:         &clinicId,
+		UserId:           strp(test.Faker.UUID().V4()),
+		BirthDate:        strp(test.Faker.Time().ISO8601(time.Now())[:10]),
+		Email:            strp(test.Faker.Internet().Email()),
+		FullName:         strp(test.Faker.Person().Name()),
+		Mrn:              strp(test.Faker.RandomStringElement([]string{mrn, strings.ToUpper(mrn)})),
+		Tags:             &tags,
+		TargetDevices:    &devices,
+		Permissions:      &permissions,
+		IsMigrated:       test.Faker.Bool(),
+		DataSources:      (*[]patients.DataSource)(&dataSources),
+		EHRSubscriptions: RandomSubscriptions(),
+		Sites:            &[]sites.Site{},
+		GlycemicRanges:   RandomGlycemicRanges(),
+		DiagnosisType:    RandomDiagnosisType(),
+		PrimaryIssue:     RandomPrimaryIssue(),
+		UpdatedTime:      test.Faker.Time().TimeBetween(time.Now().Add(-time.Hour), time.Now().Add(-time.Minute)),
 	}
 }
 
@@ -116,16 +116,22 @@ func RandomDiagnosisType() *patients.DiagnosisType {
 	return &choice
 }
 
-// RandomPrimaryIssueProvider returns one of the known provider names, or nil, since the
-// field is optional.
-func RandomPrimaryIssueProvider() *string {
-	all := []*string{
-		nil,
-		strp(patients.AbbottDataSourceProviderName),
-		strp(patients.DexcomDataSourceProviderName),
-		strp(patients.TwiistDataSourceProviderName),
+// RandomPrimaryIssue returns a primary issue for one of the known providers, or nil,
+// since the field is optional. The time is truncated to what Mongo stores so that values
+// compare equal after a round trip.
+func RandomPrimaryIssue() *patients.PrimaryIssue {
+	providers := []string{
+		patients.AbbottDataSourceProviderName,
+		patients.DexcomDataSourceProviderName,
+		patients.TwiistDataSourceProviderName,
 	}
-	return all[rand.IntN(len(all))]
+	if rand.IntN(len(providers)+1) == 0 {
+		return nil
+	}
+	return &patients.PrimaryIssue{
+		ProviderName: providers[rand.IntN(len(providers))],
+		CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
+	}
 }
 
 func RandomSubscriptions() patients.EHRSubscriptions {
@@ -264,6 +270,6 @@ func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"Sites":                          Equal(patient.Sites),
 		"GlycemicRanges":                 Equal(patient.GlycemicRanges),
 		"DiagnosisType":                  Equal(patient.DiagnosisType),
-		"PrimaryIssueProvider":           Equal(patient.PrimaryIssueProvider),
+		"PrimaryIssue":                   Equal(patient.PrimaryIssue),
 	})
 }

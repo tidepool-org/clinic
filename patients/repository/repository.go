@@ -890,16 +890,18 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	}
 
 	key := "providerConnectionRequests." + request.ProviderName
-	update := bson.M{
-		"$currentDate": bson.M{"updatedTime": true},
-		"$push": bson.M{
-			key: bson.M{
-				"$each": bson.A{request},
-				// Prepend, so the most recent request is stored first
-				"$position": 0,
-			},
-		},
-	}
+	// A pipeline update prepends the request and derives the primary issue provider from
+	// the stored document in one atomic operation, so concurrent requests can't observe a
+	// stale value.
+	update := mongo.Pipeline{bson.D{{Key: "$set", Value: bson.M{
+		"updatedTime": "$$NOW",
+		// Prepend, so the most recent request is stored first
+		key: bson.M{"$concatArrays": bson.A{
+			bson.M{"$literal": bson.A{request}},
+			bson.M{"$ifNull": bson.A{"$" + key, bson.A{}}},
+		}},
+		"primaryIssue": primaryIssueAfterRequest(request),
+	}}}}
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
@@ -910,6 +912,58 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	}
 
 	return nil
+}
+
+// primaryIssueAfterRequest builds the aggregation expression that decides a patient's
+// primary issue once request has been added. The request becomes the primary issue when
+// it is newer than the current one, when there is no current one, or when the times are
+// equal and the request's provider ranks higher in patients.PrimaryIssueProviderPrecedence.
+// Otherwise the current value is kept.
+func primaryIssueAfterRequest(request patients.ConnectionRequest) bson.M {
+	const current = "$primaryIssue"
+	const currentTime = current + ".createdTime"
+	const currentProvider = current + ".providerName"
+	newIssue := bson.M{"$literal": patients.PrimaryIssue{
+		ProviderName: request.ProviderName,
+		CreatedTime:  request.CreatedTime,
+	}}
+
+	requestWins := bson.M{"$switch": bson.M{
+		"branches": bson.A{
+			bson.M{
+				// A missing field compares equal to null.
+				"case": bson.M{"$eq": bson.A{currentTime, nil}},
+				"then": true,
+			},
+			bson.M{
+				"case": bson.M{"$gt": bson.A{request.CreatedTime, currentTime}},
+				"then": true,
+			},
+			bson.M{
+				"case": bson.M{"$eq": bson.A{request.CreatedTime, currentTime}},
+				"then": bson.M{"$gt": bson.A{
+					providerPrecedence(bson.M{"$literal": request.ProviderName}),
+					providerPrecedence(currentProvider),
+				}},
+			},
+		},
+		"default": false,
+	}}
+
+	return bson.M{"$cond": bson.A{requestWins, newIssue, current}}
+}
+
+// providerPrecedence builds an expression that ranks the provider expression by its
+// position in patients.PrimaryIssueProviderPrecedence. Unknown providers rank lowest.
+func providerPrecedence(provider interface{}) bson.M {
+	branches := bson.A{}
+	for i, name := range patients.PrimaryIssueProviderPrecedence {
+		branches = append(branches, bson.M{
+			"case": bson.M{"$eq": bson.A{provider, name}},
+			"then": i + 1,
+		})
+	}
+	return bson.M{"$switch": bson.M{"branches": branches, "default": 0}}
 }
 
 func (r *repository) RescheduleLastSubscriptionOrderForAllPatients(ctx context.Context, clinicId, subscription, ordersCollection, targetCollection string) error {

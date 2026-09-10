@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/client"
+	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/store/test"
 )
 
@@ -29,18 +31,33 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		return fmt.Sprintf("/v1/clinics/%s/patients/%s", *clinic.Id, *patient.Id)
 	}
 
-	patientDocument := func() bson.M {
+	patientSelector := func() bson.M {
 		GinkgoHelper()
 
 		clinicId, err := primitive.ObjectIDFromHex(*clinic.Id)
 		Expect(err).ToNot(HaveOccurred())
-		selector := bson.M{"userId": *patient.Id, "clinicId": clinicId}
+		return bson.M{"userId": *patient.Id, "clinicId": clinicId}
+	}
+
+	// patientDocument returns the raw document, for asserting on the presence of keys.
+	patientDocument := func() bson.M {
+		GinkgoHelper()
 
 		doc := bson.M{}
 		db := test.GetTestDatabase()
-		Expect(db.Collection("patients").FindOne(context.Background(), selector).
+		Expect(db.Collection("patients").FindOne(context.Background(), patientSelector()).
 			Decode(&doc)).To(Succeed())
 		return doc
+	}
+
+	storedPatient := func() patients.Patient {
+		GinkgoHelper()
+
+		stored := patients.Patient{}
+		db := test.GetTestDatabase()
+		Expect(db.Collection("patients").FindOne(context.Background(), patientSelector()).
+			Decode(&stored)).To(Succeed())
+		return stored
 	}
 
 	getPatient := func() api.PatientV1 {
@@ -94,6 +111,12 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		return updated
 	}
 
+	expectStoredProviderName := func(providerName string) {
+		GinkgoHelper()
+		Expect(storedPatient().PrimaryIssue).
+			To(PointTo(HaveField("ProviderName", providerName)))
+	}
+
 	Describe("Create a clinic", func() {
 		It("Succeeds", func() {
 			rec := httptest.NewRecorder()
@@ -134,20 +157,19 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		})
 
 		It("Does not persist the field", func() {
-			Expect(patientDocument()).ToNot(HaveKey("primaryIssueProvider"))
+			Expect(patientDocument()).ToNot(HaveKey("primaryIssue"))
 		})
 	})
 
-	Describe("Set the primary issue provider out-of-band", func() {
+	Describe("Set the primary issue out-of-band", func() {
 		It("Succeeds", func() {
-			clinicId, err := primitive.ObjectIDFromHex(*clinic.Id)
-			Expect(err).ToNot(HaveOccurred())
-
 			db := test.GetTestDatabase()
-			selector := bson.M{"userId": *patient.Id, "clinicId": clinicId}
-			update := bson.M{"$set": bson.M{"primaryIssueProvider": "abbott"}}
+			update := bson.M{"$set": bson.M{"primaryIssue": patients.PrimaryIssue{
+				ProviderName: patients.AbbottDataSourceProviderName,
+				CreatedTime:  time.Now(),
+			}}}
 			result, err := db.Collection("patients").UpdateOne(context.Background(),
-				selector, update)
+				patientSelector(), update)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result.MatchedCount).To(BeEquivalentTo(1))
 		})
@@ -170,7 +192,7 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		})
 
 		It("Keeps the previous value in the database", func() {
-			Expect(patientDocument()).To(HaveKeyWithValue("primaryIssueProvider", "abbott"))
+			expectStoredProviderName(patients.AbbottDataSourceProviderName)
 		})
 	})
 
@@ -185,7 +207,7 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		})
 
 		It("Keeps the previous value in the database", func() {
-			Expect(patientDocument()).To(HaveKeyWithValue("primaryIssueProvider", "abbott"))
+			expectStoredProviderName(patients.AbbottDataSourceProviderName)
 		})
 	})
 })

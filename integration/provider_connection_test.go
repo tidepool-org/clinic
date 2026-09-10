@@ -110,6 +110,10 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			Expect(patient.ConnectionRequests.Dexcom).To(HaveLen(1))
 			Expect(patient.ConnectionRequests.Dexcom[0].ProviderName).To(Equal(api.Dexcom))
 		})
+
+		It("Makes dexcom the primary issue provider", func() {
+			Expect(patient.PrimaryIssueProvider).To(PointTo(Equal(api.Dexcom)))
+		})
 	})
 
 	Describe("Send Twiist Connection Request", func() {
@@ -141,6 +145,10 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 		It("Adds the connection request", func() {
 			Expect(patient.ConnectionRequests.Twiist).To(HaveLen(1))
 			Expect(patient.ConnectionRequests.Twiist[0].ProviderName).To(Equal(api.Twiist))
+		})
+
+		It("Makes twiist the primary issue provider", func() {
+			Expect(patient.PrimaryIssueProvider).To(PointTo(Equal(api.Twiist)))
 		})
 	})
 
@@ -177,6 +185,10 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			Expect(patient.ConnectionRequests.Dexcom[1].ProviderName).To(Equal(api.Dexcom))
 			Expect(patient.ConnectionRequests.Dexcom[1].CreatedTime).To(Not(BeZero()))
 			Expect(patient.ConnectionRequests.Dexcom[0].CreatedTime).To(BeTemporally(">", patient.ConnectionRequests.Dexcom[1].CreatedTime))
+		})
+
+		It("Makes dexcom the primary issue provider again", func() {
+			Expect(patient.PrimaryIssueProvider).To(PointTo(Equal(api.Dexcom)))
 		})
 	})
 })

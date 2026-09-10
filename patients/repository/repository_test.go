@@ -316,23 +316,29 @@ var _ = Describe("Patients Repository", func() {
 				Expect(got.DiagnosisType).To(Equal(patient.DiagnosisType))
 			})
 
-			It("stores the primary issue provider", func() {
+			It("stores the primary issue", func() {
 				ctx := context.Background()
-				provider := patients.AbbottDataSourceProviderName
-				patient.PrimaryIssueProvider = &provider
+				issue := patients.PrimaryIssue{
+					ProviderName: patients.AbbottDataSourceProviderName,
+					CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
+				}
+				patient.PrimaryIssue = &issue
 				result, err := repo.Create(ctx, patient)
 				Expect(err).To(Succeed())
 				patient.Id = result.Id
 
 				got, err := repo.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
 				Expect(err).To(Succeed())
-				Expect(got.PrimaryIssueProvider).To(PointTo(Equal(provider)))
+				Expect(got.PrimaryIssue).To(PointTo(Equal(issue)))
 			})
 
-			It("does not change the primary issue provider on update", func() {
+			It("does not change the primary issue on update", func() {
 				ctx := context.Background()
-				provider := patients.DexcomDataSourceProviderName
-				patient.PrimaryIssueProvider = &provider
+				issue := patients.PrimaryIssue{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
+				}
+				patient.PrimaryIssue = &issue
 				result, err := repo.Create(ctx, patient)
 				Expect(err).To(Succeed())
 				patient.Id = result.Id
@@ -341,13 +347,13 @@ var _ = Describe("Patients Repository", func() {
 				update := patientsTest.RandomPatientUpdate()
 				update.ClinicId = patient.ClinicId.Hex()
 				update.UserId = *patient.UserId
-				Expect(update.Patient.PrimaryIssueProvider).To(BeNil())
+				Expect(update.Patient.PrimaryIssue).To(BeNil())
 				_, err = repo.Update(ctx, update)
 				Expect(err).To(Succeed())
 
 				got, err := repo.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
 				Expect(err).To(Succeed())
-				Expect(got.PrimaryIssueProvider).To(PointTo(Equal(provider)))
+				Expect(got.PrimaryIssue).To(PointTo(Equal(issue)))
 			})
 
 			It("stores preset glycemic ranges", func() {
@@ -429,23 +435,23 @@ var _ = Describe("Patients Repository", func() {
 			BeforeEach(func() {
 				update = patientsTest.RandomPatientUpdate()
 				expected := patients.Patient{
-					Id:                   randomPatient.Id,
-					ClinicId:             randomPatient.ClinicId,
-					UserId:               randomPatient.UserId,
-					BirthDate:            update.Patient.BirthDate,
-					Email:                update.Patient.Email,
-					FullName:             update.Patient.FullName,
-					Mrn:                  update.Patient.Mrn,
-					Tags:                 update.Patient.Tags,
-					TargetDevices:        update.Patient.TargetDevices,
-					Permissions:          update.Patient.Permissions,
-					IsMigrated:           randomPatient.IsMigrated,
-					DataSources:          update.Patient.DataSources,
-					EHRSubscriptions:     update.Patient.EHRSubscriptions,
-					Sites:                update.Patient.Sites,
-					GlycemicRanges:       update.Patient.GlycemicRanges,
-					DiagnosisType:        update.Patient.DiagnosisType,
-					PrimaryIssueProvider: randomPatient.PrimaryIssueProvider,
+					Id:               randomPatient.Id,
+					ClinicId:         randomPatient.ClinicId,
+					UserId:           randomPatient.UserId,
+					BirthDate:        update.Patient.BirthDate,
+					Email:            update.Patient.Email,
+					FullName:         update.Patient.FullName,
+					Mrn:              update.Patient.Mrn,
+					Tags:             update.Patient.Tags,
+					TargetDevices:    update.Patient.TargetDevices,
+					Permissions:      update.Patient.Permissions,
+					IsMigrated:       randomPatient.IsMigrated,
+					DataSources:      update.Patient.DataSources,
+					EHRSubscriptions: update.Patient.EHRSubscriptions,
+					Sites:            update.Patient.Sites,
+					GlycemicRanges:   update.Patient.GlycemicRanges,
+					DiagnosisType:    update.Patient.DiagnosisType,
+					PrimaryIssue:     randomPatient.PrimaryIssue,
 				}
 				matchPatientFields = patientsTest.PatientFieldsMatcher(expected)
 			})
@@ -496,23 +502,23 @@ var _ = Describe("Patients Repository", func() {
 			BeforeEach(func() {
 				update = patientsTest.RandomPatientUpdate()
 				expected := patients.Patient{
-					Id:                   randomPatient.Id,
-					ClinicId:             randomPatient.ClinicId,
-					UserId:               randomPatient.UserId,
-					BirthDate:            randomPatient.BirthDate,
-					Email:                update.Patient.Email,
-					FullName:             randomPatient.FullName,
-					Mrn:                  randomPatient.Mrn,
-					Tags:                 randomPatient.Tags,
-					TargetDevices:        randomPatient.TargetDevices,
-					Permissions:          randomPatient.Permissions,
-					IsMigrated:           randomPatient.IsMigrated,
-					DataSources:          randomPatient.DataSources,
-					EHRSubscriptions:     randomPatient.EHRSubscriptions,
-					Sites:                randomPatient.Sites,
-					GlycemicRanges:       randomPatient.GlycemicRanges,
-					DiagnosisType:        randomPatient.DiagnosisType,
-					PrimaryIssueProvider: randomPatient.PrimaryIssueProvider,
+					Id:               randomPatient.Id,
+					ClinicId:         randomPatient.ClinicId,
+					UserId:           randomPatient.UserId,
+					BirthDate:        randomPatient.BirthDate,
+					Email:            update.Patient.Email,
+					FullName:         randomPatient.FullName,
+					Mrn:              randomPatient.Mrn,
+					Tags:             randomPatient.Tags,
+					TargetDevices:    randomPatient.TargetDevices,
+					Permissions:      randomPatient.Permissions,
+					IsMigrated:       randomPatient.IsMigrated,
+					DataSources:      randomPatient.DataSources,
+					EHRSubscriptions: randomPatient.EHRSubscriptions,
+					Sites:            randomPatient.Sites,
+					GlycemicRanges:   randomPatient.GlycemicRanges,
+					DiagnosisType:    randomPatient.DiagnosisType,
+					PrimaryIssue:     randomPatient.PrimaryIssue,
 				}
 				matchPatientFields = patientsTest.PatientFieldsMatcher(expected)
 			})
@@ -1951,6 +1957,108 @@ var _ = Describe("Patients Repository", func() {
 				Expect(dexcom[1].ProviderName).To(BeComparableTo(request.ProviderName))
 
 				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			Describe("primary issue", func() {
+				var ctx context.Context
+				var subject patients.Patient
+				var now time.Time
+
+				abbott := patients.AbbottDataSourceProviderName
+				dexcom := patients.DexcomDataSourceProviderName
+				twiist := patients.TwiistDataSourceProviderName
+
+				issue := func(providerName string, when time.Time) *patients.PrimaryIssue {
+					return &patients.PrimaryIssue{
+						ProviderName: providerName,
+						CreatedTime:  when,
+					}
+				}
+
+				// createSubject stores a fresh patient with the given primary issue,
+				// bypassing the derivation under test.
+				createSubject := func(primary *patients.PrimaryIssue) {
+					GinkgoHelper()
+					subject = patientsTest.RandomPatient()
+					subject.PrimaryIssue = primary
+					created, err := repo.Create(ctx, subject)
+					Expect(err).ToNot(HaveOccurred())
+					subject.Id = created.Id
+				}
+
+				addRequest := func(provider string, createdTime time.Time) (
+					_ *patients.Patient) {
+
+					GinkgoHelper()
+					request := patients.ConnectionRequest{
+						ProviderName: provider,
+						CreatedTime:  createdTime,
+					}
+					err := repo.AddProviderConnectionRequest(ctx, subject.ClinicId.Hex(),
+						*subject.UserId, request)
+					Expect(err).ToNot(HaveOccurred())
+
+					got, err := repo.Get(ctx, subject.ClinicId.Hex(), *subject.UserId)
+					Expect(err).ToNot(HaveOccurred())
+					return got
+				}
+
+				BeforeEach(func() {
+					ctx = context.Background()
+					// Mongo stores dates at millisecond precision, so ties need exact
+					// values.
+					now = time.Now().UTC().Truncate(time.Millisecond)
+				})
+
+				AfterEach(func() {
+					_, err := collection.DeleteOne(ctx, primitive.M{"_id": subject.Id})
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("is set by the first request when there is no current value", func() {
+					createSubject(nil)
+					got := addRequest(abbott, now)
+					Expect(got.PrimaryIssue).To(Equal(issue(abbott, now)))
+				})
+
+				It("is replaced by a newer request for another provider", func() {
+					createSubject(issue(dexcom, now.Add(-time.Minute)))
+					got := addRequest(abbott, now)
+					Expect(got.PrimaryIssue).To(Equal(issue(abbott, now)))
+				})
+
+				It("is kept when the request is older than the current issue", func() {
+					createSubject(issue(dexcom, now))
+					got := addRequest(twiist, now.Add(-time.Minute))
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
+					Expect(got.ProviderConnectionRequests[twiist]).To(HaveLen(1))
+				})
+
+				It("is replaced on a tie when the request's provider ranks higher", func() {
+					createSubject(issue(dexcom, now))
+					got := addRequest(twiist, now)
+					Expect(got.PrimaryIssue).To(Equal(issue(twiist, now)))
+				})
+
+				It("is kept on a tie when the current provider ranks higher", func() {
+					createSubject(issue(dexcom, now))
+					got := addRequest(abbott, now)
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
+				})
+
+				It("is refreshed by a newer request for the current provider", func() {
+					createSubject(issue(twiist, now.Add(-time.Minute)))
+					got := addRequest(twiist, now)
+					Expect(got.PrimaryIssue).To(Equal(issue(twiist, now)))
+					Expect(got.ProviderConnectionRequests[twiist]).To(HaveLen(1))
+				})
+
+				It("is replaced when the current issue has no time", func() {
+					// Seeded out-of-band without a time, there is nothing to be older than.
+					createSubject(&patients.PrimaryIssue{ProviderName: abbott})
+					got := addRequest(dexcom, now.Add(-time.Hour))
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now.Add(-time.Hour))))
+				})
 			})
 		})
 

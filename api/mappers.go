@@ -218,18 +218,16 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 	if patient.DiagnosisType != nil {
 		dto.DiagnosisType = NewDiagnosisTypeDto(string(*patient.DiagnosisType))
 	}
-	dto.PrimaryIssueProvider = NewPrimaryIssueProviderDto(patient.PrimaryIssueProvider)
+	dto.PrimaryIssueProvider = NewPrimaryIssueProviderDto(patient.PrimaryIssue)
 
 	return dto
 }
 
-// NewPrimaryIssueProviderDto maps a stored provider name to the API enum. Unknown values
-// are dropped rather than returned, so the response always satisfies the schema.
-func NewPrimaryIssueProviderDto(provider *string) *ProviderIdV1 {
-	if provider == nil {
+func NewPrimaryIssueProviderDto(issue *patients.PrimaryIssue) *ProviderIdV1 {
+	if issue == nil {
 		return nil
 	}
-	dtoProvider := ProviderIdV1(*provider)
+	dtoProvider := ProviderIdV1(issue.ProviderName)
 	switch dtoProvider {
 	case Abbott, Dexcom, Twiist:
 		return &dtoProvider
