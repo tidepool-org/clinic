@@ -34,6 +34,8 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
+	DataSourceStateConnected = "connected"
+
 	// PrimaryIssueProviderPrecedence orders providers from lowest to highest priority. It
 	// breaks ties between connection requests that share a createdTime when deciding a
 	// patient's primary issue provider.
@@ -139,14 +141,15 @@ type Patient struct {
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
 }
 
-// PrimaryIssue records the provider of the connection request that most recently became the
-// patient's primary issue, and when that request was created.
+// PrimaryIssue records the provider that most recently became the patient's primary issue,
+// either through a connection request or through a data source becoming connected.
 //
-// CreatedTime is denormalized from the providerConnectionRequest to make later comparisons
-// simpler.
+// EffectiveTime is denormalized from the event that set the provider: the createdTime of
+// the connection request, or the modifiedTime of the data source. Later events are compared
+// against it; see Repository.AddProviderConnectionRequest and UpdatePatientDataSources.
 type PrimaryIssue struct {
-	ProviderName string    `bson:"providerName"`
-	CreatedTime  time.Time `bson:"createdTime"`
+	ProviderName  string    `bson:"providerName"`
+	EffectiveTime time.Time `bson:"effectiveTime"`
 }
 
 type DiagnosisType string

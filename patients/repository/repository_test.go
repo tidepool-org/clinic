@@ -319,8 +319,8 @@ var _ = Describe("Patients Repository", func() {
 			It("stores the primary issue", func() {
 				ctx := context.Background()
 				issue := patients.PrimaryIssue{
-					ProviderName: patients.AbbottDataSourceProviderName,
-					CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
+					ProviderName:  patients.AbbottDataSourceProviderName,
+					EffectiveTime: time.Now().UTC().Truncate(time.Millisecond),
 				}
 				patient.PrimaryIssue = &issue
 				result, err := repo.Create(ctx, patient)
@@ -335,8 +335,8 @@ var _ = Describe("Patients Repository", func() {
 			It("does not change the primary issue on update", func() {
 				ctx := context.Background()
 				issue := patients.PrimaryIssue{
-					ProviderName: patients.DexcomDataSourceProviderName,
-					CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
+					ProviderName:  patients.DexcomDataSourceProviderName,
+					EffectiveTime: time.Now().UTC().Truncate(time.Millisecond),
 				}
 				patient.PrimaryIssue = &issue
 				result, err := repo.Create(ctx, patient)
@@ -1924,6 +1924,162 @@ var _ = Describe("Patients Repository", func() {
 				Expect(*patient.DataSources).To(HaveLen(1))
 				Expect((*patient.DataSources)[0].CreatedTime).To(PointTo(Equal(createdTime)))
 			})
+
+			Describe("primary issue", func() {
+				var ctx context.Context
+				var subject patients.Patient
+				var now time.Time
+
+				abbott := patients.AbbottDataSourceProviderName
+				dexcom := patients.DexcomDataSourceProviderName
+				twiist := patients.TwiistDataSourceProviderName
+				connected := patients.DataSourceStateConnected
+
+				issue := func(providerName string, when time.Time) *patients.PrimaryIssue {
+					return &patients.PrimaryIssue{
+						ProviderName:  providerName,
+						EffectiveTime: when,
+					}
+				}
+
+				source := func(
+					providerName, state string, modified *time.Time,
+				) patients.DataSource {
+					return patients.DataSource{
+						ProviderName: providerName,
+						State:        state,
+						ModifiedTime: modified,
+					}
+				}
+
+				// createSubject stores a fresh patient with the given primary issue and
+				// data sources, bypassing the derivation under test.
+				createSubject := func(
+					primary *patients.PrimaryIssue, stored ...patients.DataSource,
+				) {
+					GinkgoHelper()
+					subject = patientsTest.RandomPatient()
+					subject.PrimaryIssue = primary
+					subject.DataSources = &stored
+					created, err := repo.Create(ctx, subject)
+					Expect(err).ToNot(HaveOccurred())
+					subject.Id = created.Id
+				}
+
+				update := func(incoming ...patients.DataSource) *patients.Patient {
+					GinkgoHelper()
+					sources := patients.DataSources(incoming)
+					err := repo.UpdatePatientDataSources(ctx, *subject.UserId, &sources)
+					Expect(err).ToNot(HaveOccurred())
+
+					got, err := repo.Get(ctx, subject.ClinicId.Hex(), *subject.UserId)
+					Expect(err).ToNot(HaveOccurred())
+					return got
+				}
+
+				BeforeEach(func() {
+					ctx = context.Background()
+					// Mongo stores dates at millisecond precision, so ties need exact
+					// values.
+					now = time.Now().UTC().Truncate(time.Millisecond)
+				})
+
+				AfterEach(func() {
+					// Other specs in this block count documents, so leave none behind.
+					_, err := collection.DeleteMany(ctx,
+						primitive.M{"userId": subject.UserId})
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("is set when a data source becomes connected", func() {
+					createSubject(nil)
+					got := update(source(dexcom, connected, &now))
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
+					Expect(got.DataSources).To(PointTo(HaveLen(1)))
+				})
+
+				It("is kept when an already connected data source is modified", func() {
+					earlier := now.Add(-time.Hour)
+					createSubject(issue(twiist, now.Add(-time.Minute)),
+						source(dexcom, connected, &earlier))
+					got := update(source(dexcom, connected, &now))
+					Expect(got.PrimaryIssue).To(Equal(issue(twiist, now.Add(-time.Minute))))
+				})
+
+				It("is kept when the newly connected data source is older", func() {
+					earlier := now.Add(-time.Minute)
+					createSubject(issue(dexcom, now), source(twiist, "error", &earlier))
+					got := update(source(twiist, connected, &earlier))
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
+				})
+
+				It("is replaced on a tie when the new provider ranks higher", func() {
+					createSubject(issue(dexcom, now))
+					got := update(source(twiist, connected, &now))
+					Expect(got.PrimaryIssue).To(Equal(issue(twiist, now)))
+				})
+
+				It("is kept on a tie when the current provider ranks higher", func() {
+					createSubject(issue(dexcom, now))
+					got := update(source(abbott, connected, &now))
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
+				})
+
+				It("uses the current time when the data source has none", func() {
+					createSubject(nil)
+					got := update(source(abbott, connected, nil))
+					Expect(got.PrimaryIssue).To(PointTo(And(
+						HaveField("ProviderName", abbott),
+						HaveField("EffectiveTime", BeTemporally("~", now, time.Second)),
+					)))
+				})
+
+				It("prefers the most recently connected of several data sources", func() {
+					earlier := now.Add(-time.Minute)
+					createSubject(nil)
+					got := update(
+						source(twiist, connected, &earlier),
+						source(abbott, connected, &now),
+					)
+					Expect(got.PrimaryIssue).To(Equal(issue(abbott, now)))
+				})
+
+				It("breaks ties between several data sources by precedence", func() {
+					createSubject(nil)
+					got := update(
+						source(abbott, connected, &now),
+						source(dexcom, connected, &now),
+					)
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
+				})
+
+				It("is unchanged by data sources that are not connected", func() {
+					createSubject(issue(dexcom, now.Add(-time.Hour)))
+					got := update(
+						source(twiist, "error", &now),
+						source(abbott, "disconnected", &now),
+					)
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now.Add(-time.Hour))))
+					Expect(got.DataSources).To(PointTo(HaveLen(2)))
+				})
+
+				It("is set on every clinic record of the user", func() {
+					createSubject(nil)
+					other := patientsTest.RandomPatient()
+					other.UserId = subject.UserId
+					other.PrimaryIssue = nil
+					_, err := repo.Create(ctx, other)
+					Expect(err).ToNot(HaveOccurred())
+
+					update(source(dexcom, connected, &now))
+					clinicIds := []string{subject.ClinicId.Hex(), other.ClinicId.Hex()}
+					for _, clinicId := range clinicIds {
+						got, err := repo.Get(ctx, clinicId, *subject.UserId)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
+					}
+				})
+			})
 		})
 
 		Describe("Add provider connection request", func() {
@@ -1970,8 +2126,8 @@ var _ = Describe("Patients Repository", func() {
 
 				issue := func(providerName string, when time.Time) *patients.PrimaryIssue {
 					return &patients.PrimaryIssue{
-						ProviderName: providerName,
-						CreatedTime:  when,
+						ProviderName:  providerName,
+						EffectiveTime: when,
 					}
 				}
 

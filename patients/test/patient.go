@@ -129,8 +129,8 @@ func RandomPrimaryIssue() *patients.PrimaryIssue {
 		return nil
 	}
 	return &patients.PrimaryIssue{
-		ProviderName: providers[rand.IntN(len(providers))],
-		CreatedTime:  time.Now().UTC().Truncate(time.Millisecond),
+		ProviderName:  providers[rand.IntN(len(providers))],
+		EffectiveTime: time.Now().UTC().Truncate(time.Millisecond),
 	}
 }
 

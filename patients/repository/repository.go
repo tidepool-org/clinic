@@ -900,7 +900,10 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 			bson.M{"$literal": bson.A{request}},
 			bson.M{"$ifNull": bson.A{"$" + key, bson.A{}}},
 		}},
-		"primaryIssue": primaryIssueAfterRequest(request),
+		"primaryIssue": primaryIssueAfter(patients.PrimaryIssue{
+			ProviderName:  request.ProviderName,
+			EffectiveTime: request.CreatedTime,
+		}, "$primaryIssue"),
 	}}}}
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
@@ -914,21 +917,16 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	return nil
 }
 
-// primaryIssueAfterRequest builds the aggregation expression that decides a patient's
-// primary issue once request has been added. The request becomes the primary issue when
-// it is newer than the current one, when there is no current one, or when the times are
-// equal and the request's provider ranks higher in patients.PrimaryIssueProviderPrecedence.
-// Otherwise the current value is kept.
-func primaryIssueAfterRequest(request patients.ConnectionRequest) bson.M {
-	const current = "$primaryIssue"
-	const currentTime = current + ".createdTime"
-	const currentProvider = current + ".providerName"
-	newIssue := bson.M{"$literal": patients.PrimaryIssue{
-		ProviderName: request.ProviderName,
-		CreatedTime:  request.CreatedTime,
-	}}
+// primaryIssueAfter builds the aggregation expression that decides a patient's primary
+// issue once candidate has been considered against current, an expression that evaluates
+// to the primary issue so far. The candidate wins when it is newer than the current one,
+// when there is no current one, or when the times are equal and its provider ranks higher
+// in patients.PrimaryIssueProviderPrecedence. Otherwise the current value is kept.
+func primaryIssueAfter(candidate patients.PrimaryIssue, current interface{}) bson.M {
+	const currentTime = "$$current.effectiveTime"
+	const currentProvider = "$$current.providerName"
 
-	requestWins := bson.M{"$switch": bson.M{
+	candidateWins := bson.M{"$switch": bson.M{
 		"branches": bson.A{
 			bson.M{
 				// A missing field compares equal to null.
@@ -936,13 +934,13 @@ func primaryIssueAfterRequest(request patients.ConnectionRequest) bson.M {
 				"then": true,
 			},
 			bson.M{
-				"case": bson.M{"$gt": bson.A{request.CreatedTime, currentTime}},
+				"case": bson.M{"$gt": bson.A{candidate.EffectiveTime, currentTime}},
 				"then": true,
 			},
 			bson.M{
-				"case": bson.M{"$eq": bson.A{request.CreatedTime, currentTime}},
+				"case": bson.M{"$eq": bson.A{candidate.EffectiveTime, currentTime}},
 				"then": bson.M{"$gt": bson.A{
-					providerPrecedence(bson.M{"$literal": request.ProviderName}),
+					providerPrecedence(bson.M{"$literal": candidate.ProviderName}),
 					providerPrecedence(currentProvider),
 				}},
 			},
@@ -950,7 +948,63 @@ func primaryIssueAfterRequest(request patients.ConnectionRequest) bson.M {
 		"default": false,
 	}}
 
-	return bson.M{"$cond": bson.A{requestWins, newIssue, current}}
+	return bson.M{"$let": bson.M{
+		"vars": bson.M{"current": current},
+		"in": bson.M{"$cond": bson.A{
+			candidateWins, bson.M{"$literal": candidate}, "$$current",
+		}},
+	}}
+}
+
+// primaryIssueAfterConnecting builds the aggregation expression that folds every connected
+// data source in the incoming list into the patient's primary issue. Only data sources
+// whose stored counterpart, matched by provider, is absent or not connected take part, so
+// that a data source that merely got a newer modifiedTime while staying connected doesn't
+// re-assert itself. It returns nil when nothing is connected, so the field can be left
+// alone. Data sources without a modifiedTime use now as their effective time.
+func primaryIssueAfterConnecting(dataSources *patients.DataSources, now time.Time) bson.M {
+	if dataSources == nil {
+		return nil
+	}
+	var result bson.M
+	var current interface{} = "$primaryIssue"
+	for _, dataSource := range *dataSources {
+		if dataSource.State != patients.DataSourceStateConnected {
+			continue
+		}
+		candidate := patients.PrimaryIssue{
+			ProviderName:  dataSource.ProviderName,
+			EffectiveTime: now,
+		}
+		if dataSource.ModifiedTime != nil {
+			candidate.EffectiveTime = *dataSource.ModifiedTime
+		}
+		// Bind the accumulated value once so the expression grows linearly with the
+		// number of candidates.
+		result = bson.M{"$let": bson.M{
+			"vars": bson.M{"acc": current},
+			"in": bson.M{"$cond": bson.A{
+				newlyConnected(dataSource.ProviderName),
+				primaryIssueAfter(candidate, "$$acc"),
+				"$$acc",
+			}},
+		}}
+		current = result
+	}
+	return result
+}
+
+// newlyConnected builds an expression that is true when the stored data sources have no
+// connected entry for provider, meaning an incoming connected entry is a state change.
+func newlyConnected(provider string) bson.M {
+	alreadyConnected := bson.M{"$filter": bson.M{
+		"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+		"cond": bson.M{"$and": bson.A{
+			bson.M{"$eq": bson.A{"$$this.providerName", provider}},
+			bson.M{"$eq": bson.A{"$$this.state", patients.DataSourceStateConnected}},
+		}},
+	}}
+	return bson.M{"$eq": bson.A{bson.M{"$size": alreadyConnected}, 0}}
 }
 
 // providerPrecedence builds an expression that ranks the provider expression by its
@@ -1115,12 +1169,18 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 		"userId": userId,
 	}
 
-	update := bson.M{
-		"$set": bson.M{
-			"dataSources": dataSources,
-			"updatedTime": time.Now(),
-		},
+	set := bson.M{
+		"dataSources": bson.M{"$literal": dataSources},
+		"updatedTime": "$$NOW",
 	}
+	// A data source that has just become connected competes to be the primary issue. The
+	// pipeline reads the stored data sources to detect the transition and writes both
+	// fields in one atomic operation.
+	now := time.Now()
+	if primaryIssue := primaryIssueAfterConnecting(dataSources, now); primaryIssue != nil {
+		set["primaryIssue"] = primaryIssue
+	}
+	update := mongo.Pipeline{bson.D{{Key: "$set", Value: set}}}
 
 	result, err := r.collection.UpdateMany(ctx, selector, update)
 	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {

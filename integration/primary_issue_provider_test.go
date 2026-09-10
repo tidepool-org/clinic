@@ -165,8 +165,8 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		It("Succeeds", func() {
 			db := test.GetTestDatabase()
 			update := bson.M{"$set": bson.M{"primaryIssue": patients.PrimaryIssue{
-				ProviderName: patients.AbbottDataSourceProviderName,
-				CreatedTime:  time.Now(),
+				ProviderName:  patients.AbbottDataSourceProviderName,
+				EffectiveTime: time.Now(),
 			}}}
 			result, err := db.Collection("patients").UpdateOne(context.Background(),
 				patientSelector(), update)
@@ -208,6 +208,55 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 
 		It("Keeps the previous value in the database", func() {
 			expectStoredProviderName(patients.AbbottDataSourceProviderName)
+		})
+	})
+
+	Describe("A data source becomes connected", func() {
+		connectDataSource := func(modifiedTime time.Time) {
+			GinkgoHelper()
+
+			body, err := json.Marshal([]map[string]interface{}{{
+				"state":        patients.DataSourceStateConnected,
+				"providerName": patients.DexcomDataSourceProviderName,
+				"dataSourceId": "507f1f77bcf86cd799439011",
+				"createdTime":  "2025-01-01T00:00:00Z",
+				// Keep sub-second precision, so the comparison against the seeded issue
+				// is decided by time rather than by provider precedence.
+				"modifiedTime": modifiedTime.UTC().Format(time.RFC3339Nano),
+			}})
+			Expect(err).ToNot(HaveOccurred())
+
+			rec := httptest.NewRecorder()
+			endpoint := fmt.Sprintf("/v1/patients/%s/data_sources", *patient.Id)
+			req := prepareRequestWithBody(http.MethodPut, endpoint, bytes.NewReader(body))
+			asServer(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+		}
+
+		It("Makes its provider the primary issue provider", func() {
+			connectDataSource(time.Now())
+			Expect(getPatient().PrimaryIssueProvider).To(PointTo(Equal(api.Dexcom)))
+			expectStoredProviderName(patients.DexcomDataSourceProviderName)
+		})
+
+		It("Yields to a later connection request", func() {
+			rec := httptest.NewRecorder()
+			endpoint := fmt.Sprintf("/v1/clinics/%s/patients/%s/connect/twiist",
+				*clinic.Id, *patient.Id)
+			req := prepareRequest(http.MethodPost, endpoint, "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
+			Expect(getPatient().PrimaryIssueProvider).To(PointTo(Equal(api.Twiist)))
+		})
+
+		It("Does not reclaim the primary issue while it stays connected", func() {
+			connectDataSource(time.Now().Add(time.Hour))
+			Expect(getPatient().PrimaryIssueProvider).To(PointTo(Equal(api.Twiist)))
 		})
 	})
 })
