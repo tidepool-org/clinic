@@ -621,7 +621,7 @@ var _ = Describe("Patients Repository", func() {
 				Expect(stored.BGM.Id).To(Equal(newest.BGM.Id))
 			})
 
-			It("keeps stats without a calculation date away from a report without one", func() {
+			It("keeps stats with a calculation date away from an update without one", func() {
 				newest := newSummary(&calculated)
 				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newest)).To(Succeed())
 
@@ -630,6 +630,17 @@ var _ = Describe("Patients Repository", func() {
 				stored := getSummary()
 				Expect(stored.CGM.Id).To(Equal(newest.CGM.Id))
 				Expect(stored.BGM.Id).To(Equal(newest.BGM.Id))
+			})
+
+			It("replaces stats without a calculation date with an update without one", func() {
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(nil))).To(Succeed())
+
+				summary := newSummary(nil)
+				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+
+				stored := getSummary()
+				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
+				Expect(stored.BGM.Id).To(Equal(summary.BGM.Id))
 			})
 
 			It("replaces or keeps the stats of each type independently", func() {
