@@ -1354,4 +1354,65 @@ var _ = Describe("Request Authorizer", func() {
 		err := authorizer.EvaluatePolicy(context.Background(), input)
 		Expect(err).To(Equal(auth.ErrUnauthorized))
 	})
+
+	Describe("patient invitation re-sent", func() {
+		path := []string{
+			"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890",
+			"invitation_resent",
+		}
+
+		It("allows backend services to mark an invitation as re-sent", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "hydrophone",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("prevents clinic admins from marking an invitation as re-sent", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents clinic members from marking an invitation as re-sent", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents users from marking an invitation as re-sent", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+	})
 })

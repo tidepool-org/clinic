@@ -2329,6 +2329,22 @@ paths:
         - Clinics
         - Internal
       description: Send a new request to the patient to connect a data provider
+  /v1/clinics/{clinicId}/patients/{patientId}/invitation_resent:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    post:
+      summary: Patient Invitation Re-sent
+      operationId: MarkPatientInvitationResent
+      description: Internal endpoint called when the patient's account claim invitation has been re-sent. Clears the patient's primary issue, since a re-sent invitation is not specific to a device.
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+      tags:
+        - Clinics
+        - Internal
 components:
   schemas:
     clinics.v1:
@@ -4988,6 +5004,20 @@ components:
         - notApplicable
         - ''
       example: type1
+    primaryIssueCause.v1:
+      title: Primary Issue Cause
+      type: string
+      description: 'What the patient''s primary connection issue relates to: a third-party data provider, or the device-non-specific invitation to claim the account.'
+      enum:
+        - dexcom
+        - twiist
+        - abbott
+        - deviceNonSpecificInvite
+      x-enum-varnames:
+        - PrimaryIssueCauseV1Dexcom
+        - PrimaryIssueCauseV1Twiist
+        - PrimaryIssueCauseV1Abbott
+        - PrimaryIssueCauseV1DeviceNonSpecificInvite
     patient.v1:
       type: object
       title: Patient
@@ -5062,11 +5092,11 @@ components:
           $ref: '#/components/schemas/glycemicRanges.v1'
         diagnosisType:
           $ref: '#/components/schemas/diagnosisType.v1'
-        primaryIssueProvider:
-          description: The third-party data provider whose connection is the patient's primary issue, if any. Managed by Tidepool and cannot be set through this API.
+        primaryIssueCause:
+          description: 'The cause of the patient''s primary connection issue, if any: the provider of the newest connection request or connected data source, or the device-non-specific account invitation. When causes share an effective time, twiist takes precedence over dexcom, then abbott, then the invitation. Derived by the service and cannot be set through this API.'
           readOnly: true
           allOf:
-            - $ref: '#/components/schemas/providerId.v1'
+            - $ref: '#/components/schemas/primaryIssueCause.v1'
       required:
         - id
         - fullName

@@ -36,11 +36,17 @@ var (
 
 	DataSourceStateConnected = "connected"
 
-	// PrimaryIssueProviderPrecedence orders providers from lowest to highest priority. It
-	// breaks ties between connection requests that share a createdTime when deciding a
-	// patient's primary issue provider.
-	PrimaryIssueProviderPrecedence = []string{
-		AbbottDataSourceProviderName, // lowest priority
+	// PrimaryIssueCauseDeviceNonSpecificInvite is the primary issue cause recorded when the
+	// patient's outstanding issue is the invitation to claim the account rather than a
+	// specific device. The other causes are the provider names above.
+	PrimaryIssueCauseDeviceNonSpecificInvite = "deviceNonSpecificInvite"
+
+	// PrimaryIssueCausePrecedence orders causes from lowest to highest priority. It breaks
+	// ties between events that share an effective time when deciding a patient's primary
+	// issue; the device-non-specific invitation always yields to a device.
+	PrimaryIssueCausePrecedence = []string{
+		PrimaryIssueCauseDeviceNonSpecificInvite, // lowest priority
+		AbbottDataSourceProviderName,
 		DexcomDataSourceProviderName,
 		TwiistDataSourceProviderName, // highest priority
 	}
@@ -73,6 +79,7 @@ type Service interface {
 	DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
+	MarkInvitationResent(ctx context.Context, clinicId, userId string) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error
@@ -131,24 +138,30 @@ type Patient struct {
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
 	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
 	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
-	// PrimaryIssue tracks the most recently connected provider device (if any). This
-	// value is used to determine if other patient issues should be exposed through the
-	// connections issue dashboard. Its value is set by the backend and is read-only from
-	// the API.
+	// PrimaryIssue tracks the cause of the most recent connection issue (if any).
+	//
+	// Only certain events trigger a change in the primary issue. Later issues that are
+	// detected with a connection can be automatically suppressed, if they don't match the
+	// primary issue. This prevents, for example, an old device having stale data from
+	// becoming a connection issue when a newer device is present and connected.
+	//
+	// Its value should only be set by the backend and is read-only from the API.
 	PrimaryIssue *PrimaryIssue `bson:"primaryIssue,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
 }
 
-// PrimaryIssue records the provider that most recently became the patient's primary issue,
-// either through a connection request or through a data source becoming connected.
+// PrimaryIssue records what the patient's primary connection issue relates to and when
+// that became the case. Cause is a provider name, when a connection request or a connected
+// data source set it, or PrimaryIssueCauseDeviceNonSpecificInvite when the outstanding
+// issue is the invitation to claim the account.
 //
-// EffectiveTime is denormalized from the event that set the provider: the createdTime of
-// the connection request, or the modifiedTime of the data source. Later events are compared
-// against it; see Repository.AddProviderConnectionRequest and UpdatePatientDataSources.
+// EffectiveTime is denormalized from the event that set the cause: the createdTime of the
+// connection request, the modifiedTime of the data source at the time it was connected, or
+// the time the invitation was sent.
 type PrimaryIssue struct {
-	ProviderName  string    `bson:"providerName"`
+	Cause         string    `bson:"cause"`
 	EffectiveTime time.Time `bson:"effectiveTime"`
 }
 

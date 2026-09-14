@@ -262,6 +262,20 @@ func (mr *MockServiceMockRecorder) List(ctx, filter, pagination, sort any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockService)(nil).List), ctx, filter, pagination, sort)
 }
 
+// MarkInvitationResent mocks base method.
+func (m *MockService) MarkInvitationResent(ctx context.Context, clinicId, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkInvitationResent", ctx, clinicId, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkInvitationResent indicates an expected call of MarkInvitationResent.
+func (mr *MockServiceMockRecorder) MarkInvitationResent(ctx, clinicId, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInvitationResent", reflect.TypeOf((*MockService)(nil).MarkInvitationResent), ctx, clinicId, userId)
+}
+
 // MergeSites mocks base method.
 func (m *MockService) MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error {
 	m.ctrl.T.Helper()
@@ -718,6 +732,20 @@ func (m *MockRepository) List(ctx context.Context, filter *patients.Filter, pagi
 func (mr *MockRepositoryMockRecorder) List(ctx, filter, pagination, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepository)(nil).List), ctx, filter, pagination, sort)
+}
+
+// MarkInvitationResent mocks base method.
+func (m *MockRepository) MarkInvitationResent(ctx context.Context, clinicId, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkInvitationResent", ctx, clinicId, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkInvitationResent indicates an expected call of MarkInvitationResent.
+func (mr *MockRepositoryMockRecorder) MarkInvitationResent(ctx, clinicId, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInvitationResent", reflect.TypeOf((*MockRepository)(nil).MarkInvitationResent), ctx, clinicId, userId)
 }
 
 // MergeSites mocks base method.

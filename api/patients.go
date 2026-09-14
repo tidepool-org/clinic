@@ -525,3 +525,19 @@ func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId 
 
 	return ec.NoContent(http.StatusNoContent)
 }
+
+// MarkPatientInvitationResent records that the patient's account claim invitation was
+// re-sent, which makes the device-non-specific invitation the patient's primary issue
+// unless a newer device event holds it. Only backend services are permitted to call it;
+// see auth/policy.rego.
+func (h *Handler) MarkPatientInvitationResent(ec echo.Context,
+	clinicId ClinicId, patientId PatientId) error {
+
+	ctx := ec.Request().Context()
+
+	if err := h.Patients.MarkInvitationResent(ctx, clinicId, patientId); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
+}

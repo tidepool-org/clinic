@@ -218,6 +218,34 @@ var _ = Describe("Patients Service", func() {
 			When("the patient is custodial", func() {
 				BeforeEach(func() {
 					randomPatient.Permissions.Custodian = &patients.Permission{}
+					// An existing primary issue is left alone; the invitation case below
+					// starts from none.
+					randomPatient.PrimaryIssue = &patients.PrimaryIssue{
+						Cause: patients.DexcomDataSourceProviderName,
+					}
+				})
+
+				It("makes the invitation the primary issue when there is none", func() {
+					randomPatient.PrimaryIssue = nil
+					clinicsService.EXPECT().
+						GetPatientCountSettings(gomock.Any(), gomock.Eq(clinicId.Hex())).
+						Return(nil, nil)
+					repo.EXPECT().
+						Create(gomock.Any(), gomock.Cond(func(p patients.Patient) bool {
+							invite := patients.PrimaryIssueCauseDeviceNonSpecificInvite
+							return p.PrimaryIssue != nil &&
+								p.PrimaryIssue.Cause == invite &&
+								!p.PrimaryIssue.EffectiveTime.IsZero()
+						})).
+						Return(&randomPatient, nil)
+					clinicsService.EXPECT().
+						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
+						Return(nil)
+
+					createdPatient, err := service.Create(context.Background(),
+						randomPatient)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(createdPatient).ToNot(BeNil())
 				})
 
 				It("returns an error when GetPatientCountSettings returns an error", func() {

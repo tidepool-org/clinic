@@ -86,6 +86,14 @@ func (s *service) Create(ctx context.Context, patient patients.Patient) (*patien
 		patient.Sites = &resolved
 	}
 
+	if patient.PrimaryIssue == nil && patient.IsCustodial() &&
+		patient.Email != nil && *patient.Email != "" {
+		patient.PrimaryIssue = &patients.PrimaryIssue{
+			Cause:         patients.PrimaryIssueCauseDeviceNonSpecificInvite,
+			EffectiveTime: time.Now(),
+		}
+	}
+
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
 
 	result, err := s.patientsRepo.Create(ctx, patient)
@@ -297,6 +305,12 @@ func (s *service) DeleteSummaryInAllClinics(ctx context.Context, summaryId strin
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	s.logger.Infow("updating last upload reminder time for user", "clinicId", update.ClinicId, "userId", update.UserId)
 	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)
+}
+
+func (s *service) MarkInvitationResent(ctx context.Context, clinicId, userId string) error {
+	s.logger.Infow("marking invitation re-sent for user",
+		"clinicId", clinicId, "userId", userId)
+	return s.patientsRepo.MarkInvitationResent(ctx, clinicId, userId)
 }
 
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {

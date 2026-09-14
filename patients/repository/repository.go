@@ -881,6 +881,33 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *p
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
+func (r *repository) MarkInvitationResent(ctx context.Context,
+	clinicId, userId string) error {
+
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId":   userId,
+	}
+	invite := patients.PrimaryIssue{
+		Cause:         patients.PrimaryIssueCauseDeviceNonSpecificInvite,
+		EffectiveTime: time.Now(),
+	}
+	update := mongo.Pipeline{bson.D{{Key: "$set", Value: bson.M{
+		"updatedTime":  "$$NOW",
+		"primaryIssue": primaryIssueAfter(invite, "$primaryIssue"),
+	}}}}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return patients.ErrNotFound
+		}
+		return fmt.Errorf("error marking invitation re-sent: %w", err)
+	}
+
+	return nil
+}
+
 func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 
@@ -901,7 +928,7 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 			bson.M{"$ifNull": bson.A{"$" + key, bson.A{}}},
 		}},
 		"primaryIssue": primaryIssueAfter(patients.PrimaryIssue{
-			ProviderName:  request.ProviderName,
+			Cause:         request.ProviderName,
 			EffectiveTime: request.CreatedTime,
 		}, "$primaryIssue"),
 	}}}}
@@ -917,14 +944,22 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 	return nil
 }
 
-// primaryIssueAfter builds the aggregation expression that decides a patient's primary
-// issue once candidate has been considered against current, an expression that evaluates
-// to the primary issue so far. The candidate wins when it is newer than the current one,
-// when there is no current one, or when the times are equal and its provider ranks higher
-// in patients.PrimaryIssueProviderPrecedence. Otherwise the current value is kept.
+// primaryIssueAfter returns an aggregation expression that picks between two primary
+// issues: candidate, a value known to the caller, and current, an expression for the
+// primary issue stored so far (typically "$primaryIssue", or the result of a previous
+// primaryIssueAfter when folding several candidates).
+//
+// The expression evaluates to candidate when any of these hold:
+//   - there is no current primary issue, or it has no effective time;
+//   - candidate is newer than current;
+//   - both have the same effective time and candidate's cause ranks higher in
+//     patients.PrimaryIssueCausePrecedence.
+//
+// Otherwise it evaluates to current. This is the only definition of the rule in the
+// service; the one-time backfill in tools-private (BACK-4319) restates it in mongosh.
 func primaryIssueAfter(candidate patients.PrimaryIssue, current interface{}) bson.M {
 	const currentTime = "$$current.effectiveTime"
-	const currentProvider = "$$current.providerName"
+	const currentCause = "$$current.cause"
 
 	candidateWins := bson.M{"$switch": bson.M{
 		"branches": bson.A{
@@ -940,8 +975,8 @@ func primaryIssueAfter(candidate patients.PrimaryIssue, current interface{}) bso
 			bson.M{
 				"case": bson.M{"$eq": bson.A{candidate.EffectiveTime, currentTime}},
 				"then": bson.M{"$gt": bson.A{
-					providerPrecedence(bson.M{"$literal": candidate.ProviderName}),
-					providerPrecedence(currentProvider),
+					causePrecedence(bson.M{"$literal": candidate.Cause}),
+					causePrecedence(currentCause),
 				}},
 			},
 		},
@@ -973,7 +1008,7 @@ func primaryIssueAfterConnecting(dataSources *patients.DataSources, now time.Tim
 			continue
 		}
 		candidate := patients.PrimaryIssue{
-			ProviderName:  dataSource.ProviderName,
+			Cause:         dataSource.ProviderName,
 			EffectiveTime: now,
 		}
 		if dataSource.ModifiedTime != nil {
@@ -1007,13 +1042,13 @@ func newlyConnected(provider string) bson.M {
 	return bson.M{"$eq": bson.A{bson.M{"$size": alreadyConnected}, 0}}
 }
 
-// providerPrecedence builds an expression that ranks the provider expression by its
-// position in patients.PrimaryIssueProviderPrecedence. Unknown providers rank lowest.
-func providerPrecedence(provider interface{}) bson.M {
+// causePrecedence builds an expression that ranks the cause expression by its 1-based
+// position in patients.PrimaryIssueCausePrecedence. Unknown causes rank 0, the lowest.
+func causePrecedence(cause interface{}) bson.M {
 	branches := bson.A{}
-	for i, name := range patients.PrimaryIssueProviderPrecedence {
+	for i, name := range patients.PrimaryIssueCausePrecedence {
 		branches = append(branches, bson.M{
-			"case": bson.M{"$eq": bson.A{provider, name}},
+			"case": bson.M{"$eq": bson.A{cause, name}},
 			"then": i + 1,
 		})
 	}

@@ -712,6 +712,14 @@ const (
 	RUNNING   MigrationStatusV1 = "RUNNING"
 )
 
+// Defines values for PrimaryIssueCauseV1.
+const (
+	PrimaryIssueCauseV1Abbott                  PrimaryIssueCauseV1 = "abbott"
+	PrimaryIssueCauseV1DeviceNonSpecificInvite PrimaryIssueCauseV1 = "deviceNonSpecificInvite"
+	PrimaryIssueCauseV1Dexcom                  PrimaryIssueCauseV1 = "dexcom"
+	PrimaryIssueCauseV1Twiist                  PrimaryIssueCauseV1 = "twiist"
+)
+
 // Defines values for ProviderIdV1.
 const (
 	Abbott ProviderIdV1 = "abbott"
@@ -1605,10 +1613,10 @@ type PatientV1 struct {
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
 
-	// PrimaryIssueProvider The provider of the patient's newest connection request, if any. When requests share a createdTime, twiist takes precedence over dexcom, which takes precedence over abbott. Derived by the service and cannot be set through this API.
-	PrimaryIssueProvider *ProviderIdV1     `json:"primaryIssueProvider,omitempty"`
-	Reviews              []PatientReviewV1 `json:"reviews"`
-	Sites                []SiteV1          `json:"sites,omitzero"`
+	// PrimaryIssueCause The cause of the patient's primary connection issue, if any: the provider of the newest connection request or connected data source, or the device-non-specific account invitation. When causes share an effective time, twiist takes precedence over dexcom, then abbott, then the invitation. Derived by the service and cannot be set through this API.
+	PrimaryIssueCause *PrimaryIssueCauseV1 `json:"primaryIssueCause,omitempty"`
+	Reviews           []PatientReviewV1    `json:"reviews"`
+	Sites             []SiteV1             `json:"sites,omitzero"`
 
 	// Summary A summary of a patients recent data
 	Summary *PatientSummaryV1 `json:"summary,omitempty"`
@@ -1744,6 +1752,9 @@ type PhoneNumbersV1 = []PhoneNumberV1
 
 // PostalCodeV1 Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
 type PostalCodeV1 = string
+
+// PrimaryIssueCauseV1 What the patient's primary connection issue relates to: a third-party data provider, or the device-non-specific invitation to claim the account.
+type PrimaryIssueCauseV1 string
 
 // ProviderConnectionRequestV1 defines model for providerConnectionRequest.v1.
 type ProviderConnectionRequestV1 struct {

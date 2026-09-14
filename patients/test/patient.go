@@ -116,20 +116,21 @@ func RandomDiagnosisType() *patients.DiagnosisType {
 	return &choice
 }
 
-// RandomPrimaryIssue returns a primary issue for one of the known providers, or nil,
+// RandomPrimaryIssue returns a primary issue for one of the known causes, or nil,
 // since the field is optional. The time is truncated to what Mongo stores so that values
 // compare equal after a round trip.
 func RandomPrimaryIssue() *patients.PrimaryIssue {
-	providers := []string{
+	causes := []string{
 		patients.AbbottDataSourceProviderName,
 		patients.DexcomDataSourceProviderName,
 		patients.TwiistDataSourceProviderName,
+		patients.PrimaryIssueCauseDeviceNonSpecificInvite,
 	}
-	if rand.IntN(len(providers)+1) == 0 {
+	if rand.IntN(len(causes)+1) == 0 {
 		return nil
 	}
 	return &patients.PrimaryIssue{
-		ProviderName:  providers[rand.IntN(len(providers))],
+		Cause:         causes[rand.IntN(len(causes))],
 		EffectiveTime: time.Now().UTC().Truncate(time.Millisecond),
 	}
 }

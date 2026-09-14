@@ -247,6 +247,9 @@ type ClientInterface interface {
 	// ConnectProvider request
 	ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// MarkPatientInvitationResent request
+	MarkPatientInvitationResent(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdatePatientPermissionsWithBody request with any body
 	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1074,6 +1077,18 @@ func (c *Client) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId
 
 func (c *Client) ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectProviderRequest(c.Server, clinicId, patientId, providerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MarkPatientInvitationResent(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMarkPatientInvitationResentRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -5753,6 +5768,47 @@ func NewConnectProviderRequest(server string, clinicId ClinicId, patientId Patie
 	return req, nil
 }
 
+// NewMarkPatientInvitationResentRequest generates requests for MarkPatientInvitationResent
+func NewMarkPatientInvitationResentRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/invitation_resent", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdatePatientPermissionsRequest calls the generic UpdatePatientPermissions builder with application/json body
 func NewUpdatePatientPermissionsRequest(server string, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7633,6 +7689,9 @@ type ClientWithResponsesInterface interface {
 	// ConnectProviderWithResponse request
 	ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error)
 
+	// MarkPatientInvitationResentWithResponse request
+	MarkPatientInvitationResentWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*MarkPatientInvitationResentResponse, error)
+
 	// UpdatePatientPermissionsWithBodyWithResponse request with any body
 	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientPermissionsResponse, error)
 
@@ -8661,6 +8720,27 @@ func (r ConnectProviderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MarkPatientInvitationResentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r MarkPatientInvitationResentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MarkPatientInvitationResentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9939,6 +10019,15 @@ func (c *ClientWithResponses) ConnectProviderWithResponse(ctx context.Context, c
 		return nil, err
 	}
 	return ParseConnectProviderResponse(rsp)
+}
+
+// MarkPatientInvitationResentWithResponse request returning *MarkPatientInvitationResentResponse
+func (c *ClientWithResponses) MarkPatientInvitationResentWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*MarkPatientInvitationResentResponse, error) {
+	rsp, err := c.MarkPatientInvitationResent(ctx, clinicId, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMarkPatientInvitationResentResponse(rsp)
 }
 
 // UpdatePatientPermissionsWithBodyWithResponse request with arbitrary body returning *UpdatePatientPermissionsResponse
@@ -11350,6 +11439,22 @@ func ParseConnectProviderResponse(rsp *http.Response) (*ConnectProviderResponse,
 	}
 
 	response := &ConnectProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseMarkPatientInvitationResentResponse parses an HTTP response from a MarkPatientInvitationResentWithResponse call
+func ParseMarkPatientInvitationResentResponse(rsp *http.Response) (*MarkPatientInvitationResentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MarkPatientInvitationResentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

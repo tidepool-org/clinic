@@ -21,9 +21,9 @@ import (
 	"github.com/tidepool-org/clinic/store/test"
 )
 
-// The primaryIssueProvider field is read-only. The request validator accepts read-only
+// The primaryIssueCause field is read-only. The request validator accepts read-only
 // fields in request bodies, so the API must silently ignore them rather than reject them.
-var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
+var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 	var clinic client.ClinicV1
 	var patient api.PatientV1
 
@@ -37,17 +37,6 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		clinicId, err := primitive.ObjectIDFromHex(*clinic.Id)
 		Expect(err).ToNot(HaveOccurred())
 		return bson.M{"userId": *patient.Id, "clinicId": clinicId}
-	}
-
-	// patientDocument returns the raw document, for asserting on the presence of keys.
-	patientDocument := func() bson.M {
-		GinkgoHelper()
-
-		doc := bson.M{}
-		db := test.GetTestDatabase()
-		Expect(db.Collection("patients").FindOne(context.Background(), patientSelector()).
-			Decode(&doc)).To(Succeed())
-		return doc
 	}
 
 	storedPatient := func() patients.Patient {
@@ -111,10 +100,9 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		return updated
 	}
 
-	expectStoredProviderName := func(providerName string) {
+	expectStoredCause := func(cause string) {
 		GinkgoHelper()
-		Expect(storedPatient().PrimaryIssue).
-			To(PointTo(HaveField("ProviderName", providerName)))
+		Expect(storedPatient().PrimaryIssue).To(PointTo(HaveField("Cause", cause)))
 	}
 
 	Describe("Create a clinic", func() {
@@ -132,14 +120,14 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		})
 	})
 
-	Describe("Create a patient with a primary issue provider", func() {
+	Describe("Create a patient with a primary issue cause", func() {
 		It("Succeeds but ignores the field", func() {
 			body, err := json.Marshal(map[string]interface{}{
-				"fullName":             "Timothy Bixby",
-				"birthDate":            "2008-01-06",
-				"mrn":                  "0000000001",
-				"email":                "test@tidepool.org",
-				"primaryIssueProvider": "dexcom",
+				"fullName":          "Timothy Bixby",
+				"birthDate":         "2008-01-06",
+				"mrn":               "0000000001",
+				"email":             "test@tidepool.org",
+				"primaryIssueCause": "dexcom",
 			})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -153,11 +141,14 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 			Expect(json.NewDecoder(rec.Result().Body).Decode(&patient)).To(Succeed())
 			Expect(patient.Id).To(PointTo(Not(BeEmpty())))
-			Expect(patient.PrimaryIssueProvider).To(BeNil())
+			// The custodial invitation sent at creation is the primary issue, not the
+			// provider supplied in the body.
+			Expect(patient.PrimaryIssueCause).
+				To(PointTo(Equal(api.PrimaryIssueCauseV1DeviceNonSpecificInvite)))
 		})
 
-		It("Does not persist the field", func() {
-			Expect(patientDocument()).ToNot(HaveKey("primaryIssue"))
+		It("Records the invitation rather than the supplied value", func() {
+			expectStoredCause(patients.PrimaryIssueCauseDeviceNonSpecificInvite)
 		})
 	})
 
@@ -165,7 +156,7 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		It("Succeeds", func() {
 			db := test.GetTestDatabase()
 			update := bson.M{"$set": bson.M{"primaryIssue": patients.PrimaryIssue{
-				ProviderName:  patients.AbbottDataSourceProviderName,
+				Cause:         patients.AbbottDataSourceProviderName,
 				EffectiveTime: time.Now(),
 			}}}
 			result, err := db.Collection("patients").UpdateOne(context.Background(),
@@ -175,39 +166,43 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 		})
 
 		It("Is returned when the patient is fetched", func() {
-			Expect(getPatient().PrimaryIssueProvider).To(PointTo(Equal(api.Abbott)))
+			Expect(getPatient().PrimaryIssueCause).
+				To(PointTo(Equal(api.PrimaryIssueCauseV1Abbott)))
 		})
 	})
 
-	Describe("Update the patient with a different primary issue provider", func() {
+	Describe("Update the patient with a different primary issue cause", func() {
 		It("Succeeds but ignores the field", func() {
 			updated := updatePatient(func(body map[string]interface{}) {
-				body["primaryIssueProvider"] = "twiist"
+				body["primaryIssueCause"] = "twiist"
 			})
-			Expect(updated.PrimaryIssueProvider).To(PointTo(Equal(api.Abbott)))
+			Expect(updated.PrimaryIssueCause).
+				To(PointTo(Equal(api.PrimaryIssueCauseV1Abbott)))
 		})
 
 		It("Keeps the previous value when the patient is fetched", func() {
-			Expect(getPatient().PrimaryIssueProvider).To(PointTo(Equal(api.Abbott)))
+			Expect(getPatient().PrimaryIssueCause).
+				To(PointTo(Equal(api.PrimaryIssueCauseV1Abbott)))
 		})
 
 		It("Keeps the previous value in the database", func() {
-			expectStoredProviderName(patients.AbbottDataSourceProviderName)
+			expectStoredCause(patients.AbbottDataSourceProviderName)
 		})
 	})
 
-	Describe("Update the patient without a primary issue provider", func() {
+	Describe("Update the patient without a primary issue cause", func() {
 		It("Succeeds", func() {
 			updated := updatePatient(func(body map[string]interface{}) {
-				delete(body, "primaryIssueProvider")
+				delete(body, "primaryIssueCause")
 				body["fullName"] = "Timothy A. Bixby"
 			})
 			Expect(updated.FullName).To(Equal("Timothy A. Bixby"))
-			Expect(updated.PrimaryIssueProvider).To(PointTo(Equal(api.Abbott)))
+			Expect(updated.PrimaryIssueCause).
+				To(PointTo(Equal(api.PrimaryIssueCauseV1Abbott)))
 		})
 
 		It("Keeps the previous value in the database", func() {
-			expectStoredProviderName(patients.AbbottDataSourceProviderName)
+			expectStoredCause(patients.AbbottDataSourceProviderName)
 		})
 	})
 
@@ -236,10 +231,11 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 		}
 
-		It("Makes its provider the primary issue provider", func() {
+		It("Makes its provider the primary issue cause", func() {
 			connectDataSource(time.Now())
-			Expect(getPatient().PrimaryIssueProvider).To(PointTo(Equal(api.Dexcom)))
-			expectStoredProviderName(patients.DexcomDataSourceProviderName)
+			Expect(getPatient().PrimaryIssueCause).
+				To(PointTo(Equal(api.PrimaryIssueCauseV1Dexcom)))
+			expectStoredCause(patients.DexcomDataSourceProviderName)
 		})
 
 		It("Yields to a later connection request", func() {
@@ -251,12 +247,14 @@ var _ = Describe("Primary Issue Provider Integration Test", Ordered, func() {
 
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
-			Expect(getPatient().PrimaryIssueProvider).To(PointTo(Equal(api.Twiist)))
+			Expect(getPatient().PrimaryIssueCause).
+				To(PointTo(Equal(api.PrimaryIssueCauseV1Twiist)))
 		})
 
 		It("Does not reclaim the primary issue while it stays connected", func() {
 			connectDataSource(time.Now().Add(time.Hour))
-			Expect(getPatient().PrimaryIssueProvider).To(PointTo(Equal(api.Twiist)))
+			Expect(getPatient().PrimaryIssueCause).
+				To(PointTo(Equal(api.PrimaryIssueCauseV1Twiist)))
 		})
 	})
 })

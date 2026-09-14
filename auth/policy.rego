@@ -418,6 +418,14 @@ allow {
   is_backend_service
 }
 
+# Allow backend services to record that a patient's invitation was re-sent
+# POST /v1/clinics/:clinicId/patients/:patientId/invitation_resent
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "invitation_resent"]
+  is_backend_service
+}
+
 # Allow currently authenticated clinician to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {

@@ -319,7 +319,7 @@ var _ = Describe("Patients Repository", func() {
 			It("stores the primary issue", func() {
 				ctx := context.Background()
 				issue := patients.PrimaryIssue{
-					ProviderName:  patients.AbbottDataSourceProviderName,
+					Cause:         patients.AbbottDataSourceProviderName,
 					EffectiveTime: time.Now().UTC().Truncate(time.Millisecond),
 				}
 				patient.PrimaryIssue = &issue
@@ -335,7 +335,7 @@ var _ = Describe("Patients Repository", func() {
 			It("does not change the primary issue on update", func() {
 				ctx := context.Background()
 				issue := patients.PrimaryIssue{
-					ProviderName:  patients.DexcomDataSourceProviderName,
+					Cause:         patients.DexcomDataSourceProviderName,
 					EffectiveTime: time.Now().UTC().Truncate(time.Millisecond),
 				}
 				patient.PrimaryIssue = &issue
@@ -1937,7 +1937,7 @@ var _ = Describe("Patients Repository", func() {
 
 				issue := func(providerName string, when time.Time) *patients.PrimaryIssue {
 					return &patients.PrimaryIssue{
-						ProviderName:  providerName,
+						Cause:         providerName,
 						EffectiveTime: when,
 					}
 				}
@@ -2029,7 +2029,7 @@ var _ = Describe("Patients Repository", func() {
 					createSubject(nil)
 					got := update(source(abbott, connected, nil))
 					Expect(got.PrimaryIssue).To(PointTo(And(
-						HaveField("ProviderName", abbott),
+						HaveField("Cause", abbott),
 						HaveField("EffectiveTime", BeTemporally("~", now, time.Second)),
 					)))
 				})
@@ -2126,7 +2126,7 @@ var _ = Describe("Patients Repository", func() {
 
 				issue := func(providerName string, when time.Time) *patients.PrimaryIssue {
 					return &patients.PrimaryIssue{
-						ProviderName:  providerName,
+						Cause:         providerName,
 						EffectiveTime: when,
 					}
 				}
@@ -2211,10 +2211,94 @@ var _ = Describe("Patients Repository", func() {
 
 				It("is replaced when the current issue has no time", func() {
 					// Seeded out-of-band without a time, there is nothing to be older than.
-					createSubject(&patients.PrimaryIssue{ProviderName: abbott})
+					createSubject(&patients.PrimaryIssue{Cause: abbott})
 					got := addRequest(dexcom, now.Add(-time.Hour))
 					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now.Add(-time.Hour))))
 				})
+			})
+		})
+
+		Describe("Mark invitation re-sent", func() {
+			var ctx context.Context
+			var subject patients.Patient
+			var now time.Time
+
+			invite := patients.PrimaryIssueCauseDeviceNonSpecificInvite
+
+			createSubject := func(primary *patients.PrimaryIssue) {
+				GinkgoHelper()
+				subject = patientsTest.RandomPatient()
+				subject.PrimaryIssue = primary
+				_, err := repo.Create(ctx, subject)
+				Expect(err).ToNot(HaveOccurred())
+			}
+
+			markResent := func() *patients.Patient {
+				GinkgoHelper()
+				err := repo.MarkInvitationResent(ctx, subject.ClinicId.Hex(),
+					*subject.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				got, err := repo.Get(ctx, subject.ClinicId.Hex(), *subject.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				return got
+			}
+
+			BeforeEach(func() {
+				ctx = context.Background()
+				now = time.Now().UTC().Truncate(time.Millisecond)
+			})
+
+			AfterEach(func() {
+				// Other specs in this block count documents, so leave none behind.
+				_, err := collection.DeleteMany(ctx, primitive.M{"userId": subject.UserId})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("makes the invitation the primary issue when there is none", func() {
+				createSubject(nil)
+				got := markResent()
+				Expect(got.PrimaryIssue).To(PointTo(And(
+					HaveField("Cause", invite),
+					HaveField("EffectiveTime", BeTemporally("~", now, time.Second)),
+				)))
+			})
+
+			It("replaces an older device cause", func() {
+				createSubject(&patients.PrimaryIssue{
+					Cause:         patients.AbbottDataSourceProviderName,
+					EffectiveTime: now.Add(-time.Hour),
+				})
+				got := markResent()
+				Expect(got.PrimaryIssue).To(PointTo(HaveField("Cause", invite)))
+			})
+
+			It("yields to a newer device cause", func() {
+				newer := patients.PrimaryIssue{
+					Cause:         patients.DexcomDataSourceProviderName,
+					EffectiveTime: now.Add(time.Hour),
+				}
+				createSubject(&newer)
+				got := markResent()
+				Expect(got.PrimaryIssue).To(PointTo(Equal(newer)))
+			})
+
+			It("refreshes the time of an existing invitation cause", func() {
+				createSubject(&patients.PrimaryIssue{
+					Cause:         invite,
+					EffectiveTime: now.Add(-time.Hour),
+				})
+				got := markResent()
+				Expect(got.PrimaryIssue).To(PointTo(And(
+					HaveField("Cause", invite),
+					HaveField("EffectiveTime", BeTemporally("~", now, time.Second)),
+				)))
+			})
+
+			It("returns not found for an unknown patient", func() {
+				subject = patientsTest.RandomPatient()
+				err := repo.MarkInvitationResent(ctx, subject.ClinicId.Hex(),
+					*subject.UserId)
+				Expect(err).To(MatchError(patients.ErrNotFound))
 			})
 		})
 
