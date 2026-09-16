@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -200,6 +201,86 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 			Expect(fetched.PrimaryIssue).To(PointTo(
 				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1InviteExpired)))))
 			Expect(fetched.UpdatedTime).To(PointTo(BeTemporally("==", updatedTime)))
+		})
+	})
+
+	Describe("Trigger the check after connected data goes stale", func() {
+		var updatedTime time.Time
+
+		// oldData is the latest data time of the data source connected below: it went
+		// stale an hour ago.
+		oldData := now.Add(-patients.DataSourceStaleDataDuration - time.Hour)
+		staleAt := oldData.Add(patients.DataSourceStaleDataDuration)
+
+		// putDataSource reports a connected dexcom data source created now, as the data
+		// service does, with the given latest data time.
+		putDataSource := func(latestDataTime time.Time) {
+			GinkgoHelper()
+
+			body, err := json.Marshal([]map[string]interface{}{{
+				"state":          patients.DataSourceStateConnected,
+				"providerName":   patients.DexcomDataSourceProviderName,
+				"dataSourceId":   "507f1f77bcf86cd799439011",
+				"createdTime":    now.Format(time.RFC3339Nano),
+				"modifiedTime":   now.Format(time.RFC3339Nano),
+				"latestDataTime": latestDataTime.Format(time.RFC3339Nano),
+			}})
+			Expect(err).ToNot(HaveOccurred())
+
+			rec := httptest.NewRecorder()
+			endpoint := fmt.Sprintf("/v1/patients/%s/data_sources", *patient.Id)
+			req := prepareRequestWithBody(http.MethodPut, endpoint, bytes.NewReader(body))
+			asServer(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+		}
+
+		It("Connects a dexcom data source whose data is stale", func() {
+			putDataSource(oldData)
+			// Connecting replaces the expired invitation as the primary issue.
+			Expect(getPatient().PrimaryIssue).To(PointTo(And(
+				HaveField("Source", api.PrimaryIssueSourceV1Dexcom),
+				HaveField("Kind", BeNil()),
+			)))
+		})
+
+		It("Classifies the primary issue as stale data", func() {
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+
+			fetched := getPatient()
+			Expect(fetched.PrimaryIssue).To(PointTo(And(
+				HaveField("Source", api.PrimaryIssueSourceV1Dexcom),
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1StaleData))),
+				HaveField("EffectiveTime", PointTo(BeTemporally("==", staleAt))),
+			)))
+			updatedTime = *fetched.UpdatedTime
+		})
+
+		It("Leaves the patient alone when triggered again", func() {
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+
+			fetched := getPatient()
+			Expect(fetched.PrimaryIssue).To(PointTo(
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1StaleData)))))
+			Expect(fetched.UpdatedTime).To(PointTo(BeTemporally("==", updatedTime)))
+		})
+
+		It("Does not classify stale data once a newer connection request exists", func() {
+			endpoint := fmt.Sprintf("/v1/clinics/%s/patients/%s/connect/dexcom",
+				*clinic.Id, *patient.Id)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodPost, endpoint, "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
+			// The new request replaces the primary issue, clearing the kind.
+			Expect(getPatient().PrimaryIssue).To(PointTo(HaveField("Kind", BeNil())))
+
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+			Expect(getPatient().PrimaryIssue).To(PointTo(HaveField("Kind", BeNil())))
 		})
 	})
 })

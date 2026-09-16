@@ -32,6 +32,7 @@ var _ = Describe("Patients Repository Device Issues", func() {
 	invite := patients.PrimaryIssueSourceDeviceNonSpecificInvite
 	expired := patients.PrimaryIssueKindInviteExpired
 	staleInvite := patients.PrimaryIssueKindStaleInvite
+	staleDataKind := patients.PrimaryIssueKindStaleData
 
 	type subject struct{ clinicId, userId string }
 
@@ -74,6 +75,19 @@ var _ = Describe("Patients Repository Device Issues", func() {
 			ProviderName: provider,
 			State:        patients.DataSourceStateConnected,
 			CreatedTime:  &createdTime,
+		}
+	}
+
+	// dataSourceWithData builds a data source in the given state whose latest data arrived
+	// at latestDataTime.
+	dataSourceWithData := func(
+		provider, state string, createdTime, latestDataTime time.Time,
+	) patients.DataSource {
+		return patients.DataSource{
+			ProviderName:   provider,
+			State:          state,
+			CreatedTime:    &createdTime,
+			LatestDataTime: &latestDataTime,
 		}
 	}
 
@@ -389,6 +403,140 @@ var _ = Describe("Patients Repository Device Issues", func() {
 				Source:        twiist,
 				EffectiveTime: now,
 			})))
+		})
+	})
+
+	Describe("stale data", func() {
+		// Times for a data source's latest data, relative to when data received now would
+		// go stale: oldData went stale an hour ago, recentData goes stale in an hour. The
+		// data source itself was created a day ago.
+		var oldData, recentData, sourceCreated time.Time
+		// staleAt is when oldData went stale.
+		var staleAt time.Time
+		connected := patients.DataSourceStateConnected
+
+		BeforeEach(func() {
+			staleNow := now.Add(-patients.DataSourceStaleDataDuration)
+			oldData = staleNow.Add(-time.Hour)
+			recentData = staleNow.Add(time.Hour)
+			sourceCreated = now.Add(-24 * time.Hour)
+			staleAt = oldData.Add(patients.DataSourceStaleDataDuration)
+		})
+
+		It("classifies the issue when connected data went stale", func() {
+			s := seed(issue(dexcom), nil,
+				dataSourceWithData(dexcom, connected, sourceCreated, oldData))
+			update()
+			got := get(s)
+			Expect(got.PrimaryIssue).To(PointTo(Equal(patients.PrimaryIssue{
+				Source:        dexcom,
+				Kind:          staleDataKind,
+				EffectiveTime: staleAt,
+			})))
+			Expect(got.UpdatedTime).To(BeTemporally("~", time.Now(), time.Second))
+		})
+
+		It("ignores recent data", func() {
+			s := seed(issue(dexcom), nil,
+				dataSourceWithData(dexcom, connected, sourceCreated, recentData))
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("ignores a data source without latest data", func() {
+			s := seed(issue(dexcom), nil, dataSource(dexcom, sourceCreated))
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("ignores stale data from a disconnected data source", func() {
+			disconnected := patients.DataSourceStateDisconnected
+			s := seed(issue(dexcom), nil,
+				dataSourceWithData(dexcom, disconnected, sourceCreated, oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("ignores stale data from an erroring data source", func() {
+			s := seed(issue(dexcom), nil,
+				dataSourceWithData(dexcom, patients.DataSourceStateError, sourceCreated,
+					oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("classifies the issue when the request predates the data source", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, sourceCreated.Add(-time.Hour))},
+			}, dataSourceWithData(dexcom, connected, sourceCreated, oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleDataKind)))
+		})
+
+		It("ignores stale data when a newer connection request exists", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, now.Add(-time.Hour))},
+			}, dataSourceWithData(dexcom, connected, sourceCreated, oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("ignores stale data for other providers", func() {
+			s := seed(issue(dexcom), nil,
+				dataSourceWithData(twiist, connected, sourceCreated, oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("ignores the device-non-specific invitation", func() {
+			s := seed(issue(invite), nil,
+				dataSourceWithData(dexcom, connected, sourceCreated, oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(invite)))
+		})
+
+		It("ignores patients without a primary issue", func() {
+			s := seed(nil, nil,
+				dataSourceWithData(dexcom, connected, sourceCreated, oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(BeNil())
+		})
+
+		It("replaces an existing kind", func() {
+			classified := issue(dexcom)
+			classified.Kind = staleInvite
+			s := seed(classified, nil,
+				dataSourceWithData(dexcom, connected, sourceCreated, oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleDataKind)))
+		})
+
+		It("leaves an already classified patient alone", func() {
+			s := seed(issue(dexcom), nil,
+				dataSourceWithData(dexcom, connected, sourceCreated, oldData))
+			update()
+			first := get(s)
+			Expect(first.PrimaryIssue).To(PointTo(HaveField("Kind", staleDataKind)))
+
+			update()
+			second := get(s)
+			Expect(second.PrimaryIssue).To(Equal(first.PrimaryIssue))
+			Expect(second.UpdatedTime).To(BeTemporally("==", first.UpdatedTime))
+		})
+
+		It("keeps the classification when data becomes recent again", func() {
+			s := seed(issue(dexcom), nil,
+				dataSourceWithData(dexcom, connected, sourceCreated, oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleDataKind)))
+
+			// No criterion un-classifies an issue; only a new event replaces it.
+			sources := patients.DataSources{
+				dataSourceWithData(dexcom, connected, sourceCreated, recentData),
+			}
+			Expect(repo.UpdatePatientDataSources(ctx, s.userId, &sources)).To(Succeed())
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleDataKind)))
 		})
 	})
 })

@@ -32,6 +32,9 @@ var (
 	// PendingDataSourceStaleDuration is how long a provider connection request may go
 	// unaccepted before the patient's primary issue is classified as a stale invitation.
 	PendingDataSourceStaleDuration = time.Hour * 48
+	// DataSourceStaleDataDuration is how long a connected data source may go without new
+	// data before the patient's primary issue is classified as stale data.
+	DataSourceStaleDataDuration = time.Hour * 48
 
 	DexcomDataSourceProviderName = "dexcom"
 	TwiistDataSourceProviderName = "twiist"

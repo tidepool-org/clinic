@@ -29,6 +29,10 @@ const deviceIssueField = "deviceIssue"
 //     has gone unaccepted for PendingDataSourceStaleDuration, that is, no data source for
 //     that provider was created after it. The issue is classified as staleInvite,
 //     effective when the request went stale.
+//   - Stale data: the connected data source for the primary issue's provider has had no
+//     new data for DataSourceStaleDataDuration, and no connection request for that
+//     provider is newer than the data source. The issue is classified as staleData,
+//     effective when the data went stale.
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	// Only provider-specific issues have connection requests or data sources to check.
 	selector := bson.M{
@@ -79,6 +83,13 @@ func deviceIssueOutcome(now time.Time) bson.M {
 					"effectiveTime": requestStaleAt(),
 				},
 			},
+			bson.M{
+				"case": dataStale(now),
+				"then": bson.M{
+					"kind":          patients.PrimaryIssueKindStaleData,
+					"effectiveTime": dataStaleAt(),
+				},
+			},
 		},
 		"default": nil,
 	}}
@@ -88,8 +99,9 @@ func deviceIssueOutcome(now time.Time) bson.M {
 	}}
 	return bson.M{"$let": bson.M{
 		"vars": bson.M{
-			"request":           newestRequestForSource(),
-			"dataSourceCreated": newestDataSourceCreatedForSource(),
+			"request":             newestRequestForSource(),
+			"dataSourceCreated":   newestDataSourceCreatedForSource(),
+			"connectedDataSource": newestConnectedDataSourceForSource(),
 		},
 		"in": bson.M{"$let": bson.M{
 			"vars": bson.M{"outcome": criteria},
@@ -148,6 +160,35 @@ func requestStaleAt() bson.M {
 	}}
 }
 
+// dataStale builds the expression for the third criterion. It is true when the connected
+// data source for the primary issue's provider ($$connectedDataSource) last received data
+// more than DataSourceStaleDataDuration ago, and no connection request for that provider
+// ($$request being the newest) is newer than the data source. A data source without a
+// latestDataTime, or no connected data source at all, never qualifies.
+func dataStale(now time.Time) bson.M {
+	return bson.M{"$and": bson.A{
+		bson.M{"$eq": bson.A{
+			bson.M{"$type": "$$connectedDataSource.latestDataTime"}, "date",
+		}},
+		bson.M{"$lte": bson.A{dataStaleAt(), now}},
+		bson.M{"$or": bson.A{
+			bson.M{"$eq": bson.A{"$$request", nil}},
+			bson.M{"$lte": bson.A{
+				"$$request.createdTime", "$$connectedDataSource.createdTime",
+			}},
+		}},
+	}}
+}
+
+// dataStaleAt builds the expression for the time the connected data source's data
+// ($$connectedDataSource) goes stale: DataSourceStaleDataDuration after its latest data.
+func dataStaleAt() bson.M {
+	return bson.M{"$add": bson.A{
+		"$$connectedDataSource.latestDataTime",
+		patients.DataSourceStaleDataDuration.Milliseconds(),
+	}}
+}
+
 // newestRequestForSource builds the expression for the newest connection request whose
 // provider is the primary issue's source, or null when there is none. Requests are stored
 // per provider, newest first. The provider is only known per document, so the map is
@@ -168,6 +209,23 @@ func newestRequestForSource() bson.M {
 		bson.A{},
 	}}
 	return bson.M{"$first": requests}
+}
+
+// newestConnectedDataSourceForSource builds the expression for the connected data source
+// whose provider is the primary issue's source, or null when there is none. Should several
+// be connected, the most recently created one is chosen.
+func newestConnectedDataSourceForSource() bson.M {
+	matching := bson.M{"$filter": bson.M{
+		"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
+		"cond": bson.M{"$and": bson.A{
+			bson.M{"$eq": bson.A{"$$this.providerName", "$primaryIssue.source"}},
+			bson.M{"$eq": bson.A{"$$this.state", patients.DataSourceStateConnected}},
+		}},
+	}}
+	return bson.M{"$first": bson.M{"$sortArray": bson.M{
+		"input":  matching,
+		"sortBy": bson.M{"createdTime": -1},
+	}}}
 }
 
 // newestDataSourceCreatedForSource builds the expression for the creation time of the
