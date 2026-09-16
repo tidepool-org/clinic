@@ -208,7 +208,9 @@ func newestRequestForSource() bson.M {
 		}}},
 		bson.A{},
 	}}
-	return bson.M{"$first": requests}
+	// $first of an empty array yields a missing value, which a variable does not equate to
+	// null, so normalise it.
+	return bson.M{"$ifNull": bson.A{bson.M{"$first": requests}, nil}}
 }
 
 // newestConnectedDataSourceForSource builds the expression for the connected data source
@@ -222,10 +224,12 @@ func newestConnectedDataSourceForSource() bson.M {
 			bson.M{"$eq": bson.A{"$$this.state", patients.DataSourceStateConnected}},
 		}},
 	}}
-	return bson.M{"$first": bson.M{"$sortArray": bson.M{
+	newest := bson.M{"$first": bson.M{"$sortArray": bson.M{
 		"input":  matching,
 		"sortBy": bson.M{"createdTime": -1},
 	}}}
+	// As in newestRequestForSource, normalise a missing value to null.
+	return bson.M{"$ifNull": bson.A{newest, nil}}
 }
 
 // newestDataSourceCreatedForSource builds the expression for the creation time of the

@@ -150,9 +150,10 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 			"state":        state,
 			"providerName": provider,
 			"dataSourceId": "507f1f77bcf86cd799439011",
-			"createdTime":  "2025-01-01T00:00:00Z",
-			// Keep sub-second precision, so comparisons against seeded issues are decided
-			// by time rather than by provider precedence.
+			// Created when reported, so the data source is newer than any request made
+			// earlier in the flow. Keep sub-second precision, so comparisons against
+			// seeded issues are decided by time rather than by provider precedence.
+			"createdTime":  modifiedTime.UTC().Format(time.RFC3339Nano),
 			"modifiedTime": modifiedTime.UTC().Format(time.RFC3339Nano),
 		}})
 		Expect(err).ToNot(HaveOccurred())

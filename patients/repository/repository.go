@@ -1035,10 +1035,12 @@ func primaryIssueAfterConnecting(dataSources *patients.DataSources,
 // source in the incoming list that has just disconnected or errored into the patient's
 // primary issue, starting from current, the expression for the primary issue stored so
 // far. A data source takes part only when its stored counterpart, matched by provider, is
-// connected, so a repeated failure report doesn't refresh the issue. When the primary
-// issue's source is that provider, the issue keeps its source and gets the kind for the new
-// state and now as its effective time. It returns nil when no data source has failed, so
-// the field can be left alone.
+// connected, so a repeated failure report doesn't refresh the issue, and only when the
+// patient has no connection request for that provider newer than the data source, since
+// such a request supersedes the device. The kind changes only when the primary issue's
+// source is the failing data source's provider: the issue then keeps its source and gets
+// the kind for the new state and now as its effective time. It returns nil when no data
+// source has failed, so the field can be left alone.
 func primaryIssueAfterDisconnecting(dataSources *patients.DataSources,
 	now time.Time, current interface{}) bson.M {
 
@@ -1060,6 +1062,7 @@ func primaryIssueAfterDisconnecting(dataSources *patients.DataSources,
 			"in": bson.M{"$cond": bson.A{
 				bson.M{"$and": bson.A{
 					wasConnected(dataSource.ProviderName),
+					noNewerRequest(dataSource),
 					bson.M{"$eq": bson.A{"$$acc.source", dataSource.ProviderName}},
 				}},
 				classified,
@@ -1093,6 +1096,31 @@ func newlyConnected(provider string) bson.M {
 // connected entry for provider, meaning an incoming failed entry is a state change.
 func wasConnected(provider string) bson.M {
 	return bson.M{"$gt": bson.A{bson.M{"$size": storedConnected(provider)}, 0}}
+}
+
+// noNewerRequest builds an expression that is true when the patient has no connection
+// request for the data source's provider created after the data source. Requests are
+// stored newest first. A data source without a creation time can't be shown to be newer
+// than any request, so it qualifies only when there are none.
+//
+// $first of an empty array yields a missing value, which a variable does not equate to
+// null, so the newest request is normalised to null when there is none.
+func noNewerRequest(dataSource patients.DataSource) bson.M {
+	requests := "$providerConnectionRequests." + dataSource.ProviderName
+	newest := bson.M{"$ifNull": bson.A{
+		bson.M{"$first": bson.M{"$ifNull": bson.A{requests, bson.A{}}}},
+		nil,
+	}}
+	acceptable := bson.A{bson.M{"$eq": bson.A{"$$newest", nil}}}
+	if dataSource.CreatedTime != nil {
+		acceptable = append(acceptable, bson.M{"$lte": bson.A{
+			"$$newest.createdTime", *dataSource.CreatedTime,
+		}})
+	}
+	return bson.M{"$let": bson.M{
+		"vars": bson.M{"newest": newest},
+		"in":   bson.M{"$or": acceptable},
+	}}
 }
 
 // sourcePrecedence builds an expression that ranks the source expression by its 1-based

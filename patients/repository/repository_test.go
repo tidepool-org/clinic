@@ -1981,6 +1981,30 @@ var _ = Describe("Patients Repository", func() {
 					return got
 				}
 
+				// sourceCreated is source with a creation time as well.
+				sourceCreated := func(
+					providerName, state string, created, modified time.Time,
+				) patients.DataSource {
+					dataSource := source(providerName, state, &modified)
+					dataSource.CreatedTime = &created
+					return dataSource
+				}
+
+				// seedRequest stores a connection request for the subject directly,
+				// without the derivation a request normally triggers.
+				seedRequest := func(provider string, created time.Time) {
+					GinkgoHelper()
+					requests := patients.ProviderConnectionRequests{provider: {{
+						ProviderName: provider,
+						CreatedTime:  created,
+					}}}
+					set := primitive.M{"$set": primitive.M{
+						"providerConnectionRequests": requests,
+					}}
+					_, err := collection.UpdateOne(ctx, primitive.M{"_id": subject.Id}, set)
+					Expect(err).ToNot(HaveOccurred())
+				}
+
 				BeforeEach(func() {
 					ctx = context.Background()
 					// Mongo stores dates at millisecond precision, so ties need exact
@@ -2150,6 +2174,54 @@ var _ = Describe("Patients Repository", func() {
 					)
 					Expect(got.PrimaryIssue).To(Equal(issue(twiist, now)))
 				})
+
+				failures := []struct{ state, kind string }{
+					{disconnected, patients.PrimaryIssueKindDisconnected},
+					{errored, patients.PrimaryIssueKindErroring},
+				}
+				for _, failure := range failures {
+					state, kind := failure.state, failure.kind
+
+					Context("when the data source enters the "+state+" state", func() {
+						var dayAgo, twoDaysAgo time.Time
+
+						BeforeEach(func() {
+							dayAgo = now.Add(-24 * time.Hour)
+							twoDaysAgo = now.Add(-48 * time.Hour)
+						})
+
+						It("yields to a newer connection request", func() {
+							createSubject(issue(dexcom, dayAgo),
+								sourceCreated(dexcom, connected, dayAgo, dayAgo))
+							seedRequest(dexcom, now.Add(-time.Hour))
+							got := update(sourceCreated(dexcom, state, dayAgo, now))
+							Expect(got.PrimaryIssue).To(Equal(issue(dexcom, dayAgo)))
+						})
+
+						It("is classified when the request is older", func() {
+							createSubject(issue(dexcom, dayAgo),
+								sourceCreated(dexcom, connected, dayAgo, dayAgo))
+							seedRequest(dexcom, twoDaysAgo)
+							got := update(sourceCreated(dexcom, state, dayAgo, now))
+							Expect(got.PrimaryIssue).To(PointTo(HaveField("Kind", kind)))
+						})
+
+						It("yields to any request when it has no creation time", func() {
+							createSubject(issue(dexcom, dayAgo),
+								source(dexcom, connected, &dayAgo))
+							seedRequest(dexcom, twoDaysAgo)
+							got := update(source(dexcom, state, &now))
+							Expect(got.PrimaryIssue).To(Equal(issue(dexcom, dayAgo)))
+						})
+
+						It("is classified without a creation time if no request", func() {
+							createSubject(issue(dexcom, dayAgo),
+								source(dexcom, connected, &dayAgo))
+							got := update(source(dexcom, state, &now))
+							Expect(got.PrimaryIssue).To(PointTo(HaveField("Kind", kind)))
+						})
+					})
+				}
 
 				It("is set on every clinic record of the user", func() {
 					createSubject(nil)
