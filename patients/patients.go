@@ -34,6 +34,13 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
+	// DataSourceProviderNames lists the third-party providers a patient can connect.
+	DataSourceProviderNames = []string{
+		DexcomDataSourceProviderName,
+		TwiistDataSourceProviderName,
+		AbbottDataSourceProviderName,
+	}
+
 	DataSourceStateConnected    = "connected"
 	DataSourceStateDisconnected = "disconnected"
 	DataSourceStateError        = "error"
@@ -104,6 +111,7 @@ type Service interface {
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	MarkInvitationResent(ctx context.Context, clinicId, userId string) error
+	UpdateDeviceIssues(ctx context.Context) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error

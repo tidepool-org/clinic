@@ -313,6 +313,11 @@ func (s *service) MarkInvitationResent(ctx context.Context, clinicId, userId str
 	return s.patientsRepo.MarkInvitationResent(ctx, clinicId, userId)
 }
 
+func (s *service) UpdateDeviceIssues(ctx context.Context) error {
+	s.logger.Infow("updating patients' device issues")
+	return s.patientsRepo.UpdateDeviceIssues(ctx)
+}
+
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "providerName", request.ProviderName)
 

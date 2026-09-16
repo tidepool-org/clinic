@@ -6,7 +6,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// UpdateDeviceIssues lets backend services trigger a check of patients' device issues.
 func (h *Handler) UpdateDeviceIssues(ec echo.Context) error {
+	ctx := ec.Request().Context()
+
+	if err := h.Patients.UpdateDeviceIssues(ctx); err != nil {
+		return err
+	}
+
 	return ec.NoContent(http.StatusNoContent)
 }

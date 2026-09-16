@@ -784,6 +784,13 @@ var _ = Describe("Patients Service", func() {
 		})
 	})
 
+	Describe("UpdateDeviceIssues", func() {
+		It("delegates to the repository", func() {
+			repo.EXPECT().UpdateDeviceIssues(gomock.Any()).Return(nil)
+			Expect(service.UpdateDeviceIssues(context.Background())).To(Succeed())
+		})
+	})
+
 	Describe("DeleteFromAllClinics", func() {
 		It("delete the user from no clinics", func() {
 			userId := "1234567890"
