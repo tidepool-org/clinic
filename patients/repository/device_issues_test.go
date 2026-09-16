@@ -30,7 +30,7 @@ var _ = Describe("Patients Repository Device Issues", func() {
 	dexcom := patients.DexcomDataSourceProviderName
 	twiist := patients.TwiistDataSourceProviderName
 	invite := patients.PrimaryIssueSourceDeviceNonSpecificInvite
-	expired := patients.PrimaryIssueKindInvitationExpired
+	expired := patients.PrimaryIssueKindInviteExpired
 	staleInvite := patients.PrimaryIssueKindStaleInvite
 
 	type subject struct{ clinicId, userId string }
@@ -127,7 +127,7 @@ var _ = Describe("Patients Repository Device Issues", func() {
 			current = now.Add(-time.Hour)
 		})
 
-		It("classifies the issue when the invitation expired with no data source", func() {
+		It("classifies the issue when the invite expired with no data source", func() {
 			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
 				dexcom: {request(dexcom, lapsed)},
 			})

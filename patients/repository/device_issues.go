@@ -23,7 +23,7 @@ const deviceIssueField = "deviceIssue"
 // Criteria so far, in order of precedence:
 //   - Expired provider-specific invitation: the newest connection request for the primary
 //     issue's provider has expired, and no data source for that provider was created
-//     since. The issue is classified as invitationExpired, effective at the request's
+//     since. The issue is classified as inviteExpired, effective at the request's
 //     expiration time.
 //   - Stale invitation: the newest connection request for the primary issue's provider
 //     has gone unaccepted for PendingDataSourceStaleDuration, that is, no data source for
@@ -66,9 +66,9 @@ func deviceIssueOutcome(now time.Time) bson.M {
 	criteria := bson.M{"$switch": bson.M{
 		"branches": bson.A{
 			bson.M{
-				"case": invitationExpired(now),
+				"case": inviteExpired(now),
 				"then": bson.M{
-					"kind":          patients.PrimaryIssueKindInvitationExpired,
+					"kind":          patients.PrimaryIssueKindInviteExpired,
 					"effectiveTime": "$$request.expirationTime",
 				},
 			},
@@ -105,12 +105,12 @@ func deviceIssueOutcome(now time.Time) bson.M {
 	}}
 }
 
-// invitationExpired builds the expression that checks for expired invitations. It is true
+// inviteExpired builds the expression that checks for expired invitations. It is true
 // when the newest connection request for the primary issue's provider ($$request) has an
 // expiration time that has passed, and the newest data source for that provider
 // ($$dataSourceCreated, its creation time) is absent or predates the request. A request
 // without an expiration time never expires.
-func invitationExpired(now time.Time) bson.M {
+func inviteExpired(now time.Time) bson.M {
 	return bson.M{"$and": bson.A{
 		bson.M{"$eq": bson.A{bson.M{"$type": "$$request.expirationTime"}, "date"}},
 		bson.M{"$lt": bson.A{"$$request.expirationTime", now}},

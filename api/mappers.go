@@ -258,7 +258,7 @@ func NewPrimaryIssueKindDto(kind string) *PrimaryIssueKindV1 {
 	switch dtoKind {
 	case PrimaryIssueKindV1Erroring,
 		PrimaryIssueKindV1Disconnected,
-		PrimaryIssueKindV1InvitationExpired,
+		PrimaryIssueKindV1InviteExpired,
 		PrimaryIssueKindV1StaleData,
 		PrimaryIssueKindV1StaleInvite:
 		return &dtoKind

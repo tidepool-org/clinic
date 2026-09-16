@@ -714,11 +714,11 @@ const (
 
 // Defines values for PrimaryIssueKindV1.
 const (
-	PrimaryIssueKindV1Disconnected      PrimaryIssueKindV1 = "disconnected"
-	PrimaryIssueKindV1Erroring          PrimaryIssueKindV1 = "erroring"
-	PrimaryIssueKindV1InvitationExpired PrimaryIssueKindV1 = "invitationExpired"
-	PrimaryIssueKindV1StaleData         PrimaryIssueKindV1 = "staleData"
-	PrimaryIssueKindV1StaleInvite       PrimaryIssueKindV1 = "staleInvite"
+	PrimaryIssueKindV1Disconnected  PrimaryIssueKindV1 = "disconnected"
+	PrimaryIssueKindV1Erroring      PrimaryIssueKindV1 = "erroring"
+	PrimaryIssueKindV1InviteExpired PrimaryIssueKindV1 = "inviteExpired"
+	PrimaryIssueKindV1StaleData     PrimaryIssueKindV1 = "staleData"
+	PrimaryIssueKindV1StaleInvite   PrimaryIssueKindV1 = "staleInvite"
 )
 
 // Defines values for PrimaryIssueSourceV1.

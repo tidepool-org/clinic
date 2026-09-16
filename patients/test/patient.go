@@ -143,7 +143,7 @@ func RandomPrimaryIssueKind() string {
 		"",
 		patients.PrimaryIssueKindErroring,
 		patients.PrimaryIssueKindDisconnected,
-		patients.PrimaryIssueKindInvitationExpired,
+		patients.PrimaryIssueKindInviteExpired,
 		patients.PrimaryIssueKindStaleData,
 		patients.PrimaryIssueKindStaleInvite,
 	}

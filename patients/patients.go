@@ -56,11 +56,11 @@ var (
 	// PrimaryIssueKind* classify a patient's primary issue. They are set by backend
 	// services once the issue has been evaluated; an empty Kind means the issue has not
 	// been classified yet.
-	PrimaryIssueKindErroring          = "erroring"
-	PrimaryIssueKindDisconnected      = "disconnected"
-	PrimaryIssueKindInvitationExpired = "invitationExpired"
-	PrimaryIssueKindStaleData         = "staleData"
-	PrimaryIssueKindStaleInvite       = "staleInvite"
+	PrimaryIssueKindErroring      = "erroring"
+	PrimaryIssueKindDisconnected  = "disconnected"
+	PrimaryIssueKindInviteExpired = "inviteExpired"
+	PrimaryIssueKindStaleData     = "staleData"
+	PrimaryIssueKindStaleInvite   = "staleInvite"
 
 	// PrimaryIssueSourcePrecedence orders sources from lowest to highest priority. It breaks
 	// ties between events that share an effective time when deciding a patient's primary
