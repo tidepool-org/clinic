@@ -716,7 +716,7 @@ const (
 const (
 	PrimaryIssueKindV1Disconnected  PrimaryIssueKindV1 = "disconnected"
 	PrimaryIssueKindV1Erroring      PrimaryIssueKindV1 = "erroring"
-	PrimaryIssueKindV1InviteExpired PrimaryIssueKindV1 = "inviteExpired"
+	PrimaryIssueKindV1ExpiredInvite PrimaryIssueKindV1 = "expiredInvite"
 	PrimaryIssueKindV1StaleData     PrimaryIssueKindV1 = "staleData"
 	PrimaryIssueKindV1StaleInvite   PrimaryIssueKindV1 = "staleInvite"
 )

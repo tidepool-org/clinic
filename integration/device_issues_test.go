@@ -186,7 +186,7 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 			fetched := getPatient()
 			Expect(fetched.PrimaryIssue).To(PointTo(And(
 				HaveField("Source", api.PrimaryIssueSourceV1Dexcom),
-				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1InviteExpired))),
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1ExpiredInvite))),
 				HaveField("EffectiveTime", PointTo(BeTemporally("==", expiration))),
 			)))
 			Expect(fetched.UpdatedTime).
@@ -199,7 +199,7 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 
 			fetched := getPatient()
 			Expect(fetched.PrimaryIssue).To(PointTo(
-				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1InviteExpired)))))
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1ExpiredInvite)))))
 			Expect(fetched.UpdatedTime).To(PointTo(BeTemporally("==", updatedTime)))
 		})
 	})

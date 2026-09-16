@@ -5036,13 +5036,13 @@ components:
       enum:
         - erroring
         - disconnected
-        - inviteExpired
+        - expiredInvite
         - staleData
         - staleInvite
       x-enum-varnames:
         - PrimaryIssueKindV1Erroring
         - PrimaryIssueKindV1Disconnected
-        - PrimaryIssueKindV1InviteExpired
+        - PrimaryIssueKindV1ExpiredInvite
         - PrimaryIssueKindV1StaleData
         - PrimaryIssueKindV1StaleInvite
     primaryIssue.v1:

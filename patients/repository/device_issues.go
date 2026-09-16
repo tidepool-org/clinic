@@ -23,7 +23,7 @@ const deviceIssueField = "deviceIssue"
 // Criteria so far, in order of precedence:
 //   - Expired provider-specific invitation: the newest connection request for the primary
 //     issue's provider has expired, and no data source for that provider was created
-//     since. The issue is classified as inviteExpired, effective at the request's
+//     since. The issue is classified as expiredInvite, effective at the request's
 //     expiration time.
 //   - Stale invitation: the newest connection request for the primary issue's provider
 //     has gone unaccepted for PendingDataSourceStaleDuration, that is, no data source for
@@ -70,14 +70,14 @@ func deviceIssueOutcome(now time.Time) bson.M {
 	criteria := bson.M{"$switch": bson.M{
 		"branches": bson.A{
 			bson.M{
-				"case": inviteExpired(now),
+				"case": expiredInvite(now),
 				"then": bson.M{
-					"kind":          patients.PrimaryIssueKindInviteExpired,
+					"kind":          patients.PrimaryIssueKindExpiredInvite,
 					"effectiveTime": "$$request.expirationTime",
 				},
 			},
 			bson.M{
-				"case": invitationStale(now),
+				"case": staleInvite(now),
 				"then": bson.M{
 					"kind":          patients.PrimaryIssueKindStaleInvite,
 					"effectiveTime": requestStaleAt(),
@@ -117,12 +117,12 @@ func deviceIssueOutcome(now time.Time) bson.M {
 	}}
 }
 
-// inviteExpired builds the expression that checks for expired invitations. It is true
+// expiredInvite builds the expression that checks for expired invitations. It is true
 // when the newest connection request for the primary issue's provider ($$request) has an
 // expiration time that has passed, and the newest data source for that provider
 // ($$dataSourceCreated, its creation time) is absent or predates the request. A request
 // without an expiration time never expires.
-func inviteExpired(now time.Time) bson.M {
+func expiredInvite(now time.Time) bson.M {
 	return bson.M{"$and": bson.A{
 		bson.M{"$eq": bson.A{bson.M{"$type": "$$request.expirationTime"}, "date"}},
 		bson.M{"$lt": bson.A{"$$request.expirationTime", now}},
@@ -133,13 +133,13 @@ func inviteExpired(now time.Time) bson.M {
 	}}
 }
 
-// invitationStale builds the expression for the second criterion. It is true when the
+// staleInvite builds the expression for the second criterion. It is true when the
 // newest connection request for the primary issue's provider ($$request) went stale
 // before now without being accepted, meaning no data source for that provider
 // ($$dataSourceCreated, the newest one's creation time) was created after the request.
 // Expiry is checked first, so this applies to requests aged between
 // PendingDataSourceStaleDuration and PendingDataSourceExpirationDuration.
-func invitationStale(now time.Time) bson.M {
+func staleInvite(now time.Time) bson.M {
 	return bson.M{"$and": bson.A{
 		bson.M{"$eq": bson.A{bson.M{"$type": "$$request.createdTime"}, "date"}},
 		bson.M{"$lte": bson.A{requestStaleAt(), now}},

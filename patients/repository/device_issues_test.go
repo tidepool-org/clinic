@@ -30,7 +30,7 @@ var _ = Describe("Patients Repository Device Issues", func() {
 	dexcom := patients.DexcomDataSourceProviderName
 	twiist := patients.TwiistDataSourceProviderName
 	invite := patients.PrimaryIssueSourceDeviceNonSpecificInvite
-	expired := patients.PrimaryIssueKindInviteExpired
+	expired := patients.PrimaryIssueKindExpiredInvite
 	staleInvite := patients.PrimaryIssueKindStaleInvite
 	staleDataKind := patients.PrimaryIssueKindStaleData
 

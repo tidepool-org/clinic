@@ -61,7 +61,7 @@ var (
 	// been classified yet.
 	PrimaryIssueKindErroring      = "erroring"
 	PrimaryIssueKindDisconnected  = "disconnected"
-	PrimaryIssueKindInviteExpired = "inviteExpired"
+	PrimaryIssueKindExpiredInvite = "expiredInvite"
 	PrimaryIssueKindStaleData     = "staleData"
 	PrimaryIssueKindStaleInvite   = "staleInvite"
 
