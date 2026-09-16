@@ -24,11 +24,12 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 	var clinic client.ClinicV1
 	var patient api.PatientV1
 
-	// Mongo stores dates at millisecond precision, so the times are truncated to compare
-	// equal after a round trip.
-	requestCreated := time.Now().UTC().Truncate(time.Millisecond).
+	now := time.Now().UTC().Truncate(time.Millisecond)
+	staleRequestCreated := now.Add(-patients.PendingDataSourceStaleDuration - time.Hour)
+	staleAt := staleRequestCreated.Add(patients.PendingDataSourceStaleDuration)
+	expiredRequestCreated := now.
 		Add(-patients.PendingDataSourceExpirationDuration - time.Hour)
-	expiration := requestCreated.Add(patients.PendingDataSourceExpirationDuration)
+	expiration := expiredRequestCreated.Add(patients.PendingDataSourceExpirationDuration)
 
 	triggerCheck := func(authenticate func(*http.Request)) int {
 		GinkgoHelper()
@@ -57,6 +58,27 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 		fetched := api.PatientV1{}
 		Expect(json.NewDecoder(rec.Result().Body).Decode(&fetched)).To(Succeed())
 		return fetched
+	}
+
+	// ageRequest moves the patient's dexcom connection request to have been created at the
+	// given time, keeping its expiration PendingDataSourceExpirationDuration later.
+	ageRequest := func(createdTime time.Time) {
+		GinkgoHelper()
+
+		clinicId, err := primitive.ObjectIDFromHex(*clinic.Id)
+		Expect(err).ToNot(HaveOccurred())
+
+		db := test.GetTestDatabase()
+		selector := bson.M{"userId": *patient.Id, "clinicId": clinicId}
+		update := bson.M{"$set": bson.M{
+			"providerConnectionRequests.dexcom.0.createdTime": createdTime,
+			"providerConnectionRequests.dexcom.0.expirationTime": createdTime.
+				Add(patients.PendingDataSourceExpirationDuration),
+		}}
+		result, err := db.Collection("patients").UpdateOne(context.Background(),
+			selector, update)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(result.ModifiedCount).To(BeEquivalentTo(1))
 	}
 
 	Describe("Create a clinic", func() {
@@ -121,23 +143,40 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 		})
 	})
 
+	Describe("Trigger the check after the invitation goes stale", func() {
+		var updatedTime time.Time
+
+		It("Ages the request out-of-band", func() {
+			ageRequest(staleRequestCreated)
+		})
+
+		It("Classifies the primary issue as a stale invitation", func() {
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+
+			fetched := getPatient()
+			Expect(fetched.PrimaryIssue).To(PointTo(And(
+				HaveField("Source", api.PrimaryIssueSourceV1Dexcom),
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1StaleInvite))),
+				HaveField("EffectiveTime", PointTo(BeTemporally("==", staleAt))),
+			)))
+			updatedTime = *fetched.UpdatedTime
+		})
+
+		It("Leaves the patient alone when triggered again", func() {
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+
+			fetched := getPatient()
+			Expect(fetched.PrimaryIssue).To(PointTo(
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1StaleInvite)))))
+			Expect(fetched.UpdatedTime).To(PointTo(BeTemporally("==", updatedTime)))
+		})
+	})
+
 	Describe("Trigger the check after the invitation expires", func() {
 		var updatedTime time.Time
 
 		It("Ages the request out-of-band", func() {
-			clinicId, err := primitive.ObjectIDFromHex(*clinic.Id)
-			Expect(err).ToNot(HaveOccurred())
-
-			db := test.GetTestDatabase()
-			selector := bson.M{"userId": *patient.Id, "clinicId": clinicId}
-			update := bson.M{"$set": bson.M{
-				"providerConnectionRequests.dexcom.0.createdTime":    requestCreated,
-				"providerConnectionRequests.dexcom.0.expirationTime": expiration,
-			}}
-			result, err := db.Collection("patients").UpdateOne(context.Background(),
-				selector, update)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(result.ModifiedCount).To(BeEquivalentTo(1))
+			ageRequest(expiredRequestCreated)
 		})
 
 		It("Classifies the primary issue as an expired invitation", func() {

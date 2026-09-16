@@ -31,6 +31,7 @@ var _ = Describe("Patients Repository Device Issues", func() {
 	twiist := patients.TwiistDataSourceProviderName
 	invite := patients.PrimaryIssueSourceDeviceNonSpecificInvite
 	expired := patients.PrimaryIssueKindInvitationExpired
+	staleInvite := patients.PrimaryIssueKindStaleInvite
 
 	type subject struct{ clinicId, userId string }
 
@@ -115,15 +116,15 @@ var _ = Describe("Patients Repository Device Issues", func() {
 
 	Describe("expired provider-specific invitations", func() {
 		// Creation times for requests, relative to when a request created now would
-		// expire: lapsed and longLapsed have expired, an hour and two hours ago; current
-		// expires in half an hour.
+		// expire: lapsed and longLapsed have expired, an hour and two hours ago. current
+		// was created an hour ago, so it has neither expired nor gone stale.
 		var lapsed, longLapsed, current time.Time
 
 		BeforeEach(func() {
 			expiresNow := now.Add(-patients.PendingDataSourceExpirationDuration)
 			lapsed = expiresNow.Add(-time.Hour)
 			longLapsed = expiresNow.Add(-2 * time.Hour)
-			current = expiresNow.Add(30 * time.Minute)
+			current = now.Add(-time.Hour)
 		})
 
 		It("classifies the issue when the invitation expired with no data source", func() {
@@ -192,12 +193,13 @@ var _ = Describe("Patients Repository Device Issues", func() {
 			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
 		})
 
-		It("ignores an invitation without an expiration time", func() {
+		It("never expires an invitation without an expiration time", func() {
 			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
 				dexcom: {{ProviderName: dexcom, CreatedTime: lapsed}},
 			})
 			update()
-			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+			// Old enough to have gone stale, which is the most the check can conclude.
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleInvite)))
 		})
 
 		It("ignores the device-non-specific invitation", func() {
@@ -250,6 +252,143 @@ var _ = Describe("Patients Repository Device Issues", func() {
 			update()
 			Expect(get(expiredSubject).PrimaryIssue).To(PointTo(HaveField("Kind", expired)))
 			Expect(get(pending).PrimaryIssue).To(Equal(issue(twiist)))
+		})
+	})
+
+	Describe("stale invitations", func() {
+		// Creation times for requests, relative to when a request created now would go
+		// stale: stale went stale an hour ago, fresh goes stale in an hour, and lapsed
+		// has expired as well as gone stale.
+		var stale, fresh, lapsed time.Time
+		// staleAt is when the stale request went stale.
+		var staleAt time.Time
+
+		BeforeEach(func() {
+			staleNow := now.Add(-patients.PendingDataSourceStaleDuration)
+			stale = staleNow.Add(-time.Hour)
+			fresh = staleNow.Add(time.Hour)
+			lapsed = now.Add(-patients.PendingDataSourceExpirationDuration - time.Hour)
+			staleAt = stale.Add(patients.PendingDataSourceStaleDuration)
+		})
+
+		It("classifies the issue when the invitation went stale unaccepted", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			})
+			update()
+			got := get(s)
+			Expect(got.PrimaryIssue).To(PointTo(Equal(patients.PrimaryIssue{
+				Source:        dexcom,
+				Kind:          staleInvite,
+				EffectiveTime: staleAt,
+			})))
+			Expect(got.UpdatedTime).To(BeTemporally("~", time.Now(), time.Second))
+		})
+
+		It("ignores an invitation that was accepted", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			}, dataSource(dexcom, stale.Add(time.Minute)))
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("classifies the issue when the data source predates the invitation", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			}, dataSource(dexcom, stale.Add(-time.Minute)))
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleInvite)))
+		})
+
+		It("ignores a fresh invitation", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, fresh)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("considers only the newest invitation", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, fresh), request(dexcom, stale)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("classifies an expired invitation as expired rather than stale", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, lapsed)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", expired)))
+		})
+
+		It("ignores stale invitations for other providers", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				twiist: {request(twiist, stale)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("ignores the device-non-specific invitation", func() {
+			s := seed(issue(invite), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(invite)))
+		})
+
+		It("ignores patients without a primary issue", func() {
+			s := seed(nil, patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(BeNil())
+		})
+
+		It("replaces an existing kind", func() {
+			classified := issue(dexcom)
+			classified.Kind = patients.PrimaryIssueKindStaleData
+			s := seed(classified, patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleInvite)))
+		})
+
+		It("leaves an already classified patient alone", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			})
+			update()
+			first := get(s)
+			Expect(first.PrimaryIssue).To(PointTo(HaveField("Kind", staleInvite)))
+
+			update()
+			second := get(s)
+			Expect(second.PrimaryIssue).To(Equal(first.PrimaryIssue))
+			Expect(second.UpdatedTime).To(BeTemporally("==", first.UpdatedTime))
+		})
+
+		It("is superseded by a newer connection request", func() {
+			s := seed(issue(dexcom), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleInvite)))
+
+			// A new event replaces the primary issue wholesale: fresh source and
+			// effective time, no kind.
+			newer := request(twiist, now)
+			Expect(repo.AddProviderConnectionRequest(ctx, s.clinicId, s.userId, newer)).
+				To(Succeed())
+			Expect(get(s).PrimaryIssue).To(PointTo(Equal(patients.PrimaryIssue{
+				Source:        twiist,
+				EffectiveTime: now,
+			})))
 		})
 	})
 })

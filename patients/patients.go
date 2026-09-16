@@ -29,6 +29,9 @@ var (
 	ErrReviewNotOwner     = fmt.Errorf("%w: cannot revert review from another clinician", errors.Conflict)
 
 	PendingDataSourceExpirationDuration = time.Hour * 24 * 30
+	// PendingDataSourceStaleDuration is how long a provider connection request may go
+	// unaccepted before the patient's primary issue is classified as a stale invitation.
+	PendingDataSourceStaleDuration = time.Hour * 48
 
 	DexcomDataSourceProviderName = "dexcom"
 	TwiistDataSourceProviderName = "twiist"

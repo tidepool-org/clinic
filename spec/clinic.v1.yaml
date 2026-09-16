@@ -2349,7 +2349,7 @@ paths:
     post:
       summary: Trigger Device Issues Check
       operationId: UpdateDeviceIssues
-      description: 'Internal endpoint for backend services to trigger a check of patients'' device issues. The check re-evaluates every patient''s primary issue: when the newest connection request for its provider has expired and no data source for that provider has been created since, the issue is classified as invitationExpired, effective at the request''s expiration time.'
+      description: Internal endpoint for backend services to trigger a check of patients' device issues.
       responses:
         '204':
           description: No Content

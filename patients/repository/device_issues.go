@@ -20,11 +20,15 @@ const deviceIssueField = "deviceIssue"
 // at most once, and a patient whose primary issue already reflects the outcome is left
 // untouched, so repeated runs don't bump updatedTime.
 //
-// Criteria so far:
+// Criteria so far, in order of precedence:
 //   - Expired provider-specific invitation: the newest connection request for the primary
 //     issue's provider has expired, and no data source for that provider was created
 //     since. The issue is classified as invitationExpired, effective at the request's
 //     expiration time.
+//   - Stale invitation: the newest connection request for the primary issue's provider
+//     has gone unaccepted for PendingDataSourceStaleDuration, that is, no data source for
+//     that provider was created after it. The issue is classified as staleInvite,
+//     effective when the request went stale.
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	// Only provider-specific issues have connection requests or data sources to check.
 	selector := bson.M{
@@ -68,6 +72,13 @@ func deviceIssueOutcome(now time.Time) bson.M {
 					"effectiveTime": "$$request.expirationTime",
 				},
 			},
+			bson.M{
+				"case": invitationStale(now),
+				"then": bson.M{
+					"kind":          patients.PrimaryIssueKindStaleInvite,
+					"effectiveTime": requestStaleAt(),
+				},
+			},
 		},
 		"default": nil,
 	}}
@@ -107,6 +118,33 @@ func invitationExpired(now time.Time) bson.M {
 			bson.M{"$eq": bson.A{"$$dataSourceCreated", nil}},
 			bson.M{"$lt": bson.A{"$$dataSourceCreated", "$$request.createdTime"}},
 		}},
+	}}
+}
+
+// invitationStale builds the expression for the second criterion. It is true when the
+// newest connection request for the primary issue's provider ($$request) went stale
+// before now without being accepted, meaning no data source for that provider
+// ($$dataSourceCreated, the newest one's creation time) was created after the request.
+// Expiry is checked first, so this applies to requests aged between
+// PendingDataSourceStaleDuration and PendingDataSourceExpirationDuration.
+func invitationStale(now time.Time) bson.M {
+	return bson.M{"$and": bson.A{
+		bson.M{"$eq": bson.A{bson.M{"$type": "$$request.createdTime"}, "date"}},
+		bson.M{"$lte": bson.A{requestStaleAt(), now}},
+		bson.M{"$or": bson.A{
+			bson.M{"$eq": bson.A{"$$dataSourceCreated", nil}},
+			bson.M{"$lte": bson.A{"$$dataSourceCreated", "$$request.createdTime"}},
+		}},
+	}}
+}
+
+// requestStaleAt builds the expression for the time the newest connection request
+// ($$request) goes stale: PendingDataSourceStaleDuration after its creation. Adding a
+// number of milliseconds to a date yields a date.
+func requestStaleAt() bson.M {
+	return bson.M{"$add": bson.A{
+		"$$request.createdTime",
+		patients.PendingDataSourceStaleDuration.Milliseconds(),
 	}}
 }
 
