@@ -1415,4 +1415,62 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 	})
+
+	Describe("device issues", func() {
+		path := []string{"v1", "device_issues"}
+
+		It("allows backend services to trigger a device issues check", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "task",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("prevents clinic admins from triggering a device issues check", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents clinic members from triggering a device issues check", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents users from triggering a device issues check", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "POST",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+	})
 })

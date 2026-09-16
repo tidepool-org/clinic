@@ -426,6 +426,14 @@ allow {
   is_backend_service
 }
 
+# Allow backend services to trigger a device issues check
+# POST /v1/device_issues
+allow {
+  input.method == "POST"
+  input.path = ["v1", "device_issues"]
+  is_backend_service
+}
+
 # Allow currently authenticated clinician to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
