@@ -2,6 +2,8 @@ package patients_test
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -33,16 +35,6 @@ var _ = Describe("Bulk Account Creation", func() {
 	})
 
 	Describe("ParsePotentialCSVPatients", func() {
-		It("returns a fatal blocking error if input CSV does not have the necessary number of columns", func() {
-			ctx := context.Background()
-			records := [][]string{
-				{"Name", "Birthdate"},
-				{"George Washington", "1950-01-02"},
-			}
-			_, _, _, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, nil)
-			Expect(err).To(MatchError(patients.ErrCSVHeaderMissingCols))
-		})
-
 		It("returns correct fields and errors depending on criteria", func() {
 			ctx := context.Background()
 			records := [][]string{
@@ -53,9 +45,6 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Existing Email Case Insensitive Check", "1959-01-02", "444455555", "EXISTING+email@tidepool.org"},
 				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org"},
 				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk"},
-				{"Invalid Email", "1960-01-02", "123456792", "invalid+email", "type2", ""},
-				{"Missing Required Field Mrn", "1955-01-02", ""},
-				{"Missing Required Field DOB", "", "123456"},
 				{"Default Invalid Glycemic Target To Default", "1955-01-02", "123456793", "dev@tidepool.org", "", "Some Glycemic Target"},
 				{"Diabetes Type", "1955-01-02", "123456794", "diabetes+type@tidepool.org", "type1"},
 				{"Test extra input columns are not included in output", "1960-02-03", "88888888", "extra+columns@tidepool.org", "type1", "adaStandard", "Extra column 1", "Extra column 2", "Extra column 3"},
@@ -73,9 +62,6 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Existing Email Case Insensitive Check", "1959-01-02", "444455555", "EXISTING+email@tidepool.org", "", "adaStandard", "duplicate email", ""},
 				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org", "", "adaStandard", "", ""},
 				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk", "", ""},
-				{"Invalid Email", "1960-01-02", "123456792", "invalid+email", "type2", "", "invalid email", ""},
-				{"Missing Required Field Mrn", "1955-01-02", "", "", "", "", "missing MRN", ""},
-				{"Missing Required Field DOB", "", "123456", "", "", "", "missing birthdate", ""},
 				{"Default Invalid Glycemic Target To Default", "1955-01-02", "123456793", "dev@tidepool.org", "", "adaStandard", "", ""},
 				{"Diabetes Type", "1955-01-02", "123456794", "diabetes+type@tidepool.org", "type1", "adaStandard", "", ""},
 				{"Test extra input columns are not included in output", "1960-02-03", "88888888", "extra+columns@tidepool.org", "type1", "adaStandard", "", ""},
@@ -126,16 +112,13 @@ var _ = Describe("Bulk Account Creation", func() {
 			records := [][]string{
 				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
-				{"Invalid Email", "1960-01-02", "123456791", "invalid+email", "type2", ""},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk"},
 			}
 			expectedOutput := [][]string{
 				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
-				{"Invalid Email", "1960-01-02", "123456791", "invalid+email", "type2", "", "invalid email", "N (invalid email)"},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y"},
 			}
-
 			patientSvc.EXPECT().
 				List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				DoAndReturn(
@@ -166,10 +149,177 @@ var _ = Describe("Bulk Account Creation", func() {
 				Times(1)
 
 			_, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, &invitedBy)
-			Expect(len(parsedPatients)).To(Equal(3))
+			Expect(len(parsedPatients)).To(Equal(2))
 			Expect(err).ToNot(HaveOccurred())
 			outputRecords := patients.CreateCSVPatients(ctx, patientSvc, header, parsedPatients)
 			Expect(outputRecords).To(Equal(expectedOutput))
+		})
+	})
+
+	Describe("ParsePotentialCSVPatientsReader", func() {
+		Describe("validation", func() {
+			BeforeEach(func() {
+				patientSvc.EXPECT().
+					List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					DoAndReturn(
+						func(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sort []*store.Sort) (*patients.ListResult, error) {
+							return &patients.ListResult{
+								Patients: []*patients.Patient{
+									{
+										Mrn: strp("DUPLICATEMRN"),
+									},
+								},
+								MatchingCount: 1,
+							}, nil
+						}).
+					AnyTimes()
+				userSvc.EXPECT().
+					GetUser(gomock.Any()).
+					DoAndReturn(
+						func(userId string) (*shoreline.UserData, error) {
+							if userId == "existing+email@tidepool.org" {
+								return &shoreline.UserData{Username: "existing+email@tidepool.org"}, nil
+							}
+							return nil, clinicErrs.NotFound
+						}).
+					AnyTimes()
+				patientSvc.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(&patients.Patient{}, nil).
+					AnyTimes()
+			})
+
+			DescribeTable("valid CSV", func(contentsCSV string, expectedOutput [][]string) {
+				ctx := context.Background()
+				outputRecords, header, parsedPatients, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
+				Expect(err).ToNot(HaveOccurred())
+				outputRecords = patients.CreateCSVPatients(ctx, patientSvc, header, parsedPatients)
+				Expect(outputRecords).To(Equal(expectedOutput))
+			},
+				Entry(
+					"valid CSV no non-blocking patient errors",
+					`Name,Birthdate,Mrn,Email,Diabetes Type,Glycemic Target
+George Washington,1950-01-02,123456789,george+washington@tidepool.org
+John Adams,1951-01-02,123456780,john+adams@tidepool.org`,
+					[][]string{
+						{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
+						{"George Washington", "1950-01-02", "123456789", "george+washington@tidepool.org", "", "adaStandard", "", "Y"},
+						{"John Adams", "1951-01-02", "123456780", "john+adams@tidepool.org", "", "adaStandard", "", "Y"},
+					}),
+				Entry(
+					"valid CSV with mix of valid patients and duplicate mrn / emails",
+					`Name,Birthdate,Mrn,Email,Diabetes Type,Glycemic Target
+Thomas Jefferson,1952-01-09,112233,thomas+jefferson@tidepool.org
+Ben Franklin,1952-01-10,112234
+George Washington,1950-01-02,123456789,existing+email@tidepool.org
+John Adams,1951-01-02,DUPLICATEMRN,john+adams@tidepool.org
+Invalid Glycemic Target Defaults To adaStandard,1973-03-04,22334455,james+madison@tidepool.org,,invalid type
+Extra Columns truncated from output row,1974-03-04,22334456,,type1,,extra,columns,here`,
+					[][]string{
+						{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
+						{"Thomas Jefferson", "1952-01-09", "112233", "thomas+jefferson@tidepool.org", "", "adaStandard", "", "Y"},
+						{"Ben Franklin", "1952-01-10", "112234", "", "", "adaStandard", "", "N"},
+						{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
+						{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", "N"},
+						{"Invalid Glycemic Target Defaults To adaStandard", "1973-03-04", "22334455", "james+madison@tidepool.org", "", "adaStandard", "", "Y"},
+						{"Extra Columns truncated from output row", "1974-03-04", "22334456", "", "type1", "adaStandard", "", "N"},
+					}),
+			)
+
+			It("invalid CSV", func() {
+				contentsCSV := `Name,Birthdate,Mrn,Email,Diabetes Type,Glycemic Target
+	Missing MRN,1952-01-02,
+	,
+	Missing birthdate and MRN,,,,
+	,1999-01-02,,,
+	Invalid birthdate,yyyy-mm-dd,1111
+	Invalid email,1999-01-12,2222,invalid+email`
+				ctx := context.Background()
+				expectedErrs := []error{
+					patients.ErrCSVPatientMissingName,
+					patients.ErrCSVPatientMissingMRN,
+					patients.ErrCSVPatientInvalidEmail,
+					patients.ErrCSVPatientInvalidBirthdate,
+					patients.ErrCSVPatientMissingBirthdate,
+				}
+				expectedErrStrs := []string{
+					"missing MRN: row 2, column 3",
+					"missing name: row 3, column 1",
+					"missing birthdate: row 3, column 2",
+					"missing MRN: row 3, column 3",
+					"missing birthdate: row 4, column 2",
+					"missing MRN: row 4, column 3",
+					"missing name: row 5, column 1",
+					"missing MRN: row 5, column 3",
+					"invalid birthdate: row 6, column 2",
+					"invalid email: row 7, column 4",
+				}
+				_, _, _, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
+				Expect(patients.IsBulkPatientCSVValidationErr(err)).To(Equal(true))
+				for _, expectedErr := range expectedErrs {
+					Expect(err).To(MatchError(expectedErr))
+				}
+				for _, errSubstr := range expectedErrStrs {
+					Expect(err).To(MatchError(ContainSubstring(errSubstr)))
+				}
+			})
+		})
+
+		Describe("server error", func() {
+			var contentsCSV string
+			BeforeEach(func() {
+				contentsCSV = `Name,Birthdate,Mrn,Email,Diabetes Type,Glycemic Target
+George Washington,1950-01-02,123456789,george+washington@tidepool.org
+John Adams,1951-01-02,123456780,john+adams@tidepool.org`
+			})
+			It("patient svc List error", func() {
+				patientSvc.EXPECT().
+					List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					DoAndReturn(
+						func(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sort []*store.Sort) (*patients.ListResult, error) {
+							return &patients.ListResult{
+								Patients: []*patients.Patient{
+									{
+										Mrn: strp("DUPLICATEMRN"),
+									},
+								},
+								MatchingCount: 1,
+							}, errors.New("error retrieving existing patients")
+						}).
+					Times(1)
+				ctx := context.Background()
+				_, _, _, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
+				Expect(err).To(HaveOccurred())
+				Expect(patients.IsBulkPatientCSVValidationErr(err)).To(Equal(false))
+			})
+
+			It("user svc GetUser error", func() {
+				patientSvc.EXPECT().
+					List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					DoAndReturn(
+						func(ctx context.Context, filter *patients.Filter, pagination store.Pagination, sort []*store.Sort) (*patients.ListResult, error) {
+							return &patients.ListResult{
+								Patients: []*patients.Patient{
+									{
+										Mrn: strp("DUPLICATEMRN"),
+									},
+								},
+								MatchingCount: 1,
+							}, nil
+						}).
+					Times(1)
+				userSvc.EXPECT().
+					GetUser(gomock.Any()).
+					DoAndReturn(
+						func(userId string) (*shoreline.UserData, error) {
+							return nil, errors.New("error retrieving user")
+						}).
+					AnyTimes()
+				ctx := context.Background()
+				_, _, _, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
+				Expect(err).To(HaveOccurred())
+				Expect(patients.IsBulkPatientCSVValidationErr(err)).To(Equal(false))
+			})
 		})
 	})
 })
