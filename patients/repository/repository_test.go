@@ -1936,6 +1936,8 @@ var _ = Describe("Patients Repository", func() {
 				dexcom := patients.DexcomDataSourceProviderName
 				twiist := patients.TwiistDataSourceProviderName
 				connected := patients.DataSourceStateConnected
+				disconnected := patients.DataSourceStateDisconnected
+				errored := patients.DataSourceStateError
 
 				issue := func(providerName string, when time.Time) *patients.PrimaryIssue {
 					return &patients.PrimaryIssue{
@@ -2027,7 +2029,7 @@ var _ = Describe("Patients Repository", func() {
 
 				It("is kept when the newly connected data source is older", func() {
 					earlier := now.Add(-time.Minute)
-					createSubject(issue(dexcom, now), source(twiist, "error", &earlier))
+					createSubject(issue(dexcom, now), source(twiist, errored, &earlier))
 					got := update(source(twiist, connected, &earlier))
 					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
 				})
@@ -2075,11 +2077,78 @@ var _ = Describe("Patients Repository", func() {
 				It("is unchanged by data sources that are not connected", func() {
 					createSubject(issue(dexcom, now.Add(-time.Hour)))
 					got := update(
-						source(twiist, "error", &now),
-						source(abbott, "disconnected", &now),
+						source(twiist, errored, &now),
+						source(abbott, disconnected, &now),
 					)
 					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now.Add(-time.Hour))))
 					Expect(got.DataSources).To(PointTo(HaveLen(2)))
+				})
+
+				It("is classified when its connected data source disconnects", func() {
+					earlier := now.Add(-time.Hour)
+					createSubject(issue(dexcom, earlier),
+						source(dexcom, connected, &earlier))
+					got := update(source(dexcom, disconnected, &now))
+					Expect(got.PrimaryIssue).To(PointTo(And(
+						HaveField("Source", dexcom),
+						HaveField("Kind", patients.PrimaryIssueKindDisconnected),
+						HaveField("EffectiveTime", BeTemporally("~", now, time.Second)),
+					)))
+				})
+
+				It("is classified when its connected data source errors", func() {
+					earlier := now.Add(-time.Hour)
+					createSubject(issue(dexcom, earlier),
+						source(dexcom, connected, &earlier))
+					got := update(source(dexcom, errored, &now))
+					Expect(got.PrimaryIssue).To(PointTo(And(
+						HaveField("Source", dexcom),
+						HaveField("Kind", patients.PrimaryIssueKindErroring),
+					)))
+				})
+
+				It("replaces an existing kind when its data source fails", func() {
+					earlier := now.Add(-time.Hour)
+					current := issue(dexcom, earlier)
+					current.Kind = patients.PrimaryIssueKindStaleData
+					createSubject(current, source(dexcom, connected, &earlier))
+					got := update(source(dexcom, disconnected, &now))
+					Expect(got.PrimaryIssue).
+						To(PointTo(HaveField("Kind", patients.PrimaryIssueKindDisconnected)))
+				})
+
+				It("is not classified when another provider's data source fails", func() {
+					earlier := now.Add(-time.Hour)
+					createSubject(issue(twiist, earlier),
+						source(dexcom, connected, &earlier))
+					got := update(source(dexcom, disconnected, &now))
+					Expect(got.PrimaryIssue).To(Equal(issue(twiist, earlier)))
+				})
+
+				It("is not classified when the data source was not connected", func() {
+					earlier := now.Add(-time.Hour)
+					createSubject(issue(dexcom, earlier),
+						source(dexcom, errored, &earlier))
+					got := update(source(dexcom, disconnected, &now))
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, earlier)))
+				})
+
+				It("stays absent when a data source fails", func() {
+					earlier := now.Add(-time.Hour)
+					createSubject(nil, source(dexcom, connected, &earlier))
+					got := update(source(dexcom, disconnected, &now))
+					Expect(got.PrimaryIssue).To(BeNil())
+				})
+
+				It("goes to a device connecting in the same update as the failure", func() {
+					earlier := now.Add(-time.Hour)
+					createSubject(issue(dexcom, earlier),
+						source(dexcom, connected, &earlier))
+					got := update(
+						source(dexcom, disconnected, &now),
+						source(twiist, connected, &now),
+					)
+					Expect(got.PrimaryIssue).To(Equal(issue(twiist, now)))
 				})
 
 				It("is set on every clinic record of the user", func() {

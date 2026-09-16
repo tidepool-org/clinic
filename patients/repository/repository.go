@@ -992,17 +992,19 @@ func primaryIssueAfter(candidate patients.PrimaryIssue, current interface{}) bso
 }
 
 // primaryIssueAfterConnecting builds the aggregation expression that folds every connected
-// data source in the incoming list into the patient's primary issue. Only data sources
-// whose stored counterpart, matched by provider, is absent or not connected take part, so
-// that a data source that merely got a newer modifiedTime while staying connected doesn't
-// re-assert itself. It returns nil when nothing is connected, so the field can be left
-// alone. Data sources without a modifiedTime use now as their effective time.
-func primaryIssueAfterConnecting(dataSources *patients.DataSources, now time.Time) bson.M {
+// data source in the incoming list into the patient's primary issue, starting from current,
+// the expression for the primary issue stored so far. Only data sources whose stored
+// counterpart, matched by provider, is absent or not connected take part, so that a data
+// source that merely got a newer modifiedTime while staying connected doesn't re-assert
+// itself. It returns nil when nothing is connected, so the field can be left alone. Data
+// sources without a modifiedTime use now as their effective time.
+func primaryIssueAfterConnecting(dataSources *patients.DataSources,
+	now time.Time, current interface{}) bson.M {
+
 	if dataSources == nil {
 		return nil
 	}
 	var result bson.M
-	var current interface{} = "$primaryIssue"
 	for _, dataSource := range *dataSources {
 		if dataSource.State != patients.DataSourceStateConnected {
 			continue
@@ -1029,17 +1031,68 @@ func primaryIssueAfterConnecting(dataSources *patients.DataSources, now time.Tim
 	return result
 }
 
-// newlyConnected builds an expression that is true when the stored data sources have no
-// connected entry for provider, meaning an incoming connected entry is a state change.
-func newlyConnected(provider string) bson.M {
-	alreadyConnected := bson.M{"$filter": bson.M{
+// primaryIssueAfterDisconnecting builds the aggregation expression that folds every data
+// source in the incoming list that has just disconnected or errored into the patient's
+// primary issue, starting from current, the expression for the primary issue stored so
+// far. A data source takes part only when its stored counterpart, matched by provider, is
+// connected, so a repeated failure report doesn't refresh the issue. When the primary
+// issue's source is that provider, the issue keeps its source and gets the kind for the new
+// state and now as its effective time. It returns nil when no data source has failed, so
+// the field can be left alone.
+func primaryIssueAfterDisconnecting(dataSources *patients.DataSources,
+	now time.Time, current interface{}) bson.M {
+
+	if dataSources == nil {
+		return nil
+	}
+	var result bson.M
+	for _, dataSource := range *dataSources {
+		kind, ok := patients.PrimaryIssueKindForDataSourceState(dataSource.State)
+		if !ok {
+			continue
+		}
+		classified := bson.M{"$mergeObjects": bson.A{"$$acc", bson.M{
+			"kind":          kind,
+			"effectiveTime": now,
+		}}}
+		result = bson.M{"$let": bson.M{
+			"vars": bson.M{"acc": current},
+			"in": bson.M{"$cond": bson.A{
+				bson.M{"$and": bson.A{
+					wasConnected(dataSource.ProviderName),
+					bson.M{"$eq": bson.A{"$$acc.source", dataSource.ProviderName}},
+				}},
+				classified,
+				"$$acc",
+			}},
+		}}
+		current = result
+	}
+	return result
+}
+
+// storedConnected builds an expression for the stored data sources that are connected
+// entries for provider.
+func storedConnected(provider string) bson.M {
+	return bson.M{"$filter": bson.M{
 		"input": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}},
 		"cond": bson.M{"$and": bson.A{
 			bson.M{"$eq": bson.A{"$$this.providerName", provider}},
 			bson.M{"$eq": bson.A{"$$this.state", patients.DataSourceStateConnected}},
 		}},
 	}}
-	return bson.M{"$eq": bson.A{bson.M{"$size": alreadyConnected}, 0}}
+}
+
+// newlyConnected builds an expression that is true when the stored data sources have no
+// connected entry for provider, meaning an incoming connected entry is a state change.
+func newlyConnected(provider string) bson.M {
+	return bson.M{"$eq": bson.A{bson.M{"$size": storedConnected(provider)}, 0}}
+}
+
+// wasConnected builds an expression that is true when the stored data sources have a
+// connected entry for provider, meaning an incoming failed entry is a state change.
+func wasConnected(provider string) bson.M {
+	return bson.M{"$gt": bson.A{bson.M{"$size": storedConnected(provider)}, 0}}
 }
 
 // sourcePrecedence builds an expression that ranks the source expression by its 1-based
@@ -1208,11 +1261,23 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 		"dataSources": bson.M{"$literal": dataSources},
 		"updatedTime": "$$NOW",
 	}
-	// A data source that has just become connected competes to be the primary issue. The
-	// pipeline reads the stored data sources to detect the transition and writes both
-	// fields in one atomic operation.
+	// Data sources that change state also shape the primary issue. One that has just
+	// become connected competes to be the primary issue, and one that has just
+	// disconnected or errored classifies the primary issue when that issue is about its
+	// provider. The pipeline reads the stored data sources to detect the transitions and
+	// writes both fields in one atomic operation. Connections are folded first, so a
+	// device connecting in the same update takes the primary issue away from the one
+	// that failed, and the failure is then ignored.
 	now := time.Now()
-	if primaryIssue := primaryIssueAfterConnecting(dataSources, now); primaryIssue != nil {
+	var primaryIssue interface{} = "$primaryIssue"
+	changed := false
+	if expr := primaryIssueAfterConnecting(dataSources, now, primaryIssue); expr != nil {
+		primaryIssue, changed = expr, true
+	}
+	if expr := primaryIssueAfterDisconnecting(dataSources, now, primaryIssue); expr != nil {
+		primaryIssue, changed = expr, true
+	}
+	if changed {
 		set["primaryIssue"] = primaryIssue
 	}
 	update := mongo.Pipeline{bson.D{{Key: "$set", Value: set}}}

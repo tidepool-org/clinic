@@ -27,6 +27,10 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 	var clinic client.ClinicV1
 	var patient api.PatientV1
 
+	dexcom := patients.DexcomDataSourceProviderName
+	twiist := patients.TwiistDataSourceProviderName
+	connected := patients.DataSourceStateConnected
+
 	// seededTime is the effective time set out-of-band below. Mongo stores dates at
 	// millisecond precision, so it is truncated to compare equal after a round trip.
 	seededTime := time.Now().UTC().Truncate(time.Millisecond)
@@ -135,6 +139,32 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 			HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1StaleData))),
 			HaveField("EffectiveTime", PointTo(BeTemporally("==", seededTime))),
 		)))
+	}
+
+	// putDataSource reports a single data source for the patient, as the data service does,
+	// replacing whatever data sources were stored before.
+	putDataSource := func(provider, state string, modifiedTime time.Time) {
+		GinkgoHelper()
+
+		body, err := json.Marshal([]map[string]interface{}{{
+			"state":        state,
+			"providerName": provider,
+			"dataSourceId": "507f1f77bcf86cd799439011",
+			"createdTime":  "2025-01-01T00:00:00Z",
+			// Keep sub-second precision, so comparisons against seeded issues are decided
+			// by time rather than by provider precedence.
+			"modifiedTime": modifiedTime.UTC().Format(time.RFC3339Nano),
+		}})
+		Expect(err).ToNot(HaveOccurred())
+
+		rec := httptest.NewRecorder()
+		endpoint := fmt.Sprintf("/v1/patients/%s/data_sources", *patient.Id)
+		req := prepareRequestWithBody(http.MethodPut, endpoint, bytes.NewReader(body))
+		asServer(req)
+
+		server.ServeHTTP(rec, req)
+		Expect(rec.Result()).ToNot(BeNil())
+		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 	}
 
 	Describe("Create a clinic", func() {
@@ -275,32 +305,8 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 	})
 
 	Describe("A data source becomes connected", func() {
-		connectDataSource := func(modifiedTime time.Time) {
-			GinkgoHelper()
-
-			body, err := json.Marshal([]map[string]interface{}{{
-				"state":        patients.DataSourceStateConnected,
-				"providerName": patients.DexcomDataSourceProviderName,
-				"dataSourceId": "507f1f77bcf86cd799439011",
-				"createdTime":  "2025-01-01T00:00:00Z",
-				// Keep sub-second precision, so the comparison against the seeded issue
-				// is decided by time rather than by provider precedence.
-				"modifiedTime": modifiedTime.UTC().Format(time.RFC3339Nano),
-			}})
-			Expect(err).ToNot(HaveOccurred())
-
-			rec := httptest.NewRecorder()
-			endpoint := fmt.Sprintf("/v1/patients/%s/data_sources", *patient.Id)
-			req := prepareRequestWithBody(http.MethodPut, endpoint, bytes.NewReader(body))
-			asServer(req)
-
-			server.ServeHTTP(rec, req)
-			Expect(rec.Result()).ToNot(BeNil())
-			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-		}
-
 		It("Makes its provider the primary issue source and clears the kind", func() {
-			connectDataSource(time.Now())
+			putDataSource(dexcom, connected, time.Now())
 			Expect(getPatient().PrimaryIssue).To(PointTo(And(
 				HaveField("Source", api.PrimaryIssueSourceV1Dexcom),
 				HaveField("Kind", BeNil()),
@@ -332,9 +338,46 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 		})
 
 		It("Does not reclaim the primary issue while it stays connected", func() {
-			connectDataSource(time.Now().Add(time.Hour))
+			putDataSource(dexcom, connected, time.Now().Add(time.Hour))
 			Expect(getPatient().PrimaryIssue).
 				To(PointTo(HaveField("Source", api.PrimaryIssueSourceV1Twiist)))
+		})
+	})
+
+	Describe("A connected data source fails", func() {
+		var classifiedTime time.Time
+
+		It("Is ignored when the primary issue is about another provider", func() {
+			// dexcom is connected, but twiist holds the primary issue.
+			putDataSource(dexcom, patients.DataSourceStateDisconnected, time.Now())
+			Expect(getPatient().PrimaryIssue).To(PointTo(And(
+				HaveField("Source", api.PrimaryIssueSourceV1Twiist),
+				HaveField("Kind", BeNil()),
+			)))
+		})
+
+		It("Classifies the primary issue when its provider errors", func() {
+			putDataSource(twiist, connected, time.Now())
+			Expect(getPatient().PrimaryIssue).To(PointTo(HaveField("Kind", BeNil())))
+
+			putDataSource(twiist, patients.DataSourceStateError, time.Now())
+			issue := getPatient().PrimaryIssue
+			Expect(issue).To(PointTo(And(
+				HaveField("Source", api.PrimaryIssueSourceV1Twiist),
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1Erroring))),
+				HaveField("EffectiveTime",
+					PointTo(BeTemporally("~", time.Now(), time.Minute))),
+			)))
+			classifiedTime = *issue.EffectiveTime
+			expectStoredKind(patients.PrimaryIssueKindErroring)
+		})
+
+		It("Is not reclassified by a repeated failure report", func() {
+			putDataSource(twiist, patients.DataSourceStateError, time.Now())
+			Expect(getPatient().PrimaryIssue).To(PointTo(And(
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1Erroring))),
+				HaveField("EffectiveTime", PointTo(BeTemporally("==", classifiedTime))),
+			)))
 		})
 	})
 })

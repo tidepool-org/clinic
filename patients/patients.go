@@ -34,7 +34,9 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
-	DataSourceStateConnected = "connected"
+	DataSourceStateConnected    = "connected"
+	DataSourceStateDisconnected = "disconnected"
+	DataSourceStateError        = "error"
 
 	// PrimaryIssueSourceDeviceNonSpecificInvite is the primary issue source recorded when
 	// the patient's outstanding issue is the invitation to claim the account rather than a
@@ -68,6 +70,19 @@ var (
 		Note:      &permission,
 	}
 )
+
+// PrimaryIssueKindForDataSourceState returns the primary issue kind that describes a data
+// source in the given state, and whether the state describes a failure at all.
+func PrimaryIssueKindForDataSourceState(state string) (string, bool) {
+	switch state {
+	case DataSourceStateDisconnected:
+		return PrimaryIssueKindDisconnected, true
+	case DataSourceStateError:
+		return PrimaryIssueKindErroring, true
+	default:
+		return "", false
+	}
+}
 
 //go:generate go tool mockgen -source=./patients.go -destination=./test/mock_patients.go -package test
 type Service interface {
