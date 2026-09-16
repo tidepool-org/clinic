@@ -36,16 +36,25 @@ var (
 
 	DataSourceStateConnected = "connected"
 
-	// PrimaryIssueCauseDeviceNonSpecificInvite is the primary issue cause recorded when the
-	// patient's outstanding issue is the invitation to claim the account rather than a
-	// specific device. The other causes are the provider names above.
-	PrimaryIssueCauseDeviceNonSpecificInvite = "deviceNonSpecificInvite"
+	// PrimaryIssueSourceDeviceNonSpecificInvite is the primary issue source recorded when
+	// the patient's outstanding issue is the invitation to claim the account rather than a
+	// specific device. The other sources are the provider names above.
+	PrimaryIssueSourceDeviceNonSpecificInvite = "deviceNonSpecificInvite"
 
-	// PrimaryIssueCausePrecedence orders causes from lowest to highest priority. It breaks
+	// PrimaryIssueKind* classify a patient's primary issue. They are set by backend
+	// services once the issue has been evaluated; an empty Kind means the issue has not
+	// been classified yet.
+	PrimaryIssueKindErroring          = "erroring"
+	PrimaryIssueKindDisconnected      = "disconnected"
+	PrimaryIssueKindInvitationExpired = "invitationExpired"
+	PrimaryIssueKindStaleData         = "staleData"
+	PrimaryIssueKindStaleInvite       = "staleInvite"
+
+	// PrimaryIssueSourcePrecedence orders sources from lowest to highest priority. It breaks
 	// ties between events that share an effective time when deciding a patient's primary
 	// issue; the device-non-specific invitation always yields to a device.
-	PrimaryIssueCausePrecedence = []string{
-		PrimaryIssueCauseDeviceNonSpecificInvite, // lowest priority
+	PrimaryIssueSourcePrecedence = []string{
+		PrimaryIssueSourceDeviceNonSpecificInvite, // lowest priority
 		AbbottDataSourceProviderName,
 		DexcomDataSourceProviderName,
 		TwiistDataSourceProviderName, // highest priority
@@ -138,7 +147,7 @@ type Patient struct {
 	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
 	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
 	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
-	// PrimaryIssue tracks the cause of the most recent connection issue (if any).
+	// PrimaryIssue tracks the source of the most recent connection issue (if any).
 	//
 	// Only certain events trigger a change in the primary issue. Later issues that are
 	// detected with a connection can be automatically suppressed, if they don't match the
@@ -153,15 +162,20 @@ type Patient struct {
 }
 
 // PrimaryIssue records what the patient's primary connection issue relates to and when
-// that became the case. Cause is a provider name, when a connection request or a connected
-// data source set it, or PrimaryIssueCauseDeviceNonSpecificInvite when the outstanding
-// issue is the invitation to claim the account.
-//
-// EffectiveTime is denormalized from the event that set the cause: the createdTime of the
-// connection request, the modifiedTime of the data source at the time it was connected, or
-// the time the invitation was sent.
+// that became the case.
 type PrimaryIssue struct {
-	Cause         string    `bson:"cause"`
+	// Source of the issue. It can be a provider name, or the device non-specific invitation
+	// sent to custodial patients.
+	Source string `bson:"source"`
+	// Kind classifies the issue.
+	//
+	// It is set only by backend services, after they have evaluated the issue, and is empty
+	// until then. Every event that replaces the primary issue starts over with an empty
+	// Kind.
+	Kind string `bson:"kind,omitempty"`
+	// EffectiveTime is denormalized from the event that set the source: the createdTime of
+	// the connection request, the modifiedTime of the data source at the time it was
+	// connected, or the time the invitation was sent.
 	EffectiveTime time.Time `bson:"effectiveTime"`
 }
 

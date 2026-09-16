@@ -890,7 +890,7 @@ func (r *repository) MarkInvitationResent(ctx context.Context,
 		"userId":   userId,
 	}
 	invite := patients.PrimaryIssue{
-		Cause:         patients.PrimaryIssueCauseDeviceNonSpecificInvite,
+		Source:        patients.PrimaryIssueSourceDeviceNonSpecificInvite,
 		EffectiveTime: time.Now(),
 	}
 	update := mongo.Pipeline{bson.D{{Key: "$set", Value: bson.M{
@@ -928,7 +928,7 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 			bson.M{"$ifNull": bson.A{"$" + key, bson.A{}}},
 		}},
 		"primaryIssue": primaryIssueAfter(patients.PrimaryIssue{
-			Cause:         request.ProviderName,
+			Source:        request.ProviderName,
 			EffectiveTime: request.CreatedTime,
 		}, "$primaryIssue"),
 	}}}}
@@ -952,14 +952,14 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 // The expression evaluates to candidate when any of these hold:
 //   - there is no current primary issue, or it has no effective time;
 //   - candidate is newer than current;
-//   - both have the same effective time and candidate's cause ranks higher in
-//     patients.PrimaryIssueCausePrecedence.
+//   - both have the same effective time and candidate's source ranks higher in
+//     patients.PrimaryIssueSourcePrecedence.
 //
 // Otherwise it evaluates to current. This is the only definition of the rule in the
 // service; the one-time backfill in tools-private (BACK-4319) restates it in mongosh.
 func primaryIssueAfter(candidate patients.PrimaryIssue, current interface{}) bson.M {
 	const currentTime = "$$current.effectiveTime"
-	const currentCause = "$$current.cause"
+	const currentSource = "$$current.source"
 
 	candidateWins := bson.M{"$switch": bson.M{
 		"branches": bson.A{
@@ -975,8 +975,8 @@ func primaryIssueAfter(candidate patients.PrimaryIssue, current interface{}) bso
 			bson.M{
 				"case": bson.M{"$eq": bson.A{candidate.EffectiveTime, currentTime}},
 				"then": bson.M{"$gt": bson.A{
-					causePrecedence(bson.M{"$literal": candidate.Cause}),
-					causePrecedence(currentCause),
+					sourcePrecedence(bson.M{"$literal": candidate.Source}),
+					sourcePrecedence(currentSource),
 				}},
 			},
 		},
@@ -1008,7 +1008,7 @@ func primaryIssueAfterConnecting(dataSources *patients.DataSources, now time.Tim
 			continue
 		}
 		candidate := patients.PrimaryIssue{
-			Cause:         dataSource.ProviderName,
+			Source:        dataSource.ProviderName,
 			EffectiveTime: now,
 		}
 		if dataSource.ModifiedTime != nil {
@@ -1042,13 +1042,13 @@ func newlyConnected(provider string) bson.M {
 	return bson.M{"$eq": bson.A{bson.M{"$size": alreadyConnected}, 0}}
 }
 
-// causePrecedence builds an expression that ranks the cause expression by its 1-based
-// position in patients.PrimaryIssueCausePrecedence. Unknown causes rank 0, the lowest.
-func causePrecedence(cause interface{}) bson.M {
+// sourcePrecedence builds an expression that ranks the source expression by its 1-based
+// position in patients.PrimaryIssueSourcePrecedence. Unknown sources rank 0, the lowest.
+func sourcePrecedence(source interface{}) bson.M {
 	branches := bson.A{}
-	for i, name := range patients.PrimaryIssueCausePrecedence {
+	for i, name := range patients.PrimaryIssueSourcePrecedence {
 		branches = append(branches, bson.M{
-			"case": bson.M{"$eq": bson.A{cause, name}},
+			"case": bson.M{"$eq": bson.A{source, name}},
 			"then": i + 1,
 		})
 	}

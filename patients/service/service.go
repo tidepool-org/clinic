@@ -89,7 +89,7 @@ func (s *service) Create(ctx context.Context, patient patients.Patient) (*patien
 	if patient.PrimaryIssue == nil && patient.IsCustodial() &&
 		patient.Email != nil && *patient.Email != "" {
 		patient.PrimaryIssue = &patients.PrimaryIssue{
-			Cause:         patients.PrimaryIssueCauseDeviceNonSpecificInvite,
+			Source:        patients.PrimaryIssueSourceDeviceNonSpecificInvite,
 			EffectiveTime: time.Now(),
 		}
 	}

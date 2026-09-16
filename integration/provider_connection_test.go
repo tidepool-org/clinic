@@ -111,9 +111,9 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			Expect(patient.ConnectionRequests.Dexcom[0].ProviderName).To(Equal(api.Dexcom))
 		})
 
-		It("Makes dexcom the primary issue cause", func() {
-			Expect(patient.PrimaryIssueCause).
-				To(PointTo(Equal(api.PrimaryIssueCauseV1Dexcom)))
+		It("Makes dexcom the primary issue source", func() {
+			Expect(patient.PrimaryIssue).
+				To(PointTo(HaveField("Source", api.PrimaryIssueSourceV1Dexcom)))
 		})
 	})
 
@@ -148,9 +148,9 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			Expect(patient.ConnectionRequests.Twiist[0].ProviderName).To(Equal(api.Twiist))
 		})
 
-		It("Makes twiist the primary issue cause", func() {
-			Expect(patient.PrimaryIssueCause).
-				To(PointTo(Equal(api.PrimaryIssueCauseV1Twiist)))
+		It("Makes twiist the primary issue source", func() {
+			Expect(patient.PrimaryIssue).
+				To(PointTo(HaveField("Source", api.PrimaryIssueSourceV1Twiist)))
 		})
 	})
 
@@ -189,9 +189,9 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 			Expect(patient.ConnectionRequests.Dexcom[0].CreatedTime).To(BeTemporally(">", patient.ConnectionRequests.Dexcom[1].CreatedTime))
 		})
 
-		It("Makes dexcom the primary issue cause again", func() {
-			Expect(patient.PrimaryIssueCause).
-				To(PointTo(Equal(api.PrimaryIssueCauseV1Dexcom)))
+		It("Makes dexcom the primary issue source again", func() {
+			Expect(patient.PrimaryIssue).
+				To(PointTo(HaveField("Source", api.PrimaryIssueSourceV1Dexcom)))
 		})
 	})
 })

@@ -218,26 +218,50 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 	if patient.DiagnosisType != nil {
 		dto.DiagnosisType = NewDiagnosisTypeDto(string(*patient.DiagnosisType))
 	}
-	dto.PrimaryIssueCause = NewPrimaryIssueCauseDto(patient.PrimaryIssue)
+	dto.PrimaryIssue = NewPrimaryIssueDto(patient.PrimaryIssue)
 
 	return dto
 }
 
-// NewPrimaryIssueCauseDto maps a stored primary issue cause to the API enum.
+// NewPrimaryIssueDto maps a stored primary issue to its API representation.
 //
-// Unknown values are dropped rather than returned, so the response always satisfies the
-// schema.
-func NewPrimaryIssueCauseDto(issue *patients.PrimaryIssue) *PrimaryIssueCauseV1 {
+// An issue with an unknown source is dropped rather than returned, so the response always
+// satisfies the schema. An unknown or empty kind and a zero effective time are omitted
+// for the same reason.
+func NewPrimaryIssueDto(issue *patients.PrimaryIssue) *PrimaryIssueV1 {
 	if issue == nil {
 		return nil
 	}
-	cause := PrimaryIssueCauseV1(issue.Cause)
-	switch cause {
-	case PrimaryIssueCauseV1Abbott,
-		PrimaryIssueCauseV1Dexcom,
-		PrimaryIssueCauseV1Twiist,
-		PrimaryIssueCauseV1DeviceNonSpecificInvite:
-		return &cause
+	source := PrimaryIssueSourceV1(issue.Source)
+	switch source {
+	case PrimaryIssueSourceV1Abbott,
+		PrimaryIssueSourceV1Dexcom,
+		PrimaryIssueSourceV1Twiist,
+		PrimaryIssueSourceV1DeviceNonSpecificInvite:
+	default:
+		return nil
+	}
+	dto := &PrimaryIssueV1{
+		Source: source,
+		Kind:   NewPrimaryIssueKindDto(issue.Kind),
+	}
+	if !issue.EffectiveTime.IsZero() {
+		dto.EffectiveTime = &issue.EffectiveTime
+	}
+	return dto
+}
+
+// NewPrimaryIssueKindDto maps a stored primary issue kind to the API enum. Unknown values,
+// including the empty string of an issue that hasn't been classified yet, are dropped.
+func NewPrimaryIssueKindDto(kind string) *PrimaryIssueKindV1 {
+	dtoKind := PrimaryIssueKindV1(kind)
+	switch dtoKind {
+	case PrimaryIssueKindV1Erroring,
+		PrimaryIssueKindV1Disconnected,
+		PrimaryIssueKindV1InvitationExpired,
+		PrimaryIssueKindV1StaleData,
+		PrimaryIssueKindV1StaleInvite:
+		return &dtoKind
 	default:
 		return nil
 	}

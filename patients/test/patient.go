@@ -116,23 +116,38 @@ func RandomDiagnosisType() *patients.DiagnosisType {
 	return &choice
 }
 
-// RandomPrimaryIssue returns a primary issue for one of the known causes, or nil,
+// RandomPrimaryIssue returns a primary issue for one of the known sources, or nil,
 // since the field is optional. The time is truncated to what Mongo stores so that values
 // compare equal after a round trip.
 func RandomPrimaryIssue() *patients.PrimaryIssue {
-	causes := []string{
+	sources := []string{
 		patients.AbbottDataSourceProviderName,
 		patients.DexcomDataSourceProviderName,
 		patients.TwiistDataSourceProviderName,
-		patients.PrimaryIssueCauseDeviceNonSpecificInvite,
+		patients.PrimaryIssueSourceDeviceNonSpecificInvite,
 	}
-	if rand.IntN(len(causes)+1) == 0 {
+	if rand.IntN(len(sources)+1) == 0 {
 		return nil
 	}
 	return &patients.PrimaryIssue{
-		Cause:         causes[rand.IntN(len(causes))],
+		Source:        sources[rand.IntN(len(sources))],
+		Kind:          RandomPrimaryIssueKind(),
 		EffectiveTime: time.Now().UTC().Truncate(time.Millisecond),
 	}
+}
+
+// RandomPrimaryIssueKind returns one of the known kinds, or the empty string of an issue
+// that hasn't been classified yet.
+func RandomPrimaryIssueKind() string {
+	kinds := []string{
+		"",
+		patients.PrimaryIssueKindErroring,
+		patients.PrimaryIssueKindDisconnected,
+		patients.PrimaryIssueKindInvitationExpired,
+		patients.PrimaryIssueKindStaleData,
+		patients.PrimaryIssueKindStaleInvite,
+	}
+	return kinds[rand.IntN(len(kinds))]
 }
 
 func RandomSubscriptions() patients.EHRSubscriptions {

@@ -108,15 +108,15 @@ var _ = Describe("Patient Invitation Re-sent Integration Test", Ordered, func() 
 		It("Has a primary issue after it is set out-of-band", func() {
 			db := test.GetTestDatabase()
 			update := bson.M{"$set": bson.M{"primaryIssue": patients.PrimaryIssue{
-				Cause:         patients.AbbottDataSourceProviderName,
+				Source:        patients.AbbottDataSourceProviderName,
 				EffectiveTime: time.Now(),
 			}}}
 			result, err := db.Collection("patients").UpdateOne(context.Background(),
 				patientSelector(), update)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result.MatchedCount).To(BeEquivalentTo(1))
-			Expect(getPatient().PrimaryIssueCause).
-				To(PointTo(Equal(api.PrimaryIssueCauseV1Abbott)))
+			Expect(getPatient().PrimaryIssue).
+				To(PointTo(HaveField("Source", api.PrimaryIssueSourceV1Abbott)))
 		})
 	})
 
@@ -126,8 +126,8 @@ var _ = Describe("Patient Invitation Re-sent Integration Test", Ordered, func() 
 		})
 
 		It("Leaves the primary issue in place", func() {
-			Expect(getPatient().PrimaryIssueCause).
-				To(PointTo(Equal(api.PrimaryIssueCauseV1Abbott)))
+			Expect(getPatient().PrimaryIssue).
+				To(PointTo(HaveField("Source", api.PrimaryIssueSourceV1Abbott)))
 		})
 	})
 
@@ -137,18 +137,18 @@ var _ = Describe("Patient Invitation Re-sent Integration Test", Ordered, func() 
 		})
 
 		It("Makes the invitation the primary issue", func() {
-			Expect(getPatient().PrimaryIssueCause).
-				To(PointTo(Equal(api.PrimaryIssueCauseV1DeviceNonSpecificInvite)))
+			Expect(getPatient().PrimaryIssue).To(PointTo(
+				HaveField("Source", api.PrimaryIssueSourceV1DeviceNonSpecificInvite)))
 			Expect(storedPatient().PrimaryIssue).To(PointTo(And(
-				HaveField("Cause", patients.PrimaryIssueCauseDeviceNonSpecificInvite),
+				HaveField("Source", patients.PrimaryIssueSourceDeviceNonSpecificInvite),
 				HaveField("EffectiveTime", BeTemporally("~", time.Now(), time.Minute)),
 			)))
 		})
 
 		It("Succeeds again when the invitation is already the primary issue", func() {
 			Expect(markResent(*patient.Id, asServer)).To(Equal(http.StatusNoContent))
-			Expect(getPatient().PrimaryIssueCause).
-				To(PointTo(Equal(api.PrimaryIssueCauseV1DeviceNonSpecificInvite)))
+			Expect(getPatient().PrimaryIssue).To(PointTo(
+				HaveField("Source", api.PrimaryIssueSourceV1DeviceNonSpecificInvite)))
 		})
 
 		It("Returns not found for an unknown patient", func() {

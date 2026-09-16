@@ -712,12 +712,21 @@ const (
 	RUNNING   MigrationStatusV1 = "RUNNING"
 )
 
-// Defines values for PrimaryIssueCauseV1.
+// Defines values for PrimaryIssueKindV1.
 const (
-	PrimaryIssueCauseV1Abbott                  PrimaryIssueCauseV1 = "abbott"
-	PrimaryIssueCauseV1DeviceNonSpecificInvite PrimaryIssueCauseV1 = "deviceNonSpecificInvite"
-	PrimaryIssueCauseV1Dexcom                  PrimaryIssueCauseV1 = "dexcom"
-	PrimaryIssueCauseV1Twiist                  PrimaryIssueCauseV1 = "twiist"
+	PrimaryIssueKindV1Disconnected      PrimaryIssueKindV1 = "disconnected"
+	PrimaryIssueKindV1Erroring          PrimaryIssueKindV1 = "erroring"
+	PrimaryIssueKindV1InvitationExpired PrimaryIssueKindV1 = "invitationExpired"
+	PrimaryIssueKindV1StaleData         PrimaryIssueKindV1 = "staleData"
+	PrimaryIssueKindV1StaleInvite       PrimaryIssueKindV1 = "staleInvite"
+)
+
+// Defines values for PrimaryIssueSourceV1.
+const (
+	PrimaryIssueSourceV1Abbott                  PrimaryIssueSourceV1 = "abbott"
+	PrimaryIssueSourceV1DeviceNonSpecificInvite PrimaryIssueSourceV1 = "deviceNonSpecificInvite"
+	PrimaryIssueSourceV1Dexcom                  PrimaryIssueSourceV1 = "dexcom"
+	PrimaryIssueSourceV1Twiist                  PrimaryIssueSourceV1 = "twiist"
 )
 
 // Defines values for ProviderIdV1.
@@ -1613,10 +1622,10 @@ type PatientV1 struct {
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
 
-	// PrimaryIssueCause The cause of the patient's primary connection issue, if any: the provider of the newest connection request or connected data source, or the device-non-specific account invitation. When causes share an effective time, twiist takes precedence over dexcom, then abbott, then the invitation. Derived by the service and cannot be set through this API.
-	PrimaryIssueCause *PrimaryIssueCauseV1 `json:"primaryIssueCause,omitempty"`
-	Reviews           []PatientReviewV1    `json:"reviews"`
-	Sites             []SiteV1             `json:"sites,omitzero"`
+	// PrimaryIssue The patient's primary connection issue, if any.
+	PrimaryIssue *PrimaryIssueV1   `json:"primaryIssue,omitempty"`
+	Reviews      []PatientReviewV1 `json:"reviews"`
+	Sites        []SiteV1          `json:"sites,omitzero"`
 
 	// Summary A summary of a patients recent data
 	Summary *PatientSummaryV1 `json:"summary,omitempty"`
@@ -1753,8 +1762,23 @@ type PhoneNumbersV1 = []PhoneNumberV1
 // PostalCodeV1 Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
 type PostalCodeV1 = string
 
-// PrimaryIssueCauseV1 What the patient's primary connection issue relates to: a third-party data provider, or the device-non-specific invitation to claim the account.
-type PrimaryIssueCauseV1 string
+// PrimaryIssueV1 The patient's primary connection issue, if any. Derived and classified by Tidepool and cannot be set through this API.
+type PrimaryIssueV1 struct {
+	// EffectiveTime When this issue became relevant.
+	EffectiveTime *time.Time `json:"effectiveTime,omitempty"`
+
+	// Kind How the issue is classified. Absent until a backend service has evaluated the issue.
+	Kind *PrimaryIssueKindV1 `json:"kind,omitempty"`
+
+	// Source The event that is the source of the primary connection issue.
+	Source PrimaryIssueSourceV1 `json:"source"`
+}
+
+// PrimaryIssueKindV1 How the patient's primary connection issue is classified.
+type PrimaryIssueKindV1 string
+
+// PrimaryIssueSourceV1 What the patient's primary connection issue relates to: a third-party data provider, or the device-non-specific invitation to claim the account.
+type PrimaryIssueSourceV1 string
 
 // ProviderConnectionRequestV1 defines model for providerConnectionRequest.v1.
 type ProviderConnectionRequestV1 struct {

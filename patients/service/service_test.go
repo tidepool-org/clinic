@@ -221,7 +221,7 @@ var _ = Describe("Patients Service", func() {
 					// An existing primary issue is left alone; the invitation case below
 					// starts from none.
 					randomPatient.PrimaryIssue = &patients.PrimaryIssue{
-						Cause: patients.DexcomDataSourceProviderName,
+						Source: patients.DexcomDataSourceProviderName,
 					}
 				})
 
@@ -232,9 +232,9 @@ var _ = Describe("Patients Service", func() {
 						Return(nil, nil)
 					repo.EXPECT().
 						Create(gomock.Any(), gomock.Cond(func(p patients.Patient) bool {
-							invite := patients.PrimaryIssueCauseDeviceNonSpecificInvite
+							invite := patients.PrimaryIssueSourceDeviceNonSpecificInvite
 							return p.PrimaryIssue != nil &&
-								p.PrimaryIssue.Cause == invite &&
+								p.PrimaryIssue.Source == invite &&
 								!p.PrimaryIssue.EffectiveTime.IsZero()
 						})).
 						Return(&randomPatient, nil)

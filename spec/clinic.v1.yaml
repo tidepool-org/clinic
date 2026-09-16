@@ -5004,8 +5004,8 @@ components:
         - notApplicable
         - ''
       example: type1
-    primaryIssueCause.v1:
-      title: Primary Issue Cause
+    primaryIssueSource.v1:
+      title: Primary Issue Source
       type: string
       description: 'What the patient''s primary connection issue relates to: a third-party data provider, or the device-non-specific invitation to claim the account.'
       enum:
@@ -5014,10 +5014,46 @@ components:
         - abbott
         - deviceNonSpecificInvite
       x-enum-varnames:
-        - PrimaryIssueCauseV1Dexcom
-        - PrimaryIssueCauseV1Twiist
-        - PrimaryIssueCauseV1Abbott
-        - PrimaryIssueCauseV1DeviceNonSpecificInvite
+        - PrimaryIssueSourceV1Dexcom
+        - PrimaryIssueSourceV1Twiist
+        - PrimaryIssueSourceV1Abbott
+        - PrimaryIssueSourceV1DeviceNonSpecificInvite
+    primaryIssueKind.v1:
+      title: Primary Issue Kind
+      type: string
+      description: How the patient's primary connection issue is classified.
+      enum:
+        - erroring
+        - disconnected
+        - invitationExpired
+        - staleData
+        - staleInvite
+      x-enum-varnames:
+        - PrimaryIssueKindV1Erroring
+        - PrimaryIssueKindV1Disconnected
+        - PrimaryIssueKindV1InvitationExpired
+        - PrimaryIssueKindV1StaleData
+        - PrimaryIssueKindV1StaleInvite
+    primaryIssue.v1:
+      title: Primary Issue
+      type: object
+      description: The patient's primary connection issue, if any. Derived and classified by Tidepool and cannot be set through this API.
+      readOnly: true
+      properties:
+        source:
+          description: The event that is the source of the primary connection issue.
+          allOf:
+            - $ref: '#/components/schemas/primaryIssueSource.v1'
+        kind:
+          description: How the issue is classified. Absent until a backend service has evaluated the issue.
+          allOf:
+            - $ref: '#/components/schemas/primaryIssueKind.v1'
+        effectiveTime:
+          type: string
+          format: date-time
+          description: When this issue became relevant.
+      required:
+        - source
     patient.v1:
       type: object
       title: Patient
@@ -5092,11 +5128,10 @@ components:
           $ref: '#/components/schemas/glycemicRanges.v1'
         diagnosisType:
           $ref: '#/components/schemas/diagnosisType.v1'
-        primaryIssueCause:
-          description: 'The cause of the patient''s primary connection issue, if any: the provider of the newest connection request or connected data source, or the device-non-specific account invitation. When causes share an effective time, twiist takes precedence over dexcom, then abbott, then the invitation. Derived by the service and cannot be set through this API.'
-          readOnly: true
+        primaryIssue:
+          description: The patient's primary connection issue, if any.
           allOf:
-            - $ref: '#/components/schemas/primaryIssueCause.v1'
+            - $ref: '#/components/schemas/primaryIssue.v1'
       required:
         - id
         - fullName
