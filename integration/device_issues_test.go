@@ -283,4 +283,97 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 			Expect(getPatient().PrimaryIssue).To(PointTo(HaveField("Kind", BeNil())))
 		})
 	})
+
+	Describe("Trigger the check after a device-non-specific invitation goes stale", func() {
+		// The user service stub creates custodial accounts only for the fixture's email
+		// and always returns the same user id, so the invitee lives in a clinic of its own.
+		var inviteClinic client.ClinicV1
+		var invitee api.PatientV1
+		var updatedTime time.Time
+
+		// The invitee is aged out-of-band so that its invitation went stale an hour ago.
+		inviteeCreated := now.Add(-patients.PendingDataSourceStaleDuration - time.Hour)
+		inviteStaleAt := inviteeCreated.Add(patients.PendingDataSourceStaleDuration)
+
+		getInvitee := func() api.PatientV1 {
+			GinkgoHelper()
+
+			endpoint := fmt.Sprintf("/v1/clinics/%s/patients/%s",
+				*inviteClinic.Id, *invitee.Id)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet, endpoint, "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			fetched := api.PatientV1{}
+			Expect(json.NewDecoder(rec.Result().Body).Decode(&fetched)).To(Succeed())
+			return fetched
+		}
+
+		It("Creates a clinic for the invitee", func() {
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodPost, "/v1/clinics",
+				"./test/common_fixtures/01_create_clinic.json")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+			Expect(json.NewDecoder(rec.Result().Body).Decode(&inviteClinic)).To(Succeed())
+			Expect(inviteClinic.Id).ToNot(BeNil())
+		})
+
+		It("Creates a custodial patient with no devices", func() {
+			rec := httptest.NewRecorder()
+			endpoint := fmt.Sprintf("/v1/clinics/%s/patients", *inviteClinic.Id)
+			req := prepareRequest(http.MethodPost, endpoint,
+				"./test/common_fixtures/02_create_patient.json")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+			Expect(json.NewDecoder(rec.Result().Body).Decode(&invitee)).To(Succeed())
+			Expect(invitee.PrimaryIssue).To(PointTo(And(
+				HaveField("Source", api.PrimaryIssueSourceV1DeviceNonSpecificInvite),
+				HaveField("Kind", BeNil()),
+			)))
+		})
+
+		It("Ages the patient out-of-band", func() {
+			clinicId, err := primitive.ObjectIDFromHex(*inviteClinic.Id)
+			Expect(err).ToNot(HaveOccurred())
+
+			db := test.GetTestDatabase()
+			selector := bson.M{"userId": *invitee.Id, "clinicId": clinicId}
+			result, err := db.Collection("patients").UpdateOne(context.Background(),
+				selector, bson.M{"$set": bson.M{"createdTime": inviteeCreated}})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result.ModifiedCount).To(BeEquivalentTo(1))
+		})
+
+		It("Classifies the invitation as stale", func() {
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+
+			fetched := getInvitee()
+			Expect(fetched.PrimaryIssue).To(PointTo(And(
+				HaveField("Source", api.PrimaryIssueSourceV1DeviceNonSpecificInvite),
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1StaleInvite))),
+				HaveField("EffectiveTime", PointTo(BeTemporally("==", inviteStaleAt))),
+			)))
+			updatedTime = *fetched.UpdatedTime
+		})
+
+		It("Leaves the patient alone when triggered again", func() {
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+
+			fetched := getInvitee()
+			Expect(fetched.PrimaryIssue).To(PointTo(
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1StaleInvite)))))
+			Expect(fetched.UpdatedTime).To(PointTo(BeTemporally("==", updatedTime)))
+		})
+	})
 })

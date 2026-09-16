@@ -539,4 +539,114 @@ var _ = Describe("Patients Repository Device Issues", func() {
 			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleDataKind)))
 		})
 	})
+
+	Describe("stale device-non-specific invitations", func() {
+		// Creation times for patients, relative to when a patient created now would see
+		// its invitation go stale: old went stale an hour ago, recent goes stale in an
+		// hour.
+		var old, recent time.Time
+		// staleAt is when the old patient's invitation went stale.
+		var staleAt time.Time
+
+		BeforeEach(func() {
+			staleNow := now.Add(-patients.PendingDataSourceStaleDuration)
+			old = staleNow.Add(-time.Hour)
+			recent = staleNow.Add(time.Hour)
+			staleAt = old.Add(patients.PendingDataSourceStaleDuration)
+		})
+
+		// agePatient sets the subject's creation time directly, since the repository
+		// stamps it on creation.
+		agePatient := func(s subject, createdTime time.Time) {
+			GinkgoHelper()
+			clinicId, err := primitive.ObjectIDFromHex(s.clinicId)
+			Expect(err).ToNot(HaveOccurred())
+			selector := bson.M{"clinicId": clinicId, "userId": s.userId}
+			_, err = collection.UpdateOne(ctx, selector,
+				bson.M{"$set": bson.M{"createdTime": createdTime}})
+			Expect(err).ToNot(HaveOccurred())
+		}
+
+		It("classifies an old patient's unanswered invitation", func() {
+			s := seed(issue(invite), nil)
+			agePatient(s, old)
+			update()
+			got := get(s)
+			Expect(got.PrimaryIssue).To(PointTo(Equal(patients.PrimaryIssue{
+				Source:        invite,
+				Kind:          staleInvite,
+				EffectiveTime: staleAt,
+			})))
+			Expect(got.UpdatedTime).To(BeTemporally("~", time.Now(), time.Second))
+		})
+
+		It("ignores a recent patient", func() {
+			s := seed(issue(invite), nil)
+			agePatient(s, recent)
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(invite)))
+		})
+
+		It("ignores an old patient with a connection request", func() {
+			s := seed(issue(invite), patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, now.Add(-time.Hour))},
+			})
+			agePatient(s, old)
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(invite)))
+		})
+
+		It("ignores an old patient with a data source in any state", func() {
+			disconnected := patients.DataSourceStateDisconnected
+			s := seed(issue(invite), nil,
+				dataSourceWithData(dexcom, disconnected, old, old))
+			agePatient(s, old)
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(invite)))
+		})
+
+		It("does not classify a provider issue by the patient's age", func() {
+			s := seed(issue(dexcom), nil)
+			agePatient(s, old)
+			update()
+			Expect(get(s).PrimaryIssue).To(Equal(issue(dexcom)))
+		})
+
+		It("replaces an existing kind", func() {
+			classified := issue(invite)
+			classified.Kind = staleDataKind
+			s := seed(classified, nil)
+			agePatient(s, old)
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleInvite)))
+		})
+
+		It("leaves an already classified patient alone", func() {
+			s := seed(issue(invite), nil)
+			agePatient(s, old)
+			update()
+			first := get(s)
+			Expect(first.PrimaryIssue).To(PointTo(HaveField("Kind", staleInvite)))
+
+			update()
+			second := get(s)
+			Expect(second.PrimaryIssue).To(Equal(first.PrimaryIssue))
+			Expect(second.UpdatedTime).To(BeTemporally("==", first.UpdatedTime))
+		})
+
+		It("is superseded by a later connection request", func() {
+			s := seed(issue(invite), nil)
+			agePatient(s, old)
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(HaveField("Kind", staleInvite)))
+
+			newer := request(dexcom, now)
+			Expect(repo.AddProviderConnectionRequest(ctx, s.clinicId, s.userId, newer)).
+				To(Succeed())
+			Expect(get(s).PrimaryIssue).To(PointTo(Equal(patients.PrimaryIssue{
+				Source:        dexcom,
+				EffectiveTime: now,
+			})))
+		})
+	})
 })

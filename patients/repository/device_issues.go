@@ -33,11 +33,19 @@ const deviceIssueField = "deviceIssue"
 //     new data for DataSourceStaleDataDuration, and no connection request for that
 //     provider is newer than the data source. The issue is classified as staleData,
 //     effective when the data went stale.
+//   - Stale device-non-specific invitation: the patient's outstanding issue is the
+//     invitation to claim the account, the patient was created more than
+//     PendingDataSourceStaleDuration ago, and has no connection requests and no data
+//     sources. The issue is classified as staleInvite, effective when the invitation went
+//     stale.
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
-	// Only provider-specific issues have connection requests or data sources to check.
-	selector := bson.M{
-		"primaryIssue.source": bson.M{"$in": patients.DataSourceProviderNames},
-	}
+	// Provider-specific issues are checked against their connection requests and data
+	// sources; the device-non-specific invitation against the patient's age.
+	sources := append(
+		append([]string{}, patients.DataSourceProviderNames...),
+		patients.PrimaryIssueSourceDeviceNonSpecificInvite,
+	)
+	selector := bson.M{"primaryIssue.source": bson.M{"$in": sources}}
 
 	noOutcome := bson.M{"$eq": bson.A{"$" + deviceIssueField, nil}}
 	update := mongo.Pipeline{
@@ -88,6 +96,13 @@ func deviceIssueOutcome(now time.Time) bson.M {
 				"then": bson.M{
 					"kind":          patients.PrimaryIssueKindStaleData,
 					"effectiveTime": dataStaleAt(),
+				},
+			},
+			bson.M{
+				"case": nonSpecificInviteStale(now),
+				"then": bson.M{
+					"kind":          patients.PrimaryIssueKindStaleInvite,
+					"effectiveTime": patientStaleAt(),
 				},
 			},
 		},
@@ -186,6 +201,39 @@ func dataStaleAt() bson.M {
 	return bson.M{"$add": bson.A{
 		"$$connectedDataSource.latestDataTime",
 		patients.DataSourceStaleDataDuration.Milliseconds(),
+	}}
+}
+
+// nonSpecificInviteStale builds the expression for the fourth criterion. It is true when
+// the primary issue is the device-non-specific invitation to claim the account, the patient
+// was created more than PendingDataSourceStaleDuration ago, and the patient has no
+// connection requests for any provider and no data sources. Requests are counted, not
+// provider keys, so a provider entry holding an empty array counts as none.
+func nonSpecificInviteStale(now time.Time) bson.M {
+	requestCount := bson.M{"$sum": bson.M{"$map": bson.M{
+		"input": bson.M{"$objectToArray": bson.M{
+			"$ifNull": bson.A{"$providerConnectionRequests", bson.M{}},
+		}},
+		"in": bson.M{"$size": "$$this.v"},
+	}}}
+	dataSourceCount := bson.M{"$size": bson.M{"$ifNull": bson.A{"$dataSources", bson.A{}}}}
+	return bson.M{"$and": bson.A{
+		bson.M{"$eq": bson.A{
+			"$primaryIssue.source", patients.PrimaryIssueSourceDeviceNonSpecificInvite,
+		}},
+		bson.M{"$eq": bson.A{bson.M{"$type": "$createdTime"}, "date"}},
+		bson.M{"$lte": bson.A{patientStaleAt(), now}},
+		bson.M{"$eq": bson.A{requestCount, 0}},
+		bson.M{"$eq": bson.A{dataSourceCount, 0}},
+	}}
+}
+
+// patientStaleAt builds the expression for the time the patient's invitation to claim
+// the account goes stale: PendingDataSourceStaleDuration after the patient was created.
+func patientStaleAt() bson.M {
+	return bson.M{"$add": bson.A{
+		"$createdTime",
+		patients.PendingDataSourceStaleDuration.Milliseconds(),
 	}}
 }
 
