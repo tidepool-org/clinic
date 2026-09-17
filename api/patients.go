@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/csv"
 	"fmt"
 	"net/http"
 	"time"
@@ -526,4 +527,63 @@ func (h *Handler) ConnectProvider(ec echo.Context, clinicId ClinicId, patientId 
 	}
 
 	return ec.NoContent(http.StatusNoContent)
+}
+
+func (h *Handler) ListBulkCreatePatients(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	var invitedBy *string = nil
+	authData := auth.GetAuthData(ctx)
+	if authData != nil && authData.SubjectId != "" {
+		inviterId := authData.SubjectId
+		invitedBy = &inviterId
+	}
+	outputRecords, _, _, err := patients.ParsePotentialCSVPatientsReader(ctx, ec.Request().Body, h.Patients, h.Users, clinicObjId, invitedBy)
+	if patients.IsBulkPatientCSVValidationErr(err) {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: err,
+		}
+	}
+	if err != nil {
+		return err
+	}
+	res := ec.Response()
+	res.Header().Set(echo.HeaderContentType, "text/csv")
+	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=bulk-creation-result-%d.csv", time.Now().Unix()))
+	res.WriteHeader(http.StatusOK)
+	return csv.NewWriter(res.Writer).WriteAll(outputRecords)
+}
+
+func (h *Handler) BulkCreatePatients(ec echo.Context, clinicId ClinicId) error {
+	ctx := ec.Request().Context()
+	clinicObjId, err := primitive.ObjectIDFromHex(clinicId)
+	if err != nil {
+		return err
+	}
+	var invitedBy *string = nil
+	authData := auth.GetAuthData(ctx)
+	if authData != nil && authData.SubjectId != "" {
+		inviterId := authData.SubjectId
+		invitedBy = &inviterId
+	}
+	_, csvHeader, potentialPatients, err := patients.ParsePotentialCSVPatientsReader(ctx, ec.Request().Body, h.Patients, h.Users, clinicObjId, invitedBy)
+	if patients.IsBulkPatientCSVValidationErr(err) {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: err,
+		}
+	}
+	if err != nil {
+		return err
+	}
+	outputRecords := patients.CreateCSVPatients(ctx, h.Patients, csvHeader, potentialPatients)
+	res := ec.Response()
+	res.Header().Set(echo.HeaderContentType, "text/csv")
+	res.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=bulk-creation-result-%d.csv", time.Now().Unix()))
+	res.WriteHeader(http.StatusCreated)
+	return csv.NewWriter(res.Writer).WriteAll(outputRecords)
 }
