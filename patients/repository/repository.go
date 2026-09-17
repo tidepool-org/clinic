@@ -533,10 +533,22 @@ func (r *repository) Update(ctx context.Context, patientUpdate patients.PatientU
 		patient.Sites = &sites
 	}
 
-	update := bson.M{
-		"$set": patient,
+	// On an update, only the hidden field may be changed; the stored issue itself is
+	// derived by the service. Taking it out keeps it (omitempty) out of the fields set
+	// below, whatever the caller put in it.
+	primaryIssue := patient.PrimaryIssue
+	patient.PrimaryIssue = nil
+
+	set, err := literalFields(patient)
+	if err != nil {
+		return nil, fmt.Errorf("error updating patient: %w", err)
 	}
-	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if primaryIssue != nil {
+		set["primaryIssue"] = primaryIssueHiddenAfter(primaryIssue.Hidden)
+	}
+	update := mongo.Pipeline{bson.D{{Key: "$set", Value: set}}}
+
+	err = r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, patients.ErrNotFound
@@ -545,6 +557,40 @@ func (r *repository) Update(ctx context.Context, patientUpdate patients.PatientU
 	}
 
 	return r.Get(ctx, patientUpdate.ClinicId, patientUpdate.UserId)
+}
+
+func literalFields(value interface{}) (bson.M, error) {
+	raw, err := bson.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+	var fields bson.D
+	if err := bson.Unmarshal(raw, &fields); err != nil {
+		return nil, err
+	}
+	set := bson.M{}
+	for _, field := range fields {
+		set[field.Key] = bson.M{"$literal": field.Value}
+	}
+	return set, nil
+}
+
+// primaryIssueHiddenAfter builds the $set expression that hides or shows the stored primary
+// issue: hiddenAt is the stamp to hide it with, or nil to show it. Hiding keeps an existing
+// stamp, so the original time survives a client echoing the hidden flag back; showing
+// removes the stamp. A patient without a primary issue is left without one.
+func primaryIssueHiddenAfter(hiddenAt *time.Time) bson.M {
+	var applied bson.M
+	if hiddenAt != nil {
+		applied = bson.M{"$mergeObjects": bson.A{"$primaryIssue", bson.M{
+			"hidden": bson.M{"$ifNull": bson.A{"$primaryIssue.hidden", *hiddenAt}},
+		}}}
+	} else {
+		applied = bson.M{"$unsetField": bson.M{"field": "hidden", "input": "$primaryIssue"}}
+	}
+	// A missing field doesn't compare equal to null, so normalize it first.
+	noIssue := bson.M{"$eq": bson.A{bson.M{"$ifNull": bson.A{"$primaryIssue", nil}}, nil}}
+	return bson.M{"$cond": bson.A{noIssue, "$$REMOVE", applied}}
 }
 
 func uniqSites(allSites []sites.Site) []sites.Site {
@@ -983,11 +1029,26 @@ func primaryIssueAfter(candidate patients.PrimaryIssue, current interface{}) bso
 		"default": false,
 	}}
 
+	// The candidate replaces the current issue wholesale, except that a clinician's hidden
+	// stamp survives when the issue stays the same: same source and, as a candidate never
+	// carries a kind, no kind on the current issue either. A field that evaluates to a
+	// missing value is left out of the object, so an unhidden issue stays unhidden.
+	sameIssue := bson.M{"$and": bson.A{
+		bson.M{"$eq": bson.A{"$$current.source", candidate.Source}},
+		bson.M{"$eq": bson.A{bson.M{"$ifNull": bson.A{"$$current.kind", ""}}, ""}},
+	}}
+	winner := bson.M{"$cond": bson.A{
+		sameIssue,
+		bson.M{"$mergeObjects": bson.A{
+			bson.M{"$literal": candidate},
+			bson.M{"hidden": "$$current.hidden"},
+		}},
+		bson.M{"$literal": candidate},
+	}}
+
 	return bson.M{"$let": bson.M{
 		"vars": bson.M{"current": current},
-		"in": bson.M{"$cond": bson.A{
-			candidateWins, bson.M{"$literal": candidate}, "$$current",
-		}},
+		"in":   bson.M{"$cond": bson.A{candidateWins, winner, "$$current"}},
 	}}
 }
 
@@ -1053,10 +1114,24 @@ func primaryIssueAfterDisconnecting(dataSources *patients.DataSources,
 		if !ok {
 			continue
 		}
-		classified := bson.M{"$mergeObjects": bson.A{"$$acc", bson.M{
-			"kind":          kind,
-			"effectiveTime": now,
-		}}}
+		// Reclassifying keeps the rest of the issue, including a clinician's hidden
+		// stamp, when the kind is unchanged; a new kind shows the issue again, so the
+		// issue is rebuilt without it.
+		sameKind := bson.M{"$eq": bson.A{
+			bson.M{"$ifNull": bson.A{"$$acc.kind", ""}}, kind,
+		}}
+		classified := bson.M{"$cond": bson.A{
+			sameKind,
+			bson.M{"$mergeObjects": bson.A{"$$acc", bson.M{
+				"kind":          kind,
+				"effectiveTime": now,
+			}}},
+			bson.M{
+				"source":        "$$acc.source",
+				"kind":          kind,
+				"effectiveTime": now,
+			},
+		}}
 		result = bson.M{"$let": bson.M{
 			"vars": bson.M{"acc": current},
 			"in": bson.M{"$cond": bson.A{

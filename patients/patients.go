@@ -188,7 +188,8 @@ type Patient struct {
 	// primary issue. This prevents, for example, an old device having stale data from
 	// becoming a connection issue when a newer device is present and connected.
 	//
-	// Its value should only be set by the backend and is read-only from the API.
+	// Its value is derived by the backend. The one change a client may make is hiding the
+	// issue. Every other field of the value is ignored.
 	PrimaryIssue *PrimaryIssue `bson:"primaryIssue,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
@@ -211,6 +212,9 @@ type PrimaryIssue struct {
 	// the connection request, the modifiedTime of the data source at the time it was
 	// connected, or the time the invitation was sent.
 	EffectiveTime time.Time `bson:"effectiveTime"`
+	// Hidden is when a clinician hid the issue from the connection issues dashboard, or nil
+	// while it is shown.
+	Hidden *time.Time `bson:"hidden,omitempty"`
 }
 
 type DiagnosisType string

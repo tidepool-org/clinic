@@ -241,14 +241,28 @@ func NewPrimaryIssueDto(issue *patients.PrimaryIssue) *PrimaryIssueV1 {
 	default:
 		return nil
 	}
+	hidden := issue.Hidden != nil
 	dto := &PrimaryIssueV1{
 		Source: source,
 		Kind:   NewPrimaryIssueKindDto(issue.Kind),
+		Hidden: &hidden,
 	}
 	if !issue.EffectiveTime.IsZero() {
 		dto.EffectiveTime = &issue.EffectiveTime
 	}
 	return dto
+}
+
+func NewPrimaryIssueHiddenUpdate(dto *PrimaryIssueV1) *patients.PrimaryIssue {
+	if dto == nil || dto.Hidden == nil {
+		return nil
+	}
+	instruction := &patients.PrimaryIssue{}
+	if *dto.Hidden {
+		now := time.Now()
+		instruction.Hidden = &now
+	}
+	return instruction
 }
 
 // NewPrimaryIssueKindDto maps a stored primary issue kind to the API enum. Unknown values,

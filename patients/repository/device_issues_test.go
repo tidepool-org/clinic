@@ -761,4 +761,58 @@ var _ = Describe("Patients Repository Device Issues", func() {
 			})))
 		})
 	})
+
+	Describe("hidden issues", func() {
+		connected := patients.DataSourceStateConnected
+
+		It("keeps a hidden issue hidden when only its effective time moves", func() {
+			// Already stale data, hidden by a clinician; the data source's latest data
+			// time then moves, so the outcome differs only in its effective time.
+			hiddenAt := now.Add(-time.Hour)
+			current := issue(dexcom)
+			current.Kind = staleDataKind
+			current.Hidden = &hiddenAt
+			oldData := now.Add(-patients.DataSourceStaleDataDuration - 2*time.Hour)
+			s := seed(current, nil,
+				dataSourceWithData(dexcom, connected, now.Add(-72*time.Hour), oldData))
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(And(
+				HaveField("Kind", staleDataKind),
+				HaveField("EffectiveTime",
+					BeTemporally("==", oldData.Add(patients.DataSourceStaleDataDuration))),
+				HaveField("Hidden", PointTo(BeTemporally("==", hiddenAt))),
+			)))
+		})
+
+		It("shows a hidden issue again when its kind changes to stale", func() {
+			hiddenAt := now.Add(-time.Hour)
+			current := issue(dexcom)
+			current.Hidden = &hiddenAt
+			stale := now.Add(-patients.PendingDataSourceStaleDuration - time.Hour)
+			s := seed(current, patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, stale)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(And(
+				HaveField("Kind", staleInvite),
+				HaveField("Hidden", BeNil()),
+			)))
+		})
+
+		It("shows a hidden stale invitation again when it expires", func() {
+			hiddenAt := now.Add(-time.Hour)
+			current := issue(dexcom)
+			current.Kind = staleInvite
+			current.Hidden = &hiddenAt
+			lapsed := now.Add(-patients.PendingDataSourceExpirationDuration - time.Hour)
+			s := seed(current, patients.ProviderConnectionRequests{
+				dexcom: {request(dexcom, lapsed)},
+			})
+			update()
+			Expect(get(s).PrimaryIssue).To(PointTo(And(
+				HaveField("Kind", expired),
+				HaveField("Hidden", BeNil()),
+			)))
+		})
+	})
 })

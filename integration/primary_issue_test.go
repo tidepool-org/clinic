@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"github.com/onsi/gomega/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -85,9 +86,11 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 		return fetched
 	}
 
-	// updatePatient sends the fetched patient back like a client would, with the
+	// updatePatientAs sends the fetched patient back like a client would, with the
 	// read-only fields a real client strips removed, and mutate applied to the body.
-	updatePatient := func(mutate func(body map[string]interface{})) api.PatientV1 {
+	updatePatientAs := func(authenticate func(*http.Request),
+		mutate func(body map[string]interface{})) api.PatientV1 {
+
 		GinkgoHelper()
 
 		rec := httptest.NewRecorder()
@@ -109,7 +112,7 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 		rec = httptest.NewRecorder()
 		req = prepareRequestWithBody(http.MethodPut, patientEndpoint(),
 			bytes.NewReader(body))
-		asClinician(req)
+		authenticate(req)
 
 		server.ServeHTTP(rec, req)
 		Expect(rec.Result()).ToNot(BeNil())
@@ -118,6 +121,11 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 		updated := api.PatientV1{}
 		Expect(json.NewDecoder(rec.Result().Body).Decode(&updated)).To(Succeed())
 		return updated
+	}
+
+	updatePatient := func(mutate func(body map[string]interface{})) api.PatientV1 {
+		GinkgoHelper()
+		return updatePatientAs(asClinician, mutate)
 	}
 
 	expectStoredSource := func(source string) {
@@ -276,6 +284,84 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 		})
 	})
 
+	Describe("Hide the primary issue", func() {
+		var hiddenAt time.Time
+
+		expectStoredSeededIssue := func(hidden types.GomegaMatcher) {
+			GinkgoHelper()
+			Expect(storedPatient().PrimaryIssue).To(PointTo(And(
+				HaveField("Source", patients.AbbottDataSourceProviderName),
+				HaveField("Kind", patients.PrimaryIssueKindStaleData),
+				HaveField("EffectiveTime", BeTemporally("==", seededTime)),
+				HaveField("Hidden", hidden),
+			)))
+		}
+
+		It("Is shown to start with", func() {
+			Expect(getPatient().PrimaryIssue.Hidden).To(PointTo(BeFalse()))
+		})
+
+		It("Hides it, stamping the time and changing nothing else", func() {
+			updated := updatePatient(func(body map[string]interface{}) {
+				body["primaryIssue"] = map[string]interface{}{"hidden": true}
+			})
+			expectSeededIssue(updated.PrimaryIssue)
+			Expect(updated.PrimaryIssue.Hidden).To(PointTo(BeTrue()))
+			expectStoredSeededIssue(PointTo(BeTemporally("~", time.Now(), time.Minute)))
+			hiddenAt = *storedPatient().PrimaryIssue.Hidden
+		})
+
+		It("Keeps the original stamp when the client echoes the hidden flag", func() {
+			updated := updatePatient(func(body map[string]interface{}) {})
+			Expect(updated.PrimaryIssue.Hidden).To(PointTo(BeTrue()))
+			expectStoredSeededIssue(PointTo(BeTemporally("==", hiddenAt)))
+		})
+
+		It("Changes nothing else, whatever the body says", func() {
+			updated := updatePatient(func(body map[string]interface{}) {
+				body["primaryIssue"] = map[string]interface{}{
+					"source":        "twiist",
+					"kind":          "erroring",
+					"effectiveTime": "2030-01-01T00:00:00Z",
+					"hidden":        true,
+				}
+			})
+			expectSeededIssue(updated.PrimaryIssue)
+			Expect(updated.PrimaryIssue.Hidden).To(PointTo(BeTrue()))
+			expectStoredSeededIssue(PointTo(BeTemporally("==", hiddenAt)))
+		})
+
+		It("Leaves it hidden when the body omits the primary issue", func() {
+			updated := updatePatient(func(body map[string]interface{}) {
+				delete(body, "primaryIssue")
+			})
+			Expect(updated.PrimaryIssue.Hidden).To(PointTo(BeTrue()))
+			expectStoredSeededIssue(PointTo(BeTemporally("==", hiddenAt)))
+		})
+
+		It("Shows it again, changing nothing else", func() {
+			updated := updatePatient(func(body map[string]interface{}) {
+				body["primaryIssue"] = map[string]interface{}{"hidden": false}
+			})
+			expectSeededIssue(updated.PrimaryIssue)
+			Expect(updated.PrimaryIssue.Hidden).To(PointTo(BeFalse()))
+			expectStoredSeededIssue(BeNil())
+		})
+
+		It("Is ignored when there is no primary issue", func() {
+			db := test.GetTestDatabase()
+			_, err := db.Collection("patients").UpdateOne(context.Background(),
+				patientSelector(), bson.M{"$unset": bson.M{"primaryIssue": ""}})
+			Expect(err).ToNot(HaveOccurred())
+
+			updated := updatePatient(func(body map[string]interface{}) {
+				body["primaryIssue"] = map[string]interface{}{"hidden": true}
+			})
+			Expect(updated.PrimaryIssue).To(BeNil())
+			Expect(storedPatient().PrimaryIssue).To(BeNil())
+		})
+	})
+
 	Describe("A primary issue with unusual stored values", func() {
 		It("Is returned without a kind when it hasn't been classified", func() {
 			setStoredIssue(bson.M{"primaryIssue": patients.PrimaryIssue{
@@ -322,6 +408,13 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1Erroring)))))
 		})
 
+		It("Can be hidden", func() {
+			updated := updatePatient(func(body map[string]interface{}) {
+				body["primaryIssue"] = map[string]interface{}{"hidden": true}
+			})
+			Expect(updated.PrimaryIssue.Hidden).To(PointTo(BeTrue()))
+		})
+
 		It("Yields to a later connection request, which clears the kind", func() {
 			rec := httptest.NewRecorder()
 			endpoint := fmt.Sprintf("/v1/clinics/%s/patients/%s/connect/twiist",
@@ -334,6 +427,7 @@ var _ = Describe("Primary Issue Integration Test", Ordered, func() {
 			Expect(getPatient().PrimaryIssue).To(PointTo(And(
 				HaveField("Source", api.PrimaryIssueSourceV1Twiist),
 				HaveField("Kind", BeNil()),
+				HaveField("Hidden", PointTo(BeFalse())),
 			)))
 			expectStoredKind("")
 		})

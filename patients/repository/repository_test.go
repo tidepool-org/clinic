@@ -358,6 +358,106 @@ var _ = Describe("Patients Repository", func() {
 				Expect(got.PrimaryIssue).To(PointTo(Equal(issue)))
 			})
 
+			Describe("hiding the primary issue on update", func() {
+				var issue patients.PrimaryIssue
+				var stamp time.Time
+
+				// updateWith runs a client-style update whose patient carries the given
+				// primary issue value, the hide/show instruction, and returns the stored
+				// patient.
+				updateWith := func(instruction *patients.PrimaryIssue) *patients.Patient {
+					GinkgoHelper()
+					ctx := context.Background()
+					update := patientsTest.RandomPatientUpdate()
+					update.ClinicId = patient.ClinicId.Hex()
+					update.UserId = *patient.UserId
+					update.Patient.PrimaryIssue = instruction
+					_, err := repo.Update(ctx, update)
+					Expect(err).To(Succeed())
+					got, err := repo.Get(ctx, patient.ClinicId.Hex(), *patient.UserId)
+					Expect(err).To(Succeed())
+					return got
+				}
+
+				hide := func() *patients.Patient {
+					GinkgoHelper()
+					return updateWith(&patients.PrimaryIssue{Hidden: &stamp})
+				}
+
+				show := func() *patients.Patient {
+					GinkgoHelper()
+					return updateWith(&patients.PrimaryIssue{})
+				}
+
+				BeforeEach(func() {
+					// Mongo stores dates at millisecond precision.
+					stamp = time.Now().UTC().Truncate(time.Millisecond)
+					issue = patients.PrimaryIssue{
+						Source:        patients.DexcomDataSourceProviderName,
+						Kind:          patients.PrimaryIssueKindStaleData,
+						EffectiveTime: stamp.Add(-time.Hour),
+					}
+					patient.PrimaryIssue = &issue
+					result, err := repo.Create(context.Background(), patient)
+					Expect(err).To(Succeed())
+					patient.Id = result.Id
+				})
+
+				It("hides the issue with the given stamp, leaving the rest alone", func() {
+					expected := issue
+					expected.Hidden = &stamp
+					Expect(hide().PrimaryIssue).To(PointTo(Equal(expected)))
+				})
+
+				It("keeps the original stamp when hidden again", func() {
+					hide()
+					later := stamp.Add(time.Minute)
+					got := updateWith(&patients.PrimaryIssue{Hidden: &later})
+					Expect(got.PrimaryIssue.Hidden).To(PointTo(BeTemporally("==", stamp)))
+				})
+
+				It("shows the issue again, leaving the rest alone", func() {
+					hide()
+					Expect(show().PrimaryIssue).To(PointTo(Equal(issue)))
+				})
+
+				It("leaves the issue alone when the update carries no instruction", func() {
+					hide()
+					got := updateWith(nil)
+					Expect(got.PrimaryIssue.Hidden).To(PointTo(BeTemporally("==", stamp)))
+				})
+
+				It("ignores everything but the stamp when hiding", func() {
+					got := updateWith(&patients.PrimaryIssue{
+						Source:        patients.TwiistDataSourceProviderName,
+						Kind:          patients.PrimaryIssueKindErroring,
+						EffectiveTime: stamp,
+						Hidden:        &stamp,
+					})
+					expected := issue
+					expected.Hidden = &stamp
+					Expect(got.PrimaryIssue).To(PointTo(Equal(expected)))
+				})
+
+				It("ignores everything but the missing stamp when showing", func() {
+					hide()
+					got := updateWith(&patients.PrimaryIssue{
+						Source:        patients.TwiistDataSourceProviderName,
+						Kind:          patients.PrimaryIssueKindErroring,
+						EffectiveTime: stamp,
+					})
+					Expect(got.PrimaryIssue).To(PointTo(Equal(issue)))
+				})
+
+				It("ignores hiding when there is no primary issue", func() {
+					_, err := collection.UpdateOne(context.Background(),
+						primitive.M{"_id": patient.Id},
+						primitive.M{"$unset": primitive.M{"primaryIssue": ""}})
+					Expect(err).To(Succeed())
+					Expect(hide().PrimaryIssue).To(BeNil())
+				})
+			})
+
 			It("stores preset glycemic ranges", func() {
 				patient.GlycemicRanges = patientsTest.RandomGlycemicRangesPreset()
 				ctx := context.Background()
@@ -2223,6 +2323,30 @@ var _ = Describe("Patients Repository", func() {
 					})
 				}
 
+				It("shows a hidden issue again when its data source fails", func() {
+					earlier := now.Add(-time.Hour)
+					current := issue(dexcom, earlier)
+					current.Hidden = &earlier
+					createSubject(current, source(dexcom, connected, &earlier))
+					got := update(source(dexcom, disconnected, &now))
+					Expect(got.PrimaryIssue).To(PointTo(And(
+						HaveField("Kind", patients.PrimaryIssueKindDisconnected),
+						HaveField("Hidden", BeNil()),
+					)))
+				})
+
+				It("keeps a hidden issue hidden when a connecting data source refreshes it",
+					func() {
+						earlier := now.Add(-time.Hour)
+						current := issue(dexcom, earlier)
+						current.Hidden = &earlier
+						createSubject(current)
+						got := update(source(dexcom, connected, &now))
+						expected := issue(dexcom, now)
+						expected.Hidden = &earlier
+						Expect(got.PrimaryIssue).To(Equal(expected))
+					})
+
 				It("is set on every clinic record of the user", func() {
 					createSubject(nil)
 					other := patientsTest.RandomPatient()
@@ -2391,6 +2515,47 @@ var _ = Describe("Patients Repository", func() {
 					got := addRequest(twiist, now.Add(-time.Minute))
 					Expect(got.PrimaryIssue).To(Equal(current))
 				})
+
+				It("shows a hidden issue again when a newer request replaces it", func() {
+					current := issue(dexcom, now.Add(-time.Minute))
+					hiddenAt := now.Add(-time.Minute)
+					current.Hidden = &hiddenAt
+					createSubject(current)
+					got := addRequest(twiist, now)
+					Expect(got.PrimaryIssue).To(Equal(issue(twiist, now)))
+				})
+
+				It("keeps a hidden issue hidden when the request is older", func() {
+					current := issue(dexcom, now)
+					hiddenAt := now.Add(-time.Minute)
+					current.Hidden = &hiddenAt
+					createSubject(current)
+					got := addRequest(twiist, now.Add(-time.Minute))
+					Expect(got.PrimaryIssue).To(Equal(current))
+				})
+
+				It("keeps a hidden issue hidden when a newer request refreshes it", func() {
+					// Same source, no kind: only the effective time moves.
+					current := issue(dexcom, now.Add(-time.Minute))
+					hiddenAt := now.Add(-time.Minute)
+					current.Hidden = &hiddenAt
+					createSubject(current)
+					got := addRequest(dexcom, now)
+					expected := issue(dexcom, now)
+					expected.Hidden = &hiddenAt
+					Expect(got.PrimaryIssue).To(Equal(expected))
+				})
+
+				It("shows a hidden classified issue when a request refreshes it", func() {
+					// Same source, but the refresh clears the kind, which is a kind change.
+					current := issue(dexcom, now.Add(-time.Minute))
+					current.Kind = patients.PrimaryIssueKindStaleInvite
+					hiddenAt := now.Add(-time.Minute)
+					current.Hidden = &hiddenAt
+					createSubject(current)
+					got := addRequest(dexcom, now)
+					Expect(got.PrimaryIssue).To(Equal(issue(dexcom, now)))
+				})
 			})
 		})
 
@@ -2470,6 +2635,35 @@ var _ = Describe("Patients Repository", func() {
 				createSubject(&newer)
 				got := markResent()
 				Expect(got.PrimaryIssue).To(PointTo(Equal(newer)))
+			})
+
+			It("keeps a hidden invitation hidden when re-sent", func() {
+				hiddenAt := now.Add(-time.Hour)
+				createSubject(&patients.PrimaryIssue{
+					Source:        invite,
+					EffectiveTime: now.Add(-time.Hour),
+					Hidden:        &hiddenAt,
+				})
+				got := markResent()
+				Expect(got.PrimaryIssue).To(PointTo(And(
+					HaveField("Source", invite),
+					HaveField("Hidden", PointTo(BeTemporally("==", hiddenAt))),
+				)))
+			})
+
+			It("shows a hidden stale invitation again when re-sent", func() {
+				hiddenAt := now.Add(-time.Hour)
+				createSubject(&patients.PrimaryIssue{
+					Source:        invite,
+					Kind:          patients.PrimaryIssueKindStaleInvite,
+					EffectiveTime: now.Add(-time.Hour),
+					Hidden:        &hiddenAt,
+				})
+				got := markResent()
+				Expect(got.PrimaryIssue).To(PointTo(And(
+					HaveField("Kind", BeEmpty()),
+					HaveField("Hidden", BeNil()),
+				)))
 			})
 
 			It("refreshes the time of an existing invitation source", func() {

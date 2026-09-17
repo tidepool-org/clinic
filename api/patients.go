@@ -169,6 +169,9 @@ func (h *Handler) UpdatePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 		UserId:   patientId,
 		Patient:  NewPatient(dto),
 	}
+	// The primary issue is derived by the service; hiding it is the one change a client
+	// may make, and NewPatient deliberately leaves the field alone.
+	update.Patient.PrimaryIssue = NewPrimaryIssueHiddenUpdate(dto.PrimaryIssue)
 
 	patient, err := h.Patients.Update(ctx, update)
 	if err != nil {

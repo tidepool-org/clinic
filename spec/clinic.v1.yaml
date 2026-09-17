@@ -5048,21 +5048,27 @@ components:
     primaryIssue.v1:
       title: Primary Issue
       type: object
-      description: The patient's primary connection issue, if any. Derived and classified by Tidepool and cannot be set through this API.
-      readOnly: true
+      description: The patient's primary connection issue, if any. Derived and classified by Tidepool; only its hidden flag can be set through this API.
       properties:
         source:
           description: The event that is the source of the primary connection issue.
+          readOnly: true
+          x-go-type-skip-optional-pointer: true
           allOf:
             - $ref: '#/components/schemas/primaryIssueSource.v1'
         kind:
           description: How the issue is classified. Absent until a backend service has evaluated the issue.
+          readOnly: true
           allOf:
             - $ref: '#/components/schemas/primaryIssueKind.v1'
         effectiveTime:
           type: string
           format: date-time
+          readOnly: true
           description: When this issue became relevant.
+        hidden:
+          type: boolean
+          description: Whether a clinician has hidden this issue. A value of true hides the issue, false shows it again, and omitting it leaves it unchanged
       required:
         - source
     patient.v1:
@@ -5140,7 +5146,7 @@ components:
         diagnosisType:
           $ref: '#/components/schemas/diagnosisType.v1'
         primaryIssue:
-          description: The patient's primary connection issue, if any.
+          description: The patient's primary connection issue, if any. Derived by the service; only its hidden flag can be set through this API.
           allOf:
             - $ref: '#/components/schemas/primaryIssue.v1'
       required:

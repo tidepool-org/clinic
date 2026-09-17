@@ -1622,7 +1622,7 @@ type PatientV1 struct {
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
 
-	// PrimaryIssue The patient's primary connection issue, if any.
+	// PrimaryIssue The patient's primary connection issue, if any. Derived by the service; only its hidden flag can be set through this API.
 	PrimaryIssue *PrimaryIssueV1   `json:"primaryIssue,omitempty"`
 	Reviews      []PatientReviewV1 `json:"reviews"`
 	Sites        []SiteV1          `json:"sites,omitzero"`
@@ -1762,16 +1762,19 @@ type PhoneNumbersV1 = []PhoneNumberV1
 // PostalCodeV1 Postal code. In the U.S., typically the zip code such as `94301` or `94301-1704`.
 type PostalCodeV1 = string
 
-// PrimaryIssueV1 The patient's primary connection issue, if any. Derived and classified by Tidepool and cannot be set through this API.
+// PrimaryIssueV1 The patient's primary connection issue, if any. Derived and classified by Tidepool; only its hidden flag can be set through this API.
 type PrimaryIssueV1 struct {
 	// EffectiveTime When this issue became relevant.
 	EffectiveTime *time.Time `json:"effectiveTime,omitempty"`
+
+	// Hidden Whether a clinician has hidden this issue. A value of true hides the issue, false shows it again, and omitting it leaves it unchanged
+	Hidden *bool `json:"hidden,omitempty"`
 
 	// Kind How the issue is classified. Absent until a backend service has evaluated the issue.
 	Kind *PrimaryIssueKindV1 `json:"kind,omitempty"`
 
 	// Source The event that is the source of the primary connection issue.
-	Source PrimaryIssueSourceV1 `json:"source"`
+	Source PrimaryIssueSourceV1 `json:"source,omitempty"`
 }
 
 // PrimaryIssueKindV1 How the patient's primary connection issue is classified.

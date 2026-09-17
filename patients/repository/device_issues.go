@@ -51,18 +51,30 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	)
 	selector := bson.M{"primaryIssue.source": bson.M{"$in": sources}}
 
-	noOutcome := bson.M{"$eq": bson.A{"$" + deviceIssueField, nil}}
+	outcome := "$" + deviceIssueField
+	noOutcome := bson.M{"$eq": bson.A{outcome, nil}}
+	// Applying an outcome keeps the rest of the issue, including a clinician's hidden
+	// stamp, when only the effective time moves; a new kind shows the issue again, so the
+	// issue is rebuilt without it.
+	sameKind := bson.M{"$eq": bson.A{
+		bson.M{"$ifNull": bson.A{"$primaryIssue.kind", ""}}, outcome + ".kind",
+	}}
+	applied := bson.M{"$cond": bson.A{
+		sameKind,
+		bson.M{"$mergeObjects": bson.A{"$primaryIssue", outcome}},
+		bson.M{
+			"source":        "$primaryIssue.source",
+			"kind":          outcome + ".kind",
+			"effectiveTime": outcome + ".effectiveTime",
+		},
+	}}
 	update := mongo.Pipeline{
 		bson.D{{Key: "$set", Value: bson.M{
 			deviceIssueField: deviceIssueOutcome(time.Now()),
 		}}},
 		bson.D{{Key: "$set", Value: bson.M{
-			"primaryIssue": bson.M{"$cond": bson.A{
-				noOutcome,
-				"$primaryIssue",
-				bson.M{"$mergeObjects": bson.A{"$primaryIssue", "$" + deviceIssueField}},
-			}},
-			"updatedTime": bson.M{"$cond": bson.A{noOutcome, "$updatedTime", "$$NOW"}},
+			"primaryIssue": bson.M{"$cond": bson.A{noOutcome, "$primaryIssue", applied}},
+			"updatedTime":  bson.M{"$cond": bson.A{noOutcome, "$updatedTime", "$$NOW"}},
 		}}},
 		bson.D{{Key: "$unset", Value: deviceIssueField}},
 	}
