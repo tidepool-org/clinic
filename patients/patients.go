@@ -35,6 +35,10 @@ var (
 	// DataSourceStaleDataDuration is how long a connected data source may go without new
 	// data before the patient's primary issue is classified as stale data.
 	DataSourceStaleDataDuration = time.Hour * 48
+	// DeviceNonSpecificInviteExpirationDuration is how long the invitation to claim a
+	// custodial account stays valid. It mirrors hydrophone's signup confirmation timeout;
+	// the automated resend after a week regenerates the token without extending it.
+	DeviceNonSpecificInviteExpirationDuration = time.Hour * 24 * 31
 
 	DexcomDataSourceProviderName = "dexcom"
 	TwiistDataSourceProviderName = "twiist"

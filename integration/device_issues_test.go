@@ -291,9 +291,30 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 		var invitee api.PatientV1
 		var updatedTime time.Time
 
-		// The invitee is aged out-of-band so that its invitation went stale an hour ago.
+		// The invitee is aged out-of-band, first so that its invitation went stale an hour
+		// ago and then so that it expired an hour ago.
 		inviteeCreated := now.Add(-patients.PendingDataSourceStaleDuration - time.Hour)
 		inviteStaleAt := inviteeCreated.Add(patients.PendingDataSourceStaleDuration)
+		inviteeExpiredCreated := now.
+			Add(-patients.DeviceNonSpecificInviteExpirationDuration - time.Hour)
+		inviteExpiresAt := inviteeExpiredCreated.
+			Add(patients.DeviceNonSpecificInviteExpirationDuration)
+
+		// ageInvitee moves the invitee's creation time, and so the sending of its
+		// invitation, to the given time.
+		ageInvitee := func(createdTime time.Time) {
+			GinkgoHelper()
+
+			clinicId, err := primitive.ObjectIDFromHex(*inviteClinic.Id)
+			Expect(err).ToNot(HaveOccurred())
+
+			db := test.GetTestDatabase()
+			selector := bson.M{"userId": *invitee.Id, "clinicId": clinicId}
+			result, err := db.Collection("patients").UpdateOne(context.Background(),
+				selector, bson.M{"$set": bson.M{"createdTime": createdTime}})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result.ModifiedCount).To(BeEquivalentTo(1))
+		}
 
 		getInvitee := func() api.PatientV1 {
 			GinkgoHelper()
@@ -344,15 +365,7 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 		})
 
 		It("Ages the patient out-of-band", func() {
-			clinicId, err := primitive.ObjectIDFromHex(*inviteClinic.Id)
-			Expect(err).ToNot(HaveOccurred())
-
-			db := test.GetTestDatabase()
-			selector := bson.M{"userId": *invitee.Id, "clinicId": clinicId}
-			result, err := db.Collection("patients").UpdateOne(context.Background(),
-				selector, bson.M{"$set": bson.M{"createdTime": inviteeCreated}})
-			Expect(err).ToNot(HaveOccurred())
-			Expect(result.ModifiedCount).To(BeEquivalentTo(1))
+			ageInvitee(inviteeCreated)
 		})
 
 		It("Classifies the invitation as stale", func() {
@@ -373,6 +386,31 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 			fetched := getInvitee()
 			Expect(fetched.PrimaryIssue).To(PointTo(
 				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1StaleInvite)))))
+			Expect(fetched.UpdatedTime).To(PointTo(BeTemporally("==", updatedTime)))
+		})
+
+		It("Ages the patient past the invitation's expiry out-of-band", func() {
+			ageInvitee(inviteeExpiredCreated)
+		})
+
+		It("Classifies the invitation as expired", func() {
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+
+			fetched := getInvitee()
+			Expect(fetched.PrimaryIssue).To(PointTo(And(
+				HaveField("Source", api.PrimaryIssueSourceV1DeviceNonSpecificInvite),
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1ExpiredInvite))),
+				HaveField("EffectiveTime", PointTo(BeTemporally("==", inviteExpiresAt))),
+			)))
+			updatedTime = *fetched.UpdatedTime
+		})
+
+		It("Leaves the patient alone when triggered again after expiry", func() {
+			Expect(triggerCheck(asServer)).To(Equal(http.StatusNoContent))
+
+			fetched := getInvitee()
+			Expect(fetched.PrimaryIssue).To(PointTo(
+				HaveField("Kind", PointTo(Equal(api.PrimaryIssueKindV1ExpiredInvite)))))
 			Expect(fetched.UpdatedTime).To(PointTo(BeTemporally("==", updatedTime)))
 		})
 	})

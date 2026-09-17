@@ -33,11 +33,15 @@ const deviceIssueField = "deviceIssue"
 //     new data for DataSourceStaleDataDuration, and no connection request for that
 //     provider is newer than the data source. The issue is classified as staleData,
 //     effective when the data went stale.
-//   - Stale device-non-specific invitation: the patient's outstanding issue is the
+//   - Expired device-non-specific invitation: the patient's outstanding issue is the
 //     invitation to claim the account, the patient was created more than
-//     PendingDataSourceStaleDuration ago, and has no connection requests and no data
-//     sources. The issue is classified as staleInvite, effective when the invitation went
-//     stale.
+//     DeviceNonSpecificInviteExpirationDuration ago, and has no connection requests and
+//     no data sources. The issue is classified as expiredInvite, effective when the
+//     invitation expired. The automated resend a week after creation regenerates the
+//     token without extending the expiry.
+//   - Stale device-non-specific invitation: as above, but the patient was created more
+//     than PendingDataSourceStaleDuration ago. The issue is classified as staleInvite,
+//     effective when the invitation went stale.
 func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	// Provider-specific issues are checked against their connection requests and data
 	// sources; the device-non-specific invitation against the patient's age.
@@ -96,6 +100,13 @@ func deviceIssueOutcome(now time.Time) bson.M {
 				"then": bson.M{
 					"kind":          patients.PrimaryIssueKindStaleData,
 					"effectiveTime": dataStaleAt(),
+				},
+			},
+			bson.M{
+				"case": nonSpecificInviteExpired(now),
+				"then": bson.M{
+					"kind":          patients.PrimaryIssueKindExpiredInvite,
+					"effectiveTime": patientExpiresAt(),
 				},
 			},
 			bson.M{
@@ -204,12 +215,12 @@ func dataStaleAt() bson.M {
 	}}
 }
 
-// nonSpecificInviteStale builds the expression for the fourth criterion. It is true when
-// the primary issue is the device-non-specific invitation to claim the account, the patient
-// was created more than PendingDataSourceStaleDuration ago, and the patient has no
-// connection requests for any provider and no data sources. Requests are counted, not
-// provider keys, so a provider entry holding an empty array counts as none.
-func nonSpecificInviteStale(now time.Time) bson.M {
+// nonSpecificInviteUnanswered builds the expression shared by the device-non-specific
+// invitation criteria. It is true when the primary issue is the invitation to claim the
+// account and the patient, whose createdTime must be a date, has no connection requests
+// for any provider and no data sources. Requests are counted, not provider keys, so a
+// provider entry holding an empty array counts as none.
+func nonSpecificInviteUnanswered() bson.M {
 	requestCount := bson.M{"$sum": bson.M{"$map": bson.M{
 		"input": bson.M{"$objectToArray": bson.M{
 			"$ifNull": bson.A{"$providerConnectionRequests", bson.M{}},
@@ -222,9 +233,39 @@ func nonSpecificInviteStale(now time.Time) bson.M {
 			"$primaryIssue.source", patients.PrimaryIssueSourceDeviceNonSpecificInvite,
 		}},
 		bson.M{"$eq": bson.A{bson.M{"$type": "$createdTime"}, "date"}},
-		bson.M{"$lte": bson.A{patientStaleAt(), now}},
 		bson.M{"$eq": bson.A{requestCount, 0}},
 		bson.M{"$eq": bson.A{dataSourceCount, 0}},
+	}}
+}
+
+// nonSpecificInviteExpired builds the expression for the fourth criterion. It is true when
+// the unanswered invitation to claim the account was sent, at the patient's creation, more
+// than DeviceNonSpecificInviteExpirationDuration ago. It is checked before the stale
+// variant, so expiry wins.
+func nonSpecificInviteExpired(now time.Time) bson.M {
+	return bson.M{"$and": bson.A{
+		nonSpecificInviteUnanswered(),
+		bson.M{"$lte": bson.A{patientExpiresAt(), now}},
+	}}
+}
+
+// nonSpecificInviteStale builds the expression for the fifth criterion. It is true when
+// the unanswered invitation to claim the account was sent more than
+// PendingDataSourceStaleDuration ago.
+func nonSpecificInviteStale(now time.Time) bson.M {
+	return bson.M{"$and": bson.A{
+		nonSpecificInviteUnanswered(),
+		bson.M{"$lte": bson.A{patientStaleAt(), now}},
+	}}
+}
+
+// patientExpiresAt builds the expression for the time the patient's invitation to claim
+// the account expires: DeviceNonSpecificInviteExpirationDuration after the patient was
+// created.
+func patientExpiresAt() bson.M {
+	return bson.M{"$add": bson.A{
+		"$createdTime",
+		patients.DeviceNonSpecificInviteExpirationDuration.Milliseconds(),
 	}}
 }
 
