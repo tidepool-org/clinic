@@ -69,9 +69,10 @@ var (
 	PrimaryIssueKindStaleData     = "staleData"
 	PrimaryIssueKindStaleInvite   = "staleInvite"
 
-	// PrimaryIssueSourcePrecedence orders sources from lowest to highest priority. It breaks
-	// ties between events that share an effective time when deciding a patient's primary
-	// issue; the device-non-specific invitation always yields to a device.
+	// PrimaryIssueSourcePrecedence orders sources from lowest to highest priority. It only
+	// breaks ties between events that share an effective time; a newer event wins regardless
+	// of source, so a re-sent invitation replaces an older device event. On an exact tie the
+	// device-non-specific invitation yields to any device.
 	PrimaryIssueSourcePrecedence = []string{
 		PrimaryIssueSourceDeviceNonSpecificInvite, // lowest priority
 		AbbottDataSourceProviderName,

@@ -21,7 +21,8 @@ import (
 )
 
 // Marking an invitation as re-sent is a backend-only operation that makes the
-// device-non-specific invitation the patient's primary issue.
+// device-non-specific invitation the patient's primary issue unless a newer device event
+// already holds it.
 var _ = Describe("Patient Invitation Re-sent Integration Test", Ordered, func() {
 	var clinic client.ClinicV1
 	var patient api.PatientV1
