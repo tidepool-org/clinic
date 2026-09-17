@@ -2336,7 +2336,7 @@ paths:
     post:
       summary: Patient Invitation Re-sent
       operationId: MarkPatientInvitationResent
-      description: Internal endpoint called when the patient's account claim invitation has been re-sent. Clears the patient's primary issue, since a re-sent invitation is not specific to a device.
+      description: Internal endpoint called when the patient's account claim invitation has been re-sent.
       responses:
         '204':
           description: No Content
