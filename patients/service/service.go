@@ -506,6 +506,21 @@ func (s *service) TideReport(ctx context.Context, clinicId string, params patien
 	return s.patientsRepo.TideReport(ctx, clinicId, params)
 }
 
+func (s *service) ListExportedPatients(ctx context.Context, params patients.ExportParams) ([]patients.ExportedPatient, error) {
+	ps, err := s.patientsRepo.ListExportedPatients(ctx, params)
+	args := []any{
+		"clinicId", params.WorkspaceID,
+		"clinicianId", params.ExporterClinicianID,
+		"patientCount", len(ps),
+	}
+	if err != nil {
+		args = append(args, "error", err)
+	}
+	s.logger.Infow("ListExportedPatients invoked", args...)
+
+	return ps, err
+}
+
 func mrnChanged(existing patients.Patient, updated patients.Patient) bool {
 	return (existing.Mrn == nil && updated.Mrn != nil) ||
 		(existing.Mrn != nil && updated.Mrn == nil) ||
