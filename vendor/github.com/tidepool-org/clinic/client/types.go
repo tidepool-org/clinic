@@ -1767,7 +1767,7 @@ type PrimaryIssueV1 struct {
 	// EffectiveTime When this issue became relevant.
 	EffectiveTime *time.Time `json:"effectiveTime,omitempty"`
 
-	// Hidden Whether a clinician has hidden this issue. The only property of the primary issue that can be set through the API: true hides the issue, false shows it again, and omitting it leaves it unchanged. The service shows the issue again when its source or kind changes.
+	// Hidden Whether a clinician has hidden this issue. A value of true hides the issue, false shows it again, and omitting it leaves it unchanged
 	Hidden *bool `json:"hidden,omitempty"`
 
 	// Kind How the issue is classified. Absent until a backend service has evaluated the issue.

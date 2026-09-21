@@ -6,10 +6,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Handler) UpdateDeviceIssues(ec echo.Context) error {
+func (h *Handler) UpdateConnectionIssues(ec echo.Context) error {
 	ctx := ec.Request().Context()
 
-	if err := h.Patients.UpdateDeviceIssues(ctx); err != nil {
+	if err := h.Patients.UpdateConnectionIssues(ctx); err != nil {
 		return err
 	}
 

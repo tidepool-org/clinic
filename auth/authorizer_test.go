@@ -1416,10 +1416,10 @@ var _ = Describe("Request Authorizer", func() {
 		})
 	})
 
-	Describe("device issues", func() {
-		path := []string{"v1", "device_issues"}
+	Describe("connection issues", func() {
+		path := []string{"v1", "connection_issues"}
 
-		It("allows backend services to trigger a device issues check", func() {
+		It("allows backend services to trigger a connection issues check", func() {
 			input := map[string]interface{}{
 				"path":   path,
 				"method": "POST",
@@ -1432,7 +1432,7 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("prevents clinic admins from triggering a device issues check", func() {
+		It("prevents clinic admins from triggering a connection issues check", func() {
 			input := map[string]interface{}{
 				"path":   path,
 				"method": "POST",
@@ -1446,7 +1446,7 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
-		It("prevents clinic members from triggering a device issues check", func() {
+		It("prevents clinic members from triggering a connection issues check", func() {
 			input := map[string]interface{}{
 				"path":   path,
 				"method": "POST",
@@ -1460,7 +1460,7 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
-		It("prevents users from triggering a device issues check", func() {
+		It("prevents users from triggering a connection issues check", func() {
 			input := map[string]interface{}{
 				"path":   path,
 				"method": "POST",

@@ -11,11 +11,11 @@ import (
 	"github.com/tidepool-org/clinic/patients"
 )
 
-// deviceIssueField is a temporary field holding the outcome of the device issue criteria
-// while the update pipeline runs. It never reaches the stored document.
-const deviceIssueField = "deviceIssue"
+// connectionIssueField is a temporary field holding the outcome of the connection issue
+// criteria while the update pipeline runs. It never reaches the stored document.
+const connectionIssueField = "connectionIssue"
 
-// UpdateDeviceIssues re-evaluates the primary issue of every patient against the device
+// UpdateConnectionIssues re-evaluates the primary issue of every patient against the device
 // issue criteria, in one update across all patients. Each patient is examined and written
 // at most once, and a patient whose primary issue already reflects the outcome is left
 // untouched, so repeated runs don't bump updatedTime.
@@ -42,7 +42,7 @@ const deviceIssueField = "deviceIssue"
 //   - Stale device-non-specific invitation: as above, but the patient was created more
 //     than PendingDataSourceStaleDuration ago. The issue is classified as staleInvite,
 //     effective when the invitation went stale.
-func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
+func (r *repository) UpdateConnectionIssues(ctx context.Context) error {
 	// Provider-specific issues are checked against their connection requests and data
 	// sources; the device-non-specific invitation against the patient's age.
 	sources := append(
@@ -51,7 +51,7 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	)
 	selector := bson.M{"primaryIssue.source": bson.M{"$in": sources}}
 
-	outcome := "$" + deviceIssueField
+	outcome := "$" + connectionIssueField
 	noOutcome := bson.M{"$eq": bson.A{outcome, nil}}
 	// Applying an outcome keeps the rest of the issue, including a clinician's hidden
 	// stamp, when only the effective time moves; a new kind shows the issue again, so the
@@ -70,27 +70,27 @@ func (r *repository) UpdateDeviceIssues(ctx context.Context) error {
 	}}
 	update := mongo.Pipeline{
 		bson.D{{Key: "$set", Value: bson.M{
-			deviceIssueField: deviceIssueOutcome(time.Now()),
+			connectionIssueField: connectionIssueOutcome(time.Now()),
 		}}},
 		bson.D{{Key: "$set", Value: bson.M{
 			"primaryIssue": bson.M{"$cond": bson.A{noOutcome, "$primaryIssue", applied}},
 			"updatedTime":  bson.M{"$cond": bson.A{noOutcome, "$updatedTime", "$$NOW"}},
 		}}},
-		bson.D{{Key: "$unset", Value: deviceIssueField}},
+		bson.D{{Key: "$unset", Value: connectionIssueField}},
 	}
 
 	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
-		r.logger.Errorw("error updating patient device issues", "error", err)
-		return fmt.Errorf("error updating patient device issues: %w", err)
+		r.logger.Errorw("error updating patient connection issues", "error", err)
+		return fmt.Errorf("error updating patient connection issues: %w", err)
 	}
 	return nil
 }
 
-// deviceIssueOutcome builds the expression that evaluates the device issue criteria for
+// connectionIssueOutcome builds the expression that evaluates the connection issue criteria for
 // one patient. It yields the fields to merge into the primary issue, or null when no
 // criterion applies or the primary issue already carries the outcome. Each criterion is
 // a $switch branch; the first that applies wins.
-func deviceIssueOutcome(now time.Time) bson.M {
+func connectionIssueOutcome(now time.Time) bson.M {
 	criteria := bson.M{"$switch": bson.M{
 		"branches": bson.A{
 			bson.M{

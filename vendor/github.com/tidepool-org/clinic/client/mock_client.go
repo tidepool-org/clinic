@@ -1641,24 +1641,24 @@ func (mr *MockClientInterfaceMockRecorder) UpdateClinicianWithBody(ctx, clinicId
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClinicianWithBody", reflect.TypeOf((*MockClientInterface)(nil).UpdateClinicianWithBody), varargs...)
 }
 
-// UpdateDeviceIssues mocks base method.
-func (m *MockClientInterface) UpdateDeviceIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+// UpdateConnectionIssues mocks base method.
+func (m *MockClientInterface) UpdateConnectionIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "UpdateDeviceIssues", varargs...)
+	ret := m.ctrl.Call(m, "UpdateConnectionIssues", varargs...)
 	ret0, _ := ret[0].(*http.Response)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// UpdateDeviceIssues indicates an expected call of UpdateDeviceIssues.
-func (mr *MockClientInterfaceMockRecorder) UpdateDeviceIssues(ctx any, reqEditors ...any) *gomock.Call {
+// UpdateConnectionIssues indicates an expected call of UpdateConnectionIssues.
+func (mr *MockClientInterfaceMockRecorder) UpdateConnectionIssues(ctx any, reqEditors ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeviceIssues", reflect.TypeOf((*MockClientInterface)(nil).UpdateDeviceIssues), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnectionIssues", reflect.TypeOf((*MockClientInterface)(nil).UpdateConnectionIssues), varargs...)
 }
 
 // UpdateEHRSettings mocks base method.
@@ -3905,24 +3905,24 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateClinicianWithRespo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClinicianWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateClinicianWithResponse), varargs...)
 }
 
-// UpdateDeviceIssuesWithResponse mocks base method.
-func (m *MockClientWithResponsesInterface) UpdateDeviceIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateDeviceIssuesResponse, error) {
+// UpdateConnectionIssuesWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UpdateConnectionIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateConnectionIssuesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx}
 	for _, a := range reqEditors {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "UpdateDeviceIssuesWithResponse", varargs...)
-	ret0, _ := ret[0].(*UpdateDeviceIssuesResponse)
+	ret := m.ctrl.Call(m, "UpdateConnectionIssuesWithResponse", varargs...)
+	ret0, _ := ret[0].(*UpdateConnectionIssuesResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// UpdateDeviceIssuesWithResponse indicates an expected call of UpdateDeviceIssuesWithResponse.
-func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateDeviceIssuesWithResponse(ctx any, reqEditors ...any) *gomock.Call {
+// UpdateConnectionIssuesWithResponse indicates an expected call of UpdateConnectionIssuesWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateConnectionIssuesWithResponse(ctx any, reqEditors ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx}, reqEditors...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDeviceIssuesWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateDeviceIssuesWithResponse), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnectionIssuesWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateConnectionIssuesWithResponse), varargs...)
 }
 
 // UpdateEHRSettingsWithBodyWithResponse mocks base method.

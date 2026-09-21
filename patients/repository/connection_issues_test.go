@@ -20,7 +20,7 @@ import (
 	dbTest "github.com/tidepool-org/clinic/store/test"
 )
 
-var _ = Describe("Patients Repository Device Issues", func() {
+var _ = Describe("Patients Repository Connection Issues", func() {
 	var repo patients.Repository
 	var collection *mongo.Collection
 	var ctx context.Context
@@ -125,7 +125,7 @@ var _ = Describe("Patients Repository Device Issues", func() {
 
 	update := func() {
 		GinkgoHelper()
-		Expect(repo.UpdateDeviceIssues(ctx)).To(Succeed())
+		Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
 	}
 
 	// agePatient sets the subject's creation time directly, since the repository stamps

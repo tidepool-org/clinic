@@ -122,7 +122,7 @@ type Service interface {
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	MarkInvitationResent(ctx context.Context, clinicId, userId string) error
-	UpdateDeviceIssues(ctx context.Context) error
+	UpdateConnectionIssues(ctx context.Context) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error

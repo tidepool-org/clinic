@@ -426,11 +426,11 @@ allow {
   is_backend_service
 }
 
-# Allow backend services to trigger a device issues check
-# POST /v1/device_issues
+# Allow backend services to trigger a connection issues check
+# POST /v1/connection_issues
 allow {
   input.method == "POST"
-  input.path = ["v1", "device_issues"]
+  input.path = ["v1", "connection_issues"]
   is_backend_service
 }
 

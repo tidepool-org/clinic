@@ -784,10 +784,10 @@ var _ = Describe("Patients Service", func() {
 		})
 	})
 
-	Describe("UpdateDeviceIssues", func() {
+	Describe("UpdateConnectionIssues", func() {
 		It("delegates to the repository", func() {
-			repo.EXPECT().UpdateDeviceIssues(gomock.Any()).Return(nil)
-			Expect(service.UpdateDeviceIssues(context.Background())).To(Succeed())
+			repo.EXPECT().UpdateConnectionIssues(gomock.Any()).Return(nil)
+			Expect(service.UpdateConnectionIssues(context.Background())).To(Succeed())
 		})
 	})
 

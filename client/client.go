@@ -332,8 +332,8 @@ type ClientInterface interface {
 
 	UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateTierJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UpdateDeviceIssues request
-	UpdateDeviceIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// UpdateConnectionIssues request
+	UpdateConnectionIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// FindPatients request
 	FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1474,8 +1474,8 @@ func (c *Client) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateT
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateDeviceIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateDeviceIssuesRequest(c.Server)
+func (c *Client) UpdateConnectionIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateConnectionIssuesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -6776,8 +6776,8 @@ func NewUpdateTierRequestWithBody(server string, clinicId ClinicId, contentType 
 	return req, nil
 }
 
-// NewUpdateDeviceIssuesRequest generates requests for UpdateDeviceIssues
-func NewUpdateDeviceIssuesRequest(server string) (*http.Request, error) {
+// NewUpdateConnectionIssuesRequest generates requests for UpdateConnectionIssues
+func NewUpdateConnectionIssuesRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -6785,7 +6785,7 @@ func NewUpdateDeviceIssuesRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/v1/device_issues")
+	operationPath := fmt.Sprintf("/v1/connection_issues")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -7816,8 +7816,8 @@ type ClientWithResponsesInterface interface {
 
 	UpdateTierWithResponse(ctx context.Context, clinicId ClinicId, body UpdateTierJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTierResponse, error)
 
-	// UpdateDeviceIssuesWithResponse request
-	UpdateDeviceIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateDeviceIssuesResponse, error)
+	// UpdateConnectionIssuesWithResponse request
+	UpdateConnectionIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateConnectionIssuesResponse, error)
 
 	// FindPatientsWithResponse request
 	FindPatientsWithResponse(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*FindPatientsResponse, error)
@@ -9222,13 +9222,13 @@ func (r UpdateTierResponse) StatusCode() int {
 	return 0
 }
 
-type UpdateDeviceIssuesResponse struct {
+type UpdateConnectionIssuesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r UpdateDeviceIssuesResponse) Status() string {
+func (r UpdateConnectionIssuesResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -9236,7 +9236,7 @@ func (r UpdateDeviceIssuesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r UpdateDeviceIssuesResponse) StatusCode() int {
+func (r UpdateConnectionIssuesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -10364,13 +10364,13 @@ func (c *ClientWithResponses) UpdateTierWithResponse(ctx context.Context, clinic
 	return ParseUpdateTierResponse(rsp)
 }
 
-// UpdateDeviceIssuesWithResponse request returning *UpdateDeviceIssuesResponse
-func (c *ClientWithResponses) UpdateDeviceIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateDeviceIssuesResponse, error) {
-	rsp, err := c.UpdateDeviceIssues(ctx, reqEditors...)
+// UpdateConnectionIssuesWithResponse request returning *UpdateConnectionIssuesResponse
+func (c *ClientWithResponses) UpdateConnectionIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateConnectionIssuesResponse, error) {
+	rsp, err := c.UpdateConnectionIssues(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseUpdateDeviceIssuesResponse(rsp)
+	return ParseUpdateConnectionIssuesResponse(rsp)
 }
 
 // FindPatientsWithResponse request returning *FindPatientsResponse
@@ -11957,15 +11957,15 @@ func ParseUpdateTierResponse(rsp *http.Response) (*UpdateTierResponse, error) {
 	return response, nil
 }
 
-// ParseUpdateDeviceIssuesResponse parses an HTTP response from a UpdateDeviceIssuesWithResponse call
-func ParseUpdateDeviceIssuesResponse(rsp *http.Response) (*UpdateDeviceIssuesResponse, error) {
+// ParseUpdateConnectionIssuesResponse parses an HTTP response from a UpdateConnectionIssuesWithResponse call
+func ParseUpdateConnectionIssuesResponse(rsp *http.Response) (*UpdateConnectionIssuesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &UpdateDeviceIssuesResponse{
+	response := &UpdateConnectionIssuesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

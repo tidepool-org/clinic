@@ -2345,11 +2345,11 @@ paths:
       tags:
         - Clinics
         - Internal
-  /v1/device_issues:
+  /v1/connection_issues:
     post:
-      summary: Trigger Device Issues Check
-      operationId: UpdateDeviceIssues
-      description: Internal endpoint for backend services to trigger a check of patients' device issues.
+      summary: Trigger Connection Issues Check
+      operationId: UpdateConnectionIssues
+      description: Internal endpoint for backend services to trigger a check of patients' connection issues.
       responses:
         '204':
           description: No Content

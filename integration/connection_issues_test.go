@@ -21,7 +21,7 @@ import (
 	"github.com/tidepool-org/clinic/store/test"
 )
 
-var _ = Describe("Device Issues Integration Test", Ordered, func() {
+var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 	var clinic client.ClinicV1
 	var patient api.PatientV1
 
@@ -36,7 +36,7 @@ var _ = Describe("Device Issues Integration Test", Ordered, func() {
 		GinkgoHelper()
 
 		rec := httptest.NewRecorder()
-		req := prepareRequest(http.MethodPost, "/v1/device_issues", "")
+		req := prepareRequest(http.MethodPost, "/v1/connection_issues", "")
 		authenticate(req)
 
 		server.ServeHTTP(rec, req)
