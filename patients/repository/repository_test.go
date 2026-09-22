@@ -1918,6 +1918,35 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("Update last invitation sent", func() {
+			It("sets the last invitation sent time and bumps the updated time", func() {
+				ctx := context.Background()
+				sentTime := time.Now().Truncate(time.Millisecond)
+
+				patientBefore, err := repo.Get(ctx, randomPatient.ClinicId.Hex(),
+					*randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patientBefore.LastInvitationSent).To(BeZero())
+
+				err = repo.UpdateLastInvitationSent(ctx, randomPatient.ClinicId.Hex(),
+					*randomPatient.UserId, sentTime)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(ctx, randomPatient.ClinicId.Hex(),
+					*randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.LastInvitationSent).To(BeTemporally("==", sentTime))
+				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			It("returns not found for an unknown patient", func() {
+				ctx := context.Background()
+				err := repo.UpdateLastInvitationSent(ctx, randomPatient.ClinicId.Hex(),
+					"0000000000", time.Now())
+				Expect(err).To(MatchError(patients.ErrNotFound))
+			})
+		})
+
 		Describe("List exported patients", func() {
 			It("includes provider connection requests", func() {
 				ctx := context.Background()

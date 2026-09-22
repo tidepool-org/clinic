@@ -881,6 +881,32 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *p
 	return r.Get(ctx, update.ClinicId, update.UserId)
 }
 
+func (r *repository) UpdateLastInvitationSent(ctx context.Context, clinicId, userId string,
+	sentTime time.Time) error {
+
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId": clinicObjId,
+		"userId":   userId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"lastInvitationSent": sentTime,
+			"updatedTime":        time.Now(),
+		},
+	}
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return patients.ErrNotFound
+		}
+		return fmt.Errorf("error updating patient: %w", err)
+	}
+
+	return nil
+}
+
 func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 

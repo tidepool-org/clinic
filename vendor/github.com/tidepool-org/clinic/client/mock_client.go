@@ -741,6 +741,26 @@ func (mr *MockClientInterfaceMockRecorder) EnableNewClinicExperience(ctx, userId
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableNewClinicExperience", reflect.TypeOf((*MockClientInterface)(nil).EnableNewClinicExperience), varargs...)
 }
 
+// ExportPatientList mocks base method.
+func (m *MockClientInterface) ExportPatientList(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ExportPatientList", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExportPatientList indicates an expected call of ExportPatientList.
+func (mr *MockClientInterfaceMockRecorder) ExportPatientList(ctx, clinicId, params any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportPatientList", reflect.TypeOf((*MockClientInterface)(nil).ExportPatientList), varargs...)
+}
+
 // FindPatients mocks base method.
 func (m *MockClientInterface) FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1359,6 +1379,26 @@ func (mr *MockClientInterfaceMockRecorder) ProcessEHRMessageWithBody(ctx, conten
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, contentType, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEHRMessageWithBody", reflect.TypeOf((*MockClientInterface)(nil).ProcessEHRMessageWithBody), varargs...)
+}
+
+// RecordInvitationResent mocks base method.
+func (m *MockClientInterface) RecordInvitationResent(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RecordInvitationResent", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecordInvitationResent indicates an expected call of RecordInvitationResent.
+func (mr *MockClientInterfaceMockRecorder) RecordInvitationResent(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInvitationResent", reflect.TypeOf((*MockClientInterface)(nil).RecordInvitationResent), varargs...)
 }
 
 // RefreshPatientCount mocks base method.
@@ -3005,6 +3045,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) EnableNewClinicExperienc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableNewClinicExperienceWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).EnableNewClinicExperienceWithResponse), varargs...)
 }
 
+// ExportPatientListWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) ExportPatientListWithResponse(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*ExportPatientListResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ExportPatientListWithResponse", varargs...)
+	ret0, _ := ret[0].(*ExportPatientListResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExportPatientListWithResponse indicates an expected call of ExportPatientListWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) ExportPatientListWithResponse(ctx, clinicId, params any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportPatientListWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ExportPatientListWithResponse), varargs...)
+}
+
 // FindPatientsWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) FindPatientsWithResponse(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*FindPatientsResponse, error) {
 	m.ctrl.T.Helper()
@@ -3623,6 +3683,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ProcessEHRMessageWithRes
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEHRMessageWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ProcessEHRMessageWithResponse), varargs...)
+}
+
+// RecordInvitationResentWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) RecordInvitationResentWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*RecordInvitationResentResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RecordInvitationResentWithResponse", varargs...)
+	ret0, _ := ret[0].(*RecordInvitationResentResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecordInvitationResentWithResponse indicates an expected call of RecordInvitationResentWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) RecordInvitationResentWithResponse(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInvitationResentWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).RecordInvitationResentWithResponse), varargs...)
 }
 
 // RefreshPatientCountWithResponse mocks base method.

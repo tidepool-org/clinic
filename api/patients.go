@@ -209,6 +209,19 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
+func (h *Handler) RecordInvitationResent(ec echo.Context, clinicId ClinicId,
+	patientId PatientId) error {
+
+	ctx := ec.Request().Context()
+	err := h.Patients.UpdateLastInvitationSent(ctx, string(clinicId), string(patientId),
+		time.Now())
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
+}
+
 func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := PatientPermissionsV1{}

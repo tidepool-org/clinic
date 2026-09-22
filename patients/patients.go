@@ -61,6 +61,7 @@ type Service interface {
 	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
 	DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
+	UpdateLastInvitationSent(ctx context.Context, clinicId, userId string, sentTime time.Time) error
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
@@ -115,6 +116,7 @@ type Patient struct {
 	Summary                    *Summary                   `bson:"summary,omitempty"`
 	Reviews                    []Review                   `bson:"reviews,omitempty"`
 	LastUploadReminderTime     time.Time                  `bson:"lastUploadReminderTime,omitempty"`
+	LastInvitationSent         time.Time                  `bson:"lastInvitationSent,omitempty"`
 	ProviderConnectionRequests ProviderConnectionRequests `bson:"providerConnectionRequests,omitempty"`
 	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
 	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`

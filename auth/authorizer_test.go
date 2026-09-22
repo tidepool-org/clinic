@@ -1454,6 +1454,55 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).To(Equal(auth.ErrUnauthorized))
 	})
 
+	It("allows backend services to record that an invitation was resent", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "invitation_resent"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "data",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("prevents unauthenticated requests from recording an invitation resent", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "invitation_resent"},
+			"method": "POST",
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("prevents a clinic admin from recording that an invitation was resent", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "invitation_resent"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinician-user-id",
+				"serverAccess": false,
+			},
+			"clinician": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("prevents a patient from recording an invitation resent to themselves", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "invitation_resent"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
 	It("allows orca to merge clinics", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},
