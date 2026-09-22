@@ -129,12 +129,8 @@ type ClientInterface interface {
 	// ListBulkCreatePatientsWithBody request with any body
 	ListBulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ListBulkCreatePatientsWithTextBody(ctx context.Context, clinicId ClinicId, body ListBulkCreatePatientsTextRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// BulkCreatePatientsWithBody request with any body
 	BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	BulkCreatePatientsWithTextBody(ctx context.Context, clinicId ClinicId, body BulkCreatePatientsTextRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClinicians request
 	ListClinicians(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -574,32 +570,8 @@ func (c *Client) ListBulkCreatePatientsWithBody(ctx context.Context, clinicId Cl
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListBulkCreatePatientsWithTextBody(ctx context.Context, clinicId ClinicId, body ListBulkCreatePatientsTextRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListBulkCreatePatientsRequestWithTextBody(c.Server, clinicId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCreatePatientsRequestWithBody(c.Server, clinicId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) BulkCreatePatientsWithTextBody(ctx context.Context, clinicId ClinicId, body BulkCreatePatientsTextRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewBulkCreatePatientsRequestWithTextBody(c.Server, clinicId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2378,13 +2350,6 @@ func NewUpdateClinicRequestWithBody(server string, clinicId ClinicId, contentTyp
 	return req, nil
 }
 
-// NewListBulkCreatePatientsRequestWithTextBody calls the generic ListBulkCreatePatients builder with text/plain body
-func NewListBulkCreatePatientsRequestWithTextBody(server string, clinicId ClinicId, body ListBulkCreatePatientsTextRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	bodyReader = strings.NewReader(string(body))
-	return NewListBulkCreatePatientsRequestWithBody(server, clinicId, "text/plain", bodyReader)
-}
-
 // NewListBulkCreatePatientsRequestWithBody generates requests for ListBulkCreatePatients with any type of body
 func NewListBulkCreatePatientsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
@@ -2419,13 +2384,6 @@ func NewListBulkCreatePatientsRequestWithBody(server string, clinicId ClinicId, 
 	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
-}
-
-// NewBulkCreatePatientsRequestWithTextBody calls the generic BulkCreatePatients builder with text/plain body
-func NewBulkCreatePatientsRequestWithTextBody(server string, clinicId ClinicId, body BulkCreatePatientsTextRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	bodyReader = strings.NewReader(string(body))
-	return NewBulkCreatePatientsRequestWithBody(server, clinicId, "text/plain", bodyReader)
 }
 
 // NewBulkCreatePatientsRequestWithBody generates requests for BulkCreatePatients with any type of body
@@ -7802,12 +7760,8 @@ type ClientWithResponsesInterface interface {
 	// ListBulkCreatePatientsWithBodyWithResponse request with any body
 	ListBulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ListBulkCreatePatientsResponse, error)
 
-	ListBulkCreatePatientsWithTextBodyWithResponse(ctx context.Context, clinicId ClinicId, body ListBulkCreatePatientsTextRequestBody, reqEditors ...RequestEditorFn) (*ListBulkCreatePatientsResponse, error)
-
 	// BulkCreatePatientsWithBodyWithResponse request with any body
 	BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error)
-
-	BulkCreatePatientsWithTextBodyWithResponse(ctx context.Context, clinicId ClinicId, body BulkCreatePatientsTextRequestBody, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error)
 
 	// ListCliniciansWithResponse request
 	ListCliniciansWithResponse(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*ListCliniciansResponse, error)
@@ -9948,25 +9902,9 @@ func (c *ClientWithResponses) ListBulkCreatePatientsWithBodyWithResponse(ctx con
 	return ParseListBulkCreatePatientsResponse(rsp)
 }
 
-func (c *ClientWithResponses) ListBulkCreatePatientsWithTextBodyWithResponse(ctx context.Context, clinicId ClinicId, body ListBulkCreatePatientsTextRequestBody, reqEditors ...RequestEditorFn) (*ListBulkCreatePatientsResponse, error) {
-	rsp, err := c.ListBulkCreatePatientsWithTextBody(ctx, clinicId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListBulkCreatePatientsResponse(rsp)
-}
-
 // BulkCreatePatientsWithBodyWithResponse request with arbitrary body returning *BulkCreatePatientsResponse
 func (c *ClientWithResponses) BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error) {
 	rsp, err := c.BulkCreatePatientsWithBody(ctx, clinicId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseBulkCreatePatientsResponse(rsp)
-}
-
-func (c *ClientWithResponses) BulkCreatePatientsWithTextBodyWithResponse(ctx context.Context, clinicId ClinicId, body BulkCreatePatientsTextRequestBody, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error) {
-	rsp, err := c.BulkCreatePatientsWithTextBody(ctx, clinicId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
