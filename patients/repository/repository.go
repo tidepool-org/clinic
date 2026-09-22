@@ -508,8 +508,14 @@ func (r *repository) Create(ctx context.Context, patient patients.Patient) (*pat
 			sites := uniqSites(*patient.Sites)
 			patient.Sites = &sites
 		}
-		patient.CreatedTime = time.Now()
-		patient.UpdatedTime = time.Now()
+		now := time.Now()
+		patient.CreatedTime = now
+		patient.UpdatedTime = now
+		if patient.IsCustodial() && patient.HasEmail() {
+			// A downstream service sends an invitation when a custodial patient is created
+			// with an email address.
+			patient.LastInvitationSent = now
+		}
 		if _, err = r.collection.InsertOne(ctx, patient); err != nil {
 			return nil, fmt.Errorf("error creating patient: %w", err)
 		}
