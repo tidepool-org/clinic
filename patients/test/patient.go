@@ -245,7 +245,7 @@ func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"ProviderConnectionRequests":     Equal(patient.ProviderConnectionRequests),
 		"ConnectionIssueSource":          Equal(patient.ConnectionIssueSource),
 		"LastUploadReminderTime":         Equal(patient.LastUploadReminderTime),
-		"LastInvitationSent":             Equal(patient.LastInvitationSent),
+		"LastInvitationSent":             Ignore(),
 		"LastRequestedDexcomConnectTime": Equal(patient.LastRequestedDexcomConnectTime),
 		"DataSources":                    PointTo(Equal(*patient.DataSources)),
 		"RequireUniqueMrn":               Equal(patient.RequireUniqueMrn),

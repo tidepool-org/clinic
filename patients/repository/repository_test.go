@@ -152,6 +152,48 @@ var _ = Describe("Patients Repository", func() {
 				Expect(inserted).To(matchPatientFields)
 			})
 
+			It("sets the last invitation sent time when custodial", func() {
+				Expect(patient.Email).To(PointTo(Not(BeEmpty())))
+				patient.Permissions.Custodian = &patients.Permission{}
+
+				result, err := repo.Create(context.Background(), patient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				patient.Id = result.Id
+
+				Expect(result.LastInvitationSent).ToNot(BeZero())
+				Expect(result.LastInvitationSent).
+					To(BeTemporally("==", result.CreatedTime))
+
+				var inserted patients.Patient
+				selector := primitive.M{"_id": result.Id}
+				err = collection.FindOne(context.Background(), selector).Decode(&inserted)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(inserted.LastInvitationSent).
+					To(BeTemporally("==", inserted.CreatedTime))
+			})
+
+			DescribeTable("does not set the last invitation sent time",
+				func(custodial bool, email *string) {
+					if custodial {
+						patient.Permissions.Custodian = &patients.Permission{}
+					} else {
+						patient.Permissions.Custodian = nil
+					}
+					patient.Email = email
+
+					result, err := repo.Create(context.Background(), patient)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).ToNot(BeNil())
+					patient.Id = result.Id
+
+					Expect(result.LastInvitationSent).To(BeZero())
+				},
+				Entry("for a custodial patient with a nil email", true, nil),
+				Entry("for a custodial patient with an empty email", true, strp("")),
+				Entry("for a non-custodial patient with an email", false, strp("a@b.c")),
+			)
+
 			It("successfully inserts a patient with duplicate mrn if uniqueness is not enabled", func() {
 				patient.RequireUniqueMrn = false
 				result, err := repo.Create(context.Background(), patient)
