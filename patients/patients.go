@@ -34,6 +34,18 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
+	DataSourceStateConnected    = "connected"
+	DataSourceStateDisconnected = "disconnected"
+	DataSourceStateError        = "error"
+
+	// connectionIssueProviderPriority breaks ties between data sources that enter the
+	// connected state at the same time. Earlier entries win.
+	connectionIssueProviderPriority = []string{
+		TwiistDataSourceProviderName,
+		DexcomDataSourceProviderName,
+		AbbottDataSourceProviderName,
+	}
+
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,
@@ -119,11 +131,14 @@ type Patient struct {
 	LastUploadReminderTime     time.Time                  `bson:"lastUploadReminderTime,omitempty"`
 	LastInvitationSent         time.Time                  `bson:"lastInvitationSent,omitempty"`
 	ProviderConnectionRequests ProviderConnectionRequests `bson:"providerConnectionRequests,omitempty"`
-	RequireUniqueMrn           bool                       `bson:"requireUniqueMrn"`
-	EHRSubscriptions           EHRSubscriptions           `bson:"ehrSubscriptions,omitempty"`
-	Sites                      *[]sites.Site              `bson:"sites,omitempty"`
-	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
-	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
+	// ConnectionIssueSource is owned by the server, see the ConnectionIssueSource type.
+	// omitempty keeps whole-document updates from clearing it.
+	ConnectionIssueSource ConnectionIssueSource `bson:"connectionIssueSource,omitempty"`
+	RequireUniqueMrn      bool                  `bson:"requireUniqueMrn"`
+	EHRSubscriptions      EHRSubscriptions      `bson:"ehrSubscriptions,omitempty"`
+	Sites                 *[]sites.Site         `bson:"sites,omitempty"`
+	GlycemicRanges        GlycemicRanges        `bson:"glycemicRanges,omitempty"`
+	DiagnosisType         *DiagnosisType        `bson:"diagnosisType,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
@@ -195,6 +210,10 @@ type ValueWithUnits struct {
 
 func (p Patient) IsCustodial() bool {
 	return p.Permissions != nil && p.Permissions.Custodian != nil
+}
+
+func (p Patient) HasEmail() bool {
+	return p.Email != nil && *p.Email != ""
 }
 
 type EHRSubscriptions map[string]EHRSubscription
@@ -371,6 +390,132 @@ type DataSource struct {
 	ProviderName   string              `bson:"providerName"`
 	State          string              `bson:"state"`
 	LatestDataTime *time.Time          `bson:"latestDataTime,omitempty"`
+	// ConnectedTime is when the source last entered the connected state. Sources that
+	// have not connected since the platform started recording it do not have one.
+	ConnectedTime *time.Time `bson:"connectedTime,omitempty"`
+}
+
+// NewlyConnected returns the incoming sources that enter the connected state relative
+// to the existing (stored) sources, in incoming order. A source enters the connected
+// state when it is connected and was not stored before, or was stored in another state.
+// Sources are matched by provider name.
+func (incoming DataSources) NewlyConnected(existing DataSources) DataSources {
+	if incoming == nil {
+		return nil
+	}
+
+	existingByProvider := existing.byProvider()
+	result := DataSources{}
+	for _, ds := range incoming {
+		if entersConnected(ds, existingByProvider) {
+			result = append(result, ds)
+		}
+	}
+
+	return result
+}
+
+// Newest returns the source most recently created, or nil when there are none. A nil
+// CreatedTime sorts oldest. Ties are broken by connectionIssueProviderPriority and finally
+// by position, earlier winning.
+func (d DataSources) Newest() *DataSource {
+	var newest *DataSource
+	for i := range d {
+		if newest == nil || isNewer(d[i], *newest) {
+			newest = &d[i]
+		}
+	}
+	return newest
+}
+
+// byProvider indexes the sources by provider name. The first source of a provider
+// wins.
+func (d DataSources) byProvider() map[string]DataSource {
+	result := make(map[string]DataSource, len(d))
+	for _, ds := range d {
+		if _, ok := result[ds.ProviderName]; !ok {
+			result[ds.ProviderName] = ds
+		}
+	}
+	return result
+}
+
+// entersConnected reports whether ds is connected while the stored source of the same
+// provider was either absent or not connected, or was connected earlier than ds. The
+// latter catches a reconnection whose intermediate state was never stored. It requires
+// both connected times, so a stored source gaining its first connected time, as it does
+// when the platform backfills them, is not mistaken for a reconnection.
+func entersConnected(ds DataSource, existingByProvider map[string]DataSource) bool {
+	if ds.State != DataSourceStateConnected {
+		return false
+	}
+	prev, wasStored := existingByProvider[ds.ProviderName]
+	if !wasStored || prev.State != DataSourceStateConnected {
+		return true
+	}
+	return ds.ConnectedTime != nil && prev.ConnectedTime != nil &&
+		ds.ConnectedTime.After(*prev.ConnectedTime)
+}
+
+// isNewer reports whether a should replace b as the newest source. Equal candidates
+// return false, so the earlier one is kept.
+func isNewer(a, b DataSource) bool {
+	switch {
+	case a.CreatedTime == nil && b.CreatedTime == nil:
+	// determine by provider priority below
+	case a.CreatedTime == nil:
+		return false
+	case b.CreatedTime == nil:
+		return true
+	case !a.CreatedTime.Equal(*b.CreatedTime):
+		return a.CreatedTime.After(*b.CreatedTime)
+	}
+	return providerPriority(a.ProviderName) < providerPriority(b.ProviderName)
+}
+
+// providerPriority ranks a provider by connectionIssueProviderPriority. Unknown
+// providers rank last.
+func providerPriority(providerName string) int {
+	for i, name := range connectionIssueProviderPriority {
+		if name == providerName {
+			return i
+		}
+	}
+	return len(connectionIssueProviderPriority)
+}
+
+// ConnectionIssueSource records the patient's most recently triggered connection or
+// invitation flow. This flow is used to filter related issues, in turn causing the patient
+// to be included or excluded from the connection issues dashboard. It is set by the server
+// only, and is never accepted from API clients.
+type ConnectionIssueSource string
+
+const (
+	ConnectionIssueSourceDexcom ConnectionIssueSource = "dexcom"
+	ConnectionIssueSourceAbbott ConnectionIssueSource = "abbott"
+	ConnectionIssueSourceTwiist ConnectionIssueSource = "twiist"
+)
+
+// ConnectionIssueSourceDeviceNonSpecificInvitation is set when a custodial patient is
+// created with an email address, which triggers a device non-specific invitation, and
+// when a reminder for that invitation is sent. A reminder never replaces a provider
+// source that is already set.
+const ConnectionIssueSourceDeviceNonSpecificInvitation ConnectionIssueSource = "deviceNonSpecificInvitation"
+
+// ConnectionIssueSourceForProvider maps a data source or connection request provider
+// name to its connection issue source. ok is false for unknown providers.
+func ConnectionIssueSourceForProvider(providerName string) (
+	source ConnectionIssueSource, ok bool) {
+
+	switch providerName {
+	case DexcomDataSourceProviderName:
+		return ConnectionIssueSourceDexcom, true
+	case AbbottDataSourceProviderName:
+		return ConnectionIssueSourceAbbott, true
+	case TwiistDataSourceProviderName:
+		return ConnectionIssueSourceTwiist, true
+	} // oura is not currently valid as a connection issue source.
+	return "", false
 }
 
 type TideReportParams struct {

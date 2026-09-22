@@ -635,6 +635,14 @@ const (
 	Zulu                           ClinicTimezoneV1 = "Zulu"
 )
 
+// Defines values for ConnectionIssueSourceV1.
+const (
+	ConnectionIssueSourceAbbott                      ConnectionIssueSourceV1 = "abbott"
+	ConnectionIssueSourceDeviceNonSpecificInvitation ConnectionIssueSourceV1 = "deviceNonSpecificInvitation"
+	ConnectionIssueSourceDexcom                      ConnectionIssueSourceV1 = "dexcom"
+	ConnectionIssueSourceTwiist                      ConnectionIssueSourceV1 = "twiist"
+)
+
 // Defines values for DataSourceV1State.
 const (
 	Connected    DataSourceV1State = "connected"
@@ -1334,6 +1342,9 @@ type CliniciansV1 = []ClinicianV1
 // ClinicsV1 defines model for clinics.v1.
 type ClinicsV1 = []ClinicV1
 
+// ConnectionIssueSourceV1 The most recent flow that put the patient into a pending connection state.
+type ConnectionIssueSourceV1 string
+
 // CountryV1 Country name.
 type CountryV1 = string
 
@@ -1360,6 +1371,9 @@ type CreatePatientV1 struct {
 
 // DataSourceV1 defines model for dataSource.v1.
 type DataSourceV1 struct {
+	// ConnectedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	ConnectedTime *DatetimeV1 `json:"connectedTime,omitempty"`
+
 	// CreatedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	CreatedTime *DatetimeV1 `json:"createdTime,omitempty"`
 
@@ -1625,13 +1639,16 @@ type ObjectidV1 = string
 
 // PatientV1 defines model for patient.v1.
 type PatientV1 struct {
-	AttestationSubmitted *bool                         `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date            `json:"birthDate"`
-	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
-	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
-	DataSources          *[]DataSourceV1               `json:"dataSources"`
-	DiagnosisType        *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
-	Email                *string                       `json:"email,omitempty"`
+	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date `json:"birthDate"`
+
+	// ConnectionIssueSource The most recent flow that put the patient into a pending connection state.
+	ConnectionIssueSource *ConnectionIssueSourceV1      `json:"connectionIssueSource,omitempty"`
+	ConnectionRequests    *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
+	CreatedTime           *time.Time                    `json:"createdTime,omitempty"`
+	DataSources           *[]DataSourceV1               `json:"dataSources"`
+	DiagnosisType         *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
+	Email                 *string                       `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName       string            `json:"fullName"`

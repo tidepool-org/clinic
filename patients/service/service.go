@@ -86,6 +86,16 @@ func (s *service) Create(ctx context.Context, patient patients.Patient) (*patien
 		patient.Sites = &resolved
 	}
 
+	// A downstream service sends an invitation to custodial patients that are created with
+	// an email address.
+	if patient.IsCustodial() && patient.HasEmail() && patient.ConnectionIssueSource == "" {
+		patient.ConnectionIssueSource =
+			patients.ConnectionIssueSourceDeviceNonSpecificInvitation
+		s.logger.Infow("setting connection issue source for new patient",
+			"clinicId", clinicId, "userId", patient.UserId,
+			"connectionIssueSource", patient.ConnectionIssueSource)
+	}
+
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
 
 	result, err := s.patientsRepo.Create(ctx, patient)
@@ -309,6 +319,10 @@ func (s *service) UpdateLastInvitationSent(ctx context.Context, clinicId, userId
 
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "providerName", request.ProviderName)
+	if source, ok := patients.ConnectionIssueSourceForProvider(request.ProviderName); ok {
+		s.logger.Infow("setting connection issue source for patient",
+			"clinicId", clinicId, "userId", userId, "connectionIssueSource", source)
+	}
 
 	now := time.Now()
 	request.CreatedTime = now
