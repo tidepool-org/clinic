@@ -275,6 +275,10 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 	if !patient.LastUploadReminderTime.IsZero() {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
 	}
+	if patient.ConnectionIssueSource != "" {
+		source := ConnectionIssueSourceV1(patient.ConnectionIssueSource)
+		dto.ConnectionIssueSource = &source
+	}
 
 	// Populate the new connection requests structure from the now deprecated lastRequestedDexcomConnectTime
 	if len(dto.ConnectionRequests.Dexcom) == 0 && !patient.LastRequestedDexcomConnectTime.IsZero() {
@@ -820,6 +824,11 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSourceV
 			if d.LatestDataTime != nil {
 				latestDataTime := DatetimeV1(d.LatestDataTime.Format(time.RFC3339Nano))
 				newDataSource.LatestDataTime = &latestDataTime
+			}
+
+			if d.ConnectedTime != nil {
+				connectedTime := DatetimeV1(d.ConnectedTime.Format(time.RFC3339Nano))
+				newDataSource.ConnectedTime = &connectedTime
 			}
 
 			dtos = append(dtos, newDataSource)
