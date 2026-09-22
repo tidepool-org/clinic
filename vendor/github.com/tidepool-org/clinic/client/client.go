@@ -148,6 +148,9 @@ type ClientInterface interface {
 	// SyncEHRData request
 	SyncEHRData(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ExportPatientList request
+	ExportPatientList(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteInvitedClinician request
 	DeleteInvitedClinician(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -251,6 +254,9 @@ type ClientInterface interface {
 
 	// ConnectProvider request
 	ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RecordInvitationResent request
+	RecordInvitationResent(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdatePatientPermissionsWithBody request with any body
 	UpdatePatientPermissionsWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -635,6 +641,18 @@ func (c *Client) UpdateClinician(ctx context.Context, clinicId ClinicId, clinici
 
 func (c *Client) SyncEHRData(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSyncEHRDataRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ExportPatientList(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewExportPatientListRequest(c.Server, clinicId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1103,6 +1121,18 @@ func (c *Client) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId
 
 func (c *Client) ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectProviderRequest(c.Server, clinicId, patientId, providerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RecordInvitationResent(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRecordInvitationResentRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -2635,6 +2665,58 @@ func NewSyncEHRDataRequest(server string, clinicId ClinicId) (*http.Request, err
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewExportPatientListRequest generates requests for ExportPatientList
+func NewExportPatientListRequest(server string, clinicId ClinicId, params *ExportPatientListParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/export/patients", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, params.Period); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5829,6 +5911,47 @@ func NewConnectProviderRequest(server string, clinicId ClinicId, patientId Patie
 	return req, nil
 }
 
+// NewRecordInvitationResentRequest generates requests for RecordInvitationResent
+func NewRecordInvitationResentRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/invitation_resent", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdatePatientPermissionsRequest calls the generic UpdatePatientPermissions builder with application/json body
 func NewUpdatePatientPermissionsRequest(server string, clinicId ClinicId, patientId PatientId, body UpdatePatientPermissionsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7610,6 +7733,9 @@ type ClientWithResponsesInterface interface {
 	// SyncEHRDataWithResponse request
 	SyncEHRDataWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*SyncEHRDataResponse, error)
 
+	// ExportPatientListWithResponse request
+	ExportPatientListWithResponse(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*ExportPatientListResponse, error)
+
 	// DeleteInvitedClinicianWithResponse request
 	DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*DeleteInvitedClinicianResponse, error)
 
@@ -7713,6 +7839,9 @@ type ClientWithResponsesInterface interface {
 
 	// ConnectProviderWithResponse request
 	ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error)
+
+	// RecordInvitationResentWithResponse request
+	RecordInvitationResentWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*RecordInvitationResentResponse, error)
 
 	// UpdatePatientPermissionsWithBodyWithResponse request with any body
 	UpdatePatientPermissionsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientPermissionsResponse, error)
@@ -8199,6 +8328,27 @@ func (r SyncEHRDataResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r SyncEHRDataResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ExportPatientListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ExportPatientListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ExportPatientListResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -8763,6 +8913,27 @@ func (r ConnectProviderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RecordInvitationResentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r RecordInvitationResentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RecordInvitationResentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9722,6 +9893,15 @@ func (c *ClientWithResponses) SyncEHRDataWithResponse(ctx context.Context, clini
 	return ParseSyncEHRDataResponse(rsp)
 }
 
+// ExportPatientListWithResponse request returning *ExportPatientListResponse
+func (c *ClientWithResponses) ExportPatientListWithResponse(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*ExportPatientListResponse, error) {
+	rsp, err := c.ExportPatientList(ctx, clinicId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseExportPatientListResponse(rsp)
+}
+
 // DeleteInvitedClinicianWithResponse request returning *DeleteInvitedClinicianResponse
 func (c *ClientWithResponses) DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*DeleteInvitedClinicianResponse, error) {
 	rsp, err := c.DeleteInvitedClinician(ctx, clinicId, inviteId, reqEditors...)
@@ -10058,6 +10238,15 @@ func (c *ClientWithResponses) ConnectProviderWithResponse(ctx context.Context, c
 		return nil, err
 	}
 	return ParseConnectProviderResponse(rsp)
+}
+
+// RecordInvitationResentWithResponse request returning *RecordInvitationResentResponse
+func (c *ClientWithResponses) RecordInvitationResentWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*RecordInvitationResentResponse, error) {
+	rsp, err := c.RecordInvitationResent(ctx, clinicId, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRecordInvitationResentResponse(rsp)
 }
 
 // UpdatePatientPermissionsWithBodyWithResponse request with arbitrary body returning *UpdatePatientPermissionsResponse
@@ -10896,6 +11085,22 @@ func ParseSyncEHRDataResponse(rsp *http.Response) (*SyncEHRDataResponse, error) 
 	return response, nil
 }
 
+// ParseExportPatientListResponse parses an HTTP response from a ExportPatientListWithResponse call
+func ParseExportPatientListResponse(rsp *http.Response) (*ExportPatientListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ExportPatientListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ParseDeleteInvitedClinicianResponse parses an HTTP response from a DeleteInvitedClinicianWithResponse call
 func ParseDeleteInvitedClinicianResponse(rsp *http.Response) (*DeleteInvitedClinicianResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -11485,6 +11690,22 @@ func ParseConnectProviderResponse(rsp *http.Response) (*ConnectProviderResponse,
 	}
 
 	response := &ConnectProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseRecordInvitationResentResponse parses an HTTP response from a RecordInvitationResentWithResponse call
+func ParseRecordInvitationResentResponse(rsp *http.Response) (*RecordInvitationResentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RecordInvitationResentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

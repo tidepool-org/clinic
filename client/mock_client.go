@@ -1381,6 +1381,26 @@ func (mr *MockClientInterfaceMockRecorder) ProcessEHRMessageWithBody(ctx, conten
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEHRMessageWithBody", reflect.TypeOf((*MockClientInterface)(nil).ProcessEHRMessageWithBody), varargs...)
 }
 
+// RecordInvitationResent mocks base method.
+func (m *MockClientInterface) RecordInvitationResent(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RecordInvitationResent", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecordInvitationResent indicates an expected call of RecordInvitationResent.
+func (mr *MockClientInterfaceMockRecorder) RecordInvitationResent(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInvitationResent", reflect.TypeOf((*MockClientInterface)(nil).RecordInvitationResent), varargs...)
+}
+
 // RefreshPatientCount mocks base method.
 func (m *MockClientInterface) RefreshPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3663,6 +3683,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ProcessEHRMessageWithRes
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEHRMessageWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ProcessEHRMessageWithResponse), varargs...)
+}
+
+// RecordInvitationResentWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) RecordInvitationResentWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*RecordInvitationResentResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RecordInvitationResentWithResponse", varargs...)
+	ret0, _ := ret[0].(*RecordInvitationResentResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecordInvitationResentWithResponse indicates an expected call of RecordInvitationResentWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) RecordInvitationResentWithResponse(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInvitationResentWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).RecordInvitationResentWithResponse), varargs...)
 }
 
 // RefreshPatientCountWithResponse mocks base method.

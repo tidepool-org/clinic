@@ -12,6 +12,7 @@ package test
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	deletions "github.com/tidepool-org/clinic/deletions"
 	patients "github.com/tidepool-org/clinic/patients"
@@ -389,6 +390,20 @@ func (m *MockService) UpdateEmail(ctx context.Context, userId string, email *str
 func (mr *MockServiceMockRecorder) UpdateEmail(ctx, userId, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmail", reflect.TypeOf((*MockService)(nil).UpdateEmail), ctx, userId, email)
+}
+
+// UpdateLastInvitationSent mocks base method.
+func (m *MockService) UpdateLastInvitationSent(ctx context.Context, clinicId, userId string, sentTime time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastInvitationSent", ctx, clinicId, userId, sentTime)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateLastInvitationSent indicates an expected call of UpdateLastInvitationSent.
+func (mr *MockServiceMockRecorder) UpdateLastInvitationSent(ctx, clinicId, userId, sentTime any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastInvitationSent", reflect.TypeOf((*MockService)(nil).UpdateLastInvitationSent), ctx, clinicId, userId, sentTime)
 }
 
 // UpdateLastUploadReminderTime mocks base method.
@@ -862,6 +877,20 @@ func (m *MockRepository) UpdateEmail(ctx context.Context, userId string, email *
 func (mr *MockRepositoryMockRecorder) UpdateEmail(ctx, userId, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmail", reflect.TypeOf((*MockRepository)(nil).UpdateEmail), ctx, userId, email)
+}
+
+// UpdateLastInvitationSent mocks base method.
+func (m *MockRepository) UpdateLastInvitationSent(ctx context.Context, clinicId, userId string, sentTime time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastInvitationSent", ctx, clinicId, userId, sentTime)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateLastInvitationSent indicates an expected call of UpdateLastInvitationSent.
+func (mr *MockRepositoryMockRecorder) UpdateLastInvitationSent(ctx, clinicId, userId, sentTime any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastInvitationSent", reflect.TypeOf((*MockRepository)(nil).UpdateLastInvitationSent), ctx, clinicId, userId, sentTime)
 }
 
 // UpdateLastUploadReminderTime mocks base method.

@@ -299,6 +299,14 @@ func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *pati
 	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)
 }
 
+func (s *service) UpdateLastInvitationSent(ctx context.Context, clinicId, userId string,
+	sentTime time.Time) error {
+
+	s.logger.Infow("updating last invitation sent time for user",
+		"clinicId", clinicId, "userId", userId)
+	return s.patientsRepo.UpdateLastInvitationSent(ctx, clinicId, userId, sentTime)
+}
+
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "providerName", request.ProviderName)
 

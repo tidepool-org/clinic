@@ -2149,6 +2149,12 @@ type ListCliniciansParams struct {
 	Role   *Role   `form:"role,omitempty" json:"role,omitempty"`
 }
 
+// ExportPatientListParams defines parameters for ExportPatientList.
+type ExportPatientListParams struct {
+	// Period Time Period to display
+	Period string `form:"period" json:"period"`
+}
+
 // ListPatientsParams defines parameters for ListPatients.
 type ListPatientsParams struct {
 	// Search Full text search query
