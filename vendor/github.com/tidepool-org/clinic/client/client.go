@@ -343,6 +343,9 @@ type ClientInterface interface {
 	// FindPatients request
 	FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpdateConnectionIssues request
+	UpdateConnectionIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SyncEHRDataForPatient request
 	SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1517,6 +1520,18 @@ func (c *Client) UpdateTier(ctx context.Context, clinicId ClinicId, body UpdateT
 
 func (c *Client) FindPatients(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewFindPatientsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateConnectionIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateConnectionIssuesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -7033,6 +7048,33 @@ func NewFindPatientsRequest(server string, params *FindPatientsParams) (*http.Re
 	return req, nil
 }
 
+// NewUpdateConnectionIssuesRequest generates requests for UpdateConnectionIssues
+func NewUpdateConnectionIssuesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/patients/connection_issues")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSyncEHRDataForPatientRequest generates requests for SyncEHRDataForPatient
 func NewSyncEHRDataForPatientRequest(server string, patientId PatientId) (*http.Request, error) {
 	var err error
@@ -7927,6 +7969,9 @@ type ClientWithResponsesInterface interface {
 
 	// FindPatientsWithResponse request
 	FindPatientsWithResponse(ctx context.Context, params *FindPatientsParams, reqEditors ...RequestEditorFn) (*FindPatientsResponse, error)
+
+	// UpdateConnectionIssuesWithResponse request
+	UpdateConnectionIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateConnectionIssuesResponse, error)
 
 	// SyncEHRDataForPatientWithResponse request
 	SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error)
@@ -9392,6 +9437,27 @@ func (r FindPatientsResponse) StatusCode() int {
 	return 0
 }
 
+type UpdateConnectionIssuesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateConnectionIssuesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateConnectionIssuesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SyncEHRDataForPatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -10524,6 +10590,15 @@ func (c *ClientWithResponses) FindPatientsWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseFindPatientsResponse(rsp)
+}
+
+// UpdateConnectionIssuesWithResponse request returning *UpdateConnectionIssuesResponse
+func (c *ClientWithResponses) UpdateConnectionIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateConnectionIssuesResponse, error) {
+	rsp, err := c.UpdateConnectionIssues(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateConnectionIssuesResponse(rsp)
 }
 
 // SyncEHRDataForPatientWithResponse request returning *SyncEHRDataForPatientResponse
@@ -12154,6 +12229,22 @@ func ParseFindPatientsResponse(rsp *http.Response) (*FindPatientsResponse, error
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseUpdateConnectionIssuesResponse parses an HTTP response from a UpdateConnectionIssuesWithResponse call
+func ParseUpdateConnectionIssuesResponse(rsp *http.Response) (*UpdateConnectionIssuesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateConnectionIssuesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

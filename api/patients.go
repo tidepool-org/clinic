@@ -388,6 +388,15 @@ func (h *Handler) UpdatePatientDataSources(ec echo.Context, userId UserId) error
 	return ec.NoContent(http.StatusOK)
 }
 
+func (h *Handler) UpdateConnectionIssues(ec echo.Context) error {
+	ctx := ec.Request().Context()
+	if err := h.Patients.UpdateConnectionIssues(ctx); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
+}
+
 func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error {
 	ctx := ec.Request().Context()
 	authData := auth.GetAuthData(ctx)

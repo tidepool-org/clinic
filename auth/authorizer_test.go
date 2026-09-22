@@ -1503,6 +1503,68 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).To(Equal(auth.ErrUnauthorized))
 	})
 
+	It("allows backend services to update connection issues", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "patients", "connection_issues"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "data",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("prevents backend services from using other methods on connection issues", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "patients", "connection_issues"},
+			"method": "GET",
+			"auth": map[string]interface{}{
+				"subjectId":    "data",
+				"serverAccess": true,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("prevents unauthenticated requests from updating connection issues", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "patients", "connection_issues"},
+			"method": "POST",
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("prevents a clinic admin from updating connection issues", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "patients", "connection_issues"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "clinician-user-id",
+				"serverAccess": false,
+			},
+			"clinician": clinicAdmin,
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
+	It("prevents a patient from updating connection issues", func() {
+		input := map[string]interface{}{
+			"path":   []string{"v1", "patients", "connection_issues"},
+			"method": "POST",
+			"auth": map[string]interface{}{
+				"subjectId":    "1234567890",
+				"serverAccess": false,
+			},
+		}
+		err := authorizer.EvaluatePolicy(context.Background(), input)
+		Expect(err).To(Equal(auth.ErrUnauthorized))
+	})
+
 	It("allows orca to merge clinics", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},

@@ -83,6 +83,14 @@ allow {
   input.path = ["v1", "patients", _, "summary"]
 }
 
+# Allow backend services to update the connection issues of all patients
+# POST /v1/patients/connection_issues
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "patients", "connection_issues"]
+}
+
 # Allow backend services delete patient summaries
 # GET /v1/summaries/:summaryId/clinics
 allow {

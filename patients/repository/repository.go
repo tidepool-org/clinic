@@ -1289,6 +1289,12 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	return nil
 }
 
+// UpdateConnectionIssues is a placeholder until the connection issues logic is
+// implemented. The Repository interface embeds Service, so it has to exist here too.
+func (r *repository) UpdateConnectionIssues(ctx context.Context) error {
+	return nil
+}
+
 func (r *repository) UpdateEHRSubscription(ctx context.Context, clinicId, patientId string, update patients.SubscriptionUpdate) error {
 	patient, err := r.Get(ctx, clinicId, patientId)
 	if err != nil {
