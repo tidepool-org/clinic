@@ -890,18 +890,33 @@ func (r *repository) UpdateLastInvitationSent(ctx context.Context, clinicId, use
 		"userId":   userId,
 	}
 
-	update := bson.M{
-		"$set": bson.M{
-			"lastInvitationSent": sentTime,
-			"updatedTime":        time.Now(),
-		},
-	}
-	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	source := patients.ConnectionIssueSourceDeviceNonSpecificInvitation
+	update := mongo.Pipeline{{{Key: "$set", Value: bson.M{
+		"lastInvitationSent": sentTime,
+		"updatedTime":        time.Now(),
+		// Only set the source when it is unset or already the invitation source, so a
+		// provider source is never overwritten by an invitation reminder.
+		"connectionIssueSource": bson.M{"$cond": bson.A{
+			bson.M{"$in": bson.A{
+				bson.M{"$ifNull": bson.A{"$connectionIssueSource", ""}},
+				bson.A{"", source},
+			}},
+			source,
+			"$connectionIssueSource",
+		}},
+	}}}}
+
+	var previous patients.Patient
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Decode(&previous)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return patients.ErrNotFound
 		}
 		return fmt.Errorf("error updating patient: %w", err)
+	}
+	if previous.ConnectionIssueSource == "" {
+		r.logger.Infow("setting connection issue source for patient",
+			"clinicId", clinicId, "userId", userId, "connectionIssueSource", source)
 	}
 
 	return nil
@@ -925,6 +940,9 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 				"$position": 0,
 			},
 		},
+	}
+	if source, ok := patients.ConnectionIssueSourceForProvider(request.ProviderName); ok {
+		update["$set"] = bson.M{"connectionIssueSource": source}
 	}
 
 	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
@@ -1271,11 +1289,33 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 		"userId": userId,
 	}
 
+	// This read-modify-write is not atomic, which is acceptable because the clinic-worker
+	// CDC consumer is the only writer of data sources.
+	existing, err := r.getPatientDataSources(ctx, userId)
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+	set := bson.M{
+		"updatedTime": now,
+	}
+	if dataSources != nil {
+		if newest := dataSources.NewlyConnected(existing).Newest(); newest != nil {
+			source, ok := patients.ConnectionIssueSourceForProvider(newest.ProviderName)
+			if ok {
+				r.logger.Infow("setting connection issue source for clinic patients",
+					"userId", userId, "connectionIssueSource", source)
+				set["connectionIssueSource"] = source
+			} else {
+				r.logger.Warnw("unknown provider for connection issue source",
+					"userId", userId, "providerName", newest.ProviderName)
+			}
+		}
+	}
+	set["dataSources"] = dataSources
+
 	update := bson.M{
-		"$set": bson.M{
-			"dataSources": dataSources,
-			"updatedTime": time.Now(),
-		},
+		"$set": set,
 	}
 
 	result, err := r.collection.UpdateMany(ctx, selector, update)
@@ -1287,6 +1327,29 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	}
 
 	return nil
+}
+
+func (r *repository) getPatientDataSources(ctx context.Context,
+	userId string) (patients.DataSources, error) {
+
+	selector := bson.M{
+		"userId": userId,
+	}
+	opts := options.FindOne().SetProjection(bson.M{"_id": 0, "dataSources": 1})
+
+	var patient patients.Patient
+	err := r.collection.FindOne(ctx, selector, opts).Decode(&patient)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to read data sources of user %v: %w", userId, err)
+	}
+	if patient.DataSources == nil {
+		return nil, nil
+	}
+
+	return *patient.DataSources, nil
 }
 
 // UpdateConnectionIssues is a placeholder until the connection issues logic is
@@ -2103,7 +2166,10 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 					bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": time.Now().UTC().Add(-8 * time.Hour)}},
 					bson.M{"$or": bson.A{
 						bson.M{"summary.cgmStats.dates.lastData": bson.M{"$lt": params.LastDataCutoff}},
-						bson.M{"dataSources": bson.M{"$elemMatch": bson.M{"providerName": "dexcom", "state": bson.M{"$ne": "connected"}}}},
+						bson.M{"dataSources": bson.M{"$elemMatch": bson.M{
+							"providerName": patients.DexcomDataSourceProviderName,
+							"state":        bson.M{"$ne": patients.DataSourceStateConnected},
+						}}},
 					}},
 				}},
 			},

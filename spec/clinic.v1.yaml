@@ -3891,6 +3891,9 @@ components:
         latestDataTime:
           $ref: '#/components/schemas/datetime.v1'
           title: Time of the latest data point from this source
+        connectedTime:
+          $ref: '#/components/schemas/datetime.v1'
+          title: Time the data source last entered the connected state
       required:
         - state
         - providerName
@@ -5026,6 +5029,20 @@ components:
         - twiist
         - dexcom
         - abbott
+    connectionIssueSource.v1:
+      title: Connection Issue Source
+      type: string
+      description: The most recent flow that put the patient into a pending connection state.
+      enum:
+        - dexcom
+        - abbott
+        - twiist
+        - deviceNonSpecificInvitation
+      x-enum-varnames:
+        - ConnectionIssueSourceDexcom
+        - ConnectionIssueSourceAbbott
+        - ConnectionIssueSourceTwiist
+        - ConnectionIssueSourceDeviceNonSpecificInvitation
     glycemicRangesThresholdUpperBound.v1:
       type: object
       properties:
@@ -5179,6 +5196,9 @@ components:
           x-stoplight:
             id: 502rliv0l2tyy
           description: Requests for each provider are listed in reverse chronological order
+          readOnly: true
+        connectionIssueSource:
+          $ref: '#/components/schemas/connectionIssueSource.v1'
           readOnly: true
         sites:
           type: array
