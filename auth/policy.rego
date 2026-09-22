@@ -405,6 +405,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow backend services to record that an invitation was resent to a patient
+# POST /v1/clinics/:clinicId/patients/:patientId/invitation_resent
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "invitation_resent"]
+}
+
 # Allow currently authenticated clinician to send a dexcom connect reminder
 # POST /v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request
 allow {
