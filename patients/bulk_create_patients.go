@@ -19,12 +19,11 @@ import (
 var (
 	// If an error is an ErrInvalidCSV, it is a "fatal" error and no patients
 	// should be created. Currently only missing or invalid required fields in
-	// the header or content is a blocking error. An error due to other reasons
+	// the columns is a blocking error. An error due to other reasons
 	// such as a duplicate MRN results in the corresponding row being skipped and
 	// the error is included in the corresponding output row but does not stop
 	// other patients from being processed.
 	ErrInvalidCSV                 = errors.New("invalid CSV")
-	ErrCSVHeaderEmpty             = fmt.Errorf(`%w: header is empty`, ErrInvalidCSV)
 	ErrCSVMissingCols             = fmt.Errorf(`%w: row is missing columns`, ErrInvalidCSV)
 	ErrCSVEmpty                   = fmt.Errorf(`%w: no rows in input records`, ErrInvalidCSV)
 	ErrCSVNoPatientRows           = errors.New("no patient rows")
@@ -71,16 +70,6 @@ func IsBulkPatientCSVValidationErr(err error) bool {
 	return errors.Is(err, ErrInvalidCSV)
 }
 
-func ValidateCSVHeader(header []string) error {
-	if len(header) == 0 {
-		return ErrCSVHeaderEmpty
-	}
-	if len(header) < int(NumRequiredColumns) {
-		return fmt.Errorf(`%w: num header columns: %v, num required columns: %v`, ErrCSVMissingCols, len(header), NumRequiredColumns)
-	}
-	return nil
-}
-
 // ParsedCSVPatient represents the potential patient to be created from a CSV
 // row along with a copy of the original input CSV row with added information
 // in [Columns]. Patient may be nil if there is an error with the patient,
@@ -108,27 +97,30 @@ func (p *ParsedCSVPatient) AppendErr(err error) {
 }
 
 // ParsePotentialCSVPatients takes an input of slices of string slices (from a
-// CSV or otherwise) representing data for a patient in a predefined order and
-// returns the updated CSV to be used for output as well as the patients to
-// be created along with their row information in parsedPatients. Individual
+// HEADERLESS CSV or otherwise) representing data for a patient in the same
+// patient field column-order as [ColName], [ColBirthdate], [ColMRN] and
+// returns the updated CSV to be used for output as well as the patients to be
+// created along with their row information in parsedPatients. Individual
 // errors that would prevent a patient from being created but that would NOT
 // stop other patients from being created, if any, are outputed in the "reason"
 // column defined as the slice index [OutputColStatus] in
 // [ParsedCSVPatient.Columns] in which case [ParsedCSVPatient.Patient] would be
-// empty. The CSV header is ALWAYS expected.
-// A returned error can be checked with [IsBulkPatientCSVValidationErr].
+// empty. There should be NO CSV input header row. A returned error can be
+// checked with [IsBulkPatientCSVValidationErr].
 func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, csvRecords [][]string, clinicId primitive.ObjectID, invitedBy *string) (outputRows [][]string, outputHeader []string, parsedPatients []*ParsedCSVPatient, err error) {
 	if len(csvRecords) == 0 {
 		return nil, nil, nil, ErrCSVEmpty
 	}
-	header := csvRecords[0]
-	if err := ValidateCSVHeader(header); err != nil {
-		return nil, nil, nil, err
+	outputHeader = []string{
+		"Name",
+		"Birthdate",
+		"MRN",
+		"Email",
+		"Diabetes Type",
+		"Glycemic Target",
+		"Reason",
+		"Emailed?",
 	}
-	outputHeader = make([]string, NumOutputCols)
-	copy(outputHeader, header)
-	outputHeader[OutputColStatus] = "Reason"
-	outputHeader[OutputColEmailed] = "Emailed?"
 	outputRows = append(outputRows, outputHeader)
 
 	filter := Filter{
@@ -154,8 +146,8 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 	}
 
 	var errs []error
-	for i, record := range csvRecords[1:] {
-		rowNum := i + 2
+	for i, record := range csvRecords {
+		rowNum := i + 1
 		outputRow := make([]string, NumOutputCols)
 		copy(outputRow[:MaxInputColumns], record)
 		patient, err := NewPatientFromColumns(rowNum, record, clinicId, invitedBy)

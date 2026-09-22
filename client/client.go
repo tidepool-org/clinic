@@ -126,11 +126,8 @@ type ClientInterface interface {
 
 	UpdateClinic(ctx context.Context, clinicId ClinicId, body UpdateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListBulkCreatePatientsWithBody request with any body
-	ListBulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// BulkCreatePatientsWithBody request with any body
-	BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, params *BulkCreatePatientsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClinicians request
 	ListClinicians(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -558,20 +555,8 @@ func (c *Client) UpdateClinic(ctx context.Context, clinicId ClinicId, body Updat
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListBulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListBulkCreatePatientsRequestWithBody(c.Server, clinicId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewBulkCreatePatientsRequestWithBody(c.Server, clinicId, contentType, body)
+func (c *Client) BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, params *BulkCreatePatientsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkCreatePatientsRequestWithBody(c.Server, clinicId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2350,44 +2335,8 @@ func NewUpdateClinicRequestWithBody(server string, clinicId ClinicId, contentTyp
 	return req, nil
 }
 
-// NewListBulkCreatePatientsRequestWithBody generates requests for ListBulkCreatePatients with any type of body
-func NewListBulkCreatePatientsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/v1/clinics/%s/bulk/patients", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewBulkCreatePatientsRequestWithBody generates requests for BulkCreatePatients with any type of body
-func NewBulkCreatePatientsRequestWithBody(server string, clinicId ClinicId, contentType string, body io.Reader) (*http.Request, error) {
+func NewBulkCreatePatientsRequestWithBody(server string, clinicId ClinicId, params *BulkCreatePatientsParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -2410,6 +2359,28 @@ func NewBulkCreatePatientsRequestWithBody(server string, clinicId ClinicId, cont
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dryRun", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
@@ -7757,11 +7728,8 @@ type ClientWithResponsesInterface interface {
 
 	UpdateClinicWithResponse(ctx context.Context, clinicId ClinicId, body UpdateClinicJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClinicResponse, error)
 
-	// ListBulkCreatePatientsWithBodyWithResponse request with any body
-	ListBulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ListBulkCreatePatientsResponse, error)
-
 	// BulkCreatePatientsWithBodyWithResponse request with any body
-	BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error)
+	BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, params *BulkCreatePatientsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error)
 
 	// ListCliniciansWithResponse request
 	ListCliniciansWithResponse(ctx context.Context, clinicId ClinicId, params *ListCliniciansParams, reqEditors ...RequestEditorFn) (*ListCliniciansResponse, error)
@@ -8249,27 +8217,6 @@ func (r UpdateClinicResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateClinicResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ListBulkCreatePatientsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r ListBulkCreatePatientsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListBulkCreatePatientsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9893,18 +9840,9 @@ func (c *ClientWithResponses) UpdateClinicWithResponse(ctx context.Context, clin
 	return ParseUpdateClinicResponse(rsp)
 }
 
-// ListBulkCreatePatientsWithBodyWithResponse request with arbitrary body returning *ListBulkCreatePatientsResponse
-func (c *ClientWithResponses) ListBulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ListBulkCreatePatientsResponse, error) {
-	rsp, err := c.ListBulkCreatePatientsWithBody(ctx, clinicId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListBulkCreatePatientsResponse(rsp)
-}
-
 // BulkCreatePatientsWithBodyWithResponse request with arbitrary body returning *BulkCreatePatientsResponse
-func (c *ClientWithResponses) BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error) {
-	rsp, err := c.BulkCreatePatientsWithBody(ctx, clinicId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, params *BulkCreatePatientsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error) {
+	rsp, err := c.BulkCreatePatientsWithBody(ctx, clinicId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -11043,22 +10981,6 @@ func ParseUpdateClinicResponse(rsp *http.Response) (*UpdateClinicResponse, error
 		}
 		response.JSON200 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseListBulkCreatePatientsResponse parses an HTTP response from a ListBulkCreatePatientsWithResponse call
-func ParseListBulkCreatePatientsResponse(rsp *http.Response) (*ListBulkCreatePatientsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListBulkCreatePatientsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
 	}
 
 	return response, nil

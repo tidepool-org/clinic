@@ -38,7 +38,6 @@ var _ = Describe("Bulk Account Creation", func() {
 		It("returns correct fields and errors depending on criteria", func() {
 			ctx := context.Background()
 			records := [][]string{
-				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
 				{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org"},
 				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "existing+email@tidepool.org"},
@@ -55,7 +54,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Person 3 duplicate email within CSV ignoring case", "2000-11-12", "55555558", "DUPLICATE+EMAIL@tidepool.org", "type1", "adaStandard"},
 			}
 			expectedOutput := [][]string{
-				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
+				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", ""},
 				{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", ""},
 				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "existing+email@tidepool.org", "", "adaStandard", "duplicate MRN, duplicate email", ""},
@@ -110,12 +109,11 @@ var _ = Describe("Bulk Account Creation", func() {
 			ctx := context.Background()
 			invitedBy := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 			records := [][]string{
-				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk"},
 			}
 			expectedOutput := [][]string{
-				{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
+				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y"},
 			}
@@ -198,42 +196,37 @@ var _ = Describe("Bulk Account Creation", func() {
 			},
 				Entry(
 					"valid CSV no non-blocking patient errors",
-					`Name,Birthdate,Mrn,Email,Diabetes Type,Glycemic Target
-George Washington,1950-01-02,123456789,george+washington@tidepool.org
+					`George Washington,1950-01-02,123456789,george+washington@tidepool.org
 John Adams,1951-01-02,123456780,john+adams@tidepool.org`,
 					[][]string{
-						{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
+						{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 						{"George Washington", "1950-01-02", "123456789", "george+washington@tidepool.org", "", "adaStandard", "", "Y"},
 						{"John Adams", "1951-01-02", "123456780", "john+adams@tidepool.org", "", "adaStandard", "", "Y"},
 					}),
 				Entry(
 					"valid CSV with mix of valid patients and duplicate mrn / emails",
-					`Name,Birthdate,Mrn,Email,Diabetes Type,Glycemic Target
-Thomas Jefferson,1952-01-09,112233,thomas+jefferson@tidepool.org
+					`Thomas Jefferson,1952-01-09,112233,thomas+jefferson@tidepool.org
 Ben Franklin,1952-01-10,112234
 George Washington,1950-01-02,123456789,existing+email@tidepool.org
 John Adams,1951-01-02,DUPLICATEMRN,john+adams@tidepool.org
-Invalid Glycemic Target Defaults To adaStandard,1973-03-04,22334455,james+madison@tidepool.org,,invalid type
-Extra Columns truncated from output row,1974-03-04,22334456,,type1,,extra,columns,here`,
+Invalid Glycemic Target Defaults To adaStandard,1973-03-04,22334455,james+madison@tidepool.org,,invalid type`,
 					[][]string{
-						{"Name", "Birthdate", "Mrn", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
+						{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 						{"Thomas Jefferson", "1952-01-09", "112233", "thomas+jefferson@tidepool.org", "", "adaStandard", "", "Y"},
 						{"Ben Franklin", "1952-01-10", "112234", "", "", "adaStandard", "", "N"},
 						{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
 						{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", "N"},
 						{"Invalid Glycemic Target Defaults To adaStandard", "1973-03-04", "22334455", "james+madison@tidepool.org", "", "adaStandard", "", "Y"},
-						{"Extra Columns truncated from output row", "1974-03-04", "22334456", "", "type1", "adaStandard", "", "N"},
 					}),
 			)
 
 			It("invalid CSV", func() {
-				contentsCSV := `Name,Birthdate,Mrn,Email,Diabetes Type,Glycemic Target
-	Missing MRN,1952-01-02,
-	,
-	Missing birthdate and MRN,,,,
+				contentsCSV := `Missing MRN,1952-01-02,,,
+	,,,,
+	Missing birthdate and MRN,,,
 	,1999-01-02,,,
-	Invalid birthdate,yyyy-mm-dd,1111
-	Invalid email,1999-01-12,2222,invalid+email`
+	Invalid birthdate,yyyy-mm-dd,1111,,
+	Invalid email,1999-01-12,2222,invalid+email,`
 				ctx := context.Background()
 				expectedErrs := []error{
 					patients.ErrCSVPatientMissingName,
@@ -243,16 +236,16 @@ Extra Columns truncated from output row,1974-03-04,22334456,,type1,,extra,column
 					patients.ErrCSVPatientMissingBirthdate,
 				}
 				expectedErrStrs := []string{
+					"missing MRN: row 1, column 3",
+					"missing name: row 2, column 1",
+					"missing birthdate: row 2, column 2",
 					"missing MRN: row 2, column 3",
-					"missing name: row 3, column 1",
 					"missing birthdate: row 3, column 2",
 					"missing MRN: row 3, column 3",
-					"missing birthdate: row 4, column 2",
+					"missing name: row 4, column 1",
 					"missing MRN: row 4, column 3",
-					"missing name: row 5, column 1",
-					"missing MRN: row 5, column 3",
-					"invalid birthdate: row 6, column 2",
-					"invalid email: row 7, column 4",
+					"invalid birthdate: row 5, column 2",
+					"invalid email: row 6, column 4",
 				}
 				_, _, _, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
 				Expect(patients.IsBulkPatientCSVValidationErr(err)).To(Equal(true))
@@ -268,8 +261,7 @@ Extra Columns truncated from output row,1974-03-04,22334456,,type1,,extra,column
 		Describe("server error", func() {
 			var contentsCSV string
 			BeforeEach(func() {
-				contentsCSV = `Name,Birthdate,Mrn,Email,Diabetes Type,Glycemic Target
-George Washington,1950-01-02,123456789,george+washington@tidepool.org
+				contentsCSV = `George Washington,1950-01-02,123456789,george+washington@tidepool.org
 John Adams,1951-01-02,123456780,john+adams@tidepool.org`
 			})
 			It("patient svc List error", func() {

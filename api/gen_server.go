@@ -43,12 +43,9 @@ type ServerInterface interface {
 	// Update Clinic
 	// (PUT /v1/clinics/{clinicId})
 	UpdateClinic(ctx echo.Context, clinicId ClinicId) error
-	// List patients that would be bulk created from input CSV.
-	// (GET /v1/clinics/{clinicId}/bulk/patients)
-	ListBulkCreatePatients(ctx echo.Context, clinicId ClinicId) error
-	// Create multiple patients in one request from input CSV.
+	// Return a list of potential patients that would be created from the request body CSV. Actually creates the patients if the query string parameter "dryRun" is false.
 	// (POST /v1/clinics/{clinicId}/bulk/patients)
-	BulkCreatePatients(ctx echo.Context, clinicId ClinicId) error
+	BulkCreatePatients(ctx echo.Context, clinicId ClinicId, params BulkCreatePatientsParams) error
 	// List Clinicians
 	// (GET /v1/clinics/{clinicId}/clinicians)
 	ListClinicians(ctx echo.Context, clinicId ClinicId, params ListCliniciansParams) error
@@ -512,24 +509,6 @@ func (w *ServerInterfaceWrapper) UpdateClinic(ctx echo.Context) error {
 	return err
 }
 
-// ListBulkCreatePatients converts echo context to params.
-func (w *ServerInterfaceWrapper) ListBulkCreatePatients(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "clinicId" -------------
-	var clinicId ClinicId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
-	}
-
-	ctx.Set(SessionTokenScopes, []string{})
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ListBulkCreatePatients(ctx, clinicId)
-	return err
-}
-
 // BulkCreatePatients converts echo context to params.
 func (w *ServerInterfaceWrapper) BulkCreatePatients(ctx echo.Context) error {
 	var err error
@@ -543,8 +522,17 @@ func (w *ServerInterfaceWrapper) BulkCreatePatients(ctx echo.Context) error {
 
 	ctx.Set(SessionTokenScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params BulkCreatePatientsParams
+	// ------------- Optional query parameter "dryRun" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "dryRun", ctx.QueryParams(), &params.DryRun)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter dryRun: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.BulkCreatePatients(ctx, clinicId)
+	err = w.Handler.BulkCreatePatients(ctx, clinicId, params)
 	return err
 }
 
@@ -3039,7 +3027,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId", wrapper.DeleteClinic)
 	router.GET(baseURL+"/v1/clinics/:clinicId", wrapper.GetClinic)
 	router.PUT(baseURL+"/v1/clinics/:clinicId", wrapper.UpdateClinic)
-	router.GET(baseURL+"/v1/clinics/:clinicId/bulk/patients", wrapper.ListBulkCreatePatients)
 	router.POST(baseURL+"/v1/clinics/:clinicId/bulk/patients", wrapper.BulkCreatePatients)
 	router.GET(baseURL+"/v1/clinics/:clinicId/clinicians", wrapper.ListClinicians)
 	router.POST(baseURL+"/v1/clinics/:clinicId/clinicians", wrapper.CreateClinician)

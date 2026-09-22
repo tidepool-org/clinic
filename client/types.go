@@ -962,23 +962,6 @@ type BgmStatsV1 struct {
 	Periods BgmPeriodsV1 `json:"periods,omitempty"`
 }
 
-// BulkPatientInputRowV1 defines model for bulkPatientInputRow.v1.
-type BulkPatientInputRowV1 struct {
-	// BirthDate The patient's date of birth.
-	BirthDate     openapi_types.Date `json:"birthDate"`
-	DiagnosisType *DiagnosisTypeV1   `json:"diagnosisType,omitempty"`
-
-	// Email The patient's optional email.
-	Email *openapi_types.Email `json:"email,omitempty"`
-
-	// FullName The name of the patient.
-	FullName       string                 `json:"fullName"`
-	GlycemicTarget GlycemicRangesPresetV1 `json:"glycemicTarget,omitempty,omitzero"`
-
-	// Mrn The medical record number of the patient
-	Mrn string `json:"mrn"`
-}
-
 // BulkPatientOutputRowV1 defines model for bulkPatientOutputRow.v1.
 type BulkPatientOutputRowV1 struct {
 	// BirthDate The patient's date of birth.
@@ -2188,6 +2171,11 @@ type ListClinicsParams struct {
 
 	// EhrEnabled Retrieve clinics with enabled EHR integration
 	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
+}
+
+// BulkCreatePatientsParams defines parameters for BulkCreatePatients.
+type BulkCreatePatientsParams struct {
+	DryRun *bool `form:"dryRun,omitempty" json:"dryRun,omitempty"`
 }
 
 // ListCliniciansParams defines parameters for ListClinicians.
