@@ -58,6 +58,14 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	filter.OmitNonStandardRanges = params.OmitNonStandardRanges != nil &&
 		*params.OmitNonStandardRanges
 
+	filter.ConnectionIssueCauses, err = ParseConnectionIssueCauses(
+		params.ConnectionIssueCauses)
+	if err != nil {
+		return err
+	}
+	filter.OnlyHiddenConnectionIssues = params.OnlyHiddenConnectionIssues != nil &&
+		*params.OnlyHiddenConnectionIssues
+
 	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
 	if err != nil {
 		return err

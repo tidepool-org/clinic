@@ -327,6 +327,12 @@ type Filter struct {
 	// OmitNonStandardRanges will exclude patients that aren't assigned the ADA standard
 	// preset ranges.
 	OmitNonStandardRanges bool
+
+	// ConnectionIssueCauses, when set, only includes patients whose connection issue has
+	// one of the causes and is not hidden. OnlyHiddenConnectionIssues inverts the hidden
+	// condition, so that only hidden issues are included, and can be used on its own.
+	ConnectionIssueCauses      []ConnectionIssueCause
+	OnlyHiddenConnectionIssues bool
 }
 
 type Permission = map[string]interface{}

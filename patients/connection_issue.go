@@ -139,3 +139,22 @@ func (r ConnectionRequest) isExpired(now time.Time) bool {
 func (r ConnectionRequest) isStale(now time.Time) bool {
 	return now.Sub(r.CreatedTime) > StaleDuration
 }
+
+var connectionIssueCauses = []ConnectionIssueCause{
+	ConnectionIssueCauseError,
+	ConnectionIssueCauseDisconnected,
+	ConnectionIssueCauseStaleData,
+	ConnectionIssueCauseStaleInvite,
+	ConnectionIssueCauseExpiredInvite,
+}
+
+// ParseConnectionIssueCause returns the cause named by value. ok is false for unknown
+// values.
+func ParseConnectionIssueCause(value string) (cause ConnectionIssueCause, ok bool) {
+	for _, cause := range connectionIssueCauses {
+		if string(cause) == value {
+			return cause, true
+		}
+	}
+	return "", false
+}

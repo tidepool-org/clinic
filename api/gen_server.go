@@ -1971,6 +1971,20 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sites: %s", err))
 	}
 
+	// ------------- Optional query parameter "connectionIssueCauses" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "connectionIssueCauses", ctx.QueryParams(), &params.ConnectionIssueCauses)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter connectionIssueCauses: %s", err))
+	}
+
+	// ------------- Optional query parameter "onlyHiddenConnectionIssues" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "onlyHiddenConnectionIssues", ctx.QueryParams(), &params.OnlyHiddenConnectionIssues)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter onlyHiddenConnectionIssues: %s", err))
+	}
+
 	// ------------- Optional query parameter "omitNonStandardRanges" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "omitNonStandardRanges", ctx.QueryParams(), &params.OmitNonStandardRanges)
