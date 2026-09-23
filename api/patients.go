@@ -222,6 +222,24 @@ func (h *Handler) RecordInvitationResent(ec echo.Context, clinicId ClinicId,
 	return ec.NoContent(http.StatusNoContent)
 }
 
+func (h *Handler) SetConnectionIssueHidden(ec echo.Context, clinicId ClinicId,
+	patientId PatientId) error {
+
+	ctx := ec.Request().Context()
+	dto := ConnectionIssueHiddenV1{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	patient, err := h.Patients.SetConnectionIssueHidden(ctx, string(clinicId),
+		string(patientId), dto.Hidden)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+}
+
 func (h *Handler) UpdatePatientPermissions(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 	dto := PatientPermissionsV1{}

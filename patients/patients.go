@@ -28,6 +28,8 @@ var (
 	ErrDuplicateEmail     = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
 	ErrReviewNotOwner     = fmt.Errorf("%w: cannot revert review from another clinician", errors.Conflict)
 
+	ErrConnectionIssueNotFound = fmt.Errorf("connection issue %w", errors.NotFound)
+
 	PendingDataSourceExpirationDuration = time.Hour * 24 * 30
 
 	// StaleDuration is how long data or an invitation may go without activity before it
@@ -84,6 +86,8 @@ type Service interface {
 	ConvertPatientTagToSite(ctx context.Context, clinicId, patientTagId string, site *sites.Site) error
 	UpdatePatientDataSources(ctx context.Context, userId string, dataSources *DataSources) error
 	UpdateConnectionIssues(ctx context.Context) error
+	SetConnectionIssueHidden(ctx context.Context, clinicId, userId string,
+		hidden bool) (*Patient, error)
 	TideReport(ctx context.Context, clinicId string, params TideReportParams) (*Tide, error)
 	ListExportedPatients(ctx context.Context, params ExportParams) ([]ExportedPatient, error)
 	UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update SubscriptionUpdate) error

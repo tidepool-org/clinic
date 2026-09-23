@@ -1849,6 +1849,33 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateSuppressedNotifications'
+  /v1/clinics/{clinicId}/patients/{patientId}/connection_issue/hidden:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    put:
+      summary: Set Connection Issue Hidden
+      operationId: SetConnectionIssueHidden
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/patient.v1'
+        '404':
+          description: The patient does not exist or has no connection issue
+      description: |-
+        Hide or unhide the patient's connection issue. Patients with
+        hidden connection issues aren't show when listing patients
+        that specify connection issue causes.
+      tags:
+        - Clinics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/connectionIssueHidden.v1'
   /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -5062,6 +5089,9 @@ components:
             - ConnectionIssueCauseStaleData
             - ConnectionIssueCauseStaleInvite
             - ConnectionIssueCauseExpiredInvite
+        hidden:
+          type: boolean
+          description: Set by a clinician to hide the issue. Cleared when the connection issue source or the cause changes.
       required:
         - cause
     glycemicRangesThresholdUpperBound.v1:
@@ -5402,6 +5432,15 @@ components:
         - RUNNING
         - COMPLETED
       description: The current status of the migration
+    connectionIssueHidden.v1:
+      title: Connection Issue Hidden
+      type: object
+      properties:
+        hidden:
+          type: boolean
+          description: Whether the clinician wants the connection issue hidden.
+      required:
+        - hidden
     membershipRestriction.v1:
       title: Membership Restriction
       type: object

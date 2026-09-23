@@ -73,6 +73,27 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 		return &value
 	}
 
+	setHidden := func(hidden bool, as func(*http.Request)) *http.Response {
+		GinkgoHelper()
+		body, err := json.Marshal(api.ConnectionIssueHiddenV1{Hidden: hidden})
+		Expect(err).ToNot(HaveOccurred())
+
+		rec := httptest.NewRecorder()
+		endpoint := patientEndpoint() + "/connection_issue/hidden"
+		req := prepareRequestWithBody(http.MethodPut, endpoint, bytes.NewReader(body))
+		as(req)
+
+		server.ServeHTTP(rec, req)
+		Expect(rec.Result()).ToNot(BeNil())
+		return rec.Result()
+	}
+
+	expectHidden := func(hidden bool) {
+		GinkgoHelper()
+		Expect(getPatient().ConnectionIssue).ToNot(BeNil())
+		Expect(getPatient().ConnectionIssue.Hidden).To(PointTo(Equal(hidden)))
+	}
+
 	Describe("Update Connection Issues", func() {
 		It("Succeeds for a backend service", func() {
 			updateConnectionIssues()
@@ -146,8 +167,35 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 			updateConnectionIssues()
 
 			Expect(getPatient().ConnectionIssue).To(PointTo(MatchAllFields(Fields{
-				"Cause": Equal(api.ConnectionIssueCauseStaleData),
+				"Cause":  Equal(api.ConnectionIssueCauseStaleData),
+				"Hidden": PointTo(BeFalse()),
 			})))
+		})
+
+		Describe("Hiding the issue", func() {
+			It("Is hidden by a clinician", func() {
+				resp := setHidden(true, asClinician)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				updated := api.PatientV1{}
+				Expect(json.NewDecoder(resp.Body).Decode(&updated)).To(Succeed())
+				Expect(updated.ConnectionIssue.Hidden).To(PointTo(BeTrue()))
+				expectHidden(true)
+			})
+
+			It("Is unhidden by a backend service", func() {
+				resp := setHidden(false, asServer)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				expectHidden(false)
+			})
+
+			It("Stays hidden while the cause is unchanged", func() {
+				Expect(setHidden(true, asClinician).StatusCode).To(Equal(http.StatusOK))
+
+				updateConnectionIssues()
+
+				expectHidden(true)
+			})
 		})
 
 		It("Reports an error", func() {
@@ -161,7 +209,8 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 			updateConnectionIssues()
 
 			Expect(getPatient().ConnectionIssue).To(PointTo(MatchAllFields(Fields{
-				"Cause": Equal(api.ConnectionIssueCauseError),
+				"Cause":  Equal(api.ConnectionIssueCauseError),
+				"Hidden": PointTo(BeFalse()),
 			})))
 		})
 
@@ -176,6 +225,10 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 			updateConnectionIssues()
 
 			Expect(getPatient().ConnectionIssue).To(BeNil())
+		})
+
+		It("Cannot be hidden once there is no issue", func() {
+			Expect(setHidden(true, asClinician).StatusCode).To(Equal(http.StatusNotFound))
 		})
 	})
 })

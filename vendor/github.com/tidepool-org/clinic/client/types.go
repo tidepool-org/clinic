@@ -1354,10 +1354,19 @@ type ClinicsV1 = []ClinicV1
 // ConnectionIssueV1 The highest priority connection problem detected for the patient.
 type ConnectionIssueV1 struct {
 	Cause ConnectionIssueV1Cause `json:"cause"`
+
+	// Hidden Set by a clinician to hide the issue. Cleared when the connection issue source or the cause changes.
+	Hidden *bool `json:"hidden,omitempty"`
 }
 
 // ConnectionIssueV1Cause defines model for ConnectionIssueV1.Cause.
 type ConnectionIssueV1Cause string
+
+// ConnectionIssueHiddenV1 defines model for connectionIssueHidden.v1.
+type ConnectionIssueHiddenV1 struct {
+	// Hidden Whether the clinician wants the connection issue hidden.
+	Hidden bool `json:"hidden"`
+}
 
 // ConnectionIssueSourceV1 The most recent flow that put the patient into a pending connection state.
 type ConnectionIssueSourceV1 string
@@ -2675,6 +2684,9 @@ type CreatePatientFromUserJSONRequestBody = CreatePatientV1
 
 // UpdatePatientJSONRequestBody defines body for UpdatePatient for application/json ContentType.
 type UpdatePatientJSONRequestBody = PatientV1
+
+// SetConnectionIssueHiddenJSONRequestBody defines body for SetConnectionIssueHidden for application/json ContentType.
+type SetConnectionIssueHiddenJSONRequestBody = ConnectionIssueHiddenV1
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody = PatientPermissionsV1

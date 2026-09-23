@@ -445,6 +445,22 @@ allow {
   is_backend_service
 }
 
+# Allow currently authenticated clinician to hide or unhide a connection issue
+# PUT /v1/clinics/:clinicId/patients/:patientId/connection_issue/hidden
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patients", _, "connection_issue", "hidden"]
+  clinician_has_read_access
+}
+
+# Allow backend services to hide or unhide a connection issue
+# PUT /v1/clinics/:clinicId/patients/:patientId/connection_issue/hidden
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patients", _, "connection_issue", "hidden"]
+  is_backend_service
+}
+
 # Allow currently authenticated clinician to fetch patient by id
 # GET /v1/clinics/:clinicId/patients/:patientId
 allow {
