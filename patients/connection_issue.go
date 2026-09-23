@@ -30,8 +30,7 @@ func (c *ConnectionIssue) Equal(other *ConnectionIssue) bool {
 }
 
 // DetectConnectionIssue returns the patient's connection issue, or nil when there is
-// none. Only patients whose connection issue source is a provider are considered. The
-// conditions are checked in priority order and the first one that holds wins.
+// none. The conditions are checked in priority order and the first one that holds wins.
 //
 // The hidden flag of the stored issue is kept while the cause stays the same and dropped
 // when the cause changes.
@@ -44,6 +43,10 @@ func (p Patient) DetectConnectionIssue(now time.Time) *ConnectionIssue {
 }
 
 func (p Patient) detectConnectionIssue(now time.Time) *ConnectionIssue {
+	if p.ConnectionIssueSource == ConnectionIssueSourceDeviceNonSpecificInvitation {
+		return p.detectInvitationIssue(now)
+	}
+
 	provider := string(p.ConnectionIssueSource)
 	if _, ok := ConnectionIssueSourceForProvider(provider); !ok {
 		return nil
@@ -66,6 +69,35 @@ func (p Patient) detectConnectionIssue(now time.Time) *ConnectionIssue {
 	}
 
 	return nil
+}
+
+// detectInvitationIssue applies to a device non-specific invitation that has not been
+// accepted. Expiry is measured from the patient's creation, because reminders do not
+// extend the invitation, while staleness is measured from the last time it was sent.
+func (p Patient) detectInvitationIssue(now time.Time) *ConnectionIssue {
+	if p.invitationAccepted() || len(p.ProviderConnectionRequests) > 0 {
+		return nil
+	}
+
+	sentAt := p.LastInvitationSent
+	if sentAt.IsZero() {
+		// The initial invitation is sent when the patient is created
+		sentAt = p.CreatedTime
+	}
+
+	switch {
+	case now.Sub(p.CreatedTime) > InvitationExpirationDuration:
+		return &ConnectionIssue{Cause: ConnectionIssueCauseExpiredInvite}
+	case now.Sub(sentAt) > StaleDuration:
+		return &ConnectionIssue{Cause: ConnectionIssueCauseStaleInvite}
+	}
+	return nil
+}
+
+// invitationAccepted reports whether the patient claimed the account or connected a
+// data source, either of which means the invitation did its job.
+func (p Patient) invitationAccepted() bool {
+	return !p.IsCustodial() || (p.DataSources != nil && len(*p.DataSources) > 0)
 }
 
 func (p Patient) dataSourceFor(provider string) *DataSource {
