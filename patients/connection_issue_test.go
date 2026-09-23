@@ -67,12 +67,77 @@ var _ = Describe("ConnectionIssue", func() {
 			Expect(p.DetectConnectionIssue(now)).To(BeNil())
 		})
 
-		It("is nil for the invitation source", func() {
-			p := patient([]patients.DataSource{dexcom("error")})
-			p.ConnectionIssueSource =
-				patients.ConnectionIssueSourceDeviceNonSpecificInvitation
+		Describe("invitation issues", func() {
+			// invited returns a custodial patient with an outstanding device non-specific
+			// invitation, created and last invited the given durations ago.
+			invited := func(createdAgo, sentAgo time.Duration) patients.Patient {
+				custodial := patients.Permissions{Custodian: &patients.Permission{}}
+				return patients.Patient{
+					ConnectionIssueSource: patients.
+						ConnectionIssueSourceDeviceNonSpecificInvitation,
+					Permissions:        &custodial,
+					CreatedTime:        now.Add(-createdAgo),
+					LastInvitationSent: now.Add(-sentAgo),
+				}
+			}
 
-			Expect(p.DetectConnectionIssue(now)).To(BeNil())
+			It("is nil while the invitation is fresh", func() {
+				p := invited(24*time.Hour, 24*time.Hour)
+
+				Expect(p.DetectConnectionIssue(now)).To(BeNil())
+			})
+
+			It("is stale when the invitation was last sent over 48 hours ago", func() {
+				p := invited(10*24*time.Hour, 72*time.Hour)
+
+				expectIssue(p.DetectConnectionIssue(now),
+					patients.ConnectionIssueCauseStaleInvite)
+			})
+
+			It("is expired once the patient is over 31 days old", func() {
+				p := invited(40*24*time.Hour, 72*time.Hour)
+
+				expectIssue(p.DetectConnectionIssue(now),
+					patients.ConnectionIssueCauseExpiredInvite)
+			})
+
+			It("stays expired after a recent reminder", func() {
+				p := invited(40*24*time.Hour, time.Hour)
+
+				expectIssue(p.DetectConnectionIssue(now),
+					patients.ConnectionIssueCauseExpiredInvite)
+			})
+
+			It("falls back to the creation time when the sent time is unknown", func() {
+				p := invited(40*24*time.Hour, 0)
+				p.LastInvitationSent = time.Time{}
+
+				expectIssue(p.DetectConnectionIssue(now),
+					patients.ConnectionIssueCauseExpiredInvite)
+			})
+
+			It("is nil once the patient has claimed the account", func() {
+				p := invited(40*24*time.Hour, 72*time.Hour)
+				p.Permissions = &patients.Permissions{View: &patients.Permission{}}
+
+				Expect(p.DetectConnectionIssue(now)).To(BeNil())
+			})
+
+			It("is nil once the patient has a data source", func() {
+				p := invited(40*24*time.Hour, 72*time.Hour)
+				p.DataSources = &[]patients.DataSource{dexcom("connected")}
+
+				Expect(p.DetectConnectionIssue(now)).To(BeNil())
+			})
+
+			It("is nil when a provider connection request exists", func() {
+				p := invited(40*24*time.Hour, 72*time.Hour)
+				p.ProviderConnectionRequests = patients.ProviderConnectionRequests{
+					patients.DexcomDataSourceProviderName: {request(now)},
+				}
+
+				Expect(p.DetectConnectionIssue(now)).To(BeNil())
+			})
 		})
 
 		It("is nil for a connected source with fresh data", func() {
