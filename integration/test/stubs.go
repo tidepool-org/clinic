@@ -101,7 +101,7 @@ var (
 	// success for "creating" custodial users by the shoreline stub (I am aware
 	// this a stubs file but this is simpler to modify here for some semi-dynamic
 	// content).
-	createCustodialEmailRegexp = regexp.MustCompile(`^working\+test\+custodial.*@tidepool.org$`)
+	createCustodialEmailRegexp = regexp.MustCompile(`^working\+test\+custodial.*@tidepool\.org$`)
 )
 
 func ShorelineStub() *httptest.Server {
