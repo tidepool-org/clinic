@@ -1456,14 +1456,15 @@ func (r *repository) getPatientDataSources(ctx context.Context,
 	return sources, nil
 }
 
-// UpdateConnectionIssues recomputes the connection issue of every patient whose
-// connection issue source is a provider, writing only the patients whose issue changed.
+// UpdateConnectionIssues recomputes the connection issue of every patient with a
+// connection issue source, writing only the patients whose issue changed.
 func (r *repository) UpdateConnectionIssues(ctx context.Context) error {
 	selector := bson.M{
 		"connectionIssueSource": bson.M{"$in": bson.A{
 			patients.ConnectionIssueSourceDexcom,
 			patients.ConnectionIssueSourceAbbott,
 			patients.ConnectionIssueSourceTwiist,
+			patients.ConnectionIssueSourceDeviceNonSpecificInvitation,
 		}},
 	}
 	opts := options.Find().SetProjection(bson.M{
@@ -1472,6 +1473,9 @@ func (r *repository) UpdateConnectionIssues(ctx context.Context) error {
 		"connectionIssue":            1,
 		"dataSources":                1,
 		"providerConnectionRequests": 1,
+		"permissions":                1,
+		"createdTime":                1,
+		"lastInvitationSent":         1,
 	})
 	cursor, err := r.collection.Find(ctx, selector, opts)
 	if err != nil {
