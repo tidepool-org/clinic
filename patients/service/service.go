@@ -380,11 +380,9 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 	return nil
 }
 
-// UpdateConnectionIssues is a placeholder that only records the call until the
-// connection issues logic is implemented.
 func (s *service) UpdateConnectionIssues(ctx context.Context) error {
 	s.logger.Infow("updating connection issues for all patients")
-	return nil
+	return s.patientsRepo.UpdateConnectionIssues(ctx)
 }
 
 func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {

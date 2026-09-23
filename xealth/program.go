@@ -90,8 +90,7 @@ func formatDataSourceState(conn connection) string {
 	if conn.DataSource == nil {
 		return "pending"
 	}
-	if conn.DataSource.ModifiedTime != nil && conn.ConnectionRequest != nil &&
-		conn.ConnectionRequest.CreatedTime.After(*conn.DataSource.ModifiedTime) {
+	if conn.ConnectionRequest != nil && !conn.DataSource.Accepted(*conn.ConnectionRequest) {
 		return "pending reconnect"
 	}
 	return strings.ToLower(conn.DataSource.State)

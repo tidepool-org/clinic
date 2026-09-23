@@ -140,6 +140,17 @@ func (r *repository) Initialize(ctx context.Context) error {
 		},
 		{
 			Keys: bson.D{
+				{Key: "connectionIssueSource", Value: 1},
+			},
+			Options: options.Index().
+				// Used by UpdateConnectionIssues to sweep the patients with a source
+				SetName("ConnectionIssueSource").
+				SetPartialFilterExpression(bson.D{
+					{"connectionIssueSource", bson.M{"$type": "string"}},
+				}),
+		},
+		{
+			Keys: bson.D{
 				{Key: "clinicId", Value: 1},
 				{Key: "mrn", Value: 1},
 				// The field is not used and only set here to allow the creation of
@@ -863,6 +874,21 @@ func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId st
 	return nil
 }
 
+// clearConnectionIssue removes the connection issue of the patients matching the
+// selector. It is used when the connection issue source changes: the stored issue
+// describes the previous source, so it is removed and recomputed by the next sweep.
+// While it could be made a part of the relevant connection issue source database
+// updates, doing so makes those queries overly complicated. While there might be a small
+// increase in performance from doing so, the extra MongoDB query complexity wasn't worth
+// it.
+func (r *repository) clearConnectionIssue(ctx context.Context, selector bson.M) error {
+	update := bson.M{"$unset": bson.M{"connectionIssue": ""}}
+	if _, err := r.collection.UpdateMany(ctx, selector, update); err != nil {
+		return fmt.Errorf("error clearing connection issue: %w", err)
+	}
+	return nil
+}
+
 func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	clinicObjId, _ := primitive.ObjectIDFromHex(update.ClinicId)
 	selector := bson.M{
@@ -923,6 +949,7 @@ func (r *repository) UpdateLastInvitationSent(ctx context.Context, clinicId, use
 	if previous.ConnectionIssueSource == "" {
 		r.logger.Infow("setting connection issue source for patient",
 			"clinicId", clinicId, "userId", userId, "connectionIssueSource", source)
+		return r.clearConnectionIssue(ctx, selector)
 	}
 
 	return nil
@@ -947,11 +974,14 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 			},
 		},
 	}
-	if source, ok := patients.ConnectionIssueSourceForProvider(request.ProviderName); ok {
+	source, ok := patients.ConnectionIssueSourceForProvider(request.ProviderName)
+	if ok {
 		update["$set"] = bson.M{"connectionIssueSource": source}
 	}
 
-	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
+	// FindOneAndUpdate returns the document as it was before the update
+	var previous patients.Patient
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Decode(&previous)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return patients.ErrNotFound
@@ -959,6 +989,9 @@ func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId,
 		return fmt.Errorf("error updating patient: %w", err)
 	}
 
+	if ok && previous.ConnectionIssueSource != source {
+		return r.clearConnectionIssue(ctx, selector)
+	}
 	return nil
 }
 
@@ -1305,12 +1338,24 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	set := bson.M{
 		"updatedTime": now,
 	}
+	update := bson.M{
+		"$set": set,
+	}
 	if dataSources != nil {
 		if newest := dataSources.NewlyConnected(existing).Newest(); newest != nil {
 			source, ok := patients.ConnectionIssueSourceForProvider(newest.ProviderName)
 			if ok {
 				r.logger.Infow("setting connection issue source for clinic patients",
 					"userId", userId, "connectionIssueSource", source)
+				// Each clinic patient record has its own source, so only the records
+				// whose source changes lose their connection issue.
+				err := r.clearConnectionIssue(ctx, bson.M{
+					"userId":                userId,
+					"connectionIssueSource": bson.M{"$ne": source},
+				})
+				if err != nil {
+					return err
+				}
 				set["connectionIssueSource"] = source
 			} else {
 				r.logger.Warnw("unknown provider for connection issue source",
@@ -1319,10 +1364,6 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 		}
 	}
 	set["dataSources"] = dataSources
-
-	update := bson.M{
-		"$set": set,
-	}
 
 	result, err := r.collection.UpdateMany(ctx, selector, update)
 	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
@@ -1335,13 +1376,19 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	return nil
 }
 
+// getPatientDataSources returns the data sources stored for the user. All clinic patient
+// records of a user share them, so reading one record is sufficient. A user without any
+// patient records yields no data sources.
 func (r *repository) getPatientDataSources(ctx context.Context,
 	userId string) (patients.DataSources, error) {
 
 	selector := bson.M{
 		"userId": userId,
 	}
-	opts := options.FindOne().SetProjection(bson.M{"_id": 0, "dataSources": 1})
+	opts := options.FindOne().SetProjection(bson.M{
+		"_id":         0,
+		"dataSources": 1,
+	})
 
 	var patient patients.Patient
 	err := r.collection.FindOne(ctx, selector, opts).Decode(&patient)
@@ -1351,16 +1398,80 @@ func (r *repository) getPatientDataSources(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("unable to read data sources of user %v: %w", userId, err)
 	}
-	if patient.DataSources == nil {
-		return nil, nil
-	}
 
-	return *patient.DataSources, nil
+	var sources patients.DataSources
+	if patient.DataSources != nil {
+		sources = *patient.DataSources
+	}
+	return sources, nil
 }
 
-// UpdateConnectionIssues is a placeholder until the connection issues logic is
-// implemented. The Repository interface embeds Service, so it has to exist here too.
+// UpdateConnectionIssues recomputes the connection issue of every patient whose
+// connection issue source is a provider, writing only the patients whose issue changed.
 func (r *repository) UpdateConnectionIssues(ctx context.Context) error {
+	selector := bson.M{
+		"connectionIssueSource": bson.M{"$in": bson.A{
+			patients.ConnectionIssueSourceDexcom,
+			patients.ConnectionIssueSourceAbbott,
+			patients.ConnectionIssueSourceTwiist,
+		}},
+	}
+	opts := options.Find().SetProjection(bson.M{
+		"_id":                        1,
+		"connectionIssueSource":      1,
+		"connectionIssue":            1,
+		"dataSources":                1,
+		"providerConnectionRequests": 1,
+	})
+	cursor, err := r.collection.Find(ctx, selector, opts)
+	if err != nil {
+		return fmt.Errorf("unable to list patients with a connection issue source: %w", err)
+	}
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			r.logger.Errorw("error closing cursor", "error", err)
+		}
+	}()
+
+	now := time.Now()
+	checked, updated := 0, 0
+	for cursor.Next(ctx) {
+		var patient patients.Patient
+		if err := cursor.Decode(&patient); err != nil {
+			return fmt.Errorf("unable to decode patient: %w", err)
+		}
+		checked++
+
+		issue := patient.DetectConnectionIssue(now)
+		if issue.Equal(patient.ConnectionIssue) {
+			continue
+		}
+
+		update := bson.M{"$set": bson.M{"connectionIssue": issue, "updatedTime": now}}
+		if issue == nil {
+			update = bson.M{
+				"$unset": bson.M{"connectionIssue": ""},
+				"$set":   bson.M{"updatedTime": now},
+			}
+		}
+		// Matching the source skips patients whose source changed since they were read,
+		// as the issue computed here would be for the old source.
+		selector := bson.M{
+			"_id":                   patient.Id,
+			"connectionIssueSource": patient.ConnectionIssueSource,
+		}
+		if _, err := r.collection.UpdateOne(ctx, selector, update); err != nil {
+			return fmt.Errorf("unable to update connection issue of patient %v: %w",
+				patient.Id.Hex(), err)
+		}
+		updated++
+	}
+	if err := cursor.Err(); err != nil {
+		return fmt.Errorf("error iterating patients with a connection issue source: %w",
+			err)
+	}
+
+	r.logger.Infow("updated connection issues", "checked", checked, "updated", updated)
 	return nil
 }
 

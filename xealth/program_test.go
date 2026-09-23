@@ -248,6 +248,46 @@ var _ = Describe("Program", func() {
 			Expect(xealth.GetProgramDescription(lastUpload, lastViewed, patient)).To(PointTo(Equal(expected)))
 		})
 
+		It("is correct with a disconnected cloud connection connected before the request",
+			func() {
+				expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Dexcom (pending reconnect)"
+				connected := now.Add(-2 * time.Hour)
+				patient.DataSources = &[]patients.DataSource{{
+					ProviderName:  "dexcom",
+					State:         "disconnected",
+					CreatedTime:   &connected,
+					ModifiedTime:  &modifiedTime,
+					ConnectedTime: &connected,
+				}}
+				patient.ProviderConnectionRequests = map[string]patients.ConnectionRequests{
+					"dexcom": []patients.ConnectionRequest{
+						{ProviderName: "dexcom", CreatedTime: now.Add(-time.Hour)},
+					},
+				}
+				Expect(xealth.GetProgramDescription(lastUpload, lastViewed, patient)).
+					To(PointTo(Equal(expected)))
+			})
+
+		It("is correct with an errored cloud connection connected after the request",
+			func() {
+				expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Dexcom (error)"
+				created := now.Add(-2 * time.Hour)
+				connected := now.Add(-30 * time.Minute)
+				patient.DataSources = &[]patients.DataSource{{
+					ProviderName:  "dexcom",
+					State:         "error",
+					CreatedTime:   &created,
+					ConnectedTime: &connected,
+				}}
+				patient.ProviderConnectionRequests = map[string]patients.ConnectionRequests{
+					"dexcom": []patients.ConnectionRequest{
+						{ProviderName: "dexcom", CreatedTime: now.Add(-time.Hour)},
+					},
+				}
+				Expect(xealth.GetProgramDescription(lastUpload, lastViewed, patient)).
+					To(PointTo(Equal(expected)))
+			})
+
 		It("is correct with a single cloud connection in connected state", func() {
 			expected := "Last Upload: N/A | Last Viewed by You: N/A | Claimed Account?: No | Cloud Connections: Dexcom (connected)"
 			patient.DataSources = &[]patients.DataSource{
