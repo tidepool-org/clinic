@@ -1146,6 +1146,22 @@ func NewPatientCountDto(patientCount *clinics.PatientCount) PatientCountV1 {
 	return dto
 }
 
+func ParseConnectionIssueCauses(values *[]string) ([]patients.ConnectionIssueCause, error) {
+	if values == nil || len(*values) == 0 {
+		return nil, nil
+	}
+	causes := make([]patients.ConnectionIssueCause, 0, len(*values))
+	for _, value := range *values {
+		cause, ok := patients.ParseConnectionIssueCause(value)
+		if !ok {
+			return nil, fmt.Errorf("%w: invalid connection issue cause %q",
+				errors.BadRequest, value)
+		}
+		causes = append(causes, cause)
+	}
+	return causes, nil
+}
+
 func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 	if sort == nil {
 		return nil, nil

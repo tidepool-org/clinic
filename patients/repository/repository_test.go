@@ -1649,6 +1649,109 @@ var _ = Describe("Patients Repository", func() {
 				Expect(result2PatientUserIDs).To(ContainElement(*got.UserId))
 			})
 
+			Describe("filters by connection issue", func() {
+				var ctx context.Context
+				var visibleStale, hiddenStale, visibleError, noIssue primitive.ObjectID
+
+				insert := func(issue *patients.ConnectionIssue) primitive.ObjectID {
+					GinkgoHelper()
+					patient := patientsTest.RandomPatient()
+					patient.ClinicId = &clinicId
+					patient.ConnectionIssueSource = patients.ConnectionIssueSourceDexcom
+					patient.ConnectionIssue = issue
+					result, err := collection.InsertOne(ctx, patient)
+					Expect(err).ToNot(HaveOccurred())
+					id := result.InsertedID.(primitive.ObjectID)
+					DeferCleanup(func() {
+						_, err := collection.DeleteOne(ctx, bson.M{"_id": id})
+						Expect(err).ToNot(HaveOccurred())
+					})
+					return id
+				}
+
+				issue := func(cause patients.ConnectionIssueCause,
+					hidden bool) *patients.ConnectionIssue {
+
+					return &patients.ConnectionIssue{
+						Cause:  cause,
+						Hidden: hidden,
+					}
+				}
+
+				list := func(filter patients.Filter) []primitive.ObjectID {
+					GinkgoHelper()
+					filter.ClinicId = strp(clinicId.Hex())
+					result, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
+					Expect(err).ToNot(HaveOccurred())
+					count, err := repo.Count(ctx, &filter)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(count).To(Equal(len(result.Patients)))
+
+					var ids []primitive.ObjectID
+					for _, patient := range result.Patients {
+						ids = append(ids, *patient.Id)
+					}
+					return ids
+				}
+
+				BeforeEach(func() {
+					ctx = context.Background()
+					staleData := patients.ConnectionIssueCauseStaleData
+					visibleStale = insert(issue(staleData, false))
+					hiddenStale = insert(issue(staleData, true))
+					visibleError = insert(issue(patients.ConnectionIssueCauseError, false))
+					noIssue = insert(nil)
+				})
+
+				It("returns the visible issues with a matching cause", func() {
+					ids := list(patients.Filter{
+						ConnectionIssueCauses: []patients.ConnectionIssueCause{
+							patients.ConnectionIssueCauseStaleData,
+						},
+					})
+
+					Expect(ids).To(ConsistOf([]primitive.ObjectID{visibleStale}))
+				})
+
+				It("matches any of several causes", func() {
+					ids := list(patients.Filter{
+						ConnectionIssueCauses: []patients.ConnectionIssueCause{
+							patients.ConnectionIssueCauseStaleData,
+							patients.ConnectionIssueCauseError,
+						},
+					})
+
+					Expect(ids).To(ConsistOf([]primitive.ObjectID{
+						visibleStale, visibleError,
+					}))
+				})
+
+				It("returns only the hidden issues when requested", func() {
+					ids := list(patients.Filter{
+						ConnectionIssueCauses: []patients.ConnectionIssueCause{
+							patients.ConnectionIssueCauseStaleData,
+							patients.ConnectionIssueCauseError,
+						},
+						OnlyHiddenConnectionIssues: true,
+					})
+
+					Expect(ids).To(ConsistOf([]primitive.ObjectID{hiddenStale}))
+				})
+
+				It("returns hidden issues of any cause without causes", func() {
+					ids := list(patients.Filter{OnlyHiddenConnectionIssues: true})
+
+					Expect(ids).To(ConsistOf([]primitive.ObjectID{hiddenStale}))
+				})
+
+				It("does not filter without either parameter", func() {
+					ids := list(patients.Filter{})
+
+					Expect(ids).To(ContainElements(visibleStale, hiddenStale, visibleError,
+						noIssue))
+				})
+			})
+
 			It("filters by patient site correctly", func() {
 				// non-existent sites match no patients
 				ctx := context.Background()

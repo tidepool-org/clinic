@@ -2571,6 +2571,17 @@ type ListPatientsParams struct {
 	// Sites Comma-separated list of clinic site IDs
 	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
 
+	// ConnectionIssueCauses Comma-separated list of connection issue causes. When given, only patients
+	// whose connection issue has one of these causes and is not hidden are
+	// returned. Valid causes are error, disconnected, staleData, staleInvite and
+	// expiredInvite.
+	ConnectionIssueCauses *[]string `form:"connectionIssueCauses,omitempty" json:"connectionIssueCauses,omitempty"`
+
+	// OnlyHiddenConnectionIssues When true, only patients whose connection issue is hidden are returned,
+	// instead of excluding them. Combine with connectionIssueCauses to list the
+	// hidden issues of specific causes.
+	OnlyHiddenConnectionIssues *bool `form:"onlyHiddenConnectionIssues,omitempty" json:"onlyHiddenConnectionIssues,omitempty"`
+
 	// OmitNonStandardRanges Whether patients whose glycemic ranges selection is *not*
 	// the ADA standard ranges (e.g. as used by the TIDE report)
 	// should be omitted.

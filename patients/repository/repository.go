@@ -175,6 +175,18 @@ func (r *repository) Initialize(ctx context.Context) error {
 			Options: options.Index().
 				SetName("Sites"),
 		},
+		{
+			Keys: bson.D{
+				{Key: "clinicId", Value: 1},
+				{Key: "connectionIssue.cause", Value: 1},
+				{Key: "connectionIssue.hidden", Value: 1},
+			},
+			Options: options.Index().
+				SetName("ConnectionIssueCause").
+				SetPartialFilterExpression(bson.D{
+					{"connectionIssue", bson.M{"$exists": true}},
+				}),
+		},
 		// This kludgy indexing strategy is due to the way the data is currently
 		// shaped. For each time period, we need to index individual time periods
 		// 1d, 7d, 14d, 30d. These partial filter expressions will mostly meet the
@@ -1684,6 +1696,17 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 				bson.M{"sites": bson.M{"$size": 0}},
 				bson.M{"sites": bson.M{"$exists": 0}},
 			})
+		}
+	}
+
+	if len(filter.ConnectionIssueCauses) > 0 {
+		selector["connectionIssue.cause"] = bson.M{"$in": filter.ConnectionIssueCauses}
+	}
+	if len(filter.ConnectionIssueCauses) > 0 || filter.OnlyHiddenConnectionIssues {
+		// The hidden flag is only ever stored as true, so "not hidden" is "not true"
+		selector["connectionIssue.hidden"] = bson.M{"$ne": true}
+		if filter.OnlyHiddenConnectionIssues {
+			selector["connectionIssue.hidden"] = true
 		}
 	}
 
