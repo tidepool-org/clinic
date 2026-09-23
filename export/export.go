@@ -245,14 +245,13 @@ func fmtProviderStatus(patient *patients.ExportedPatient, providerName string,
 	return fmtDataSourceStatus(ds, now)
 }
 
+// requestIsNewer reports whether the connection request is still outstanding, that is,
+// whether it was not accepted by the data source. See patients.DataSource.Accepted.
 func requestIsNewer(cr *patients.ConnectionRequest, ds *patients.DataSource) bool {
 	if cr == nil {
 		return false
 	}
-	if ds == nil || ds.CreatedTime == nil {
-		return true
-	}
-	return cr.CreatedTime.After(*ds.CreatedTime)
+	return ds == nil || !ds.Accepted(*cr)
 }
 
 func fmtProviderConnectionRequestStatus(cr *patients.ConnectionRequest,
@@ -268,7 +267,7 @@ func fmtDataSourceStatus(ds *patients.DataSource, now time.Time) string {
 	if ds == nil || ds.State == "" {
 		return "NA"
 	}
-	inactiveCutoff := now.Add(-time.Hour * 24 * 2)
+	inactiveCutoff := now.Add(-patients.StaleDuration)
 
 	if ds.State == "connected" && ds.LatestDataTime != nil && ds.LatestDataTime.Before(inactiveCutoff) {
 		return "inactive"

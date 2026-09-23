@@ -30,6 +30,10 @@ var (
 
 	PendingDataSourceExpirationDuration = time.Hour * 24 * 30
 
+	// StaleDuration is how long data or an invitation may go without activity before it
+	// is considered stale.
+	StaleDuration = time.Hour * 48
+
 	DexcomDataSourceProviderName = "dexcom"
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
@@ -134,11 +138,14 @@ type Patient struct {
 	// ConnectionIssueSource is owned by the server, see the ConnectionIssueSource type.
 	// omitempty keeps whole-document updates from clearing it.
 	ConnectionIssueSource ConnectionIssueSource `bson:"connectionIssueSource,omitempty"`
-	RequireUniqueMrn      bool                  `bson:"requireUniqueMrn"`
-	EHRSubscriptions      EHRSubscriptions      `bson:"ehrSubscriptions,omitempty"`
-	Sites                 *[]sites.Site         `bson:"sites,omitempty"`
-	GlycemicRanges        GlycemicRanges        `bson:"glycemicRanges,omitempty"`
-	DiagnosisType         *DiagnosisType        `bson:"diagnosisType,omitempty"`
+	// ConnectionIssue is owned by the server, see DetectConnectionIssue. omitempty keeps
+	// whole-document updates from clearing it.
+	ConnectionIssue  *ConnectionIssue `bson:"connectionIssue,omitempty"`
+	RequireUniqueMrn bool             `bson:"requireUniqueMrn"`
+	EHRSubscriptions EHRSubscriptions `bson:"ehrSubscriptions,omitempty"`
+	Sites            *[]sites.Site    `bson:"sites,omitempty"`
+	GlycemicRanges   GlycemicRanges   `bson:"glycemicRanges,omitempty"`
+	DiagnosisType    *DiagnosisType   `bson:"diagnosisType,omitempty"`
 
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
