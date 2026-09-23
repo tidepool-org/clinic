@@ -281,7 +281,8 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 	}
 	if patient.ConnectionIssue != nil {
 		dto.ConnectionIssue = &ConnectionIssueV1{
-			Cause: ConnectionIssueV1Cause(patient.ConnectionIssue.Cause),
+			Cause:  ConnectionIssueV1Cause(patient.ConnectionIssue.Cause),
+			Hidden: &patient.ConnectionIssue.Hidden,
 		}
 	}
 

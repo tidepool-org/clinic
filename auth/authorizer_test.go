@@ -1454,6 +1454,85 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).To(Equal(auth.ErrUnauthorized))
 	})
 
+	Describe("hiding a connection issue", func() {
+		path := []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients",
+			"1234567890", "connection_issue", "hidden"}
+
+		It("allows a clinic member", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "clinician-user-id",
+					"serverAccess": false,
+				},
+				"clinician": clinicMember,
+			}
+			Expect(authorizer.EvaluatePolicy(context.Background(), input)).To(Succeed())
+		})
+
+		It("allows a clinic admin", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "clinician-user-id",
+					"serverAccess": false,
+				},
+				"clinician": clinicAdmin,
+			}
+			Expect(authorizer.EvaluatePolicy(context.Background(), input)).To(Succeed())
+		})
+
+		It("allows backend services", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "clinic-worker",
+					"serverAccess": true,
+				},
+			}
+			Expect(authorizer.EvaluatePolicy(context.Background(), input)).To(Succeed())
+		})
+
+		It("prevents a clinician without roles", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "clinician-user-id",
+					"serverAccess": false,
+				},
+				"clinician": map[string]interface{}{"roles": []string{}},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents a patient from hiding their own connection issue", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "PUT",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
+		It("prevents unauthenticated requests", func() {
+			input := map[string]interface{}{
+				"path":   path,
+				"method": "PUT",
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+	})
+
 	It("allows backend services to record that an invitation was resent", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "invitation_resent"},
