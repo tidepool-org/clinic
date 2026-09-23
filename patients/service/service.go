@@ -304,6 +304,14 @@ func (s *service) DeleteSummaryInAllClinics(ctx context.Context, summaryId strin
 	return s.patientsRepo.DeleteSummaryInAllClinics(ctx, summaryId)
 }
 
+func (s *service) SetConnectionIssueHidden(ctx context.Context, clinicId, userId string,
+	hidden bool) (*patients.Patient, error) {
+
+	s.logger.Infow("setting connection issue hidden",
+		"clinicId", clinicId, "userId", userId, "hidden", hidden)
+	return s.patientsRepo.SetConnectionIssueHidden(ctx, clinicId, userId, hidden)
+}
+
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	s.logger.Infow("updating last upload reminder time for user", "clinicId", update.ClinicId, "userId", update.UserId)
 	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)

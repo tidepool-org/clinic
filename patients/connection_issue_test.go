@@ -54,7 +54,7 @@ var _ = Describe("ConnectionIssue", func() {
 		cause patients.ConnectionIssueCause) {
 
 		GinkgoHelper()
-		Expect(got).To(PointTo(MatchAllFields(Fields{
+		Expect(got).To(PointTo(MatchFields(IgnoreExtras, Fields{
 			"Cause": Equal(cause),
 		})))
 	}
@@ -288,6 +288,47 @@ var _ = Describe("ConnectionIssue", func() {
 		})
 	})
 
+	Describe("hidden", func() {
+		staleSource := func() []patients.DataSource {
+			source := dexcom("connected")
+			source.LatestDataTime = timep(now.Add(-72 * time.Hour))
+			return []patients.DataSource{source}
+		}
+
+		It("is false without a stored issue", func() {
+			got := patient(staleSource()).DetectConnectionIssue(now)
+
+			Expect(got).ToNot(BeNil())
+			Expect(got.Hidden).To(BeFalse())
+		})
+
+		It("is kept while the cause stays the same", func() {
+			p := patient(staleSource())
+			p.ConnectionIssue = &patients.ConnectionIssue{
+				Cause:  patients.ConnectionIssueCauseStaleData,
+				Hidden: true,
+			}
+
+			got := p.DetectConnectionIssue(now)
+
+			expectIssue(got, patients.ConnectionIssueCauseStaleData)
+			Expect(got.Hidden).To(BeTrue())
+		})
+
+		It("is dropped when the cause changes", func() {
+			p := patient(staleSource())
+			p.ConnectionIssue = &patients.ConnectionIssue{
+				Cause:  patients.ConnectionIssueCauseError,
+				Hidden: true,
+			}
+
+			got := p.DetectConnectionIssue(now)
+
+			Expect(got.Cause).To(Equal(patients.ConnectionIssueCauseStaleData))
+			Expect(got.Hidden).To(BeFalse())
+		})
+	})
+
 	Describe("Equal", func() {
 		issue := func(cause patients.ConnectionIssueCause) *patients.ConnectionIssue {
 			return &patients.ConnectionIssue{Cause: cause}
@@ -303,6 +344,13 @@ var _ = Describe("ConnectionIssue", func() {
 			present := issue(patients.ConnectionIssueCauseError)
 			Expect(absent.Equal(present)).To(BeFalse())
 			Expect(present.Equal(absent)).To(BeFalse())
+		})
+
+		It("ignores hidden", func() {
+			a := issue(patients.ConnectionIssueCauseError)
+			b := issue(patients.ConnectionIssueCauseError)
+			b.Hidden = true
+			Expect(a.Equal(b)).To(BeTrue())
 		})
 
 		It("compares the cause", func() {
