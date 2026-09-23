@@ -120,7 +120,7 @@ func asRedox(req *http.Request) {
 	req.Header.Set("verification-token", RedoxVerificationToken)
 }
 
-func prepareRequest(method, endpoint string, fixturePath string) *http.Request {
+func prepareRequestMIMEType(method, endpoint string, fixturePath string, mimeType string) *http.Request {
 	var body io.Reader
 	if fixturePath != "" {
 		b, err := test.LoadFixture(fixturePath)
@@ -128,12 +128,20 @@ func prepareRequest(method, endpoint string, fixturePath string) *http.Request {
 		body = bytes.NewReader(b)
 	}
 
-	return prepareRequestWithBody(method, endpoint, body)
+	return prepareRequestWithBodyMIMEType(method, endpoint, body, mimeType)
+}
+
+func prepareRequest(method, endpoint string, fixturePath string) *http.Request {
+	return prepareRequestMIMEType(method, endpoint, fixturePath, echo.MIMEApplicationJSON)
 }
 
 func prepareRequestWithBody(method, endpoint string, body io.Reader) *http.Request {
+	return prepareRequestWithBodyMIMEType(method, endpoint, body, echo.MIMEApplicationJSON)
+}
+
+func prepareRequestWithBodyMIMEType(method, endpoint string, body io.Reader, mimeType string) *http.Request {
 	req := httptest.NewRequest(method, endpoint, body)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderContentType, mimeType)
 	return req
 }
 

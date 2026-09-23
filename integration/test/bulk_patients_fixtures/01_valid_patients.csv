@@ -1,0 +1,11 @@
+Thomas Jefferson,1952-01-09,112233,working+test+custodial+thomas@tidepool.org
+Ben Franklin,1952-01-10,112234,
+George Washington,1950-01-02,123456789,working+test+custodial+george@tidepool.org
+Duplicate MRN,1951-01-02,DUPLICATEMRN,duplicate+mrn+1@tidepool.org
+Duplicate MRN II,1949-03-04,DUPLICATEMRN,duplicate+mrn+2@tidepool.org
+Existing Email In System,1990-06-21,113322445577,existing+patient+email@tidepool.org
+Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org
+Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org
+Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org
+Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org
+
