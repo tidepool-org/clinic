@@ -2317,6 +2317,20 @@ var _ = Describe("Patients Repository", func() {
 				return patient
 			}
 
+			// invitationPatient is a custodial patient with an outstanding device
+			// non-specific invitation, created and last invited the given durations ago.
+			invitationPatient := func(createdAgo, sentAgo time.Duration) patients.Patient {
+				patient := patientsTest.RandomPatient()
+				patient.ConnectionIssueSource =
+					patients.ConnectionIssueSourceDeviceNonSpecificInvitation
+				custodial := patients.Permissions{Custodian: &patients.Permission{}}
+				patient.Permissions = &custodial
+				patient.DataSources = nil
+				patient.CreatedTime = now.Add(-createdAgo)
+				patient.LastInvitationSent = now.Add(-sentAgo)
+				return patient
+			}
+
 			It("records stale data", func() {
 				latest := now.Add(-72 * time.Hour)
 				id := insert(dexcomPatient(patients.DataSource{
@@ -2419,21 +2433,44 @@ var _ = Describe("Patients Repository", func() {
 				})))
 			})
 
-			It("does not touch patients with the invitation source", func() {
-				patient := patientsTest.RandomPatient()
-				patient.ConnectionIssueSource =
-					patients.ConnectionIssueSourceDeviceNonSpecificInvitation
-				patient.ConnectionIssue = &patients.ConnectionIssue{
-					Cause: patients.ConnectionIssueCauseStaleInvite,
-				}
+			It("records an expired invitation", func() {
+				patient := invitationPatient(40*24*time.Hour, 72*time.Hour)
 				id := insert(patient)
 				before := get(id)
 
 				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
 
-				patient = get(id)
-				Expect(patient.ConnectionIssue).To(Equal(before.ConnectionIssue))
-				Expect(patient.UpdatedTime).To(BeTemporally("==", before.UpdatedTime))
+				updated := get(id)
+				Expect(updated.ConnectionIssue).To(PointTo(MatchAllFields(Fields{
+					"Cause":  Equal(patients.ConnectionIssueCauseExpiredInvite),
+					"Hidden": BeFalse(),
+				})))
+				Expect(updated.UpdatedTime).To(BeTemporally(">", before.UpdatedTime))
+			})
+
+			It("records a stale invitation", func() {
+				patient := invitationPatient(10*24*time.Hour, 72*time.Hour)
+				id := insert(patient)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).ConnectionIssue).To(PointTo(MatchAllFields(Fields{
+					"Cause":  Equal(patients.ConnectionIssueCauseStaleInvite),
+					"Hidden": BeFalse(),
+				})))
+			})
+
+			It("clears an invitation issue once the invitation is accepted", func() {
+				patient := invitationPatient(40*24*time.Hour, 72*time.Hour)
+				patient.Permissions = &patients.Permissions{View: &patients.Permission{}}
+				patient.ConnectionIssue = &patients.ConnectionIssue{
+					Cause: patients.ConnectionIssueCauseStaleInvite,
+				}
+				id := insert(patient)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).ConnectionIssue).To(BeNil())
 			})
 
 			It("does not touch patients without a source", func() {

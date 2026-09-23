@@ -36,6 +36,12 @@ var (
 	// is considered stale.
 	StaleDuration = time.Hour * 48
 
+	// InvitationExpirationDuration is how long a device non-specific invitation stays
+	// valid. It matches hydrophone's TypeSignUp confirmation timeout of 31 days. Reminders
+	// do not extend it and new invitations are not issued, so it is measured from the
+	// patient's creation.
+	InvitationExpirationDuration = time.Hour * 24 * 31
+
 	DexcomDataSourceProviderName = "dexcom"
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
