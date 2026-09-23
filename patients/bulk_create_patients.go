@@ -141,8 +141,11 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 			mrnCounts[mrn]++
 		}
 		// Note emails of patients in clinic does not include all user who have a
-		// specific email so a check for the email should be done via the user
-		// service.
+		// specific email so the actual check for the email should be done via the user
+		// service a preliminary check of the same email within a clinic is OK.
+		if email := strings.ToLower(pstr(p.Email)); email != "" {
+			emailCounts[email]++
+		}
 	}
 
 	var errs []error
@@ -242,12 +245,24 @@ func ParsePotentialCSVPatientsReader(ctx context.Context, r io.Reader, patientSv
 func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string, patients []*ParsedCSVPatient) (outputRows [][]string) {
 	outputRows = make([][]string, 0, len(patients)+1)
 	outputRows = append(outputRows, header)
+	numSkipped := 0
+	numSkippedDupeEmail := 0
+	numSkippedDupeMRN := 0
+	numCreated := 0
+	numEmailed := 0
 	for _, parsedPatient := range patients {
 		if parsedPatient.Patient == nil {
+			numSkipped++
 			if errors.Is(parsedPatient.Err(), ErrCSVPatientInvalidEmail) {
 				parsedPatient.Columns[OutputColEmailed] = "N (invalid email)"
 			} else {
 				parsedPatient.Columns[OutputColEmailed] = "N"
+			}
+			if errors.Is(parsedPatient.Err(), ErrCSVPatientDuplicateEmail) {
+				numSkippedDupeEmail++
+			}
+			if errors.Is(parsedPatient.Err(), ErrCSVPatientDuplicateMRN) {
+				numSkippedDupeMRN++
 			}
 		} else {
 			_, err := patientSvc.Create(ctx, *parsedPatient.Patient)
@@ -259,17 +274,29 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 				status += err.Error()
 				parsedPatient.Columns[OutputColStatus] = status
 				parsedPatient.Columns[OutputColEmailed] = "N"
-			} else if parsedPatient.Patient.Email != nil && *parsedPatient.Patient.Email != "" {
-				// Since the actual emaling is done outside the clinic service by
-				// hydrophone, we assume any patients with emails that were
-				// successfully created to have been emailed.
-				parsedPatient.Columns[OutputColEmailed] = "Y"
 			} else {
-				parsedPatient.Columns[OutputColEmailed] = "N"
+				numCreated++
+				if parsedPatient.Patient.Email != nil && *parsedPatient.Patient.Email != "" {
+					// Since the actual emaling is done outside the clinic service by
+					// hydrophone, we assume any patients with emails that were
+					// successfully created to have been emailed.
+					parsedPatient.Columns[OutputColEmailed] = "Y"
+					numEmailed++
+				} else {
+					parsedPatient.Columns[OutputColEmailed] = "N"
+				}
 			}
 		}
 		outputRows = append(outputRows, parsedPatient.Columns)
 	}
+	outputRows = append(outputRows, [][]string{
+		{"Patients Processed", fmt.Sprintf("%v", len(patients))},
+		{"Patients Created", fmt.Sprintf("%v", numCreated)},
+		{"Patients Skipped", fmt.Sprintf("%v", numSkipped)},
+		{"Patients Emailed", fmt.Sprintf("%v", numEmailed)},
+		{"Duplicate MRNs count", fmt.Sprintf("%v", numSkippedDupeMRN)},
+		{"Duplicate emails count", fmt.Sprintf("%v", numSkippedDupeEmail)},
+	}...)
 	return outputRows
 }
 

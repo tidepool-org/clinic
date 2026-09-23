@@ -87,9 +87,21 @@ var (
 		EmailVerified:  true,
 	}
 
+	custodialPatientPartialUser = shoreline.UserData{
+		PasswordExists: false,
+		Roles:          []string{"patient"},
+		EmailVerified:  false,
+	}
+
 	createClinicUserUrlRegexp      = regexp.MustCompile("/v1/clinics/.+/users")
 	createRestrictedTokenUrlRegexp = regexp.MustCompile("/v1/users/(.+)/restricted_tokens")
 	updateUserUrlRegexp            = regexp.MustCompile("^/user/.+")
+
+	// createCustodialEmailRegexp is the regex check for emails that will return
+	// success for "creating" custodial users by the shoreline stub (I am aware
+	// this a stubs file but this is simpler to modify here for some semi-dynamic
+	// content).
+	createCustodialEmailRegexp = regexp.MustCompile(`^working\+test\+custodial.*@tidepool.org$`)
 )
 
 func ShorelineStub() *httptest.Server {
@@ -153,6 +165,21 @@ func ShorelineStub() *httptest.Server {
 				w.WriteHeader(http.StatusCreated)
 			} else if user.Username == "xealth+guardian@tidepool.org" {
 				resp, _ = json.Marshal(xealthGuardianUser)
+				w.WriteHeader(http.StatusCreated)
+			} else if createCustodialEmailRegexp.MatchString(user.Username) {
+				var custodialUser shoreline.UserData = custodialPatientPartialUser
+				custodialUser.Username = user.Username
+				custodialUser.UserID = uuid.New().String()
+				custodialUser.Emails = []string{
+					user.Username,
+				}
+				resp, _ = json.Marshal(custodialUser)
+				w.WriteHeader(http.StatusCreated)
+			} else if user.Username == "" {
+				// allow empty custodial
+				var custodialUser shoreline.UserData = custodialPatientPartialUser
+				custodialUser.UserID = uuid.New().String()
+				resp, _ = json.Marshal(custodialUser)
 				w.WriteHeader(http.StatusCreated)
 			} else {
 				w.WriteHeader(http.StatusBadRequest)

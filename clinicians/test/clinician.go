@@ -22,6 +22,21 @@ func RandomClinician() *clinicians.Clinician {
 	}
 }
 
+func RandomClinicianWithClinicId(clinicId primitive.ObjectID) *clinicians.Clinician {
+	userId := test.Faker.UUID().V4()
+	email := test.Faker.Internet().Email()
+	name := test.Faker.Person().Name()
+	roles := []string{test.Faker.RandomStringElement([]string{"CLINIC_MEMBER", "CLINIC_ADMIN"})}
+
+	return &clinicians.Clinician{
+		ClinicId: &clinicId,
+		UserId:   &userId,
+		Email:    &email,
+		Name:     &name,
+		Roles:    roles,
+	}
+}
+
 func RandomClinicianInvite() *clinicians.Clinician {
 	inviteId := test.Faker.UUID().V4()
 	clinician := RandomClinician()

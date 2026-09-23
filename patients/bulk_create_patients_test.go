@@ -116,6 +116,12 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y"},
+				{"Patients Processed", "2"},
+				{"Patients Created", "1"},
+				{"Patients Skipped", "1"},
+				{"Patients Emailed", "1"},
+				{"Duplicate MRNs count", "0"},
+				{"Duplicate emails count", "1"},
 			}
 			patientSvc.EXPECT().
 				List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
@@ -202,6 +208,12 @@ John Adams,1951-01-02,123456780,john+adams@tidepool.org`,
 						{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 						{"George Washington", "1950-01-02", "123456789", "george+washington@tidepool.org", "", "adaStandard", "", "Y"},
 						{"John Adams", "1951-01-02", "123456780", "john+adams@tidepool.org", "", "adaStandard", "", "Y"},
+						{"Patients Processed", "2"},
+						{"Patients Created", "2"},
+						{"Patients Skipped", "0"},
+						{"Patients Emailed", "2"},
+						{"Duplicate MRNs count", "0"},
+						{"Duplicate emails count", "0"},
 					}),
 				Entry(
 					"valid CSV with mix of valid patients and duplicate mrn / emails",
@@ -217,6 +229,12 @@ Invalid Glycemic Target Defaults To adaStandard,1973-03-04,22334455,james+madiso
 						{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
 						{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", "N"},
 						{"Invalid Glycemic Target Defaults To adaStandard", "1973-03-04", "22334455", "james+madison@tidepool.org", "", "adaStandard", "", "Y"},
+						{"Patients Processed", "5"},
+						{"Patients Created", "3"},
+						{"Patients Skipped", "2"},
+						{"Patients Emailed", "2"},
+						{"Duplicate MRNs count", "1"},
+						{"Duplicate emails count", "1"},
 					}),
 			)
 
