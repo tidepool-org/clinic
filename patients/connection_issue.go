@@ -15,9 +15,13 @@ const (
 // ConnectionIssue is the highest priority connection problem detected for a patient.
 type ConnectionIssue struct {
 	Cause ConnectionIssueCause `bson:"cause"`
+	// Hidden is set by a clinician who does not want to see the issue. It is cleared
+	// whenever the connection issue source or the cause changes.
+	Hidden bool `bson:"hidden,omitempty"`
 }
 
-// Equal reports whether both issues are absent, or have the same cause.
+// Equal reports whether both issues are absent, or have the same cause. Hidden is
+// deliberately ignored, so hiding an issue does not make it look changed.
 func (c *ConnectionIssue) Equal(other *ConnectionIssue) bool {
 	if c == nil || other == nil {
 		return c == nil && other == nil
@@ -28,7 +32,18 @@ func (c *ConnectionIssue) Equal(other *ConnectionIssue) bool {
 // DetectConnectionIssue returns the patient's connection issue, or nil when there is
 // none. Only patients whose connection issue source is a provider are considered. The
 // conditions are checked in priority order and the first one that holds wins.
+//
+// The hidden flag of the stored issue is kept while the cause stays the same and dropped
+// when the cause changes.
 func (p Patient) DetectConnectionIssue(now time.Time) *ConnectionIssue {
+	issue := p.detectConnectionIssue(now)
+	if issue != nil && p.ConnectionIssue != nil && issue.Cause == p.ConnectionIssue.Cause {
+		issue.Hidden = p.ConnectionIssue.Hidden
+	}
+	return issue
+}
+
+func (p Patient) detectConnectionIssue(now time.Time) *ConnectionIssue {
 	provider := string(p.ConnectionIssueSource)
 	if _, ok := ConnectionIssueSourceForProvider(provider); !ok {
 		return nil

@@ -255,6 +255,11 @@ type ClientInterface interface {
 	// ConnectProvider request
 	ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SetConnectionIssueHiddenWithBody request with any body
+	SetConnectionIssueHiddenWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SetConnectionIssueHidden(ctx context.Context, clinicId ClinicId, patientId PatientId, body SetConnectionIssueHiddenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// RecordInvitationResent request
 	RecordInvitationResent(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1124,6 +1129,30 @@ func (c *Client) UpdatePatient(ctx context.Context, clinicId ClinicId, patientId
 
 func (c *Client) ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConnectProviderRequest(c.Server, clinicId, patientId, providerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetConnectionIssueHiddenWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetConnectionIssueHiddenRequestWithBody(c.Server, clinicId, patientId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetConnectionIssueHidden(ctx context.Context, clinicId ClinicId, patientId PatientId, body SetConnectionIssueHiddenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetConnectionIssueHiddenRequest(c.Server, clinicId, patientId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5926,6 +5955,60 @@ func NewConnectProviderRequest(server string, clinicId ClinicId, patientId Patie
 	return req, nil
 }
 
+// NewSetConnectionIssueHiddenRequest calls the generic SetConnectionIssueHidden builder with application/json body
+func NewSetConnectionIssueHiddenRequest(server string, clinicId ClinicId, patientId PatientId, body SetConnectionIssueHiddenJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetConnectionIssueHiddenRequestWithBody(server, clinicId, patientId, "application/json", bodyReader)
+}
+
+// NewSetConnectionIssueHiddenRequestWithBody generates requests for SetConnectionIssueHidden with any type of body
+func NewSetConnectionIssueHiddenRequestWithBody(server string, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/connection_issue/hidden", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewRecordInvitationResentRequest generates requests for RecordInvitationResent
 func NewRecordInvitationResentRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
 	var err error
@@ -7882,6 +7965,11 @@ type ClientWithResponsesInterface interface {
 	// ConnectProviderWithResponse request
 	ConnectProviderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*ConnectProviderResponse, error)
 
+	// SetConnectionIssueHiddenWithBodyWithResponse request with any body
+	SetConnectionIssueHiddenWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetConnectionIssueHiddenResponse, error)
+
+	SetConnectionIssueHiddenWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body SetConnectionIssueHiddenJSONRequestBody, reqEditors ...RequestEditorFn) (*SetConnectionIssueHiddenResponse, error)
+
 	// RecordInvitationResentWithResponse request
 	RecordInvitationResentWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*RecordInvitationResentResponse, error)
 
@@ -8958,6 +9046,28 @@ func (r ConnectProviderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ConnectProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SetConnectionIssueHiddenResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientV1
+}
+
+// Status returns HTTPResponse.Status
+func (r SetConnectionIssueHiddenResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetConnectionIssueHiddenResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -10304,6 +10414,23 @@ func (c *ClientWithResponses) ConnectProviderWithResponse(ctx context.Context, c
 		return nil, err
 	}
 	return ParseConnectProviderResponse(rsp)
+}
+
+// SetConnectionIssueHiddenWithBodyWithResponse request with arbitrary body returning *SetConnectionIssueHiddenResponse
+func (c *ClientWithResponses) SetConnectionIssueHiddenWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetConnectionIssueHiddenResponse, error) {
+	rsp, err := c.SetConnectionIssueHiddenWithBody(ctx, clinicId, patientId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetConnectionIssueHiddenResponse(rsp)
+}
+
+func (c *ClientWithResponses) SetConnectionIssueHiddenWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body SetConnectionIssueHiddenJSONRequestBody, reqEditors ...RequestEditorFn) (*SetConnectionIssueHiddenResponse, error) {
+	rsp, err := c.SetConnectionIssueHidden(ctx, clinicId, patientId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetConnectionIssueHiddenResponse(rsp)
 }
 
 // RecordInvitationResentWithResponse request returning *RecordInvitationResentResponse
@@ -11767,6 +11894,32 @@ func ParseConnectProviderResponse(rsp *http.Response) (*ConnectProviderResponse,
 	response := &ConnectProviderResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseSetConnectionIssueHiddenResponse parses an HTTP response from a SetConnectionIssueHiddenWithResponse call
+func ParseSetConnectionIssueHiddenResponse(rsp *http.Response) (*SetConnectionIssueHiddenResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetConnectionIssueHiddenResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

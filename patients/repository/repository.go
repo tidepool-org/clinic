@@ -874,6 +874,44 @@ func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId st
 	return nil
 }
 
+func (r *repository) SetConnectionIssueHidden(ctx context.Context, clinicId, userId string,
+	hidden bool) (*patients.Patient, error) {
+
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId":        clinicObjId,
+		"userId":          userId,
+		"connectionIssue": bson.M{"$exists": true},
+	}
+
+	// Unsetting rather than storing false keeps documents consistent with omitempty
+	update := bson.M{
+		"$set": bson.M{"connectionIssue.hidden": true, "updatedTime": time.Now()},
+	}
+	if !hidden {
+		update = bson.M{
+			"$unset": bson.M{"connectionIssue.hidden": ""},
+			"$set":   bson.M{"updatedTime": time.Now()},
+		}
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var patient patients.Patient
+	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		// Distinguish a missing patient from a patient without a connection issue
+		if _, err := r.Get(ctx, clinicId, userId); err != nil {
+			return nil, err
+		}
+		return nil, patients.ErrConnectionIssueNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error updating patient: %w", err)
+	}
+
+	return &patient, nil
+}
+
 // clearConnectionIssue removes the connection issue of the patients matching the
 // selector. It is used when the connection issue source changes: the stored issue
 // describes the previous source, so it is removed and recomputed by the next sweep.
