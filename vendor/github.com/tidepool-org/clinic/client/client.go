@@ -5535,6 +5535,38 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
+		if params.ConnectionIssueCauses != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "connectionIssueCauses", runtime.ParamLocationQuery, *params.ConnectionIssueCauses); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OnlyHiddenConnectionIssues != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "onlyHiddenConnectionIssues", runtime.ParamLocationQuery, *params.OnlyHiddenConnectionIssues); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.OmitNonStandardRanges != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "omitNonStandardRanges", runtime.ParamLocationQuery, *params.OmitNonStandardRanges); err != nil {

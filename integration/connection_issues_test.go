@@ -88,6 +88,30 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 		return rec.Result()
 	}
 
+	// listPatients returns the ids of the clinic's patients matching the query string
+	listPatients := func(query string) ([]string, int) {
+		GinkgoHelper()
+		rec := httptest.NewRecorder()
+		endpoint := fmt.Sprintf("/v1/clinics/%s/patients?%s", *clinic.Id, query)
+		req := prepareRequest(http.MethodGet, endpoint, "")
+		asClinician(req)
+
+		server.ServeHTTP(rec, req)
+		Expect(rec.Result()).ToNot(BeNil())
+		if rec.Result().StatusCode != http.StatusOK {
+			return nil, rec.Result().StatusCode
+		}
+
+		response := client.PatientsResponseV1{}
+		Expect(json.NewDecoder(rec.Result().Body).Decode(&response)).To(Succeed())
+		Expect(response.Data).ToNot(BeNil())
+		var ids []string
+		for _, listed := range *response.Data {
+			ids = append(ids, *listed.Id)
+		}
+		return ids, http.StatusOK
+	}
+
 	expectHidden := func(hidden bool) {
 		GinkgoHelper()
 		Expect(getPatient().ConnectionIssue).ToNot(BeNil())
@@ -172,6 +196,32 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 			})))
 		})
 
+		Describe("Listing by connection issue", func() {
+			It("Includes the patient for a matching visible cause", func() {
+				ids, status := listPatients("connectionIssueCauses=staleData")
+				Expect(status).To(Equal(http.StatusOK))
+				Expect(ids).To(ContainElement(*patient.Id))
+			})
+
+			It("Excludes the patient for other causes", func() {
+				ids, status := listPatients("connectionIssueCauses=error,disconnected")
+				Expect(status).To(Equal(http.StatusOK))
+				Expect(ids).ToNot(ContainElement(*patient.Id))
+			})
+
+			It("Excludes the patient when only hidden issues are requested", func() {
+				ids, status := listPatients(
+					"connectionIssueCauses=staleData&onlyHiddenConnectionIssues=true")
+				Expect(status).To(Equal(http.StatusOK))
+				Expect(ids).ToNot(ContainElement(*patient.Id))
+			})
+
+			It("Rejects an unknown cause", func() {
+				_, status := listPatients("connectionIssueCauses=staleData,bogus")
+				Expect(status).To(Equal(http.StatusBadRequest))
+			})
+		})
+
 		Describe("Hiding the issue", func() {
 			It("Is hidden by a clinician", func() {
 				resp := setHidden(true, asClinician)
@@ -181,6 +231,21 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 				Expect(json.NewDecoder(resp.Body).Decode(&updated)).To(Succeed())
 				Expect(updated.ConnectionIssue.Hidden).To(PointTo(BeTrue()))
 				expectHidden(true)
+			})
+
+			It("Is excluded from the visible list and included in the hidden list", func() {
+				ids, status := listPatients("connectionIssueCauses=staleData")
+				Expect(status).To(Equal(http.StatusOK))
+				Expect(ids).ToNot(ContainElement(*patient.Id))
+
+				ids, status = listPatients(
+					"connectionIssueCauses=staleData&onlyHiddenConnectionIssues=true")
+				Expect(status).To(Equal(http.StatusOK))
+				Expect(ids).To(ContainElement(*patient.Id))
+
+				ids, status = listPatients("onlyHiddenConnectionIssues=true")
+				Expect(status).To(Equal(http.StatusOK))
+				Expect(ids).To(ContainElement(*patient.Id))
 			})
 
 			It("Is unhidden by a backend service", func() {

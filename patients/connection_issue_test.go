@@ -329,6 +329,29 @@ var _ = Describe("ConnectionIssue", func() {
 		})
 	})
 
+	Describe("ParseConnectionIssueCause", func() {
+		It("accepts every known cause", func() {
+			for _, cause := range []patients.ConnectionIssueCause{
+				patients.ConnectionIssueCauseError,
+				patients.ConnectionIssueCauseDisconnected,
+				patients.ConnectionIssueCauseStaleData,
+				patients.ConnectionIssueCauseStaleInvite,
+				patients.ConnectionIssueCauseExpiredInvite,
+			} {
+				got, ok := patients.ParseConnectionIssueCause(string(cause))
+				Expect(ok).To(BeTrue(), string(cause))
+				Expect(got).To(Equal(cause))
+			}
+		})
+
+		It("rejects unknown values", func() {
+			for _, value := range []string{"", "bogus", "Error", "stale_data"} {
+				_, ok := patients.ParseConnectionIssueCause(value)
+				Expect(ok).To(BeFalse(), value)
+			}
+		})
+	})
+
 	Describe("Equal", func() {
 		issue := func(cause patients.ConnectionIssueCause) *patients.ConnectionIssue {
 			return &patients.ConnectionIssue{Cause: cause}
