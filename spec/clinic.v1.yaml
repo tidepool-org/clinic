@@ -5043,6 +5043,27 @@ components:
         - ConnectionIssueSourceAbbott
         - ConnectionIssueSourceTwiist
         - ConnectionIssueSourceDeviceNonSpecificInvitation
+    connectionIssue.v1:
+      title: Connection Issue
+      type: object
+      description: The highest priority connection problem detected for the patient.
+      properties:
+        cause:
+          type: string
+          enum:
+            - error
+            - disconnected
+            - staleData
+            - staleInvite
+            - expiredInvite
+          x-enum-varnames:
+            - ConnectionIssueCauseError
+            - ConnectionIssueCauseDisconnected
+            - ConnectionIssueCauseStaleData
+            - ConnectionIssueCauseStaleInvite
+            - ConnectionIssueCauseExpiredInvite
+      required:
+        - cause
     glycemicRangesThresholdUpperBound.v1:
       type: object
       properties:
@@ -5199,6 +5220,9 @@ components:
           readOnly: true
         connectionIssueSource:
           $ref: '#/components/schemas/connectionIssueSource.v1'
+          readOnly: true
+        connectionIssue:
+          $ref: '#/components/schemas/connectionIssue.v1'
           readOnly: true
         sites:
           type: array

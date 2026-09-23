@@ -635,6 +635,15 @@ const (
 	Zulu                           ClinicTimezoneV1 = "Zulu"
 )
 
+// Defines values for ConnectionIssueV1Cause.
+const (
+	ConnectionIssueCauseDisconnected  ConnectionIssueV1Cause = "disconnected"
+	ConnectionIssueCauseError         ConnectionIssueV1Cause = "error"
+	ConnectionIssueCauseExpiredInvite ConnectionIssueV1Cause = "expiredInvite"
+	ConnectionIssueCauseStaleData     ConnectionIssueV1Cause = "staleData"
+	ConnectionIssueCauseStaleInvite   ConnectionIssueV1Cause = "staleInvite"
+)
+
 // Defines values for ConnectionIssueSourceV1.
 const (
 	ConnectionIssueSourceAbbott                      ConnectionIssueSourceV1 = "abbott"
@@ -1342,6 +1351,14 @@ type CliniciansV1 = []ClinicianV1
 // ClinicsV1 defines model for clinics.v1.
 type ClinicsV1 = []ClinicV1
 
+// ConnectionIssueV1 The highest priority connection problem detected for the patient.
+type ConnectionIssueV1 struct {
+	Cause ConnectionIssueV1Cause `json:"cause"`
+}
+
+// ConnectionIssueV1Cause defines model for ConnectionIssueV1.Cause.
+type ConnectionIssueV1Cause string
+
 // ConnectionIssueSourceV1 The most recent flow that put the patient into a pending connection state.
 type ConnectionIssueSourceV1 string
 
@@ -1641,6 +1658,9 @@ type ObjectidV1 = string
 type PatientV1 struct {
 	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
 	BirthDate            openapi_types.Date `json:"birthDate"`
+
+	// ConnectionIssue The highest priority connection problem detected for the patient.
+	ConnectionIssue *ConnectionIssueV1 `json:"connectionIssue,omitempty"`
 
 	// ConnectionIssueSource The most recent flow that put the patient into a pending connection state.
 	ConnectionIssueSource *ConnectionIssueSourceV1      `json:"connectionIssueSource,omitempty"`

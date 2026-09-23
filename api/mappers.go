@@ -279,6 +279,11 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		source := ConnectionIssueSourceV1(patient.ConnectionIssueSource)
 		dto.ConnectionIssueSource = &source
 	}
+	if patient.ConnectionIssue != nil {
+		dto.ConnectionIssue = &ConnectionIssueV1{
+			Cause: ConnectionIssueV1Cause(patient.ConnectionIssue.Cause),
+		}
+	}
 
 	// Populate the new connection requests structure from the now deprecated lastRequestedDexcomConnectTime
 	if len(dto.ConnectionRequests.Dexcom) == 0 && !patient.LastRequestedDexcomConnectTime.IsZero() {
