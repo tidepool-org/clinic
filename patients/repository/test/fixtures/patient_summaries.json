@@ -1005,10 +1005,6 @@
         "dataSources":
         [
             {
-                "expirationTime":
-                {
-                    "$date": "2025-10-30T20:30:28.397Z"
-                },
                 "providerName": "dexcom",
                 "state": "connected"
             }
@@ -1518,11 +1514,7 @@
         [
             {
                 "providerName": "dexcom",
-                "state": "connected",
-                "expirationTime":
-                {
-                    "$date": "2025-10-30T20:49:05.465Z"
-                }
+                "state": "connected"
             }
         ],
         "providerConnectionRequests":
@@ -2920,11 +2912,7 @@
         [
             {
                 "providerName": "dexcom",
-                "state": "connected",
-                "expirationTime":
-                {
-                    "$date": "2025-10-10T18:15:04.463Z"
-                }
+                "state": "connected"
             }
         ],
         "providerConnectionRequests":
@@ -3454,11 +3442,7 @@
         [
             {
                 "providerName": "dexcom",
-                "state": "connected",
-                "expirationTime":
-                {
-                    "$date": "2025-10-10T17:07:17.052Z"
-                }
+                "state": "connected"
             }
         ],
         "providerConnectionRequests":
@@ -4546,11 +4530,7 @@
         [
             {
                 "providerName": "dexcom",
-                "state": "connected",
-                "expirationTime":
-                {
-                    "$date": "2025-10-09T21:48:56.869Z"
-                }
+                "state": "connected"
             }
         ],
         "providerConnectionRequests":
