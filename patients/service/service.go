@@ -86,6 +86,16 @@ func (s *service) Create(ctx context.Context, patient patients.Patient) (*patien
 		patient.Sites = &resolved
 	}
 
+	// A downstream service sends an invitation to custodial patients that are created with
+	// an email address.
+	if patient.IsCustodial() && patient.HasEmail() && patient.ConnectionIssueSource == "" {
+		patient.ConnectionIssueSource =
+			patients.ConnectionIssueSourceDeviceNonSpecificInvitation
+		s.logger.Infow("setting connection issue source for new patient",
+			"clinicId", clinicId, "userId", patient.UserId,
+			"connectionIssueSource", patient.ConnectionIssueSource)
+	}
+
 	s.logger.Infow("creating patient in clinic", "userId", patient.UserId, "clinicId", clinicId)
 
 	result, err := s.patientsRepo.Create(ctx, patient)
@@ -294,13 +304,33 @@ func (s *service) DeleteSummaryInAllClinics(ctx context.Context, summaryId strin
 	return s.patientsRepo.DeleteSummaryInAllClinics(ctx, summaryId)
 }
 
+func (s *service) SetConnectionIssueHidden(ctx context.Context, clinicId, userId string,
+	hidden bool) (*patients.Patient, error) {
+
+	s.logger.Infow("setting connection issue hidden",
+		"clinicId", clinicId, "userId", userId, "hidden", hidden)
+	return s.patientsRepo.SetConnectionIssueHidden(ctx, clinicId, userId, hidden)
+}
+
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	s.logger.Infow("updating last upload reminder time for user", "clinicId", update.ClinicId, "userId", update.UserId)
 	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)
 }
 
+func (s *service) UpdateLastInvitationSent(ctx context.Context, clinicId, userId string,
+	sentTime time.Time) error {
+
+	s.logger.Infow("updating last invitation sent time for user",
+		"clinicId", clinicId, "userId", userId)
+	return s.patientsRepo.UpdateLastInvitationSent(ctx, clinicId, userId, sentTime)
+}
+
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "providerName", request.ProviderName)
+	if source, ok := patients.ConnectionIssueSourceForProvider(request.ProviderName); ok {
+		s.logger.Infow("setting connection issue source for patient",
+			"clinicId", clinicId, "userId", userId, "connectionIssueSource", source)
+	}
 
 	now := time.Now()
 	request.CreatedTime = now
@@ -356,6 +386,11 @@ func (s *service) UpdatePatientDataSources(ctx context.Context, userId string, d
 	}
 
 	return nil
+}
+
+func (s *service) UpdateConnectionIssues(ctx context.Context) error {
+	s.logger.Infow("updating connection issues for all patients")
+	return s.patientsRepo.UpdateConnectionIssues(ctx)
 }
 
 func (s *service) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {

@@ -12,6 +12,7 @@ package test
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	deletions "github.com/tidepool-org/clinic/deletions"
 	patients "github.com/tidepool-org/clinic/patients"
@@ -333,6 +334,21 @@ func (mr *MockServiceMockRecorder) RescheduleLastSubscriptionOrderForPatient(ctx
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RescheduleLastSubscriptionOrderForPatient", reflect.TypeOf((*MockService)(nil).RescheduleLastSubscriptionOrderForPatient), ctx, clinicIds, userId, subscription, ordersCollection, targetCollection)
 }
 
+// SetConnectionIssueHidden mocks base method.
+func (m *MockService) SetConnectionIssueHidden(ctx context.Context, clinicId, userId string, hidden bool) (*patients.Patient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetConnectionIssueHidden", ctx, clinicId, userId, hidden)
+	ret0, _ := ret[0].(*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetConnectionIssueHidden indicates an expected call of SetConnectionIssueHidden.
+func (mr *MockServiceMockRecorder) SetConnectionIssueHidden(ctx, clinicId, userId, hidden any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnectionIssueHidden", reflect.TypeOf((*MockService)(nil).SetConnectionIssueHidden), ctx, clinicId, userId, hidden)
+}
+
 // TideReport mocks base method.
 func (m *MockService) TideReport(ctx context.Context, clinicId string, params patients.TideReportParams) (*patients.Tide, error) {
 	m.ctrl.T.Helper()
@@ -363,6 +379,20 @@ func (mr *MockServiceMockRecorder) Update(ctx, update any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockService)(nil).Update), ctx, update)
 }
 
+// UpdateConnectionIssues mocks base method.
+func (m *MockService) UpdateConnectionIssues(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateConnectionIssues", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateConnectionIssues indicates an expected call of UpdateConnectionIssues.
+func (mr *MockServiceMockRecorder) UpdateConnectionIssues(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnectionIssues", reflect.TypeOf((*MockService)(nil).UpdateConnectionIssues), ctx)
+}
+
 // UpdateEHRSubscription mocks base method.
 func (m *MockService) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {
 	m.ctrl.T.Helper()
@@ -389,6 +419,20 @@ func (m *MockService) UpdateEmail(ctx context.Context, userId string, email *str
 func (mr *MockServiceMockRecorder) UpdateEmail(ctx, userId, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmail", reflect.TypeOf((*MockService)(nil).UpdateEmail), ctx, userId, email)
+}
+
+// UpdateLastInvitationSent mocks base method.
+func (m *MockService) UpdateLastInvitationSent(ctx context.Context, clinicId, userId string, sentTime time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastInvitationSent", ctx, clinicId, userId, sentTime)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateLastInvitationSent indicates an expected call of UpdateLastInvitationSent.
+func (mr *MockServiceMockRecorder) UpdateLastInvitationSent(ctx, clinicId, userId, sentTime any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastInvitationSent", reflect.TypeOf((*MockService)(nil).UpdateLastInvitationSent), ctx, clinicId, userId, sentTime)
 }
 
 // UpdateLastUploadReminderTime mocks base method.
@@ -806,6 +850,21 @@ func (mr *MockRepositoryMockRecorder) RescheduleLastSubscriptionOrderForPatient(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RescheduleLastSubscriptionOrderForPatient", reflect.TypeOf((*MockRepository)(nil).RescheduleLastSubscriptionOrderForPatient), ctx, clinicIds, userId, subscription, ordersCollection, targetCollection)
 }
 
+// SetConnectionIssueHidden mocks base method.
+func (m *MockRepository) SetConnectionIssueHidden(ctx context.Context, clinicId, userId string, hidden bool) (*patients.Patient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetConnectionIssueHidden", ctx, clinicId, userId, hidden)
+	ret0, _ := ret[0].(*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetConnectionIssueHidden indicates an expected call of SetConnectionIssueHidden.
+func (mr *MockRepositoryMockRecorder) SetConnectionIssueHidden(ctx, clinicId, userId, hidden any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnectionIssueHidden", reflect.TypeOf((*MockRepository)(nil).SetConnectionIssueHidden), ctx, clinicId, userId, hidden)
+}
+
 // TideReport mocks base method.
 func (m *MockRepository) TideReport(ctx context.Context, clinicId string, params patients.TideReportParams) (*patients.Tide, error) {
 	m.ctrl.T.Helper()
@@ -836,6 +895,20 @@ func (mr *MockRepositoryMockRecorder) Update(ctx, update any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepository)(nil).Update), ctx, update)
 }
 
+// UpdateConnectionIssues mocks base method.
+func (m *MockRepository) UpdateConnectionIssues(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateConnectionIssues", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateConnectionIssues indicates an expected call of UpdateConnectionIssues.
+func (mr *MockRepositoryMockRecorder) UpdateConnectionIssues(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnectionIssues", reflect.TypeOf((*MockRepository)(nil).UpdateConnectionIssues), ctx)
+}
+
 // UpdateEHRSubscription mocks base method.
 func (m *MockRepository) UpdateEHRSubscription(ctx context.Context, clinicId, userId string, update patients.SubscriptionUpdate) error {
 	m.ctrl.T.Helper()
@@ -862,6 +935,20 @@ func (m *MockRepository) UpdateEmail(ctx context.Context, userId string, email *
 func (mr *MockRepositoryMockRecorder) UpdateEmail(ctx, userId, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmail", reflect.TypeOf((*MockRepository)(nil).UpdateEmail), ctx, userId, email)
+}
+
+// UpdateLastInvitationSent mocks base method.
+func (m *MockRepository) UpdateLastInvitationSent(ctx context.Context, clinicId, userId string, sentTime time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastInvitationSent", ctx, clinicId, userId, sentTime)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateLastInvitationSent indicates an expected call of UpdateLastInvitationSent.
+func (mr *MockRepositoryMockRecorder) UpdateLastInvitationSent(ctx, clinicId, userId, sentTime any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastInvitationSent", reflect.TypeOf((*MockRepository)(nil).UpdateLastInvitationSent), ctx, clinicId, userId, sentTime)
 }
 
 // UpdateLastUploadReminderTime mocks base method.

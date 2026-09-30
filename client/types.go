@@ -635,6 +635,23 @@ const (
 	Zulu                           ClinicTimezoneV1 = "Zulu"
 )
 
+// Defines values for ConnectionIssueV1Cause.
+const (
+	ConnectionIssueCauseDisconnected  ConnectionIssueV1Cause = "disconnected"
+	ConnectionIssueCauseError         ConnectionIssueV1Cause = "error"
+	ConnectionIssueCauseExpiredInvite ConnectionIssueV1Cause = "expiredInvite"
+	ConnectionIssueCauseStaleData     ConnectionIssueV1Cause = "staleData"
+	ConnectionIssueCauseStaleInvite   ConnectionIssueV1Cause = "staleInvite"
+)
+
+// Defines values for ConnectionIssueSourceV1.
+const (
+	ConnectionIssueSourceAbbott                      ConnectionIssueSourceV1 = "abbott"
+	ConnectionIssueSourceDeviceNonSpecificInvitation ConnectionIssueSourceV1 = "deviceNonSpecificInvitation"
+	ConnectionIssueSourceDexcom                      ConnectionIssueSourceV1 = "dexcom"
+	ConnectionIssueSourceTwiist                      ConnectionIssueSourceV1 = "twiist"
+)
+
 // Defines values for DataSourceV1State.
 const (
 	Connected    DataSourceV1State = "connected"
@@ -1334,6 +1351,26 @@ type CliniciansV1 = []ClinicianV1
 // ClinicsV1 defines model for clinics.v1.
 type ClinicsV1 = []ClinicV1
 
+// ConnectionIssueV1 The highest priority connection problem detected for the patient.
+type ConnectionIssueV1 struct {
+	Cause ConnectionIssueV1Cause `json:"cause"`
+
+	// Hidden Set by a clinician to hide the issue. Cleared when the connection issue source or the cause changes.
+	Hidden *bool `json:"hidden,omitempty"`
+}
+
+// ConnectionIssueV1Cause defines model for ConnectionIssueV1.Cause.
+type ConnectionIssueV1Cause string
+
+// ConnectionIssueHiddenV1 defines model for connectionIssueHidden.v1.
+type ConnectionIssueHiddenV1 struct {
+	// Hidden Whether the clinician wants the connection issue hidden.
+	Hidden bool `json:"hidden"`
+}
+
+// ConnectionIssueSourceV1 The most recent flow that put the patient into a pending connection state.
+type ConnectionIssueSourceV1 string
+
 // CountryV1 Country name.
 type CountryV1 = string
 
@@ -1360,6 +1397,9 @@ type CreatePatientV1 struct {
 
 // DataSourceV1 defines model for dataSource.v1.
 type DataSourceV1 struct {
+	// ConnectedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
+	ConnectedTime *DatetimeV1 `json:"connectedTime,omitempty"`
+
 	// CreatedTime [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) / [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) timestamp _with_ timezone information
 	CreatedTime *DatetimeV1 `json:"createdTime,omitempty"`
 
@@ -1625,13 +1665,19 @@ type ObjectidV1 = string
 
 // PatientV1 defines model for patient.v1.
 type PatientV1 struct {
-	AttestationSubmitted *bool                         `json:"attestationSubmitted,omitempty"`
-	BirthDate            openapi_types.Date            `json:"birthDate"`
-	ConnectionRequests   *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
-	CreatedTime          *time.Time                    `json:"createdTime,omitempty"`
-	DataSources          *[]DataSourceV1               `json:"dataSources"`
-	DiagnosisType        *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
-	Email                *string                       `json:"email,omitempty"`
+	AttestationSubmitted *bool              `json:"attestationSubmitted,omitempty"`
+	BirthDate            openapi_types.Date `json:"birthDate"`
+
+	// ConnectionIssue The highest priority connection problem detected for the patient.
+	ConnectionIssue *ConnectionIssueV1 `json:"connectionIssue,omitempty"`
+
+	// ConnectionIssueSource The most recent flow that put the patient into a pending connection state.
+	ConnectionIssueSource *ConnectionIssueSourceV1      `json:"connectionIssueSource,omitempty"`
+	ConnectionRequests    *ProviderConnectionRequestsV1 `json:"connectionRequests,omitempty"`
+	CreatedTime           *time.Time                    `json:"createdTime,omitempty"`
+	DataSources           *[]DataSourceV1               `json:"dataSources"`
+	DiagnosisType         *DiagnosisTypeV1              `json:"diagnosisType,omitempty"`
+	Email                 *string                       `json:"email,omitempty"`
 
 	// FullName The full name of the patient
 	FullName       string            `json:"fullName"`
@@ -2528,6 +2574,17 @@ type ListPatientsParams struct {
 	// Sites Comma-separated list of clinic site IDs
 	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
 
+	// ConnectionIssueCauses Comma-separated list of connection issue causes. When given, only patients
+	// whose connection issue has one of these causes and is not hidden are
+	// returned. Valid causes are error, disconnected, staleData, staleInvite and
+	// expiredInvite.
+	ConnectionIssueCauses *[]string `form:"connectionIssueCauses,omitempty" json:"connectionIssueCauses,omitempty"`
+
+	// OnlyHiddenConnectionIssues When true, only patients whose connection issue is hidden are returned,
+	// instead of excluding them. Combine with connectionIssueCauses to list the
+	// hidden issues of specific causes.
+	OnlyHiddenConnectionIssues *bool `form:"onlyHiddenConnectionIssues,omitempty" json:"onlyHiddenConnectionIssues,omitempty"`
+
 	// OmitNonStandardRanges Whether patients whose glycemic ranges selection is *not*
 	// the ADA standard ranges (e.g. as used by the TIDE report)
 	// should be omitted.
@@ -2641,6 +2698,9 @@ type CreatePatientFromUserJSONRequestBody = CreatePatientV1
 
 // UpdatePatientJSONRequestBody defines body for UpdatePatient for application/json ContentType.
 type UpdatePatientJSONRequestBody = PatientV1
+
+// SetConnectionIssueHiddenJSONRequestBody defines body for SetConnectionIssueHidden for application/json ContentType.
+type SetConnectionIssueHiddenJSONRequestBody = ConnectionIssueHiddenV1
 
 // UpdatePatientPermissionsJSONRequestBody defines body for UpdatePatientPermissions for application/json ContentType.
 type UpdatePatientPermissionsJSONRequestBody = PatientPermissionsV1
