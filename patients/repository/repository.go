@@ -883,61 +883,25 @@ func (r *repository) UpdateLastUploadReminderTime(ctx context.Context, update *p
 
 func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
-	currentTime := time.Now()
-
-	// We fetch the current dexcom data source to determine if we are requesting an initial connection
-	// or a reconnection to a previously connected data source, which will have a `ModifiedTime` set
-	patient, err := r.Get(ctx, clinicId, userId)
-	if err != nil {
-		return fmt.Errorf("error finding patient: %w", err)
-	}
-
-	var providerDataSource patients.DataSource
-	if patient.DataSources != nil {
-		for _, source := range *patient.DataSources {
-			if source.ProviderName == request.ProviderName {
-				providerDataSource = source
-			}
-		}
-	}
 
 	selector := bson.M{
-		"clinicId":                 clinicObjId,
-		"userId":                   userId,
-		"dataSources.providerName": request.ProviderName,
-	}
-
-	// Default update for initial connection requests
-	mongoUpdate := bson.M{
-		"$set": bson.M{
-			"updatedTime":                  currentTime,
-			"dataSources.$.expirationTime": currentTime.Add(patients.PendingDataSourceExpirationDuration),
-			"dataSources.$.state":          patients.DataSourceStatePending,
-		},
-	}
-
-	// Update for previously connected requests
-	if providerDataSource.ModifiedTime != nil {
-		mongoUpdate = bson.M{
-			"$set": bson.M{
-				"updatedTime":                  currentTime,
-				"dataSources.$.expirationTime": currentTime.Add(patients.PendingDataSourceExpirationDuration),
-				"dataSources.$.modifiedTime":   currentTime,
-				"dataSources.$.state":          patients.DataSourceStatePendingReconnect,
-			},
-		}
+		"clinicId": clinicObjId,
+		"userId":   userId,
 	}
 
 	key := "providerConnectionRequests." + request.ProviderName
-	mongoUpdate["$push"] = bson.M{
-		key: bson.M{
-			"$each": bson.A{request},
-			// Prepend, so the most recent request is stored first
-			"$position": 0,
+	update := bson.M{
+		"$currentDate": bson.M{"updatedTime": true},
+		"$push": bson.M{
+			key: bson.M{
+				"$each": bson.A{request},
+				// Prepend, so the most recent request is stored first
+				"$position": 0,
+			},
 		},
 	}
 
-	err = r.collection.FindOneAndUpdate(ctx, selector, mongoUpdate).Err()
+	err := r.collection.FindOneAndUpdate(ctx, selector, update).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return patients.ErrNotFound
@@ -1217,41 +1181,42 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 	// Finally, explicitly list fields that we're exporting as they may be renamed and we are interested in only a small subset of them
 	projectStage := bson.D{
 		{"$project", bson.M{
-			"_id":                  0,
-			"fullName":             1,
-			"userId":               1,
-			"mrn":                  1,
-			"birthDate":            1,
-			"email":                1,
-			"permissions":          1,
-			"createdTime":          1,
-			"invitedBy":            1,
-			"clinicSiteNames":      1,
-			"tagIds":               1,
-			"glycemicRanges":       1,
-			"diagnosisType":        1,
-			"dexcomDataSource":     1,
-			"abbottDataSource":     1,
-			"twiistDataSource":     1,
-			"cgmLastData":          1,
-			"cgmActiveWearTime":    1,
-			"cgmDaysWithData":      1,
-			"cgmHoursWithData":     1,
-			"cgmAverageGlucose":    1,
-			"cgmGmi":               1,
-			"cgmStdDev":            1,
-			"cgmCV":                1,
-			"cgmTimeInLevel2Hypo":  1,
-			"cgmTimeInLevel1Hypo":  1,
-			"cgmTimeInTarget":      1,
-			"cgmTimeInLevel2Hyper": 1,
-			"cgmTimeInLevel1Hyper": 1,
-			"bgmLastData":          1,
-			"bgmAverageGlucose":    1,
-			"bgmReadingsPerDay":    1,
-			"bgmTotalReadings":     1,
-			"bgmLowEvents":         1,
-			"bgmHighEvents":        1,
+			"_id":                        0,
+			"fullName":                   1,
+			"userId":                     1,
+			"mrn":                        1,
+			"birthDate":                  1,
+			"email":                      1,
+			"permissions":                1,
+			"createdTime":                1,
+			"invitedBy":                  1,
+			"clinicSiteNames":            1,
+			"tagIds":                     1,
+			"glycemicRanges":             1,
+			"diagnosisType":              1,
+			"providerConnectionRequests": 1,
+			"dexcomDataSource":           1,
+			"abbottDataSource":           1,
+			"twiistDataSource":           1,
+			"cgmLastData":                1,
+			"cgmActiveWearTime":          1,
+			"cgmDaysWithData":            1,
+			"cgmHoursWithData":           1,
+			"cgmAverageGlucose":          1,
+			"cgmGmi":                     1,
+			"cgmStdDev":                  1,
+			"cgmCV":                      1,
+			"cgmTimeInLevel2Hypo":        1,
+			"cgmTimeInLevel1Hypo":        1,
+			"cgmTimeInTarget":            1,
+			"cgmTimeInLevel2Hyper":       1,
+			"cgmTimeInLevel1Hyper":       1,
+			"bgmLastData":                1,
+			"bgmAverageGlucose":          1,
+			"bgmReadingsPerDay":          1,
+			"bgmTotalReadings":           1,
+			"bgmLowEvents":               1,
+			"bgmHighEvents":              1,
 		}},
 	}
 	stages := mongo.Pipeline{
