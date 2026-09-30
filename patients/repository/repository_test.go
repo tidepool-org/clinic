@@ -27,6 +27,7 @@ import (
 
 	"github.com/tidepool-org/clinic/config"
 	"github.com/tidepool-org/clinic/deletions"
+	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
@@ -1569,7 +1570,7 @@ var _ = Describe("Patients Repository", func() {
 					Expect(patientTags).To(ContainElement(randomPatientTags[0]))
 				}
 
-				// an empty tag returns patients without tags
+				// the zero sentinel returns patients without tags
 				noPatientTags := []primitive.ObjectID{}
 				randomPatient.Tags = &noPatientTags
 				update := patients.PatientUpdate{
@@ -1579,7 +1580,7 @@ var _ = Describe("Patients Repository", func() {
 				}
 				got, err := repo.Update(ctx, update)
 				Expect(err).To(Succeed())
-				noTags := []string{""}
+				noTags := []string{"_"}
 				filter.Tags = &noTags
 				result2, err := repo.List(ctx, &filter, pagination, nil)
 				Expect(err).To(Succeed())
@@ -1631,8 +1632,8 @@ var _ = Describe("Patients Repository", func() {
 				Expect(len(result3.Patients)).To(Equal(1))
 				Expect(*result3.Patients[0].UserId).To(Equal(*got.UserId))
 
-				// an empty site returns patients without sites
-				noSites := []string{""}
+				// the zero sentinel returns patients without sites
+				noSites := []string{"_"}
 				filter.Sites = &noSites
 				result4, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
 				Expect(err).To(Succeed())
@@ -1642,6 +1643,28 @@ var _ = Describe("Patients Repository", func() {
 					result4PatientUserIDs = append(result4PatientUserIDs, *patient.UserId)
 				}
 				Expect(result4PatientUserIDs).ToNot(ContainElement(*got.UserId))
+			})
+
+			It("rejects invalid values in the tags and sites filters", func() {
+				ctx := context.Background()
+				pagination := store.DefaultPagination()
+
+				garbage := []string{"not-a-hex-object-id"}
+				_, err := repo.List(ctx, &patients.Filter{Tags: &garbage}, pagination, nil)
+				Expect(err).To(MatchError(errs.BadRequest))
+				_, err = repo.List(ctx, &patients.Filter{Sites: &garbage}, pagination, nil)
+				Expect(err).To(MatchError(errs.BadRequest))
+			})
+
+			It("rejects mixing ids with the zero sentinel in the tags and sites filters", func() {
+				ctx := context.Background()
+				pagination := store.DefaultPagination()
+
+				mixed := []string{primitive.NewObjectID().Hex(), "_"}
+				_, err := repo.List(ctx, &patients.Filter{Tags: &mixed}, pagination, nil)
+				Expect(err).To(MatchError(errs.BadRequest))
+				_, err = repo.List(ctx, &patients.Filter{Sites: &mixed}, pagination, nil)
+				Expect(err).To(MatchError(errs.BadRequest))
 			})
 
 			It("supports searching by mrn", func() {
@@ -2090,6 +2113,22 @@ var _ = Describe("Patients Repository", func() {
 })
 
 var _ = Describe("TideReport", func() {
+	resultIds := func(results []patients.TideResultPatient) []string {
+		ids := make([]string, 0, len(results))
+		for _, result := range results {
+			Expect(result.Patient.Id).ToNot(BeNil())
+			ids = append(ids, *result.Patient.Id)
+		}
+		return ids
+	}
+
+	AfterEach(func() {
+		database := dbTest.GetTestDatabase()
+		patients := database.Collection("patients")
+		_, err := patients.DeleteMany(context.Background(), primitive.M{})
+		Expect(err).To(Succeed())
+	})
+
 	Context("Metadata", func() {
 		It("includes the number of candidate patients", func() {
 			numWithoutData := 151
@@ -2116,13 +2155,306 @@ var _ = Describe("TideReport", func() {
 			exp := patientsRepository.TideReportNoDataPatientLimit + patientsRepository.TideReportPatientLimit
 			Expect(tide.Metadata.SelectedPatients).To(Equal(exp))
 		})
+	})
 
-		AfterEach(func() {
-			database := dbTest.GetTestDatabase()
-			patients := database.Collection("patients")
-			_, err := patients.DeleteMany(context.Background(), primitive.M{})
-			Expect(err).To(Succeed())
+	Context("Sites", func() {
+		var siteA, siteB, siteC sites.Site
+		// userIds seeded per site-membership group, populated by distributeSites.
+		var group map[string][]string
+
+		// distributeSites spreads seeded patients across site combinations:
+		//   i%5 == 0: siteA and siteB
+		//   i%5 == 1: siteA, siteB and siteC (superset of the filter under test)
+		//   i%5 == 2: only siteA
+		//   i%5 == 3: only siteB
+		//   i%5 == 4: no sites
+		distributeSites := func(i int, p *patients.Patient) {
+			switch i % 5 {
+			case 0:
+				p.Sites = &[]sites.Site{siteA, siteB}
+			case 1:
+				p.Sites = &[]sites.Site{siteA, siteB, siteC}
+			case 2:
+				p.Sites = &[]sites.Site{siteA}
+			case 3:
+				p.Sites = &[]sites.Site{siteB}
+			case 4:
+				p.Sites = nil
+			}
+			names := []string{"both", "superset", "onlyA", "onlyB", "none"}
+			group[names[i%5]] = append(group[names[i%5]], *p.UserId)
+		}
+
+		// seed inserts 10 patients with data (all in the timeInVeryLowPercent category) and
+		// 10 without data, two of each per site group.
+		seed := func() (context.Context, *repoTestHelper) {
+			return newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 10}, 10, distributeSites)
+		}
+
+		cutoff := func() time.Time { return time.Now().Add(-7 * 24 * time.Hour) }
+
+		BeforeEach(func() {
+			siteA, siteB, siteC = sitesTest.Random(), sitesTest.Random(), sitesTest.Random()
+			group = map[string][]string{}
 		})
+
+		It("returns all patients when no sites filter is given", func() {
+			ctx, th := seed()
+			params := th.params("7d", cutoff())
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Metadata.CandidatePatients).To(Equal(20))
+			Expect(tide.Config.Sites).To(BeEmpty())
+		})
+
+		It("includes patients assigned to any of the requested sites", func() {
+			ctx, th := seed()
+			params := th.params("7d", cutoff())
+			params.Sites = []string{siteA.Id.Hex(), siteB.Id.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			// Every group except "none" matches; half of each group has data,
+			// the other half lands in noData.
+			Expect(tide.Metadata.CandidatePatients).To(Equal(16))
+			expected := append(group["both"][:2:2], group["superset"][:2]...)
+			expected = append(expected, group["onlyA"][:2]...)
+			expected = append(expected, group["onlyB"][:2]...)
+			Expect(resultIds(tide.Results["timeInVeryLowPercent"])).To(ConsistOf(expected))
+		})
+
+		It("includes patients assigned to a single requested site", func() {
+			ctx, th := seed()
+			params := th.params("7d", cutoff())
+			params.Sites = []string{siteA.Id.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			// Groups "both", "superset" and "onlyA" match.
+			Expect(tide.Metadata.CandidatePatients).To(Equal(12))
+		})
+
+		It("applies the filter to the noData category", func() {
+			ctx, th := seed()
+			params := th.params("7d", cutoff())
+			params.Sites = []string{siteA.Id.Hex(), siteB.Id.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			expected := append(group["both"][2:4:4], group["superset"][2:4]...)
+			expected = append(expected, group["onlyA"][2:4]...)
+			expected = append(expected, group["onlyB"][2:4]...)
+			Expect(resultIds(tide.Results["noData"])).To(ConsistOf(expected))
+		})
+
+		It("omits the noData category when excludeNoData is set", func() {
+			ctx, th := seed()
+			params := th.params("7d", cutoff())
+			params.Sites = []string{siteA.Id.Hex(), siteB.Id.Hex()}
+			params.ExcludeNoData = true
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Results).ToNot(HaveKey("noData"))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(8))
+		})
+
+		It("combines the sites filter with the tags filter", func() {
+			ctx, th := seed()
+			// An extra patient assigned to both sites, but with a different tag, must not
+			// appear in the report.
+			outsider := patientsTest.RandomPatient()
+			outsider.ClinicId = &th.clinicId
+			outsider.Tags = &[]primitive.ObjectID{primitive.NewObjectID()}
+			outsider.Sites = &[]sites.Site{siteA, siteB}
+			collection := dbTest.GetTestDatabase().Collection("patients")
+			_, err := collection.InsertOne(ctx, outsider)
+			Expect(err).To(Succeed())
+
+			params := th.params("7d", cutoff())
+			params.Sites = []string{siteA.Id.Hex(), siteB.Id.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Metadata.CandidatePatients).To(Equal(16))
+			for category := range tide.Results {
+				Expect(resultIds(tide.Results[category])).ToNot(ContainElement(*outsider.UserId))
+			}
+		})
+
+		It("echoes the requested sites in the config", func() {
+			ctx, th := seed()
+			params := th.params("7d", cutoff())
+			params.Sites = []string{siteA.Id.Hex(), siteB.Id.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Config.Sites).To(Equal(params.Sites))
+		})
+
+		It("deduplicates repeated site ids in the config", func() {
+			// config.sites is published as siteIds.v1, which requires unique items.
+			ctx, th := seed()
+			params := th.params("7d", cutoff())
+			params.Sites = []string{siteA.Id.Hex(), siteA.Id.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Config.Sites).To(Equal([]string{siteA.Id.Hex()}))
+			// Groups "both", "superset" and "onlyA" match, same as a single occurrence.
+			Expect(tide.Metadata.CandidatePatients).To(Equal(12))
+		})
+
+		It("deduplicates site ids that differ only by hex case", func() {
+			ctx, th := seed()
+			params := th.params("7d", cutoff())
+			params.Sites = []string{strings.ToUpper(siteA.Id.Hex()), siteA.Id.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Config.Sites).To(Equal([]string{siteA.Id.Hex()}))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(12))
+		})
+	})
+
+	Context("NoData", func() {
+		It("does not report a patient in both a glycemic category and noData", func() {
+			// A patient with recent data and a disconnected dexcom data source
+			// matches both the timeInVeryLowPercent selector and the noData
+			// selector's dexcom arm.
+			var dexcomUserId string
+			disconnectedDexcom := func(i int, p *patients.Patient) {
+				if i == 0 {
+					p.DataSources = &[]patients.DataSource{{
+						ProviderName: patients.DexcomDataSourceProviderName,
+						State:        patients.DataSourceStatePendingReconnect,
+					}}
+					dexcomUserId = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 1}, 3, disconnectedDexcom)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(resultIds(tide.Results["timeInVeryLowPercent"])).To(ContainElement(dexcomUserId))
+			Expect(resultIds(tide.Results["noData"])).ToNot(ContainElement(dexcomUserId))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(4))
+			Expect(tide.Metadata.SelectedPatients).To(Equal(4))
+		})
+
+		It("includes only patients with a dexcom data source", func() {
+			var withDexcom string
+			setDataSources := func(i int, p *patients.Patient) {
+				switch i {
+				case 0:
+					p.DataSources = nil
+				case 1:
+					p.DataSources = &[]patients.DataSource{}
+				case 2:
+					p.DataSources = &[]patients.DataSource{{
+						ProviderName: patients.TwiistDataSourceProviderName,
+						State:        "disconnected",
+					}}
+				case 3:
+					withDexcom = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{}, 4, setDataSources)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(resultIds(tide.Results["noData"])).To(ConsistOf(withDexcom))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(1))
+		})
+	})
+
+	Context("Tags", func() {
+		It("returns patients regardless of tags when no tags are given", func() {
+			var otherTagWithData, untaggedNoData string
+			retag := func(i int, p *patients.Patient) {
+				switch i {
+				case 0:
+					p.Tags = &[]primitive.ObjectID{primitive.NewObjectID()}
+					otherTagWithData = *p.UserId
+				case 2:
+					p.Tags = nil
+					untaggedNoData = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 2}, 2, retag)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+			params.Tags = nil
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(tide.Metadata.CandidatePatients).To(Equal(4))
+			Expect(resultIds(tide.Results["timeInVeryLowPercent"])).To(ContainElement(otherTagWithData))
+			Expect(resultIds(tide.Results["noData"])).To(ContainElement(untaggedNoData))
+		})
+
+		It("filters patients by tags when tags are given", func() {
+			var otherTagWithData string
+			retag := func(i int, p *patients.Patient) {
+				if i == 0 {
+					p.Tags = &[]primitive.ObjectID{primitive.NewObjectID()}
+					otherTagWithData = *p.UserId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 2}, 2, retag)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+
+			Expect(tide.Metadata.CandidatePatients).To(Equal(3))
+			Expect(resultIds(tide.Results["timeInVeryLowPercent"])).ToNot(ContainElement(otherTagWithData))
+		})
+
+		It("echoes the requested tags in the config", func() {
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 1}, 0)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Config.Tags).To(Equal(params.Tags))
+		})
+
+		It("deduplicates repeated tag ids in the config", func() {
+			// config.tags is published as patientTagIds.v1, which requires unique items.
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 1}, 0)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+			params.Tags = []string{th.tagId.Hex(), th.tagId.Hex()}
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Config.Tags).To(Equal([]string{th.tagId.Hex()}))
+			Expect(tide.Metadata.CandidatePatients).To(Equal(1))
+		})
+	})
+
+	Context("Demo", func() {
+		It("excludes the demo patient", func() {
+			makeDemo := func(i int, p *patients.Patient) {
+				if i == 0 {
+					demoId := DemoPatientId
+					p.UserId = &demoId
+				}
+			}
+			ctx, th := newTestRepo(GinkgoT(), patientDataCounts{withVeryLow: 2}, 0, makeDemo)
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Metadata.CandidatePatients).To(Equal(1))
+			Expect(resultIds(tide.Results["timeInVeryLowPercent"])).ToNot(ContainElement(DemoPatientId))
+		})
+
 	})
 
 	Describe("TideResults", func() {
@@ -2386,37 +2718,9 @@ var _ = Describe("TideReport", func() {
 							TimeInAnyLowPercent:      floatp(0.013888888888888888),
 							LastData:                 mustTime("2025-06-25T16:04:07.079Z"),
 						},
-						{
-							AverageGlucoseMmol:         floatp(4.366742521825891),
-							GlucoseManagementIndicator: floatp(5.2),
-							Patient: patients.TidePatient{
-								Email:    strp("disconnected+user@tidepool.org"),
-								FullName: strp("Disconnected User"),
-								Id:       strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaadcdc"),
-								Tags:     []string{"aaaaaaaaaaaaaaaaaaaaaaaa"},
-								Reviews:  nil,
-								DataSources: &[]patients.DataSource{
-									{
-										DataSourceId:   mustObjectID("686c054cbea00653fd4fcf8b"),
-										ModifiedTime:   mustTime("2025-07-07T17:41:13Z"),
-										ExpirationTime: nil,
-										ProviderName:   "dexcom",
-										State:          "disconnected",
-									},
-								},
-							},
-							TimeCGMUseMinutes:        intp(20045),
-							TimeCGMUsePercent:        floatp(0.9942956349206349),
-							TimeInHighPercent:        floatp(0.001995510102269893),
-							TimeInLowPercent:         floatp(0.014218009478672985),
-							TimeInTargetPercent:      floatp(0.976303317535545),
-							TimeInTargetPercentDelta: floatp(0.022936733994397884),
-							TimeInVeryHighPercent:    floatp(0),
-							TimeInVeryLowPercent:     floatp(0.0044831628835120975),
-							TimeInAnyHighPercent:     floatp(0.001995510102269893),
-							TimeInAnyLowPercent:      floatp(0.021701172362185085),
-							LastData:                 mustTime("2025-07-07T16:38:39.206Z"),
-						},
+						// The "Disconnected User" patient also matches the noData
+						// selector's dexcom arm, but is reported only in the
+						// higher-priority meetingTargets category.
 					}
 
 					meetingTargetsResults = []patients.TideResultPatient{
@@ -2519,8 +2823,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 8
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(13))
-					Expect(report.Metadata.SelectedPatients).To(Equal(13))
+					Expect(report.Metadata.CandidatePatients).To(Equal(12))
+					Expect(report.Metadata.SelectedPatients).To(Equal(12))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(matchTIDEPatients(timeInVeryLowResults))
 
@@ -2548,8 +2852,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 8
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(13))
-					Expect(report.Metadata.SelectedPatients).To(Equal(13))
+					Expect(report.Metadata.CandidatePatients).To(Equal(12))
+					Expect(report.Metadata.SelectedPatients).To(Equal(12))
 
 					Expect(report.Results["timeInVeryLowPercent"]).To(matchTIDEPatients(timeInVeryLowResults))
 
@@ -2766,8 +3070,8 @@ var _ = Describe("TideReport", func() {
 					Expect(err).ToNot(HaveOccurred())
 					numResultCategories := 2
 					Expect(len(report.Results)).To(Equal(numResultCategories))
-					Expect(report.Metadata.CandidatePatients).To(Equal(5))
-					Expect(report.Metadata.SelectedPatients).To(Equal(5))
+					Expect(report.Metadata.CandidatePatients).To(Equal(4))
+					Expect(report.Metadata.SelectedPatients).To(Equal(4))
 
 					meetingTargetsResults = []patients.TideResultPatient{
 						{
@@ -3575,8 +3879,12 @@ var _ = Describe("TideReport", func() {
 	})
 })
 
-func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutData int) (
-	context.Context, *repoTestHelper) {
+// testPatientOption customizes the i-th seeded patient. Patients with data
+// are indexed 0..withData-1, patients without data continue from withData.
+type testPatientOption func(i int, p *patients.Patient)
+
+func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutData int,
+	opts ...testPatientOption) (context.Context, *repoTestHelper) {
 
 	t.Helper()
 	cfg := &config.Config{ClinicDemoPatientUserId: DemoPatientId}
@@ -3615,13 +3923,21 @@ func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutDa
 		}
 		patient.ClinicId = &clinicId
 		patient.Tags = &[]primitive.ObjectID{tagId}
+		patient.DataSources = dexcomDataSources()
+		for _, opt := range opts {
+			opt(i, &patient)
+		}
 		allPatients = append(allPatients, patient)
 	}
-	for range withoutData {
+	for j := range withoutData {
 		patient := patientsTest.RandomPatient()
 
 		patient.ClinicId = &clinicId
 		patient.Tags = &[]primitive.ObjectID{tagId}
+		patient.DataSources = dexcomDataSources()
+		for _, opt := range opts {
+			opt(withData+j, &patient)
+		}
 		allPatients = append(allPatients, patient)
 	}
 	result, err := collection.InsertMany(ctx, allPatients)
@@ -3633,6 +3949,15 @@ func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutDa
 		tagId:    tagId,
 		repo:     repo,
 	}
+}
+
+// dexcomDataSources returns a connected Dexcom data source, the default for patients seeded
+// by newTestRepo, so that they are eligible for the TIDE report's noData category.
+func dexcomDataSources() *[]patients.DataSource {
+	return &[]patients.DataSource{{
+		ProviderName: patients.DexcomDataSourceProviderName,
+		State:        "connected",
+	}}
 }
 
 type patientDataCounts struct {
