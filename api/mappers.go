@@ -275,6 +275,16 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 	if !patient.LastUploadReminderTime.IsZero() {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
 	}
+	if patient.ConnectionIssueSource != "" {
+		source := ConnectionIssueSourceV1(patient.ConnectionIssueSource)
+		dto.ConnectionIssueSource = &source
+	}
+	if patient.ConnectionIssue != nil {
+		dto.ConnectionIssue = &ConnectionIssueV1{
+			Cause:  ConnectionIssueV1Cause(patient.ConnectionIssue.Cause),
+			Hidden: &patient.ConnectionIssue.Hidden,
+		}
+	}
 
 	// Populate the new connection requests structure from the now deprecated lastRequestedDexcomConnectTime
 	if len(dto.ConnectionRequests.Dexcom) == 0 && !patient.LastRequestedDexcomConnectTime.IsZero() {
@@ -822,6 +832,11 @@ func NewPatientDataSourcesDto(dataSources *[]patients.DataSource) *[]DataSourceV
 				newDataSource.LatestDataTime = &latestDataTime
 			}
 
+			if d.ConnectedTime != nil {
+				connectedTime := DatetimeV1(d.ConnectedTime.Format(time.RFC3339Nano))
+				newDataSource.ConnectedTime = &connectedTime
+			}
+
 			dtos = append(dtos, newDataSource)
 		}
 	}
@@ -1129,6 +1144,22 @@ func NewPatientCountDto(patientCount *clinics.PatientCount) PatientCountV1 {
 	}
 
 	return dto
+}
+
+func ParseConnectionIssueCauses(values *[]string) ([]patients.ConnectionIssueCause, error) {
+	if values == nil || len(*values) == 0 {
+		return nil, nil
+	}
+	causes := make([]patients.ConnectionIssueCause, 0, len(*values))
+	for _, value := range *values {
+		cause, ok := patients.ParseConnectionIssueCause(value)
+		if !ok {
+			return nil, fmt.Errorf("%w: invalid connection issue cause %q",
+				errors.BadRequest, value)
+		}
+		causes = append(causes, cause)
+	}
+	return causes, nil
 }
 
 func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {

@@ -58,6 +58,14 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	filter.OmitNonStandardRanges = params.OmitNonStandardRanges != nil &&
 		*params.OmitNonStandardRanges
 
+	filter.ConnectionIssueCauses, err = ParseConnectionIssueCauses(
+		params.ConnectionIssueCauses)
+	if err != nil {
+		return err
+	}
+	filter.OnlyHiddenConnectionIssues = params.OnlyHiddenConnectionIssues != nil &&
+		*params.OnlyHiddenConnectionIssues
+
 	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
 	if err != nil {
 		return err
@@ -202,6 +210,37 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 		Time:     time.Now(),
 	}
 	patient, err := h.Patients.UpdateLastUploadReminderTime(ctx, &update)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+}
+
+func (h *Handler) RecordInvitationResent(ec echo.Context, clinicId ClinicId,
+	patientId PatientId) error {
+
+	ctx := ec.Request().Context()
+	err := h.Patients.UpdateLastInvitationSent(ctx, string(clinicId), string(patientId),
+		time.Now())
+	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
+}
+
+func (h *Handler) SetConnectionIssueHidden(ec echo.Context, clinicId ClinicId,
+	patientId PatientId) error {
+
+	ctx := ec.Request().Context()
+	dto := ConnectionIssueHiddenV1{}
+	if err := ec.Bind(&dto); err != nil {
+		return err
+	}
+
+	patient, err := h.Patients.SetConnectionIssueHidden(ctx, string(clinicId),
+		string(patientId), dto.Hidden)
 	if err != nil {
 		return err
 	}
@@ -373,6 +412,15 @@ func (h *Handler) UpdatePatientDataSources(ec echo.Context, userId UserId) error
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) UpdateConnectionIssues(ec echo.Context) error {
+	ctx := ec.Request().Context()
+	if err := h.Patients.UpdateConnectionIssues(ctx); err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusNoContent)
 }
 
 func (h *Handler) FindPatients(ec echo.Context, params FindPatientsParams) error {

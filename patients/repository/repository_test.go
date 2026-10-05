@@ -152,6 +152,48 @@ var _ = Describe("Patients Repository", func() {
 				Expect(inserted).To(matchPatientFields)
 			})
 
+			It("sets the last invitation sent time when custodial", func() {
+				Expect(patient.Email).To(PointTo(Not(BeEmpty())))
+				patient.Permissions.Custodian = &patients.Permission{}
+
+				result, err := repo.Create(context.Background(), patient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result).ToNot(BeNil())
+				patient.Id = result.Id
+
+				Expect(result.LastInvitationSent).ToNot(BeZero())
+				Expect(result.LastInvitationSent).
+					To(BeTemporally("==", result.CreatedTime))
+
+				var inserted patients.Patient
+				selector := primitive.M{"_id": result.Id}
+				err = collection.FindOne(context.Background(), selector).Decode(&inserted)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(inserted.LastInvitationSent).
+					To(BeTemporally("==", inserted.CreatedTime))
+			})
+
+			DescribeTable("does not set the last invitation sent time",
+				func(custodial bool, email *string) {
+					if custodial {
+						patient.Permissions.Custodian = &patients.Permission{}
+					} else {
+						patient.Permissions.Custodian = nil
+					}
+					patient.Email = email
+
+					result, err := repo.Create(context.Background(), patient)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).ToNot(BeNil())
+					patient.Id = result.Id
+
+					Expect(result.LastInvitationSent).To(BeZero())
+				},
+				Entry("for a custodial patient with a nil email", true, nil),
+				Entry("for a custodial patient with an empty email", true, strp("")),
+				Entry("for a non-custodial patient with an email", false, strp("a@b.c")),
+			)
+
 			It("successfully inserts a patient with duplicate mrn if uniqueness is not enabled", func() {
 				patient.RequireUniqueMrn = false
 				result, err := repo.Create(context.Background(), patient)
@@ -452,6 +494,22 @@ var _ = Describe("Patients Repository", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 				Expect(*result).To(matchPatientFields)
+			})
+
+			It("preserves the connection issue source", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *randomPatient.UserId
+				err := repo.UpdateLastInvitationSent(ctx, clinicId, userId, time.Now())
+				Expect(err).ToNot(HaveOccurred())
+
+				update.ClinicId = clinicId
+				update.UserId = userId
+				update.Patient.ConnectionIssueSource = ""
+				result, err := repo.Update(ctx, update)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(result.ConnectionIssueSource).
+					To(Equal(patients.ConnectionIssueSourceDeviceNonSpecificInvitation))
 			})
 		})
 
@@ -1591,6 +1649,109 @@ var _ = Describe("Patients Repository", func() {
 				Expect(result2PatientUserIDs).To(ContainElement(*got.UserId))
 			})
 
+			Describe("filters by connection issue", func() {
+				var ctx context.Context
+				var visibleStale, hiddenStale, visibleError, noIssue primitive.ObjectID
+
+				insert := func(issue *patients.ConnectionIssue) primitive.ObjectID {
+					GinkgoHelper()
+					patient := patientsTest.RandomPatient()
+					patient.ClinicId = &clinicId
+					patient.ConnectionIssueSource = patients.ConnectionIssueSourceDexcom
+					patient.ConnectionIssue = issue
+					result, err := collection.InsertOne(ctx, patient)
+					Expect(err).ToNot(HaveOccurred())
+					id := result.InsertedID.(primitive.ObjectID)
+					DeferCleanup(func() {
+						_, err := collection.DeleteOne(ctx, bson.M{"_id": id})
+						Expect(err).ToNot(HaveOccurred())
+					})
+					return id
+				}
+
+				issue := func(cause patients.ConnectionIssueCause,
+					hidden bool) *patients.ConnectionIssue {
+
+					return &patients.ConnectionIssue{
+						Cause:  cause,
+						Hidden: hidden,
+					}
+				}
+
+				list := func(filter patients.Filter) []primitive.ObjectID {
+					GinkgoHelper()
+					filter.ClinicId = strp(clinicId.Hex())
+					result, err := repo.List(ctx, &filter, store.DefaultPagination(), nil)
+					Expect(err).ToNot(HaveOccurred())
+					count, err := repo.Count(ctx, &filter)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(count).To(Equal(len(result.Patients)))
+
+					var ids []primitive.ObjectID
+					for _, patient := range result.Patients {
+						ids = append(ids, *patient.Id)
+					}
+					return ids
+				}
+
+				BeforeEach(func() {
+					ctx = context.Background()
+					staleData := patients.ConnectionIssueCauseStaleData
+					visibleStale = insert(issue(staleData, false))
+					hiddenStale = insert(issue(staleData, true))
+					visibleError = insert(issue(patients.ConnectionIssueCauseError, false))
+					noIssue = insert(nil)
+				})
+
+				It("returns the visible issues with a matching cause", func() {
+					ids := list(patients.Filter{
+						ConnectionIssueCauses: []patients.ConnectionIssueCause{
+							patients.ConnectionIssueCauseStaleData,
+						},
+					})
+
+					Expect(ids).To(ConsistOf([]primitive.ObjectID{visibleStale}))
+				})
+
+				It("matches any of several causes", func() {
+					ids := list(patients.Filter{
+						ConnectionIssueCauses: []patients.ConnectionIssueCause{
+							patients.ConnectionIssueCauseStaleData,
+							patients.ConnectionIssueCauseError,
+						},
+					})
+
+					Expect(ids).To(ConsistOf([]primitive.ObjectID{
+						visibleStale, visibleError,
+					}))
+				})
+
+				It("returns only the hidden issues when requested", func() {
+					ids := list(patients.Filter{
+						ConnectionIssueCauses: []patients.ConnectionIssueCause{
+							patients.ConnectionIssueCauseStaleData,
+							patients.ConnectionIssueCauseError,
+						},
+						OnlyHiddenConnectionIssues: true,
+					})
+
+					Expect(ids).To(ConsistOf([]primitive.ObjectID{hiddenStale}))
+				})
+
+				It("returns hidden issues of any cause without causes", func() {
+					ids := list(patients.Filter{OnlyHiddenConnectionIssues: true})
+
+					Expect(ids).To(ConsistOf([]primitive.ObjectID{hiddenStale}))
+				})
+
+				It("does not filter without either parameter", func() {
+					ids := list(patients.Filter{})
+
+					Expect(ids).To(ContainElements(visibleStale, hiddenStale, visibleError,
+						noIssue))
+				})
+			})
+
 			It("filters by patient site correctly", func() {
 				// non-existent sites match no patients
 				ctx := context.Background()
@@ -1882,6 +2043,521 @@ var _ = Describe("Patients Repository", func() {
 				Expect(*patient.DataSources).To(HaveLen(1))
 				Expect((*patient.DataSources)[0].CreatedTime).To(PointTo(Equal(createdTime)))
 			})
+
+			It("returns an error when the existing data sources can't be read", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				dataSources := patients.DataSources{{
+					ProviderName: patients.DexcomDataSourceProviderName,
+					State:        "connected",
+				}}
+				err := repo.UpdatePatientDataSources(ctx, *randomPatient.UserId, &dataSources)
+				Expect(err).To(MatchError(context.Canceled))
+			})
+
+			Describe("connection issue source", func() {
+				var ctx context.Context
+				var userId, clinicId string
+
+				BeforeEach(func() {
+					ctx = context.Background()
+					userId = *randomPatient.UserId
+					clinicId = randomPatient.ClinicId.Hex()
+				})
+
+				updateDexcom := func(state string) time.Time {
+					dataSources := patients.DataSources{{
+						ProviderName: patients.DexcomDataSourceProviderName,
+						State:        state,
+					}}
+					before := time.Now()
+					err := repo.UpdatePatientDataSources(ctx, userId, &dataSources)
+					Expect(err).ToNot(HaveOccurred())
+					return before
+				}
+
+				updateSources := func(sources patients.DataSources) {
+					err := repo.UpdatePatientDataSources(ctx, userId, &sources)
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				getSource := func(clinicId string) patients.ConnectionIssueSource {
+					patient, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					return patient.ConnectionIssueSource
+				}
+
+				It("is set on every clinic patient record of the user", func() {
+					secondClinicId := primitive.NewObjectID()
+					second := patientsTest.RandomPatient()
+					second.ClinicId = &secondClinicId
+					second.UserId = randomPatient.UserId
+					second.DataSources = randomPatient.DataSources
+					result, err := collection.InsertOne(ctx, second)
+					Expect(err).ToNot(HaveOccurred())
+					defer func() {
+						selector := bson.M{"_id": result.InsertedID}
+						_, err := collection.DeleteOne(ctx, selector)
+						Expect(err).ToNot(HaveOccurred())
+					}()
+
+					updateDexcom("disconnected")
+					updateDexcom("connected")
+
+					for _, id := range []string{clinicId, secondClinicId.Hex()} {
+						Expect(getSource(id)).
+							To(Equal(patients.ConnectionIssueSourceDexcom))
+					}
+				})
+
+				storeIssueFor := func(source patients.ConnectionIssueSource) {
+					GinkgoHelper()
+					_, err := collection.UpdateMany(ctx, bson.M{"userId": userId},
+						bson.M{"$set": bson.M{
+							"connectionIssueSource": source,
+							"connectionIssue": patients.ConnectionIssue{
+								Cause:  patients.ConnectionIssueCauseStaleData,
+								Hidden: true,
+							},
+						}})
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				getIssue := func() *patients.ConnectionIssue {
+					GinkgoHelper()
+					patient, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					return patient.ConnectionIssue
+				}
+
+				It("removes the connection issue when the source changes", func() {
+					storeIssueFor(patients.ConnectionIssueSourceTwiist)
+
+					updateDexcom("connected")
+
+					Expect(getSource(clinicId)).
+						To(Equal(patients.ConnectionIssueSourceDexcom))
+					Expect(getIssue()).To(BeNil())
+				})
+
+				It("keeps the connection issue when the source is unchanged", func() {
+					updateDexcom("disconnected")
+					storeIssueFor(patients.ConnectionIssueSourceDexcom)
+
+					updateDexcom("connected")
+
+					Expect(getSource(clinicId)).
+						To(Equal(patients.ConnectionIssueSourceDexcom))
+					issue := getIssue()
+					Expect(issue).ToNot(BeNil())
+					Expect(issue.Hidden).To(BeTrue())
+				})
+
+				It("clears the connection issue only where the source changes", func() {
+					secondClinicId := primitive.NewObjectID()
+					second := patientsTest.RandomPatient()
+					second.ClinicId = &secondClinicId
+					second.UserId = randomPatient.UserId
+					second.DataSources = randomPatient.DataSources
+					result, err := collection.InsertOne(ctx, second)
+					Expect(err).ToNot(HaveOccurred())
+					defer func() {
+						selector := bson.M{"_id": result.InsertedID}
+						_, err := collection.DeleteOne(ctx, selector)
+						Expect(err).ToNot(HaveOccurred())
+					}()
+					storeIssue := func(clinicId primitive.ObjectID,
+						source patients.ConnectionIssueSource) {
+
+						GinkgoHelper()
+						selector := bson.M{"clinicId": clinicId, "userId": userId}
+						_, err := collection.UpdateOne(ctx, selector, bson.M{"$set": bson.M{
+							"connectionIssueSource": source,
+							"connectionIssue": patients.ConnectionIssue{
+								Cause:  patients.ConnectionIssueCauseStaleData,
+								Hidden: true,
+							},
+						}})
+						Expect(err).ToNot(HaveOccurred())
+					}
+					storeIssue(*randomPatient.ClinicId,
+						patients.ConnectionIssueSourceDexcom)
+					storeIssue(secondClinicId, patients.ConnectionIssueSourceAbbott)
+
+					updateSources(patients.DataSources{{
+						ProviderName: patients.AbbottDataSourceProviderName,
+						State:        "connected",
+					}})
+
+					changed, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(changed.ConnectionIssueSource).
+						To(Equal(patients.ConnectionIssueSourceAbbott))
+					Expect(changed.ConnectionIssue).To(BeNil())
+
+					unchanged, err := repo.Get(ctx, secondClinicId.Hex(), userId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(unchanged.ConnectionIssueSource).
+						To(Equal(patients.ConnectionIssueSourceAbbott))
+					Expect(unchanged.ConnectionIssue).ToNot(BeNil())
+					Expect(unchanged.ConnectionIssue.Hidden).To(BeTrue())
+				})
+
+				It("is set when a source enters the connected state", func() {
+					updateDexcom("disconnected")
+					Expect(getSource(clinicId)).To(BeEmpty())
+
+					updateDexcom("connected")
+					Expect(getSource(clinicId)).
+						To(Equal(patients.ConnectionIssueSourceDexcom))
+				})
+
+				It("is left alone when a connected source stays connected", func() {
+					updateDexcom("connected")
+					request := patients.ConnectionRequest{
+						ProviderName: patients.TwiistDataSourceProviderName,
+						CreatedTime:  time.Now(),
+					}
+					err := repo.AddProviderConnectionRequest(ctx, clinicId, userId,
+						request)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(getSource(clinicId)).
+						To(Equal(patients.ConnectionIssueSourceTwiist))
+
+					updateDexcom("connected")
+					Expect(getSource(clinicId)).
+						To(Equal(patients.ConnectionIssueSourceTwiist))
+				})
+
+				It("is not set for an unknown provider", func() {
+					updateSources(patients.DataSources{{
+						ProviderName: "acme",
+						State:        "connected",
+					}})
+
+					Expect(getSource(clinicId)).To(BeEmpty())
+				})
+
+				It("prefers the source with the newest created time", func() {
+					newer := time.Now().UTC().Truncate(time.Millisecond)
+					older := newer.Add(-time.Hour)
+					updateSources(patients.DataSources{
+						{
+							ProviderName: patients.TwiistDataSourceProviderName,
+							State:        "connected",
+							CreatedTime:  &older,
+						},
+						{
+							ProviderName: patients.AbbottDataSourceProviderName,
+							State:        "connected",
+							CreatedTime:  &newer,
+						},
+					})
+
+					Expect(getSource(clinicId)).
+						To(Equal(patients.ConnectionIssueSourceAbbott))
+				})
+
+				It("breaks created time ties by provider priority", func() {
+					created := time.Now().UTC().Truncate(time.Millisecond)
+					updateSources(patients.DataSources{
+						{
+							ProviderName: patients.DexcomDataSourceProviderName,
+							State:        "connected",
+							CreatedTime:  &created,
+						},
+						{
+							ProviderName: patients.TwiistDataSourceProviderName,
+							State:        "connected",
+							CreatedTime:  &created,
+						},
+					})
+
+					Expect(getSource(clinicId)).
+						To(Equal(patients.ConnectionIssueSourceTwiist))
+				})
+			})
+		})
+
+		Describe("Update connection issues", func() {
+			var ctx context.Context
+			var now time.Time
+
+			BeforeEach(func() {
+				ctx = context.Background()
+				now = time.Now().UTC().Truncate(time.Millisecond)
+			})
+
+			// insert stores an extra patient for the duration of the spec
+			insert := func(patient patients.Patient) primitive.ObjectID {
+				GinkgoHelper()
+				result, err := collection.InsertOne(ctx, patient)
+				Expect(err).ToNot(HaveOccurred())
+				id := result.InsertedID.(primitive.ObjectID)
+				DeferCleanup(func() {
+					_, err := collection.DeleteOne(ctx, bson.M{"_id": id})
+					Expect(err).ToNot(HaveOccurred())
+				})
+				return id
+			}
+
+			get := func(id primitive.ObjectID) patients.Patient {
+				GinkgoHelper()
+				var patient patients.Patient
+				err := collection.FindOne(ctx, bson.M{"_id": id}).Decode(&patient)
+				Expect(err).ToNot(HaveOccurred())
+				return patient
+			}
+
+			dexcomPatient := func(source patients.DataSource) patients.Patient {
+				patient := patientsTest.RandomPatient()
+				patient.ConnectionIssueSource = patients.ConnectionIssueSourceDexcom
+				source.ProviderName = patients.DexcomDataSourceProviderName
+				patient.DataSources = &[]patients.DataSource{source}
+				return patient
+			}
+
+			// invitationPatient is a custodial patient with an outstanding device
+			// non-specific invitation, created and last invited the given durations ago.
+			invitationPatient := func(createdAgo, sentAgo time.Duration) patients.Patient {
+				patient := patientsTest.RandomPatient()
+				patient.ConnectionIssueSource =
+					patients.ConnectionIssueSourceDeviceNonSpecificInvitation
+				custodial := patients.Permissions{Custodian: &patients.Permission{}}
+				patient.Permissions = &custodial
+				patient.DataSources = nil
+				patient.CreatedTime = now.Add(-createdAgo)
+				patient.LastInvitationSent = now.Add(-sentAgo)
+				return patient
+			}
+
+			It("records stale data", func() {
+				latest := now.Add(-72 * time.Hour)
+				id := insert(dexcomPatient(patients.DataSource{
+					State:          "connected",
+					LatestDataTime: &latest,
+				}))
+				before := get(id)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				patient := get(id)
+				Expect(patient.ConnectionIssue).To(PointTo(MatchAllFields(Fields{
+					"Cause":  Equal(patients.ConnectionIssueCauseStaleData),
+					"Hidden": BeFalse(),
+				})))
+				Expect(patient.UpdatedTime).To(BeTemporally(">", before.UpdatedTime))
+			})
+
+			It("records an error", func() {
+				id := insert(dexcomPatient(patients.DataSource{
+					State: "error",
+				}))
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).ConnectionIssue).To(PointTo(MatchAllFields(Fields{
+					"Cause":  Equal(patients.ConnectionIssueCauseError),
+					"Hidden": BeFalse(),
+				})))
+			})
+
+			It("clears an issue that no longer applies", func() {
+				latest := now
+				patient := dexcomPatient(patients.DataSource{
+					State:          "connected",
+					LatestDataTime: &latest,
+				})
+				patient.ConnectionIssue = &patients.ConnectionIssue{
+					Cause: patients.ConnectionIssueCauseStaleData,
+				}
+				id := insert(patient)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).ConnectionIssue).To(BeNil())
+			})
+
+			It("does not touch a patient whose issue is unchanged", func() {
+				latest := now.Add(-72 * time.Hour)
+				patient := dexcomPatient(patients.DataSource{
+					State:          "connected",
+					LatestDataTime: &latest,
+				})
+				patient.ConnectionIssue = &patients.ConnectionIssue{
+					Cause: patients.ConnectionIssueCauseStaleData,
+				}
+				id := insert(patient)
+				before := get(id)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).UpdatedTime).To(BeTemporally("==", before.UpdatedTime))
+			})
+
+			It("keeps the hidden flag while the cause stays the same", func() {
+				latest := now.Add(-72 * time.Hour)
+				patient := dexcomPatient(patients.DataSource{
+					State:          "connected",
+					LatestDataTime: &latest,
+				})
+				patient.ConnectionIssue = &patients.ConnectionIssue{
+					Cause:  patients.ConnectionIssueCauseStaleData,
+					Hidden: true,
+				}
+				id := insert(patient)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).ConnectionIssue).To(PointTo(MatchAllFields(Fields{
+					"Cause":  Equal(patients.ConnectionIssueCauseStaleData),
+					"Hidden": BeTrue(),
+				})))
+			})
+
+			It("clears the hidden flag when the cause changes", func() {
+				patient := dexcomPatient(patients.DataSource{
+					State: "error",
+				})
+				patient.ConnectionIssue = &patients.ConnectionIssue{
+					Cause:  patients.ConnectionIssueCauseStaleData,
+					Hidden: true,
+				}
+				id := insert(patient)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).ConnectionIssue).To(PointTo(MatchAllFields(Fields{
+					"Cause":  Equal(patients.ConnectionIssueCauseError),
+					"Hidden": BeFalse(),
+				})))
+			})
+
+			It("records an expired invitation", func() {
+				patient := invitationPatient(40*24*time.Hour, 72*time.Hour)
+				id := insert(patient)
+				before := get(id)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				updated := get(id)
+				Expect(updated.ConnectionIssue).To(PointTo(MatchAllFields(Fields{
+					"Cause":  Equal(patients.ConnectionIssueCauseExpiredInvite),
+					"Hidden": BeFalse(),
+				})))
+				Expect(updated.UpdatedTime).To(BeTemporally(">", before.UpdatedTime))
+			})
+
+			It("records a stale invitation", func() {
+				patient := invitationPatient(10*24*time.Hour, 72*time.Hour)
+				id := insert(patient)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).ConnectionIssue).To(PointTo(MatchAllFields(Fields{
+					"Cause":  Equal(patients.ConnectionIssueCauseStaleInvite),
+					"Hidden": BeFalse(),
+				})))
+			})
+
+			It("clears an invitation issue once the invitation is accepted", func() {
+				patient := invitationPatient(40*24*time.Hour, 72*time.Hour)
+				patient.Permissions = &patients.Permissions{View: &patients.Permission{}}
+				patient.ConnectionIssue = &patients.ConnectionIssue{
+					Cause: patients.ConnectionIssueCauseStaleInvite,
+				}
+				id := insert(patient)
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				Expect(get(id).ConnectionIssue).To(BeNil())
+			})
+
+			It("does not touch patients without a source", func() {
+				clinicId, userId := randomPatient.ClinicId.Hex(), *randomPatient.UserId
+				before, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(repo.UpdateConnectionIssues(ctx)).To(Succeed())
+
+				patient, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.ConnectionIssue).To(BeNil())
+				Expect(patient.UpdatedTime).To(BeTemporally("==", before.UpdatedTime))
+			})
+		})
+
+		Describe("Set connection issue hidden", func() {
+			var ctx context.Context
+			var clinicId, userId string
+			var selector bson.M
+
+			BeforeEach(func() {
+				ctx = context.Background()
+				clinicId = randomPatient.ClinicId.Hex()
+				userId = *randomPatient.UserId
+				selector = bson.M{"clinicId": *randomPatient.ClinicId, "userId": userId}
+			})
+
+			raw := func() bson.M {
+				GinkgoHelper()
+				var doc bson.M
+				err := collection.FindOne(ctx, selector).Decode(&doc)
+				Expect(err).ToNot(HaveOccurred())
+				return doc
+			}
+
+			storeIssue := func(issue patients.ConnectionIssue) {
+				GinkgoHelper()
+				_, err := collection.UpdateOne(ctx, selector,
+					bson.M{"$set": bson.M{"connectionIssue": issue}})
+				Expect(err).ToNot(HaveOccurred())
+			}
+
+			It("sets the flag and bumps the updated time", func() {
+				storeIssue(patients.ConnectionIssue{
+					Cause: patients.ConnectionIssueCauseStaleData,
+				})
+				before, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.SetConnectionIssueHidden(ctx, clinicId, userId, true)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(patient.ConnectionIssue.Hidden).To(BeTrue())
+				Expect(patient.UpdatedTime).To(BeTemporally(">", before.UpdatedTime))
+				stored, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(stored.ConnectionIssue.Hidden).To(BeTrue())
+			})
+
+			It("unsets the flag when turned off and bumps the updated time", func() {
+				storeIssue(patients.ConnectionIssue{
+					Cause:  patients.ConnectionIssueCauseStaleData,
+					Hidden: true,
+				})
+				before, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.SetConnectionIssueHidden(ctx, clinicId, userId, false)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(patient.ConnectionIssue.Hidden).To(BeFalse())
+				Expect(patient.UpdatedTime).To(BeTemporally(">", before.UpdatedTime))
+				issue := raw()["connectionIssue"].(bson.M)
+				Expect(issue).ToNot(HaveKey("hidden"))
+				Expect(issue).To(HaveKey("cause"))
+			})
+
+			It("returns not found for an unknown patient", func() {
+				_, err := repo.SetConnectionIssueHidden(ctx, clinicId, "0000000000", true)
+				Expect(err).To(MatchError(patients.ErrNotFound))
+			})
+
+			It("returns not found for a patient without a connection issue", func() {
+				_, err := repo.SetConnectionIssueHidden(ctx, clinicId, userId, true)
+				Expect(err).To(MatchError(patients.ErrConnectionIssueNotFound))
+			})
 		})
 
 		Describe("Add provider connection request", func() {
@@ -1915,6 +2591,217 @@ var _ = Describe("Patients Repository", func() {
 				Expect(dexcom[1].ProviderName).To(BeComparableTo(request.ProviderName))
 
 				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			Describe("connection issue", func() {
+				var ctx context.Context
+				var clinicId, userId string
+
+				BeforeEach(func() {
+					ctx = context.Background()
+					clinicId = randomPatient.ClinicId.Hex()
+					userId = *randomPatient.UserId
+				})
+
+				storeIssueFor := func(source patients.ConnectionIssueSource) {
+					GinkgoHelper()
+					selector := bson.M{
+						"clinicId": *randomPatient.ClinicId,
+						"userId":   userId,
+					}
+					_, err := collection.UpdateOne(ctx, selector,
+						bson.M{"$set": bson.M{
+							"connectionIssueSource": source,
+							"connectionIssue": patients.ConnectionIssue{
+								Cause:  patients.ConnectionIssueCauseStaleData,
+								Hidden: true,
+							},
+						}})
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				request := func(provider string) patients.ConnectionRequest {
+					return patients.ConnectionRequest{
+						ProviderName: provider,
+						CreatedTime:  time.Now().Truncate(time.Millisecond),
+					}
+				}
+
+				It("is removed when the source changes", func() {
+					storeIssueFor(patients.ConnectionIssueSourceDexcom)
+
+					err := repo.AddProviderConnectionRequest(ctx, clinicId, userId,
+						request(patients.TwiistDataSourceProviderName))
+					Expect(err).ToNot(HaveOccurred())
+
+					patient, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(patient.ConnectionIssueSource).
+						To(Equal(patients.ConnectionIssueSourceTwiist))
+					Expect(patient.ConnectionIssue).To(BeNil())
+				})
+
+				It("is kept when the same provider is requested again", func() {
+					storeIssueFor(patients.ConnectionIssueSourceDexcom)
+
+					err := repo.AddProviderConnectionRequest(ctx, clinicId, userId,
+						request(patients.DexcomDataSourceProviderName))
+					Expect(err).ToNot(HaveOccurred())
+
+					patient, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(patient.ConnectionIssue).ToNot(BeNil())
+					Expect(patient.ConnectionIssue.Cause).
+						To(Equal(patients.ConnectionIssueCauseStaleData))
+					Expect(patient.ConnectionIssue.Hidden).To(BeTrue())
+				})
+			})
+
+			It("sets the connection issue source to the provider", func() {
+				ctx := context.Background()
+				clinicId := randomPatient.ClinicId.Hex()
+				userId := *randomPatient.UserId
+				request := patients.ConnectionRequest{
+					ProviderName: patients.TwiistDataSourceProviderName,
+					CreatedTime:  time.Now().Truncate(time.Millisecond),
+				}
+
+				err := repo.AddProviderConnectionRequest(ctx, clinicId, userId, request)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(ctx, clinicId, userId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.ConnectionIssueSource).
+					To(Equal(patients.ConnectionIssueSourceTwiist))
+			})
+		})
+
+		Describe("Update last invitation sent", func() {
+			It("sets the last invitation sent time and bumps the updated time", func() {
+				ctx := context.Background()
+				sentTime := time.Now().Truncate(time.Millisecond)
+
+				patientBefore, err := repo.Get(ctx, randomPatient.ClinicId.Hex(),
+					*randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patientBefore.LastInvitationSent).To(BeZero())
+
+				err = repo.UpdateLastInvitationSent(ctx, randomPatient.ClinicId.Hex(),
+					*randomPatient.UserId, sentTime)
+				Expect(err).ToNot(HaveOccurred())
+
+				patient, err := repo.Get(ctx, randomPatient.ClinicId.Hex(),
+					*randomPatient.UserId)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(patient.LastInvitationSent).To(BeTemporally("==", sentTime))
+				Expect(patient.UpdatedTime).To(BeTemporally(">", patientBefore.UpdatedTime))
+			})
+
+			It("returns not found for an unknown patient", func() {
+				ctx := context.Background()
+				err := repo.UpdateLastInvitationSent(ctx, randomPatient.ClinicId.Hex(),
+					"0000000000", time.Now())
+				Expect(err).To(MatchError(patients.ErrNotFound))
+			})
+
+			Describe("connection issue source", func() {
+				var ctx context.Context
+				var clinicId, userId string
+
+				BeforeEach(func() {
+					ctx = context.Background()
+					clinicId = randomPatient.ClinicId.Hex()
+					userId = *randomPatient.UserId
+				})
+
+				getSource := func() patients.ConnectionIssueSource {
+					patient, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					return patient.ConnectionIssueSource
+				}
+
+				It("is set to the invitation source when unset", func() {
+					Expect(getSource()).To(BeEmpty())
+
+					err := repo.UpdateLastInvitationSent(ctx, clinicId, userId, time.Now())
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(getSource()).
+						To(Equal(patients.ConnectionIssueSourceDeviceNonSpecificInvitation))
+				})
+
+				It("stays the invitation source on a repeated invitation", func() {
+					err := repo.UpdateLastInvitationSent(ctx, clinicId, userId, time.Now())
+					Expect(err).ToNot(HaveOccurred())
+					err = repo.UpdateLastInvitationSent(ctx, clinicId, userId, time.Now())
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(getSource()).
+						To(Equal(patients.ConnectionIssueSourceDeviceNonSpecificInvitation))
+				})
+
+				storeIssue := func(source patients.ConnectionIssueSource) {
+					GinkgoHelper()
+					selector := bson.M{
+						"clinicId": *randomPatient.ClinicId,
+						"userId":   userId,
+					}
+					set := bson.M{
+						"connectionIssue": patients.ConnectionIssue{
+							Cause: patients.ConnectionIssueCauseStaleData,
+						},
+					}
+					if source != "" {
+						set["connectionIssueSource"] = source
+					}
+					_, err := collection.UpdateOne(ctx, selector, bson.M{"$set": set})
+					Expect(err).ToNot(HaveOccurred())
+				}
+
+				getIssue := func() *patients.ConnectionIssue {
+					GinkgoHelper()
+					patient, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					return patient.ConnectionIssue
+				}
+
+				It("removes the connection issue when the source is first set", func() {
+					storeIssue("")
+
+					err := repo.UpdateLastInvitationSent(ctx, clinicId, userId, time.Now())
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(getIssue()).To(BeNil())
+				})
+
+				It("keeps the connection issue when the source is unchanged", func() {
+					storeIssue(patients.ConnectionIssueSourceDeviceNonSpecificInvitation)
+
+					err := repo.UpdateLastInvitationSent(ctx, clinicId, userId, time.Now())
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(getIssue()).ToNot(BeNil())
+				})
+
+				It("leaves a provider source unchanged", func() {
+					request := patients.ConnectionRequest{
+						ProviderName: patients.DexcomDataSourceProviderName,
+						CreatedTime:  time.Now().Truncate(time.Millisecond),
+					}
+					err := repo.AddProviderConnectionRequest(ctx, clinicId, userId, request)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(getSource()).To(Equal(patients.ConnectionIssueSourceDexcom))
+
+					sentTime := time.Now().Truncate(time.Millisecond)
+					err = repo.UpdateLastInvitationSent(ctx, clinicId, userId, sentTime)
+					Expect(err).ToNot(HaveOccurred())
+
+					patient, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(patient.ConnectionIssueSource).
+						To(Equal(patients.ConnectionIssueSourceDexcom))
+					Expect(patient.LastInvitationSent).To(BeTemporally("==", sentTime))
+				})
 			})
 		})
 

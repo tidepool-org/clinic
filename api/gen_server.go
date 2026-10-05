@@ -142,6 +142,12 @@ type ServerInterface interface {
 	// Connect Provider
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/connect/{providerId})
 	ConnectProvider(ctx echo.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId) error
+	// Set Connection Issue Hidden
+	// (PUT /v1/clinics/{clinicId}/patients/{patientId}/connection_issue/hidden)
+	SetConnectionIssueHidden(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+	// Record Invitation Resent
+	// (POST /v1/clinics/{clinicId}/patients/{patientId}/invitation_resent)
+	RecordInvitationResent(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Update Patient Permissions
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId}/permissions)
 	UpdatePatientPermissions(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
@@ -205,6 +211,9 @@ type ServerInterface interface {
 	// Find Patients
 	// (GET /v1/patients)
 	FindPatients(ctx echo.Context, params FindPatientsParams) error
+	// Update Connection Issues
+	// (POST /v1/patients/connection_issues)
+	UpdateConnectionIssues(ctx echo.Context) error
 	// Sync EHR Data for Patient
 	// (POST /v1/patients/{patientId}/ehr/sync)
 	SyncEHRDataForPatient(ctx echo.Context, patientId PatientId) error
@@ -1962,6 +1971,20 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sites: %s", err))
 	}
 
+	// ------------- Optional query parameter "connectionIssueCauses" -------------
+
+	err = runtime.BindQueryParameter("form", false, false, "connectionIssueCauses", ctx.QueryParams(), &params.ConnectionIssueCauses)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter connectionIssueCauses: %s", err))
+	}
+
+	// ------------- Optional query parameter "onlyHiddenConnectionIssues" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "onlyHiddenConnectionIssues", ctx.QueryParams(), &params.OnlyHiddenConnectionIssues)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter onlyHiddenConnectionIssues: %s", err))
+	}
+
 	// ------------- Optional query parameter "omitNonStandardRanges" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "omitNonStandardRanges", ctx.QueryParams(), &params.OmitNonStandardRanges)
@@ -2179,6 +2202,58 @@ func (w *ServerInterfaceWrapper) ConnectProvider(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.ConnectProvider(ctx, clinicId, patientId, providerId)
+	return err
+}
+
+// SetConnectionIssueHidden converts echo context to params.
+func (w *ServerInterfaceWrapper) SetConnectionIssueHidden(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientId", ctx.Param("patientId"), &patientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.SetConnectionIssueHidden(ctx, clinicId, patientId)
+	return err
+}
+
+// RecordInvitationResent converts echo context to params.
+func (w *ServerInterfaceWrapper) RecordInvitationResent(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientId", ctx.Param("patientId"), &patientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.RecordInvitationResent(ctx, clinicId, patientId)
 	return err
 }
 
@@ -2706,6 +2781,17 @@ func (w *ServerInterfaceWrapper) FindPatients(ctx echo.Context) error {
 	return err
 }
 
+// UpdateConnectionIssues converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateConnectionIssues(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdateConnectionIssues(ctx)
+	return err
+}
+
 // SyncEHRDataForPatient converts echo context to params.
 func (w *ServerInterfaceWrapper) SyncEHRDataForPatient(ctx echo.Context) error {
 	var err error
@@ -3030,6 +3116,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.CreatePatientFromUser)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId", wrapper.UpdatePatient)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/connect/:providerId", wrapper.ConnectProvider)
+	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/connection_issue/hidden", wrapper.SetConnectionIssueHidden)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/invitation_resent", wrapper.RecordInvitationResent)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions", wrapper.UpdatePatientPermissions)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.DeletePatientReviews)
@@ -3051,6 +3139,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/clinics/:clinicId/tide_report", wrapper.TideReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.GET(baseURL+"/v1/patients", wrapper.FindPatients)
+	router.POST(baseURL+"/v1/patients/connection_issues", wrapper.UpdateConnectionIssues)
 	router.POST(baseURL+"/v1/patients/:patientId/ehr/sync", wrapper.SyncEHRDataForPatient)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)

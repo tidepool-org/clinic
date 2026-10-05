@@ -83,6 +83,14 @@ allow {
   input.path = ["v1", "patients", _, "summary"]
 }
 
+# Allow backend services to update the connection issues of all patients
+# POST /v1/patients/connection_issues
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "patients", "connection_issues"]
+}
+
 # Allow backend services delete patient summaries
 # GET /v1/summaries/:summaryId/clinics
 allow {
@@ -405,6 +413,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow backend services to record that an invitation was resent to a patient
+# POST /v1/clinics/:clinicId/patients/:patientId/invitation_resent
+allow {
+  is_backend_service
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "invitation_resent"]
+}
+
 # Allow currently authenticated clinician to send a dexcom connect reminder
 # POST /v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request
 allow {
@@ -426,6 +442,22 @@ allow {
 allow {
   input.method == "POST"
   input.path = ["v1", "clinics", _, "patients", _, "connect", _]
+  is_backend_service
+}
+
+# Allow currently authenticated clinician to hide or unhide a connection issue
+# PUT /v1/clinics/:clinicId/patients/:patientId/connection_issue/hidden
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patients", _, "connection_issue", "hidden"]
+  clinician_has_read_access
+}
+
+# Allow backend services to hide or unhide a connection issue
+# PUT /v1/clinics/:clinicId/patients/:patientId/connection_issue/hidden
+allow {
+  input.method == "PUT"
+  input.path = ["v1", "clinics", _, "patients", _, "connection_issue", "hidden"]
   is_backend_service
 }
 
