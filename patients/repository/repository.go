@@ -1514,11 +1514,12 @@ func (r *repository) UpdateConnectionIssues(ctx context.Context) error {
 			"_id":                   patient.Id,
 			"connectionIssueSource": patient.ConnectionIssueSource,
 		}
-		if _, err := r.collection.UpdateOne(ctx, selector, update); err != nil {
+		result, err := r.collection.UpdateOne(ctx, selector, update)
+		if err != nil {
 			return fmt.Errorf("unable to update connection issue of patient %v: %w",
 				patient.Id.Hex(), err)
 		}
-		updated++
+		updated += int(result.ModifiedCount)
 	}
 	if err := cursor.Err(); err != nil {
 		return fmt.Errorf("error iterating patients with a connection issue source: %w",
