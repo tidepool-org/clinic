@@ -32,7 +32,7 @@ func (c *ConnectionIssue) Equal(other *ConnectionIssue) bool {
 // DetectConnectionIssue returns the patient's connection issue, or nil when there is
 // none. The conditions are checked in priority order and the first one that holds wins.
 //
-// The hidden flag of the stored issue is kept while the cause stays the same and dropped
+// The hidden flag of the stored issue is kept when the cause stays the same and dropped
 // when the cause changes.
 func (p Patient) DetectConnectionIssue(now time.Time) *ConnectionIssue {
 	issue := p.detectConnectionIssue(now)
