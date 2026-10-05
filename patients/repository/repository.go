@@ -1384,36 +1384,31 @@ func (r *repository) UpdatePatientDataSources(ctx context.Context, userId string
 	if err != nil {
 		return err
 	}
-	now := time.Now()
 	set := bson.M{
-		"updatedTime": now,
+		"updatedTime": time.Now(),
+		"dataSources": bson.M{"$literal": dataSources},
 	}
-	update := bson.M{
-		"$set": set,
-	}
+	update := mongo.Pipeline{{{Key: "$set", Value: set}}}
 	if dataSources != nil {
 		if newest := dataSources.NewlyConnected(existing).Newest(); newest != nil {
 			source, ok := patients.ConnectionIssueSourceForProvider(newest.ProviderName)
 			if ok {
 				r.logger.Infow("setting connection issue source for clinic patients",
 					"userId", userId, "connectionIssueSource", source)
+				set["connectionIssueSource"] = source
 				// Each clinic patient record has its own source, so only the records
 				// whose source changes lose their connection issue.
-				err := r.clearConnectionIssue(ctx, bson.M{
-					"userId":                userId,
-					"connectionIssueSource": bson.M{"$ne": source},
-				})
-				if err != nil {
-					return err
-				}
-				set["connectionIssueSource"] = source
+				set["connectionIssue"] = bson.M{"$cond": bson.A{
+					bson.M{"$eq": bson.A{"$connectionIssueSource", source}},
+					"$connectionIssue",
+					"$$REMOVE",
+				}}
 			} else {
 				r.logger.Warnw("unknown provider for connection issue source",
 					"userId", userId, "providerName", newest.ProviderName)
 			}
 		}
 	}
-	set["dataSources"] = dataSources
 
 	result, err := r.collection.UpdateMany(ctx, selector, update)
 	if result != nil && result.MatchedCount > 0 && result.MatchedCount > result.ModifiedCount {
