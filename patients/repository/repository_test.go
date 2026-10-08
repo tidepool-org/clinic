@@ -2157,7 +2157,7 @@ var _ = Describe("Patients Repository", func() {
 				CgmTimeInLevel1Hyper: floatp(0.18687044112539075),
 				BgmLastDataDate:      &bgmLastDataTime,
 				BgmAverageGlucose:    floatp(10.684787536231886),
-				BgmReadingsPerDay:    floatp(5),
+				BgmReadingsPerDay:    floatp(4.93),
 				BgmTotalReadings:     intp(69),
 				BgmLowEvents:         intp(3),
 				BgmHighEvents:        intp(22),

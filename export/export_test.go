@@ -157,9 +157,9 @@ var _ = Describe("Export", func() {
 				"71.428",             // cgm active wear time
 				"13",                 // cgm days w/ data
 				"238",                // cgm hours w/ data
-				"92",                 // avg glucose mg/dL
+				"5",                  // cgm avg glucose when clinic preferred units is mmol/L
 				"",                   // cgm gmi %
-				"2.3",                // cgm stdev in clnic preferred units
+				"2.3",                // cgm stdev in clnic preferred units (mmol/L)
 				"",                   // cbm cv %
 				"2.1340000000000003", // time in level 2 hypo %
 				"6.013",              //  time in level 1 hypo %
@@ -167,7 +167,7 @@ var _ = Describe("Export", func() {
 				"",                   // cgm time in level 1 hyper %
 				"",                   //  cgm time in level 2 hyper %
 				"2026-07-10",         // bgm last data date
-				"112",                // bgm avg glucose mg/dL
+				"6",                  // bgm avg glucose when clinic preferred units is mmol/L
 				"2",                  // bgm readings / day
 				"5",                  // bgm total readings
 				"3",                  // bgm # low events
@@ -208,9 +208,9 @@ var _ = Describe("Export", func() {
 				"71.428",             // cgm active wear time
 				"13",                 // cgm days w/ data
 				"238",                // cgm hours w/ data
-				"92",                 // avg glucose mg/dL
+				"92",                 // cgm avg glucose when clinic preferred units is mg/dL
 				"",                   // cgm gmi %
-				"41.4",               // cgm stdev in clnic preferred units
+				"41.4",               // cgm stdev in clnic preferred units (mg/dL)
 				"",                   // cbm cv %
 				"2.1340000000000003", // time in level 2 hypo %
 				"6.013",              //  time in level 1 hypo %
@@ -218,7 +218,7 @@ var _ = Describe("Export", func() {
 				"",                   // cgm time in level 1 hyper %
 				"",                   //  cgm time in level 2 hyper %
 				"2026-07-10",         // bgm last data date
-				"112",                // bgm avg glucose mg/dL
+				"112",                // bgm avg glucose when clinic preferred units is mg/dL
 				"2",                  // bgm readings / day
 				"5",                  // bgm total readings
 				"3",                  // bgm # low events
