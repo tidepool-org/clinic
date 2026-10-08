@@ -1140,9 +1140,8 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 			"bgmLastData":       "$summary.bgmStats.dates.lastData",
 			"bgmAverageGlucose": bgmPathPrefix + ".averageGlucoseMmol",
 			"bgmReadingsPerDay": bson.M{
-				"$divide": bson.A{
-					bgmPathPrefix + ".totalRecords",                            // no null check for numerator so that if field is null/missing result is missing as intended
-					bson.M{"$max": bson.A{bgmPathPrefix + ".daysWithData", 1}}, // default value for denominator to prevent divide by 0's
+				"$round": bson.A{
+					bgmPathPrefix + ".averageDailyRecords",
 				},
 			},
 			"bgmTotalReadings": bgmPathPrefix + ".totalRecords",

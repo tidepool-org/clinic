@@ -2087,6 +2087,84 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 	})
+
+	Describe("ListExportedPatients", func() {
+		var clinicId *primitive.ObjectID
+		BeforeEach(func() {
+			var err error
+			clinicId = objectidp(primitive.NewObjectID())
+			data, err := test.LoadFixture("test/fixtures/export_list_patients.json")
+			Expect(err).ToNot(HaveOccurred())
+			vr, err := bsonrw.NewExtJSONValueReader(bytes.NewReader(data), false)
+			Expect(err).ToNot(HaveOccurred())
+
+			decoder, err := bson.NewDecoder(vr)
+			Expect(err).ToNot(HaveOccurred())
+			var patientRecords []patients.Patient
+			err = decoder.Decode(&patientRecords)
+			Expect(err).ToNot(HaveOccurred())
+			var patientDocs []any
+			for _, patient := range patientRecords {
+				patient.ClinicId = clinicId
+				patient.Id = objectidp(primitive.NewObjectID())
+				patientDocs = append(patientDocs, patient)
+			}
+			_, err = collection.InsertMany(context.Background(), patientDocs)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			_, err := collection.DeleteMany(context.Background(), primitive.M{"clinicId": clinicId})
+			Expect(err).To(Succeed())
+		})
+
+		It("returns the fields properly", func() {
+			ps, err := repo.ListExportedPatients(context.Background(), patients.ExportParams{
+				Period:      "14d",
+				WorkspaceID: clinicId.Hex(),
+				ReportDate:  time.Date(2025, time.June, 26, 0, 0, 0, 0, time.UTC),
+			})
+			Expect(err).To(Succeed())
+			Expect(len(ps)).To(Equal(1))
+			createdTime := time.Date(2025, time.July, 15, 19, 29, 32, 813_000_000, time.UTC)
+			cgmLastDataTime := time.Date(2025, time.June, 17, 3, 25, 46, 0, time.UTC)
+			bgmLastDataTime := time.Date(2025, time.June, 18, 9, 9, 58, 0, time.UTC)
+			expectedPatient := patients.ExportedPatient{
+				FullName:             strp("Exported Patient"),
+				UserId:               strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaaaaaa"),
+				MRN:                  strp("1122334455"),
+				BirthDate:            strp("2000-02-03"),
+				Email:                strp("patient+export@tidepool.org"),
+				Permissions:          nil,
+				CreatedTime:          &createdTime,
+				InvitedBy:            nil,
+				ClinicSiteNames:      nil,
+				TagIds:               nil,
+				GlycemicRanges:       nil,
+				DiagnosisType:        strp("type1"),
+				CgmLastDataDate:      &cgmLastDataTime,
+				CgmActiveWearTime:    floatp(0.7140376984126984),
+				CgmDaysWithData:      intp(12),
+				CgmHoursWithData:     intp(247),
+				CgmAverageGlucose:    floatp(8.260858791246962),
+				CgmGmi:               floatp(6.9),
+				CgmStdDev:            floatp(3.218149902035002),
+				CgmCV:                floatp(0.3895660225356822),
+				CgmTimeInLevel2Hypo:  floatp(0.00868357068426537),
+				CgmTimeInLevel1Hypo:  floatp(0.03195554011809656),
+				CgmTimeInTarget:      floatp(0.7019798541160125),
+				CgmTimeInLevel2Hyper: floatp(0.07051059395623481),
+				CgmTimeInLevel1Hyper: floatp(0.18687044112539075),
+				BgmLastDataDate:      &bgmLastDataTime,
+				BgmAverageGlucose:    floatp(10.684787536231886),
+				BgmReadingsPerDay:    floatp(5),
+				BgmTotalReadings:     intp(69),
+				BgmLowEvents:         intp(3),
+				BgmHighEvents:        intp(22),
+			}
+			Expect(ps[0]).To(matchExportedPatient(expectedPatient))
+		})
+	})
 })
 
 var _ = Describe("TideReport", func() {
@@ -3811,6 +3889,92 @@ func tidePatientMatcher(patient patients.TidePatient) types.GomegaMatcher {
 		"DataSources": Ignore(),
 		"Reviews":     Ignore(),
 	})
+}
+
+func matchExportedPatient(result patients.ExportedPatient) types.GomegaMatcher {
+	fields := Fields{}
+	if result.FullName != nil {
+		fields["FullName"] = PointTo(Equal(*result.FullName))
+	}
+	if result.UserId != nil {
+		fields["UserId"] = PointTo(Equal(*result.UserId))
+	}
+	if result.MRN != nil {
+		fields["MRN"] = PointTo(Equal(*result.MRN))
+	}
+	if result.BirthDate != nil {
+		fields["BirthDate"] = PointTo(Equal(*result.BirthDate))
+	}
+	if result.Email != nil {
+		fields["Email"] = PointTo(Equal(*result.Email))
+	}
+	if result.CreatedTime != nil {
+		fields["CreatedTime"] = PointTo(Equal(*result.CreatedTime))
+	}
+	if result.InvitedBy != nil {
+		fields["InvitedBy"] = PointTo(Equal(*result.InvitedBy))
+	}
+	if result.DiagnosisType != nil {
+		fields["DiagnosisType"] = PointTo(Equal(*result.DiagnosisType))
+	}
+	if result.CgmLastDataDate != nil {
+		fields["CgmLastDataDate"] = PointTo(Equal(*result.CgmLastDataDate))
+	}
+	if result.CgmActiveWearTime != nil {
+		fields["CgmActiveWearTime"] = PointTo(BeNumerically("~", *result.CgmActiveWearTime, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmDaysWithData != nil {
+		fields["CgmDaysWithData"] = PointTo(Equal(*result.CgmDaysWithData))
+	}
+	if result.CgmHoursWithData != nil {
+		fields["CgmHoursWithData"] = PointTo(Equal(*result.CgmHoursWithData))
+	}
+	if result.CgmAverageGlucose != nil {
+		fields["CgmAverageGlucose"] = PointTo(BeNumerically("~", *result.CgmAverageGlucose, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmGmi != nil {
+		fields["CgmGmi"] = PointTo(BeNumerically("~", *result.CgmGmi, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmStdDev != nil {
+		fields["CgmStdDev"] = PointTo(BeNumerically("~", *result.CgmStdDev, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmCV != nil {
+		fields["CgmCV"] = PointTo(BeNumerically("~", *result.CgmCV, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmTimeInLevel2Hypo != nil {
+		fields["CgmTimeInLevel2Hypo"] = PointTo(BeNumerically("~", *result.CgmTimeInLevel2Hypo, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmTimeInLevel1Hypo != nil {
+		fields["CgmTimeInLevel1Hypo"] = PointTo(BeNumerically("~", *result.CgmTimeInLevel1Hypo, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmTimeInTarget != nil {
+		fields["CgmTimeInTarget"] = PointTo(BeNumerically("~", *result.CgmTimeInTarget, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmTimeInLevel2Hyper != nil {
+		fields["CgmTimeInLevel2Hyper"] = PointTo(BeNumerically("~", *result.CgmTimeInLevel2Hyper, math.SmallestNonzeroFloat64))
+	}
+	if result.CgmTimeInLevel1Hyper != nil {
+		fields["CgmTimeInLevel1Hyper"] = PointTo(BeNumerically("~", *result.CgmTimeInLevel1Hyper, math.SmallestNonzeroFloat64))
+	}
+	if result.BgmLastDataDate != nil {
+		fields["BgmLastDataDate"] = PointTo(Equal(*result.BgmLastDataDate))
+	}
+	if result.BgmAverageGlucose != nil {
+		fields["BgmAverageGlucose"] = PointTo(BeNumerically("~", *result.BgmAverageGlucose, math.SmallestNonzeroFloat64))
+	}
+	if result.BgmReadingsPerDay != nil {
+		fields["BgmReadingsPerDay"] = PointTo(BeNumerically("~", *result.BgmReadingsPerDay, math.SmallestNonzeroFloat64))
+	}
+	if result.BgmTotalReadings != nil {
+		fields["BgmTotalReadings"] = PointTo(Equal(*result.BgmTotalReadings))
+	}
+	if result.BgmLowEvents != nil {
+		fields["BgmLowEvents"] = PointTo(Equal(*result.BgmLowEvents))
+	}
+	if result.BgmHighEvents != nil {
+		fields["BgmHighEvents"] = PointTo(Equal(*result.BgmHighEvents))
+	}
+	return MatchFields(IgnoreExtras, fields)
 }
 
 func strp(s string) *string {
