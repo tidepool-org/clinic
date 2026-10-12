@@ -794,38 +794,67 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		"userId": userId,
 	}
 
-	set := bson.M{
-		"updatedTime": time.Now(),
-	}
-	unset := bson.M{}
 	if summary == nil {
-		unset = bson.M{
-			"summary": "",
+		update := bson.M{
+			"$set":   bson.M{"updatedTime": time.Now()},
+			"$unset": bson.M{"summary": ""},
 		}
-	} else {
-		if summary.CGM != nil {
-			set["summary.cgmStats"] = summary.CGM
+		res, err := r.collection.UpdateMany(ctx, selector, update)
+		if err != nil {
+			return fmt.Errorf("error updating patient: %w", err)
+		} else if res.ModifiedCount == 0 {
+			return patients.ErrSummaryNotFound
 		}
-		if summary.BGM != nil {
-			set["summary.bgmStats"] = summary.BGM
-		}
+		return nil
 	}
 
-	update := bson.M{
-		"$set": set,
+	set := bson.M{}
+	calculatedAfter := bson.A{}
+	if summary.CGM != nil {
+		set["summary.cgmStats"] = statsUnlessCalculatedAfter(summary.CGM, summary.CGM.Dates.LastUpdatedDate, "$summary.cgmStats")
+		calculatedAfter = append(calculatedAfter, bson.M{"$gt": bson.A{summary.CGM.Dates.LastUpdatedDate, "$summary.cgmStats.dates.lastUpdatedDate"}})
 	}
-	if len(unset) > 0 {
-		update["$unset"] = unset
+	if summary.BGM != nil {
+		set["summary.bgmStats"] = statsUnlessCalculatedAfter(summary.BGM, summary.BGM.Dates.LastUpdatedDate, "$summary.bgmStats")
+		calculatedAfter = append(calculatedAfter, bson.M{"$gt": bson.A{summary.BGM.Dates.LastUpdatedDate, "$summary.bgmStats.dates.lastUpdatedDate"}})
 	}
 
-	res, err := r.collection.UpdateMany(ctx, selector, update)
+	// updatedTime moves only when stats calculated after those stored arrive, so neither a stale report nor
+	// a redelivery moves it. The calculation date stands in for comparing the stats, whose periods are a map
+	// and so may be encoded in a different order on each delivery. Two reports with the same calculation
+	// date are taken to be the same, as one calculation produces one set of stats. Stats stored without a
+	// calculation date omit it, and missing sorts below null, so a report without one replacing them still
+	// moves it.
+	set["updatedTime"] = bson.M{
+		"$cond": bson.A{bson.M{"$or": calculatedAfter}, time.Now(), "$updatedTime"},
+	}
+
+	res, err := r.collection.UpdateMany(ctx, selector, mongo.Pipeline{{{Key: "$set", Value: set}}})
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
-	} else if res.ModifiedCount == 0 {
+	} else if res.MatchedCount == 0 {
+		// Ignoring a stale report handles it without modifying the patient, so only a user who is not a
+		// patient of any clinic is reported
 		return patients.ErrSummaryNotFound
 	}
 
 	return nil
+}
+
+// statsUnlessCalculatedAfter reports the stats given unless the stats stored were calculated after
+// them. Reporters deliver at least once with no ordering guarantee, so a delayed report can arrive
+// after one carrying a newer calculation, and applying it would regress the stored stats until the
+// next calculation. The BSON comparison order (missing < null < date) accepts any report when no
+// stats are stored, and lets a report without a calculation date replace only stats without one.
+// The stats are wrapped in $literal so they are stored verbatim rather than evaluated.
+func statsUnlessCalculatedAfter(stats interface{}, lastUpdatedDate *time.Time, storedStatsPath string) bson.M {
+	return bson.M{
+		"$cond": bson.A{
+			bson.M{"$gte": bson.A{lastUpdatedDate, storedStatsPath + ".dates.lastUpdatedDate"}},
+			bson.M{"$literal": stats},
+			storedStatsPath,
+		},
+	}
 }
 
 func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
