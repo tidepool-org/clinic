@@ -1,0 +1,7 @@
+John Doe,1970-01-02,1111111,working+test+custodial+john+doe@tidepool.org,type1,
+Jane Doe,1971-02-03,1111112,working+test+custodial+jane+doe@tidepool.org,type2,adaStandard
+Max Mustermann,1975-09-09,1111113,,type1,adaNonExistant
+Duplicate Existing Email,1995-01-23,1111114,existing+patient+email@tidepool.org,,
+Glycemic Target,1960-10-15,1111115,,,adaHighRisk
+Duplicate Existing MRN,1972-03-04,EXISTINGMRN,,,
+

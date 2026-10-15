@@ -201,6 +201,26 @@ func (mr *MockClientInterfaceMockRecorder) AssociateClinicianToUserWithBody(ctx,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssociateClinicianToUserWithBody", reflect.TypeOf((*MockClientInterface)(nil).AssociateClinicianToUserWithBody), varargs...)
 }
 
+// BulkCreatePatientsWithBody mocks base method.
+func (m *MockClientInterface) BulkCreatePatientsWithBody(ctx context.Context, clinicId ClinicId, params *BulkCreatePatientsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, params, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BulkCreatePatientsWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BulkCreatePatientsWithBody indicates an expected call of BulkCreatePatientsWithBody.
+func (mr *MockClientInterfaceMockRecorder) BulkCreatePatientsWithBody(ctx, clinicId, params, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, params, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkCreatePatientsWithBody", reflect.TypeOf((*MockClientInterface)(nil).BulkCreatePatientsWithBody), varargs...)
+}
+
 // ConnectProvider mocks base method.
 func (m *MockClientInterface) ConnectProvider(ctx context.Context, clinicId ClinicId, patientId PatientId, providerId ProviderId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -2483,6 +2503,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) AssociateClinicianToUser
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, inviteId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssociateClinicianToUserWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).AssociateClinicianToUserWithResponse), varargs...)
+}
+
+// BulkCreatePatientsWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) BulkCreatePatientsWithBodyWithResponse(ctx context.Context, clinicId ClinicId, params *BulkCreatePatientsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreatePatientsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, params, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BulkCreatePatientsWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*BulkCreatePatientsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BulkCreatePatientsWithBodyWithResponse indicates an expected call of BulkCreatePatientsWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) BulkCreatePatientsWithBodyWithResponse(ctx, clinicId, params, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, params, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkCreatePatientsWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).BulkCreatePatientsWithBodyWithResponse), varargs...)
 }
 
 // ConnectProviderWithResponse mocks base method.
