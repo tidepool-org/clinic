@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	timeFormat = "2006-01-02 03:04 PM"
+	timeFormat            = "2006-01-02 03:04 PM"
+	defaultPreferredUnits = "mmol/L"
 )
 
 type exporter struct {
@@ -54,18 +55,18 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 		ppctunrounded(p.CgmActiveWearTime),
 		pint(p.CgmDaysWithData),
 		pint(p.CgmHoursWithData),
-		fmtPreferredUnits(p.CgmAverageGlucose, e.clinic.PreferredBgUnits, 0),
+		fmtPreferredUnits(p.CgmAverageGlucose, e.clinic.PreferredBgUnits, 2),
 		pfloat(p.CgmGmi, 2),
-		fmtPreferredUnits(p.CgmStdDev, e.clinic.PreferredBgUnits, 1),
+		fmtPreferredUnits(p.CgmStdDev, e.clinic.PreferredBgUnits, 2),
 		ppct(p.CgmCV, 0),
 		ppctunrounded(p.CgmTimeInLevel2Hypo),
 		ppctunrounded(p.CgmTimeInLevel1Hypo),
 		ppctunrounded(p.CgmTimeInTarget),
-		ppct(p.CgmTimeInLevel1Hyper, 0),
-		ppct(p.CgmTimeInLevel2Hyper, 0),
+		ppctunrounded(p.CgmTimeInLevel1Hyper),
+		ppctunrounded(p.CgmTimeInLevel2Hyper),
 		ptime(p.BgmLastDataDate, "2006-01-02"),
-		fmtPreferredUnits(p.BgmAverageGlucose, e.clinic.PreferredBgUnits, 0),
-		pfloattrunc(p.BgmReadingsPerDay),
+		fmtPreferredUnits(p.BgmAverageGlucose, e.clinic.PreferredBgUnits, 2),
+		pfloat(p.BgmReadingsPerDay, 2),
 		pint(p.BgmTotalReadings),
 		pint(p.BgmLowEvents),
 		pint(p.BgmHighEvents),
@@ -179,9 +180,9 @@ func (e *exporter) Write(ctx context.Context, w io.Writer) error {
 		"CGM Active Wear Time (%)",
 		"CGM Days with Data",
 		"CGM Hours with Data",
-		"CGM Average Glucose (mg/dL)",
+		fmt.Sprintf("CGM Average Glucose %s", strDefault(e.clinic.PreferredBgUnits, defaultPreferredUnits)),
 		"CGM GMI (%)",
-		fmt.Sprintf("CGM Standard Deviation (%s)", e.clinic.PreferredBgUnits),
+		fmt.Sprintf("CGM Standard Deviation (%s)", strDefault(e.clinic.PreferredBgUnits, defaultPreferredUnits)),
 		"CGM Coefficient of Variation (%)",
 		"CGM Time in Level 2 Hypoglycemia (%)",
 		"CGM Time in Level 1 Hypoglycemia (%)",
@@ -315,8 +316,16 @@ func fmtPreferredUnits(valMmolL *float64, preferredBgUnits string, precision int
 	if valMmolL == nil {
 		return ""
 	}
+	preferredBgUnits = strDefault(preferredBgUnits, defaultPreferredUnits)
 	if strings.ToLower(preferredBgUnits) == "mg/dl" {
 		return FmtFloat(toMgDl(*valMmolL), precision)
 	}
 	return FmtFloat(*valMmolL, precision)
+}
+
+func strDefault(val, defaultVal string) string {
+	if val == "" {
+		return defaultVal
+	}
+	return val
 }
