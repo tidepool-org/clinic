@@ -6,12 +6,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/tidepool-org/clinic/integration/test"
+	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/fx/fxtest"
@@ -23,6 +24,7 @@ import (
 	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/integration/test"
 	"github.com/tidepool-org/clinic/patients"
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
@@ -86,6 +88,22 @@ var _ = Describe("BulkCreatePatients Integration Test", Ordered, func() {
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusBadRequest))
 		})
 	})
+
+	DescribeTable("Blocking invalid CSV errors", func(contentsCSV string) {
+		rec := httptest.NewRecorder()
+		reqBody := strings.NewReader(contentsCSV)
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/bulk/patients", clinicId.Hex()), reqBody)
+		req.Header.Set(echo.HeaderContentType, "text/csv")
+		asClinician(req)
+		server.ServeHTTP(rec, req)
+		Expect(rec.Result()).ToNot(BeNil())
+		Expect(rec.Result().StatusCode).To(Equal(http.StatusBadRequest))
+	},
+		Entry("Missing Name", `,1999-02-03,112233`),
+		Entry("Missing DOB", `John Doe,,112233`),
+		Entry("Missing MRN", `John Doe,1952-01-10,`),
+		Entry("Invalid DOB", `John Doe,this-is-not-a-DOB,123456789`),
+	)
 
 	Describe("List only", func() {
 		DescribeTable("Access",
@@ -152,6 +170,7 @@ Patients Processed,10
 Patients Created,3
 Patients Skipped,7
 Patients Emailed,2
+Patients Failed Creation,0
 Duplicate MRNs count,4
 Duplicate emails count,5
 `
@@ -184,6 +203,7 @@ Patients Processed,6
 Patients Created,4
 Patients Skipped,2
 Patients Emailed,2
+Patients Failed Creation,0
 Duplicate MRNs count,1
 Duplicate emails count,1
 `

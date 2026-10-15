@@ -246,6 +246,7 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 	outputRows = make([][]string, 0, len(patients)+1)
 	outputRows = append(outputRows, header)
 	numSkipped := 0
+	numFailedCreation := 0
 	numSkippedDupeEmail := 0
 	numSkippedDupeMRN := 0
 	numCreated := 0
@@ -272,6 +273,7 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 					status += ", "
 				}
 				status += err.Error()
+				numFailedCreation++
 				parsedPatient.Columns[OutputColStatus] = status
 				parsedPatient.Columns[OutputColEmailed] = "N"
 			} else {
@@ -294,6 +296,7 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 		{"Patients Created", fmt.Sprintf("%v", numCreated)},
 		{"Patients Skipped", fmt.Sprintf("%v", numSkipped)},
 		{"Patients Emailed", fmt.Sprintf("%v", numEmailed)},
+		{"Patients Failed Creation", fmt.Sprintf("%v", numFailedCreation)},
 		{"Duplicate MRNs count", fmt.Sprintf("%v", numSkippedDupeMRN)},
 		{"Duplicate emails count", fmt.Sprintf("%v", numSkippedDupeEmail)},
 	}...)
