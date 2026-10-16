@@ -2146,7 +2146,7 @@ var _ = Describe("Patients Repository", func() {
 				CgmActiveWearTime:    floatp(0.7140376984126984),
 				CgmDaysWithData:      intp(12),
 				CgmHoursWithData:     intp(247),
-				CgmAverageGlucose:    floatp(8.260858791246962),
+				CgmAverageGlucose:    floatp(8.260858791246962), // repository will return in full precision. Caller can then decide how to format.
 				CgmGmi:               floatp(6.9),
 				CgmStdDev:            floatp(3.218149902035002),
 				CgmCV:                floatp(0.3895660225356822),
@@ -2156,7 +2156,7 @@ var _ = Describe("Patients Repository", func() {
 				CgmTimeInLevel2Hyper: floatp(0.07051059395623481),
 				CgmTimeInLevel1Hyper: floatp(0.18687044112539075),
 				BgmLastDataDate:      &bgmLastDataTime,
-				BgmAverageGlucose:    floatp(10.684787536231886),
+				BgmAverageGlucose:    floatp(10.684787536231886), // repository will return in full precision. Caller can then decide how to format.
 				BgmReadingsPerDay:    floatp(4.93),
 				BgmTotalReadings:     intp(69),
 				BgmLowEvents:         intp(3),

@@ -18,6 +18,8 @@ import (
 const (
 	timeFormat            = "2006-01-02 03:04 PM"
 	defaultPreferredUnits = "mmol/L"
+	mmolLDecimalPlaces    = 2
+	mgDLDecimalPlaces     = 1
 )
 
 type exporter struct {
@@ -32,6 +34,13 @@ type exporter struct {
 }
 
 func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
+	preferredBgUnits := strDefault(e.clinic.PreferredBgUnits, defaultPreferredUnits)
+	// [BACK-4588] - use different number of decimal places for certain fields
+	// depending on clinic preference.
+	unitsDecimalPlaces := mmolLDecimalPlaces
+	if strings.ToLower(preferredBgUnits) == "mg/dl" {
+		unitsDecimalPlaces = mgDLDecimalPlaces
+	}
 	return []string{
 		pstr(p.FullName),
 		pstr(p.UserId),
@@ -55,9 +64,9 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 		ppctunrounded(p.CgmActiveWearTime),
 		pint(p.CgmDaysWithData),
 		pint(p.CgmHoursWithData),
-		fmtPreferredUnits(p.CgmAverageGlucose, e.clinic.PreferredBgUnits, 2),
+		fmtPreferredUnits(p.CgmAverageGlucose, preferredBgUnits, unitsDecimalPlaces),
 		pfloat(p.CgmGmi, 2),
-		fmtPreferredUnits(p.CgmStdDev, e.clinic.PreferredBgUnits, 2),
+		fmtPreferredUnits(p.CgmStdDev, preferredBgUnits, unitsDecimalPlaces),
 		ppct(p.CgmCV, 0),
 		ppctunrounded(p.CgmTimeInLevel2Hypo),
 		ppctunrounded(p.CgmTimeInLevel1Hypo),
@@ -65,7 +74,7 @@ func (e *exporter) ToCSVRow(p *patients.ExportedPatient) []string {
 		ppctunrounded(p.CgmTimeInLevel1Hyper),
 		ppctunrounded(p.CgmTimeInLevel2Hyper),
 		ptime(p.BgmLastDataDate, "2006-01-02"),
-		fmtPreferredUnits(p.BgmAverageGlucose, e.clinic.PreferredBgUnits, 2),
+		fmtPreferredUnits(p.BgmAverageGlucose, preferredBgUnits, unitsDecimalPlaces),
 		pfloat(p.BgmReadingsPerDay, 2),
 		pint(p.BgmTotalReadings),
 		pint(p.BgmLowEvents),
