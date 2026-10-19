@@ -1,0 +1,311 @@
+[
+    {
+        "_id":
+        {
+            "$oid": "aaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "clinicId":
+        {
+            "$oid": "cccccccccccccccccccccccc"
+        },
+        "userId": "aaaaaaaa-bbbb-cccc-dddd-aaaaaaaaaaaa",
+        "birthDate": "2000-02-03",
+        "email": "patient+export@tidepool.org",
+        "fullName": "Exported Patient",
+        "mrn": "1122334455",
+        "targetDevices": null,
+        "diagnosisType": "type1",
+        "permissions":
+        {
+            "view":
+            {},
+            "upload":
+            {},
+            "note":
+            {}
+        },
+        "createdTime":
+        {
+            "$date": "2025-07-15T19:29:32.813Z"
+        },
+        "updatedTime":
+        {
+            "$date": "2025-07-15T19:42:39.438Z"
+        },
+        "requireUniqueMrn": false,
+        "summary":
+        {
+            "bgmStats":
+            {
+                "id": "6855b6b6921165ea094667d9",
+                "config":
+                {
+                    "highGlucoseThreshold": 10,
+                    "lowGlucoseThreshold": 3.9,
+                    "schemaVersion": 6,
+                    "veryHighGlucoseThreshold": 13.9,
+                    "veryLowGlucoseThreshold": 3
+                },
+                "dates":
+                {
+                    "firstData":
+                    {
+                        "$date": "2025-05-20T10:46:20Z"
+                    },
+                    "hasFirstData": true,
+                    "hasLastData": true,
+                    "hasLastUploadDate": true,
+                    "hasOutdatedSince": false,
+                    "lastData":
+                    {
+                        "$date": "2025-06-18T09:09:58Z"
+                    },
+                    "lastUpdatedDate":
+                    {
+                        "$date": "2025-07-21T11:42:30.944Z"
+                    },
+                    "lastUpdatedReason":
+                    [
+                        "SCHEMA_MIGRATION"
+                    ],
+                    "lastUploadDate":
+                    {
+                        "$date": "2025-06-20T19:29:52.655Z"
+                    },
+                    "outdatedReason":
+                    []
+                },
+                "periods":
+                {
+                    "14d":
+                    {
+                        "averageDailyRecords": 4.928571428571429,
+                        "averageDailyRecordsDelta": -0.8571428571428568,
+                        "averageGlucoseMmol": 10.684787536231886,
+                        "averageGlucoseMmolDelta": -0.39203826623725213,
+                        "coefficientOfVariation": 0.3765181948426628,
+                        "coefficientOfVariationDelta": -0.15991771217321393,
+                        "daysWithData": 13,
+                        "daysWithDataDelta": 1,
+                        "hasAverageDailyRecords": true,
+                        "hasAverageGlucoseMmol": true,
+                        "hasTimeInAnyHighPercent": true,
+                        "hasTimeInAnyHighRecords": true,
+                        "hasTimeInAnyLowPercent": true,
+                        "hasTimeInAnyLowRecords": true,
+                        "hasTimeInExtremeHighPercent": true,
+                        "hasTimeInExtremeHighRecords": true,
+                        "hasTimeInHighPercent": true,
+                        "hasTimeInHighRecords": true,
+                        "hasTimeInLowPercent": true,
+                        "hasTimeInLowRecords": true,
+                        "hasTimeInTargetPercent": true,
+                        "hasTimeInTargetRecords": true,
+                        "hasTimeInVeryHighPercent": true,
+                        "hasTimeInVeryHighRecords": true,
+                        "hasTimeInVeryLowPercent": true,
+                        "hasTimeInVeryLowRecords": true,
+                        "hasTotalRecords": true,
+                        "max": 19.53863,
+                        "maxDelta": -8.825689999999998,
+                        "min": 2.44233,
+                        "minDelta": -0.4440599999999999,
+                        "standardDeviation": 4.023016915419412,
+                        "standardDeviationDelta": -1.918990180784986,
+                        "timeInAnyHighPercent": 0.5797101449275363,
+                        "timeInAnyHighPercentDelta": 0.0982286634460548,
+                        "timeInAnyHighRecords": 40,
+                        "timeInAnyHighRecordsDelta": 1,
+                        "timeInAnyLowPercent": 0.07246376811594203,
+                        "timeInAnyLowPercentDelta": -0.026301663982823395,
+                        "timeInAnyLowRecords": 5,
+                        "timeInAnyLowRecordsDelta": -3,
+                        "timeInExtremeHighPercent": 0.014492753623188406,
+                        "timeInExtremeHighPercentDelta": -0.13365539452495973,
+                        "timeInExtremeHighRecords": 1,
+                        "timeInExtremeHighRecordsDelta": -11,
+                        "timeInHighPercent": 0.2608695652173913,
+                        "timeInHighPercentDelta": 0.10037573805689748,
+                        "timeInHighRecords": 18,
+                        "timeInHighRecordsDelta": 5,
+                        "timeInLowPercent": 0.028985507246376812,
+                        "timeInLowPercentDelta": -0.05743424584004293,
+                        "timeInLowRecords": 2,
+                        "timeInLowRecordsDelta": -5,
+                        "timeInTargetPercent": 0.34782608695652173,
+                        "timeInTargetPercentDelta": -0.07192699946323133,
+                        "timeInTargetRecords": 24,
+                        "timeInTargetRecordsDelta": -10,
+                        "timeInVeryHighPercent": 0.3188405797101449,
+                        "timeInVeryHighPercentDelta": -0.0021470746108427363,
+                        "timeInVeryHighRecords": 22,
+                        "timeInVeryHighRecordsDelta": -4,
+                        "timeInVeryLowPercent": 0.043478260869565216,
+                        "timeInVeryLowPercentDelta": 0.031132581857219538,
+                        "timeInVeryLowRecords": 3,
+                        "timeInVeryLowRecordsDelta": 2,
+                        "totalRecords": 69,
+                        "totalRecordsDelta": -12
+                    }
+                }
+            },
+            "cgmStats":
+            {
+                "id": "6855b6b6921165ea094667d8",
+                "config":
+                {
+                    "highGlucoseThreshold": 10,
+                    "lowGlucoseThreshold": 3.9,
+                    "schemaVersion": 6,
+                    "veryHighGlucoseThreshold": 13.9,
+                    "veryLowGlucoseThreshold": 3
+                },
+                "dates":
+                {
+                    "firstData":
+                    {
+                        "$date": "2025-05-24T05:34:24Z"
+                    },
+                    "hasFirstData": true,
+                    "hasLastData": true,
+                    "hasLastUploadDate": true,
+                    "hasOutdatedSince": false,
+                    "lastData":
+                    {
+                        "$date": "2025-06-17T03:25:46Z"
+                    },
+                    "lastUpdatedDate":
+                    {
+                        "$date": "2025-07-21T11:48:49.838Z"
+                    },
+                    "lastUpdatedReason":
+                    [
+                        "SCHEMA_MIGRATION"
+                    ],
+                    "lastUploadDate":
+                    {
+                        "$date": "2025-06-20T19:29:52.655Z"
+                    },
+                    "outdatedReason":
+                    []
+                },
+                "periods":
+                {
+                    "14d":
+                    {
+                        "averageDailyRecords": 205.64285714285714,
+                        "averageDailyRecordsDelta": 39.35714285714286,
+                        "averageGlucoseMmol": 8.260858791246962,
+                        "averageGlucoseMmolDelta": -1.2021412903681554,
+                        "coefficientOfVariation": 0.3895660225356822,
+                        "coefficientOfVariationDelta": -0.028522678312352,
+                        "daysWithData": 12,
+                        "daysWithDataDelta": 3,
+                        "glucoseManagementIndicator": 6.9,
+                        "hasAverageDailyRecords": true,
+                        "hasAverageGlucoseMmol": true,
+                        "hasGlucoseManagementIndicator": true,
+                        "hasTimeCGMUseMinutes": true,
+                        "hasTimeCGMUsePercent": true,
+                        "hasTimeCGMUseRecords": true,
+                        "hasTimeInAnyHighMinutes": true,
+                        "hasTimeInAnyHighPercent": true,
+                        "hasTimeInAnyHighRecords": true,
+                        "hasTimeInAnyLowMinutes": true,
+                        "hasTimeInAnyLowPercent": true,
+                        "hasTimeInAnyLowRecords": true,
+                        "hasTimeInExtremeHighMinutes": true,
+                        "hasTimeInExtremeHighPercent": true,
+                        "hasTimeInExtremeHighRecords": true,
+                        "hasTimeInHighMinutes": true,
+                        "hasTimeInHighPercent": true,
+                        "hasTimeInHighRecords": true,
+                        "hasTimeInLowMinutes": true,
+                        "hasTimeInLowPercent": true,
+                        "hasTimeInLowRecords": true,
+                        "hasTimeInTargetMinutes": true,
+                        "hasTimeInTargetPercent": true,
+                        "hasTimeInTargetRecords": true,
+                        "hasTimeInVeryHighMinutes": true,
+                        "hasTimeInVeryHighPercent": true,
+                        "hasTimeInVeryHighRecords": true,
+                        "hasTimeInVeryLowMinutes": true,
+                        "hasTimeInVeryLowPercent": true,
+                        "hasTimeInVeryLowRecords": true,
+                        "hasTotalRecords": true,
+                        "hoursWithData": 247,
+                        "hoursWithDataDelta": 43,
+                        "max": 20.26023,
+                        "maxDelta": -1.9982700000000015,
+                        "min": 2.16479,
+                        "minDelta": 0,
+                        "standardDeviation": 3.218149902035002,
+                        "standardDeviationDelta": -0.7382235082123039,
+                        "timeCGMUseMinutes": 14395,
+                        "timeCGMUseMinutesDelta": 2755,
+                        "timeCGMUsePercent": 0.7140376984126984,
+                        "timeCGMUsePercentDelta": 0.13665674603174605,
+                        "timeCGMUseRecords": 2879,
+                        "timeCGMUseRecordsDelta": 551,
+                        "timeInAnyHighMinutes": 3705,
+                        "timeInAnyHighMinutesDelta": -305,
+                        "timeInAnyHighPercent": 0.2573810350816256,
+                        "timeInAnyHighPercentDelta": -0.08712068313143284,
+                        "timeInAnyHighRecords": 741,
+                        "timeInAnyHighRecordsDelta": -61,
+                        "timeInAnyLowMinutes": 585,
+                        "timeInAnyLowMinutesDelta": 345,
+                        "timeInAnyLowPercent": 0.04063911080236193,
+                        "timeInAnyLowPercentDelta": 0.020020554101331006,
+                        "timeInAnyLowRecords": 117,
+                        "timeInAnyLowRecordsDelta": 69,
+                        "timeInExtremeHighMinutes": 50,
+                        "timeInExtremeHighMinutesDelta": -195,
+                        "timeInExtremeHighPercent": 0.0034734282737061478,
+                        "timeInExtremeHighPercentDelta": -0.01757468169192959,
+                        "timeInExtremeHighRecords": 10,
+                        "timeInExtremeHighRecordsDelta": -39,
+                        "timeInHighMinutes": 2690,
+                        "timeInHighMinutesDelta": 405,
+                        "timeInHighPercent": 0.18687044112539075,
+                        "timeInHighPercentDelta": -0.00943540079900787,
+                        "timeInHighRecords": 538,
+                        "timeInHighRecordsDelta": 81,
+                        "timeInLowMinutes": 460,
+                        "timeInLowMinutesDelta": 335,
+                        "timeInLowPercent": 0.03195554011809656,
+                        "timeInLowPercentDelta": 0.021216708502976283,
+                        "timeInLowRecords": 92,
+                        "timeInLowRecordsDelta": 67,
+                        "timeInTargetMinutes": 10105,
+                        "timeInTargetMinutesDelta": 2715,
+                        "timeInTargetPercent": 0.7019798541160125,
+                        "timeInTargetPercentDelta": 0.06710012903010187,
+                        "timeInTargetRecords": 2021,
+                        "timeInTargetRecordsDelta": 543,
+                        "timeInVeryHighMinutes": 1015,
+                        "timeInVeryHighMinutesDelta": -710,
+                        "timeInVeryHighPercent": 0.07051059395623481,
+                        "timeInVeryHighPercentDelta": -0.07768528233242498,
+                        "timeInVeryHighRecords": 203,
+                        "timeInVeryHighRecordsDelta": -142,
+                        "timeInVeryLowMinutes": 125,
+                        "timeInVeryLowMinutesDelta": 10,
+                        "timeInVeryLowPercent": 0.00868357068426537,
+                        "timeInVeryLowPercentDelta": -0.0011961544016452826,
+                        "timeInVeryLowRecords": 25,
+                        "timeInVeryLowRecordsDelta": 2,
+                        "totalRecords": 2879,
+                        "totalRecordsDelta": 551
+                    }
+                }
+            }
+        },
+        "tags":
+        [
+            {
+                "$oid": "efefefefefefefefefefefef"
+            }
+        ]
+    }
+]
