@@ -112,14 +112,14 @@ var _ = Describe("Export", func() {
 				CgmDaysWithData:     intp(13),
 				CgmHoursWithData:    intp(238),
 				CgmAverageGlucose:   floatp(5.131),
-				CgmStdDev:           floatp(2.3),
+				CgmStdDev:           floatp(2.3567),
 				CgmTimeInLevel2Hypo: floatp(0.02134),
 				CgmTimeInLevel1Hypo: floatp(0.06013),
 				CgmTimeInTarget:     floatp(0.82333),
 				BgmLastDataDate:     timep(time.Date(2026, time.July, 10, 12, 0, 0, 0, time.UTC)),
 				BgmAverageGlucose:   floatp(6.231),
 				BgmTotalReadings:    intp(5),
-				BgmReadingsPerDay:   floatp(2.5),
+				BgmReadingsPerDay:   floatp(2.51),
 				BgmLowEvents:        intp(3),
 				BgmHighEvents:       intp(1),
 			}
@@ -157,18 +157,18 @@ var _ = Describe("Export", func() {
 				"71.428",             // cgm active wear time
 				"13",                 // cgm days w/ data
 				"238",                // cgm hours w/ data
-				"92",                 // avg glucose mg/dL
+				"5.13",               // cgm avg glucose w/ 2 decimal places of precision when clinic preferred units is mmol/L
 				"",                   // cgm gmi %
-				"2.3",                // cgm stdev in clnic preferred units
+				"2.36",               // cgm stdev w/ 2 decimal places of precision when clinic preferred units is mmol/L
 				"",                   // cbm cv %
 				"2.1340000000000003", // time in level 2 hypo %
-				"6.013",              //  time in level 1 hypo %
+				"6.013",              // time in level 1 hypo %
 				"82.333",             // cgm time in target %
 				"",                   // cgm time in level 1 hyper %
-				"",                   //  cgm time in level 2 hyper %
+				"",                   // cgm time in level 2 hyper %
 				"2026-07-10",         // bgm last data date
-				"112",                // bgm avg glucose mg/dL
-				"2",                  // bgm readings / day
+				"6.23",               // bgm avg glucose when clinic preferred units is mmol/L with 2 decimal points precision.
+				"2.51",               // bgm readings / day to 2 decimal points.
 				"5",                  // bgm total readings
 				"3",                  // bgm # low events
 				"1",                  // bgm # high events
@@ -208,18 +208,18 @@ var _ = Describe("Export", func() {
 				"71.428",             // cgm active wear time
 				"13",                 // cgm days w/ data
 				"238",                // cgm hours w/ data
-				"92",                 // avg glucose mg/dL
+				"92.4",               // cgm avg glucose w/ 1 decimal places of precision when clinic preferred units is mg/dL
 				"",                   // cgm gmi %
-				"41.4",               // cgm stdev in clnic preferred units
+				"42.5",               // cgm stdev w/ 1 decimal places of precision when clinic preferred units is mg/dL
 				"",                   // cbm cv %
 				"2.1340000000000003", // time in level 2 hypo %
-				"6.013",              //  time in level 1 hypo %
+				"6.013",              // time in level 1 hypo %
 				"82.333",             // cgm time in target %
 				"",                   // cgm time in level 1 hyper %
-				"",                   //  cgm time in level 2 hyper %
+				"",                   // cgm time in level 2 hyper %
 				"2026-07-10",         // bgm last data date
-				"112",                // bgm avg glucose mg/dL
-				"2",                  // bgm readings / day
+				"112.3",              // bgm avg glucose w/ 1 decimal places of precision when clinic preferred units is mg/dL
+				"2.51",               // bgm readings / day to 2 decimal points.
 				"5",                  // bgm total readings
 				"3",                  // bgm # low events
 				"1",                  // bgm # high events

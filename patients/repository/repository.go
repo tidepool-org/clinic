@@ -1142,6 +1142,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 			"bgmReadingsPerDay": bson.M{
 				"$round": bson.A{
 					bgmPathPrefix + ".averageDailyRecords",
+					2,
 				},
 			},
 			"bgmTotalReadings": bgmPathPrefix + ".totalRecords",
