@@ -413,6 +413,14 @@ allow {
   clinician_has_read_access
 }
 
+# Allow currently authenticated clinician to send a stale data follow-up
+# POST /v1/clinics/:clinicId/patients/:patientId/stale_data_follow_up
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "stale_data_follow_up"]
+  clinician_has_read_access
+}
+
 # Allow backend services to record that an invitation was resent to a patient
 # POST /v1/clinics/:clinicId/patients/:patientId/invitation_resent
 allow {

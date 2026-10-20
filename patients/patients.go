@@ -32,6 +32,9 @@ var (
 	ErrInvalidDiagnosisType = errs.New("invalid diagnosis type")
 
 	ErrConnectionIssueNotFound = fmt.Errorf("connection issue %w", errors.NotFound)
+	ErrNoStaleDataIssue        = fmt.Errorf(
+		"%w: patient has no stale data connection issue for a device provider",
+		errors.Conflict)
 
 	PendingDataSourceExpirationDuration = time.Hour * 24 * 30
 
@@ -122,6 +125,8 @@ type Service interface {
 	DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	UpdateLastInvitationSent(ctx context.Context, clinicId, userId string, sentTime time.Time) error
+	UpdateLastStaleDataFollowUpTime(ctx context.Context, clinicId, userId string,
+		sentTime time.Time) (*Patient, error)
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
 	DeletePatientTagFromClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
@@ -180,6 +185,7 @@ type Patient struct {
 	Reviews                    []Review                   `bson:"reviews,omitempty"`
 	LastUploadReminderTime     time.Time                  `bson:"lastUploadReminderTime,omitempty"`
 	LastInvitationSent         time.Time                  `bson:"lastInvitationSent,omitempty"`
+	LastStaleDataFollowUpTime  time.Time                  `bson:"lastStaleDataFollowUpTime,omitempty"`
 	ProviderConnectionRequests ProviderConnectionRequests `bson:"providerConnectionRequests,omitempty"`
 	// ConnectionIssueSource is owned by the server, see the ConnectionIssueSource type.
 	// omitempty keeps whole-document updates from clearing it.

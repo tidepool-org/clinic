@@ -112,6 +112,18 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 		return ids, http.StatusOK
 	}
 
+	sendStaleDataFollowUp := func(as func(*http.Request)) *http.Response {
+		GinkgoHelper()
+		rec := httptest.NewRecorder()
+		endpoint := patientEndpoint() + "/stale_data_follow_up"
+		req := prepareRequest(http.MethodPost, endpoint, "")
+		as(req)
+
+		server.ServeHTTP(rec, req)
+		Expect(rec.Result()).ToNot(BeNil())
+		return rec.Result()
+	}
+
 	expectHidden := func(hidden bool) {
 		GinkgoHelper()
 		Expect(getPatient().ConnectionIssue).ToNot(BeNil())
@@ -263,6 +275,28 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 			})
 		})
 
+		Describe("Sending a stale data follow-up", func() {
+			It("Records the time for a clinician", func() {
+				Expect(getPatient().LastStaleDataFollowUpTime).To(BeNil())
+				before := time.Now()
+
+				resp := sendStaleDataFollowUp(asClinician)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				updated := api.PatientV1{}
+				Expect(json.NewDecoder(resp.Body).Decode(&updated)).To(Succeed())
+				Expect(updated.LastStaleDataFollowUpTime).
+					To(PointTo(BeTemporally(">=", before.Truncate(time.Millisecond))))
+				Expect(getPatient().LastStaleDataFollowUpTime).
+					To(Equal(updated.LastStaleDataFollowUpTime))
+			})
+
+			It("Is rejected for a backend service", func() {
+				resp := sendStaleDataFollowUp(asServer)
+				Expect(resp.StatusCode).ToNot(Equal(http.StatusOK))
+			})
+		})
+
 		It("Reports an error", func() {
 			updateDataSources([]api.DataSourceV1{{
 				ProviderName:   "dexcom",
@@ -294,6 +328,11 @@ var _ = Describe("Connection Issues Integration Test", Ordered, func() {
 
 		It("Cannot be hidden once there is no issue", func() {
 			Expect(setHidden(true, asClinician).StatusCode).To(Equal(http.StatusNotFound))
+		})
+
+		It("Cannot send a stale data follow-up once there is no issue", func() {
+			resp := sendStaleDataFollowUp(asClinician)
+			Expect(resp.StatusCode).To(Equal(http.StatusConflict))
 		})
 	})
 })

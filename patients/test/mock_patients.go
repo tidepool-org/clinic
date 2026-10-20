@@ -435,6 +435,21 @@ func (mr *MockServiceMockRecorder) UpdateLastInvitationSent(ctx, clinicId, userI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastInvitationSent", reflect.TypeOf((*MockService)(nil).UpdateLastInvitationSent), ctx, clinicId, userId, sentTime)
 }
 
+// UpdateLastStaleDataFollowUpTime mocks base method.
+func (m *MockService) UpdateLastStaleDataFollowUpTime(ctx context.Context, clinicId, userId string, sentTime time.Time) (*patients.Patient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastStaleDataFollowUpTime", ctx, clinicId, userId, sentTime)
+	ret0, _ := ret[0].(*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateLastStaleDataFollowUpTime indicates an expected call of UpdateLastStaleDataFollowUpTime.
+func (mr *MockServiceMockRecorder) UpdateLastStaleDataFollowUpTime(ctx, clinicId, userId, sentTime any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastStaleDataFollowUpTime", reflect.TypeOf((*MockService)(nil).UpdateLastStaleDataFollowUpTime), ctx, clinicId, userId, sentTime)
+}
+
 // UpdateLastUploadReminderTime mocks base method.
 func (m *MockService) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -949,6 +964,21 @@ func (m *MockRepository) UpdateLastInvitationSent(ctx context.Context, clinicId,
 func (mr *MockRepositoryMockRecorder) UpdateLastInvitationSent(ctx, clinicId, userId, sentTime any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastInvitationSent", reflect.TypeOf((*MockRepository)(nil).UpdateLastInvitationSent), ctx, clinicId, userId, sentTime)
+}
+
+// UpdateLastStaleDataFollowUpTime mocks base method.
+func (m *MockRepository) UpdateLastStaleDataFollowUpTime(ctx context.Context, clinicId, userId string, sentTime time.Time) (*patients.Patient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLastStaleDataFollowUpTime", ctx, clinicId, userId, sentTime)
+	ret0, _ := ret[0].(*patients.Patient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateLastStaleDataFollowUpTime indicates an expected call of UpdateLastStaleDataFollowUpTime.
+func (mr *MockRepositoryMockRecorder) UpdateLastStaleDataFollowUpTime(ctx, clinicId, userId, sentTime any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastStaleDataFollowUpTime", reflect.TypeOf((*MockRepository)(nil).UpdateLastStaleDataFollowUpTime), ctx, clinicId, userId, sentTime)
 }
 
 // UpdateLastUploadReminderTime mocks base method.

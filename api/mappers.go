@@ -275,6 +275,9 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 	if !patient.LastUploadReminderTime.IsZero() {
 		dto.LastUploadReminderTime = &patient.LastUploadReminderTime
 	}
+	if !patient.LastStaleDataFollowUpTime.IsZero() {
+		dto.LastStaleDataFollowUpTime = &patient.LastStaleDataFollowUpTime
+	}
 	if patient.ConnectionIssueSource != "" {
 		source := ConnectionIssueSourceV1(patient.ConnectionIssueSource)
 		dto.ConnectionIssueSource = &source
