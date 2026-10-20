@@ -217,6 +217,34 @@ func (h *Handler) SendUploadReminder(ec echo.Context, clinicId ClinicId, patient
 	return ec.JSON(http.StatusOK, NewPatientDto(patient))
 }
 
+func (h *Handler) SendStaleDataFollowUp(ec echo.Context, clinicId ClinicId,
+	patientId PatientId) error {
+
+	ctx := ec.Request().Context()
+
+	authData := auth.GetAuthData(ctx)
+	if authData == nil || authData.SubjectId == "" {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected authenticated user id",
+		}
+	}
+	if authData.ServerAccess {
+		return &echo.HTTPError{
+			Code:    http.StatusBadRequest,
+			Message: "expected user access token",
+		}
+	}
+
+	patient, err := h.Patients.UpdateLastStaleDataFollowUpTime(ctx, string(clinicId),
+		string(patientId), time.Now())
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientDto(patient))
+}
+
 func (h *Handler) RecordInvitationResent(ec echo.Context, clinicId ClinicId,
 	patientId PatientId) error {
 

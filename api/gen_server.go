@@ -160,6 +160,9 @@ type ServerInterface interface {
 	// Update Patient Reviews
 	// (PUT /v1/clinics/{clinicId}/patients/{patientId}/reviews)
 	UpdatePatientReviews(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+	// Send Stale Data Follow-Up
+	// (POST /v1/clinics/{clinicId}/patients/{patientId}/stale_data_follow_up)
+	SendStaleDataFollowUp(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
 	// Send Upload Reminder
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
 	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
@@ -2369,6 +2372,32 @@ func (w *ServerInterfaceWrapper) UpdatePatientReviews(ctx echo.Context) error {
 	return err
 }
 
+// SendStaleDataFollowUp converts echo context to params.
+func (w *ServerInterfaceWrapper) SendStaleDataFollowUp(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientId", ctx.Param("patientId"), &patientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.SendStaleDataFollowUp(ctx, clinicId, patientId)
+	return err
+}
+
 // SendUploadReminder converts echo context to params.
 func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
 	var err error
@@ -3122,6 +3151,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/permissions/:permission", wrapper.DeletePatientPermission)
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.DeletePatientReviews)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.UpdatePatientReviews)
+	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/stale_data_follow_up", wrapper.SendStaleDataFollowUp)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
 	router.POST(baseURL+"/v1/clinics/:clinicId/reports/merge", wrapper.GenerateMergeReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/service_accounts", wrapper.AddServiceAccount)

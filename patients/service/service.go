@@ -325,6 +325,14 @@ func (s *service) UpdateLastInvitationSent(ctx context.Context, clinicId, userId
 	return s.patientsRepo.UpdateLastInvitationSent(ctx, clinicId, userId, sentTime)
 }
 
+func (s *service) UpdateLastStaleDataFollowUpTime(ctx context.Context, clinicId,
+	userId string, sentTime time.Time) (*patients.Patient, error) {
+
+	s.logger.Infow("updating last stale data follow-up time for user",
+		"clinicId", clinicId, "userId", userId)
+	return s.patientsRepo.UpdateLastStaleDataFollowUpTime(ctx, clinicId, userId, sentTime)
+}
+
 func (s *service) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	s.logger.Infow("adding provider connection request for user", "clinicId", clinicId, "userId", userId, "providerName", request.ProviderName)
 	if source, ok := patients.ConnectionIssueSourceForProvider(request.ProviderName); ok {

@@ -2560,6 +2560,90 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("Update last stale data follow-up time", func() {
+			var ctx context.Context
+			var clinicId, userId string
+			var selector bson.M
+			var sentTime time.Time
+
+			BeforeEach(func() {
+				ctx = context.Background()
+				clinicId = randomPatient.ClinicId.Hex()
+				userId = *randomPatient.UserId
+				selector = bson.M{"clinicId": *randomPatient.ClinicId, "userId": userId}
+				sentTime = time.Now().Truncate(time.Millisecond)
+			})
+
+			storeIssue := func(cause patients.ConnectionIssueCause,
+				source patients.ConnectionIssueSource) {
+
+				GinkgoHelper()
+				_, err := collection.UpdateOne(ctx, selector, bson.M{"$set": bson.M{
+					"connectionIssue":       patients.ConnectionIssue{Cause: cause},
+					"connectionIssueSource": source,
+				}})
+				Expect(err).ToNot(HaveOccurred())
+			}
+
+			DescribeTable("sets the time and bumps the updated time",
+				func(source patients.ConnectionIssueSource) {
+					storeIssue(patients.ConnectionIssueCauseStaleData, source)
+					before, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+
+					patient, err := repo.UpdateLastStaleDataFollowUpTime(ctx, clinicId,
+						userId, sentTime)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(patient.LastStaleDataFollowUpTime).
+						To(BeTemporally("==", sentTime))
+					Expect(patient.UpdatedTime).To(BeTemporally(">", before.UpdatedTime))
+					stored, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stored.LastStaleDataFollowUpTime).
+						To(BeTemporally("==", sentTime))
+				},
+				Entry("for dexcom", patients.ConnectionIssueSourceDexcom),
+				Entry("for abbott", patients.ConnectionIssueSourceAbbott),
+				Entry("for twiist", patients.ConnectionIssueSourceTwiist),
+			)
+
+			It("returns not found for an unknown patient", func() {
+				_, err := repo.UpdateLastStaleDataFollowUpTime(ctx, clinicId, "0000000000",
+					sentTime)
+				Expect(err).To(MatchError(patients.ErrNotFound))
+			})
+
+			It("returns a conflict for a patient without a connection issue", func() {
+				_, err := collection.UpdateOne(ctx, selector,
+					bson.M{"$unset": bson.M{"connectionIssue": ""}})
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = repo.UpdateLastStaleDataFollowUpTime(ctx, clinicId, userId,
+					sentTime)
+				Expect(err).To(MatchError(patients.ErrNoStaleDataIssue))
+			})
+
+			DescribeTable("returns a conflict and leaves the patient unchanged",
+				func(cause patients.ConnectionIssueCause,
+					source patients.ConnectionIssueSource) {
+
+					storeIssue(cause, source)
+
+					_, err := repo.UpdateLastStaleDataFollowUpTime(ctx, clinicId, userId,
+						sentTime)
+					Expect(err).To(MatchError(patients.ErrNoStaleDataIssue))
+					stored, err := repo.Get(ctx, clinicId, userId)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(stored.LastStaleDataFollowUpTime).To(BeZero())
+				},
+				Entry("for another cause", patients.ConnectionIssueCauseError,
+					patients.ConnectionIssueSourceDexcom),
+				Entry("for an invitation source", patients.ConnectionIssueCauseStaleData,
+					patients.ConnectionIssueSourceDeviceNonSpecificInvitation),
+			)
+		})
+
 		Describe("Add provider connection request", func() {
 			It("correctly adds multiple requests", func() {
 				request := patients.ConnectionRequest{

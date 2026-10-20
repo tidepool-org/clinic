@@ -1888,7 +1888,7 @@ paths:
           description: The patient does not exist or has no connection issue
       description: |-
         Hide or unhide the patient's connection issue. Patients with
-        hidden connection issues aren't show when listing patients
+        hidden connection issues aren't shown when listing patients
         that specify connection issue causes.
       tags:
         - Clinics
@@ -1908,6 +1908,27 @@ paths:
         '200':
           description: OK
       description: Sends upload reminder to the patient
+      tags:
+        - Clinics
+  /v1/clinics/{clinicId}/patients/{patientId}/stale_data_follow_up:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    post:
+      summary: Send Stale Data Follow-Up
+      operationId: SendStaleDataFollowUp
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/patient.v1'
+        '404':
+          description: Not Found
+        '409':
+          description: The patient does not have a stale data connection issue for a device provider
+      description: Sends an email to a patient whose device is connected to Tidepool, but from which no new data has been received recently, asking them to contact their clinic. The patient must have a stale data connection issue for a device provider. Sets the patient's last stale data follow-up time to the current server time.
       tags:
         - Clinics
   /v1/clinics/{clinicId}/patients/{patientId}/invitation_resent:
@@ -5253,6 +5274,11 @@ components:
         lastUploadReminderTime:
           type: string
           format: date-time
+          readOnly: true
+        lastStaleDataFollowUpTime:
+          type: string
+          format: date-time
+          description: The time a clinician last sent the patient a stale data follow-up email
           readOnly: true
         summary:
           $ref: '#/components/schemas/patientSummary.v1'

@@ -1421,6 +1421,26 @@ func (mr *MockClientInterfaceMockRecorder) RefreshPatientCount(ctx, clinicId any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshPatientCount", reflect.TypeOf((*MockClientInterface)(nil).RefreshPatientCount), varargs...)
 }
 
+// SendStaleDataFollowUp mocks base method.
+func (m *MockClientInterface) SendStaleDataFollowUp(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SendStaleDataFollowUp", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendStaleDataFollowUp indicates an expected call of SendStaleDataFollowUp.
+func (mr *MockClientInterfaceMockRecorder) SendStaleDataFollowUp(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendStaleDataFollowUp", reflect.TypeOf((*MockClientInterface)(nil).SendStaleDataFollowUp), varargs...)
+}
+
 // SendUploadReminder mocks base method.
 func (m *MockClientInterface) SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3783,6 +3803,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) RefreshPatientCountWithR
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshPatientCountWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).RefreshPatientCountWithResponse), varargs...)
+}
+
+// SendStaleDataFollowUpWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) SendStaleDataFollowUpWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendStaleDataFollowUpResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SendStaleDataFollowUpWithResponse", varargs...)
+	ret0, _ := ret[0].(*SendStaleDataFollowUpResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendStaleDataFollowUpWithResponse indicates an expected call of SendStaleDataFollowUpWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) SendStaleDataFollowUpWithResponse(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendStaleDataFollowUpWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SendStaleDataFollowUpWithResponse), varargs...)
 }
 
 // SendUploadReminderWithResponse mocks base method.

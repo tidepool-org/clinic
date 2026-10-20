@@ -277,6 +277,9 @@ type ClientInterface interface {
 	// UpdatePatientReviews request
 	UpdatePatientReviews(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SendStaleDataFollowUp request
+	SendStaleDataFollowUp(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1225,6 +1228,18 @@ func (c *Client) DeletePatientReviews(ctx context.Context, clinicId ClinicId, pa
 
 func (c *Client) UpdatePatientReviews(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdatePatientReviewsRequest(c.Server, clinicId, patientId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SendStaleDataFollowUp(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendStaleDataFollowUpRequest(c.Server, clinicId, patientId)
 	if err != nil {
 		return nil, err
 	}
@@ -6266,6 +6281,47 @@ func NewUpdatePatientReviewsRequest(server string, clinicId ClinicId, patientId 
 	return req, nil
 }
 
+// NewSendStaleDataFollowUpRequest generates requests for SendStaleDataFollowUp
+func NewSendStaleDataFollowUpRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/patients/%s/stale_data_follow_up", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSendUploadReminderRequest generates requests for SendUploadReminder
 func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId PatientId) (*http.Request, error) {
 	var err error
@@ -8019,6 +8075,9 @@ type ClientWithResponsesInterface interface {
 	// UpdatePatientReviewsWithResponse request
 	UpdatePatientReviewsWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*UpdatePatientReviewsResponse, error)
 
+	// SendStaleDataFollowUpWithResponse request
+	SendStaleDataFollowUpWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendStaleDataFollowUpResponse, error)
+
 	// SendUploadReminderWithResponse request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
 
@@ -9208,6 +9267,28 @@ func (r UpdatePatientReviewsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdatePatientReviewsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SendStaleDataFollowUpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientV1
+}
+
+// Status returns HTTPResponse.Status
+func (r SendStaleDataFollowUpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SendStaleDataFollowUpResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -10516,6 +10597,15 @@ func (c *ClientWithResponses) UpdatePatientReviewsWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseUpdatePatientReviewsResponse(rsp)
+}
+
+// SendStaleDataFollowUpWithResponse request returning *SendStaleDataFollowUpResponse
+func (c *ClientWithResponses) SendStaleDataFollowUpWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendStaleDataFollowUpResponse, error) {
+	rsp, err := c.SendStaleDataFollowUp(ctx, clinicId, patientId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSendStaleDataFollowUpResponse(rsp)
 }
 
 // SendUploadReminderWithResponse request returning *SendUploadReminderResponse
@@ -12057,6 +12147,32 @@ func ParseUpdatePatientReviewsResponse(rsp *http.Response) (*UpdatePatientReview
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest PatientReviewsV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSendStaleDataFollowUpResponse parses an HTTP response from a SendStaleDataFollowUpWithResponse call
+func ParseSendStaleDataFollowUpResponse(rsp *http.Response) (*SendStaleDataFollowUpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SendStaleDataFollowUpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientV1
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

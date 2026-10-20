@@ -1005,6 +1005,47 @@ func (r *repository) UpdateLastInvitationSent(ctx context.Context, clinicId, use
 	return nil
 }
 
+// UpdateLastStaleDataFollowUpTime records that a stale data follow-up email was sent to
+// the patient. Only patients with a stale data connection issue for a device provider
+// are updated, as the provider determines the device named in the email.
+func (r *repository) UpdateLastStaleDataFollowUpTime(ctx context.Context, clinicId,
+	userId string, sentTime time.Time) (*patients.Patient, error) {
+
+	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
+	selector := bson.M{
+		"clinicId":              clinicObjId,
+		"userId":                userId,
+		"connectionIssue.cause": patients.ConnectionIssueCauseStaleData,
+		"connectionIssueSource": bson.M{"$in": bson.A{
+			patients.ConnectionIssueSourceDexcom,
+			patients.ConnectionIssueSourceAbbott,
+			patients.ConnectionIssueSourceTwiist,
+		}},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"lastStaleDataFollowUpTime": sentTime,
+			"updatedTime":               time.Now(),
+		},
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var patient patients.Patient
+	err := r.collection.FindOneAndUpdate(ctx, selector, update, opts).Decode(&patient)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		// Distinguish a missing patient from a patient without a stale data issue
+		if _, err := r.Get(ctx, clinicId, userId); err != nil {
+			return nil, err
+		}
+		return nil, patients.ErrNoStaleDataIssue
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error updating patient: %w", err)
+	}
+
+	return &patient, nil
+}
+
 func (r *repository) AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request patients.ConnectionRequest) error {
 	clinicObjId, _ := primitive.ObjectIDFromHex(clinicId)
 

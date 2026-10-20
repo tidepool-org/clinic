@@ -1684,8 +1684,11 @@ type PatientV1 struct {
 	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
 
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
-	Id                     *Tidepooluserid `json:"id,omitempty"`
-	LastUploadReminderTime *time.Time      `json:"lastUploadReminderTime,omitempty"`
+	Id *Tidepooluserid `json:"id,omitempty"`
+
+	// LastStaleDataFollowUpTime The time a clinician last sent the patient a stale data follow-up email
+	LastStaleDataFollowUpTime *time.Time `json:"lastStaleDataFollowUpTime,omitempty"`
+	LastUploadReminderTime    *time.Time `json:"lastUploadReminderTime,omitempty"`
 
 	// Mrn The medical record number of the patient
 	Mrn         *string               `json:"mrn,omitempty"`
