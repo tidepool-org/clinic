@@ -52,6 +52,10 @@ var _ = Describe("Invitation Resent Integration Test", Ordered, func() {
 			Expect(dec.Decode(&patient)).To(Succeed())
 			Expect(patient.Id).To(PointTo(Not(BeEmpty())))
 		})
+
+		It("Has a last invitation sent time", func() {
+			Expect(patient.LastInvitationSent).To(PointTo(Not(BeZero())))
+		})
 	})
 
 	Describe("Record Invitation Resent", func() {
@@ -70,14 +74,30 @@ var _ = Describe("Invitation Resent Integration Test", Ordered, func() {
 			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
 		})
 
-		It("Is forbidden for a clinician", func() {
+		It("Succeeds for a clinician", func() {
+			previous := *patient.LastInvitationSent
+
 			rec := httptest.NewRecorder()
 			req := prepareRequest(http.MethodPost, endpoint(), "")
 			asClinician(req)
 
 			server.ServeHTTP(rec, req)
 			Expect(rec.Result()).ToNot(BeNil())
-			Expect(rec.Result().StatusCode).To(Equal(http.StatusForbidden))
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
+
+			rec = httptest.NewRecorder()
+			req = prepareRequest(http.MethodGet,
+				fmt.Sprintf("/v1/clinics/%s/patients/%s", *clinic.Id, *patient.Id), "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			var updated api.PatientV1
+			dec := json.NewDecoder(rec.Result().Body)
+			Expect(dec.Decode(&updated)).To(Succeed())
+			Expect(updated.LastInvitationSent).To(PointTo(BeTemporally(">", previous)))
 		})
 
 		It("Returns not found for an unknown patient", func() {
