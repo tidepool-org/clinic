@@ -429,6 +429,15 @@ allow {
   input.path = ["v1", "clinics", _, "patients", _, "invitation_resent"]
 }
 
+# Allow currently authenticated clinician to record that an invitation was resent to a
+# patient, after requesting the resend from hydrophone
+# POST /v1/clinics/:clinicId/patients/:patientId/invitation_resent
+allow {
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "patients", _, "invitation_resent"]
+  clinician_has_read_access
+}
+
 # Allow currently authenticated clinician to send a dexcom connect reminder
 # POST /v1/clinics/:clinicId/patients/:patientId/send_dexcom_connect_request
 allow {

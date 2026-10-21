@@ -1686,6 +1686,9 @@ type PatientV1 struct {
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id *Tidepooluserid `json:"id,omitempty"`
 
+	// LastInvitationSent The time a device non-specific invitation was last sent to the patient, either when the patient was created or when it was later resent
+	LastInvitationSent *time.Time `json:"lastInvitationSent,omitempty"`
+
 	// LastStaleDataFollowUpTime The time a clinician last sent the patient a stale data follow-up email
 	LastStaleDataFollowUpTime *time.Time `json:"lastStaleDataFollowUpTime,omitempty"`
 	LastUploadReminderTime    *time.Time `json:"lastUploadReminderTime,omitempty"`

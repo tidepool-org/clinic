@@ -1941,11 +1941,11 @@ paths:
       responses:
         '204':
           description: No Content
-      description: An internal endpoint called by other backend services after an invitation is resent to the patient. Sets the patient's last invitation sent time to the current server time.
+        '404':
+          description: Not Found
+      description: Records that a device non-specific invitation was resent to the patient. Called by a clinician after requesting that the invitation be resent, and by backend services after sending an automated invitation reminder. Sets the patient's last invitation sent time to the current server time.
       tags:
         - Clinics
-        - Internal
-      x-internal: true
   /v1/clinics/{clinicId}/patients/assign_tag/{patientTagId}:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -5279,6 +5279,11 @@ components:
           type: string
           format: date-time
           description: The time a clinician last sent the patient a stale data follow-up email
+          readOnly: true
+        lastInvitationSent:
+          type: string
+          format: date-time
+          description: The time a device non-specific invitation was last sent to the patient, either when the patient was created or when it was later resent
           readOnly: true
         summary:
           $ref: '#/components/schemas/patientSummary.v1'
