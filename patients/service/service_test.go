@@ -8,6 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 
 	"github.com/onsi/gomega/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -68,6 +69,17 @@ var _ = Describe("Patients Service", func() {
 		var randomPatient patients.Patient
 		var matchPatientFields types.GomegaMatcher
 
+		// invited returns the patient as the repository is expected to receive it: a
+		// custodial patient with an email gets a connection issue source set by the
+		// service, any other patient is passed through unchanged.
+		invited := func(p patients.Patient) patients.Patient {
+			if p.IsCustodial() && p.HasEmail() {
+				p.ConnectionIssueSource =
+					patients.ConnectionIssueSourceDeviceNonSpecificInvitation
+			}
+			return p
+		}
+
 		BeforeEach(func() {
 			clinicId, _ = primitive.ObjectIDFromHex("60d1dc0eac5285751add8f82")
 			patientId := primitive.NewObjectID()
@@ -94,7 +106,7 @@ var _ = Describe("Patients Service", func() {
 				clinicIdString := clinicId.Hex()
 
 				repo.EXPECT().
-					Create(gomock.Any(), gomock.Eq(randomPatient)).
+					Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 					Return(&randomPatient, nil)
 				clinicsService.EXPECT().
 					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
@@ -132,7 +144,7 @@ var _ = Describe("Patients Service", func() {
 				expected.RequireUniqueMrn = true
 
 				repo.EXPECT().
-					Create(gomock.Any(), gomock.Eq(expected)).
+					Create(gomock.Any(), gomock.Eq(invited(expected))).
 					Return(&expected, nil)
 				clinicsService.EXPECT().
 					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdStr)).
@@ -204,7 +216,7 @@ var _ = Describe("Patients Service", func() {
 
 			It("creates the patient in the repository when the patient is not custodial", func() {
 				repo.EXPECT().
-					Create(gomock.Any(), gomock.Eq(randomPatient)).
+					Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 					Return(&randomPatient, nil)
 				clinicsService.EXPECT().
 					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
@@ -215,10 +227,81 @@ var _ = Describe("Patients Service", func() {
 				Expect(createdPatient).ToNot(BeNil())
 			})
 
+			It("does not set the connection issue source when not custodial", func() {
+				Expect(randomPatient.IsCustodial()).To(BeFalse())
+				Expect(randomPatient.Email).To(PointTo(Not(BeEmpty())))
+				repo.EXPECT().
+					Create(gomock.Any(), gomock.Eq(randomPatient)).
+					Return(&randomPatient, nil)
+				clinicsService.EXPECT().
+					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
+					Return(nil)
+
+				created, err := service.Create(context.Background(), randomPatient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(created.ConnectionIssueSource).To(BeEmpty())
+			})
+
+			It("leaves an existing connection issue source alone", func() {
+				randomPatient.ConnectionIssueSource = patients.ConnectionIssueSourceDexcom
+				repo.EXPECT().
+					Create(gomock.Any(), gomock.Eq(randomPatient)).
+					Return(&randomPatient, nil)
+				clinicsService.EXPECT().
+					RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
+					Return(nil)
+
+				created, err := service.Create(context.Background(), randomPatient)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(created.ConnectionIssueSource).
+					To(Equal(patients.ConnectionIssueSourceDexcom))
+			})
+
 			When("the patient is custodial", func() {
 				BeforeEach(func() {
 					randomPatient.Permissions.Custodian = &patients.Permission{}
 				})
+
+				It("sets the connection issue source when there is an email", func() {
+					Expect(randomPatient.Email).To(PointTo(Not(BeEmpty())))
+					clinicsService.EXPECT().
+						GetPatientCountSettings(gomock.Any(), gomock.Eq(clinicId.Hex())).
+						Return(nil, nil)
+					expected := invited(randomPatient)
+					repo.EXPECT().
+						Create(gomock.Any(), gomock.Eq(expected)).
+						Return(&expected, nil)
+					clinicsService.EXPECT().
+						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
+						Return(nil)
+
+					created, err := service.Create(context.Background(), randomPatient)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(created.ConnectionIssueSource).
+						To(Equal(patients.ConnectionIssueSourceDeviceNonSpecificInvitation))
+				})
+
+				DescribeTable("does not set the connection issue source without an email",
+					func(email *string) {
+						randomPatient.Email = email
+						clinicsService.EXPECT().
+							GetPatientCountSettings(gomock.Any(),
+								gomock.Eq(clinicIdString)).
+							Return(nil, nil)
+						repo.EXPECT().
+							Create(gomock.Any(), gomock.Eq(randomPatient)).
+							Return(&randomPatient, nil)
+						clinicsService.EXPECT().
+							RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
+							Return(nil)
+
+						created, err := service.Create(context.Background(), randomPatient)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(created.ConnectionIssueSource).To(BeEmpty())
+					},
+					Entry("nil email", nil),
+					Entry("empty email", Ptr("")),
+				)
 
 				It("returns an error when GetPatientCountSettings returns an error", func() {
 					testErr := fmt.Errorf("test error")
@@ -237,7 +320,7 @@ var _ = Describe("Patients Service", func() {
 						GetPatientCountSettings(gomock.Any(), gomock.Eq(clinicId.Hex())).
 						Return(nil, nil)
 					repo.EXPECT().
-						Create(gomock.Any(), gomock.Eq(randomPatient)).
+						Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 						Return(&randomPatient, nil)
 					clinicsService.EXPECT().
 						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
@@ -255,7 +338,7 @@ var _ = Describe("Patients Service", func() {
 						GetPatientCountSettings(gomock.Any(), gomock.Eq(clinicId.Hex())).
 						Return(patientCountSettings, nil)
 					repo.EXPECT().
-						Create(gomock.Any(), gomock.Eq(randomPatient)).
+						Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 						Return(&randomPatient, nil)
 					clinicsService.EXPECT().
 						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
@@ -273,7 +356,7 @@ var _ = Describe("Patients Service", func() {
 						GetPatientCountSettings(gomock.Any(), gomock.Eq(clinicId.Hex())).
 						Return(patientCountSettings, nil)
 					repo.EXPECT().
-						Create(gomock.Any(), gomock.Eq(randomPatient)).
+						Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 						Return(&randomPatient, nil)
 					clinicsService.EXPECT().
 						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
@@ -291,7 +374,7 @@ var _ = Describe("Patients Service", func() {
 						GetPatientCountSettings(gomock.Any(), gomock.Eq(clinicId.Hex())).
 						Return(patientCountSettings, nil)
 					repo.EXPECT().
-						Create(gomock.Any(), gomock.Eq(randomPatient)).
+						Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 						Return(&randomPatient, nil)
 					clinicsService.EXPECT().
 						RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
@@ -352,7 +435,7 @@ var _ = Describe("Patients Service", func() {
 
 						It("does not create the patient in the repository", func() {
 							repo.EXPECT().
-								Create(gomock.Any(), gomock.Eq(randomPatient)).
+								Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 								Return(&randomPatient, nil)
 							clinicsService.EXPECT().
 								RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
@@ -365,7 +448,7 @@ var _ = Describe("Patients Service", func() {
 
 						It("creates the patient in the repository", func() {
 							repo.EXPECT().
-								Create(gomock.Any(), gomock.Eq(randomPatient)).
+								Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 								Return(&randomPatient, nil)
 							clinicsService.EXPECT().
 								RefreshPatientCount(gomock.Any(), gomock.Eq(clinicIdString)).
@@ -397,7 +480,7 @@ var _ = Describe("Patients Service", func() {
 				clinicsService.EXPECT().Get(gomock.Any(), gomock.Any()).
 					Return(&clinics.Clinic{Sites: []sites.Site{site}}, nil)
 				repo.EXPECT().
-					Create(gomock.Any(), gomock.Eq(randomPatient)).
+					Create(gomock.Any(), gomock.Eq(invited(randomPatient))).
 					Return(&randomPatient, nil)
 
 				got, err := service.Create(context.Background(), randomPatient)

@@ -1381,6 +1381,26 @@ func (mr *MockClientInterfaceMockRecorder) ProcessEHRMessageWithBody(ctx, conten
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEHRMessageWithBody", reflect.TypeOf((*MockClientInterface)(nil).ProcessEHRMessageWithBody), varargs...)
 }
 
+// RecordInvitationResent mocks base method.
+func (m *MockClientInterface) RecordInvitationResent(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RecordInvitationResent", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecordInvitationResent indicates an expected call of RecordInvitationResent.
+func (mr *MockClientInterfaceMockRecorder) RecordInvitationResent(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInvitationResent", reflect.TypeOf((*MockClientInterface)(nil).RecordInvitationResent), varargs...)
+}
+
 // RefreshPatientCount mocks base method.
 func (m *MockClientInterface) RefreshPatientCount(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1401,6 +1421,26 @@ func (mr *MockClientInterfaceMockRecorder) RefreshPatientCount(ctx, clinicId any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshPatientCount", reflect.TypeOf((*MockClientInterface)(nil).RefreshPatientCount), varargs...)
 }
 
+// SendStaleDataFollowUp mocks base method.
+func (m *MockClientInterface) SendStaleDataFollowUp(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SendStaleDataFollowUp", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendStaleDataFollowUp indicates an expected call of SendStaleDataFollowUp.
+func (mr *MockClientInterfaceMockRecorder) SendStaleDataFollowUp(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendStaleDataFollowUp", reflect.TypeOf((*MockClientInterface)(nil).SendStaleDataFollowUp), varargs...)
+}
+
 // SendUploadReminder mocks base method.
 func (m *MockClientInterface) SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -1419,6 +1459,46 @@ func (mr *MockClientInterfaceMockRecorder) SendUploadReminder(ctx, clinicId, pat
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendUploadReminder", reflect.TypeOf((*MockClientInterface)(nil).SendUploadReminder), varargs...)
+}
+
+// SetConnectionIssueHidden mocks base method.
+func (m *MockClientInterface) SetConnectionIssueHidden(ctx context.Context, clinicId ClinicId, patientId PatientId, body SetConnectionIssueHiddenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetConnectionIssueHidden", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetConnectionIssueHidden indicates an expected call of SetConnectionIssueHidden.
+func (mr *MockClientInterfaceMockRecorder) SetConnectionIssueHidden(ctx, clinicId, patientId, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnectionIssueHidden", reflect.TypeOf((*MockClientInterface)(nil).SetConnectionIssueHidden), varargs...)
+}
+
+// SetConnectionIssueHiddenWithBody mocks base method.
+func (m *MockClientInterface) SetConnectionIssueHiddenWithBody(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetConnectionIssueHiddenWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetConnectionIssueHiddenWithBody indicates an expected call of SetConnectionIssueHiddenWithBody.
+func (mr *MockClientInterfaceMockRecorder) SetConnectionIssueHiddenWithBody(ctx, clinicId, patientId, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnectionIssueHiddenWithBody", reflect.TypeOf((*MockClientInterface)(nil).SetConnectionIssueHiddenWithBody), varargs...)
 }
 
 // SyncEHRData mocks base method.
@@ -1679,6 +1759,26 @@ func (mr *MockClientInterfaceMockRecorder) UpdateClinicianWithBody(ctx, clinicId
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, clinicianId, contentType, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClinicianWithBody", reflect.TypeOf((*MockClientInterface)(nil).UpdateClinicianWithBody), varargs...)
+}
+
+// UpdateConnectionIssues mocks base method.
+func (m *MockClientInterface) UpdateConnectionIssues(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateConnectionIssues", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateConnectionIssues indicates an expected call of UpdateConnectionIssues.
+func (mr *MockClientInterfaceMockRecorder) UpdateConnectionIssues(ctx any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnectionIssues", reflect.TypeOf((*MockClientInterface)(nil).UpdateConnectionIssues), varargs...)
 }
 
 // UpdateEHRSettings mocks base method.
@@ -3665,6 +3765,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ProcessEHRMessageWithRes
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEHRMessageWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ProcessEHRMessageWithResponse), varargs...)
 }
 
+// RecordInvitationResentWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) RecordInvitationResentWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*RecordInvitationResentResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RecordInvitationResentWithResponse", varargs...)
+	ret0, _ := ret[0].(*RecordInvitationResentResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecordInvitationResentWithResponse indicates an expected call of RecordInvitationResentWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) RecordInvitationResentWithResponse(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordInvitationResentWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).RecordInvitationResentWithResponse), varargs...)
+}
+
 // RefreshPatientCountWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) RefreshPatientCountWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*RefreshPatientCountResponse, error) {
 	m.ctrl.T.Helper()
@@ -3685,6 +3805,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) RefreshPatientCountWithR
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshPatientCountWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).RefreshPatientCountWithResponse), varargs...)
 }
 
+// SendStaleDataFollowUpWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) SendStaleDataFollowUpWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendStaleDataFollowUpResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SendStaleDataFollowUpWithResponse", varargs...)
+	ret0, _ := ret[0].(*SendStaleDataFollowUpResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendStaleDataFollowUpWithResponse indicates an expected call of SendStaleDataFollowUpWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) SendStaleDataFollowUpWithResponse(ctx, clinicId, patientId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendStaleDataFollowUpWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SendStaleDataFollowUpWithResponse), varargs...)
+}
+
 // SendUploadReminderWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error) {
 	m.ctrl.T.Helper()
@@ -3703,6 +3843,46 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) SendUploadReminderWithRe
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, patientId}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendUploadReminderWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SendUploadReminderWithResponse), varargs...)
+}
+
+// SetConnectionIssueHiddenWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) SetConnectionIssueHiddenWithBodyWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetConnectionIssueHiddenResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetConnectionIssueHiddenWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*SetConnectionIssueHiddenResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetConnectionIssueHiddenWithBodyWithResponse indicates an expected call of SetConnectionIssueHiddenWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) SetConnectionIssueHiddenWithBodyWithResponse(ctx, clinicId, patientId, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnectionIssueHiddenWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SetConnectionIssueHiddenWithBodyWithResponse), varargs...)
+}
+
+// SetConnectionIssueHiddenWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) SetConnectionIssueHiddenWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, body SetConnectionIssueHiddenJSONRequestBody, reqEditors ...RequestEditorFn) (*SetConnectionIssueHiddenResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId, patientId, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetConnectionIssueHiddenWithResponse", varargs...)
+	ret0, _ := ret[0].(*SetConnectionIssueHiddenResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetConnectionIssueHiddenWithResponse indicates an expected call of SetConnectionIssueHiddenWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) SetConnectionIssueHiddenWithResponse(ctx, clinicId, patientId, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId, patientId, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnectionIssueHiddenWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SetConnectionIssueHiddenWithResponse), varargs...)
 }
 
 // SyncEHRDataForPatientWithResponse mocks base method.
@@ -3963,6 +4143,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateClinicianWithRespo
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, clinicId, clinicianId, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClinicianWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateClinicianWithResponse), varargs...)
+}
+
+// UpdateConnectionIssuesWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UpdateConnectionIssuesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UpdateConnectionIssuesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateConnectionIssuesWithResponse", varargs...)
+	ret0, _ := ret[0].(*UpdateConnectionIssuesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateConnectionIssuesWithResponse indicates an expected call of UpdateConnectionIssuesWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UpdateConnectionIssuesWithResponse(ctx any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnectionIssuesWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UpdateConnectionIssuesWithResponse), varargs...)
 }
 
 // UpdateEHRSettingsWithBodyWithResponse mocks base method.

@@ -965,6 +965,27 @@ paths:
           description: Comma-separated list of clinic site IDs
           style: form
           explode: false
+        - name: connectionIssueCauses
+          in: query
+          description: |
+            Comma-separated list of connection issue causes. When given, only patients
+            whose connection issue has one of these causes and is not hidden are
+            returned. Valid causes are error, disconnected, staleData, staleInvite and
+            expiredInvite.
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+        - name: onlyHiddenConnectionIssues
+          in: query
+          description: |
+            When true, only patients whose connection issue is hidden are returned,
+            instead of excluding them. Combine with connectionIssueCauses to list the
+            hidden issues of specific causes.
+          schema:
+            type: boolean
         - name: omitNonStandardRanges
           description: |
             Whether patients whose glycemic ranges selection is *not*
@@ -1746,6 +1767,18 @@ paths:
         - $ref: '#/components/parameters/createdTimeStart'
         - $ref: '#/components/parameters/createdTimeEnd'
       description: Returns list of all clinician/clinic relationships in the system. Internal endpoint used for reporting purposes.
+  /v1/patients/connection_issues:
+    post:
+      summary: Update Connection Issues
+      operationId: UpdateConnectionIssues
+      responses:
+        '204':
+          description: No Content
+      description: An internal endpoint called by other backend services. Updates the connection issues of every patient.
+      tags:
+        - Clinics
+        - Internal
+      x-internal: true
   /v1/patients/{patientId}/summary:
     parameters:
       - $ref: '#/components/parameters/patientId'
@@ -1837,6 +1870,33 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateSuppressedNotifications'
+  /v1/clinics/{clinicId}/patients/{patientId}/connection_issue/hidden:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    put:
+      summary: Set Connection Issue Hidden
+      operationId: SetConnectionIssueHidden
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/patient.v1'
+        '404':
+          description: The patient does not exist or has no connection issue
+      description: |-
+        Hide or unhide the patient's connection issue. Patients with
+        hidden connection issues aren't shown when listing patients
+        that specify connection issue causes.
+      tags:
+        - Clinics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/connectionIssueHidden.v1'
   /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -1848,6 +1908,42 @@ paths:
         '200':
           description: OK
       description: Sends upload reminder to the patient
+      tags:
+        - Clinics
+  /v1/clinics/{clinicId}/patients/{patientId}/stale_data_follow_up:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    post:
+      summary: Send Stale Data Follow-Up
+      operationId: SendStaleDataFollowUp
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/patient.v1'
+        '404':
+          description: Not Found
+        '409':
+          description: The patient does not have a stale data connection issue for a device provider
+      description: Sends an email to a patient whose device is connected to Tidepool, but from which no new data has been received recently, asking them to contact their clinic. The patient must have a stale data connection issue for a device provider. Sets the patient's last stale data follow-up time to the current server time.
+      tags:
+        - Clinics
+  /v1/clinics/{clinicId}/patients/{patientId}/invitation_resent:
+    parameters:
+      - $ref: '#/components/parameters/clinicId'
+      - $ref: '#/components/parameters/patientId'
+    post:
+      summary: Record Invitation Resent
+      operationId: RecordInvitationResent
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+      description: Records that a device non-specific invitation was resent to the patient. Called by a clinician after requesting that the invitation be resent, and by backend services after sending an automated invitation reminder. Sets the patient's last invitation sent time to the current server time.
       tags:
         - Clinics
   /v1/clinics/{clinicId}/patients/assign_tag/{patientTagId}:
@@ -3864,6 +3960,9 @@ components:
         latestDataTime:
           $ref: '#/components/schemas/datetime.v1'
           title: Time of the latest data point from this source
+        connectedTime:
+          $ref: '#/components/schemas/datetime.v1'
+          title: Time the data source last entered the connected state
       required:
         - state
         - providerName
@@ -4999,6 +5098,44 @@ components:
         - twiist
         - dexcom
         - abbott
+    connectionIssueSource.v1:
+      title: Connection Issue Source
+      type: string
+      description: The most recent flow that put the patient into a pending connection state.
+      enum:
+        - dexcom
+        - abbott
+        - twiist
+        - deviceNonSpecificInvitation
+      x-enum-varnames:
+        - ConnectionIssueSourceDexcom
+        - ConnectionIssueSourceAbbott
+        - ConnectionIssueSourceTwiist
+        - ConnectionIssueSourceDeviceNonSpecificInvitation
+    connectionIssue.v1:
+      title: Connection Issue
+      type: object
+      description: The highest priority connection problem detected for the patient.
+      properties:
+        cause:
+          type: string
+          enum:
+            - error
+            - disconnected
+            - staleData
+            - staleInvite
+            - expiredInvite
+          x-enum-varnames:
+            - ConnectionIssueCauseError
+            - ConnectionIssueCauseDisconnected
+            - ConnectionIssueCauseStaleData
+            - ConnectionIssueCauseStaleInvite
+            - ConnectionIssueCauseExpiredInvite
+        hidden:
+          type: boolean
+          description: Set by a clinician to hide the issue. Cleared when the connection issue source or the cause changes.
+      required:
+        - cause
     glycemicRangesThresholdUpperBound.v1:
       type: object
       properties:
@@ -5138,6 +5275,16 @@ components:
           type: string
           format: date-time
           readOnly: true
+        lastStaleDataFollowUpTime:
+          type: string
+          format: date-time
+          description: The time a clinician last sent the patient a stale data follow-up email
+          readOnly: true
+        lastInvitationSent:
+          type: string
+          format: date-time
+          description: The time a device non-specific invitation was last sent to the patient, either when the patient was created or when it was later resent
+          readOnly: true
         summary:
           $ref: '#/components/schemas/patientSummary.v1'
           readOnly: true
@@ -5152,6 +5299,12 @@ components:
           x-stoplight:
             id: 502rliv0l2tyy
           description: Requests for each provider are listed in reverse chronological order
+          readOnly: true
+        connectionIssueSource:
+          $ref: '#/components/schemas/connectionIssueSource.v1'
+          readOnly: true
+        connectionIssue:
+          $ref: '#/components/schemas/connectionIssue.v1'
           readOnly: true
         sites:
           type: array
@@ -5331,6 +5484,15 @@ components:
         - RUNNING
         - COMPLETED
       description: The current status of the migration
+    connectionIssueHidden.v1:
+      title: Connection Issue Hidden
+      type: object
+      properties:
+        hidden:
+          type: boolean
+          description: Whether the clinician wants the connection issue hidden.
+      required:
+        - hidden
     membershipRestriction.v1:
       title: Membership Restriction
       type: object

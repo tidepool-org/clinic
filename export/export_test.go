@@ -272,6 +272,25 @@ var _ = Describe("Export", func() {
 					LatestDataTime: latest,
 				}
 			}
+			modifiedAt := func(source *patients.DataSource,
+				at time.Time) *patients.DataSource {
+
+				source.ModifiedTime = &at
+				return source
+			}
+			connectedAt := func(source *patients.DataSource,
+				at time.Time) *patients.DataSource {
+
+				source.ConnectedTime = &at
+				return source
+			}
+			legacy := func(state string, modified *time.Time) *patients.DataSource {
+				return &patients.DataSource{
+					ProviderName: "dexcom",
+					State:        state,
+					ModifiedTime: modified,
+				}
+			}
 
 			DescribeTable("dexcom",
 				func(crs patients.ConnectionRequests, source *patients.DataSource,
@@ -332,6 +351,24 @@ var _ = Describe("Export", func() {
 					nil, ds("connected", nil, timep(ago(time.Hour))),
 					"connected"),
 
+				// Legacy data source without a created time: its modified time stands in.
+				Entry("legacy data source modified after the request",
+					patients.ConnectionRequests{cr(ago(20*day), hence(10*day))},
+					legacy("disconnected", timep(ago(10*day))),
+					"disconnected"),
+				Entry("legacy data source modified before a pending request",
+					patients.ConnectionRequests{cr(ago(day), hence(30*day))},
+					legacy("disconnected", timep(ago(10*day))),
+					"pending"),
+				Entry("legacy data source modified before an expired request",
+					patients.ConnectionRequests{cr(ago(35*day), ago(5*day))},
+					legacy("error", timep(ago(40*day))),
+					"expired"),
+				Entry("legacy data source without created or modified times",
+					patients.ConnectionRequests{cr(ago(day), hence(30*day))},
+					legacy("connected", nil),
+					"connected"),
+
 				// Data source created after the newest request: data source wins.
 				Entry("data source newer than pending request",
 					patients.ConnectionRequests{cr(ago(20*day), hence(10*day))},
@@ -362,15 +399,47 @@ var _ = Describe("Export", func() {
 					ds("", timep(ago(10*day)), nil),
 					"NA"),
 
-				// Request created after the data source: request wins.
-				Entry("pending request newer than data source",
+				// Request created after a connected data source: the healthy connection
+				// wins.
+				Entry("pending request newer than connected data source",
 					patients.ConnectionRequests{cr(ago(day), hence(30*day))},
 					ds("connected", timep(ago(10*day)), timep(ago(time.Hour))),
-					"pending"),
-				Entry("expired request newer than data source",
+					"connected"),
+				Entry("expired request newer than connected data source",
 					patients.ConnectionRequests{cr(ago(35*day), ago(5*day))},
 					ds("connected", timep(ago(40*day)), timep(ago(time.Hour))),
+					"connected"),
+
+				// Request created after a data source that is not connected: request
+				// wins, unless the source connected after it.
+				Entry("pending request newer than disconnected data source",
+					patients.ConnectionRequests{cr(ago(day), hence(30*day))},
+					ds("disconnected", timep(ago(10*day)), nil),
+					"pending"),
+				Entry("expired request newer than errored data source",
+					patients.ConnectionRequests{cr(ago(35*day), ago(5*day))},
+					ds("error", timep(ago(40*day)), nil),
 					"expired"),
+				Entry("errored data source connected after the request",
+					patients.ConnectionRequests{cr(ago(10*day), hence(20*day))},
+					connectedAt(ds("error", timep(ago(40*day)), nil), ago(5*day)),
+					"error"),
+				Entry("disconnected data source connected before the request",
+					patients.ConnectionRequests{cr(ago(10*day), hence(20*day))},
+					connectedAt(ds("disconnected", timep(ago(40*day)), nil), ago(20*day)),
+					"pending"),
+
+				// Data source reconnected after the request: it keeps its created time,
+				// but its connected time is reset.
+				Entry("data source reconnected after the request",
+					patients.ConnectionRequests{cr(ago(day), hence(30*day))},
+					connectedAt(ds("connected", timep(ago(40*day)), timep(ago(time.Hour))),
+						ago(time.Hour)),
+					"connected"),
+				Entry("disconnected data source modified after the request",
+					patients.ConnectionRequests{cr(ago(day), hence(30*day))},
+					modifiedAt(ds("disconnected", timep(ago(40*day)), nil), ago(time.Hour)),
+					"pending"),
 			)
 		})
 	})
