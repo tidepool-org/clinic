@@ -62,6 +62,7 @@ var (
 		"type2":         {},
 		"type3c":        {},
 	}
+	DiagnosisTypeNotApplicable DiagnosisType = DiagnosisType("notApplicable")
 
 	// ValidGlycemicRangesPresets is the authoritative source for data model
 	// patient non-custom glycemic ranges presets. This MUST stay in sync with
