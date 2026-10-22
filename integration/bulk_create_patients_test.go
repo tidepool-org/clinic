@@ -102,7 +102,6 @@ var _ = Describe("BulkCreatePatients Integration Test", Ordered, func() {
 		Entry("Missing Name", `,1999-02-03,112233`),
 		Entry("Missing DOB", `John Doe,,112233`),
 		Entry("Missing MRN", `John Doe,1952-01-10,`),
-		Entry("Invalid DOB", `John Doe,this-is-not-a-DOB,123456789`),
 	)
 
 	Describe("List only", func() {
@@ -129,6 +128,8 @@ Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org,,adaStandard,du
 Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org,,adaStandard,duplicate email,
 Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",
 Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",
+Bad DOB,9999/88/01,6666666,bad+dob@tidepool.org,,adaStandard,"invalid birthdate: row 11, column 2",
+Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"invalid email: row 12, column 4",
 `
 				Expect(string(body)).To(Equal(expectedResBody))
 				// Expect no actual patients created.
@@ -166,9 +167,11 @@ Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org,,adaStandard,du
 Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org,,adaStandard,duplicate email,N
 Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N
 Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N
-Patients Processed,10
-Patients Created,3
-Patients Skipped,7
+Bad DOB,9999/88/01,6666666,bad+dob@tidepool.org,,adaStandard,"invalid birthdate: row 11, column 2",N
+Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"invalid email: row 12, column 4",N (invalid email)
+Patients Processed,12
+Patients Created,4
+Patients Skipped,8
 Patients Emailed,2
 Patients Failed Creation,0
 Duplicate MRNs count,4
@@ -178,7 +181,7 @@ Duplicate emails count,5
 				// Count new patients
 				count, err := database.Collection("patients").CountDocuments(ctx, bson.M{"clinicId": clinicId, "userId": bson.M{"$ne": existingPatient.UserId}})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(count).To(BeNumerically("==", 3))
+				Expect(count).To(BeNumerically("==", 4))
 			})
 
 			It("with optional fields", func() {
@@ -199,20 +202,28 @@ Max Mustermann,1975-09-09,1111113,,type1,adaStandard,,N
 Duplicate Existing Email,1995-01-23,1111114,existing+patient+email@tidepool.org,,adaStandard,duplicate email,N
 Glycemic Target,1960-10-15,1111115,,,adaHighRisk,,N
 Duplicate Existing MRN,1972-03-04,EXISTINGMRN,,,adaStandard,duplicate MRN,N
-Patients Processed,6
-Patients Created,4
-Patients Skipped,2
+Invalid Diabetes Type Defaults to Blank,2005-01-03,333333333,,,adaStandard,,N
+notApplicable Diabetes Type Defaults To Blank,1993-01-13,5555555,,,adaStandard,,N
+Invalid Glycemic Target Defaults To adaStandard,1980-10-15,777777,,type1,adaStandard,,N
+Within Duplicate MRN I,1980-02-03,44444444,,,adaStandard,duplicate MRN,N
+Within Duplicate MRN II,1980-02-04,44444444,,,adaStandard,duplicate MRN,N
+Within Duplicate Email I,1980-04-03,44444445,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N
+Within Duplicate Email II,1980-04-04,44444446,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N
+Duplicate Email And MRN,1975-07-04,EXISTINGMRN,existing+patient+email@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N
+Patients Processed,14
+Patients Created,7
+Patients Skipped,7
 Patients Emailed,2
 Patients Failed Creation,0
-Duplicate MRNs count,1
-Duplicate emails count,1
+Duplicate MRNs count,4
+Duplicate emails count,4
 `
 				Expect(string(body)).To(Equal(expectedResBody))
 				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 				// Count new patients
 				count, err := database.Collection("patients").CountDocuments(ctx, bson.M{"clinicId": clinicId, "userId": bson.M{"$ne": existingPatient.UserId}})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(count).To(BeNumerically("==", 4))
+				Expect(count).To(BeNumerically("==", 7))
 			})
 		})
 	})

@@ -574,7 +574,7 @@ func (h *Handler) BulkCreatePatients(ec echo.Context, clinicId ClinicId, params 
 		invitedBy = &inviterId
 	}
 	outputRecords, csvHeader, potentialPatients, err := patients.ParsePotentialCSVPatientsReader(ctx, ec.Request().Body, h.Patients, h.Users, clinicObjId, invitedBy)
-	if patients.IsBulkPatientCSVValidationErr(err) {
+	if patients.IsBulkPatientBlockingInputError(err) {
 		return &echo.HTTPError{
 			Code:    http.StatusBadRequest,
 			Message: err,
