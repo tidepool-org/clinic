@@ -2580,7 +2580,6 @@ var _ = Describe("TideReport", func() {
 							TimeInVeryHighPercent:    floatp(0.14102241249055653),
 							TimeInVeryLowPercent:     floatp(0.004354066985645933),
 							TimeInAnyHighPercent:     floatp(0.34349030470914127),
-							TimeInExtremeHighPercent: floatp(0.02064971040040292),
 							TimeInAnyLowPercent:      floatp(0.03255854948375724),
 							LastData:                 mustTime("2025-07-08T18:15:42.591Z"),
 						},
@@ -2604,7 +2603,6 @@ var _ = Describe("TideReport", func() {
 							TimeInVeryLowPercent:     floatp(0),
 							TimeInAnyHighPercent:     floatp(0.6180555555555556),
 							TimeInAnyLowPercent:      floatp(0),
-							TimeInExtremeHighPercent: floatp(0),
 							LastData:                 mustTime("2025-07-05T23:55:00Z"),
 						},
 					}
@@ -2777,7 +2775,6 @@ var _ = Describe("TideReport", func() {
 						Expect(report.Config.ClinicId).To(Equal(clinicId.Hex()))
 						Expect(report.Config.VeryHighGlucoseThreshold).To(Equal(patients.VeryHighGlucoseThreshold))
 						Expect(report.Config.VeryLowGlucoseThreshold).To(Equal(patients.VeryLowGlucoseThreshold))
-						Expect(report.Config.ExtremeHighGlucoseThreshold).To(Equal(patients.ExtremeHighGlucoseThreshold))
 						Expect(report.Config.LowGlucoseThreshold).To(Equal(patients.LowGlucoseThreshold))
 						Expect(report.Config.HighGlucoseThreshold).To(Equal(patients.HighGlucoseThreshold))
 					})
@@ -4031,7 +4028,6 @@ func tideResultPatientMatcher(result patients.TideResultPatient) types.GomegaMat
 		"TimeInAnyLowPercent":        Ignore(),
 		"LastData":                   Ignore(),
 		"GlucoseManagementIndicator": Ignore(),
-		"TimeInExtremeHighPercent":   Ignore(),
 	}
 	// May be nil
 	if result.TimeCGMUseMinutes != nil {
@@ -4070,9 +4066,6 @@ func tideResultPatientMatcher(result patients.TideResultPatient) types.GomegaMat
 	// May be nil if user has no data
 	if result.LastData != nil {
 		fields["LastData"] = PointTo(BeTemporally(`~`, *result.LastData, time.Second))
-	}
-	if result.TimeInExtremeHighPercent != nil {
-		fields["TimeInExtremeHighPercent"] = PointTo(BeNumerically(`~`, *result.TimeInExtremeHighPercent, math.SmallestNonzeroFloat64))
 	}
 
 	return MatchAllFields(fields)
@@ -4231,7 +4224,6 @@ type patientSummaryPeriod struct {
 	AverageGlucoseMmol       float64
 	LastData                 time.Time
 	TimeCGMUsePercent        float64
-	TimeInExtremeHighPercent float64
 	TimeInHighPercent        float64
 	TimeInLowMinutes         int
 	TimeInLowPercent         float64
@@ -4249,12 +4241,11 @@ func newPatient14dSummary(patient patientWithSummary) *patients.Patient {
 	epsilon := math.SmallestNonzeroFloat64
 	timeInAnyLowPercent := summary.TimeInLowPercent
 	hasTimeInAnyLow := timeInAnyLowPercent > epsilon
-	timeInAnyHighPercent := summary.TimeInHighPercent + summary.TimeInExtremeHighPercent
+	timeInAnyHighPercent := summary.TimeInHighPercent + summary.TimeInVeryHighPercent
 	hasTimeInAnyHigh := timeInAnyHighPercent > epsilon
 	hasTimeInLow := summary.TimeInLowPercent > epsilon
 	hasTimeInVeryLow := summary.TimeInVeryLowPercent > epsilon
 	hasTimeInHigh := summary.TimeInHighPercent > epsilon
-	hasTimeInExtremeHigh := summary.TimeInExtremeHighPercent > epsilon
 	hasTimeCGMUse := summary.TimeCGMUsePercent > epsilon
 	hasTimeInTarget := summary.TimeInTargetPercent > epsilon
 
@@ -4296,9 +4287,6 @@ func newPatient14dSummary(patient patientWithSummary) *patients.Patient {
 		HasTimeInAnyLowMinutes:          hasTimeInAnyLow,
 		HasTimeInAnyLowPercent:          hasTimeInAnyLow,
 		HasTimeInAnyLowRecords:          hasTimeInAnyLow,
-		HasTimeInExtremeHighMinutes:     hasTimeInExtremeHigh,
-		HasTimeInExtremeHighPercent:     hasTimeInExtremeHigh,
-		HasTimeInExtremeHighRecords:     hasTimeInExtremeHigh,
 		HasTimeInHighMinutes:            hasTimeInHigh,
 		HasTimeInHighPercent:            hasTimeInHigh,
 		HasTimeInHighRecords:            hasTimeInHigh,
@@ -4332,11 +4320,6 @@ func newPatient14dSummary(patient patientWithSummary) *patients.Patient {
 		TimeInAnyLowPercent:             floatp(timeInAnyLowPercent),
 		TimeInAnyLowPercentDelta:        nil,
 		TimeInAnyLowRecordsDelta:        nil,
-		TimeInExtremeHighMinutesDelta:   nil,
-		TimeInExtremeHighPercent:        nil,
-		TimeInExtremeHighPercentDelta:   nil,
-		TimeInExtremeHighRecords:        nil,
-		TimeInExtremeHighRecordsDelta:   nil,
 		TimeInHighMinutesDelta:          nil,
 		TimeInHighPercent:               floatp(summary.TimeInHighPercent),
 		TimeInHighPercentDelta:          nil,
@@ -4366,10 +4349,6 @@ func newPatient14dSummary(patient patientWithSummary) *patients.Patient {
 		if summary.TimeInTargetPercentDelta < -epsilon {
 			period14d.TimeInTargetPercentDelta = floatp(summary.TimeInTargetPercentDelta)
 		}
-	}
-	if hasTimeInExtremeHigh {
-		period14d.TimeInExtremeHighRecords = intp(int(summary.TimeInExtremeHighPercent * float64(numRecords)))
-		period14d.TimeInExtremeHighMinutes = intp(int(summary.TimeInExtremeHighPercent * float64(numMinutes)))
 	}
 	if hasTimeInAnyLow {
 		period14d.TimeInAnyLowRecords = intp(int(timeInAnyLowPercent * float64(numRecords)))
