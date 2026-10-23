@@ -334,13 +334,13 @@ func newGlycemicRangesDtoWithError(ranges patients.GlycemicRanges) (
 		if err != nil {
 			return nil, err
 		}
-		return &GlycemicRangesV1{Type: Custom, Custom: *custom}, nil
+		return &GlycemicRangesV1{Type: Custom, Custom: *custom, Key: ranges.Key()}, nil
 	case patients.GlycemicRangeTypePreset:
 		preset, err := newGlycemicRangesDtoPreset(ranges.Preset)
 		if err != nil {
 			return nil, err
 		}
-		return &GlycemicRangesV1{Type: Preset, Preset: *preset}, nil
+		return &GlycemicRangesV1{Type: Preset, Preset: *preset, Key: ranges.Key()}, nil
 	}
 
 	return nil, progErrf("unhandled glycemic range type: %q", ranges.Type)

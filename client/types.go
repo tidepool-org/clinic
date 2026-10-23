@@ -1484,6 +1484,9 @@ type GlycemicRangesV1 struct {
 	// Custom User-defined glycemic ranges. Used when the glycemic ranges type is custom.
 	Custom GlycemicRangesCustomV1 `json:"custom,omitempty,omitzero"`
 
+	// Key Identifies the range set, for example to match a summary to the ranges it was computed with. Derived from the preset, or from the custom units and thresholds, so two definitions that classify readings identically have the same key, and changing a threshold changes it; changing only a custom range's name does not. Presets are `preset:<preset>` (e.g. `preset:adaHighRisk`), and custom ranges are `custom:<units>:<veryLow>,<low>,<high>,<veryHigh>` with unset thresholds left empty (e.g. `custom:mmol/L:,3.9,10,`).
+	Key string `json:"key,omitempty"`
+
 	// Preset Predefined glycemic ranges based on ADA guidelines. Used when the glycemic ranges type is preset.
 	Preset GlycemicRangesPresetV1 `json:"preset,omitempty,omitzero"`
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
@@ -183,6 +185,47 @@ func (g GlycemicRangesCustom) IsZero() bool {
 }
 
 var _ bsoncodec.Zeroer = (*GlycemicRangesCustom)(nil)
+
+// Key identifies the range set by what affects the classification of readings, so that
+// two definitions that classify identically have the same key, and changing a threshold
+// changes it. Changing only a custom range's name does not. The form is documented in the
+// API's glycemicRanges model; keep this and that documentation in sync.
+//
+// The key is derived on demand rather than stored. Storing it (with an index on userId
+// and key) would allow querying patients by range set, but the consumers planned for it
+// start from a userId, which is already indexed, and fan out to that user's few clinic
+// records, so they can compute the key for each. Deriving it also avoids a backfill of
+// existing patients. Computing it is cheap: well under a microsecond even for custom
+// ranges, so a whole clinic's patient list is a few milliseconds at most. If a query by
+// key is ever needed, the field and index can be added then, along with a backfill.
+func (g GlycemicRanges) Key() string {
+	switch g.Type {
+	case GlycemicRangeTypeCustom:
+		t := g.Custom.Thresholds
+		return fmt.Sprintf("custom:%s:%s", g.Custom.Units, strings.Join([]string{
+			formatOptionalThreshold(t.VeryLow),
+			formatThreshold(t.Low),
+			formatThreshold(t.High),
+			formatOptionalThreshold(t.VeryHigh),
+		}, ","))
+	case GlycemicRangeTypePreset:
+		return "preset:" + string(g.Preset)
+	default:
+		return "preset:" + string(GlycemicRangesPresetDefault)
+	}
+}
+
+func formatThreshold(v float64) string {
+	// Adding zero normalizes negative zero, which would otherwise format as "-0".
+	return strconv.FormatFloat(v+0, 'f', -1, 64)
+}
+
+func formatOptionalThreshold(v *float64) string {
+	if v == nil {
+		return ""
+	}
+	return formatThreshold(*v)
+}
 
 // Validate checks custom ranges, which must be precise enough for their thresholds to fall
 // between adjacent stored readings (see BACK-4158), and must be in ascending order. Other
@@ -432,4 +475,7 @@ type GlycemicRangeType string
 const (
 	GlycemicRangeTypePreset GlycemicRangeType = "preset"
 	GlycemicRangeTypeCustom GlycemicRangeType = "custom"
+
+	// GlycemicRangesPresetDefault applies when a patient has no glycemic ranges.
+	GlycemicRangesPresetDefault GlycemicRangesPreset = "adaStandard"
 )
