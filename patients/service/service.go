@@ -55,6 +55,10 @@ func (s *service) List(ctx context.Context, filter *patients.Filter, pagination 
 }
 
 func (s *service) Create(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
+	if err := patient.GlycemicRanges.Validate(); err != nil {
+		return nil, err
+	}
+
 	clinicId := patient.ClinicId.Hex()
 
 	if err := s.enforceMrnSettings(ctx, clinicId, patient.UserId, &patient); err != nil {
@@ -96,6 +100,10 @@ func (s *service) Create(ctx context.Context, patient patients.Patient) (*patien
 }
 
 func (s *service) Update(ctx context.Context, update patients.PatientUpdate) (*patients.Patient, error) {
+	if err := update.Patient.GlycemicRanges.Validate(); err != nil {
+		return nil, err
+	}
+
 	existing, err := s.Get(ctx, update.ClinicId, update.UserId)
 	if err != nil {
 		return nil, err

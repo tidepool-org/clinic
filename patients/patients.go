@@ -3,6 +3,7 @@ package patients
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
@@ -182,6 +183,64 @@ func (g GlycemicRangesCustom) IsZero() bool {
 }
 
 var _ bsoncodec.Zeroer = (*GlycemicRangesCustom)(nil)
+
+// Validate checks custom ranges, which must be precise enough for their thresholds to fall
+// between adjacent stored readings (see BACK-4158), and must be in ascending order. Other
+// ranges are always valid.
+func (g GlycemicRanges) Validate() error {
+	if g.Type != GlycemicRangeTypeCustom {
+		return nil
+	}
+	return g.Custom.validate()
+}
+
+// glycemicRangeDecimals is the precision of readings, and so of thresholds, in each unit.
+var glycemicRangeDecimals = map[string]int{
+	"mg/dL":  0,
+	"mmol/L": 1,
+}
+
+func (g GlycemicRangesCustom) validate() error {
+	decimals, ok := glycemicRangeDecimals[g.Units]
+	if !ok {
+		return fmt.Errorf("%w: unknown glycemic range units %q", errors.BadRequest, g.Units)
+	}
+
+	type namedThreshold struct {
+		name  string
+		value float64
+	}
+	thresholds := []namedThreshold{}
+	if g.Thresholds.VeryLow != nil {
+		thresholds = append(thresholds, namedThreshold{"veryLow", *g.Thresholds.VeryLow})
+	}
+	thresholds = append(thresholds,
+		namedThreshold{"low", g.Thresholds.Low},
+		namedThreshold{"high", g.Thresholds.High},
+	)
+	if g.Thresholds.VeryHigh != nil {
+		thresholds = append(thresholds, namedThreshold{"veryHigh", *g.Thresholds.VeryHigh})
+	}
+
+	for i, t := range thresholds {
+		if !hasDecimals(t.value, decimals) {
+			return fmt.Errorf("%w: glycemic range threshold %s must have at most %d "+
+				"decimal places in %s", errors.BadRequest, t.name, decimals, g.Units)
+		}
+		if i > 0 && t.value <= thresholds[i-1].value {
+			return fmt.Errorf("%w: glycemic range threshold %s must be greater than %s",
+				errors.BadRequest, t.name, thresholds[i-1].name)
+		}
+	}
+	return nil
+}
+
+// hasDecimals reports whether v has at most the given number of decimal places, allowing
+// for floating point error (e.g. 3.9 * 10 is 39.00000000000001).
+func hasDecimals(v float64, decimals int) bool {
+	scaled := v * math.Pow10(decimals)
+	return math.Abs(scaled-math.Round(scaled)) < 1e-9
+}
 
 // GlycemicRangeThresholds are expressed in their parent GlycemicRangesCustom's Units.
 type GlycemicRangeThresholds struct {

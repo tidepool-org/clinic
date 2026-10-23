@@ -64,31 +64,40 @@ func RandomGlycemicRanges() patients.GlycemicRanges {
 }
 
 func RandomGlycemicRangesCustom() patients.GlycemicRanges {
+	units := test.Faker.RandomStringElement([]string{"mg/dL", "mmol/L"})
 	return patients.GlycemicRanges{
 		Type: "custom",
 		Custom: patients.GlycemicRangesCustom{
-			Name: test.Faker.Lorem().Sentence(1 + rand.IntN(5)),
-			Units: test.Faker.RandomStringElement([]string{
-				"mg/dL",
-				"mmol/L",
-			}),
-			Thresholds: RandomGlycemicRangeThresholds(),
+			Name:       test.Faker.Lorem().Sentence(1 + rand.IntN(5)),
+			Units:      units,
+			Thresholds: RandomGlycemicRangeThresholds(units),
 		},
 	}
 }
 
-// RandomGlycemicRangeThresholds returns ascending thresholds, randomly omitting the
-// optional VeryLow and VeryHigh.
-func RandomGlycemicRangeThresholds() patients.GlycemicRangeThresholds {
+// RandomGlycemicRangeThresholds returns valid thresholds for units: ascending, at the
+// units' precision, and randomly omitting the optional VeryLow and VeryHigh.
+func RandomGlycemicRangeThresholds(units string) patients.GlycemicRangeThresholds {
+	// Each range is in mg/dL, or tenths of mmol/L, and they don't overlap.
+	ranges := [4][2]int{{40, 53}, {54, 80}, {140, 250}, {251, 400}}
+	scale := 1.0
+	if units == "mmol/L" {
+		ranges = [4][2]int{{22, 29}, {30, 44}, {78, 138}, {139, 222}}
+		scale = 10
+	}
+	random := func(i int) float64 {
+		return float64(ranges[i][0]+rand.IntN(ranges[i][1]-ranges[i][0]+1)) / scale
+	}
+
 	thresholds := patients.GlycemicRangeThresholds{
-		Low:  test.Faker.Float64(1, 50, 100),
-		High: test.Faker.Float64(1, 150, 200),
+		Low:  random(1),
+		High: random(2),
 	}
 	if test.Faker.Bool() {
-		thresholds.VeryLow = pointer.FromAny(test.Faker.Float64(1, 0, 50))
+		thresholds.VeryLow = pointer.FromAny(random(0))
 	}
 	if test.Faker.Bool() {
-		thresholds.VeryHigh = pointer.FromAny(test.Faker.Float64(1, 200, 400))
+		thresholds.VeryHigh = pointer.FromAny(random(3))
 	}
 	return thresholds
 }
