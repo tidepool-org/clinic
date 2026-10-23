@@ -1706,7 +1706,6 @@ func PatientsToTideResult(patientsList []*patients.Patient, period string, exclu
 				resultPatient.TimeInVeryLowPercent = v.TimeInVeryLowPercent
 				resultPatient.TimeInAnyLowPercent = v.TimeInAnyLowPercent
 				resultPatient.TimeInAnyHighPercent = v.TimeInAnyHighPercent
-				resultPatient.TimeInExtremeHighPercent = v.TimeInExtremeHighPercent
 			}
 		}
 
@@ -1875,7 +1874,6 @@ var availableCategories = [...]tideCategory{
 			timeInVeryLowPercent := parentFieldPath + "." + "timeInVeryLowPercent"
 			timeInAnyHighPercent := parentFieldPath + "." + "timeInAnyHighPercent"
 			timeInVeryHighPercent := parentFieldPath + "." + "timeInVeryHighPercent"
-			timeInExtremeHighPercent := parentFieldPath + "." + "timeInExtremeHighPercent"
 			return bson.A{
 				bson.M{timeInTargetPercent: bson.M{"$gt": 0.70 + halfAPercent}},
 				bson.M{"$expr": bson.M{
@@ -1926,30 +1924,6 @@ var availableCategories = [...]tideCategory{
 							5,
 						},
 					}}},
-				bson.M{"$expr": bson.M{
-					"$not": bson.M{
-						"$gte": bson.A{
-							roundFieldExpr(timeInExtremeHighPercent),
-							1,
-						},
-					}}},
-			}
-		},
-	},
-	{
-		CategoryName:          "timeInExtremeHighPercent",
-		SummaryField:          "timeInExtremeHighPercent",
-		SummaryFieldSortOrder: -1,
-		Predicates: func(parentFieldPath string) bson.A {
-			field := parentFieldPath + "." + "timeInExtremeHighPercent"
-			return bson.A{
-				bson.M{field: bson.M{"$gt": 0.01 - halfAPercent}},
-				bson.M{"$expr": bson.M{
-					"$gte": bson.A{
-						roundFieldExpr(field),
-						1,
-					},
-				}},
 			}
 		},
 	},
@@ -2053,15 +2027,14 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 				TimeInTargetPercent:       strp("<0.7"),
 				TimeCGMUsePercent:         strp("<0.7"),
 			},
-			HighGlucoseThreshold:        patients.HighGlucoseThreshold,
-			LastDataCutoff:              params.LastDataCutoff,
-			LowGlucoseThreshold:         patients.LowGlucoseThreshold,
-			Period:                      params.Period,
-			SchemaVersion:               patients.TideSchemaVersion,
-			Tags:                        params.Tags,
-			VeryHighGlucoseThreshold:    patients.VeryHighGlucoseThreshold,
-			VeryLowGlucoseThreshold:     patients.VeryLowGlucoseThreshold,
-			ExtremeHighGlucoseThreshold: patients.ExtremeHighGlucoseThreshold,
+			HighGlucoseThreshold:     patients.HighGlucoseThreshold,
+			LastDataCutoff:           params.LastDataCutoff,
+			LowGlucoseThreshold:      patients.LowGlucoseThreshold,
+			Period:                   params.Period,
+			SchemaVersion:            patients.TideSchemaVersion,
+			Tags:                     params.Tags,
+			VeryHighGlucoseThreshold: patients.VeryHighGlucoseThreshold,
+			VeryLowGlucoseThreshold:  patients.VeryLowGlucoseThreshold,
 		},
 		Results: patients.TideResults{},
 	}

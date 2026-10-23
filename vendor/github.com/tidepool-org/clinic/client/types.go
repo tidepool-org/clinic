@@ -751,7 +751,6 @@ const (
 	TimeCGMUsePercent         TideReportParamsCategories = "timeCGMUsePercent"
 	TimeInAnyHighPercent      TideReportParamsCategories = "timeInAnyHighPercent"
 	TimeInAnyLowPercent       TideReportParamsCategories = "timeInAnyLowPercent"
-	TimeInExtremeHighPercent  TideReportParamsCategories = "timeInExtremeHighPercent"
 	TimeInTargetPercent       TideReportParamsCategories = "timeInTargetPercent"
 	TimeInVeryHighPercent     TideReportParamsCategories = "timeInVeryHighPercent"
 	TimeInVeryLowPercent      TideReportParamsCategories = "timeInVeryLowPercent"
@@ -814,8 +813,6 @@ type BgmPeriodV1 struct {
 	HasTimeInAnyHighRecords     bool     `json:"hasTimeInAnyHighRecords"`
 	HasTimeInAnyLowPercent      bool     `json:"hasTimeInAnyLowPercent"`
 	HasTimeInAnyLowRecords      bool     `json:"hasTimeInAnyLowRecords"`
-	HasTimeInExtremeHighPercent bool     `json:"hasTimeInExtremeHighPercent"`
-	HasTimeInExtremeHighRecords bool     `json:"hasTimeInExtremeHighRecords"`
 	HasTimeInHighPercent        bool     `json:"hasTimeInHighPercent"`
 	HasTimeInHighRecords        bool     `json:"hasTimeInHighRecords"`
 	HasTimeInLowPercent         bool     `json:"hasTimeInLowPercent"`
@@ -857,18 +854,6 @@ type BgmPeriodV1 struct {
 
 	// TimeInAnyLowRecordsDelta Difference between the timeInAnyLowRecords in this period and version in the opposite offset
 	TimeInAnyLowRecordsDelta *int `json:"timeInAnyLowRecordsDelta,omitempty"`
-
-	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
-	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
-
-	// TimeInExtremeHighPercentDelta Difference between the timeInExtremeHighPercent in this period and version in the opposite offset
-	TimeInExtremeHighPercentDelta *float64 `json:"timeInExtremeHighPercentDelta,omitempty"`
-
-	// TimeInExtremeHighRecords Counter of records in extreme high glucose range
-	TimeInExtremeHighRecords *int `json:"timeInExtremeHighRecords,omitempty"`
-
-	// TimeInExtremeHighRecordsDelta Difference between the timeInExtremeHighRecords in this period and version in the opposite offset
-	TimeInExtremeHighRecordsDelta *int `json:"timeInExtremeHighRecordsDelta,omitempty"`
 
 	// TimeInHighPercent Percentage of time spent in high glucose range
 	TimeInHighPercent *float64 `json:"timeInHighPercent,omitempty"`
@@ -990,9 +975,6 @@ type CgmPeriodV1 struct {
 	HasTimeInAnyLowMinutes          bool     `json:"hasTimeInAnyLowMinutes"`
 	HasTimeInAnyLowPercent          bool     `json:"hasTimeInAnyLowPercent"`
 	HasTimeInAnyLowRecords          bool     `json:"hasTimeInAnyLowRecords"`
-	HasTimeInExtremeHighMinutes     bool     `json:"hasTimeInExtremeHighMinutes"`
-	HasTimeInExtremeHighPercent     bool     `json:"hasTimeInExtremeHighPercent"`
-	HasTimeInExtremeHighRecords     bool     `json:"hasTimeInExtremeHighRecords"`
 	HasTimeInHighMinutes            bool     `json:"hasTimeInHighMinutes"`
 	HasTimeInHighPercent            bool     `json:"hasTimeInHighPercent"`
 	HasTimeInHighRecords            bool     `json:"hasTimeInHighRecords"`
@@ -1071,24 +1053,6 @@ type CgmPeriodV1 struct {
 
 	// TimeInAnyLowRecordsDelta Difference between the timeInAnyLowRecords in this period and version in the opposite offset
 	TimeInAnyLowRecordsDelta *int `json:"timeInAnyLowRecordsDelta,omitempty"`
-
-	// TimeInExtremeHighMinutes Counter of minutes spent in extreme high glucose range
-	TimeInExtremeHighMinutes *int `json:"timeInExtremeHighMinutes,omitempty"`
-
-	// TimeInExtremeHighMinutesDelta Difference between the timeInExtremeHighMinutes in this period and version in the opposite offset
-	TimeInExtremeHighMinutesDelta *int `json:"timeInExtremeHighMinutesDelta,omitempty"`
-
-	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
-	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
-
-	// TimeInExtremeHighPercentDelta Difference between the timeInExtremeHighPercent in this period and version in the opposite offset
-	TimeInExtremeHighPercentDelta *float64 `json:"timeInExtremeHighPercentDelta,omitempty"`
-
-	// TimeInExtremeHighRecords Counter of records in extreme high glucose range
-	TimeInExtremeHighRecords *int `json:"timeInExtremeHighRecords,omitempty"`
-
-	// TimeInExtremeHighRecordsDelta Difference between the timeInExtremeHighRecords in this period and version in the opposite offset
-	TimeInExtremeHighRecordsDelta *int `json:"timeInExtremeHighRecordsDelta,omitempty"`
 
 	// TimeInHighMinutes Counter of minutes spent in high glucose range
 	TimeInHighMinutes *int `json:"timeInHighMinutes,omitempty"`
@@ -1926,9 +1890,6 @@ type TideConfigV1 struct {
 	// ClinicId Clinic identifier.
 	ClinicId *ClinicIdV1 `json:"clinicId,omitempty"`
 
-	// ExtremeHighGlucoseThreshold Minimum inclusive threshold in mmol/L for categorizing if a glucose value is extremely high. Not defined by the AACE.
-	ExtremeHighGlucoseThreshold *float64 `json:"extremeHighGlucoseThreshold,omitempty"`
-
 	// Filters Visual representation of filtered categories selected
 	Filters TideFiltersV1 `json:"filters"`
 
@@ -1956,7 +1917,6 @@ type TideFiltersV1 struct {
 	DropInTimeInTargetPercent *string `json:"dropInTimeInTargetPercent,omitempty"`
 	TimeCGMUsePercent         *string `json:"timeCGMUsePercent,omitempty"`
 	TimeInAnyLowPercent       *string `json:"timeInAnyLowPercent,omitempty"`
-	TimeInExtremeHighPercent  *string `json:"timeInExtremeHighPercent,omitempty"`
 	TimeInHighPercent         *string `json:"timeInHighPercent,omitempty"`
 	TimeInTargetPercent       *string `json:"timeInTargetPercent,omitempty"`
 	TimeInVeryHighPercent     *string `json:"timeInVeryHighPercent,omitempty"`
@@ -2004,9 +1964,6 @@ type TideResultPatientV1 struct {
 
 	// TimeInAnyLowPercent Percentage of time spent in any low glucose range
 	TimeInAnyLowPercent *float64 `json:"timeInAnyLowPercent,omitempty"`
-
-	// TimeInExtremeHighPercent Percentage of time spent in extreme high glucose range
-	TimeInExtremeHighPercent *float64 `json:"timeInExtremeHighPercent,omitempty"`
 
 	// TimeInHighPercent Percentage of time spent in high glucose range
 	TimeInHighPercent *float64 `json:"timeInHighPercent,omitempty"`
@@ -2150,6 +2107,12 @@ type ListCliniciansParams struct {
 	Role   *Role   `form:"role,omitempty" json:"role,omitempty"`
 }
 
+// ExportPatientListParams defines parameters for ExportPatientList.
+type ExportPatientListParams struct {
+	// Period Time Period to display
+	Period string `form:"period" json:"period"`
+}
+
 // ListPatientsParams defines parameters for ListPatients.
 type ListPatientsParams struct {
 	// Search Full text search query
@@ -2202,9 +2165,6 @@ type ListPatientsParams struct {
 	// CgmTimeInVeryHighPercent Percentage of time [0.0-1.0]  above 250 mg/dL
 	CgmTimeInVeryHighPercent *FloatFilter `form:"cgm.timeInVeryHighPercent,omitempty" json:"cgm.timeInVeryHighPercent,omitempty"`
 
-	// CgmTimeInExtremeHighPercent Percentage of time [0.0-1.0]  above 350 mg/dL
-	CgmTimeInExtremeHighPercent *FloatFilter `form:"cgm.timeInExtremeHighPercent,omitempty" json:"cgm.timeInExtremeHighPercent,omitempty"`
-
 	// CgmTimeInAnyHighPercent Percentage of time [0.0-1.0]  above 180 mg/dL
 	CgmTimeInAnyHighPercent *FloatFilter `form:"cgm.timeInAnyHighPercent,omitempty" json:"cgm.timeInAnyHighPercent,omitempty"`
 
@@ -2228,9 +2188,6 @@ type ListPatientsParams struct {
 
 	// CgmTimeInVeryHighMinutes Minutes above 250 mg/dL
 	CgmTimeInVeryHighMinutes *IntFilter `form:"cgm.timeInVeryHighMinutes,omitempty" json:"cgm.timeInVeryHighMinutes,omitempty"`
-
-	// CgmTimeInExtremeHighMinutes Minutes above 350 mg/dL
-	CgmTimeInExtremeHighMinutes *IntFilter `form:"cgm.timeInExtremeHighMinutes,omitempty" json:"cgm.timeInExtremeHighMinutes,omitempty"`
 
 	// CgmTimeInAnyHighMinutes Minutes above 180 mg/dL
 	CgmTimeInAnyHighMinutes *IntFilter `form:"cgm.timeInAnyHighMinutes,omitempty" json:"cgm.timeInAnyHighMinutes,omitempty"`
@@ -2304,9 +2261,6 @@ type ListPatientsParams struct {
 	// BgmTimeInVeryHighPercent Percentage of time [0.0-1.0]  above 250 mg/dL
 	BgmTimeInVeryHighPercent *FloatFilter `form:"bgm.timeInVeryHighPercent,omitempty" json:"bgm.timeInVeryHighPercent,omitempty"`
 
-	// BgmTimeInExtremeHighPercent Percentage of time [0.0-1.0]  above 350 mg/dL
-	BgmTimeInExtremeHighPercent *FloatFilter `form:"bgm.timeInExtremeHighPercent,omitempty" json:"bgm.timeInExtremeHighPercent,omitempty"`
-
 	// BgmTimeInAnyHighPercent Percentage of time [0.0-1.0]  above 180 mg/dL
 	BgmTimeInAnyHighPercent *FloatFilter `form:"bgm.timeInAnyHighPercent,omitempty" json:"bgm.timeInAnyHighPercent,omitempty"`
 
@@ -2370,9 +2324,6 @@ type ListPatientsParams struct {
 	// CgmTimeInVeryHighPercentDelta Delta of time above 250 mg/dL
 	CgmTimeInVeryHighPercentDelta *FloatFilter `form:"cgm.timeInVeryHighPercentDelta,omitempty" json:"cgm.timeInVeryHighPercentDelta,omitempty"`
 
-	// CgmTimeInExtremeHighPercentDelta Delta of time above 350 mg/dL
-	CgmTimeInExtremeHighPercentDelta *FloatFilter `form:"cgm.timeInExtremeHighPercentDelta,omitempty" json:"cgm.timeInExtremeHighPercentDelta,omitempty"`
-
 	// CgmTimeInAnyHighPercentDelta Delta of time above 180 mg/dL
 	CgmTimeInAnyHighPercentDelta *FloatFilter `form:"cgm.timeInAnyHighPercentDelta,omitempty" json:"cgm.timeInAnyHighPercentDelta,omitempty"`
 
@@ -2396,9 +2347,6 @@ type ListPatientsParams struct {
 
 	// CgmTimeInVeryHighMinutesDelta Delta of minutes above 250 mg/dL
 	CgmTimeInVeryHighMinutesDelta *IntFilter `form:"cgm.timeInVeryHighMinutesDelta,omitempty" json:"cgm.timeInVeryHighMinutesDelta,omitempty"`
-
-	// CgmTimeInExtremeHighMinutesDelta Delta of minutes above 350 mg/dL
-	CgmTimeInExtremeHighMinutesDelta *IntFilter `form:"cgm.timeInExtremeHighMinutesDelta,omitempty" json:"cgm.timeInExtremeHighMinutesDelta,omitempty"`
 
 	// CgmTimeInAnyHighMinutesDelta Delta of minutes above 180 mg/dL
 	CgmTimeInAnyHighMinutesDelta *IntFilter `form:"cgm.timeInAnyHighMinutesDelta,omitempty" json:"cgm.timeInAnyHighMinutesDelta,omitempty"`
@@ -2477,9 +2425,6 @@ type ListPatientsParams struct {
 
 	// BgmTimeInVeryHighPercentDelta Delta of time above 250 mg/dL
 	BgmTimeInVeryHighPercentDelta *FloatFilter `form:"bgm.timeInVeryHighPercentDelta,omitempty" json:"bgm.timeInVeryHighPercentDelta,omitempty"`
-
-	// BgmTimeInExtremeHighPercentDelta Delta of time above 350 mg/dL
-	BgmTimeInExtremeHighPercentDelta *FloatFilter `form:"bgm.timeInExtremeHighPercentDelta,omitempty" json:"bgm.timeInExtremeHighPercentDelta,omitempty"`
 
 	// BgmTimeInAnyHighPercentDelta Delta of time above 180 mg/dL
 	BgmTimeInAnyHighPercentDelta *FloatFilter `form:"bgm.timeInAnyHighPercentDelta,omitempty" json:"bgm.timeInAnyHighPercentDelta,omitempty"`

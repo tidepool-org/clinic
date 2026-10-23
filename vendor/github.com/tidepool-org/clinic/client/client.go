@@ -148,6 +148,9 @@ type ClientInterface interface {
 	// SyncEHRData request
 	SyncEHRData(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ExportPatientList request
+	ExportPatientList(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteInvitedClinician request
 	DeleteInvitedClinician(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -635,6 +638,18 @@ func (c *Client) UpdateClinician(ctx context.Context, clinicId ClinicId, clinici
 
 func (c *Client) SyncEHRData(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSyncEHRDataRequest(c.Server, clinicId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ExportPatientList(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewExportPatientListRequest(c.Server, clinicId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2642,6 +2657,58 @@ func NewSyncEHRDataRequest(server string, clinicId ClinicId) (*http.Request, err
 	return req, nil
 }
 
+// NewExportPatientListRequest generates requests for ExportPatientList
+func NewExportPatientListRequest(server string, clinicId ClinicId, params *ExportPatientListParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/export/patients", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "period", runtime.ParamLocationQuery, params.Period); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDeleteInvitedClinicianRequest generates requests for DeleteInvitedClinician
 func NewDeleteInvitedClinicianRequest(server string, clinicId ClinicId, inviteId InviteId) (*http.Request, error) {
 	var err error
@@ -3697,22 +3764,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.CgmTimeInExtremeHighPercent != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInExtremeHighPercent", runtime.ParamLocationQuery, *params.CgmTimeInExtremeHighPercent); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
 		if params.CgmTimeInAnyHighPercent != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInAnyHighPercent", runtime.ParamLocationQuery, *params.CgmTimeInAnyHighPercent); err != nil {
@@ -3828,22 +3879,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.CgmTimeInVeryHighMinutes != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInVeryHighMinutes", runtime.ParamLocationQuery, *params.CgmTimeInVeryHighMinutes); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.CgmTimeInExtremeHighMinutes != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInExtremeHighMinutes", runtime.ParamLocationQuery, *params.CgmTimeInExtremeHighMinutes); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -4241,22 +4276,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.BgmTimeInExtremeHighPercent != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInExtremeHighPercent", runtime.ParamLocationQuery, *params.BgmTimeInExtremeHighPercent); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
 		if params.BgmTimeInAnyHighPercent != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInAnyHighPercent", runtime.ParamLocationQuery, *params.BgmTimeInAnyHighPercent); err != nil {
@@ -4593,22 +4612,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.CgmTimeInExtremeHighPercentDelta != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInExtremeHighPercentDelta", runtime.ParamLocationQuery, *params.CgmTimeInExtremeHighPercentDelta); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
 		if params.CgmTimeInAnyHighPercentDelta != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInAnyHighPercentDelta", runtime.ParamLocationQuery, *params.CgmTimeInAnyHighPercentDelta); err != nil {
@@ -4724,22 +4727,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.CgmTimeInVeryHighMinutesDelta != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInVeryHighMinutesDelta", runtime.ParamLocationQuery, *params.CgmTimeInVeryHighMinutesDelta); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.CgmTimeInExtremeHighMinutesDelta != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInExtremeHighMinutesDelta", runtime.ParamLocationQuery, *params.CgmTimeInExtremeHighMinutesDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -5156,22 +5143,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.BgmTimeInVeryHighPercentDelta != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInVeryHighPercentDelta", runtime.ParamLocationQuery, *params.BgmTimeInVeryHighPercentDelta); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.BgmTimeInExtremeHighPercentDelta != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInExtremeHighPercentDelta", runtime.ParamLocationQuery, *params.BgmTimeInExtremeHighPercentDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7610,6 +7581,9 @@ type ClientWithResponsesInterface interface {
 	// SyncEHRDataWithResponse request
 	SyncEHRDataWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*SyncEHRDataResponse, error)
 
+	// ExportPatientListWithResponse request
+	ExportPatientListWithResponse(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*ExportPatientListResponse, error)
+
 	// DeleteInvitedClinicianWithResponse request
 	DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*DeleteInvitedClinicianResponse, error)
 
@@ -8199,6 +8173,27 @@ func (r SyncEHRDataResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r SyncEHRDataResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ExportPatientListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ExportPatientListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ExportPatientListResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9722,6 +9717,15 @@ func (c *ClientWithResponses) SyncEHRDataWithResponse(ctx context.Context, clini
 	return ParseSyncEHRDataResponse(rsp)
 }
 
+// ExportPatientListWithResponse request returning *ExportPatientListResponse
+func (c *ClientWithResponses) ExportPatientListWithResponse(ctx context.Context, clinicId ClinicId, params *ExportPatientListParams, reqEditors ...RequestEditorFn) (*ExportPatientListResponse, error) {
+	rsp, err := c.ExportPatientList(ctx, clinicId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseExportPatientListResponse(rsp)
+}
+
 // DeleteInvitedClinicianWithResponse request returning *DeleteInvitedClinicianResponse
 func (c *ClientWithResponses) DeleteInvitedClinicianWithResponse(ctx context.Context, clinicId ClinicId, inviteId InviteId, reqEditors ...RequestEditorFn) (*DeleteInvitedClinicianResponse, error) {
 	rsp, err := c.DeleteInvitedClinician(ctx, clinicId, inviteId, reqEditors...)
@@ -10889,6 +10893,22 @@ func ParseSyncEHRDataResponse(rsp *http.Response) (*SyncEHRDataResponse, error) 
 	}
 
 	response := &SyncEHRDataResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseExportPatientListResponse parses an HTTP response from a ExportPatientListWithResponse call
+func ParseExportPatientListResponse(rsp *http.Response) (*ExportPatientListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ExportPatientListResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

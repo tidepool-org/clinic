@@ -3764,22 +3764,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.CgmTimeInExtremeHighPercent != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInExtremeHighPercent", runtime.ParamLocationQuery, *params.CgmTimeInExtremeHighPercent); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
 		if params.CgmTimeInAnyHighPercent != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInAnyHighPercent", runtime.ParamLocationQuery, *params.CgmTimeInAnyHighPercent); err != nil {
@@ -3895,22 +3879,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.CgmTimeInVeryHighMinutes != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInVeryHighMinutes", runtime.ParamLocationQuery, *params.CgmTimeInVeryHighMinutes); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.CgmTimeInExtremeHighMinutes != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInExtremeHighMinutes", runtime.ParamLocationQuery, *params.CgmTimeInExtremeHighMinutes); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -4308,22 +4276,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.BgmTimeInExtremeHighPercent != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInExtremeHighPercent", runtime.ParamLocationQuery, *params.BgmTimeInExtremeHighPercent); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
 		if params.BgmTimeInAnyHighPercent != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInAnyHighPercent", runtime.ParamLocationQuery, *params.BgmTimeInAnyHighPercent); err != nil {
@@ -4660,22 +4612,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		}
 
-		if params.CgmTimeInExtremeHighPercentDelta != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInExtremeHighPercentDelta", runtime.ParamLocationQuery, *params.CgmTimeInExtremeHighPercentDelta); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
 		if params.CgmTimeInAnyHighPercentDelta != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInAnyHighPercentDelta", runtime.ParamLocationQuery, *params.CgmTimeInAnyHighPercentDelta); err != nil {
@@ -4791,22 +4727,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.CgmTimeInVeryHighMinutesDelta != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInVeryHighMinutesDelta", runtime.ParamLocationQuery, *params.CgmTimeInVeryHighMinutesDelta); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.CgmTimeInExtremeHighMinutesDelta != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "cgm.timeInExtremeHighMinutesDelta", runtime.ParamLocationQuery, *params.CgmTimeInExtremeHighMinutesDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -5223,22 +5143,6 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 		if params.BgmTimeInVeryHighPercentDelta != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInVeryHighPercentDelta", runtime.ParamLocationQuery, *params.BgmTimeInVeryHighPercentDelta); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.BgmTimeInExtremeHighPercentDelta != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "bgm.timeInExtremeHighPercentDelta", runtime.ParamLocationQuery, *params.BgmTimeInExtremeHighPercentDelta); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
