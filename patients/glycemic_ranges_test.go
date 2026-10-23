@@ -1,6 +1,8 @@
 package patients_test
 
 import (
+	"math"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -11,6 +13,73 @@ import (
 )
 
 var _ = Describe("GlycemicRanges", func() {
+	Describe("Key", func() {
+		custom := func(units string, veryLow *float64, low, high float64,
+			veryHigh *float64) patients.GlycemicRanges {
+
+			return patients.GlycemicRanges{
+				Type: patients.GlycemicRangeTypeCustom,
+				Custom: patients.GlycemicRangesCustom{
+					Name:  "Mine",
+					Units: units,
+					Thresholds: patients.GlycemicRangeThresholds{
+						VeryLow:  veryLow,
+						Low:      low,
+						High:     high,
+						VeryHigh: veryHigh,
+					},
+				},
+			}
+		}
+		preset := func(name string) patients.GlycemicRanges {
+			return patients.GlycemicRanges{
+				Type:   patients.GlycemicRangeTypePreset,
+				Preset: patients.GlycemicRangesPreset(name),
+			}
+		}
+
+		DescribeTable("derives the key from the definition",
+			func(ranges patients.GlycemicRanges, key string) {
+				Expect(ranges.Key()).To(Equal(key))
+			},
+			Entry("unset ranges", patients.GlycemicRanges{}, "preset:adaStandard"),
+			Entry("adaStandard", preset("adaStandard"), "preset:adaStandard"),
+			Entry("adaPregnancyType1", preset("adaPregnancyType1"),
+				"preset:adaPregnancyType1"),
+			Entry("adaPregnancyType2", preset("adaPregnancyType2"),
+				"preset:adaPregnancyType2"),
+			Entry("adaHighRisk", preset("adaHighRisk"), "preset:adaHighRisk"),
+			Entry("custom mg/dL with all thresholds",
+				custom("mg/dL", pointer.FromAny(54.0), 70, 180, pointer.FromAny(250.0)),
+				"custom:mg/dL:54,70,180,250"),
+			Entry("custom mmol/L without optional thresholds",
+				custom("mmol/L", nil, 3.9, 10, nil), "custom:mmol/L:,3.9,10,"),
+			Entry("custom with only veryLow",
+				custom("mmol/L", pointer.FromAny(3.0), 3.9, 10, nil),
+				"custom:mmol/L:3,3.9,10,"),
+			Entry("custom with only veryHigh",
+				custom("mg/dL", nil, 70, 180, pointer.FromAny(250.0)),
+				"custom:mg/dL:,70,180,250"),
+			Entry("custom with a negative zero threshold",
+				custom("mg/dL", pointer.FromAny(math.Copysign(0, -1)), 70, 180, nil),
+				"custom:mg/dL:0,70,180,"),
+		)
+
+		It("ignores the custom range's name", func() {
+			a := custom("mg/dL", nil, 70, 180, nil)
+			b := a
+			b.Custom.Name = "Yours"
+			Expect(a.Key()).To(Equal(b.Key()))
+		})
+
+		It("changes when a single threshold changes", func() {
+			a := custom("mg/dL", nil, 70, 180, nil)
+			b := a
+			b.Custom.Thresholds.High = 181
+			Expect(a.Key()).ToNot(Equal(b.Key()))
+		})
+	})
+
 	Describe("Validate", func() {
 		custom := func(units string, veryLow *float64, low, high float64,
 			veryHigh *float64) patients.GlycemicRanges {
