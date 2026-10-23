@@ -17,6 +17,7 @@ import (
 
 	"github.com/tidepool-org/clinic/api"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/pointer"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/test"
 )
@@ -67,21 +68,29 @@ func RandomGlycemicRangesCustom() patients.GlycemicRanges {
 		Type: "custom",
 		Custom: patients.GlycemicRangesCustom{
 			Name: test.Faker.Lorem().Sentence(1 + rand.IntN(5)),
-			Thresholds: []patients.GlycemicRangeThreshold{
-				{
-					Name: test.Faker.Lorem().Sentence(1 + rand.IntN(5)),
-					UpperBound: patients.ValueWithUnits{
-						Units: test.Faker.RandomStringElement([]string{
-							"mg/dL",
-							"mmol/L",
-						}),
-						Value: test.Faker.Float32(1, 0, 100),
-					},
-					Inclusive: test.Faker.Bool(),
-				},
-			},
+			Units: test.Faker.RandomStringElement([]string{
+				"mg/dL",
+				"mmol/L",
+			}),
+			Thresholds: RandomGlycemicRangeThresholds(),
 		},
 	}
+}
+
+// RandomGlycemicRangeThresholds returns ascending thresholds, randomly omitting the
+// optional VeryLow and VeryHigh.
+func RandomGlycemicRangeThresholds() patients.GlycemicRangeThresholds {
+	thresholds := patients.GlycemicRangeThresholds{
+		Low:  test.Faker.Float64(1, 50, 100),
+		High: test.Faker.Float64(1, 150, 200),
+	}
+	if test.Faker.Bool() {
+		thresholds.VeryLow = pointer.FromAny(test.Faker.Float64(1, 0, 50))
+	}
+	if test.Faker.Bool() {
+		thresholds.VeryHigh = pointer.FromAny(test.Faker.Float64(1, 200, 400))
+	}
+	return thresholds
 }
 
 var glycemicRangesPresets = []api.GlycemicRangesPresetV1{

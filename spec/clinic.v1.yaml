@@ -4974,54 +4974,60 @@ components:
         - twiist
         - dexcom
         - abbott
-    glycemicRangesThresholdUpperBound.v1:
+    glycemicRangesThresholds.v1:
       type: object
+      description: 'Named thresholds dividing glucose readings into ranges, expressed in the parent''s units. Values must not be negative. veryLow and veryHigh are optional. A reading exactly at a threshold belongs to the range nearer the target range: at veryLow it is low, at low or high it is in range, and at veryHigh it is high. Values must be whole numbers in mg/dL, or have at most one decimal place in mmol/L, and must be in ascending order (veryLow < low < high < veryHigh, for those that are set); otherwise the request is rejected as a bad request.'
       properties:
-        value:
+        veryLow:
           type: number
-          format: float
+          format: double
+          minimum: 0
+          description: Readings below this value are very low.
+        low:
+          type: number
+          format: double
+          minimum: 0
+          description: Readings below this value are low (or very low, if below veryLow).
+        high:
+          type: number
+          format: double
+          minimum: 0
+          description: Readings above this value are high (or very high, if above veryHigh).
+        veryHigh:
+          type: number
+          format: double
+          minimum: 0
+          description: Readings above this value are very high.
+      required:
+        - low
+        - high
+    glycemicRangesCustom.v1:
+      type: object
+      description: User-defined glycemic ranges. Used when the glycemic ranges type is custom.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: ^[A-Za-z0-9][A-Za-z0-9.,()/' -]{0,31}$
+          description: 'Display name of the custom glycemic ranges. Up to 32 characters: letters, digits, spaces, and the punctuation . , - ( ) / '' — the first character must be a letter or digit.'
         units:
           type: string
+          description: Blood glucose units in which all threshold values are expressed.
           enum:
             - mg/dL
             - mmol/L
-      required:
-        - value
-        - units
-    glycemicRangesThreshold.v1:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-        upperBound:
-          $ref: '#/components/schemas/glycemicRangesThresholdUpperBound.v1'
-        inclusive:
-          type: boolean
-          default: false
-          x-go-type-skip-optional-pointer: true
-      required:
-        - name
-        - upperBound
-    glycemicRangesCustom.v1:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
         thresholds:
-          type: array
-          items:
-            $ref: '#/components/schemas/glycemicRangesThreshold.v1'
-          minLength: 4
-          maxLength: 5
+          $ref: '#/components/schemas/glycemicRangesThresholds.v1'
       required:
         - name
+        - units
         - thresholds
       x-go-type-skip-optional-pointer: true
       x-omitzero: true
     glycemicRangesPreset.v1:
       type: string
+      description: Predefined glycemic ranges based on ADA guidelines. Used when the glycemic ranges type is preset.
       minLength: 1
       enum:
         - adaStandard
@@ -5033,6 +5039,11 @@ components:
         - ADAPregnancyType1
         - ADAPregnancyType2
         - ADAHighRisk
+      x-enumDescriptions:
+        adaStandard: ADA standard ranges for most adults with type 1 or type 2 diabetes.
+        adaPregnancyType1: ADA ranges for pregnancy with type 1 diabetes.
+        adaPregnancyType2: ADA ranges for pregnancy with type 2 or gestational diabetes.
+        adaHighRisk: ADA ranges for older or high-risk individuals.
       default: adaStandard
       x-go-type-skip-optional-pointer: true
       x-omitzero: true
@@ -5040,6 +5051,7 @@ components:
       properties:
         type:
           type: string
+          description: 'Which kind of glycemic ranges is in use: preset selects one of the predefined ranges named by preset; custom uses the ranges defined in custom.'
           enum:
             - preset
             - custom

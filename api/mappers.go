@@ -350,27 +350,21 @@ func newGlycemicRangesDtoCustom(custom patients.GlycemicRangesCustom) (
 	*GlycemicRangesCustomV1, error) {
 
 	dtoCustom := &GlycemicRangesCustomV1{
-		Name:       custom.Name,
-		Thresholds: []GlycemicRangesThresholdV1{},
+		Name: custom.Name,
+		Thresholds: GlycemicRangesThresholdsV1{
+			VeryLow:  custom.Thresholds.VeryLow,
+			Low:      custom.Thresholds.Low,
+			High:     custom.Thresholds.High,
+			VeryHigh: custom.Thresholds.VeryHigh,
+		},
 	}
-	for _, threshold := range custom.Thresholds {
-		upperBound := GlycemicRangesThresholdUpperBoundV1{
-			Value: threshold.UpperBound.Value,
-		}
-		switch threshold.UpperBound.Units {
-		case string(GlycemicRangesThresholdUpperBoundV1UnitsMgdL):
-			upperBound.Units = GlycemicRangesThresholdUpperBoundV1UnitsMgdL
-		case string(GlycemicRangesThresholdUpperBoundV1UnitsMmolL):
-			upperBound.Units = GlycemicRangesThresholdUpperBoundV1UnitsMmolL
-		default:
-			return nil, progErrf("unhandled units: %q", threshold.UpperBound.Units)
-		}
-		customThreshold := GlycemicRangesThresholdV1{
-			Inclusive:  threshold.Inclusive,
-			Name:       threshold.Name,
-			UpperBound: upperBound,
-		}
-		dtoCustom.Thresholds = append(dtoCustom.Thresholds, customThreshold)
+	switch custom.Units {
+	case string(GlycemicRangesCustomV1UnitsMgdL):
+		dtoCustom.Units = GlycemicRangesCustomV1UnitsMgdL
+	case string(GlycemicRangesCustomV1UnitsMmolL):
+		dtoCustom.Units = GlycemicRangesCustomV1UnitsMmolL
+	default:
+		return nil, progErrf("unhandled units: %q", custom.Units)
 	}
 	return dtoCustom, nil
 }
@@ -425,8 +419,14 @@ func newGlycemicRangesWithError(ranges *GlycemicRangesV1) (
 		out := &patients.GlycemicRanges{
 			Type: pType,
 			Custom: patients.GlycemicRangesCustom{
-				Name:       ranges.Custom.Name,
-				Thresholds: newGlycemicRangesCustomThresholds(ranges.Custom.Thresholds),
+				Name:  ranges.Custom.Name,
+				Units: string(ranges.Custom.Units),
+				Thresholds: patients.GlycemicRangeThresholds{
+					VeryLow:  ranges.Custom.Thresholds.VeryLow,
+					Low:      ranges.Custom.Thresholds.Low,
+					High:     ranges.Custom.Thresholds.High,
+					VeryHigh: ranges.Custom.Thresholds.VeryHigh,
+				},
 			},
 		}
 		return out, nil
@@ -439,23 +439,6 @@ func newGlycemicRangesWithError(ranges *GlycemicRangesV1) (
 	default:
 		return nil, progErrf("unhandled glycemic ranges type: %T", *ranges)
 	}
-}
-
-func newGlycemicRangesCustomThresholds(thresholds []GlycemicRangesThresholdV1) (
-	_ []patients.GlycemicRangeThreshold) {
-
-	out := []patients.GlycemicRangeThreshold{}
-	for _, threshold := range thresholds {
-		out = append(out, patients.GlycemicRangeThreshold{
-			Name: threshold.Name,
-			UpperBound: patients.ValueWithUnits{
-				Value: threshold.UpperBound.Value,
-				Units: string(threshold.UpperBound.Units),
-			},
-			Inclusive: threshold.Inclusive,
-		})
-	}
-	return out
 }
 
 func NewConnectionRequestDTO(requests patients.ProviderConnectionRequests, provider ProviderId) []ProviderConnectionRequestV1 {
