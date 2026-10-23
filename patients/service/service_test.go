@@ -82,6 +82,16 @@ var _ = Describe("Patients Service", func() {
 			matchPatientFields = patientsTest.PatientFieldsMatcher(randomPatient)
 		})
 
+		It("returns an error, without creating, for invalid glycemic ranges", func() {
+			randomPatient.GlycemicRanges = patientsTest.RandomGlycemicRangesCustom()
+			randomPatient.GlycemicRanges.Custom.Thresholds.High =
+				randomPatient.GlycemicRanges.Custom.Thresholds.Low
+
+			createdPatient, err := service.Create(context.Background(), randomPatient)
+			Expect(err).To(MatchError(errors.BadRequest))
+			Expect(createdPatient).To(BeNil())
+		})
+
 		When("the clinic requires the mrn to be set", func() {
 			BeforeEach(func() {
 				clinicsService.
@@ -446,6 +456,16 @@ var _ = Describe("Patients Service", func() {
 			update.Patient.Permissions = &patients.Permissions{
 				Upload: &patients.Permission{},
 			}
+		})
+
+		It("returns an error, without updating, for invalid glycemic ranges", func() {
+			update.Patient.GlycemicRanges = patientsTest.RandomGlycemicRangesCustom()
+			update.Patient.GlycemicRanges.Custom.Thresholds.High =
+				update.Patient.GlycemicRanges.Custom.Thresholds.Low
+
+			updatedPatient, err := service.Update(context.Background(), update)
+			Expect(err).To(MatchError(errors.BadRequest))
+			Expect(updatedPatient).To(BeNil())
 		})
 
 		When("the clinic requires the mrn to be set", func() {
