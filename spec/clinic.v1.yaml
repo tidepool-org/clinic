@@ -1724,9 +1724,17 @@ paths:
       responses:
         '200':
           description: OK
-        '404':
-          description: Not Found
-      description: Internal endpoint which updates the summary in all patient records which match the user id.
+        '204':
+          description: No Change. The user is not a patient of any clinic.
+      description: |-
+        Internal endpoint which updates the summary in all patient records which match the user id. Called by the
+        platform data service from the upload postprocess work that recalculated the summaries of the user.
+
+        Each of `cgmStats` and `bgmStats` present in the body replaces the stored one only if its
+        `dates.lastUpdatedDate` is not older than the stored one, so a report delayed past a newer calculation
+        does not regress the stored statistics; such a report is answered `200` without changing anything. The
+        `updatedTime` of a patient record moves only when newer statistics arrive, so neither a stale report nor
+        a redelivery of the same one moves it.
       tags:
         - Clinics
         - Internal
@@ -1747,7 +1755,10 @@ paths:
           description: OK
         '204':
           description: No Change
-      description: Internal endpoint which deletes the summary in all patient records which match the summary id.
+      description: |-
+        Internal endpoint which deletes the summary in all patient records which match the summary id. Called by
+        the platform data service from the upload postprocess work when a recalculation deleted the summary of a
+        user who no longer has usable data of its type.
       tags:
         - Clinics
         - Internal
@@ -2259,6 +2270,8 @@ paths:
         An internal endpoint which will push the latest patient summary statistics and PDF reports to all EHR enabled clinics for which the patient has an active subscription. The actual data is pushed asynchronously. A successful response means that an asynchronous task has been scheduled.
 
         A 404 response will be returned if no active subscriptions can be found for given patient.
+
+        The platform data service calls this from the upload postprocess work once the summaries of the user are recalculated and reported, when the work was created for a completed upload (the reasons `UPLOAD_COMPLETED` and `LEGACY_DATA_ADDED`). Data added by a continuous source (`DATA_ADDED`) does not trigger it.
       tags:
         - Clinics
         - Internal
@@ -4023,14 +4036,19 @@ components:
       type: object
       title: dates.v1
       x-go-type-skip-optional-pointer: true
-      description: dates tracked for summary calculation
+      description: |-
+        dates tracked for summary calculation
+
+        Summaries are no longer marked outdated: they are recalculated by upload postprocess work, so the fields
+        marked deprecated are no longer set. A summary stored before the change keeps them until it is recalculated.
       properties:
         lastUpdatedDate:
           description: Date of the last calculation
           type: string
           format: date-time
         lastUpdatedReason:
-          description: List of reasons the summary was updated for
+          description: No longer set; reported empty. Formerly the list of reasons the summary was updated for.
+          deprecated: true
           type: array
           items:
             type: string
@@ -4053,17 +4071,22 @@ components:
           type: string
           format: date-time
         hasOutdatedSince:
+          description: No longer set; reported false.
+          deprecated: true
           type: boolean
         outdatedSince:
-          description: Date of the first user upload after lastData, removed when calculated
+          description: No longer set. Formerly the date of the first user upload after lastData, removed when calculated.
+          deprecated: true
           type: string
           format: date-time
         outdatedSinceLimit:
-          description: Upper limit of the OutdatedSince value to prevent infinite queue duration
+          description: No longer set. Formerly the upper limit of the OutdatedSince value to prevent infinite queue duration.
+          deprecated: true
           type: string
           format: date-time
         outdatedReason:
-          description: List of reasons the summary was marked outdated for
+          description: No longer set; reported empty. Formerly the list of reasons the summary was marked outdated for.
+          deprecated: true
           type: array
           items:
             type: string
@@ -4886,54 +4909,60 @@ components:
         - twiist
         - dexcom
         - abbott
-    glycemicRangesThresholdUpperBound.v1:
+    glycemicRangesThresholds.v1:
       type: object
+      description: 'Named thresholds dividing glucose readings into ranges, expressed in the parent''s units. Values must not be negative. veryLow and veryHigh are optional. A reading exactly at a threshold belongs to the range nearer the target range: at veryLow it is low, at low or high it is in range, and at veryHigh it is high. Values must be whole numbers in mg/dL, or have at most one decimal place in mmol/L, and must be in ascending order (veryLow < low < high < veryHigh, for those that are set); otherwise the request is rejected as a bad request.'
       properties:
-        value:
+        veryLow:
           type: number
-          format: float
+          format: double
+          minimum: 0
+          description: Readings below this value are very low.
+        low:
+          type: number
+          format: double
+          minimum: 0
+          description: Readings below this value are low (or very low, if below veryLow).
+        high:
+          type: number
+          format: double
+          minimum: 0
+          description: Readings above this value are high (or very high, if above veryHigh).
+        veryHigh:
+          type: number
+          format: double
+          minimum: 0
+          description: Readings above this value are very high.
+      required:
+        - low
+        - high
+    glycemicRangesCustom.v1:
+      type: object
+      description: User-defined glycemic ranges. Used when the glycemic ranges type is custom.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 32
+          pattern: ^[A-Za-z0-9][A-Za-z0-9.,()/' -]{0,31}$
+          description: 'Display name of the custom glycemic ranges. Up to 32 characters: letters, digits, spaces, and the punctuation . , - ( ) / '' — the first character must be a letter or digit.'
         units:
           type: string
+          description: Blood glucose units in which all threshold values are expressed.
           enum:
             - mg/dL
             - mmol/L
-      required:
-        - value
-        - units
-    glycemicRangesThreshold.v1:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-        upperBound:
-          $ref: '#/components/schemas/glycemicRangesThresholdUpperBound.v1'
-        inclusive:
-          type: boolean
-          default: false
-          x-go-type-skip-optional-pointer: true
-      required:
-        - name
-        - upperBound
-    glycemicRangesCustom.v1:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
         thresholds:
-          type: array
-          items:
-            $ref: '#/components/schemas/glycemicRangesThreshold.v1'
-          minLength: 4
-          maxLength: 5
+          $ref: '#/components/schemas/glycemicRangesThresholds.v1'
       required:
         - name
+        - units
         - thresholds
       x-go-type-skip-optional-pointer: true
       x-omitzero: true
     glycemicRangesPreset.v1:
       type: string
+      description: Predefined glycemic ranges based on ADA guidelines. Used when the glycemic ranges type is preset.
       minLength: 1
       enum:
         - adaStandard
@@ -4945,6 +4974,11 @@ components:
         - ADAPregnancyType1
         - ADAPregnancyType2
         - ADAHighRisk
+      x-enumDescriptions:
+        adaStandard: ADA standard ranges for most adults with type 1 or type 2 diabetes.
+        adaPregnancyType1: ADA ranges for pregnancy with type 1 diabetes.
+        adaPregnancyType2: ADA ranges for pregnancy with type 2 or gestational diabetes.
+        adaHighRisk: ADA ranges for older or high-risk individuals.
       default: adaStandard
       x-go-type-skip-optional-pointer: true
       x-omitzero: true
@@ -4952,6 +4986,7 @@ components:
       properties:
         type:
           type: string
+          description: 'Which kind of glycemic ranges is in use: preset selects one of the predefined ranges named by preset; custom uses the ranges defined in custom.'
           enum:
             - preset
             - custom

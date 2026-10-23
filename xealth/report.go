@@ -72,13 +72,8 @@ func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, c
 	switch patient.GlycemicRanges.Type {
 	case patients.GlycemicRangeTypeCustom:
 		query.Add("glycemicRangeType", string(patients.GlycemicRangeTypeCustom))
-		for _, threshold := range patient.GlycemicRanges.Custom.Thresholds {
-			name := &bytes.Buffer{}
-			w := csv.NewWriter(name)
-			w.Write([]string{threshold.Name})
-			w.Flush()
-			query.Add("glycemicRangeThresholds", fmt.Sprintf("name,%s,upperBound.value,%f,upperBound.units,%s,inclusive,%t", strings.TrimSpace(name.String()), threshold.UpperBound.Value, threshold.UpperBound.Units, threshold.Inclusive))
-		}
+		query.Add("glycemicRangeThresholds",
+			formatGlycemicRangeThresholds(patient.GlycemicRanges.Custom))
 	case patients.GlycemicRangeTypePreset:
 		query.Add("glycemicRangeType", string(patients.GlycemicRangeTypePreset))
 		query.Add("glycemicRangePreset", string(patient.GlycemicRanges.Preset))
@@ -96,6 +91,28 @@ func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, c
 	query.Add(restrictedTokenKey, token)
 	u.RawQuery = query.Encode()
 	return u, nil
+}
+
+// formatGlycemicRangeThresholds encodes custom glycemic ranges as comma-separated key,
+// value pairs, with the name CSV-escaped. The export service parses this format, so keep
+// the two in sync.
+func formatGlycemicRangeThresholds(custom patients.GlycemicRangesCustom) string {
+	name := &bytes.Buffer{}
+	w := csv.NewWriter(name)
+	w.Write([]string{custom.Name})
+	w.Flush()
+	fields := []string{"name", strings.TrimSpace(name.String()), "units", custom.Units}
+	if custom.Thresholds.VeryLow != nil {
+		fields = append(fields, "veryLow", fmt.Sprintf("%f", *custom.Thresholds.VeryLow))
+	}
+	fields = append(fields,
+		"low", fmt.Sprintf("%f", custom.Thresholds.Low),
+		"high", fmt.Sprintf("%f", custom.Thresholds.High),
+	)
+	if custom.Thresholds.VeryHigh != nil {
+		fields = append(fields, "veryHigh", fmt.Sprintf("%f", *custom.Thresholds.VeryHigh))
+	}
+	return strings.Join(fields, ",")
 }
 
 func getReportEndDate(patient patients.Patient) (endDate time.Time) {

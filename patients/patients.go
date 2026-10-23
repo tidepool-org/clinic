@@ -171,26 +171,24 @@ func (g GlycemicRangesPreset) String() string {
 }
 
 type GlycemicRangesCustom struct {
-	Name       string                   `bson:"name"`
-	Thresholds []GlycemicRangeThreshold `bson:"thresholds"`
+	Name       string                  `bson:"name"`
+	Units      string                  `bson:"units"`
+	Thresholds GlycemicRangeThresholds `bson:"thresholds"`
 }
 
 // IsZero implements bsoncodec.Zeroer
 func (g GlycemicRangesCustom) IsZero() bool {
-	return g.Name == "" && len(g.Thresholds) == 0
+	return g.Name == "" && g.Units == "" && g.Thresholds == GlycemicRangeThresholds{}
 }
 
 var _ bsoncodec.Zeroer = (*GlycemicRangesCustom)(nil)
 
-type GlycemicRangeThreshold struct {
-	Name       string         `bson:"name"`
-	UpperBound ValueWithUnits `bson:"upperBound"`
-	Inclusive  bool           `bson:"inclusive"`
-}
-
-type ValueWithUnits struct {
-	Value float32 `bson:"value"`
-	Units string  `bson:"units"`
+// GlycemicRangeThresholds are expressed in their parent GlycemicRangesCustom's Units.
+type GlycemicRangeThresholds struct {
+	VeryLow  *float64 `bson:"veryLow,omitempty"`
+	Low      float64  `bson:"low"`
+	High     float64  `bson:"high"`
+	VeryHigh *float64 `bson:"veryHigh,omitempty"`
 }
 
 func (p Patient) IsCustodial() bool {
