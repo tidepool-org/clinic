@@ -173,8 +173,13 @@ func RandomPermissions() patients.Permissions {
 }
 
 func RandomDataSources() patients.DataSources {
+	createdTime := time.Now().UTC().Truncate(time.Millisecond)
 	return []patients.DataSource{
-		{State: test.Faker.RandomStringElement([]string{"pending", "connected"}), ProviderName: test.Faker.Company().Name()},
+		{
+			State:        test.Faker.RandomStringElement([]string{"pending", "connected"}),
+			ProviderName: test.Faker.Company().Name(),
+			CreatedTime:  &createdTime,
+		},
 	}
 }
 
