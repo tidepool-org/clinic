@@ -48,31 +48,33 @@ var (
 		Note:      &permission,
 	}
 
-	// ValidDiagnosisTypes is the authoritative source for data model patient
-	// diagnosis types. This MUST stay in sync with the API DiagnosisTypeV1 enum
-	// values defined in the clinic client/schema.
-	ValidDiagnosisTypes = map[DiagnosisType]struct{}{
-		"gestational":   {},
-		"lada":          {},
-		"mody":          {},
-		"notApplicable": {},
-		"other":         {},
-		"prediabetes":   {},
-		"type1":         {},
-		"type2":         {},
-		"type3c":        {},
+	// ValidDiagnosisTypes is a mapping of valid lowercased data model patient
+	// model types to a proper DiagnosisType. It is the authoritative source for
+	// data model patient diagnosis types. This MUST stay in sync with the API
+	// DiagnosisTypeV1 enum values defined in the clinic client/schema.
+	ValidDiagnosisTypes = map[string]DiagnosisType{
+		"gestational":   DiagnosisType("gestational"),
+		"lada":          DiagnosisType("lada"),
+		"mody":          DiagnosisType("mody"),
+		"notapplicable": DiagnosisType("notApplicable"),
+		"other":         DiagnosisType("other"),
+		"prediabetes":   DiagnosisType("prediabetes"),
+		"type1":         DiagnosisType("type1"),
+		"type2":         DiagnosisType("type2"),
+		"type3c":        DiagnosisType("type3c"),
 	}
 	DiagnosisTypeNotApplicable DiagnosisType = DiagnosisType("notApplicable")
 
-	// ValidGlycemicRangesPresets is the authoritative source for data model
-	// patient non-custom glycemic ranges presets. This MUST stay in sync with
-	// the API GlycemicRangesPresetV1 enum values defined in the clinic
-	// client/schema.
-	ValidGlycemicRangesPresets = map[GlycemicRangesPreset]struct{}{
-		"adaHighRisk":       {},
-		"adaPregnancyType1": {},
-		"adaPregnancyType2": {},
-		"adaStandard":       {},
+	// ValidGlycemicRangesPresets is a mapping of valid lowercased non-custom
+	// glycemic ranges preset names to their proper names. It is the
+	// authoritative source for data model patient non-custom glycemic ranges
+	// presets. This MUST stay in sync with the API GlycemicRangesPresetV1 enum
+	// values defined in the clinic client/schema.
+	ValidGlycemicRangesPresets = map[string]GlycemicRangesPreset{
+		"adahighrisk":       GlycemicRangesPreset("adaHighRisk"),
+		"adapregnancytype1": GlycemicRangesPreset("adaPregnancyType1"),
+		"adapregnancytype2": GlycemicRangesPreset("adaPregnancyType2"),
+		"adastandard":       GlycemicRangesPreset("adaStandard"),
 	}
 
 	// DefaultGlycemicPreset is the preferred default preset to return when no
@@ -412,19 +414,21 @@ const (
 )
 
 func ParseDiagnosisType(raw string) (DiagnosisType, error) {
-	dt := DiagnosisType(strings.TrimSpace(raw))
-	if _, ok := ValidDiagnosisTypes[dt]; !ok {
+	dt := strings.ToLower(strings.TrimSpace(raw))
+	validDT, ok := ValidDiagnosisTypes[dt]
+	if !ok {
 		return "", fmt.Errorf(`%w: %q`, ErrInvalidDiagnosisType, raw)
 	}
-	return dt, nil
+	return validDT, nil
 }
 
 // ParseGlycemicRangesPreset parses a string into a non-custom
 // GlycemicRangesPreset. It never returns an error.
 func ParseGlycemicRangesPreset(raw string, defaultPreset GlycemicRangesPreset) GlycemicRangesPreset {
-	preset := GlycemicRangesPreset(strings.TrimSpace(raw))
-	if _, ok := ValidGlycemicRangesPresets[preset]; !ok {
+	preset := strings.ToLower(strings.TrimSpace(raw))
+	validPreset, ok := ValidGlycemicRangesPresets[preset]
+	if !ok {
 		return defaultPreset
 	}
-	return preset
+	return validPreset
 }

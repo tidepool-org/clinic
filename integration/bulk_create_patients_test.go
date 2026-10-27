@@ -201,17 +201,19 @@ Jane Doe,1971-02-03,1111112,working+test+custodial+jane+doe@tidepool.org,type2,a
 Max Mustermann,1975-09-09,1111113,,type1,adaStandard,,N
 Duplicate Existing Email,1995-01-23,1111114,existing+patient+email@tidepool.org,,adaStandard,duplicate email,N
 Glycemic Target,1960-10-15,1111115,,,adaHighRisk,,N
+Case Insensitive Glycemic Target,1959-11-16,1111116,,,adaHighRisk,,N
 Duplicate Existing MRN,1972-03-04,EXISTINGMRN,,,adaStandard,duplicate MRN,N
 Invalid Diabetes Type Defaults to Blank,2005-01-03,333333333,,,adaStandard,,N
 notApplicable Diabetes Type Defaults To Blank,1993-01-13,5555555,,,adaStandard,,N
+Case Insensitive Diagnosis Type,1979-11-16,6666666,,type2,adaStandard,,N
 Invalid Glycemic Target Defaults To adaStandard,1980-10-15,777777,,type1,adaStandard,,N
 Within Duplicate MRN I,1980-02-03,44444444,,,adaStandard,duplicate MRN,N
 Within Duplicate MRN II,1980-02-04,44444444,,,adaStandard,duplicate MRN,N
 Within Duplicate Email I,1980-04-03,44444445,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N
 Within Duplicate Email II,1980-04-04,44444446,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N
 Duplicate Email And MRN,1975-07-04,EXISTINGMRN,existing+patient+email@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N
-Patients Processed,14
-Patients Created,7
+Patients Processed,16
+Patients Created,9
 Patients Skipped,7
 Patients Emailed,2
 Patients Failed Creation,0
@@ -223,7 +225,7 @@ Duplicate emails count,4
 				// Count new patients
 				count, err := database.Collection("patients").CountDocuments(ctx, bson.M{"clinicId": clinicId, "userId": bson.M{"$ne": existingPatient.UserId}})
 				Expect(err).ToNot(HaveOccurred())
-				Expect(count).To(BeNumerically("==", 7))
+				Expect(count).To(BeNumerically("==", 9))
 			})
 		})
 	})
