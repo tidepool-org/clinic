@@ -203,7 +203,7 @@ Duplicate Existing Email,1995-01-23,1111114,existing+patient+email@tidepool.org,
 Glycemic Target,1960-10-15,1111115,,,adaHighRisk,,N
 Case Insensitive Glycemic Target,1959-11-16,1111116,,,adaHighRisk,,N
 Duplicate Existing MRN,1972-03-04,EXISTINGMRN,,,adaStandard,duplicate MRN,N
-Invalid Diabetes Type Defaults to Blank,2005-01-03,333333333,,,adaStandard,,N
+Invalid Diabetes Type Defaults to Blank,2005-01-03,333333333,,,adaStandard,invalid diagnosis type,N
 notApplicable Diabetes Type Defaults To Blank,1993-01-13,5555555,,,adaStandard,,N
 Case Insensitive Diagnosis Type,1979-11-16,6666666,,type2,adaStandard,,N
 Invalid Glycemic Target Defaults To adaStandard,1980-10-15,777777,,type1,adaStandard,,N

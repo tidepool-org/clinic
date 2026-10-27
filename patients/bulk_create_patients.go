@@ -21,13 +21,15 @@ var (
 	ErrCSVFewerThanMinCols = &BlockingInputCSVError{"row has less than the minimum number of required columns"}
 	ErrCSVEmpty            = &BlockingInputCSVError{"empty CSV"}
 
-	ErrCSVPatientMissingName      = &BlockingInputCSVError{"missing name"}
-	ErrCSVPatientMissingBirthdate = &BlockingInputCSVError{"missing birthdate"}
-	ErrCSVPatientMissingMRN       = &BlockingInputCSVError{"missing MRN"}
-	ErrCSVPatientInvalidBirthdate = &ExcludedPatientInputError{"invalid birthdate"}
-	ErrCSVPatientInvalidEmail     = errors.New("invalid email")
-	ErrCSVPatientDuplicateMRN     = &ExcludedPatientInputError{"duplicate MRN"}
-	ErrCSVPatientDuplicateEmail   = &ExcludedPatientInputError{"duplicate email"}
+	ErrCSVPatientMissingName           = &BlockingInputCSVError{"missing name"}
+	ErrCSVPatientMissingBirthdate      = &BlockingInputCSVError{"missing birthdate"}
+	ErrCSVPatientMissingMRN            = &BlockingInputCSVError{"missing MRN"}
+	ErrCSVPatientInvalidBirthdate      = &ExcludedPatientInputError{"invalid birthdate"}
+	ErrCSVPatientInvalidEmail          = errors.New("invalid email")
+	ErrCSVPatientInvalidDiagnosisType  = errors.New("invalid diagnosis type")
+	ErrCSVPatientInvalidGlycemicPreset = errors.New("invalid glycemic preset")
+	ErrCSVPatientDuplicateMRN          = &ExcludedPatientInputError{"duplicate MRN"}
+	ErrCSVPatientDuplicateEmail        = &ExcludedPatientInputError{"duplicate email"}
 )
 
 const (
@@ -401,9 +403,11 @@ func NewPatientFromColumns(rowNum int, record []string, clinicId primitive.Objec
 		raw := strings.TrimSpace(record[ColDiagnosisType])
 		if raw != "" {
 			dt, err := ParseDiagnosisType(record[ColDiagnosisType])
-			// Diagnosis type is only set if it's one of the supported types in [ValidDiagnosisTypes] AND it's not the non applicable type, [DiagnosisTypeNotApplicable].
+			// Diagnosis type is only set if it's one of the supported types in [ValidDiagnosisTypes] AND it's not the type non applicable, [DiagnosisTypeNotApplicable], otherwise it is set to blank / nil.
 			if err == nil && dt != DiagnosisTypeNotApplicable {
 				diagnosisType = &dt
+			} else if err != nil {
+				errs = append(errs, ErrCSVPatientInvalidDiagnosisType)
 			}
 		}
 	}

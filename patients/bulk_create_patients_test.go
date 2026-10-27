@@ -68,7 +68,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Invalid Glycemic Target Defaults To adaStandard", "1955-01-02", "123456793", "dev@tidepool.org", "", "adaStandard", "", ""},
 				{"Case Insensitive Glycemic Target", "1954-02-03", "123456797", "high+risk+case+insensitive@tidepool.org", "", "adaHighRisk", "", ""},
 				{"Case Insensitive DiagnosisType", "1954-02-04", "123456798", "diagnosis+type+case+insensitive@tidepool.org", "type1", "adaStandard", "", ""},
-				{"Invalid Diabetes Type Defaults To Blank", "1965-11-23", "3333333", "invalid+type@tidepool.org", "", "adaStandard", "", ""},
+				{"Invalid Diabetes Type Defaults To Blank", "1965-11-23", "3333333", "invalid+type@tidepool.org", "", "adaStandard", "invalid diagnosis type", ""},
 				{"Diabetes Type notApplicable Defaults to Blank", "1966-10-22", "4444444", "not+applicable@tidepool.org", "", "adaStandard", "", ""},
 				{"Diabetes Type", "1955-01-02", "123456794", "diabetes+type@tidepool.org", "type1", "adaStandard", "", ""},
 				{"Test extra input columns are not included in output", "1960-02-03", "88888888", "extra+columns@tidepool.org", "type1", "adaStandard", "", ""},
