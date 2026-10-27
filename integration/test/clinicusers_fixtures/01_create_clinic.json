@@ -1,0 +1,18 @@
+{
+  "address": "800 User Way",
+  "city": "San Francisco",
+  "clinicSize": "0-249",
+  "clinicType": "provider_practice",
+  "country": "USA",
+  "name": "Clinic User Test Clinic",
+  "phoneNumbers": [
+    {
+      "number": "+15551115555"
+    }
+  ],
+  "postalCode": "90210",
+  "preferredBgUnits": "mg/dL",
+  "state": "California",
+  "timezone": "US/Pacific",
+  "website": "http://www.clinicusertest.com"
+}
