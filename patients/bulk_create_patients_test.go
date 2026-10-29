@@ -117,18 +117,20 @@ var _ = Describe("Bulk Account Creation", func() {
 			ctx := context.Background()
 			invitedBy := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 			records := [][]string{
-				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
+				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", ""},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk"},
+				{"Internal DB Creation Error", "1953-02-03", "123456786", "internal+db+error@tidepool.org", "", "adaStandard"},
 			}
 			expectedOutput := [][]string{
 				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y"},
-				{"Patients Processed", "2"},
+				{"Internal DB Creation Error", "1953-02-03", "123456786", "internal+db+error@tidepool.org", "", "adaStandard", "internal database error", "N"},
+				{"Patients Processed", "3"},
 				{"Patients Created", "1"},
 				{"Patients Skipped", "1"},
 				{"Patients Emailed", "1"},
-				{"Patients Failed Creation", "0"},
+				{"Patients Failed Creation", "1"},
 				{"Duplicate MRNs count", "0"},
 				{"Duplicate emails count", "1"},
 			}
@@ -158,11 +160,18 @@ var _ = Describe("Bulk Account Creation", func() {
 				AnyTimes()
 			patientSvc.EXPECT().
 				Create(gomock.Any(), gomock.Any()).
-				Return(&patients.Patient{}, nil).
-				Times(1)
-
+				DoAndReturn(
+					func(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
+						if pstr(patient.Email) == "internal+db+error@tidepool.org" {
+							return nil, errors.New("internal database error")
+						}
+						return &patients.Patient{
+							UserId: patient.UserId,
+						}, nil
+					}).
+				Times(2)
 			_, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, &invitedBy)
-			Expect(len(parsedPatients)).To(Equal(2))
+			Expect(len(parsedPatients)).To(Equal(3))
 			Expect(err).ToNot(HaveOccurred())
 			outputRecords := patients.CreateCSVPatients(ctx, patientSvc, header, parsedPatients)
 			Expect(outputRecords).To(Equal(expectedOutput))
@@ -362,4 +371,11 @@ John Adams,1951-01-02,123456780,john+adams@tidepool.org`
 
 func strp(s string) *string {
 	return &s
+}
+
+func pstr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
