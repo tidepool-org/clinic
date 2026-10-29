@@ -125,7 +125,7 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?", "Status"},
 				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N", "skipped"},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y", "created"},
-				{"Internal DB Creation Error", "1953-02-03", "123456786", "internal+db+error@tidepool.org", "", "adaStandard", "internal database error", "N", "error"},
+				{"Internal DB Creation Error", "1953-02-03", "123456786", "internal+db+error@tidepool.org", "", "adaStandard", "internal database error", "N", "failed"},
 				{"Patients Processed", "3"},
 				{"Patients Created", "1"},
 				{"Patients Skipped", "1"},

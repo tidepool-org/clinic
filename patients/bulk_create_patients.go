@@ -315,7 +315,7 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 				parsedPatient.Columns[OutputColErrors] = parsedPatient.ErrorsDescription()
 				numFailedCreation++
 				parsedPatient.Columns[OutputColEmailed] = "N"
-				parsedPatient.Columns[OutputColState] = "error"
+				parsedPatient.Columns[OutputColState] = "failed"
 			} else {
 				numCreated++
 				parsedPatient.Columns[OutputColState] = "created"
