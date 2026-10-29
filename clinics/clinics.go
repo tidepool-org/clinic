@@ -212,6 +212,7 @@ type MRNSettings struct {
 type TagsSettings struct {
 	Codes     []string `bson:"codes"`
 	Separator *string  `bson:"separator"`
+	Append    bool     `bson:"append,omitempty"`
 }
 
 type FlowsheetSettings struct {

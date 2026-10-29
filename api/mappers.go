@@ -1052,6 +1052,7 @@ func NewEHRSettingsDto(settings *clinics.EHRSettings) *EhrSettingsV1 {
 		Tags: EhrTagsSettingsV1{
 			Codes:     &settings.Tags.Codes,
 			Separator: settings.Tags.Separator,
+			Append:    settings.Tags.Append,
 		},
 		Flowsheets: EhrFlowsheetSettingsV1{
 			Icode: settings.Flowsheets.Icode,
