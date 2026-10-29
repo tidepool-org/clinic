@@ -117,19 +117,19 @@ var _ = Describe("BulkCreatePatients Integration Test", Ordered, func() {
 				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
 				body, err := io.ReadAll(rec.Result().Body)
 				Expect(err).ToNot(HaveOccurred())
-				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?
-Thomas Jefferson,1952-01-09,112233,working+test+custodial+thomas@tidepool.org,,adaStandard,,
-Ben Franklin,1952-01-10,112234,,,adaStandard,,
-George Washington,1950-01-02,123456789,working+test+custodial+george@tidepool.org,,adaStandard,,
-Duplicate MRN,1951-01-02,DUPLICATEMRN,duplicate+mrn+1@tidepool.org,,adaStandard,duplicate MRN,
-Duplicate MRN II,1949-03-04,DUPLICATEMRN,duplicate+mrn+2@tidepool.org,,adaStandard,duplicate MRN,
-Existing Email In System,1990-06-21,113322445577,existing+patient+email@tidepool.org,,adaStandard,duplicate email,
-Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org,,adaStandard,duplicate email,
-Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org,,adaStandard,duplicate email,
-Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",
-Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",
-Bad DOB,9999/88/01,6666666,bad+dob@tidepool.org,,adaStandard,"invalid birthdate: row 11, column 2",
-Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"invalid email: row 12, column 4",
+				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?,Status
+Thomas Jefferson,1952-01-09,112233,working+test+custodial+thomas@tidepool.org,,adaStandard,,,
+Ben Franklin,1952-01-10,112234,,,adaStandard,,,
+George Washington,1950-01-02,123456789,working+test+custodial+george@tidepool.org,,adaStandard,,,
+Duplicate MRN,1951-01-02,DUPLICATEMRN,duplicate+mrn+1@tidepool.org,,adaStandard,duplicate MRN,,
+Duplicate MRN II,1949-03-04,DUPLICATEMRN,duplicate+mrn+2@tidepool.org,,adaStandard,duplicate MRN,,
+Existing Email In System,1990-06-21,113322445577,existing+patient+email@tidepool.org,,adaStandard,duplicate email,,
+Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org,,adaStandard,duplicate email,,
+Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org,,adaStandard,duplicate email,,
+Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",,
+Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",,
+Bad DOB,9999/88/01,6666666,bad+dob@tidepool.org,,adaStandard,"invalid birthdate: row 11, column 2",,
+Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"invalid email: row 12, column 4",,
 `
 				Expect(string(body)).To(Equal(expectedResBody))
 				// Expect no actual patients created.
@@ -156,19 +156,19 @@ Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"i
 				body, err := io.ReadAll(rec.Result().Body)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
-				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?
-Thomas Jefferson,1952-01-09,112233,working+test+custodial+thomas@tidepool.org,,adaStandard,,Y
-Ben Franklin,1952-01-10,112234,,,adaStandard,,N
-George Washington,1950-01-02,123456789,working+test+custodial+george@tidepool.org,,adaStandard,,Y
-Duplicate MRN,1951-01-02,DUPLICATEMRN,duplicate+mrn+1@tidepool.org,,adaStandard,duplicate MRN,N
-Duplicate MRN II,1949-03-04,DUPLICATEMRN,duplicate+mrn+2@tidepool.org,,adaStandard,duplicate MRN,N
-Existing Email In System,1990-06-21,113322445577,existing+patient+email@tidepool.org,,adaStandard,duplicate email,N
-Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org,,adaStandard,duplicate email,N
-Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org,,adaStandard,duplicate email,N
-Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N
-Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N
-Bad DOB,9999/88/01,6666666,bad+dob@tidepool.org,,adaStandard,"invalid birthdate: row 11, column 2",N
-Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"invalid email: row 12, column 4",N (invalid email)
+				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?,Status
+Thomas Jefferson,1952-01-09,112233,working+test+custodial+thomas@tidepool.org,,adaStandard,,Y,created
+Ben Franklin,1952-01-10,112234,,,adaStandard,,N,created
+George Washington,1950-01-02,123456789,working+test+custodial+george@tidepool.org,,adaStandard,,Y,created
+Duplicate MRN,1951-01-02,DUPLICATEMRN,duplicate+mrn+1@tidepool.org,,adaStandard,duplicate MRN,N,skipped
+Duplicate MRN II,1949-03-04,DUPLICATEMRN,duplicate+mrn+2@tidepool.org,,adaStandard,duplicate MRN,N,skipped
+Existing Email In System,1990-06-21,113322445577,existing+patient+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N,skipped
+Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N,skipped
+Bad DOB,9999/88/01,6666666,bad+dob@tidepool.org,,adaStandard,"invalid birthdate: row 11, column 2",N,skipped
+Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"invalid email: row 12, column 4",N (invalid email),created
 Patients Processed,12
 Patients Created,4
 Patients Skipped,8
@@ -195,23 +195,23 @@ Duplicate emails count,5
 				Expect(rec.Result()).ToNot(BeNil())
 				body, err := io.ReadAll(rec.Result().Body)
 				Expect(err).ToNot(HaveOccurred())
-				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?
-John Doe,1970-01-02,1111111,working+test+custodial+john+doe@tidepool.org,type1,adaStandard,,Y
-Jane Doe,1971-02-03,1111112,working+test+custodial+jane+doe@tidepool.org,type2,adaStandard,,Y
-Max Mustermann,1975-09-09,1111113,,type1,adaStandard,,N
-Duplicate Existing Email,1995-01-23,1111114,existing+patient+email@tidepool.org,,adaStandard,duplicate email,N
-Glycemic Target,1960-10-15,1111115,,,adaHighRisk,,N
-Case Insensitive Glycemic Target,1959-11-16,1111116,,,adaHighRisk,,N
-Duplicate Existing MRN,1972-03-04,EXISTINGMRN,,,adaStandard,duplicate MRN,N
-Invalid Diabetes Type Defaults to Blank,2005-01-03,333333333,,,adaStandard,invalid diagnosis type,N
-notApplicable Diabetes Type Defaults To Blank,1993-01-13,5555555,,,adaStandard,,N
-Case Insensitive Diagnosis Type,1979-11-16,6666666,,type2,adaStandard,,N
-Invalid Glycemic Target Defaults To adaStandard,1980-10-15,777777,,type1,adaStandard,,N
-Within Duplicate MRN I,1980-02-03,44444444,,,adaStandard,duplicate MRN,N
-Within Duplicate MRN II,1980-02-04,44444444,,,adaStandard,duplicate MRN,N
-Within Duplicate Email I,1980-04-03,44444445,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N
-Within Duplicate Email II,1980-04-04,44444446,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N
-Duplicate Email And MRN,1975-07-04,EXISTINGMRN,existing+patient+email@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N
+				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?,Status
+John Doe,1970-01-02,1111111,working+test+custodial+john+doe@tidepool.org,type1,adaStandard,,Y,created
+Jane Doe,1971-02-03,1111112,working+test+custodial+jane+doe@tidepool.org,type2,adaStandard,,Y,created
+Max Mustermann,1975-09-09,1111113,,type1,adaStandard,,N,created
+Duplicate Existing Email,1995-01-23,1111114,existing+patient+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Glycemic Target,1960-10-15,1111115,,,adaHighRisk,,N,created
+Case Insensitive Glycemic Target,1959-11-16,1111116,,,adaHighRisk,,N,created
+Duplicate Existing MRN,1972-03-04,EXISTINGMRN,,,adaStandard,duplicate MRN,N,skipped
+Invalid Diabetes Type Defaults to Blank,2005-01-03,333333333,,,adaStandard,invalid diagnosis type,N,created
+notApplicable Diabetes Type Defaults To Blank,1993-01-13,5555555,,,adaStandard,,N,created
+Case Insensitive Diagnosis Type,1979-11-16,6666666,,type2,adaStandard,,N,created
+Invalid Glycemic Target Defaults To adaStandard,1980-10-15,777777,,type1,adaStandard,,N,created
+Within Duplicate MRN I,1980-02-03,44444444,,,adaStandard,duplicate MRN,N,skipped
+Within Duplicate MRN II,1980-02-04,44444444,,,adaStandard,duplicate MRN,N,skipped
+Within Duplicate Email I,1980-04-03,44444445,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Within Duplicate Email II,1980-04-04,44444446,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Duplicate Email And MRN,1975-07-04,EXISTINGMRN,existing+patient+email@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N,skipped
 Patients Processed,16
 Patients Created,9
 Patients Skipped,7

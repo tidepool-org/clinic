@@ -73,8 +73,9 @@ const (
 
 const (
 	// Output CSV is returned w/ original rows along with 2 additional columns
-	OutputColStatus = MaxInputColumns + iota
+	OutputColErrors = MaxInputColumns + iota
 	OutputColEmailed
+	OutputColState
 	NumOutputCols
 )
 
@@ -100,7 +101,7 @@ func ShouldSkipPatientCreation(err error) bool {
 // ParsedCSVPatient represents the potential patient to be created from a CSV
 // row along with a copy of the original input CSV row with added information
 // in [Columns]. Patient may be nil if there is an error with the patient,
-// which would be noted in [OutputColStatus] of [Columns]
+// which would be noted in [OutputColErrors] of [Columns]
 type ParsedCSVPatient struct {
 	Columns []string
 	// Errs is an accumulated slice of errors that have been encountered
@@ -109,9 +110,17 @@ type ParsedCSVPatient struct {
 	Patient *Patient
 }
 
-// Err returns the accumulated non-fatal errors encountered for a patient
+// Err returns the accumulated errors encountered for a patient
 func (p *ParsedCSVPatient) Err() error {
 	return errors.Join(p.Errs...)
+}
+
+func (p *ParsedCSVPatient) ErrorsDescription() string {
+	errs := make([]string, 0, len(p.Errs))
+	for _, err := range p.Errs {
+		errs = append(errs, err.Error())
+	}
+	return strings.Join(errs, ", ")
 }
 
 func (p *ParsedCSVPatient) AppendErr(err error) {
@@ -135,7 +144,7 @@ func (p *ParsedCSVPatient) Emailable() bool {
 // created along with their row information in parsedPatients. Individual
 // errors that would prevent a patient from being created but that would NOT
 // stop other patients from being created, if any, are outputed in the "reason"
-// column defined as the slice index [OutputColStatus] in
+// column defined as the slice index [OutputColErrors] in
 // [ParsedCSVPatient.Columns] in which case [ParsedCSVPatient.Patient] would be
 // empty. There should be NO CSV input header row. A returned error can be
 // checked with [IsBulkPatientBlockingInputError] to indicate to the caller an input
@@ -154,6 +163,7 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 		"Glycemic Target",
 		"Reason",
 		"Emailed?",
+		"Status",
 	}
 	outputRows = append(outputRows, outputHeader)
 
@@ -254,13 +264,7 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 		if email := strings.ToLower(pstr(pp.Patient.Email)); email != "" && emailCounts[email] > 1 {
 			pp.AppendErr(ErrCSVPatientDuplicateEmail)
 		}
-		if len(pp.Errs) > 0 {
-			errs := make([]string, 0, len(pp.Errs))
-			for _, err := range pp.Errs {
-				errs = append(errs, err.Error())
-			}
-			pp.Columns[OutputColStatus] = strings.Join(errs, ", ")
-		}
+		pp.Columns[OutputColErrors] = pp.ErrorsDescription()
 	}
 	return outputRows, outputHeader, parsedPatients, errors.Join(fatalErrs...)
 }
@@ -303,19 +307,18 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 		}
 		if ShouldSkipPatientCreation(patientErrs) {
 			numSkipped++
+			parsedPatient.Columns[OutputColState] = "skipped"
 		} else {
 			_, err := patientSvc.Create(ctx, *parsedPatient.Patient)
 			if err != nil {
-				status := parsedPatient.Columns[OutputColStatus]
-				if status != "" {
-					status += ", "
-				}
-				status += err.Error()
+				parsedPatient.AppendErr(err)
+				parsedPatient.Columns[OutputColErrors] = parsedPatient.ErrorsDescription()
 				numFailedCreation++
-				parsedPatient.Columns[OutputColStatus] = status
 				parsedPatient.Columns[OutputColEmailed] = "N"
+				parsedPatient.Columns[OutputColState] = "error"
 			} else {
 				numCreated++
+				parsedPatient.Columns[OutputColState] = "created"
 				if parsedPatient.Emailable() {
 					// Since the actual emaling is done outside the clinic service by
 					// hydrophone, we assume any patients with emails that were
