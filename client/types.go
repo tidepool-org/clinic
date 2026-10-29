@@ -1357,7 +1357,7 @@ type CreatePatientV1 struct {
 	Mrn         *string               `json:"mrn,omitempty"`
 	Permissions *PatientPermissionsV1 `json:"permissions,omitempty"`
 	Sites       []SiteV1              `json:"sites,omitzero"`
-	Tags        *PatientTagIdsV1      `json:"tags"`
+	Tags        *PatientTagIdsV1      `json:"tags,omitempty,omitzero"`
 }
 
 // DataSourceV1 defines model for dataSource.v1.
@@ -1622,6 +1622,9 @@ type NameV1 = string
 // ObjectIdV1 String representation of a resource id
 type ObjectIdV1 = string
 
+// ObjectIdOrZeroV1 A resource id, or the underscore sentinel `_` meaning "records with none assigned".
+type ObjectIdOrZeroV1 = string
+
 // ObjectidV1 String representation of a resource id
 type ObjectidV1 = string
 
@@ -1651,7 +1654,7 @@ type PatientV1 struct {
 
 	// Summary A summary of a patients recent data
 	Summary *PatientSummaryV1 `json:"summary,omitempty"`
-	Tags    *PatientTagIdsV1  `json:"tags"`
+	Tags    *PatientTagIdsV1  `json:"tags,omitempty,omitzero"`
 
 	// TargetDevices When uploading data, the user selects a target device (typically
 	// make and model) of their data source (i.e. meter or pump) from a
@@ -1846,6 +1849,9 @@ type SiteCreationV1 struct {
 // SiteIdV1 defines model for siteId.v1.
 type SiteIdV1 = string
 
+// SiteIdsV1 defines model for siteIds.v1.
+type SiteIdsV1 = []SiteIdV1
+
 // SiteNameV1 The site's name.
 type SiteNameV1 = string
 
@@ -1942,7 +1948,8 @@ type TideConfigV1 struct {
 
 	// SchemaVersion TIDE schema version
 	SchemaVersion int              `json:"schemaVersion"`
-	Tags          *PatientTagIdsV1 `json:"tags"`
+	Sites         *SiteIdsV1       `json:"sites,omitempty,omitzero"`
+	Tags          *PatientTagIdsV1 `json:"tags,omitempty,omitzero"`
 
 	// VeryHighGlucoseThreshold Minimum exclusive threshold in mmol/L for categorizing if a glucose value is very high as established by the AACE.
 	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold"`
@@ -1974,7 +1981,7 @@ type TidePatientV1 struct {
 	// Id String representation of a Tidepool User ID. Old style IDs are 10-digit strings consisting of only hexadeximcal digits. New style IDs are 36-digit [UUID v4](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random))
 	Id      *Tidepooluserid   `json:"id,omitempty"`
 	Reviews []PatientReviewV1 `json:"reviews"`
-	Tags    *PatientTagIdsV1  `json:"tags"`
+	Tags    *PatientTagIdsV1  `json:"tags,omitempty,omitzero"`
 }
 
 // TideResponseV1 Report of at-risk patients based on specific grouping criteria
@@ -2523,11 +2530,11 @@ type ListPatientsParams struct {
 	// BgmLastDataTo Exclusive
 	BgmLastDataTo *time.Time `form:"bgm.lastDataTo,omitempty" json:"bgm.lastDataTo,omitempty"`
 
-	// Tags Comma-separated list of patient tag IDs
-	Tags *[]string `form:"tags,omitempty" json:"tags,omitempty"`
+	// Tags Comma-separated list of patient tag IDs. The single value `_` filters for patients without any tags assigned; combining `_` with tag IDs is rejected.
+	Tags *[]ObjectIdOrZeroV1 `form:"tags,omitempty" json:"tags,omitempty"`
 
-	// Sites Comma-separated list of clinic site IDs
-	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
+	// Sites Comma-separated list of clinic site IDs. The single value `_` filters for patients without any sites assigned; combining `_` with site IDs is rejected.
+	Sites *[]ObjectIdOrZeroV1 `form:"sites,omitempty" json:"sites,omitempty"`
 
 	// OmitNonStandardRanges Whether patients whose glycemic ranges selection is *not*
 	// the ADA standard ranges (e.g. as used by the TIDE report)
@@ -2540,8 +2547,8 @@ type TideReportParams struct {
 	// Period Time Period to display
 	Period string `form:"period" json:"period"`
 
-	// Tags Comma-separated list of patient tag IDs
-	Tags []ObjectIdV1 `form:"tags" json:"tags"`
+	// Tags Comma-separated list of patient tag IDs. If provided, only patients tagged with all of the given tags are included in the report. An empty value is ignored, as if the parameter were omitted, and patients are included regardless of their tags.
+	Tags []ObjectIdV1 `form:"tags,omitempty" json:"tags,omitempty"`
 
 	// LastDataCutoff Inclusive minimum of date of last data from a patient.
 	LastDataCutoff time.Time `form:"lastDataCutoff" json:"lastDataCutoff"`
@@ -2551,6 +2558,9 @@ type TideReportParams struct {
 
 	// ExcludeNoData If true, then exclude / omit patients with no data in the TIDE report.
 	ExcludeNoData bool `form:"excludeNoData,omitempty" json:"excludeNoData,omitempty"`
+
+	// Sites Comma-separated list of clinic site IDs. If provided, only patients assigned to at least one of the given sites are included in the report. An empty value is ignored, as if the parameter were omitted.
+	Sites []ObjectIdV1 `form:"sites,omitempty" json:"sites,omitempty"`
 }
 
 // TideReportParamsCategories defines parameters for TideReport.

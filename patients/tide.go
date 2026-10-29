@@ -8,7 +8,7 @@ const (
 	HighGlucoseThreshold        = 10.0
 	VeryHighGlucoseThreshold    = 13.9
 	ExtremeHighGlucoseThreshold = 19.4
-	TideSchemaVersion           = 2
+	TideSchemaVersion           = 3
 )
 
 type Tide struct {
@@ -25,7 +25,8 @@ type TideConfig struct {
 	LowGlucoseThreshold         float64     `json:"lowGlucoseThreshold"`
 	Period                      string      `json:"period"`
 	SchemaVersion               int         `json:"schemaVersion"`
-	Tags                        []string    `json:"tags"`
+	Sites                       []string    `json:"sites,omitempty,omitzero"`
+	Tags                        []string    `json:"tags,omitempty,omitzero"`
 	VeryHighGlucoseThreshold    float64     `json:"veryHighGlucoseThreshold"`
 	VeryLowGlucoseThreshold     float64     `json:"veryLowGlucoseThreshold"`
 	ExtremeHighGlucoseThreshold float64     `json:"extremeHighGlucoseThreshold"`
