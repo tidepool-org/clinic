@@ -569,7 +569,7 @@ func (h *Handler) BulkCreatePatients(ec echo.Context, clinicId ClinicId, params 
 	}
 	var invitedBy *string = nil
 	authData := auth.GetAuthData(ctx)
-	if authData != nil && authData.SubjectId != "" {
+	if authData != nil && authData.SubjectId != "" && !authData.ServerAccess {
 		inviterId := authData.SubjectId
 		invitedBy = &inviterId
 	}
