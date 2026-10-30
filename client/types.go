@@ -13,6 +13,13 @@ const (
 	SessionTokenScopes = "sessionToken.Scopes"
 )
 
+// Defines values for BulkPatientOutputRowV1Emailed.
+const (
+	N             BulkPatientOutputRowV1Emailed = "N"
+	NInvalidEmail BulkPatientOutputRowV1Emailed = "N (invalid email)"
+	Y             BulkPatientOutputRowV1Emailed = "Y"
+)
+
 // Defines values for ClinicV1ClinicSize.
 const (
 	N0249   ClinicV1ClinicSize = "0-249"
@@ -954,6 +961,32 @@ type BgmStatsV1 struct {
 	// Periods A map to each supported BGM summary period
 	Periods BgmPeriodsV1 `json:"periods,omitempty"`
 }
+
+// BulkPatientOutputRowV1 defines model for bulkPatientOutputRow.v1.
+type BulkPatientOutputRowV1 struct {
+	// BirthDate The patient's date of birth.
+	BirthDate     *openapi_types.Date `json:"birthDate,omitempty"`
+	DiagnosisType *DiagnosisTypeV1    `json:"diagnosisType,omitempty"`
+
+	// Email The patient's optional email.
+	Email *openapi_types.Email `json:"email,omitempty"`
+
+	// Emailed A description of whether the patient was emailed.
+	Emailed *BulkPatientOutputRowV1Emailed `json:"emailed,omitempty"`
+
+	// FullName The name of the patient.
+	FullName       *string                `json:"fullName,omitempty"`
+	GlycemicTarget GlycemicRangesPresetV1 `json:"glycemicTarget,omitempty,omitzero"`
+
+	// Mrn The medical record number of the patient
+	Mrn *string `json:"mrn,omitempty"`
+
+	// Reason If an error was encountered, the non-empty error reason string .
+	Reason *string `json:"reason,omitempty"`
+}
+
+// BulkPatientOutputRowV1Emailed A description of whether the patient was emailed.
+type BulkPatientOutputRowV1Emailed string
 
 // CgmPeriodV1 Summary of a specific CGM time period (currently: 1d, 7d, 14d, 30d)
 type CgmPeriodV1 struct {
@@ -2138,6 +2171,11 @@ type ListClinicsParams struct {
 
 	// EhrEnabled Retrieve clinics with enabled EHR integration
 	EhrEnabled *EhrEnabled `form:"ehrEnabled,omitempty" json:"ehrEnabled,omitempty"`
+}
+
+// BulkCreatePatientsParams defines parameters for BulkCreatePatients.
+type BulkCreatePatientsParams struct {
+	DryRun *bool `form:"dryRun,omitempty" json:"dryRun,omitempty"`
 }
 
 // ListCliniciansParams defines parameters for ListClinicians.
