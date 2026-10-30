@@ -17,24 +17,19 @@ import (
 )
 
 var (
-	// If an error is an ErrInvalidCSV, it is a "fatal" error and no patients
-	// should be created. Currently only missing or invalid required fields in
-	// the columns is a blocking error. An error due to other reasons
-	// such as a duplicate MRN results in the corresponding row being skipped and
-	// the error is included in the corresponding output row but does not stop
-	// other patients from being processed.
-	ErrInvalidCSV                 = errors.New("invalid CSV")
-	ErrCSVMissingCols             = fmt.Errorf(`%w: row is missing columns`, ErrInvalidCSV)
-	ErrCSVEmpty                   = fmt.Errorf(`%w: no rows in input records`, ErrInvalidCSV)
-	ErrCSVNoPatientRows           = errors.New("no patient rows")
-	ErrCSVPatientMissingName      = fmt.Errorf(`%w: missing name`, ErrInvalidCSV)
-	ErrCSVPatientMissingBirthdate = fmt.Errorf(`%w: missing birthdate`, ErrInvalidCSV)
-	ErrCSVPatientInvalidBirthdate = fmt.Errorf(`%w: invalid birthdate`, ErrInvalidCSV)
-	ErrCSVPatientMissingMRN       = fmt.Errorf(`%w: missing MRN`, ErrInvalidCSV)
-	ErrCSVPatientInvalidEmail     = fmt.Errorf(`%w: invalid email`, ErrInvalidCSV)
+	ErrCSVUnreadable       = &BlockingInputCSVError{"unable to parse or read CSV"}
+	ErrCSVFewerThanMinCols = &BlockingInputCSVError{"row has less than the minimum number of required columns"}
+	ErrCSVEmpty            = &BlockingInputCSVError{"empty CSV"}
 
-	ErrCSVPatientDuplicateMRN   = errors.New("duplicate MRN")
-	ErrCSVPatientDuplicateEmail = errors.New("duplicate email")
+	ErrCSVPatientMissingName           = &BlockingInputCSVError{"missing name"}
+	ErrCSVPatientMissingBirthdate      = &BlockingInputCSVError{"missing birthdate"}
+	ErrCSVPatientMissingMRN            = &BlockingInputCSVError{"missing MRN"}
+	ErrCSVPatientInvalidBirthdate      = &ExcludedPatientInputError{"invalid birthdate"}
+	ErrCSVPatientInvalidEmail          = errors.New("invalid email")
+	ErrCSVPatientInvalidDiagnosisType  = errors.New("invalid diagnosis type")
+	ErrCSVPatientInvalidGlycemicPreset = errors.New("invalid glycemic preset")
+	ErrCSVPatientDuplicateMRN          = &ExcludedPatientInputError{"duplicate MRN"}
+	ErrCSVPatientDuplicateEmail        = &ExcludedPatientInputError{"duplicate email"}
 )
 
 const (
@@ -47,6 +42,26 @@ const (
 	NumRequiredColumns
 )
 
+// ExcludedPatientInputError indicates an error that should preclude creating a
+// individual patient/row. It does not affect the creation of others.
+type ExcludedPatientInputError struct {
+	Message string
+}
+
+func (e *ExcludedPatientInputError) Error() string {
+	return e.Message
+}
+
+// BlockingInputCSVError indicates an error that should preclude creating any
+// and all patients due to an issue with the CSV.
+type BlockingInputCSVError struct {
+	Message string
+}
+
+func (e *BlockingInputCSVError) Error() string {
+	return e.Message
+}
+
 const (
 	// Optional Columns
 	ColEmail = iota + NumRequiredColumns
@@ -58,33 +73,54 @@ const (
 
 const (
 	// Output CSV is returned w/ original rows along with 2 additional columns
-	OutputColStatus = MaxInputColumns + iota
+	OutputColErrors = MaxInputColumns + iota
 	OutputColEmailed
+	OutputColState
 	NumOutputCols
 )
 
-// IsBulkPatientCSVValidationErr returns true if an error is a fatal CSV
-// validation error. This occurs when required columns are missing or
-// required/optional columns have an invalid value.
-func IsBulkPatientCSVValidationErr(err error) bool {
-	return errors.Is(err, ErrInvalidCSV)
+// IsBulkPatientBlockingInputError returns true if an error is a fatal CSV
+// validation error. This occurs only when required columns are missing.
+// Invalid values are handled separately and are "logged" errors within the CSV
+// output error column, but do not block further processing of other rows..
+func IsBulkPatientBlockingInputError(err error) bool {
+	var blockingErr *BlockingInputCSVError
+	return errors.As(err, &blockingErr)
+}
+
+// ShouldSkipPatientCreation returns true if the given error is an error
+// that does not allow creation of a patient.
+func ShouldSkipPatientCreation(err error) bool {
+	if IsBulkPatientBlockingInputError(err) {
+		return true
+	}
+	var excludedErr *ExcludedPatientInputError
+	return errors.As(err, &excludedErr)
 }
 
 // ParsedCSVPatient represents the potential patient to be created from a CSV
 // row along with a copy of the original input CSV row with added information
 // in [Columns]. Patient may be nil if there is an error with the patient,
-// which would be noted in [OutputColStatus] of [Columns]
+// which would be noted in [OutputColErrors] of [Columns]
 type ParsedCSVPatient struct {
 	Columns []string
-	// Errs is an accumulated slice of non-blocking errors that have been
-	// encountered while parsing or creating a patient.
+	// Errs is an accumulated slice of errors that have been encountered
+	// while parsing or creating a patient.
 	Errs    []error
 	Patient *Patient
 }
 
-// Err returns the accumulated non-blocking errors encountered for a patient
+// Err returns the accumulated errors encountered for a patient
 func (p *ParsedCSVPatient) Err() error {
 	return errors.Join(p.Errs...)
+}
+
+func (p *ParsedCSVPatient) ErrorsDescription() string {
+	errs := make([]string, 0, len(p.Errs))
+	for _, err := range p.Errs {
+		errs = append(errs, err.Error())
+	}
+	return strings.Join(errs, ", ")
 }
 
 func (p *ParsedCSVPatient) AppendErr(err error) {
@@ -96,6 +132,11 @@ func (p *ParsedCSVPatient) AppendErr(err error) {
 	}
 }
 
+func (p *ParsedCSVPatient) Emailable() bool {
+	err := p.Err()
+	return p.Patient != nil && pstr(p.Patient.Email) != "" && !errors.Is(err, ErrCSVPatientDuplicateEmail) && !errors.Is(err, ErrCSVPatientInvalidEmail)
+}
+
 // ParsePotentialCSVPatients takes an input of slices of string slices (from a
 // HEADERLESS CSV or otherwise) representing data for a patient in the same
 // patient field column-order as [ColName], [ColBirthdate], [ColMRN] and
@@ -103,10 +144,12 @@ func (p *ParsedCSVPatient) AppendErr(err error) {
 // created along with their row information in parsedPatients. Individual
 // errors that would prevent a patient from being created but that would NOT
 // stop other patients from being created, if any, are outputed in the "reason"
-// column defined as the slice index [OutputColStatus] in
+// column defined as the slice index [OutputColErrors] in
 // [ParsedCSVPatient.Columns] in which case [ParsedCSVPatient.Patient] would be
 // empty. There should be NO CSV input header row. A returned error can be
-// checked with [IsBulkPatientCSVValidationErr].
+// checked with [IsBulkPatientBlockingInputError] to indicate to the caller an input
+// error (bad request/malformed CSV) that should avoid attempting to create
+// any patients.
 func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc UserService, csvRecords [][]string, clinicId primitive.ObjectID, invitedBy *string) (outputRows [][]string, outputHeader []string, parsedPatients []*ParsedCSVPatient, err error) {
 	if len(csvRecords) == 0 {
 		return nil, nil, nil, ErrCSVEmpty
@@ -120,6 +163,7 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 		"Glycemic Target",
 		"Reason",
 		"Emailed?",
+		"Status",
 	}
 	outputRows = append(outputRows, outputHeader)
 
@@ -148,7 +192,10 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 		}
 	}
 
-	var errs []error
+	// Keep track of a fatal error but don't immediately return on one because
+	// still want to process the other rows for potential problems so that each
+	// individual row's errors can be checked as well.
+	var fatalErrs []error
 	for i, record := range csvRecords {
 		rowNum := i + 1
 		outputRow := make([]string, NumOutputCols)
@@ -158,19 +205,31 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 			Patient: patient,
 		}
 		if err != nil {
-			errs = append(errs, err)
-		} else {
+			parsedPatient.AppendErr(err)
+			if IsBulkPatientBlockingInputError(err) {
+				fatalErrs = append(fatalErrs, err)
+			}
+		}
+		if patient != nil && !IsBulkPatientBlockingInputError(err) {
+			// Checking for duplicate MRN's and other validation issues will only
+			// happen if there was no fatal error for the patient's info in the CSV
 			if !patient.GlycemicRanges.IsZero() {
 				outputRow[ColGlycemicPreset] = string(patient.GlycemicRanges.Preset)
+			} else {
+				outputRow[ColGlycemicPreset] = ""
 			}
 			if !patient.DiagnosisType.IsZero() {
 				outputRow[ColDiagnosisType] = string(*patient.DiagnosisType)
+			} else {
+				outputRow[ColDiagnosisType] = ""
 			}
 			// No error from column data, now check for issues with mrn / email of
 			// which there can be multiple.
-			mrnCounts[*patient.Mrn]++
-			if mrnCounts[*patient.Mrn] > 1 {
-				parsedPatient.AppendErr(ErrCSVPatientDuplicateMRN)
+			if mrn := pstr(patient.Mrn); mrn != "" {
+				mrnCounts[mrn]++
+				if mrnCounts[mrn] > 1 {
+					parsedPatient.AppendErr(ErrCSVPatientDuplicateMRN)
+				}
 			}
 			if email := strings.ToLower(pstr(patient.Email)); email != "" {
 				duplicateEmail := false
@@ -194,34 +253,20 @@ func ParsePotentialCSVPatients(ctx context.Context, patientSvc Service, userSvc 
 		parsedPatients = append(parsedPatients, parsedPatient)
 		outputRows = append(outputRows, outputRow)
 	}
-	if len(errs) > 0 {
-		return nil, nil, nil, errors.Join(errs...)
-	}
 	// Reiterate through patients to handle first instance of any individually
 	// repeated MRN or email within the CSV itself (e.g., multiple cases of
 	// email "dev@tidepool.org" within the CSV but not associated with an
 	// existing patient.)
 	for _, pp := range parsedPatients {
-		if pp.Patient != nil && mrnCounts[*pp.Patient.Mrn] > 1 {
+		if mrn := pstr(pp.Patient.Mrn); mrn != "" && mrnCounts[*pp.Patient.Mrn] > 1 {
 			pp.AppendErr(ErrCSVPatientDuplicateMRN)
 		}
-
-		if pp.Patient != nil {
-			if email := strings.ToLower(pstr(pp.Patient.Email)); email != "" && emailCounts[email] > 1 {
-				pp.AppendErr(ErrCSVPatientDuplicateEmail)
-			}
+		if email := strings.ToLower(pstr(pp.Patient.Email)); email != "" && emailCounts[email] > 1 {
+			pp.AppendErr(ErrCSVPatientDuplicateEmail)
 		}
-		if len(pp.Errs) > 0 {
-			errs := make([]string, 0, len(pp.Errs))
-			for _, err := range pp.Errs {
-				errs = append(errs, err.Error())
-			}
-			pp.Columns[OutputColStatus] = strings.Join(errs, ", ")
-			// set Patient to nil to indicate no further action to be done on patient
-			pp.Patient = nil
-		}
+		pp.Columns[OutputColErrors] = pp.ErrorsDescription()
 	}
-	return outputRows, outputHeader, parsedPatients, nil
+	return outputRows, outputHeader, parsedPatients, errors.Join(fatalErrs...)
 }
 
 // ParsePotentialCSVPatientsReader wraps [ParsePotentialCSVPatients] and takes
@@ -231,7 +276,7 @@ func ParsePotentialCSVPatientsReader(ctx context.Context, r io.Reader, patientSv
 	reader.FieldsPerRecord = -1
 	records, err := reader.ReadAll()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf(`%w: %w`, ErrInvalidCSV, err)
+		return nil, nil, nil, fmt.Errorf(`%w: %w`, ErrCSVUnreadable, err)
 	}
 	return ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, invitedBy)
 }
@@ -252,42 +297,43 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 	numCreated := 0
 	numEmailed := 0
 	for _, parsedPatient := range patients {
-		if parsedPatient.Patient == nil {
+		patientErrs := parsedPatient.Err()
+		emailed := false
+		if errors.Is(patientErrs, ErrCSVPatientDuplicateEmail) {
+			numSkippedDupeEmail++
+		}
+		if errors.Is(patientErrs, ErrCSVPatientDuplicateMRN) {
+			numSkippedDupeMRN++
+		}
+		if ShouldSkipPatientCreation(patientErrs) {
 			numSkipped++
-			if errors.Is(parsedPatient.Err(), ErrCSVPatientInvalidEmail) {
-				parsedPatient.Columns[OutputColEmailed] = "N (invalid email)"
-			} else {
-				parsedPatient.Columns[OutputColEmailed] = "N"
-			}
-			if errors.Is(parsedPatient.Err(), ErrCSVPatientDuplicateEmail) {
-				numSkippedDupeEmail++
-			}
-			if errors.Is(parsedPatient.Err(), ErrCSVPatientDuplicateMRN) {
-				numSkippedDupeMRN++
-			}
+			parsedPatient.Columns[OutputColState] = "skipped"
 		} else {
 			_, err := patientSvc.Create(ctx, *parsedPatient.Patient)
 			if err != nil {
-				status := parsedPatient.Columns[OutputColStatus]
-				if status != "" {
-					status += ", "
-				}
-				status += err.Error()
+				parsedPatient.AppendErr(err)
+				parsedPatient.Columns[OutputColErrors] = parsedPatient.ErrorsDescription()
 				numFailedCreation++
-				parsedPatient.Columns[OutputColStatus] = status
 				parsedPatient.Columns[OutputColEmailed] = "N"
+				parsedPatient.Columns[OutputColState] = "failed"
 			} else {
 				numCreated++
-				if parsedPatient.Patient.Email != nil && *parsedPatient.Patient.Email != "" {
+				parsedPatient.Columns[OutputColState] = "created"
+				if parsedPatient.Emailable() {
 					// Since the actual emaling is done outside the clinic service by
 					// hydrophone, we assume any patients with emails that were
 					// successfully created to have been emailed.
-					parsedPatient.Columns[OutputColEmailed] = "Y"
 					numEmailed++
-				} else {
-					parsedPatient.Columns[OutputColEmailed] = "N"
+					emailed = true
 				}
 			}
+		}
+		if emailed {
+			parsedPatient.Columns[OutputColEmailed] = "Y"
+		} else if errors.Is(patientErrs, ErrCSVPatientInvalidEmail) {
+			parsedPatient.Columns[OutputColEmailed] = "N (invalid email)"
+		} else {
+			parsedPatient.Columns[OutputColEmailed] = "N"
 		}
 		outputRows = append(outputRows, parsedPatient.Columns)
 	}
@@ -306,11 +352,14 @@ func CreateCSVPatients(ctx context.Context, patientSvc Service, header []string,
 // NewPatientFromColumns instantiates a Patient object suitable for actual
 // creation given a row of text columns. Optionally, [Patient.InvitedBy] will
 // be set to the user id invitedBy if it is non-nil the string value is
-// non-zero.
+// non-zero. Any error returned should be checked with
+// [IsBulkPatientBlockingInputError] as the input record may have validation errors
+// that still allow a patient to be created and the error will then be recorded
+// in the output CSV.
 func NewPatientFromColumns(rowNum int, record []string, clinicId primitive.ObjectID, invitedBy *string) (*Patient, error) {
 	var errs []error
 	if len(record) < int(NumRequiredColumns) {
-		errs = append(errs, fmt.Errorf(`%w: row %v`, ErrCSVMissingCols, rowNum))
+		errs = append(errs, fmt.Errorf(`%w: row %v`, ErrCSVFewerThanMinCols, rowNum))
 	}
 	var fullName string
 	if len(record) > ColName {
@@ -343,10 +392,12 @@ func NewPatientFromColumns(rowNum int, record []string, clinicId primitive.Objec
 	}
 	var email string
 	if len(record) > ColEmail {
-		email = strings.TrimSpace(record[ColEmail])
-		if email != "" {
-			if _, err := mail.ParseAddress(email); err != nil {
+		emailRaw := strings.TrimSpace(record[ColEmail])
+		if emailRaw != "" {
+			if _, err := mail.ParseAddress(emailRaw); err != nil {
 				errs = append(errs, fmt.Errorf(`%w: row %v, column %v`, ErrCSVPatientInvalidEmail, rowNum, ColEmail+1))
+			} else {
+				email = emailRaw
 			}
 		}
 	}
@@ -355,19 +406,18 @@ func NewPatientFromColumns(rowNum int, record []string, clinicId primitive.Objec
 		raw := strings.TrimSpace(record[ColDiagnosisType])
 		if raw != "" {
 			dt, err := ParseDiagnosisType(record[ColDiagnosisType])
-			if err != nil {
-				return nil, err
+			// Diagnosis type is only set if it's one of the supported types in [ValidDiagnosisTypes] AND it's not the type non applicable, [DiagnosisTypeNotApplicable], otherwise it is set to blank / nil.
+			if err == nil && dt != DiagnosisTypeNotApplicable {
+				diagnosisType = &dt
+			} else if err != nil {
+				errs = append(errs, ErrCSVPatientInvalidDiagnosisType)
 			}
-			diagnosisType = &dt
 		}
 	}
 	preset := DefaultGlycemicPreset
 	if len(record) > ColGlycemicPreset {
 		presetRaw := record[ColGlycemicPreset]
 		preset = ParseGlycemicRangesPreset(presetRaw, DefaultGlycemicPreset)
-	}
-	if len(errs) > 0 {
-		return nil, errors.Join(errs...)
 	}
 	patient := Patient{
 		FullName:      &fullName,
@@ -383,7 +433,7 @@ func NewPatientFromColumns(rowNum int, record []string, clinicId primitive.Objec
 		},
 		Permissions: &CustodialAccountPermissions,
 	}
-	return &patient, nil
+	return &patient, errors.Join(errs...)
 }
 
 func pstr(p *string) string {

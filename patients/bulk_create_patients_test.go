@@ -44,7 +44,11 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Existing Email Case Insensitive Check", "1959-01-02", "444455555", "EXISTING+email@tidepool.org"},
 				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org"},
 				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk"},
-				{"Default Invalid Glycemic Target To Default", "1955-01-02", "123456793", "dev@tidepool.org", "", "Some Glycemic Target"},
+				{"Invalid Glycemic Target Defaults To adaStandard", "1955-01-02", "123456793", "dev@tidepool.org", "", "Some Glycemic Target"},
+				{"Case Insensitive Glycemic Target", "1954-02-03", "123456797", "high+risk+case+insensitive@tidepool.org", "", "ADAHIGHRISK"},
+				{"Case Insensitive DiagnosisType", "1954-02-04", "123456798", "diagnosis+type+case+insensitive@tidepool.org", "TyPE1", "adaStandard"},
+				{"Invalid Diabetes Type Defaults To Blank", "1965-11-23", "3333333", "invalid+type@tidepool.org", "invalid type 9999", ""},
+				{"Diabetes Type notApplicable Defaults to Blank", "1966-10-22", "4444444", "not+applicable@tidepool.org", "notApplicable", ""},
 				{"Diabetes Type", "1955-01-02", "123456794", "diabetes+type@tidepool.org", "type1"},
 				{"Test extra input columns are not included in output", "1960-02-03", "88888888", "extra+columns@tidepool.org", "type1", "adaStandard", "Extra column 1", "Extra column 2", "Extra column 3"},
 				{"Person 1 duplicate MRN within CSV", "1999-12-10", "55555555", "duplicate+mrn1@tidepool.org", "type1", "adaStandard"},
@@ -54,21 +58,25 @@ var _ = Describe("Bulk Account Creation", func() {
 				{"Person 3 duplicate email within CSV ignoring case", "2000-11-12", "55555558", "DUPLICATE+EMAIL@tidepool.org", "type1", "adaStandard"},
 			}
 			expectedOutput := [][]string{
-				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
-				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", ""},
-				{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", ""},
-				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "existing+email@tidepool.org", "", "adaStandard", "duplicate MRN, duplicate email", ""},
-				{"Existing Email Case Insensitive Check", "1959-01-02", "444455555", "EXISTING+email@tidepool.org", "", "adaStandard", "duplicate email", ""},
-				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org", "", "adaStandard", "", ""},
-				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk", "", ""},
-				{"Default Invalid Glycemic Target To Default", "1955-01-02", "123456793", "dev@tidepool.org", "", "adaStandard", "", ""},
-				{"Diabetes Type", "1955-01-02", "123456794", "diabetes+type@tidepool.org", "type1", "adaStandard", "", ""},
-				{"Test extra input columns are not included in output", "1960-02-03", "88888888", "extra+columns@tidepool.org", "type1", "adaStandard", "", ""},
-				{"Person 1 duplicate MRN within CSV", "1999-12-10", "55555555", "duplicate+mrn1@tidepool.org", "type1", "adaStandard", "duplicate MRN", ""},
-				{"Person 2 duplicate MRN within CSV", "2000-10-10", "55555555", "duplicate+mrn2@tidepool.org", "type1", "adaStandard", "duplicate MRN", ""},
-				{"Person 1 duplicate email within CSV", "1999-12-10", "55555556", "duplicate+email@tidepool.org", "type1", "adaStandard", "duplicate email", ""},
-				{"Person 2 duplicate email within CSV", "2000-10-10", "55555557", "duplicate+email@tidepool.org", "type1", "adaStandard", "duplicate email", ""},
-				{"Person 3 duplicate email within CSV ignoring case", "2000-11-12", "55555558", "DUPLICATE+EMAIL@tidepool.org", "type1", "adaStandard", "duplicate email", ""},
+				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?", "Status"},
+				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "", ""},
+				{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", "", ""},
+				{"Thomas Jefferson", "1952-01-02", "DUPLICATEMRN", "existing+email@tidepool.org", "", "adaStandard", "duplicate MRN, duplicate email", "", ""},
+				{"Existing Email Case Insensitive Check", "1959-01-02", "444455555", "EXISTING+email@tidepool.org", "", "adaStandard", "duplicate email", "", ""},
+				{"James Madison", "1953-01-02", "123456790", "james+madison@tidepool.org", "", "adaStandard", "", "", ""},
+				{"James Monroe", "1954-01-02", "123456791", "james+monroe@tidepool.org", "", "adaHighRisk", "", "", ""},
+				{"Invalid Glycemic Target Defaults To adaStandard", "1955-01-02", "123456793", "dev@tidepool.org", "", "adaStandard", "", "", ""},
+				{"Case Insensitive Glycemic Target", "1954-02-03", "123456797", "high+risk+case+insensitive@tidepool.org", "", "adaHighRisk", "", "", ""},
+				{"Case Insensitive DiagnosisType", "1954-02-04", "123456798", "diagnosis+type+case+insensitive@tidepool.org", "type1", "adaStandard", "", "", ""},
+				{"Invalid Diabetes Type Defaults To Blank", "1965-11-23", "3333333", "invalid+type@tidepool.org", "", "adaStandard", "invalid diagnosis type", "", ""},
+				{"Diabetes Type notApplicable Defaults to Blank", "1966-10-22", "4444444", "not+applicable@tidepool.org", "", "adaStandard", "", "", ""},
+				{"Diabetes Type", "1955-01-02", "123456794", "diabetes+type@tidepool.org", "type1", "adaStandard", "", "", ""},
+				{"Test extra input columns are not included in output", "1960-02-03", "88888888", "extra+columns@tidepool.org", "type1", "adaStandard", "", "", ""},
+				{"Person 1 duplicate MRN within CSV", "1999-12-10", "55555555", "duplicate+mrn1@tidepool.org", "type1", "adaStandard", "duplicate MRN", "", ""},
+				{"Person 2 duplicate MRN within CSV", "2000-10-10", "55555555", "duplicate+mrn2@tidepool.org", "type1", "adaStandard", "duplicate MRN", "", ""},
+				{"Person 1 duplicate email within CSV", "1999-12-10", "55555556", "duplicate+email@tidepool.org", "type1", "adaStandard", "duplicate email", "", ""},
+				{"Person 2 duplicate email within CSV", "2000-10-10", "55555557", "duplicate+email@tidepool.org", "type1", "adaStandard", "duplicate email", "", ""},
+				{"Person 3 duplicate email within CSV ignoring case", "2000-11-12", "55555558", "DUPLICATE+EMAIL@tidepool.org", "type1", "adaStandard", "duplicate email", "", ""},
 			}
 
 			patientSvc.EXPECT().
@@ -109,18 +117,20 @@ var _ = Describe("Bulk Account Creation", func() {
 			ctx := context.Background()
 			invitedBy := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 			records := [][]string{
-				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org"},
+				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", ""},
 				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk"},
+				{"Internal DB Creation Error", "1953-02-03", "123456786", "internal+db+error@tidepool.org", "", "adaStandard"},
 			}
 			expectedOutput := [][]string{
-				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
-				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
-				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y"},
-				{"Patients Processed", "2"},
+				{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?", "Status"},
+				{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N", "skipped"},
+				{"James Monroe", "1954-01-02", "123456792", "james+monroe@tidepool.org", "", "adaHighRisk", "", "Y", "created"},
+				{"Internal DB Creation Error", "1953-02-03", "123456786", "internal+db+error@tidepool.org", "", "adaStandard", "internal database error", "N", "failed"},
+				{"Patients Processed", "3"},
 				{"Patients Created", "1"},
 				{"Patients Skipped", "1"},
 				{"Patients Emailed", "1"},
-				{"Patients Failed Creation", "0"},
+				{"Patients Failed Creation", "1"},
 				{"Duplicate MRNs count", "0"},
 				{"Duplicate emails count", "1"},
 			}
@@ -150,11 +160,18 @@ var _ = Describe("Bulk Account Creation", func() {
 				AnyTimes()
 			patientSvc.EXPECT().
 				Create(gomock.Any(), gomock.Any()).
-				Return(&patients.Patient{}, nil).
-				Times(1)
-
+				DoAndReturn(
+					func(ctx context.Context, patient patients.Patient) (*patients.Patient, error) {
+						if pstr(patient.Email) == "internal+db+error@tidepool.org" {
+							return nil, errors.New("internal database error")
+						}
+						return &patients.Patient{
+							UserId: patient.UserId,
+						}, nil
+					}).
+				Times(2)
 			_, header, parsedPatients, err := patients.ParsePotentialCSVPatients(ctx, patientSvc, userSvc, records, clinicId, &invitedBy)
-			Expect(len(parsedPatients)).To(Equal(2))
+			Expect(len(parsedPatients)).To(Equal(3))
 			Expect(err).ToNot(HaveOccurred())
 			outputRecords := patients.CreateCSVPatients(ctx, patientSvc, header, parsedPatients)
 			Expect(outputRecords).To(Equal(expectedOutput))
@@ -202,13 +219,13 @@ var _ = Describe("Bulk Account Creation", func() {
 				Expect(outputRecords).To(Equal(expectedOutput))
 			},
 				Entry(
-					"valid CSV no non-blocking patient errors",
+					"valid CSV no errors",
 					`George Washington,1950-01-02,123456789,george+washington@tidepool.org
 John Adams,1951-01-02,123456780,john+adams@tidepool.org`,
 					[][]string{
-						{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
-						{"George Washington", "1950-01-02", "123456789", "george+washington@tidepool.org", "", "adaStandard", "", "Y"},
-						{"John Adams", "1951-01-02", "123456780", "john+adams@tidepool.org", "", "adaStandard", "", "Y"},
+						{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?", "Status"},
+						{"George Washington", "1950-01-02", "123456789", "george+washington@tidepool.org", "", "adaStandard", "", "Y", "created"},
+						{"John Adams", "1951-01-02", "123456780", "john+adams@tidepool.org", "", "adaStandard", "", "Y", "created"},
 						{"Patients Processed", "2"},
 						{"Patients Created", "2"},
 						{"Patients Skipped", "0"},
@@ -218,19 +235,19 @@ John Adams,1951-01-02,123456780,john+adams@tidepool.org`,
 						{"Duplicate emails count", "0"},
 					}),
 				Entry(
-					"valid CSV with mix of valid patients and duplicate mrn / emails",
+					"valid CSV with individual patient errors but no blocking errors",
 					`Thomas Jefferson,1952-01-09,112233,thomas+jefferson@tidepool.org
 Ben Franklin,1952-01-10,112234
 George Washington,1950-01-02,123456789,existing+email@tidepool.org
 John Adams,1951-01-02,DUPLICATEMRN,john+adams@tidepool.org
 Invalid Glycemic Target Defaults To adaStandard,1973-03-04,22334455,james+madison@tidepool.org,,invalid type`,
 					[][]string{
-						{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?"},
-						{"Thomas Jefferson", "1952-01-09", "112233", "thomas+jefferson@tidepool.org", "", "adaStandard", "", "Y"},
-						{"Ben Franklin", "1952-01-10", "112234", "", "", "adaStandard", "", "N"},
-						{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N"},
-						{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", "N"},
-						{"Invalid Glycemic Target Defaults To adaStandard", "1973-03-04", "22334455", "james+madison@tidepool.org", "", "adaStandard", "", "Y"},
+						{"Name", "Birthdate", "MRN", "Email", "Diabetes Type", "Glycemic Target", "Reason", "Emailed?", "Status"},
+						{"Thomas Jefferson", "1952-01-09", "112233", "thomas+jefferson@tidepool.org", "", "adaStandard", "", "Y", "created"},
+						{"Ben Franklin", "1952-01-10", "112234", "", "", "adaStandard", "", "N", "created"},
+						{"George Washington", "1950-01-02", "123456789", "existing+email@tidepool.org", "", "adaStandard", "duplicate email", "N", "skipped"},
+						{"John Adams", "1951-01-02", "DUPLICATEMRN", "john+adams@tidepool.org", "", "adaStandard", "duplicate MRN", "N", "skipped"},
+						{"Invalid Glycemic Target Defaults To adaStandard", "1973-03-04", "22334455", "james+madison@tidepool.org", "", "adaStandard", "", "Y", "created"},
 						{"Patients Processed", "5"},
 						{"Patients Created", "3"},
 						{"Patients Skipped", "2"},
@@ -249,14 +266,16 @@ Invalid Glycemic Target Defaults To adaStandard,1973-03-04,22334455,james+madiso
 	Invalid birthdate,yyyy-mm-dd,1111,,
 	Invalid email,1999-01-12,2222,invalid+email,`
 				ctx := context.Background()
-				expectedErrs := []error{
+				expectedFatalErrs := []error{
 					patients.ErrCSVPatientMissingName,
 					patients.ErrCSVPatientMissingMRN,
-					patients.ErrCSVPatientInvalidEmail,
-					patients.ErrCSVPatientInvalidBirthdate,
 					patients.ErrCSVPatientMissingBirthdate,
 				}
-				expectedErrStrs := []string{
+				expectedNonFatalErrs := []error{
+					patients.ErrCSVPatientInvalidEmail,
+					patients.ErrCSVPatientInvalidBirthdate,
+				}
+				expectedFatalErrStrs := []string{
 					"missing MRN: row 1, column 3",
 					"missing name: row 2, column 1",
 					"missing birthdate: row 2, column 2",
@@ -265,16 +284,29 @@ Invalid Glycemic Target Defaults To adaStandard,1973-03-04,22334455,james+madiso
 					"missing MRN: row 3, column 3",
 					"missing name: row 4, column 1",
 					"missing MRN: row 4, column 3",
+				}
+				expectedNonFatalErrStrs := []string{
 					"invalid birthdate: row 5, column 2",
 					"invalid email: row 6, column 4",
 				}
-				_, _, _, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
-				Expect(patients.IsBulkPatientCSVValidationErr(err)).To(Equal(true))
-				for _, expectedErr := range expectedErrs {
+				_, _, parsedPatients, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
+				var patientErrs []error
+				for _, patient := range parsedPatients {
+					patientErrs = append(patientErrs, patient.Errs...)
+				}
+				Expect(patients.IsBulkPatientBlockingInputError(err)).To(Equal(true))
+				for _, expectedErr := range expectedFatalErrs {
 					Expect(err).To(MatchError(expectedErr))
 				}
-				for _, errSubstr := range expectedErrStrs {
+				for _, errSubstr := range expectedFatalErrStrs {
 					Expect(err).To(MatchError(ContainSubstring(errSubstr)))
+				}
+				combinedPatientErrs := errors.Join(patientErrs...)
+				for _, expectedErr := range expectedNonFatalErrs {
+					Expect(combinedPatientErrs).To(MatchError(expectedErr))
+				}
+				for _, errSubstr := range expectedNonFatalErrStrs {
+					Expect(combinedPatientErrs).To(MatchError(ContainSubstring(errSubstr)))
 				}
 			})
 		})
@@ -303,7 +335,7 @@ John Adams,1951-01-02,123456780,john+adams@tidepool.org`
 				ctx := context.Background()
 				_, _, _, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
 				Expect(err).To(HaveOccurred())
-				Expect(patients.IsBulkPatientCSVValidationErr(err)).To(Equal(false))
+				Expect(patients.IsBulkPatientBlockingInputError(err)).To(Equal(false))
 			})
 
 			It("user svc GetUser error", func() {
@@ -331,7 +363,7 @@ John Adams,1951-01-02,123456780,john+adams@tidepool.org`
 				ctx := context.Background()
 				_, _, _, err := patients.ParsePotentialCSVPatientsReader(ctx, strings.NewReader(contentsCSV), patientSvc, userSvc, clinicId, nil)
 				Expect(err).To(HaveOccurred())
-				Expect(patients.IsBulkPatientCSVValidationErr(err)).To(Equal(false))
+				Expect(patients.IsBulkPatientBlockingInputError(err)).To(Equal(false))
 			})
 		})
 	})
@@ -339,4 +371,11 @@ John Adams,1951-01-02,123456780,john+adams@tidepool.org`
 
 func strp(s string) *string {
 	return &s
+}
+
+func pstr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
