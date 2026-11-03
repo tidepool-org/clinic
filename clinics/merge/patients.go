@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -117,6 +118,7 @@ type PatientPlan struct {
 	PostMigrationTagNames      []string `bson:"postMigrationTagNames"`
 	PostMigrationSiteNames     []string `bson:"postMigrationSiteNames"`
 	PostMigrationMRNUniqueness bool     `bson:"postMigrationMRNUniqueness"`
+	PostMigrationMRN           *string  `bson:"postMigrationMrn,omitempty" json:",omitempty"`
 	AssignedSiteName           *string  `bson:"assignedSiteName,omitempty" json:",omitempty"`
 
 	CanExecuteAction bool         `bson:"canExecuteAction"`
@@ -231,6 +233,12 @@ func siteNames(sourceSites *[]sites.Site, targetSites []sites.Site) []string {
 
 func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 	mergeTargetPatients := map[string]struct{}{}
+	reservedMRNs := map[string]struct{}{}
+	for _, patient := range slices.Concat(p.sourcePatients, p.targetPatients) {
+		if mrn := getMRN(patient); mrn != "" {
+			reservedMRNs[mrn] = struct{}{}
+		}
+	}
 	list := make([]PatientPlan, 0, len(p.sourcePatients)+len(p.targetPatients))
 	for _, patient := range p.sourcePatients {
 		plan := PatientPlan{
@@ -293,16 +301,9 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 						// Ensure MRNs are unique after patients are moved
 						plan.PostMigrationMRNUniqueness = true
 
-						// Do not allow moving patients if there are patients with the same MRN in the target clinic
-						if pts := p.targetByAttribute.GetPatientsWithMRN(mrn); len(pts) > 0 {
-							plan.CanExecuteAction = false
-							plan.Error = &ErrorDuplicateMRNInTargetWorkspace
-						}
-
-						// Do not allow moving patients if there are patients with the same MRN in the source clinic
-						if pts := p.sourceByAttribute.GetPatientsWithMRN(mrn); len(pts) > 1 {
-							plan.CanExecuteAction = false
-							plan.Error = &ErrorDuplicateMRNInSourceWorkspace
+						// Rename the MRN if it clashes with a target patient or another source patient
+						if len(p.targetByAttribute.GetPatientsWithMRN(mrn)) > 0 || len(p.sourceByAttribute.GetPatientsWithMRN(mrn)) > 1 {
+							plan.PostMigrationMRN = dupeMRN(strings.TrimSpace(*patient.Mrn), reservedMRNs)
 						}
 					}
 				}
@@ -431,6 +432,18 @@ func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, sou
 	}
 }
 
+// dupeMRN returns the lowest unused "<mrn>-dupe-NN" and reserves it
+func dupeMRN(mrn string, reserved map[string]struct{}) *string {
+	for n := 1; ; n++ {
+		candidate := fmt.Sprintf("%s-dupe-%02d", mrn, n)
+		key := strings.ToLower(candidate)
+		if _, ok := reserved[key]; !ok {
+			reserved[key] = struct{}{}
+			return &candidate
+		}
+	}
+}
+
 func (p *PatientPlanExecutor) movePatient(ctx context.Context, plan PatientPlan, target clinics.Clinic) error {
 	resultingSites, err := plan.sourceSitesForTarget(target)
 	if err != nil {
@@ -463,6 +476,9 @@ func (p *PatientPlanExecutor) movePatient(ctx context.Context, plan PatientPlan,
 	}
 	if resultingSites != nil {
 		update["$set"].(bson.M)["sites"] = resultingSites
+	}
+	if plan.PostMigrationMRN != nil {
+		update["$set"].(bson.M)["mrn"] = *plan.PostMigrationMRN
 	}
 
 	res, err := p.patientsCollection.UpdateOne(ctx, selector, update)

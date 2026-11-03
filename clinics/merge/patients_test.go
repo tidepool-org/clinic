@@ -143,7 +143,7 @@ var _ = Describe("New Merge Planner", func() {
 			}
 		})
 
-		It("fails for merge plans with MRN conflicts when the target workspace requires unique MRNs", func() {
+		It("renames clashing source MRNs when the target workspace requires unique MRNs", func() {
 			target.MRNSettings = &clinics.MRNSettings{
 				Unique: true,
 			}
@@ -152,21 +152,17 @@ var _ = Describe("New Merge Planner", func() {
 
 			patientPlans, err := planner.Plan(context.Background())
 			Expect(err).ToNot(HaveOccurred())
+			Expect(patientPlans.PreventsMerge()).To(BeFalse())
 
-			Expect(patientPlans.PreventsMerge()).To(BeTrue())
-			Expect(patientPlans.Errors()).ToNot(BeEmpty())
-
+			renamed := 0
 			for _, plan := range patientPlans {
-				if plan.PatientAction != merge.PatientActionMerge {
+				if plan.PatientAction != merge.PatientActionMove || len(plan.Conflicts[merge.PatientConflictCategoryMRNOnlyMatch]) == 0 {
 					continue
 				}
-				if len(plan.Conflicts[merge.PatientConflictCategoryMRNOnlyMatch]) == 0 {
-					continue
-				}
-
-				Expect(plan.Error).To(Equal(merge.ErrorDuplicateMRNInTargetWorkspace))
-				Expect(plan.PreventsMerge()).To(BeTrue())
+				Expect(plan.PostMigrationMRN).To(PointTo(HavePrefix(*plan.SourcePatient.Mrn + "-dupe-")))
+				renamed++
 			}
+			Expect(renamed).To(BeNumerically(">", 0))
 		})
 	})
 
