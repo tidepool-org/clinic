@@ -18,13 +18,12 @@ import (
 	"github.com/tidepool-org/clinic/pointer"
 )
 
-var _ = Describe("List Patients Sort Integration Test", Ordered, ContinueOnFailure, func() {
+var _ = Describe("List Patients Sort and Filter Integration Test", Ordered, ContinueOnFailure, func() {
 	var clinic client.ClinicV1
 
-	listPatients := func(sort, sortType string) *httptest.ResponseRecorder {
-		query := url.Values{}
-		query.Set("sort", sort)
-		query.Set("sortType", sortType)
+	// listPatientsQuery lists the clinic's patients over the 7d period with the additional
+	// query parameters in query.
+	listPatientsQuery := func(query url.Values) *httptest.ResponseRecorder {
 		query.Set("period", "7d")
 
 		rec := httptest.NewRecorder()
@@ -35,6 +34,25 @@ var _ = Describe("List Patients Sort Integration Test", Ordered, ContinueOnFailu
 		server.ServeHTTP(rec, req)
 		Expect(rec.Result()).ToNot(BeNil())
 		return rec
+	}
+
+	listPatients := func(sort, sortType string) *httptest.ResponseRecorder {
+		return listPatientsQuery(url.Values{"sort": {sort}, "sortType": {sortType}})
+	}
+
+	// patientNames returns the full names of the patients in rec's successful response.
+	patientNames := func(rec *httptest.ResponseRecorder) []string {
+		Expect(rec.Result().StatusCode).To(Equal(http.StatusOK),
+			"response body: %s", rec.Body.String())
+
+		var patients client.PatientsResponseV1
+		Expect(json.NewDecoder(rec.Result().Body).Decode(&patients)).To(Succeed())
+		Expect(patients.Data).ToNot(BeNil())
+		names := []string{}
+		for _, patient := range *patients.Data {
+			names = append(names, patient.FullName)
+		}
+		return names
 	}
 
 	Describe("Create a clinic", func() {
@@ -142,18 +160,7 @@ var _ = Describe("List Patients Sort Integration Test", Ordered, ContinueOnFailu
 	// like MongoDB sorts a missing value: first when ascending, last when descending.
 	DescribeTable("Sorting by timeInTargetPercentDelta orders patients",
 		func(sort string, expected []string) {
-			rec := listPatients(sort, "cgm")
-			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK),
-				"response body: %s", rec.Body.String())
-
-			var patients client.PatientsResponseV1
-			Expect(json.NewDecoder(rec.Result().Body).Decode(&patients)).To(Succeed())
-			Expect(patients.Data).ToNot(BeNil())
-			names := []string{}
-			for _, patient := range *patients.Data {
-				names = append(names, patient.FullName)
-			}
-			Expect(names).To(Equal(expected))
+			Expect(patientNames(listPatients(sort, "cgm"))).To(Equal(expected))
 		},
 		Entry("descending", "-timeInTargetPercentDelta", []string{
 			"Rising Patient", "Falling Patient", "No Delta Patient", "No Summary Patient",
@@ -161,5 +168,62 @@ var _ = Describe("List Patients Sort Integration Test", Ordered, ContinueOnFailu
 		Entry("ascending", "+timeInTargetPercentDelta", []string{
 			"No Delta Patient", "Falling Patient", "Rising Patient", "No Summary Patient",
 		}),
+	)
+
+	// With includeNullDeltas, a delta filter also matches patients whose delta is null but
+	// whose timeInTargetPercent is present ("No Delta Patient"), never patients without a
+	// summary. Results use the default sort, by full name.
+	DescribeTable("Filtering by timeInTargetPercentDelta",
+		func(query url.Values, expected []string) {
+			Expect(patientNames(listPatientsQuery(query))).To(Equal(expected))
+		},
+		Entry("excludes null deltas by default",
+			url.Values{"cgm.timeInTargetPercentDelta": {"<=0"}},
+			[]string{"Falling Patient"},
+		),
+		Entry("excludes null deltas when includeNullDeltas is false",
+			url.Values{
+				"cgm.timeInTargetPercentDelta": {"<=0"},
+				"includeNullDeltas":            {"false"},
+			},
+			[]string{"Falling Patient"},
+		),
+		Entry("includes null deltas with <=",
+			url.Values{
+				"cgm.timeInTargetPercentDelta": {"<=0"},
+				"includeNullDeltas":            {"true"},
+			},
+			[]string{"Falling Patient", "No Delta Patient"},
+		),
+		Entry("includes null deltas with >=",
+			url.Values{
+				"cgm.timeInTargetPercentDelta": {">=0"},
+				"includeNullDeltas":            {"true"},
+			},
+			[]string{"No Delta Patient", "Rising Patient"},
+		),
+		Entry("has no effect without a delta filter",
+			url.Values{"includeNullDeltas": {"true"}},
+			[]string{
+				"Falling Patient", "No Delta Patient", "No Summary Patient", "Rising Patient",
+			},
+		),
+		Entry("doesn't loosen non-delta filters",
+			url.Values{
+				"cgm.timeInTargetPercentDelta": {"<=0"},
+				"cgm.timeInTargetPercent":      {">=0.55"},
+				"includeNullDeltas":            {"true"},
+			},
+			[]string{"No Delta Patient"},
+		),
+		Entry("combines with other OR filters",
+			url.Values{
+				"cgm.timeInTargetPercentDelta": {"<=0"},
+				"tags":                         {"_"},
+				"sites":                        {"_"},
+				"includeNullDeltas":            {"true"},
+			},
+			[]string{"Falling Patient", "No Delta Patient"},
+		),
 	)
 })

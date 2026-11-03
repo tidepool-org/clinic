@@ -1551,20 +1551,24 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) (bson.M, e
 	}
 
 	for field, pair := range filter.CGM {
-		MaybeApplyNumericFilter(selector,
+		orSelectors = MaybeApplyNumericFilter(selector,
+			orSelectors,
 			*filter.Period,
 			"cgm",
 			field,
 			pair,
+			filter.IncludeNullDeltas,
 		)
 	}
 
 	for field, pair := range filter.BGM {
-		MaybeApplyNumericFilter(selector,
+		orSelectors = MaybeApplyNumericFilter(selector,
+			orSelectors,
 			*filter.Period,
 			"bgm",
 			field,
 			pair,
+			filter.IncludeNullDeltas,
 		)
 	}
 
@@ -1604,10 +1608,35 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) (bson.M, e
 	return selector, nil
 }
 
-func MaybeApplyNumericFilter(selector bson.M, period string, typ string, field string, pair patients.FilterPair) {
-	if operator, ok := cmpToMongoFilter(&pair.Cmp); ok {
-		selector["summary."+typ+"Stats.periods."+period+"."+field] = bson.M{operator: pair.Value}
+// MaybeApplyNumericFilter adds the summary filter pair for field to selector, unless
+// pair's comparator is invalid. It returns orSelectors, extended with a group of ORed
+// clauses when the filter needs one.
+//
+// When includeNullDeltas is true and field is a delta (its name ends in "Delta"), the
+// filter also matches patients whose delta is null but whose corresponding
+// current-period value (field without the "Delta" suffix) is present. That's the case
+// when the current period has sufficient data and the previous period doesn't.
+func MaybeApplyNumericFilter(selector bson.M, orSelectors bson.A, period string, typ string,
+	field string, pair patients.FilterPair, includeNullDeltas bool) bson.A {
+
+	operator, ok := cmpToMongoFilter(&pair.Cmp)
+	if !ok {
+		return orSelectors
 	}
+
+	prefix := "summary." + typ + "Stats.periods." + period + "."
+	if base, isDelta := strings.CutSuffix(field, "Delta"); includeNullDeltas && isDelta {
+		return append(orSelectors, bson.A{
+			bson.M{prefix + field: bson.M{operator: pair.Value}},
+			bson.M{
+				prefix + field: nil,
+				prefix + base:  bson.M{"$ne": nil},
+			},
+		})
+	}
+
+	selector[prefix+field] = bson.M{operator: pair.Value}
+	return orSelectors
 }
 
 func ApplyDateFilter(selector bson.M, typ string, field string, pair patients.FilterDatePair) {

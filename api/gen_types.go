@@ -2540,6 +2540,13 @@ type ListPatientsParams struct {
 	// the ADA standard ranges (e.g. as used by the TIDE report)
 	// should be omitted.
 	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
+
+	// IncludeNullDeltas Whether delta filters (parameters ending in `Delta`) should also
+	// match patients whose delta is null, provided the corresponding
+	// current-period value is present. A delta is null in that case when
+	// the previous period lacks sufficient data for comparison. Has no
+	// effect on filters that aren't delta filters.
+	IncludeNullDeltas *bool `form:"includeNullDeltas,omitempty" json:"includeNullDeltas,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.

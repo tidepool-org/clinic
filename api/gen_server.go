@@ -1969,6 +1969,13 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter omitNonStandardRanges: %s", err))
 	}
 
+	// ------------- Optional query parameter "includeNullDeltas" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "includeNullDeltas", ctx.QueryParams(), &params.IncludeNullDeltas)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter includeNullDeltas: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.ListPatients(ctx, clinicId, params)
 	return err

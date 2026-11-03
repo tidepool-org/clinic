@@ -286,6 +286,11 @@ type Filter struct {
 	// OmitNonStandardRanges will exclude patients that aren't assigned the ADA standard
 	// preset ranges.
 	OmitNonStandardRanges bool
+
+	// IncludeNullDeltas makes the delta filters in CGM and BGM (those whose field name
+	// ends in "Delta") also match patients whose delta is null, provided the
+	// corresponding current-period value is present.
+	IncludeNullDeltas bool
 }
 
 type Permission = map[string]interface{}
