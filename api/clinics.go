@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/tealeg/xlsx/v3"
 
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -483,30 +484,42 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 		return err
 	}
 
-	if dto.SourceId == nil || *dto.SourceId == "" || *dto.SourceId == clinicId {
-		return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
-	}
-	if err := h.authorizeMergeSource(ctx, *dto.SourceId); err != nil {
-		return err
-	}
+	// Without a source clinic, report the path clinic's duplicates alone
+	var plan any
+	var generate func() (*xlsx.File, error)
+	filename := "merge-report"
+	if dto.SourceId == nil {
+		duplicatesPlan, err := merge.PlanDuplicatesReport(ctx, h.Clinics, h.Patients, clinicId)
+		if err != nil {
+			return err
+		}
+		plan, generate, filename = duplicatesPlan, merge.NewDuplicatesReport(duplicatesPlan).Generate, "duplicates-report"
+	} else {
+		if *dto.SourceId == "" || *dto.SourceId == clinicId {
+			return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
+		}
+		if err := h.authorizeMergeSource(ctx, *dto.SourceId); err != nil {
+			return err
+		}
 
-	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
-	plan, err := planner.Plan(ctx)
-	if err != nil {
-		return err
+		planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
+		mergePlan, err := planner.Plan(ctx)
+		if err != nil {
+			return err
+		}
+		plan, generate = mergePlan, merge.NewReport(mergePlan).Generate
 	}
 
 	if ec.Request().Header.Get("Accept") == "application/json" {
 		return ec.JSON(http.StatusOK, plan)
 	}
 
-	report := merge.NewReport(plan)
-	file, err := report.Generate()
+	file, err := generate()
 	if err != nil {
 		return err
 	}
 
-	disposition := fmt.Sprintf("attachment; filename=merge-report-%d.xlsx", time.Now().Unix())
+	disposition := fmt.Sprintf("attachment; filename=%s-%d.xlsx", filename, time.Now().Unix())
 	ec.Response().Header().Set(echo.HeaderContentDisposition, disposition)
 	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.ms-excel")
 	ec.Response().WriteHeader(http.StatusOK)

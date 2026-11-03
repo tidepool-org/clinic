@@ -152,11 +152,11 @@ func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, er
 		return
 	}
 
-	sourcePatients, err := m.listAllPatients(ctx, *source)
+	sourcePatients, err := listAllPatients(ctx, m.patients, *source)
 	if err != nil {
 		return
 	}
-	targetPatients, err := m.listAllPatients(ctx, *target)
+	targetPatients, err := listAllPatients(ctx, m.patients, *target)
 	if err != nil {
 		return
 	}
@@ -294,7 +294,7 @@ func (m *ClinicMergePlanner) CliniciansMergePlan(ctx context.Context, source, ta
 	return slices.Concat(sourcePlan, targetPlan), nil
 }
 
-func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics.Clinic) ([]patients.Patient, error) {
+func listAllPatients(ctx context.Context, service patients.Service, clinic clinics.Clinic) ([]patients.Patient, error) {
 	clinicId := clinic.Id.Hex()
 
 	filter := patients.Filter{
@@ -318,7 +318,7 @@ func (m *ClinicMergePlanner) listAllPatients(ctx context.Context, clinic clinics
 	list := []patients.Patient{}
 
 	for {
-		result, err := m.patients.List(ctx, &filter, page, sort)
+		result, err := service.List(ctx, &filter, page, sort)
 		if err != nil {
 			return nil, err
 		}

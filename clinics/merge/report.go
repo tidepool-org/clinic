@@ -53,14 +53,17 @@ func (r Report) Generate() (*xlsx.File, error) {
 		}
 	}
 
+	setColumnWidths(report)
+	return report, nil
+}
+
+func setColumnWidths(report *xlsx.File) {
 	for _, sh := range report.Sheets {
 		sh.SetColWidth(1, 1, 50)
 		for i := 2; i <= sh.MaxCol; i++ {
 			_ = sh.SetColAutoWidth(i, xlsx.DefaultAutoWidth)
 		}
 	}
-
-	return report, nil
 }
 
 func (r Report) addSummarySheet(report *xlsx.File) error {
@@ -92,16 +95,7 @@ func (r Report) addSourcePatients(report *xlsx.File) error {
 		return err
 	}
 
-	currentRow := sh.AddRow()
-	currentRow.AddCell().SetValue("Name ---")
-	currentRow.AddCell().SetValue("Claimed ---")
-	currentRow.AddCell().SetValue("UUID ---")
-	currentRow.AddCell().SetValue("DOB ---")
-	currentRow.AddCell().SetValue("MRN ---")
-	currentRow.AddCell().SetValue("Tags ---")
-	currentRow.AddCell().SetValue("Sites ---")
-	currentRow.AddCell().SetValue("Latest Upload ---")
-	sh.AddRow()
+	addPatientsHeader(sh)
 
 	for _, plan := range r.plan.PatientPlans.GetSourcePatientPlans() {
 		addPatientDetails(sh.AddRow(), *plan.SourcePatient, plan.SourceTagNames, plan.SourceSiteNames)
@@ -115,6 +109,15 @@ func (r Report) addTargetPatients(report *xlsx.File) error {
 		return err
 	}
 
+	addPatientsHeader(sh)
+
+	for _, plan := range r.plan.PatientPlans.GetTargetPatientPlans() {
+		addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames, plan.TargetSiteNames)
+	}
+	return nil
+}
+
+func addPatientsHeader(sh *xlsx.Sheet) {
 	currentRow := sh.AddRow()
 	currentRow.AddCell().SetValue("Name ---")
 	currentRow.AddCell().SetValue("Claimed ---")
@@ -125,11 +128,6 @@ func (r Report) addTargetPatients(report *xlsx.File) error {
 	currentRow.AddCell().SetValue("Sites ---")
 	currentRow.AddCell().SetValue("Latest Upload ---")
 	sh.AddRow()
-
-	for _, plan := range r.plan.PatientPlans.GetTargetPatientPlans() {
-		addPatientDetails(sh.AddRow(), *plan.TargetPatient, plan.TargetTagNames, plan.TargetSiteNames)
-	}
-	return nil
 }
 
 func (r Report) addSourcePatientClusters(report *xlsx.File) error {
