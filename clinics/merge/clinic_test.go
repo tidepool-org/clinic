@@ -38,6 +38,7 @@ import (
 	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
 	patientsService "github.com/tidepool-org/clinic/patients/service"
 	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	"github.com/tidepool-org/clinic/pointer"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 	dbTest "github.com/tidepool-org/clinic/store/test"
@@ -313,6 +314,15 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 		Expect(ids).To(ConsistOf(expected))
 	})
 
+	It("persists no consent record when no clinician confirmed the merge", func() {
+		var persisted struct {
+			Plan bson.M `bson:"plan"`
+		}
+		filter := bson.M{"planId": t.planId, "type": "clinic"}
+		Expect(t.db.Collection("merge_plans").FindOne(context.Background(), filter).Decode(&persisted)).To(Succeed())
+		Expect(persisted.Plan).ToNot(HaveKey("consent"))
+	})
+
 	It("removes the source clinic", func() {
 		_, err := t.clinicsService.Get(context.Background(), t.source.Id.Hex())
 		Expect(errors.Is(err, errs.NotFound)).To(BeTrue())
@@ -416,6 +426,136 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 			"plan.source._id": t.source.Id,
 			"plan.target._id": t.target.Id,
 		}, 1)
+	})
+})
+
+var _ = Describe("Clinic Merge with source patient tag, site and consent", Ordered, func() {
+	var t *ClinicMergeTest
+	var tagName string
+	const siteName = "Merged from source"
+	var sourceUserIds mapset.Set[string]
+	var consent merge.Consent
+
+	BeforeAll(func() {
+		t = NewClinicMergeTest()
+		t.Init(mergeTest.Params{
+			UniquePatientCount:     patientCount,
+			DuplicateAccountsCount: duplicateAccountsCount,
+		})
+		sourceUserIds = mapset.NewSet[string]()
+		for _, p := range t.sourcePatients {
+			sourceUserIds.Add(*p.UserId)
+		}
+
+		// Reuse an existing target tag and create a new site
+		tagName = t.target.PatientTags[0].Name
+		t.planner = merge.NewClinicMergePlanner(t.clinicsService, t.patientsService, t.cliniciansService,
+			t.source.Id.Hex(), t.target.Id.Hex(), merge.Options{SourcePatientTag: &tagName, SourcePatientSite: pointer.FromAny(siteName)})
+
+		var err error
+		t.plan, err = t.planner.Plan(context.Background())
+		Expect(err).ToNot(HaveOccurred())
+		consent = merge.Consent{
+			ConfirmingUserId: *t.targetAdmin.UserId,
+			ConfirmingName:   *t.targetAdmin.Name,
+			ConfirmingEmail:  *t.targetAdmin.Email,
+			ConfirmedAt:      time.Now().UTC(),
+			Confirmed:        true,
+		}
+		t.plan.Consent = &consent
+		t.planId, err = t.executor.Execute(context.Background(), t.plan)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	AfterAll(func() {
+		t.app.RequireStop()
+		_, err := dbTest.GetTestDatabase().Collection("patients").DeleteMany(context.Background(), bson.M{})
+		Expect(err).To(Succeed())
+	})
+
+	getTarget := func() *clinics.Clinic {
+		target, err := t.clinicsService.Get(context.Background(), t.target.Id.Hex())
+		Expect(err).ToNot(HaveOccurred())
+		return target
+	}
+
+	It("reuses the existing tag and creates the site once", func() {
+		target := getTarget()
+		tagCount, siteCount := 0, 0
+		for _, tag := range target.PatientTags {
+			if tag.Name == tagName {
+				tagCount++
+			}
+		}
+		for _, site := range target.Sites {
+			if site.Name == siteName {
+				siteCount++
+			}
+		}
+		Expect(tagCount).To(Equal(1))
+		Expect(siteCount).To(Equal(1))
+		Expect(target.PatientTags).To(HaveLen(t.plan.TagsPlans.GetResultingTagsCount()))
+	})
+
+	It("applies the tag and site to every patient from the source and to no other patient", func() {
+		target := getTarget()
+		var tagId primitive.ObjectID
+		for _, tag := range target.PatientTags {
+			if tag.Name == tagName {
+				tagId = *tag.Id
+			}
+		}
+		originalTargetPatients := make(map[string]patients.Patient)
+		for _, p := range t.targetPatients {
+			originalTargetPatients[*p.UserId] = p
+		}
+
+		clinicId := t.target.Id.Hex()
+		result, err := t.patientsService.List(context.Background(), &patients.Filter{ClinicId: &clinicId}, store.DefaultPagination().WithLimit(100000), nil)
+		Expect(err).ToNot(HaveOccurred())
+		for _, p := range result.Patients {
+			siteNames := mapset.NewSet[string]()
+			if p.Sites != nil {
+				for _, site := range *p.Sites {
+					siteNames.Add(site.Name)
+				}
+			}
+			if sourceUserIds.Contains(*p.UserId) {
+				Expect(*p.Tags).To(ContainElement(tagId))
+				Expect(siteNames.Contains(siteName)).To(BeTrue())
+			} else {
+				original := originalTargetPatients[*p.UserId]
+				Expect(*p.Tags).To(ConsistOf(*original.Tags))
+				Expect(siteNames.Contains(siteName)).To(BeFalse())
+			}
+		}
+	})
+
+	It("persists the consent record with the merge plan", func() {
+		var persisted struct {
+			Plan struct {
+				Consent *merge.Consent `bson:"consent"`
+			} `bson:"plan"`
+		}
+		filter := bson.M{"planId": t.planId, "type": "clinic"}
+		Expect(t.db.Collection("merge_plans").FindOne(context.Background(), filter).Decode(&persisted)).To(Succeed())
+		Expect(persisted.Plan.Consent).ToNot(BeNil())
+
+		stored := *persisted.Plan.Consent
+		Expect(stored.ConfirmedAt).To(BeTemporally("~", consent.ConfirmedAt, time.Millisecond))
+		stored.ConfirmedAt = consent.ConfirmedAt
+		Expect(stored).To(Equal(merge.Consent{
+			ConfirmingUserId: consent.ConfirmingUserId,
+			ConfirmingName:   consent.ConfirmingName,
+			ConfirmingEmail:  consent.ConfirmingEmail,
+			ConfirmedAt:      consent.ConfirmedAt,
+			SourceId:         t.source.Id.Hex(),
+			SourceName:       *t.source.Name,
+			TargetId:         t.target.Id.Hex(),
+			TargetName:       *t.target.Name,
+			Confirmed:        true,
+			SourceDeleted:    true,
+		}))
 	})
 })
 
