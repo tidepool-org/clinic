@@ -477,9 +477,16 @@ func (h *Handler) RefreshPatientCount(ec echo.Context, clinicId ClinicId) error 
 	return ec.NoContent(http.StatusOK)
 }
 
-func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error {
+func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) (err error) {
 	ctx := ec.Request().Context()
+	format := "xlsx"
+	if ec.Request().Header.Get("Accept") == "application/json" {
+		format = "json"
+	}
 	dto := GenerateMergeReportV1{}
+	defer func() {
+		h.logMergeAudit(ctx, "GenerateMergeReport invoked", err, "clinicId", clinicId, "sourceId", dto.SourceId, "format", format)
+	}()
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -510,7 +517,7 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 		plan, generate = mergePlan, merge.NewReport(mergePlan).Generate
 	}
 
-	if ec.Request().Header.Get("Accept") == "application/json" {
+	if format == "json" {
 		return ec.JSON(http.StatusOK, plan)
 	}
 
@@ -526,9 +533,12 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 	return file.Write(ec.Response())
 }
 
-func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
+func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) (err error) {
 	ctx := ec.Request().Context()
 	dto := MergeClinicV1{}
+	defer func() {
+		h.logMergeAudit(ctx, "MergeClinic invoked", err, "clinicId", clinicId, "sourceId", dto.SourceId)
+	}()
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
@@ -557,7 +567,8 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 			ConfirmingEmail: pointer.ToString(clinician.Email), ConfirmedAt: time.Now().UTC(), Confirmed: *dto.Confirmed}
 	}
 
-	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
+	options := merge.Options{SourcePatientTag: dto.SourcePatientTag, SourcePatientSite: dto.SourcePatientSite}
+	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId, options)
 	plan, err := planner.Plan(ctx)
 	if err != nil {
 		return err
@@ -570,6 +581,17 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+// logMergeAudit writes one audit entry per merge report or merge request. Never add PHI here.
+func (h *Handler) logMergeAudit(ctx context.Context, msg string, err error, args ...any) {
+	if authData := auth.GetAuthData(ctx); authData != nil {
+		args = append(args, "clinicianId", authData.SubjectId, "serverAccess", authData.ServerAccess)
+	}
+	if err != nil {
+		args = append(args, "error", err)
+	}
+	h.Logger.Infow(msg, args...)
 }
 
 func (h *Handler) authorizeMergeSource(ctx context.Context, sourceId string) error {

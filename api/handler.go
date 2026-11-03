@@ -12,6 +12,7 @@ import (
 	"github.com/tidepool-org/clinic/store"
 	"github.com/tidepool-org/clinic/xealth"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type Handler struct {
@@ -27,6 +28,7 @@ type Handler struct {
 	Xealth                      xealth.Xealth
 	ServiceAccountAuthenticator *auth.ServiceAccountAuthenticator
 	Users                       patients.UserService
+	Logger                      *zap.SugaredLogger
 }
 
 var _ ServerInterface = &Handler{}
