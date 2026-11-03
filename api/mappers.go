@@ -1832,10 +1832,14 @@ func patientTagsToObjectIds(tags *[]PatientTagId) *[]primitive.ObjectID {
 	return &tagIds
 }
 
-func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.SummaryFilters, err error) {
-	filters = patients.SummaryFilters{}
+func ParseCGMSummaryFilters(params ListPatientsParams) (patients.SummaryFilters, error) {
+	return parseSummaryFilters(cgmSummaryFilterParams(params))
+}
 
-	fieldsMap := map[string]*string{
+// cgmSummaryFilterParams returns the CGM summary filter parameters in params, keyed by
+// summary field name.
+func cgmSummaryFilterParams(params ListPatientsParams) map[string]*string {
+	return map[string]*string{
 		"min":      params.CgmMin,
 		"minDelta": params.CgmMinDelta,
 
@@ -1922,21 +1926,16 @@ func ParseCGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 		"standardDeviationDelta":      params.CgmStandardDeviationDelta,
 		"coefficientOfVariationDelta": params.CgmCoefficientOfVariationDelta,
 	}
-
-	for field, value := range fieldsMap {
-		err = parseRangeFilter(filters, field, value)
-		if err != nil {
-			return
-		}
-	}
-
-	return
 }
 
-func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.SummaryFilters, err error) {
-	filters = patients.SummaryFilters{}
+func ParseBGMSummaryFilters(params ListPatientsParams) (patients.SummaryFilters, error) {
+	return parseSummaryFilters(bgmSummaryFilterParams(params))
+}
 
-	fieldsMap := map[string]*string{
+// bgmSummaryFilterParams returns the BGM summary filter parameters in params, keyed by
+// summary field name.
+func bgmSummaryFilterParams(params ListPatientsParams) map[string]*string {
+	return map[string]*string{
 		"max": params.BgmMax,
 		"min": params.BgmMin,
 
@@ -1986,15 +1985,50 @@ func ParseBGMSummaryFilters(params ListPatientsParams) (filters patients.Summary
 		"averageDailyRecordsDelta": params.BgmAverageDailyRecordsDelta,
 		"totalRecordsDelta":        params.BgmTotalRecordsDelta,
 	}
+}
 
-	for field, value := range fieldsMap {
+// parseSummaryFilters parses the summary filter parameters in fields, keyed by summary
+// field name. It skips absent (nil) parameters.
+func parseSummaryFilters(fields map[string]*string) (filters patients.SummaryFilters,
+	err error) {
+
+	filters = patients.SummaryFilters{}
+	for field, value := range fields {
 		err = parseRangeFilter(filters, field, value)
 		if err != nil {
 			return
 		}
 	}
-
 	return
+}
+
+// ParseIncludeNullDeltas returns the delta filter parameters named in params'
+// includeNullDeltas, as a set keyed by parameter name (e.g.
+// "cgm.timeInTargetPercentDelta"). It returns an [errors.BadRequest] error if a name isn't
+// a delta filter parameter.
+func ParseIncludeNullDeltas(params ListPatientsParams) (map[string]bool, error) {
+	includeNullDeltas := map[string]bool{}
+	if params.IncludeNullDeltas == nil {
+		return includeNullDeltas, nil
+	}
+
+	fieldsByType := map[string]map[string]*string{
+		"cgm": cgmSummaryFilterParams(params),
+		"bgm": bgmSummaryFilterParams(params),
+	}
+	for _, name := range *params.IncludeNullDeltas {
+		typ, field, _ := strings.Cut(name, ".")
+		fields, ok := fieldsByType[typ]
+		if ok {
+			_, ok = fields[field]
+		}
+		if !ok || !strings.HasSuffix(field, "Delta") {
+			return nil, fmt.Errorf("%w: invalid includeNullDeltas parameter, "+
+				"unknown delta filter %q", errors.BadRequest, name)
+		}
+		includeNullDeltas[name] = true
+	}
+	return includeNullDeltas, nil
 }
 
 func ParseCGMSummaryDateFilters(params ListPatientsParams) (filters patients.SummaryDateFilters) {
