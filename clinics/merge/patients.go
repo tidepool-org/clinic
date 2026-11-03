@@ -117,6 +117,7 @@ type PatientPlan struct {
 	PostMigrationTagNames      []string `bson:"postMigrationTagNames"`
 	PostMigrationSiteNames     []string `bson:"postMigrationSiteNames"`
 	PostMigrationMRNUniqueness bool     `bson:"postMigrationMRNUniqueness"`
+	AssignedSiteName           *string  `bson:"assignedSiteName,omitempty" json:",omitempty"`
 
 	CanExecuteAction bool         `bson:"canExecuteAction"`
 	Error            *ReportError `bson:"error"`
@@ -431,6 +432,10 @@ func (p *PatientPlanExecutor) Execute(ctx context.Context, plan PatientPlan, sou
 }
 
 func (p *PatientPlanExecutor) movePatient(ctx context.Context, plan PatientPlan, target clinics.Clinic) error {
+	resultingSites, err := plan.sourceSitesForTarget(target)
+	if err != nil {
+		return err
+	}
 	tagNames := map[string]struct{}{}
 	for _, name := range plan.PostMigrationTagNames {
 		tagNames[name] = struct{}{}
@@ -455,6 +460,9 @@ func (p *PatientPlanExecutor) movePatient(ctx context.Context, plan PatientPlan,
 			"tags":             tagIds,
 			"updatedTime":      time.Now(),
 		},
+	}
+	if resultingSites != nil {
+		update["$set"].(bson.M)["sites"] = resultingSites
 	}
 
 	res, err := p.patientsCollection.UpdateOne(ctx, selector, update)
@@ -490,12 +498,15 @@ func (p *PatientPlanExecutor) mergeSites(ctx context.Context, plan PatientPlan,
 		"clinicId": plan.TargetPatient.ClinicId,
 		"userId":   plan.TargetPatient.UserId,
 	}
-	srcSites := plan.SourcePatient.Sites
-	if srcSites == nil || len(*srcSites) == 0 {
+	srcSites, err := plan.sourceSitesForTarget(target)
+	if err != nil {
+		return err
+	}
+	if len(srcSites) == 0 {
 		return nil
 	}
 	update := bson.M{
-		"$push": bson.M{
+		"$addToSet": bson.M{
 			"sites": bson.M{
 				"$each": srcSites,
 			},
@@ -510,6 +521,33 @@ func (p *PatientPlanExecutor) mergeSites(ctx context.Context, plan PatientPlan,
 		return fmt.Errorf("error updating patient %s sites: unexpected modified count %d", selector, res.ModifiedCount)
 	}
 	return nil
+}
+
+func (p PatientPlan) sourceSitesForTarget(target clinics.Clinic) ([]sites.Site, error) {
+	var result []sites.Site
+	if p.SourcePatient.Sites != nil {
+		result = slices.Clone(*p.SourcePatient.Sites)
+	}
+	for i := range result {
+		for _, migrated := range target.Sites {
+			if migrated.Id == result[i].Id {
+				result[i] = migrated
+				break
+			}
+		}
+	}
+	if p.AssignedSiteName != nil {
+		for _, site := range target.Sites {
+			if site.Name == *p.AssignedSiteName {
+				if !slices.ContainsFunc(result, func(existing sites.Site) bool { return existing.Id == site.Id }) {
+					result = append(result, site)
+				}
+				return result, nil
+			}
+		}
+		return nil, fmt.Errorf("assigned source patient site does not exist in target")
+	}
+	return result, nil
 }
 
 func (p *PatientPlanExecutor) mergeTags(ctx context.Context, plan PatientPlan, target clinics.Clinic) error {

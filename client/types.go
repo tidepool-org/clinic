@@ -1503,9 +1503,9 @@ type ErrorV1 struct {
 	Message string `json:"message"`
 }
 
-// GenerateMergeReportV1 defines model for generateMergeReport.v1.
+// GenerateMergeReportV1 Omit sourceId for a single-clinic report.
 type GenerateMergeReportV1 struct {
-	// SourceId Clinic identifier.
+	// SourceId Source clinic, distinct from the path clinic; omit for a single-clinic report.
 	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
 }
 
@@ -1569,8 +1569,17 @@ type MembershipRestrictionsV1 struct {
 
 // MergeClinicV1 defines model for mergeClinic.v1.
 type MergeClinicV1 struct {
-	// SourceId Clinic identifier.
-	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
+	// Confirmed The clinician's confirmation checkbox state. Must be true for user sessions.
+	Confirmed *bool `json:"confirmed,omitempty"`
+
+	// SourceId Required source clinic, distinct from the path clinic.
+	SourceId *ClinicIdV1 `json:"sourceId"`
+
+	// SourcePatientSite One target site name to reuse or create and apply to source-originating patients.
+	SourcePatientSite *string `json:"sourcePatientSite,omitempty"`
+
+	// SourcePatientTag One target tag name to reuse or create and apply to source-originating patients.
+	SourcePatientTag *string `json:"sourcePatientTag,omitempty"`
 }
 
 // MetaV1 defines model for meta.v1.

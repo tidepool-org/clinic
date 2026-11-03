@@ -8971,6 +8971,7 @@ func (r SendUploadReminderResponse) StatusCode() int {
 type GenerateMergeReportResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
 }
 
 // Status returns HTTPResponse.Status
@@ -11729,6 +11730,19 @@ func ParseGenerateMergeReportResponse(rsp *http.Response) (*GenerateMergeReportR
 	response := &GenerateMergeReportResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case rsp.StatusCode == 200:
+		// Content-type (application/vnd.ms-excel) unsupported
+
 	}
 
 	return response, nil

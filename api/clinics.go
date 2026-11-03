@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	stderrors "errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,6 +16,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/merge"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/pointer"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -480,6 +483,13 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error 
 		return err
 	}
 
+	if dto.SourceId == nil || *dto.SourceId == "" || *dto.SourceId == clinicId {
+		return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
+	}
+	if err := h.authorizeMergeSource(ctx, *dto.SourceId); err != nil {
+		return err
+	}
+
 	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
 	plan, err := planner.Plan(ctx)
 	if err != nil {
@@ -510,11 +520,36 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 		return err
 	}
 
+	if dto.SourceId == nil || *dto.SourceId == "" || *dto.SourceId == clinicId {
+		return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
+	}
+	if err := h.authorizeMergeSource(ctx, *dto.SourceId); err != nil {
+		return err
+	}
+
+	var consent *merge.Consent
+	authData := auth.GetAuthData(ctx)
+	if !auth.IsServerAuth(authData) {
+		if dto.Confirmed == nil || !*dto.Confirmed {
+			return fmt.Errorf("merge confirmation is required: %w", errors.BadRequest)
+		}
+		clinician, err := h.Clinicians.Get(ctx, clinicId, authData.SubjectId)
+		if err != nil {
+			return err
+		}
+		if clinician == nil || !clinician.IsAdmin() {
+			return errors.HttpError{Code: http.StatusForbidden, Err: auth.ErrUnauthorized}
+		}
+		consent = &merge.Consent{ConfirmingUserId: authData.SubjectId, ConfirmingName: pointer.ToString(clinician.Name),
+			ConfirmingEmail: pointer.ToString(clinician.Email), ConfirmedAt: time.Now().UTC(), Confirmed: *dto.Confirmed}
+	}
+
 	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
 	plan, err := planner.Plan(ctx)
 	if err != nil {
 		return err
 	}
+	plan.Consent = consent
 
 	_, err = h.ClinicMergePlanExecutor.Execute(ctx, plan)
 	if err != nil {
@@ -522,6 +557,28 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) authorizeMergeSource(ctx context.Context, sourceId string) error {
+	authData := auth.GetAuthData(ctx)
+	if auth.IsServerAuth(authData) {
+		return nil
+	}
+	if authData == nil || authData.SubjectId == "" {
+		return errors.Unauthorized
+	}
+
+	clinician, err := h.Clinicians.Get(ctx, sourceId, authData.SubjectId)
+	if err != nil && !stderrors.Is(err, errors.NotFound) {
+		return err
+	}
+	if err != nil || clinician == nil || !clinician.IsAdmin() {
+		return fmt.Errorf("source clinic admin access required: %w", errors.HttpError{
+			Code: http.StatusForbidden,
+			Err:  auth.ErrUnauthorized,
+		})
+	}
+	return nil
 }
 
 func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {

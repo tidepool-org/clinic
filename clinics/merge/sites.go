@@ -16,6 +16,7 @@ type SiteAction string
 
 const (
 	SiteActionInvalid SiteAction = ""
+	SiteActionCreate  SiteAction = "CREATE"
 	// SiteActionMove the site from the source clinic to the target clinic.
 	SiteActionMove SiteAction = "MOVE"
 	// SiteActionRetain the site in the target clinic.
@@ -167,6 +168,9 @@ func NewSitePlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Servi
 func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 	logger := t.logger.With("site", plan.Site)
 	switch plan.Action {
+	case SiteActionCreate:
+		_, err := t.clinicsService.CreateSite(ctx, plan.TargetClinicId.Hex(), &plan.Site)
+		return err
 	case SiteActionRetain:
 		logger.Debug("retaining existing target site")
 	case SiteActionMove:

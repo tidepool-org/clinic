@@ -1349,7 +1349,7 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("prevents clinicians from generating merge reports", func() {
+	It("allows clinic admins to generate merge reports", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "merge"},
 			"method": "POST",
@@ -1360,7 +1360,7 @@ var _ = Describe("Request Authorizer", func() {
 			"clinician": clinicAdmin,
 		}
 		err := authorizer.EvaluatePolicy(context.Background(), input)
-		Expect(err).To(Equal(auth.ErrUnauthorized))
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("prevents users from generating merge reports", func() {

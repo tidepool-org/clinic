@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,6 +17,8 @@ import (
 	"github.com/tidepool-org/clinic/clinics/manager"
 	errs "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/pointer"
+	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
 
@@ -42,6 +45,20 @@ type ClinicMergePlan struct {
 	PatientPlans                    PatientPlans                    `bson:"-"`
 
 	CreatedTime time.Time `bson:"createdTime"`
+	Consent     *Consent  `bson:"consent,omitempty" json:"-"`
+}
+
+type Consent struct {
+	ConfirmingUserId string    `bson:"confirmingUserId"`
+	ConfirmingName   string    `bson:"confirmingName"`
+	ConfirmingEmail  string    `bson:"confirmingEmail"`
+	ConfirmedAt      time.Time `bson:"confirmedAt"`
+	SourceId         string    `bson:"sourceId"`
+	SourceName       string    `bson:"sourceName"`
+	TargetId         string    `bson:"targetId"`
+	TargetName       string    `bson:"targetName"`
+	Confirmed        bool      `bson:"confirmed"`
+	SourceDeleted    bool      `bson:"sourceDeleted"`
 }
 
 func (c ClinicMergePlan) Plans() []Plan {
@@ -77,16 +94,26 @@ type ClinicMergePlanner struct {
 
 	sourceId string
 	targetId string
+	options  Options
 }
 
-func NewClinicMergePlanner(clinicsService clinics.Service, patientsService patients.Service, cliniciansService clinicians.Service, sourceId, targetId string) Planner[ClinicMergePlan] {
-	return &ClinicMergePlanner{
+type Options struct {
+	SourcePatientTag  *string
+	SourcePatientSite *string
+}
+
+func NewClinicMergePlanner(clinicsService clinics.Service, patientsService patients.Service, cliniciansService clinicians.Service, sourceId, targetId string, options ...Options) Planner[ClinicMergePlan] {
+	planner := &ClinicMergePlanner{
 		clinics:    clinicsService,
 		patients:   patientsService,
 		clinicians: cliniciansService,
 		sourceId:   sourceId,
 		targetId:   targetId,
 	}
+	if len(options) > 0 {
+		planner.options = options[0]
+	}
+	return planner
 }
 
 func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, err error) {
@@ -141,7 +168,59 @@ func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, er
 	intermediate.SourcePatientClusters = NewPatientClusterReporter(sourcePatients)
 	intermediate.TargetPatientClusters = NewPatientClusterReporter(targetPatients)
 
-	return intermediate.Plan(ctx)
+	plan, err = intermediate.Plan(ctx)
+	if err != nil {
+		return
+	}
+	err = plan.assignSourcePatients(m.options)
+	return
+}
+
+func (p *ClinicMergePlan) assignSourcePatients(options Options) error {
+	var tagName, siteName string
+	if options.SourcePatientTag != nil {
+		tagName = strings.TrimSpace(*options.SourcePatientTag)
+		if tagName == "" {
+			return fmt.Errorf("source patient tag must not be empty: %w", errs.BadRequest)
+		}
+		if !slices.ContainsFunc(p.TagsPlans, func(plan TagPlan) bool { return plan.Name == tagName }) {
+			p.TagsPlans = append(p.TagsPlans, TagPlan{Name: tagName, TagAction: TagActionCreate,
+				TargetClinicId: p.Target.Id, Workspaces: []string{*p.Target.Name}})
+		}
+	}
+	if options.SourcePatientSite != nil {
+		siteName = strings.TrimSpace(*options.SourcePatientSite)
+		if siteName == "" {
+			return fmt.Errorf("source patient site must not be empty: %w", errs.BadRequest)
+		}
+		found := false
+		for _, plan := range p.SitesPlans {
+			if strings.EqualFold(plan.Name(), siteName) {
+				siteName, found = plan.Name(), true
+				break
+			}
+		}
+		if !found {
+			p.SitesPlans = append(p.SitesPlans, SitePlan{Site: sites.Site{Name: siteName},
+				Action: SiteActionCreate, TargetClinicId: p.Target.Id, SourceWorkspace: *p.Target.Name})
+		}
+	}
+	for i := range p.PatientPlans {
+		plan := &p.PatientPlans[i]
+		if plan.SourcePatient == nil {
+			continue
+		}
+		if tagName != "" && !slices.Contains(plan.PostMigrationTagNames, tagName) {
+			plan.PostMigrationTagNames = append(plan.PostMigrationTagNames, tagName)
+		}
+		if siteName != "" {
+			plan.AssignedSiteName = &siteName
+			if !slices.Contains(plan.PostMigrationSiteNames, siteName) {
+				plan.PostMigrationSiteNames = append(plan.PostMigrationSiteNames, siteName)
+			}
+		}
+	}
+	return nil
 }
 
 func (m *ClinicMergePlanner) MembershipRestrictionsMergePlan(source, target clinics.Clinic) (Planner[MembershipRestrictionsMergePlan], error) {
@@ -361,6 +440,29 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 			}
 		}
 
+		logger.Info("starting sites migration")
+		spe := NewSitePlanExecutor(logger, c.ClinicsService, c.PatientsService)
+		for _, sitePlan := range plan.SitesPlans {
+			if err := spe.Execute(sessionContext, sitePlan); err != nil {
+				return nil, err
+			}
+			if sitePlan.Action == SiteActionCreate {
+				updated, err := c.ClinicsService.Get(sessionContext, plan.Target.Id.Hex())
+				if err != nil {
+					return nil, err
+				}
+				for _, site := range updated.Sites {
+					if site.Name == sitePlan.Name() {
+						sitePlan.Site = site
+						break
+					}
+				}
+			}
+			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeSite, sitePlan)); err != nil {
+				return nil, err
+			}
+		}
+
 		logger.Info("starting patients migration")
 		ppe := NewPatientPlanExecutor(logger, c.ClinicsService, c.DB)
 		for _, p := range plan.PatientPlans {
@@ -374,17 +476,6 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 				sanitizePatient(p.TargetPatient)
 			}
 			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypePatient, p)); err != nil {
-				return nil, err
-			}
-		}
-
-		logger.Info("starting sites migration")
-		spe := NewSitePlanExecutor(logger, c.ClinicsService, c.PatientsService)
-		for _, plan := range plan.SitesPlans {
-			if err := spe.Execute(sessionContext, plan); err != nil {
-				return nil, err
-			}
-			if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeSite, plan)); err != nil {
 				return nil, err
 			}
 		}
@@ -404,7 +495,15 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		if err := c.ClinicManager.FinalizeMerge(sessionContext, plan.Source.Id.Hex(), plan.Target.Id.Hex()); err != nil {
 			return nil, err
 		}
-		if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeClinic, plan)); err != nil {
+		persistedPlan := plan
+		if plan.Consent != nil {
+			consent := *plan.Consent
+			consent.SourceId, consent.TargetId = plan.Source.Id.Hex(), plan.Target.Id.Hex()
+			consent.SourceName, consent.TargetName = pointer.ToString(plan.Source.Name), pointer.ToString(plan.Target.Name)
+			consent.SourceDeleted = true
+			persistedPlan.Consent = &consent
+		}
+		if err := c.persistPlan(sessionContext, NewPersistentPlan(planId, planTypeClinic, persistedPlan)); err != nil {
 			return nil, err
 		}
 

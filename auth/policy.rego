@@ -210,11 +210,20 @@ allow {
 }
 
 # Allow backend services to generate merge reports
-# POST /v1/clinics/:clinicId/tier
+# POST /v1/clinics/:clinicId/reports/merge
 allow {
   is_backend_service
   input.method == "POST"
   input.path = ["v1", "clinics", _, "reports", "merge"]
+}
+
+# Allow clinic admins to generate merge reports
+# POST /v1/clinics/:clinicId/reports/merge
+allow {
+  is_authenticated_user
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "reports", "merge"]
+  clinician_has_write_access
 }
 
 # Allow currently authenticated clinician to suppress notifications
@@ -516,6 +525,15 @@ allow {
   is_backend_service
   input.method == "POST"
   input.path = ["v1", "clinics", _, "merge"]
+}
+
+# Allow clinic admins to merge clinics
+# POST /v1/clinics/:clinicId/merge
+allow {
+  is_authenticated_user
+  input.method == "POST"
+  input.path = ["v1", "clinics", _, "merge"]
+  clinician_has_write_access
 }
 
 # Allow backend services to access the list of migrations for a given clinic
