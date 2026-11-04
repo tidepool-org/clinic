@@ -170,9 +170,9 @@ var _ = Describe("List Patients Sort and Filter Integration Test", Ordered, Cont
 		}),
 	)
 
-	// With includeNullDeltas, a delta filter also matches patients whose delta is null but
-	// whose timeInTargetPercent is present ("No Delta Patient"), never patients without a
-	// summary. Results use the default sort, by full name.
+	// A delta filter listed in includeNullDeltas also matches patients whose delta is null
+	// but whose timeInTargetPercent is present ("No Delta Patient"), never patients without
+	// a summary. Results use the default sort, by full name.
 	DescribeTable("Filtering by timeInTargetPercentDelta",
 		func(query url.Values, expected []string) {
 			Expect(patientNames(listPatientsQuery(query))).To(Equal(expected))
@@ -181,29 +181,45 @@ var _ = Describe("List Patients Sort and Filter Integration Test", Ordered, Cont
 			url.Values{"cgm.timeInTargetPercentDelta": {"<=0"}},
 			[]string{"Falling Patient"},
 		),
-		Entry("excludes null deltas when includeNullDeltas is false",
-			url.Values{
-				"cgm.timeInTargetPercentDelta": {"<=0"},
-				"includeNullDeltas":            {"false"},
-			},
-			[]string{"Falling Patient"},
-		),
 		Entry("includes null deltas with <=",
 			url.Values{
 				"cgm.timeInTargetPercentDelta": {"<=0"},
-				"includeNullDeltas":            {"true"},
+				"includeNullDeltas":            {"cgm.timeInTargetPercentDelta"},
 			},
 			[]string{"Falling Patient", "No Delta Patient"},
 		),
 		Entry("includes null deltas with >=",
 			url.Values{
 				"cgm.timeInTargetPercentDelta": {">=0"},
-				"includeNullDeltas":            {"true"},
+				"includeNullDeltas":            {"cgm.timeInTargetPercentDelta"},
 			},
 			[]string{"No Delta Patient", "Rising Patient"},
 		),
+		Entry("includes null deltas when listed with other deltas",
+			url.Values{
+				"cgm.timeInTargetPercentDelta": {"<=0"},
+				"includeNullDeltas": {
+					"cgm.timeInTargetMinutesDelta,cgm.timeInTargetPercentDelta",
+				},
+			},
+			[]string{"Falling Patient", "No Delta Patient"},
+		),
+		Entry("excludes null deltas when only another delta is listed",
+			url.Values{
+				"cgm.timeInTargetPercentDelta": {"<=0"},
+				"includeNullDeltas":            {"cgm.timeInTargetMinutesDelta"},
+			},
+			[]string{"Falling Patient"},
+		),
+		Entry("excludes null deltas when only the BGM delta is listed",
+			url.Values{
+				"cgm.timeInTargetPercentDelta": {"<=0"},
+				"includeNullDeltas":            {"bgm.timeInTargetPercentDelta"},
+			},
+			[]string{"Falling Patient"},
+		),
 		Entry("has no effect without a delta filter",
-			url.Values{"includeNullDeltas": {"true"}},
+			url.Values{"includeNullDeltas": {"cgm.timeInTargetPercentDelta"}},
 			[]string{
 				"Falling Patient", "No Delta Patient", "No Summary Patient", "Rising Patient",
 			},
@@ -212,7 +228,7 @@ var _ = Describe("List Patients Sort and Filter Integration Test", Ordered, Cont
 			url.Values{
 				"cgm.timeInTargetPercentDelta": {"<=0"},
 				"cgm.timeInTargetPercent":      {">=0.55"},
-				"includeNullDeltas":            {"true"},
+				"includeNullDeltas":            {"cgm.timeInTargetPercentDelta"},
 			},
 			[]string{"No Delta Patient"},
 		),
@@ -221,9 +237,25 @@ var _ = Describe("List Patients Sort and Filter Integration Test", Ordered, Cont
 				"cgm.timeInTargetPercentDelta": {"<=0"},
 				"tags":                         {"_"},
 				"sites":                        {"_"},
-				"includeNullDeltas":            {"true"},
+				"includeNullDeltas":            {"cgm.timeInTargetPercentDelta"},
 			},
 			[]string{"Falling Patient", "No Delta Patient"},
 		),
+	)
+
+	DescribeTable("Filtering with an invalid includeNullDeltas fails",
+		func(includeNullDeltas string) {
+			rec := listPatientsQuery(url.Values{
+				"cgm.timeInTargetPercentDelta": {"<=0"},
+				"includeNullDeltas":            {includeNullDeltas},
+			})
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusBadRequest),
+				"response body: %s", rec.Body.String())
+		},
+		Entry("with a boolean", "true"),
+		Entry("with a filter that isn't a delta", "cgm.timeInTargetPercent"),
+		Entry("with an unknown delta", "cgm.fooDelta"),
+		Entry("with a known delta and an unknown one",
+			"cgm.timeInTargetPercentDelta,cgm.fooDelta"),
 	)
 })

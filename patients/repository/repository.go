@@ -1557,7 +1557,7 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) (bson.M, e
 			"cgm",
 			field,
 			pair,
-			filter.IncludeNullDeltas,
+			filter.IncludeNullDeltas["cgm."+field],
 		)
 	}
 
@@ -1568,7 +1568,7 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) (bson.M, e
 			"bgm",
 			field,
 			pair,
-			filter.IncludeNullDeltas,
+			filter.IncludeNullDeltas["bgm."+field],
 		)
 	}
 

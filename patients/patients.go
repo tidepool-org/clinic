@@ -287,10 +287,11 @@ type Filter struct {
 	// preset ranges.
 	OmitNonStandardRanges bool
 
-	// IncludeNullDeltas makes the delta filters in CGM and BGM (those whose field name
-	// ends in "Delta") also match patients whose delta is null, provided the
-	// corresponding current-period value is present.
-	IncludeNullDeltas bool
+	// IncludeNullDeltas is the set of delta filters in CGM and BGM (those whose field
+	// name ends in "Delta") that also match patients whose delta is null, provided the
+	// corresponding current-period value is present. It's keyed by "cgm.<field>" or
+	// "bgm.<field>". Delta filters not in the set don't match null deltas.
+	IncludeNullDeltas map[string]bool
 }
 
 type Permission = map[string]interface{}

@@ -169,3 +169,54 @@ var _ = DescribeTable("ParseCGMSummaryFilters",
 		errors.BadRequest,
 	),
 )
+
+var _ = DescribeTable("ParseIncludeNullDeltas",
+	func(names *[]string, expected map[string]bool, expectedErr error) {
+		got, err := api.ParseIncludeNullDeltas(api.ListPatientsParams{
+			IncludeNullDeltas: names,
+		})
+		if expectedErr != nil {
+			Expect(err).To(MatchError(expectedErr))
+			Expect(got).To(BeNil())
+		} else {
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got).To(Equal(expected))
+		}
+	},
+	Entry("absent", nil, map[string]bool{}, nil),
+	Entry("empty", &[]string{}, map[string]bool{}, nil),
+	Entry("a CGM delta",
+		&[]string{"cgm.timeInTargetPercentDelta"},
+		map[string]bool{"cgm.timeInTargetPercentDelta": true},
+		nil,
+	),
+	Entry("a BGM delta",
+		&[]string{"bgm.averageGlucoseMmolDelta"},
+		map[string]bool{"bgm.averageGlucoseMmolDelta": true},
+		nil,
+	),
+	Entry("CGM and BGM deltas sharing a field name",
+		&[]string{"cgm.timeInTargetPercentDelta", "bgm.timeInTargetPercentDelta"},
+		map[string]bool{
+			"cgm.timeInTargetPercentDelta": true,
+			"bgm.timeInTargetPercentDelta": true,
+		},
+		nil,
+	),
+	Entry("a CGM-only delta as BGM",
+		&[]string{"bgm.timeCGMUsePercentDelta"}, nil, errors.BadRequest,
+	),
+	Entry("an unknown delta", &[]string{"cgm.fooDelta"}, nil, errors.BadRequest),
+	Entry("a known delta and an unknown one",
+		&[]string{"cgm.timeInTargetPercentDelta", "cgm.fooDelta"}, nil, errors.BadRequest,
+	),
+	Entry("a filter that isn't a delta",
+		&[]string{"cgm.timeInTargetPercent"}, nil, errors.BadRequest,
+	),
+	Entry("an unknown type", &[]string{"foo.timeInTargetPercentDelta"}, nil,
+		errors.BadRequest,
+	),
+	Entry("a bare field name", &[]string{"timeInTargetPercentDelta"}, nil,
+		errors.BadRequest,
+	),
+)

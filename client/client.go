@@ -5494,7 +5494,7 @@ func NewListPatientsRequest(server string, clinicId ClinicId, params *ListPatien
 
 		if params.IncludeNullDeltas != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "includeNullDeltas", runtime.ParamLocationQuery, *params.IncludeNullDeltas); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "includeNullDeltas", runtime.ParamLocationQuery, *params.IncludeNullDeltas); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

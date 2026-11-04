@@ -1971,7 +1971,7 @@ func (w *ServerInterfaceWrapper) ListPatients(ctx echo.Context) error {
 
 	// ------------- Optional query parameter "includeNullDeltas" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "includeNullDeltas", ctx.QueryParams(), &params.IncludeNullDeltas)
+	err = runtime.BindQueryParameter("form", false, false, "includeNullDeltas", ctx.QueryParams(), &params.IncludeNullDeltas)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter includeNullDeltas: %s", err))
 	}
