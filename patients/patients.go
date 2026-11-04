@@ -37,9 +37,6 @@ var (
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
 
-	DataSourceStatePending          = "pending"
-	DataSourceStatePendingReconnect = "pendingReconnect"
-
 	permission                  = make(Permission, 0)
 	CustodialAccountPermissions = Permissions{
 		Custodian: &permission,
@@ -261,8 +258,19 @@ type ProviderConnectionRequests map[string]ConnectionRequests
 type ConnectionRequests []ConnectionRequest
 
 type ConnectionRequest struct {
-	ProviderName string    `bson:"providerName"`
-	CreatedTime  time.Time `bson:"createdTime"`
+	ProviderName   string    `bson:"providerName"`
+	CreatedTime    time.Time `bson:"createdTime"`
+	ExpirationTime time.Time `bson:"expirationTime,omitempty"`
+}
+
+// ExpiresAt is the request's expiration time. Requests that predate the field expire
+// PendingDataSourceExpirationDuration after creation, which is the rule the service
+// applies when it creates a request.
+func (r ConnectionRequest) ExpiresAt() time.Time {
+	if !r.ExpirationTime.IsZero() {
+		return r.ExpirationTime
+	}
+	return r.CreatedTime.Add(PendingDataSourceExpirationDuration)
 }
 
 type SubscriptionUpdate struct {
@@ -393,7 +401,6 @@ type DataSource struct {
 	DataSourceId   *primitive.ObjectID `bson:"dataSourceId,omitempty"`
 	CreatedTime    *time.Time          `bson:"createdTime,omitempty"`
 	ModifiedTime   *time.Time          `bson:"modifiedTime,omitempty"`
-	ExpirationTime *time.Time          `bson:"expirationTime,omitempty"`
 	ProviderName   string              `bson:"providerName"`
 	State          string              `bson:"state"`
 	LatestDataTime *time.Time          `bson:"latestDataTime,omitempty"`
