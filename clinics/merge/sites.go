@@ -16,7 +16,8 @@ type SiteAction string
 
 const (
 	SiteActionInvalid SiteAction = ""
-	SiteActionCreate  SiteAction = "CREATE"
+	// SiteActionCreate the site in the target clinic, for the source patient site option.
+	SiteActionCreate SiteAction = "CREATE"
 	// SiteActionMove the site from the source clinic to the target clinic.
 	SiteActionMove SiteAction = "MOVE"
 	// SiteActionRetain the site in the target clinic.
