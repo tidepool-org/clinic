@@ -113,6 +113,29 @@ var _ = Describe("GlycemicRanges", func() {
 			}
 		})
 
+		DescribeTable("rejects ranges it can't derive a summarizable key from",
+			func(ranges patients.GlycemicRanges, message string) {
+				err := ranges.Validate()
+				Expect(err).To(MatchError(errors.BadRequest))
+				Expect(err).To(MatchError(ContainSubstring(message)))
+			},
+			Entry("preset ranges without a preset",
+				patients.GlycemicRanges{Type: patients.GlycemicRangeTypePreset},
+				`unknown glycemic ranges preset ""`),
+			Entry("preset ranges with an unknown preset",
+				patients.GlycemicRanges{Type: patients.GlycemicRangeTypePreset, Preset: "mine"},
+				`unknown glycemic ranges preset "mine"`),
+			// The key is derived from the preset as given, so its case matters
+			Entry("preset ranges with a preset in the wrong case",
+				patients.GlycemicRanges{
+					Type:   patients.GlycemicRangeTypePreset,
+					Preset: "adahighrisk",
+				},
+				`unknown glycemic ranges preset "adahighrisk"`),
+			Entry("ranges of an unknown type", patients.GlycemicRanges{Type: "other"},
+				`unknown glycemic ranges type "other"`),
+		)
+
 		DescribeTable("accepts valid custom ranges",
 			func(ranges patients.GlycemicRanges) {
 				Expect(ranges.Validate()).To(Succeed())

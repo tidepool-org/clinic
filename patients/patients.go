@@ -264,16 +264,28 @@ func formatOptionalThreshold(v *float64) string {
 	return formatThreshold(*v)
 }
 
-// Validate checks custom ranges, which must be precise enough for their thresholds to fall
-// between adjacent stored readings (see BACK-4158), and must be in ascending order. Whole
-// mg/dL steps are finer than tenths of mmol/L, so mg/dL thresholds must also be at least 2
-// apart, or two of them would convert to the same mmol/L threshold. Other ranges are
-// always valid.
+// Validate checks that the ranges can be summarized for. Unset ranges are valid. Preset
+// ranges must name a known preset, by its proper name, as the key is derived from it.
+// Custom ranges must be precise enough for their thresholds to fall between adjacent
+// stored readings (see BACK-4158), and must be in ascending order. Whole mg/dL steps are
+// finer than tenths of mmol/L, so mg/dL thresholds must also be at least 2 apart, or two
+// of them would convert to the same mmol/L threshold.
 func (g GlycemicRanges) Validate() error {
-	if g.Type != GlycemicRangeTypeCustom {
+	switch g.Type {
+	case "":
 		return nil
+	case GlycemicRangeTypePreset:
+		preset, ok := ValidGlycemicRangesPresets[strings.ToLower(string(g.Preset))]
+		if !ok || preset != g.Preset {
+			return fmt.Errorf("%w: unknown glycemic ranges preset %q", errors.BadRequest,
+				g.Preset)
+		}
+		return nil
+	case GlycemicRangeTypeCustom:
+		return g.Custom.validate()
+	default:
+		return fmt.Errorf("%w: unknown glycemic ranges type %q", errors.BadRequest, g.Type)
 	}
-	return g.Custom.validate()
 }
 
 // glycemicRangeDecimals is the precision of readings, and so of thresholds, in each unit.
