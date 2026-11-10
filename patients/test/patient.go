@@ -78,8 +78,9 @@ func RandomGlycemicRangesCustom() patients.GlycemicRanges {
 // RandomGlycemicRangeThresholds returns valid thresholds for units: ascending, at the
 // units' precision, and randomly omitting the optional VeryLow and VeryHigh.
 func RandomGlycemicRangeThresholds(units string) patients.GlycemicRangeThresholds {
-	// Each range is in mg/dL, or tenths of mmol/L, and they don't overlap.
-	ranges := [4][2]int{{40, 53}, {54, 80}, {140, 250}, {251, 400}}
+	// Each range is in mg/dL, or tenths of mmol/L, and they don't overlap. The mg/dL
+	// ranges leave a gap of one, as mg/dL thresholds must be at least 2 apart.
+	ranges := [4][2]int{{40, 52}, {54, 80}, {140, 249}, {251, 400}}
 	scale := 1.0
 	if units == "mmol/L" {
 		ranges = [4][2]int{{22, 29}, {30, 44}, {78, 138}, {139, 222}}

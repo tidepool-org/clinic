@@ -124,6 +124,10 @@ var _ = Describe("GlycemicRanges", func() {
 			Entry("without optional thresholds", custom("mg/dL", nil, 70, 180, nil)),
 			Entry("with one-decimal mmol/L values prone to floating point error",
 				custom("mmol/L", pointer.FromAny(0.3), 0.7, 1.1, pointer.FromAny(2.3))),
+			Entry("with mg/dL thresholds 2 apart",
+				custom("mg/dL", pointer.FromAny(103.0), 105, 180, pointer.FromAny(182.0))),
+			Entry("with mmol/L thresholds 0.1 apart",
+				custom("mmol/L", pointer.FromAny(3.8), 3.9, 10, pointer.FromAny(10.1))),
 		)
 
 		DescribeTable("rejects invalid custom ranges",
@@ -147,6 +151,14 @@ var _ = Describe("GlycemicRanges", func() {
 			Entry("with veryHigh below high",
 				custom("mmol/L", nil, 3.9, 10, pointer.FromAny(9.9)),
 				"veryHigh must be greater than high"),
+			// 104 and 105 mg/dL both convert to 5.8 mmol/L, so readings in mmol/L could
+			// not be classified
+			Entry("with mg/dL thresholds 1 apart",
+				custom("mg/dL", pointer.FromAny(104.0), 105, 180, nil),
+				"low must be at least 2 mg/dL greater than veryLow"),
+			Entry("with mg/dL high and veryHigh 1 apart",
+				custom("mg/dL", nil, 70, 180, pointer.FromAny(181.0)),
+				"veryHigh must be at least 2 mg/dL greater than high"),
 		)
 	})
 })

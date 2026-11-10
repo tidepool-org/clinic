@@ -265,8 +265,10 @@ func formatOptionalThreshold(v *float64) string {
 }
 
 // Validate checks custom ranges, which must be precise enough for their thresholds to fall
-// between adjacent stored readings (see BACK-4158), and must be in ascending order. Other
-// ranges are always valid.
+// between adjacent stored readings (see BACK-4158), and must be in ascending order. Whole
+// mg/dL steps are finer than tenths of mmol/L, so mg/dL thresholds must also be at least 2
+// apart, or two of them would convert to the same mmol/L threshold. Other ranges are
+// always valid.
 func (g GlycemicRanges) Validate() error {
 	if g.Type != GlycemicRangeTypeCustom {
 		return nil
@@ -310,6 +312,10 @@ func (g GlycemicRangesCustom) validate() error {
 		if i > 0 && t.value <= thresholds[i-1].value {
 			return fmt.Errorf("%w: glycemic range threshold %s must be greater than %s",
 				errors.BadRequest, t.name, thresholds[i-1].name)
+		}
+		if i > 0 && g.Units == "mg/dL" && t.value-thresholds[i-1].value < 2 {
+			return fmt.Errorf("%w: glycemic range threshold %s must be at least 2 mg/dL "+
+				"greater than %s", errors.BadRequest, t.name, thresholds[i-1].name)
 		}
 	}
 	return nil
