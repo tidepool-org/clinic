@@ -1,0 +1,40 @@
+{
+  "cgmStats": {
+    "config": {
+      "schemaVersion": 7,
+      "glycemicRangesKey": "custom:mg/dL:54,70,180,250",
+      "lowGlucoseThreshold": 3.9,
+      "highGlucoseThreshold": 10
+    },
+    "dates": {
+      "hasFirstData": true,
+      "hasLastData": true,
+      "hasLastUploadDate": true,
+      "hasOutdatedSince": false,
+      "firstData": "2023-11-18T07:00:00Z",
+      "lastData": "2024-01-17T06:38:22.958Z",
+      "lastUpdatedDate": "2024-01-18T09:44:11.17Z",
+      "lastUploadDate": "2024-01-17T09:40:07.939Z"
+    },
+    "periods": {}
+  },
+  "bgmStats": {
+    "config": {
+      "schemaVersion": 7,
+      "glycemicRangesKey": "custom:mg/dL:54,70,180,250",
+      "lowGlucoseThreshold": 3.9,
+      "highGlucoseThreshold": 10
+    },
+    "dates": {
+      "hasFirstData": true,
+      "hasLastData": true,
+      "hasLastUploadDate": true,
+      "hasOutdatedSince": false,
+      "firstData": "2023-11-18T07:00:00Z",
+      "lastData": "2024-01-17T06:38:22.958Z",
+      "lastUpdatedDate": "2024-01-18T09:44:11.17Z",
+      "lastUploadDate": "2024-01-17T09:40:07.939Z"
+    },
+    "periods": {}
+  }
+}

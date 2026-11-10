@@ -789,9 +789,25 @@ func (r *repository) deleteMany(ctx context.Context, selector bson.M, metadata d
 	return patients, nil
 }
 
-func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *patients.Summary) error {
+// UpdateSummaryInClinics stores the summary in the user's patient records: all of them
+// when glycemicRangesKey is nil, otherwise only those whose glycemic ranges have that key
+// (see [patients.GlycemicRanges.Key]). The key is derived in Go rather than queried, so
+// the matching records are read first; a record whose ranges change in between keeps the
+// wrong stats until the next report for its ranges, which a change of ranges requests.
+// It returns [patients.ErrSummaryNotFound] only when the user has no patient records,
+// and nil when none match the key.
+func (r *repository) UpdateSummaryInClinics(ctx context.Context, userId string,
+	summary *patients.Summary, glycemicRangesKey *string) error {
+
 	selector := bson.M{
 		"userId": userId,
+	}
+	if glycemicRangesKey != nil {
+		ids, err := r.patientIdsWithGlycemicRangesKey(ctx, userId, *glycemicRangesKey)
+		if err != nil {
+			return err
+		}
+		selector = bson.M{"_id": bson.M{"$in": ids}}
 	}
 
 	if summary == nil {
@@ -802,43 +818,87 @@ func (r *repository) UpdateSummaryInAllClinics(ctx context.Context, userId strin
 		res, err := r.collection.UpdateMany(ctx, selector, update)
 		if err != nil {
 			return fmt.Errorf("error updating patient: %w", err)
-		} else if res.ModifiedCount == 0 {
+		} else if res.ModifiedCount == 0 && glycemicRangesKey == nil {
 			return patients.ErrSummaryNotFound
 		}
 		return nil
 	}
 
 	set := bson.M{}
-	calculatedAfter := bson.A{}
+	changed := bson.A{}
 	if summary.CGM != nil {
 		set["summary.cgmStats"] = statsUnlessCalculatedAfter(summary.CGM, summary.CGM.Dates.LastUpdatedDate, "$summary.cgmStats")
-		calculatedAfter = append(calculatedAfter, bson.M{"$gt": bson.A{summary.CGM.Dates.LastUpdatedDate, "$summary.cgmStats.dates.lastUpdatedDate"}})
+		changed = append(changed, statsChanged(summary.CGM.Dates.LastUpdatedDate,
+			summary.CGM.Config.GlycemicRangesKey, "$summary.cgmStats")...)
 	}
 	if summary.BGM != nil {
 		set["summary.bgmStats"] = statsUnlessCalculatedAfter(summary.BGM, summary.BGM.Dates.LastUpdatedDate, "$summary.bgmStats")
-		calculatedAfter = append(calculatedAfter, bson.M{"$gt": bson.A{summary.BGM.Dates.LastUpdatedDate, "$summary.bgmStats.dates.lastUpdatedDate"}})
+		changed = append(changed, statsChanged(summary.BGM.Dates.LastUpdatedDate,
+			summary.BGM.Config.GlycemicRangesKey, "$summary.bgmStats")...)
 	}
 
 	// updatedTime moves only when stats calculated after those stored arrive, so neither a stale report nor
 	// a redelivery moves it. The calculation date stands in for comparing the stats, whose periods are a map
 	// and so may be encoded in a different order on each delivery. Two reports with the same calculation
-	// date are taken to be the same, as one calculation produces one set of stats. Stats stored without a
-	// calculation date omit it, and missing sorts below null, so a report without one replacing them still
-	// moves it.
+	// date are taken to be the same, as one calculation produces one set of stats, unless they were computed
+	// for different glycemic range sets. Stats stored without a calculation date omit it, and missing sorts
+	// below null, so a report without one replacing them still moves it.
 	set["updatedTime"] = bson.M{
-		"$cond": bson.A{bson.M{"$or": calculatedAfter}, time.Now(), "$updatedTime"},
+		"$cond": bson.A{bson.M{"$or": changed}, time.Now(), "$updatedTime"},
 	}
 
 	res, err := r.collection.UpdateMany(ctx, selector, mongo.Pipeline{{{Key: "$set", Value: set}}})
 	if err != nil {
 		return fmt.Errorf("error updating patient: %w", err)
-	} else if res.MatchedCount == 0 {
+	} else if res.MatchedCount == 0 && glycemicRangesKey == nil {
 		// Ignoring a stale report handles it without modifying the patient, so only a user who is not a
 		// patient of any clinic is reported
 		return patients.ErrSummaryNotFound
 	}
 
 	return nil
+}
+
+// patientIdsWithGlycemicRangesKey returns the ids of the user's patient records whose
+// glycemic ranges have the key, or [patients.ErrSummaryNotFound] when the user has none.
+func (r *repository) patientIdsWithGlycemicRangesKey(ctx context.Context, userId,
+	key string) ([]primitive.ObjectID, error) {
+
+	opts := options.Find().SetProjection(bson.M{"_id": 1, "glycemicRanges": 1})
+	cursor, err := r.collection.Find(ctx, bson.M{"userId": userId}, opts)
+	if err != nil {
+		return nil, fmt.Errorf("error listing patients: %w", err)
+	}
+	var records []struct {
+		Id             primitive.ObjectID      `bson:"_id"`
+		GlycemicRanges patients.GlycemicRanges `bson:"glycemicRanges"`
+	}
+	if err := cursor.All(ctx, &records); err != nil {
+		return nil, fmt.Errorf("error decoding patients: %w", err)
+	}
+	if len(records) == 0 {
+		return nil, patients.ErrSummaryNotFound
+	}
+
+	ids := make([]primitive.ObjectID, 0, len(records))
+	for _, record := range records {
+		if record.GlycemicRanges.Key() == key {
+			ids = append(ids, record.Id)
+		}
+	}
+	return ids, nil
+}
+
+// statsChanged returns the conditions under which the stats reported differ from those
+// stored: calculated after them, or for another glycemic range set.
+func statsChanged(lastUpdatedDate *time.Time, glycemicRangesKey string,
+	storedStatsPath string) bson.A {
+
+	storedKey := bson.M{"$ifNull": bson.A{storedStatsPath + ".config.glycemicRangesKey", ""}}
+	return bson.A{
+		bson.M{"$gt": bson.A{lastUpdatedDate, storedStatsPath + ".dates.lastUpdatedDate"}},
+		bson.M{"$ne": bson.A{glycemicRangesKey, storedKey}},
+	}
 }
 
 // statsUnlessCalculatedAfter reports the stats given unless the stats stored were calculated after
@@ -881,6 +941,38 @@ func (r *repository) DeleteSummaryInAllClinics(ctx context.Context, summaryId st
 
 	if resCgm.ModifiedCount == 0 && resBgm.ModifiedCount == 0 {
 		return patients.ErrSummaryNotFound
+	}
+
+	return nil
+}
+
+// DeleteSummaryOfType removes the stats of the summary type from all the user's patient
+// records, whatever their glycemic ranges. It returns [patients.ErrSummaryNotFound] only
+// when the user has no patient records.
+func (r *repository) DeleteSummaryOfType(ctx context.Context, userId string,
+	summaryType patients.SummaryType) error {
+
+	stats := fmt.Sprintf("summary.%sStats", summaryType)
+	selector := bson.M{
+		"userId": userId,
+		stats:    bson.M{"$exists": true},
+	}
+	update := bson.M{
+		"$set":   bson.M{"updatedTime": time.Now()},
+		"$unset": bson.M{stats: ""},
+	}
+
+	res, err := r.collection.UpdateMany(ctx, selector, update)
+	if err != nil {
+		return fmt.Errorf("error removing %s from patient: %w", stats, err)
+	}
+	if res.MatchedCount == 0 {
+		count, err := r.collection.CountDocuments(ctx, bson.M{"userId": userId})
+		if err != nil {
+			return fmt.Errorf("error counting patients: %w", err)
+		} else if count == 0 {
+			return patients.ErrSummaryNotFound
+		}
 	}
 
 	return nil
@@ -1516,7 +1608,7 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 	for field, pair := range filter.CGM {
 		MaybeApplyNumericFilter(selector,
 			*filter.Period,
-			"cgm",
+			patients.SummaryTypeCGM,
 			field,
 			pair,
 		)
@@ -1525,7 +1617,7 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 	for field, pair := range filter.BGM {
 		MaybeApplyNumericFilter(selector,
 			*filter.Period,
-			"bgm",
+			patients.SummaryTypeBGM,
 			field,
 			pair,
 		)
@@ -1533,7 +1625,7 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 
 	for field, pair := range filter.CGMTime {
 		ApplyDateFilter(selector,
-			"cgm",
+			patients.SummaryTypeCGM,
 			field,
 			pair,
 		)
@@ -1541,7 +1633,7 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 
 	for field, pair := range filter.BGMTime {
 		ApplyDateFilter(selector,
-			"bgm",
+			patients.SummaryTypeBGM,
 			field,
 			pair,
 		)
@@ -1567,13 +1659,13 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 	return selector
 }
 
-func MaybeApplyNumericFilter(selector bson.M, period string, typ string, field string, pair patients.FilterPair) {
+func MaybeApplyNumericFilter(selector bson.M, period string, typ patients.SummaryType, field string, pair patients.FilterPair) {
 	if operator, ok := cmpToMongoFilter(&pair.Cmp); ok {
-		selector["summary."+typ+"Stats.periods."+period+"."+field] = bson.M{operator: pair.Value}
+		selector["summary."+string(typ)+"Stats.periods."+period+"."+field] = bson.M{operator: pair.Value}
 	}
 }
 
-func ApplyDateFilter(selector bson.M, typ string, field string, pair patients.FilterDatePair) {
+func ApplyDateFilter(selector bson.M, typ patients.SummaryType, field string, pair patients.FilterDatePair) {
 	dateFilter := bson.M{}
 
 	if pair.Min != nil {
@@ -1584,7 +1676,7 @@ func ApplyDateFilter(selector bson.M, typ string, field string, pair patients.Fi
 		dateFilter["$lt"] = pair.Max
 	}
 
-	selector["summary."+typ+"Stats.dates."+field] = dateFilter
+	selector["summary."+string(typ)+"Stats.dates."+field] = dateFilter
 }
 
 func generateListSortStage(sorts []*store.Sort) bson.D {

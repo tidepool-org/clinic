@@ -71,7 +71,7 @@ type PatientBGMPeriod struct {
 type PatientBGMPeriods map[string]PatientBGMPeriod
 
 type PatientBGMStats struct {
-	Id      string               `bson:"id" json:"id"`
+	Id      string               `bson:"id,omitempty" json:"id,omitempty"`
 	Config  PatientSummaryConfig `bson:"config,omitempty" json:"config,omitempty"`
 	Dates   PatientSummaryDates  `bson:"dates,omitempty" json:"dates,omitempty"`
 	Periods PatientBGMPeriods    `bson:"periods,omitempty" json:"periods,omitempty"`
@@ -196,7 +196,7 @@ type PatientCGMPeriod struct {
 type PatientCGMPeriods map[string]PatientCGMPeriod
 
 type PatientCGMStats struct {
-	Id      string               `bson:"id" json:"id"`
+	Id      string               `bson:"id,omitempty" json:"id,omitempty"`
 	Config  PatientSummaryConfig `bson:"config,omitempty" json:"config,omitempty"`
 	Dates   PatientSummaryDates  `bson:"dates,omitempty" json:"dates,omitempty"`
 	Periods PatientCGMPeriods    `bson:"periods,omitempty" json:"periods,omitempty"`
@@ -223,12 +223,23 @@ type PatientSummary struct {
 	CgmStats *PatientCGMStats `bson:"cgmStats,omitempty" json:"cgmStats,omitempty"`
 }
 
+// PatientSummaryConfig records how a summary was calculated. GlycemicRangesKey is the
+// key of the glycemic range set the summary was computed with (see [GlycemicRanges.Key]),
+// empty for summaries stored before it existed, which were all computed with the standard
+// ranges. The very low and very high thresholds are nil when the range set has no such
+// boundary.
+//
+// The fields are in alphabetical order, not in the thresholds' ascending order, because
+// the api package converts this type to and from the generated API type directly, which
+// requires the same fields in the same order, and generated types list their fields
+// alphabetically.
 type PatientSummaryConfig struct {
-	HighGlucoseThreshold     float64 `bson:"highGlucoseThreshold" json:"highGlucoseThreshold"`
-	LowGlucoseThreshold      float64 `bson:"lowGlucoseThreshold" json:"lowGlucoseThreshold"`
-	SchemaVersion            int     `bson:"schemaVersion" json:"schemaVersion"`
-	VeryHighGlucoseThreshold float64 `bson:"veryHighGlucoseThreshold" json:"veryHighGlucoseThreshold"`
-	VeryLowGlucoseThreshold  float64 `bson:"veryLowGlucoseThreshold" json:"veryLowGlucoseThreshold"`
+	GlycemicRangesKey        string   `bson:"glycemicRangesKey,omitempty" json:"glycemicRangesKey,omitempty"`
+	HighGlucoseThreshold     float64  `bson:"highGlucoseThreshold" json:"highGlucoseThreshold"`
+	LowGlucoseThreshold      float64  `bson:"lowGlucoseThreshold" json:"lowGlucoseThreshold"`
+	SchemaVersion            int      `bson:"schemaVersion" json:"schemaVersion"`
+	VeryHighGlucoseThreshold *float64 `bson:"veryHighGlucoseThreshold,omitempty" json:"veryHighGlucoseThreshold,omitempty"`
+	VeryLowGlucoseThreshold  *float64 `bson:"veryLowGlucoseThreshold,omitempty" json:"veryLowGlucoseThreshold,omitempty"`
 }
 
 // PatientSummaryDates dates tracked for summary calculation

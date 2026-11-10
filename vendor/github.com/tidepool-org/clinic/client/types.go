@@ -934,13 +934,13 @@ type BgmPeriodsV1 map[string]BgmPeriodV1
 
 // BgmStatsV1 A summary of a users recent BGM glucose values
 type BgmStatsV1 struct {
-	// Config Summary schema version and calculation configuration
+	// Config Summary schema version and calculation configuration. The very low and very high thresholds are omitted when the glycemic range set the summary was computed with has no such boundary, so no reading falls outside it.
 	Config SummaryConfigV1 `json:"config,omitempty"`
 
 	// Dates dates tracked for summary calculation
 	Dates SummaryDatesV1 `json:"dates,omitempty"`
 
-	// Id Summary Unique Identifier
+	// Id Identifier of the stored summary. Absent from a summary computed for a glycemic range set other than the standard one, which is never stored.
 	Id *SummaryIdV1 `json:"id,omitempty"`
 
 	// Periods A map to each supported BGM summary period
@@ -1191,13 +1191,13 @@ type CgmPeriodsV1 map[string]CgmPeriodV1
 
 // CgmStatsV1 A summary of a users recent CGM glucose values
 type CgmStatsV1 struct {
-	// Config Summary schema version and calculation configuration
+	// Config Summary schema version and calculation configuration. The very low and very high thresholds are omitted when the glycemic range set the summary was computed with has no such boundary, so no reading falls outside it.
 	Config SummaryConfigV1 `json:"config,omitempty"`
 
 	// Dates dates tracked for summary calculation
 	Dates SummaryDatesV1 `json:"dates,omitempty"`
 
-	// Id Summary Unique Identifier
+	// Id Identifier of the stored summary. Absent from a summary computed for a glycemic range set other than the standard one, which is never stored.
 	Id *SummaryIdV1 `json:"id,omitempty"`
 
 	// Periods A map to each supported CGM summary period
@@ -1870,8 +1870,11 @@ type StateV1 = string
 // StreetAddressV1 Street address.
 type StreetAddressV1 = string
 
-// SummaryConfigV1 Summary schema version and calculation configuration
+// SummaryConfigV1 Summary schema version and calculation configuration. The very low and very high thresholds are omitted when the glycemic range set the summary was computed with has no such boundary, so no reading falls outside it.
 type SummaryConfigV1 struct {
+	// GlycemicRangesKey Key of the glycemic range set the summary was computed with (see `glycemicRanges.key` in the clinic API), e.g. `preset:adaStandard`. Absent from summaries stored before this field existed, which were all computed with the standard ranges.
+	GlycemicRangesKey string `json:"glycemicRangesKey,omitempty"`
+
 	// HighGlucoseThreshold Threshold used for determining if a value is high
 	HighGlucoseThreshold float64 `json:"highGlucoseThreshold"`
 
@@ -1882,10 +1885,10 @@ type SummaryConfigV1 struct {
 	SchemaVersion int `json:"schemaVersion"`
 
 	// VeryHighGlucoseThreshold Threshold used for determining if a value is very high
-	VeryHighGlucoseThreshold float64 `json:"veryHighGlucoseThreshold"`
+	VeryHighGlucoseThreshold *float64 `json:"veryHighGlucoseThreshold,omitempty"`
 
 	// VeryLowGlucoseThreshold Threshold used for determining if a value is very low
-	VeryLowGlucoseThreshold float64 `json:"veryLowGlucoseThreshold"`
+	VeryLowGlucoseThreshold *float64 `json:"veryLowGlucoseThreshold,omitempty"`
 }
 
 // SummaryDatesV1 dates tracked for summary calculation
@@ -2567,6 +2570,12 @@ type FindPatientsParams struct {
 
 // FindPatientsParamsWorkspaceIdType defines parameters for FindPatients.
 type FindPatientsParamsWorkspaceIdType string
+
+// UpdatePatientSummaryParams defines parameters for UpdatePatientSummary.
+type UpdatePatientSummaryParams struct {
+	// GlycemicRangesKey Key of the glycemic range set the summary was computed with (see `glycemicRanges.key`). When given, the summary is stored only in the user's patient records whose glycemic ranges have that key; when omitted, in all of them.
+	GlycemicRangesKey *string `form:"glycemicRangesKey,omitempty" json:"glycemicRangesKey,omitempty"`
+}
 
 // ListClinicsForPatientParams defines parameters for ListClinicsForPatient.
 type ListClinicsForPatientParams struct {

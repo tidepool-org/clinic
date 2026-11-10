@@ -1,0 +1,24 @@
+{
+  "cgmStats": {
+    "id": "2fe2488217ee43e1b2e83c2f",
+    "config": {
+      "schemaVersion": 7,
+      "glycemicRangesKey": "preset:adaStandard",
+      "veryLowGlucoseThreshold": 3,
+      "lowGlucoseThreshold": 3.9,
+      "highGlucoseThreshold": 10,
+      "veryHighGlucoseThreshold": 13.9
+    },
+    "dates": {
+      "hasFirstData": true,
+      "hasLastData": true,
+      "hasLastUploadDate": true,
+      "hasOutdatedSince": false,
+      "firstData": "2023-11-18T07:00:00Z",
+      "lastData": "2024-01-18T06:38:22.958Z",
+      "lastUpdatedDate": "2024-01-19T09:44:11.17Z",
+      "lastUploadDate": "2024-01-18T09:40:07.939Z"
+    },
+    "periods": {}
+  }
+}

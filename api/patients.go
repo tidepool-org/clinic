@@ -279,7 +279,9 @@ func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId Pa
 	return ec.NoContent(http.StatusNoContent)
 }
 
-func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) error {
+func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId,
+	params UpdatePatientSummaryParams) error {
+
 	ctx := ec.Request().Context()
 	var dto *PatientSummaryV1
 	if ec.Request().ContentLength != 0 {
@@ -289,7 +291,8 @@ func (h *Handler) UpdatePatientSummary(ec echo.Context, patientId PatientId) err
 		}
 	}
 
-	err := h.Patients.UpdateSummaryInAllClinics(ctx, patientId, NewSummary(dto))
+	err := h.Patients.UpdateSummaryInClinics(ctx, patientId, NewSummary(dto),
+		params.GlycemicRangesKey)
 	if err != nil {
 		return err
 	}
@@ -301,6 +304,21 @@ func (h *Handler) DeletePatientSummary(ec echo.Context, summaryId SummaryId) err
 	ctx := ec.Request().Context()
 	err := h.Patients.DeleteSummaryInAllClinics(ctx, summaryId)
 	if err != nil {
+		return err
+	}
+
+	return ec.NoContent(http.StatusOK)
+}
+
+func (h *Handler) DeletePatientSummaryOfType(ec echo.Context, patientId PatientId,
+	summaryType string) error {
+
+	ctx := ec.Request().Context()
+	typ, err := patients.ParseSummaryType(summaryType)
+	if err != nil {
+		return err
+	}
+	if err := h.Patients.DeleteSummaryOfType(ctx, patientId, typ); err != nil {
 		return err
 	}
 

@@ -15,6 +15,7 @@ import (
 	"github.com/tidepool-org/clinic/deletions"
 	errors2 "github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/pointer"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -292,14 +293,25 @@ func (s *service) DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinic
 	return err
 }
 
-func (s *service) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *patients.Summary) error {
-	s.logger.Infow("updating summaries for user", "userId", userId)
-	return s.patientsRepo.UpdateSummaryInAllClinics(ctx, userId, summary)
+func (s *service) UpdateSummaryInClinics(ctx context.Context, userId string,
+	summary *patients.Summary, glycemicRangesKey *string) error {
+
+	s.logger.Infow("updating summaries for user", "userId", userId,
+		"glycemicRangesKey", pointer.ToString(glycemicRangesKey))
+	return s.patientsRepo.UpdateSummaryInClinics(ctx, userId, summary, glycemicRangesKey)
 }
 
 func (s *service) DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error {
 	s.logger.Infow("deleting summaries matching object id", "objectId", summaryId)
 	return s.patientsRepo.DeleteSummaryInAllClinics(ctx, summaryId)
+}
+
+func (s *service) DeleteSummaryOfType(ctx context.Context, userId string,
+	summaryType patients.SummaryType) error {
+
+	s.logger.Infow("deleting summaries of type for user", "userId", userId,
+		"summaryType", summaryType)
+	return s.patientsRepo.DeleteSummaryOfType(ctx, userId, summaryType)
 }
 
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {

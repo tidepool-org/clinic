@@ -15,6 +15,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/migration"
 	"github.com/tidepool-org/clinic/errors"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/pointer"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -573,9 +574,9 @@ func NewSummary(dto *PatientSummaryV1) *patients.Summary {
 
 	patientSummary := &patients.Summary{}
 
-	if dto.CgmStats != nil && dto.CgmStats.Id != nil {
+	if dto.CgmStats != nil {
 		patientSummary.CGM = &patients.PatientCGMStats{
-			Id:      *dto.CgmStats.Id,
+			Id:      pointer.ToString(dto.CgmStats.Id),
 			Periods: patients.PatientCGMPeriods{},
 		}
 
@@ -589,9 +590,9 @@ func NewSummary(dto *PatientSummaryV1) *patients.Summary {
 		}
 	}
 
-	if dto.BgmStats != nil && dto.BgmStats.Id != nil {
+	if dto.BgmStats != nil {
 		patientSummary.BGM = &patients.PatientBGMStats{
-			Id:      *dto.BgmStats.Id,
+			Id:      pointer.ToString(dto.BgmStats.Id),
 			Periods: patients.PatientBGMPeriods{},
 		}
 
@@ -617,7 +618,7 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummaryV1 {
 
 	if summary.CGM != nil {
 		patientSummary.CgmStats = &CgmStatsV1{
-			Id:      &summary.CGM.Id,
+			Id:      summaryIdDto(summary.CGM.Id),
 			Periods: CgmPeriodsV1{},
 		}
 
@@ -633,7 +634,7 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummaryV1 {
 
 	if summary.BGM != nil {
 		patientSummary.BgmStats = &BgmStatsV1{
-			Id:      &summary.BGM.Id,
+			Id:      summaryIdDto(summary.BGM.Id),
 			Periods: BgmPeriodsV1{},
 		}
 
@@ -648,6 +649,15 @@ func NewSummaryDto(summary *patients.Summary) *PatientSummaryV1 {
 	}
 
 	return patientSummary
+}
+
+// summaryIdDto returns the id of a stored summary, or nil for stats computed for a glycemic
+// range set, which have none.
+func summaryIdDto(id string) *SummaryIdV1 {
+	if id == "" {
+		return nil
+	}
+	return &id
 }
 
 func NewReviewDto(review patients.Review) PatientReviewV1 {
@@ -1152,8 +1162,10 @@ func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 
 	if typ == nil {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing type", errors.BadRequest)
-	} else if *typ != "cgm" && *typ != "bgm" {
-		return nil, fmt.Errorf("%w: invalid sort parameter, invalid type", errors.BadRequest)
+	}
+	summaryType, err := patients.ParseSummaryType(*typ)
+	if err != nil {
+		return nil, fmt.Errorf("invalid sort parameter: %w", err)
 	}
 
 	if period == nil {
@@ -1175,7 +1187,7 @@ func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 	result.Attribute = (*sort)[1:]
 	if result.Attribute == "" {
 		return nil, fmt.Errorf("%w: invalid sort parameter, missing sort attribute", errors.BadRequest)
-	} else if !isSortAttributeValid(result.Attribute, *typ) {
+	} else if !isSortAttributeValid(result.Attribute, summaryType) {
 		return nil, fmt.Errorf("%w: invalid sort parameter, invalid sort attribute", errors.BadRequest)
 	}
 
@@ -1432,8 +1444,8 @@ func ParseSort(sort *Sort, typ *string, period *string) ([]*store.Sort, error) {
 	return sorts, nil
 }
 
-var validSortAttributes = map[string]map[string]struct{}{
-	"cgm": {
+var validSortAttributes = map[patients.SummaryType]map[string]struct{}{
+	patients.SummaryTypeCGM: {
 		"fullName":       {},
 		"birthDate":      {},
 		"lastUploadDate": {},
@@ -1524,7 +1536,7 @@ var validSortAttributes = map[string]map[string]struct{}{
 		"max":      {},
 		"maxDelta": {},
 	},
-	"bgm": {
+	patients.SummaryTypeBGM: {
 		"fullName":       {},
 		"birthDate":      {},
 		"lastUploadDate": {},
@@ -1591,7 +1603,7 @@ var validSortAttributes = map[string]map[string]struct{}{
 	},
 }
 
-func isSortAttributeValid(attribute string, t string) bool {
+func isSortAttributeValid(attribute string, t patients.SummaryType) bool {
 	_, ok := validSortAttributes[t][attribute]
 	return ok
 }

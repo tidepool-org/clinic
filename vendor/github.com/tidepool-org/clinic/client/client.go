@@ -347,9 +347,12 @@ type ClientInterface interface {
 	SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdatePatientSummaryWithBody request with any body
-	UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdatePatientSummary(ctx context.Context, patientId PatientId, body UpdatePatientSummaryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdatePatientSummary(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, body UpdatePatientSummaryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeletePatientSummaryOfType request
+	DeletePatientSummaryOfType(ctx context.Context, patientId PatientId, summaryType string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListClinicsForPatient request
 	ListClinicsForPatient(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1539,8 +1542,8 @@ func (c *Client) SyncEHRDataForPatient(ctx context.Context, patientId PatientId,
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePatientSummaryRequestWithBody(c.Server, patientId, contentType, body)
+func (c *Client) UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientSummaryRequestWithBody(c.Server, patientId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1551,8 +1554,20 @@ func (c *Client) UpdatePatientSummaryWithBody(ctx context.Context, patientId Pat
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdatePatientSummary(ctx context.Context, patientId PatientId, body UpdatePatientSummaryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdatePatientSummaryRequest(c.Server, patientId, body)
+func (c *Client) UpdatePatientSummary(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, body UpdatePatientSummaryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatePatientSummaryRequest(c.Server, patientId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePatientSummaryOfType(ctx context.Context, patientId PatientId, summaryType string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePatientSummaryOfTypeRequest(c.Server, patientId, summaryType)
 	if err != nil {
 		return nil, err
 	}
@@ -6989,18 +7004,18 @@ func NewSyncEHRDataForPatientRequest(server string, patientId PatientId) (*http.
 }
 
 // NewUpdatePatientSummaryRequest calls the generic UpdatePatientSummary builder with application/json body
-func NewUpdatePatientSummaryRequest(server string, patientId PatientId, body UpdatePatientSummaryJSONRequestBody) (*http.Request, error) {
+func NewUpdatePatientSummaryRequest(server string, patientId PatientId, params *UpdatePatientSummaryParams, body UpdatePatientSummaryJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdatePatientSummaryRequestWithBody(server, patientId, "application/json", bodyReader)
+	return NewUpdatePatientSummaryRequestWithBody(server, patientId, params, "application/json", bodyReader)
 }
 
 // NewUpdatePatientSummaryRequestWithBody generates requests for UpdatePatientSummary with any type of body
-func NewUpdatePatientSummaryRequestWithBody(server string, patientId PatientId, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdatePatientSummaryRequestWithBody(server string, patientId PatientId, params *UpdatePatientSummaryParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7025,12 +7040,75 @@ func NewUpdatePatientSummaryRequestWithBody(server string, patientId PatientId, 
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.GlycemicRangesKey != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "glycemicRangesKey", runtime.ParamLocationQuery, *params.GlycemicRangesKey); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeletePatientSummaryOfTypeRequest generates requests for DeletePatientSummaryOfType
+func NewDeletePatientSummaryOfTypeRequest(server string, patientId PatientId, summaryType string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "summaryType", runtime.ParamLocationPath, summaryType)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/patients/%s/summary/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -7853,9 +7931,12 @@ type ClientWithResponsesInterface interface {
 	SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error)
 
 	// UpdatePatientSummaryWithBodyWithResponse request with any body
-	UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error)
+	UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error)
 
-	UpdatePatientSummaryWithResponse(ctx context.Context, patientId PatientId, body UpdatePatientSummaryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error)
+	UpdatePatientSummaryWithResponse(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, body UpdatePatientSummaryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error)
+
+	// DeletePatientSummaryOfTypeWithResponse request
+	DeletePatientSummaryOfTypeWithResponse(ctx context.Context, patientId PatientId, summaryType string, reqEditors ...RequestEditorFn) (*DeletePatientSummaryOfTypeResponse, error)
 
 	// ListClinicsForPatientWithResponse request
 	ListClinicsForPatientWithResponse(ctx context.Context, userId UserId, params *ListClinicsForPatientParams, reqEditors ...RequestEditorFn) (*ListClinicsForPatientResponse, error)
@@ -9355,6 +9436,27 @@ func (r UpdatePatientSummaryResponse) StatusCode() int {
 	return 0
 }
 
+type DeletePatientSummaryOfTypeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePatientSummaryOfTypeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePatientSummaryOfTypeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListClinicsForPatientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -10457,20 +10559,29 @@ func (c *ClientWithResponses) SyncEHRDataForPatientWithResponse(ctx context.Cont
 }
 
 // UpdatePatientSummaryWithBodyWithResponse request with arbitrary body returning *UpdatePatientSummaryResponse
-func (c *ClientWithResponses) UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error) {
-	rsp, err := c.UpdatePatientSummaryWithBody(ctx, patientId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error) {
+	rsp, err := c.UpdatePatientSummaryWithBody(ctx, patientId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdatePatientSummaryResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdatePatientSummaryWithResponse(ctx context.Context, patientId PatientId, body UpdatePatientSummaryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error) {
-	rsp, err := c.UpdatePatientSummary(ctx, patientId, body, reqEditors...)
+func (c *ClientWithResponses) UpdatePatientSummaryWithResponse(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, body UpdatePatientSummaryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error) {
+	rsp, err := c.UpdatePatientSummary(ctx, patientId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdatePatientSummaryResponse(rsp)
+}
+
+// DeletePatientSummaryOfTypeWithResponse request returning *DeletePatientSummaryOfTypeResponse
+func (c *ClientWithResponses) DeletePatientSummaryOfTypeWithResponse(ctx context.Context, patientId PatientId, summaryType string, reqEditors ...RequestEditorFn) (*DeletePatientSummaryOfTypeResponse, error) {
+	rsp, err := c.DeletePatientSummaryOfType(ctx, patientId, summaryType, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePatientSummaryOfTypeResponse(rsp)
 }
 
 // ListClinicsForPatientWithResponse request returning *ListClinicsForPatientResponse
@@ -12105,6 +12216,22 @@ func ParseUpdatePatientSummaryResponse(rsp *http.Response) (*UpdatePatientSummar
 	}
 
 	response := &UpdatePatientSummaryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseDeletePatientSummaryOfTypeResponse parses an HTTP response from a DeletePatientSummaryOfTypeWithResponse call
+func ParseDeletePatientSummaryOfTypeResponse(rsp *http.Response) (*DeletePatientSummaryOfTypeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePatientSummaryOfTypeResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

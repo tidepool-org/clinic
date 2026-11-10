@@ -213,7 +213,10 @@ type ServerInterface interface {
 	SyncEHRDataForPatient(ctx echo.Context, patientId PatientId) error
 	// UpdatePatientSummary
 	// (POST /v1/patients/{patientId}/summary)
-	UpdatePatientSummary(ctx echo.Context, patientId PatientId) error
+	UpdatePatientSummary(ctx echo.Context, patientId PatientId, params UpdatePatientSummaryParams) error
+	// DeletePatientSummaryOfType
+	// (DELETE /v1/patients/{patientId}/summary/{summaryType})
+	DeletePatientSummaryOfType(ctx echo.Context, patientId PatientId, summaryType string) error
 	// List Clinics for Patient
 	// (GET /v1/patients/{userId}/clinics)
 	ListClinicsForPatient(ctx echo.Context, userId UserId, params ListClinicsForPatientParams) error
@@ -2725,8 +2728,43 @@ func (w *ServerInterfaceWrapper) UpdatePatientSummary(ctx echo.Context) error {
 
 	ctx.Set(SessionTokenScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdatePatientSummaryParams
+	// ------------- Optional query parameter "glycemicRangesKey" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "glycemicRangesKey", ctx.QueryParams(), &params.GlycemicRangesKey)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter glycemicRangesKey: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.UpdatePatientSummary(ctx, patientId)
+	err = w.Handler.UpdatePatientSummary(ctx, patientId, params)
+	return err
+}
+
+// DeletePatientSummaryOfType converts echo context to params.
+func (w *ServerInterfaceWrapper) DeletePatientSummaryOfType(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientId", ctx.Param("patientId"), &patientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	// ------------- Path parameter "summaryType" -------------
+	var summaryType string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "summaryType", ctx.Param("summaryType"), &summaryType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter summaryType: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeletePatientSummaryOfType(ctx, patientId, summaryType)
 	return err
 }
 
@@ -3042,6 +3080,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/patients", wrapper.FindPatients)
 	router.POST(baseURL+"/v1/patients/:patientId/ehr/sync", wrapper.SyncEHRDataForPatient)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
+	router.DELETE(baseURL+"/v1/patients/:patientId/summary/:summaryType", wrapper.DeletePatientSummaryOfType)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)
 	router.PUT(baseURL+"/v1/patients/:userId/data_sources", wrapper.UpdatePatientDataSources)
 	router.POST(baseURL+"/v1/redox", wrapper.ProcessEHRMessage)

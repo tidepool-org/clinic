@@ -1721,12 +1721,22 @@ paths:
     post:
       summary: UpdatePatientSummary
       operationId: UpdatePatientSummary
+      parameters:
+        - schema:
+            type: string
+            maxLength: 64
+            example: preset:adaStandard
+          in: query
+          name: glycemicRangesKey
+          description: Key of the glycemic range set the summary was computed with (see `glycemicRanges.key`). When given, the summary is stored only in the user's patient records whose glycemic ranges have that key; when omitted, in all of them.
       responses:
         '200':
           description: OK
+        '204':
+          description: No Change
         '404':
           description: Not Found
-      description: Internal endpoint which updates the summary in all patient records which match the user id.
+      description: Internal endpoint which updates the summary in the patient records which match the user id, and the glycemic ranges key if one is given. Stats are replaced only when calculated no earlier than those stored. Responds with no change only when the user has no patient records.
       tags:
         - Clinics
         - Internal
@@ -1736,18 +1746,42 @@ paths:
             schema:
               $ref: '#/components/schemas/patientSummary.v1'
         description: ''
+  /v1/patients/{patientId}/summary/{summaryType}:
+    parameters:
+      - $ref: '#/components/parameters/patientId'
+      - schema:
+          type: string
+          pattern: ^(cgm|bgm)$
+          example: cgm
+        in: path
+        name: summaryType
+        required: true
+        description: Summary type
+    delete:
+      summary: DeletePatientSummaryOfType
+      operationId: DeletePatientSummaryOfType
+      responses:
+        '200':
+          description: OK
+        '204':
+          description: No Change
+      description: Internal endpoint which deletes the stats of the given summary type from all patient records which match the user id, whatever their glycemic ranges. Responds with OK even when no record stored such stats, and with no change only when the user has no patient records.
+      tags:
+        - Clinics
+        - Internal
   /v1/summaries/{summaryId}/clinics:
     parameters:
       - $ref: '#/components/parameters/summaryId'
     delete:
       summary: DeletePatientSummary
       operationId: DeletePatientSummary
+      deprecated: true
       responses:
         '200':
           description: OK
         '204':
           description: No Change
-      description: Internal endpoint which deletes the summary in all patient records which match the summary id.
+      description: 'Internal endpoint which deletes the summary in all patient records which match the summary id. Deprecated: summaries computed for a glycemic range set have no id, so use DeletePatientSummaryOfType instead.'
       tags:
         - Clinics
         - Internal
@@ -4079,12 +4113,17 @@ components:
       type: object
       title: config.v1
       x-go-type-skip-optional-pointer: true
-      description: Summary schema version and calculation configuration
+      description: Summary schema version and calculation configuration. The very low and very high thresholds are omitted when the glycemic range set the summary was computed with has no such boundary, so no reading falls outside it.
       properties:
         schemaVersion:
           description: Summary schema version
           type: number
           x-go-type: int
+        glycemicRangesKey:
+          description: Key of the glycemic range set the summary was computed with (see `glycemicRanges.key` in the clinic API), e.g. `preset:adaStandard`. Absent from summaries stored before this field existed, which were all computed with the standard ranges.
+          type: string
+          example: preset:adaStandard
+          x-go-type-skip-optional-pointer: true
         highGlucoseThreshold:
           description: Threshold used for determining if a value is high
           type: number
@@ -4103,10 +4142,8 @@ components:
           x-go-type: float64
       required:
         - schemaVersion
-        - highGlucoseThreshold
-        - veryHighGlucoseThreshold
         - lowGlucoseThreshold
-        - veryLowGlucoseThreshold
+        - highGlucoseThreshold
     summaryDates.v1:
       type: object
       title: dates.v1
@@ -4603,7 +4640,9 @@ components:
       description: A summary of a users recent CGM glucose values
       properties:
         id:
-          $ref: '#/components/schemas/summaryId.v1'
+          allOf:
+            - $ref: '#/components/schemas/summaryId.v1'
+          description: Identifier of the stored summary. Absent from a summary computed for a glycemic range set other than the standard one, which is never stored.
         config:
           $ref: '#/components/schemas/summaryConfig.v1'
         dates:
@@ -4896,7 +4935,9 @@ components:
       description: A summary of a users recent BGM glucose values
       properties:
         id:
-          $ref: '#/components/schemas/summaryId.v1'
+          allOf:
+            - $ref: '#/components/schemas/summaryId.v1'
+          description: Identifier of the stored summary. Absent from a summary computed for a glycemic range set other than the standard one, which is never stored.
         config:
           $ref: '#/components/schemas/summaryConfig.v1'
         dates:

@@ -232,6 +232,20 @@ func (mr *MockServiceMockRecorder) DeleteSummaryInAllClinics(ctx, summaryId any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSummaryInAllClinics", reflect.TypeOf((*MockService)(nil).DeleteSummaryInAllClinics), ctx, summaryId)
 }
 
+// DeleteSummaryOfType mocks base method.
+func (m *MockService) DeleteSummaryOfType(ctx context.Context, userId string, summaryType patients.SummaryType) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSummaryOfType", ctx, userId, summaryType)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSummaryOfType indicates an expected call of DeleteSummaryOfType.
+func (mr *MockServiceMockRecorder) DeleteSummaryOfType(ctx, userId, summaryType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSummaryOfType", reflect.TypeOf((*MockService)(nil).DeleteSummaryOfType), ctx, userId, summaryType)
+}
+
 // Get mocks base method.
 func (m *MockService) Get(ctx context.Context, clinicId, userId string) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -449,18 +463,18 @@ func (mr *MockServiceMockRecorder) UpdateSites(ctx, clinicId, siteId, site any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSites", reflect.TypeOf((*MockService)(nil).UpdateSites), ctx, clinicId, siteId, site)
 }
 
-// UpdateSummaryInAllClinics mocks base method.
-func (m *MockService) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *patients.Summary) error {
+// UpdateSummaryInClinics mocks base method.
+func (m *MockService) UpdateSummaryInClinics(ctx context.Context, userId string, summary *patients.Summary, glycemicRangesKey *string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSummaryInAllClinics", ctx, userId, summary)
+	ret := m.ctrl.Call(m, "UpdateSummaryInClinics", ctx, userId, summary, glycemicRangesKey)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateSummaryInAllClinics indicates an expected call of UpdateSummaryInAllClinics.
-func (mr *MockServiceMockRecorder) UpdateSummaryInAllClinics(ctx, userId, summary any) *gomock.Call {
+// UpdateSummaryInClinics indicates an expected call of UpdateSummaryInClinics.
+func (mr *MockServiceMockRecorder) UpdateSummaryInClinics(ctx, userId, summary, glycemicRangesKey any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSummaryInAllClinics", reflect.TypeOf((*MockService)(nil).UpdateSummaryInAllClinics), ctx, userId, summary)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSummaryInClinics", reflect.TypeOf((*MockService)(nil).UpdateSummaryInClinics), ctx, userId, summary, glycemicRangesKey)
 }
 
 // MockRepository is a mock of Repository interface.
@@ -705,6 +719,20 @@ func (mr *MockRepositoryMockRecorder) DeleteSummaryInAllClinics(ctx, summaryId a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSummaryInAllClinics", reflect.TypeOf((*MockRepository)(nil).DeleteSummaryInAllClinics), ctx, summaryId)
 }
 
+// DeleteSummaryOfType mocks base method.
+func (m *MockRepository) DeleteSummaryOfType(ctx context.Context, userId string, summaryType patients.SummaryType) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSummaryOfType", ctx, userId, summaryType)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSummaryOfType indicates an expected call of DeleteSummaryOfType.
+func (mr *MockRepositoryMockRecorder) DeleteSummaryOfType(ctx, userId, summaryType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSummaryOfType", reflect.TypeOf((*MockRepository)(nil).DeleteSummaryOfType), ctx, userId, summaryType)
+}
+
 // Get mocks base method.
 func (m *MockRepository) Get(ctx context.Context, clinicId, userId string) (*patients.Patient, error) {
 	m.ctrl.T.Helper()
@@ -922,16 +950,16 @@ func (mr *MockRepositoryMockRecorder) UpdateSites(ctx, clinicId, siteId, site an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSites", reflect.TypeOf((*MockRepository)(nil).UpdateSites), ctx, clinicId, siteId, site)
 }
 
-// UpdateSummaryInAllClinics mocks base method.
-func (m *MockRepository) UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *patients.Summary) error {
+// UpdateSummaryInClinics mocks base method.
+func (m *MockRepository) UpdateSummaryInClinics(ctx context.Context, userId string, summary *patients.Summary, glycemicRangesKey *string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSummaryInAllClinics", ctx, userId, summary)
+	ret := m.ctrl.Call(m, "UpdateSummaryInClinics", ctx, userId, summary, glycemicRangesKey)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateSummaryInAllClinics indicates an expected call of UpdateSummaryInAllClinics.
-func (mr *MockRepositoryMockRecorder) UpdateSummaryInAllClinics(ctx, userId, summary any) *gomock.Call {
+// UpdateSummaryInClinics indicates an expected call of UpdateSummaryInClinics.
+func (mr *MockRepositoryMockRecorder) UpdateSummaryInClinics(ctx, userId, summary, glycemicRangesKey any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSummaryInAllClinics", reflect.TypeOf((*MockRepository)(nil).UpdateSummaryInAllClinics), ctx, userId, summary)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSummaryInClinics", reflect.TypeOf((*MockRepository)(nil).UpdateSummaryInClinics), ctx, userId, summary, glycemicRangesKey)
 }

@@ -540,7 +540,7 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
-		Describe("UpdateSummaryInAllClinics", func() {
+		Describe("UpdateSummaryInClinics", func() {
 			newSummary := func(lastUpdatedDate *time.Time) *patients.Summary {
 				return &patients.Summary{
 					CGM: &patients.PatientCGMStats{
@@ -581,7 +581,7 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("updates the patient's updatedTime", func() {
-				err := repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, nil)
+				err := repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				updated, err := repo.Get(context.Background(), randomPatient.ClinicId.Hex(), *randomPatient.UserId)
@@ -591,7 +591,7 @@ var _ = Describe("Patients Repository", func() {
 
 			It("stores the summary of a patient without one", func() {
 				summary := newSummary(&calculated)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 
 				stored := getSummary()
 				Expect(stored).ToNot(BeNil())
@@ -600,11 +600,11 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("replaces stats calculated before the update", func() {
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(&calculated))).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newSummary(&calculated), nil)).To(Succeed())
 
 				later := calculated.Add(time.Minute)
 				summary := newSummary(&later)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 
 				stored := getSummary()
 				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
@@ -612,10 +612,10 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("replaces stats calculated at the same time", func() {
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(&calculated))).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newSummary(&calculated), nil)).To(Succeed())
 
 				summary := newSummary(&calculated)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 
 				stored := getSummary()
 				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
@@ -626,10 +626,10 @@ var _ = Describe("Patients Repository", func() {
 			// report after a newer one; applying it would regress the stats until the next calculation
 			It("keeps stats calculated after the update", func() {
 				newest := newSummary(&calculated)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newest)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newest, nil)).To(Succeed())
 
 				earlier := calculated.Add(-time.Minute)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(&earlier))).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newSummary(&earlier), nil)).To(Succeed())
 
 				stored := getSummary()
 				Expect(stored.CGM.Id).To(Equal(newest.CGM.Id))
@@ -638,9 +638,9 @@ var _ = Describe("Patients Repository", func() {
 
 			It("keeps stats with a calculation date away from an update without one", func() {
 				newest := newSummary(&calculated)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newest)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newest, nil)).To(Succeed())
 
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(nil))).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newSummary(nil), nil)).To(Succeed())
 
 				stored := getSummary()
 				Expect(stored.CGM.Id).To(Equal(newest.CGM.Id))
@@ -648,10 +648,10 @@ var _ = Describe("Patients Repository", func() {
 			})
 
 			It("replaces stats without a calculation date with an update without one", func() {
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(nil))).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newSummary(nil), nil)).To(Succeed())
 
 				summary := newSummary(nil)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 
 				stored := getSummary()
 				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
@@ -660,13 +660,13 @@ var _ = Describe("Patients Repository", func() {
 
 			It("replaces or keeps the stats of each type independently", func() {
 				first := newSummary(&calculated)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, first)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, first, nil)).To(Succeed())
 
 				later := calculated.Add(time.Minute)
 				earlier := calculated.Add(-time.Minute)
 				summary := newSummary(&later)
 				summary.BGM.Dates.LastUpdatedDate = &earlier
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 
 				stored := getSummary()
 				Expect(stored.CGM.Id).To(Equal(summary.CGM.Id))
@@ -678,7 +678,7 @@ var _ = Describe("Patients Repository", func() {
 
 				later := calculated.Add(time.Minute)
 				summary := newSummary(&later)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 
 				Expect(getUpdatedTime()).To(BeTemporally(">", updatedTime))
 				stored := getSummary()
@@ -688,11 +688,11 @@ var _ = Describe("Patients Repository", func() {
 
 			It("keeps the patient's updatedTime when the stats stored were calculated after the update", func() {
 				newest := newSummary(&calculated)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newest)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newest, nil)).To(Succeed())
 				updatedTime := getUpdatedTime()
 
 				earlier := calculated.Add(-time.Minute)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(&earlier))).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newSummary(&earlier), nil)).To(Succeed())
 
 				Expect(getUpdatedTime()).To(BeTemporally("==", updatedTime))
 				stored := getSummary()
@@ -710,11 +710,11 @@ var _ = Describe("Patients Repository", func() {
 					summary.CGM.Periods[period] = patients.PatientCGMPeriod{TotalRecords: pointer.FromAny(i)}
 					summary.BGM.Periods[period] = patients.PatientBGMPeriod{TotalRecords: pointer.FromAny(i)}
 				}
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 				updatedTime := getUpdatedTime()
 
 				for range 10 {
-					Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+					Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 				}
 
 				Expect(getUpdatedTime()).To(BeTemporally("==", updatedTime))
@@ -727,23 +727,267 @@ var _ = Describe("Patients Repository", func() {
 				updatedTime := storeSummary(newSummary(nil))
 
 				summary := newSummary(nil)
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, summary)).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, summary, nil)).To(Succeed())
 
 				Expect(getUpdatedTime()).To(BeTemporally(">", updatedTime))
 				Expect(getSummary().CGM.Id).To(Equal(summary.CGM.Id))
 			})
 
 			It("keeps the patient's updatedTime when the update has no stats", func() {
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, newSummary(&calculated))).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, newSummary(&calculated), nil)).To(Succeed())
 				updatedTime := getUpdatedTime()
 
-				Expect(repo.UpdateSummaryInAllClinics(context.Background(), *randomPatient.UserId, &patients.Summary{})).To(Succeed())
+				Expect(repo.UpdateSummaryInClinics(context.Background(), *randomPatient.UserId, &patients.Summary{}, nil)).To(Succeed())
 
 				Expect(getUpdatedTime()).To(BeTemporally("==", updatedTime))
 			})
 
 			It("returns an error for a user who is not a patient of any clinic", func() {
-				err := repo.UpdateSummaryInAllClinics(context.Background(), test.Faker.UUID().V4(), newSummary(&calculated))
+				err := repo.UpdateSummaryInClinics(context.Background(), test.Faker.UUID().V4(), newSummary(&calculated), nil)
+				Expect(err).To(MatchError(patients.ErrSummaryNotFound))
+			})
+		})
+
+		// A user who is a patient of several clinics has a record in each, and each record may
+		// use its own glycemic ranges. A report tagged with a glycemic ranges key is for the
+		// records using those ranges only.
+		Describe("UpdateSummaryInClinics with a glycemic ranges key", func() {
+			const standardKey = "preset:adaStandard"
+			var userId string
+			var standard, unset, custom patients.Patient
+			var customKey string
+			var calculated time.Time
+
+			newSummary := func(lastUpdatedDate *time.Time, key string) *patients.Summary {
+				return &patients.Summary{
+					CGM: &patients.PatientCGMStats{
+						Id:     primitive.NewObjectID().Hex(),
+						Config: patients.PatientSummaryConfig{GlycemicRangesKey: key},
+						Dates:  patients.PatientSummaryDates{LastUpdatedDate: lastUpdatedDate},
+					},
+					BGM: &patients.PatientBGMStats{
+						Id:     primitive.NewObjectID().Hex(),
+						Config: patients.PatientSummaryConfig{GlycemicRangesKey: key},
+						Dates:  patients.PatientSummaryDates{LastUpdatedDate: lastUpdatedDate},
+					},
+				}
+			}
+
+			get := func(patient patients.Patient) patients.Patient {
+				stored, err := repo.Get(context.Background(), patient.ClinicId.Hex(), userId)
+				Expect(err).ToNot(HaveOccurred())
+				return *stored
+			}
+
+			// cgmIds returns the ids of the CGM stats stored in each of the user's records, nil for
+			// a record without any
+			cgmIds := func() (ids [3]*string) {
+				for i, patient := range []patients.Patient{standard, unset, custom} {
+					if summary := get(patient).Summary; summary != nil && summary.CGM != nil {
+						ids[i] = pointer.FromAny(summary.CGM.Id)
+					}
+				}
+				return ids
+			}
+
+			BeforeEach(func() {
+				calculated = time.Now().UTC().Truncate(time.Millisecond)
+				userId = test.Faker.UUID().V4()
+
+				standard = patientsTest.RandomPatient()
+				standard.UserId = &userId
+				standard.GlycemicRanges = patients.GlycemicRanges{
+					Type:   patients.GlycemicRangeTypePreset,
+					Preset: patients.GlycemicRangesPresetDefault,
+				}
+				unset = patientsTest.RandomPatient()
+				unset.UserId = &userId
+				unset.GlycemicRanges = patients.GlycemicRanges{}
+				custom = patientsTest.RandomPatient()
+				custom.UserId = &userId
+				custom.GlycemicRanges = patientsTest.RandomGlycemicRangesCustom()
+				customKey = custom.GlycemicRanges.Key()
+				Expect(customKey).ToNot(Equal(standardKey))
+
+				_, err := collection.InsertMany(context.Background(), []interface{}{standard, unset, custom})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				_, err := collection.DeleteMany(context.Background(), bson.M{"userId": userId})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("stores an untagged summary in all the user's records", func() {
+				summary := newSummary(&calculated, standardKey)
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, summary, nil)).To(Succeed())
+
+				id := pointer.FromAny(summary.CGM.Id)
+				Expect(cgmIds()).To(Equal([3]*string{id, id, id}))
+			})
+
+			It("stores a summary tagged with the standard key in the records using the standard ranges", func() {
+				summary := newSummary(&calculated, standardKey)
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, summary, pointer.FromAny(standardKey))).To(Succeed())
+
+				id := pointer.FromAny(summary.CGM.Id)
+				Expect(cgmIds()).To(Equal([3]*string{id, id, nil}))
+			})
+
+			It("stores a summary tagged with a custom key in the records using those ranges", func() {
+				summary := newSummary(&calculated, customKey)
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, summary, &customKey)).To(Succeed())
+
+				Expect(cgmIds()).To(Equal([3]*string{nil, nil, pointer.FromAny(summary.CGM.Id)}))
+			})
+
+			It("stores nothing when no record uses the ranges", func() {
+				key := "custom:mmol/L:,3,9,"
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, newSummary(&calculated, key), &key)).To(Succeed())
+
+				Expect(cgmIds()).To(Equal([3]*string{nil, nil, nil}))
+			})
+
+			It("keeps stats calculated after a tagged update", func() {
+				newest := newSummary(&calculated, customKey)
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, newest, &customKey)).To(Succeed())
+
+				earlier := calculated.Add(-time.Minute)
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, newSummary(&earlier, customKey), &customKey)).To(Succeed())
+
+				Expect(cgmIds()).To(Equal([3]*string{nil, nil, pointer.FromAny(newest.CGM.Id)}))
+			})
+
+			It("removes the summary from the records using the ranges only", func() {
+				summary := newSummary(&calculated, standardKey)
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, summary, nil)).To(Succeed())
+
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, nil, pointer.FromAny(standardKey))).To(Succeed())
+
+				Expect(cgmIds()).To(Equal([3]*string{nil, nil, pointer.FromAny(summary.CGM.Id)}))
+			})
+
+			It("succeeds when removing the summary from records which have none", func() {
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, nil, pointer.FromAny(standardKey))).To(Succeed())
+			})
+
+			It("returns an error for a user who is not a patient of any clinic", func() {
+				err := repo.UpdateSummaryInClinics(context.Background(), test.Faker.UUID().V4(), newSummary(&calculated, standardKey), pointer.FromAny(standardKey))
+				Expect(err).To(MatchError(patients.ErrSummaryNotFound))
+			})
+
+			It("moves the record's updatedTime when stats for other ranges with the same calculation date arrive", func() {
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, newSummary(&calculated, standardKey), nil)).To(Succeed())
+				updatedTime := get(custom).UpdatedTime
+
+				summary := newSummary(&calculated, customKey)
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, summary, &customKey)).To(Succeed())
+
+				stored := get(custom)
+				Expect(stored.UpdatedTime).To(BeTemporally(">", updatedTime))
+				Expect(stored.Summary.CGM.Id).To(Equal(summary.CGM.Id))
+			})
+
+			It("stores stats without an id without an id", func() {
+				summary := newSummary(&calculated, customKey)
+				summary.CGM.Id = ""
+				summary.BGM.Id = ""
+				Expect(repo.UpdateSummaryInClinics(context.Background(), userId, summary, &customKey)).To(Succeed())
+
+				raw := bson.M{}
+				selector := bson.M{"userId": userId, "clinicId": custom.ClinicId}
+				Expect(collection.FindOne(context.Background(), selector).Decode(&raw)).To(Succeed())
+				cgmStats := raw["summary"].(bson.M)["cgmStats"].(bson.M)
+				Expect(cgmStats).ToNot(HaveKey("id"))
+				Expect(cgmStats["config"]).To(HaveKeyWithValue("glycemicRangesKey", customKey))
+				Expect(get(custom).Summary.CGM.Id).To(BeEmpty())
+			})
+		})
+
+		Describe("DeleteSummaryOfType", func() {
+			var userId string
+			var records []patients.Patient
+			var summary *patients.Summary
+
+			get := func(patient patients.Patient) patients.Patient {
+				stored, err := repo.Get(context.Background(), patient.ClinicId.Hex(), userId)
+				Expect(err).ToNot(HaveOccurred())
+				return *stored
+			}
+
+			BeforeEach(func() {
+				userId = test.Faker.UUID().V4()
+				records = []patients.Patient{patientsTest.RandomPatient(), patientsTest.RandomPatient()}
+				documents := make([]interface{}, len(records))
+				for i := range records {
+					records[i].UserId = &userId
+					documents[i] = records[i]
+				}
+				_, err := collection.InsertMany(context.Background(), documents)
+				Expect(err).ToNot(HaveOccurred())
+
+				summary = &patients.Summary{
+					CGM: &patients.PatientCGMStats{Id: primitive.NewObjectID().Hex()},
+					BGM: &patients.PatientBGMStats{Id: primitive.NewObjectID().Hex()},
+				}
+				_, err = collection.UpdateMany(context.Background(), bson.M{"userId": userId}, bson.M{"$set": bson.M{"summary": summary}})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				_, err := collection.DeleteMany(context.Background(), bson.M{"userId": userId})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("removes the stats of the type from all the user's records and keeps the other type", func() {
+				Expect(repo.DeleteSummaryOfType(context.Background(), userId, patients.SummaryTypeCGM)).To(Succeed())
+
+				for _, record := range records {
+					stored := get(record)
+					Expect(stored.Summary.CGM).To(BeNil())
+					Expect(stored.Summary.BGM.Id).To(Equal(summary.BGM.Id))
+				}
+			})
+
+			It("removes the BGM stats", func() {
+				Expect(repo.DeleteSummaryOfType(context.Background(), userId, patients.SummaryTypeBGM)).To(Succeed())
+
+				stored := get(records[0])
+				Expect(stored.Summary.BGM).To(BeNil())
+				Expect(stored.Summary.CGM.Id).To(Equal(summary.CGM.Id))
+			})
+
+			It("moves the records' updatedTime", func() {
+				updatedTime := get(records[0]).UpdatedTime
+				Expect(repo.DeleteSummaryOfType(context.Background(), userId, patients.SummaryTypeCGM)).To(Succeed())
+				Expect(get(records[0]).UpdatedTime).To(BeTemporally(">", updatedTime))
+			})
+
+			It("leaves other users' stats alone", func() {
+				other := &patients.Summary{CGM: &patients.PatientCGMStats{Id: primitive.NewObjectID().Hex()}}
+				_, err := collection.UpdateMany(context.Background(), bson.M{"userId": *randomPatient.UserId}, bson.M{"$set": bson.M{"summary": other}})
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(repo.DeleteSummaryOfType(context.Background(), userId, patients.SummaryTypeCGM)).To(Succeed())
+
+				count, err := collection.CountDocuments(context.Background(), bson.M{"summary.cgmStats.id": summary.CGM.Id})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(BeZero())
+				count, err = collection.CountDocuments(context.Background(), bson.M{"summary.cgmStats.id": other.CGM.Id})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(Equal(int64(1)))
+			})
+
+			It("succeeds when no record stores stats of the type", func() {
+				Expect(repo.DeleteSummaryOfType(context.Background(), userId, patients.SummaryTypeCGM)).To(Succeed())
+				updatedTime := get(records[0]).UpdatedTime
+
+				Expect(repo.DeleteSummaryOfType(context.Background(), userId, patients.SummaryTypeCGM)).To(Succeed())
+				Expect(get(records[0]).UpdatedTime).To(BeTemporally("==", updatedTime))
+			})
+
+			It("returns an error for a user who is not a patient of any clinic", func() {
+				err := repo.DeleteSummaryOfType(context.Background(), test.Faker.UUID().V4(), patients.SummaryTypeCGM)
 				Expect(err).To(MatchError(patients.ErrSummaryNotFound))
 			})
 		})
@@ -4392,8 +4636,8 @@ func newPatient14dSummary(patient patientWithSummary) *patients.Patient {
 					HighGlucoseThreshold:     patients.HighGlucoseThreshold,
 					LowGlucoseThreshold:      patients.LowGlucoseThreshold,
 					SchemaVersion:            patients.TideSchemaVersion,
-					VeryHighGlucoseThreshold: patients.VeryHighGlucoseThreshold,
-					VeryLowGlucoseThreshold:  patients.VeryLowGlucoseThreshold,
+					VeryHighGlucoseThreshold: pointer.FromAny(patients.VeryHighGlucoseThreshold),
+					VeryLowGlucoseThreshold:  pointer.FromAny(patients.VeryLowGlucoseThreshold),
 				},
 				Dates: patients.PatientSummaryDates{
 					FirstData:          &time.Time{},

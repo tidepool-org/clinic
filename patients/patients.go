@@ -27,6 +27,7 @@ const (
 var (
 	ErrNotFound             = fmt.Errorf("patient %w", errors.NotFound)
 	ErrSummaryNotFound      = fmt.Errorf("summary %w", errors.NoChange)
+	ErrInvalidSummaryType   = fmt.Errorf("%w: invalid summary type", errors.BadRequest)
 	ErrPermissionNotFound   = fmt.Errorf("permission %w", errors.NotFound)
 	ErrDuplicatePatient     = fmt.Errorf("%w: patient is already a member of the clinic", errors.Duplicate)
 	ErrDuplicateEmail       = fmt.Errorf("%w: email address is already taken", errors.Duplicate)
@@ -99,8 +100,9 @@ type Service interface {
 	DeletePermission(ctx context.Context, clinicId, userId, permission string) (*Patient, error)
 	DeleteFromAllClinics(ctx context.Context, userId string, metadata deletions.Metadata) ([]string, error)
 	DeleteNonCustodialPatientsOfClinic(ctx context.Context, clinicId string, metadata deletions.Metadata) error
-	UpdateSummaryInAllClinics(ctx context.Context, userId string, summary *Summary) error
+	UpdateSummaryInClinics(ctx context.Context, userId string, summary *Summary, glycemicRangesKey *string) error
 	DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error
+	DeleteSummaryOfType(ctx context.Context, userId string, summaryType SummaryType) error
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
@@ -463,6 +465,23 @@ type UploadReminderUpdate struct {
 type Summary struct {
 	CGM *PatientCGMStats `json:"cgmStats" bson:"cgmStats"`
 	BGM *PatientBGMStats `json:"bgmStats" bson:"bgmStats"`
+}
+
+// A SummaryType names one of the stats of a [Summary].
+type SummaryType string
+
+const (
+	SummaryTypeCGM SummaryType = "cgm"
+	SummaryTypeBGM SummaryType = "bgm"
+)
+
+// ParseSummaryType returns the summary type named by raw, or [ErrInvalidSummaryType].
+func ParseSummaryType(raw string) (SummaryType, error) {
+	switch t := SummaryType(raw); t {
+	case SummaryTypeCGM, SummaryTypeBGM:
+		return t, nil
+	}
+	return "", fmt.Errorf("%w %q", ErrInvalidSummaryType, raw)
 }
 
 func (s *Summary) GetLastUploadDate() time.Time {

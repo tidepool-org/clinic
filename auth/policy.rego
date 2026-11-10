@@ -76,15 +76,23 @@ allow {
 }
 
 # Allow backend services update patient summaries
-# GET /v1/patients/:patientId/clinics
+# POST /v1/patients/:patientId/summary
 allow {
   is_backend_service
   input.method == "POST"
   input.path = ["v1", "patients", _, "summary"]
 }
 
+# Allow backend services delete patient summaries of a type
+# DELETE /v1/patients/:patientId/summary/:summaryType
+allow {
+  is_backend_service
+  input.method == "DELETE"
+  input.path = ["v1", "patients", _, "summary", _]
+}
+
 # Allow backend services delete patient summaries
-# GET /v1/summaries/:summaryId/clinics
+# DELETE /v1/summaries/:summaryId/clinics
 allow {
   is_backend_service
   input.method == "DELETE"
