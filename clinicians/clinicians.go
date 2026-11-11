@@ -68,10 +68,14 @@ type ClinicianUpdate struct {
 	Clinician   Clinician
 }
 
-// Update multiple clinician records belonging to the same user
+// CliniciansUpdate represents fields that should be updated among multiple
+// clinician records belonging to the same user. Fields that are pointers are
+// nil to indicate they should not be modified, i.e., if a field is nil, it
+// does NOT mean to unset it.
 type CliniciansUpdate struct {
 	UserId string
-	Email  string
+	Email  *string
+	Name   *string
 }
 
 type Clinician struct {
