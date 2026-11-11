@@ -2080,6 +2080,7 @@ type TriggerMigrationV1 struct {
 // UpdateUserDetailsV1 defines model for updateUserDetails.v1.
 type UpdateUserDetailsV1 struct {
 	Email *openapi_types.Email `json:"email,omitempty"`
+	Name  *string              `json:"name,omitempty"`
 }
 
 // ClinicId defines model for clinicId.

@@ -226,11 +226,17 @@ func (r *Repository) UpdateAll(ctx context.Context, update *clinicians.Clinician
 	selector := bson.M{
 		"userId": update.UserId,
 	}
+	set := bson.M{
+		"updatedTime": time.Now(),
+	}
+	if update.Email != nil {
+		set["email"] = update.Email
+	}
+	if update.Name != nil {
+		set["name"] = update.Name
+	}
 	updates := bson.M{
-		"$set": bson.M{
-			"email":       update.Email,
-			"updatedTime": time.Now(),
-		},
+		"$set": set,
 	}
 
 	result, err := r.collection.UpdateMany(ctx, selector, updates)

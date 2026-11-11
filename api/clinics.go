@@ -240,11 +240,16 @@ func (h *Handler) UpdateClinicUserDetails(ec echo.Context, userId UserId) error 
 	id := string(userId)
 
 	var email *string
-	if dto.Email != nil {
-		email = strp(string(*dto.Email))
+	if dto.Email != nil || dto.Name != nil {
 		update := &clinicians.CliniciansUpdate{
 			UserId: id,
-			Email:  *email,
+		}
+		if dto.Email != nil {
+			email = strp(string(*dto.Email))
+			update.Email = email
+		}
+		if dto.Name != nil {
+			update.Email = dto.Name
 		}
 		if err := h.Clinicians.UpdateAll(ctx, update); err != nil {
 			return err
