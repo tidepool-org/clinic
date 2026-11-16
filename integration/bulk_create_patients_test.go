@@ -1,0 +1,232 @@
+package integration_test
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/fx/fxtest"
+
+	"github.com/tidepool-org/clinic/clinicians"
+	cliniciansRepository "github.com/tidepool-org/clinic/clinicians/repository"
+	cliniciansTest "github.com/tidepool-org/clinic/clinicians/test"
+	"github.com/tidepool-org/clinic/clinics"
+	clinicsRepository "github.com/tidepool-org/clinic/clinics/repository"
+	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
+	"github.com/tidepool-org/clinic/config"
+	"github.com/tidepool-org/clinic/integration/test"
+	"github.com/tidepool-org/clinic/patients"
+	patientsRepository "github.com/tidepool-org/clinic/patients/repository"
+	patientsTest "github.com/tidepool-org/clinic/patients/test"
+	dbTest "github.com/tidepool-org/clinic/store/test"
+)
+
+var _ = Describe("BulkCreatePatients Integration Test", Ordered, func() {
+	var clinic *clinics.Clinic
+	var ctx context.Context
+	var clinician *clinicians.Clinician
+	var existingPatient *patients.Patient
+	var database *mongo.Database
+	var clinicId primitive.ObjectID
+	var clinicianId string
+	BeforeEach(func() {
+		ctx = context.Background()
+		logger := testLogger()
+		database = dbTest.GetTestDatabase()
+		lifecycle := fxtest.NewLifecycle(GinkgoT())
+
+		clinic = clinicsTest.RandomClinic()
+		clinic.MRNSettings = &clinics.MRNSettings{
+			Required: true,
+			Unique:   true,
+		}
+		clinicsRepo, err := clinicsRepository.NewRepository(database, logger, lifecycle)
+		Expect(err).To(Succeed())
+		clinic, err = clinicsRepo.Create(ctx, clinic)
+		Expect(err).To(Succeed())
+		clinicId = *clinic.Id
+
+		clinician = cliniciansTest.RandomClinicianWithClinicId(*clinic.Id)
+		clinicianId = test.TestUserId
+		clinician.UserId = &clinicianId
+		clinician.Roles = []string{"CLINIC_ADMIN"}
+		cliniciansRepo, err := cliniciansRepository.NewRepository(database, logger, lifecycle)
+		Expect(err).To(Succeed())
+		clinician, err = cliniciansRepo.Create(ctx, clinician)
+		Expect(err).To(Succeed())
+
+		patientData := patientsTest.RandomPatient()
+		patientData.ClinicId = &clinicId
+		patientEmail := "existing+patient+email@tidepool.org"
+		patientData.Email = &patientEmail
+		patientMRN := "EXISTINGMRN"
+		patientData.Mrn = &patientMRN
+		patientsRepo, err := patientsRepository.NewRepository(&config.Config{}, database, logger, lifecycle)
+		Expect(err).To(Succeed())
+		patient, err := patientsRepo.Create(ctx, patientData)
+		Expect(err).To(Succeed())
+		existingPatient = patient
+	})
+
+	Describe("Invalid CSV", func() {
+		It("columns with missing or invalid fields", func() {
+			rec := httptest.NewRecorder()
+			req := prepareRequestMIMEType(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/bulk/patients", clinicId.Hex()), "./test/bulk_patients_fixtures/02_missing_fields.csv", "text/csv")
+			asClinician(req)
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusBadRequest))
+		})
+	})
+
+	DescribeTable("Blocking invalid CSV errors", func(contentsCSV string) {
+		rec := httptest.NewRecorder()
+		reqBody := strings.NewReader(contentsCSV)
+		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/bulk/patients", clinicId.Hex()), reqBody)
+		req.Header.Set(echo.HeaderContentType, "text/csv")
+		asClinician(req)
+		server.ServeHTTP(rec, req)
+		Expect(rec.Result()).ToNot(BeNil())
+		Expect(rec.Result().StatusCode).To(Equal(http.StatusBadRequest))
+	},
+		Entry("Missing Name", `,1999-02-03,112233`),
+		Entry("Missing DOB", `John Doe,,112233`),
+		Entry("Missing MRN", `John Doe,1952-01-10,`),
+	)
+
+	Describe("List only", func() {
+		DescribeTable("Access",
+			func(mutator func(*http.Request)) {
+				rec := httptest.NewRecorder()
+				req := prepareRequestMIMEType(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/bulk/patients", clinicId.Hex()), "./test/bulk_patients_fixtures/01_valid_patients.csv", "text/csv")
+				if mutator != nil {
+					mutator(req)
+				}
+				server.ServeHTTP(rec, req)
+				Expect(rec.Result()).ToNot(BeNil())
+				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+				body, err := io.ReadAll(rec.Result().Body)
+				Expect(err).ToNot(HaveOccurred())
+				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?,Status
+Thomas Jefferson,1952-01-09,112233,working+test+custodial+thomas@tidepool.org,,adaStandard,,,
+Ben Franklin,1952-01-10,112234,,,adaStandard,,,
+George Washington,1950-01-02,123456789,working+test+custodial+george@tidepool.org,,adaStandard,,,
+Duplicate MRN,1951-01-02,DUPLICATEMRN,duplicate+mrn+1@tidepool.org,,adaStandard,duplicate MRN,,
+Duplicate MRN II,1949-03-04,DUPLICATEMRN,duplicate+mrn+2@tidepool.org,,adaStandard,duplicate MRN,,
+Existing Email In System,1990-06-21,113322445577,existing+patient+email@tidepool.org,,adaStandard,duplicate email,,
+Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org,,adaStandard,duplicate email,,
+Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org,,adaStandard,duplicate email,,
+Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",,
+Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",,
+Bad DOB,9999/88/01,6666666,bad+dob@tidepool.org,,adaStandard,"invalid birthdate: row 11, column 2",,
+Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"invalid email: row 12, column 4",,
+`
+				Expect(string(body)).To(Equal(expectedResBody))
+				// Expect no actual patients created.
+				count, err := database.Collection("patients").CountDocuments(ctx, bson.M{"clinicId": clinicId, "userId": bson.M{"$ne": existingPatient.UserId}})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(BeNumerically("==", 0))
+			},
+			Entry("as server", asServer),
+			Entry("as clinician", asClinician),
+		)
+	})
+
+	Describe("List and Create", func() {
+		Describe("as clinician", func() {
+			It("minimum required fields", func() {
+				rec := httptest.NewRecorder()
+				req := prepareRequestMIMEType(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/bulk/patients", clinicId.Hex()), "./test/bulk_patients_fixtures/01_valid_patients.csv", "text/csv")
+				params := req.URL.Query()
+				params.Set("dryRun", "false")
+				req.URL.RawQuery = params.Encode()
+				asClinician(req)
+				server.ServeHTTP(rec, req)
+				Expect(rec.Result()).ToNot(BeNil())
+				body, err := io.ReadAll(rec.Result().Body)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?,Status
+Thomas Jefferson,1952-01-09,112233,working+test+custodial+thomas@tidepool.org,,adaStandard,,Y,created
+Ben Franklin,1952-01-10,112234,,,adaStandard,,N,created
+George Washington,1950-01-02,123456789,working+test+custodial+george@tidepool.org,,adaStandard,,Y,created
+Duplicate MRN,1951-01-02,DUPLICATEMRN,duplicate+mrn+1@tidepool.org,,adaStandard,duplicate MRN,N,skipped
+Duplicate MRN II,1949-03-04,DUPLICATEMRN,duplicate+mrn+2@tidepool.org,,adaStandard,duplicate MRN,N,skipped
+Existing Email In System,1990-06-21,113322445577,existing+patient+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Duplicate Email,1999-05-02,98765432,duplicate+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Duplicate Email II,1999-06-01,98765431,duplicate+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Duplicate Email And MRN,2000-01-02,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N,skipped
+Duplicate Email And MRN II,2000-01-03,22222222,duplicate+email+again@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N,skipped
+Bad DOB,9999/88/01,6666666,bad+dob@tidepool.org,,adaStandard,"invalid birthdate: row 11, column 2",N,skipped
+Bad Email Should Still Be Created,1998-01-03,555555,not-an-email,,adaStandard,"invalid email: row 12, column 4",N (invalid email),created
+Patients Processed,12
+Patients Created,4
+Patients Skipped,8
+Patients Emailed,2
+Patients Failed Creation,0
+Duplicate MRNs count,4
+Duplicate emails count,5
+`
+				Expect(string(body)).To(Equal(expectedResBody))
+				// Count new patients
+				count, err := database.Collection("patients").CountDocuments(ctx, bson.M{"clinicId": clinicId, "userId": bson.M{"$ne": existingPatient.UserId}})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(BeNumerically("==", 4))
+			})
+
+			It("with optional fields", func() {
+				rec := httptest.NewRecorder()
+				req := prepareRequestMIMEType(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/bulk/patients", clinicId.Hex()), "./test/bulk_patients_fixtures/03_valid_patients_optional_columns.csv", "text/csv")
+				params := req.URL.Query()
+				params.Set("dryRun", "false")
+				req.URL.RawQuery = params.Encode()
+				asClinician(req)
+				server.ServeHTTP(rec, req)
+				Expect(rec.Result()).ToNot(BeNil())
+				body, err := io.ReadAll(rec.Result().Body)
+				Expect(err).ToNot(HaveOccurred())
+				expectedResBody := `Name,Birthdate,MRN,Email,Diabetes Type,Glycemic Target,Reason,Emailed?,Status
+John Doe,1970-01-02,1111111,working+test+custodial+john+doe@tidepool.org,type1,adaStandard,,Y,created
+Jane Doe,1971-02-03,1111112,working+test+custodial+jane+doe@tidepool.org,type2,adaStandard,,Y,created
+Max Mustermann,1975-09-09,1111113,,type1,adaStandard,,N,created
+Duplicate Existing Email,1995-01-23,1111114,existing+patient+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Glycemic Target,1960-10-15,1111115,,,adaHighRisk,,N,created
+Case Insensitive Glycemic Target,1959-11-16,1111116,,,adaHighRisk,,N,created
+Duplicate Existing MRN,1972-03-04,EXISTINGMRN,,,adaStandard,duplicate MRN,N,skipped
+Invalid Diabetes Type Defaults to Blank,2005-01-03,333333333,,,adaStandard,invalid diagnosis type,N,created
+notApplicable Diabetes Type Defaults To Blank,1993-01-13,5555555,,,adaStandard,,N,created
+Case Insensitive Diagnosis Type,1979-11-16,6666666,,type2,adaStandard,,N,created
+Invalid Glycemic Target Defaults To adaStandard,1980-10-15,777777,,type1,adaStandard,,N,created
+Within Duplicate MRN I,1980-02-03,44444444,,,adaStandard,duplicate MRN,N,skipped
+Within Duplicate MRN II,1980-02-04,44444444,,,adaStandard,duplicate MRN,N,skipped
+Within Duplicate Email I,1980-04-03,44444445,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Within Duplicate Email II,1980-04-04,44444446,within+duplicate+email@tidepool.org,,adaStandard,duplicate email,N,skipped
+Duplicate Email And MRN,1975-07-04,EXISTINGMRN,existing+patient+email@tidepool.org,,adaStandard,"duplicate MRN, duplicate email",N,skipped
+Patients Processed,16
+Patients Created,9
+Patients Skipped,7
+Patients Emailed,2
+Patients Failed Creation,0
+Duplicate MRNs count,4
+Duplicate emails count,4
+`
+				Expect(string(body)).To(Equal(expectedResBody))
+				Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+				// Count new patients
+				count, err := database.Collection("patients").CountDocuments(ctx, bson.M{"clinicId": clinicId, "userId": bson.M{"$ne": existingPatient.UserId}})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(BeNumerically("==", 9))
+			})
+		})
+	})
+})

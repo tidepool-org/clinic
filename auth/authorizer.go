@@ -18,10 +18,6 @@ import (
 )
 
 const (
-	authHeaderPrefix      = "x-auth-"
-	subjectIdHeaderName   = "x-auth-subject-id"
-	serverAccessHeaderKey = "x-auth-server-access"
-	sessionTokenHeaderKey = "x-tidepool-session-token"
 	clinicIdPathParameter = "clinicId"
 )
 

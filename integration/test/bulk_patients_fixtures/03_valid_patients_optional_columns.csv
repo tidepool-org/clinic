@@ -1,0 +1,16 @@
+John Doe,1970-01-02,1111111,working+test+custodial+john+doe@tidepool.org,type1,
+Jane Doe,1971-02-03,1111112,working+test+custodial+jane+doe@tidepool.org,type2,adaStandard
+Max Mustermann,1975-09-09,1111113,,type1,adaNonExistant
+Duplicate Existing Email,1995-01-23,1111114,existing+patient+email@tidepool.org,,
+Glycemic Target,1960-10-15,1111115,,,adaHighRisk
+Case Insensitive Glycemic Target,1959-11-16,1111116,,,ADAHighRisk
+Duplicate Existing MRN,1972-03-04,EXISTINGMRN,,,
+Invalid Diabetes Type Defaults to Blank,2005-01-03,333333333,,bad diabetes type,adaStandard
+notApplicable Diabetes Type Defaults To Blank,1993-01-13,5555555,,notApplicable,adaStandard
+Case Insensitive Diagnosis Type,1979-11-16,6666666,,TYPE2,adaStandard
+Invalid Glycemic Target Defaults To adaStandard,1980-10-15,777777,,type1,Invalid Glycemic Target
+Within Duplicate MRN I,1980-02-03,44444444,,,
+Within Duplicate MRN II,1980-02-04,44444444,,,
+Within Duplicate Email I,1980-04-03,44444445,within+duplicate+email@tidepool.org,,
+Within Duplicate Email II,1980-04-04,44444446,within+duplicate+email@tidepool.org,,
+Duplicate Email And MRN,1975-07-04,EXISTINGMRN,existing+patient+email@tidepool.org,,
