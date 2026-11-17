@@ -1536,10 +1536,10 @@ type ErrorV1 struct {
 	Message string `json:"message"`
 }
 
-// GenerateMergeReportV1 Omit sourceId for a single-clinic report.
+// GenerateMergeReportV1 defines model for generateMergeReport.v1.
 type GenerateMergeReportV1 struct {
-	// SourceId Source clinic, distinct from the path clinic; omit for a single-clinic report.
-	SourceId *ClinicIdV1 `json:"sourceId,omitempty"`
+	// SourceId Required source clinic, distinct from the path clinic.
+	SourceId ClinicIdV1 `json:"sourceId"`
 }
 
 // GlycemicRangesV1 defines model for glycemicRanges.v1.
@@ -1602,17 +1602,17 @@ type MembershipRestrictionsV1 struct {
 
 // MergeClinicV1 defines model for mergeClinic.v1.
 type MergeClinicV1 struct {
-	// Confirmed The clinician's confirmation checkbox state. Must be true for user sessions.
+	// Confirmed The clinician's confirmation checkbox state. Must be true for user sessions; server-token calls may omit it.
 	Confirmed *bool `json:"confirmed,omitempty"`
 
 	// SourceId Required source clinic, distinct from the path clinic.
-	SourceId *ClinicIdV1 `json:"sourceId"`
+	SourceId ClinicIdV1 `json:"sourceId"`
 
 	// SourcePatientSite One target site name to reuse or create and apply to source-originating patients.
-	SourcePatientSite *string `json:"sourcePatientSite,omitempty"`
+	SourcePatientSite *SiteNameV1 `json:"sourcePatientSite,omitempty"`
 
 	// SourcePatientTag One target tag name to reuse or create and apply to source-originating patients.
-	SourcePatientTag *string `json:"sourcePatientTag,omitempty"`
+	SourcePatientTag *PatientTagNameV1 `json:"sourcePatientTag,omitempty"`
 }
 
 // MetaV1 defines model for meta.v1.
@@ -1798,12 +1798,15 @@ type PatientTagV1 struct {
 	Id *ObjectidV1 `json:"id,omitempty"`
 
 	// Name The tag display name
-	Name        string `json:"name"`
-	NumPatients int    `json:"numPatients,omitempty,omitzero"`
+	Name        PatientTagNameV1 `json:"name"`
+	NumPatients int              `json:"numPatients,omitempty,omitzero"`
 }
 
 // PatientTagIdsV1 defines model for patientTagIds.v1.
 type PatientTagIdsV1 = []string
+
+// PatientTagNameV1 The tag display name
+type PatientTagNameV1 = string
 
 // PatientsV1 defines model for patients.v1.
 type PatientsV1 = []PatientV1

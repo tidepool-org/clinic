@@ -160,6 +160,9 @@ type ServerInterface interface {
 	// Send Upload Reminder
 	// (POST /v1/clinics/{clinicId}/patients/{patientId}/upload_reminder)
 	SendUploadReminder(ctx echo.Context, clinicId ClinicId, patientId PatientId) error
+	// Generate Clinic Duplicates Report
+	// (GET /v1/clinics/{clinicId}/reports/duplicates)
+	GenerateDuplicatesReport(ctx echo.Context, clinicId ClinicId) error
 	// Generate Clinic Merge Report
 	// (POST /v1/clinics/{clinicId}/reports/merge)
 	GenerateMergeReport(ctx echo.Context, clinicId ClinicId) error
@@ -2350,6 +2353,24 @@ func (w *ServerInterfaceWrapper) SendUploadReminder(ctx echo.Context) error {
 	return err
 }
 
+// GenerateDuplicatesReport converts echo context to params.
+func (w *ServerInterfaceWrapper) GenerateDuplicatesReport(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "clinicId" -------------
+	var clinicId ClinicId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "clinicId", ctx.Param("clinicId"), &clinicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clinicId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GenerateDuplicatesReport(ctx, clinicId)
+	return err
+}
+
 // GenerateMergeReport converts echo context to params.
 func (w *ServerInterfaceWrapper) GenerateMergeReport(ctx echo.Context) error {
 	var err error
@@ -3066,6 +3087,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.DeletePatientReviews)
 	router.PUT(baseURL+"/v1/clinics/:clinicId/patients/:patientId/reviews", wrapper.UpdatePatientReviews)
 	router.POST(baseURL+"/v1/clinics/:clinicId/patients/:patientId/upload_reminder", wrapper.SendUploadReminder)
+	router.GET(baseURL+"/v1/clinics/:clinicId/reports/duplicates", wrapper.GenerateDuplicatesReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/reports/merge", wrapper.GenerateMergeReport)
 	router.POST(baseURL+"/v1/clinics/:clinicId/service_accounts", wrapper.AddServiceAccount)
 	router.GET(baseURL+"/v1/clinics/:clinicId/settings/ehr", wrapper.GetEHRSettings)

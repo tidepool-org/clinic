@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
@@ -14,12 +16,20 @@ import (
 	internalErrs "github.com/tidepool-org/clinic/errors"
 	"go.uber.org/zap"
 
+	"io"
+	"slices"
 	"strings"
 )
 
 const (
 	clinicIdPathParameter = "clinicId"
 )
+
+// mergeRoutes involve a second clinic, the source, named in the request body.
+var mergeRoutes = []string{
+	"/v1/clinics/{clinicId}/merge",
+	"/v1/clinics/{clinicId}/reports/merge",
+}
 
 var (
 	//go:embed policy.rego
@@ -69,9 +79,15 @@ func (e *embeddedOpaAuthorizer) Authorize(ctx context.Context, input *openapi3fi
 	}
 
 	if clinician != nil {
-		clinicianStruct := structs.New(*clinician)
-		clinicianStruct.TagName = "bson"
-		in["clinician"] = clinicianStruct.Map()
+		in["clinician"] = clinicianInput(clinician)
+	}
+
+	sourceClinician, err := e.getMergeSourceClinicianRecord(ctx, input)
+	if err != nil {
+		return err
+	}
+	if sourceClinician != nil {
+		in["sourceClinician"] = clinicianInput(sourceClinician)
 	}
 
 	if input.RequestValidationInput.PathParams[clinicIdPathParameter] != "" && strings.HasSuffix(input.RequestValidationInput.Route.Path, "/export/patients") {
@@ -144,6 +160,43 @@ func (e *embeddedOpaAuthorizer) getClinicianRecord(ctx context.Context, input *o
 	}
 
 	return clinician, nil
+}
+
+// Get the currently authenticated user's clinician record in the source clinic of a merge or
+// merge report. The body naming the source clinic has not been validated yet, so one without a
+// usable sourceId yields no record, and the policy then denies the user.
+func (e *embeddedOpaAuthorizer) getMergeSourceClinicianRecord(ctx context.Context, input *openapi3filter.AuthenticationInput) (*clinicians.Clinician, error) {
+	req := input.RequestValidationInput.Request
+	authData := GetAuthData(req.Context())
+	if !slices.Contains(mergeRoutes, input.RequestValidationInput.Route.Path) || authData == nil || authData.ServerAccess || req.Body == nil {
+		return nil, nil
+	}
+
+	// Put the body back for request validation and the handler
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+	req.Body = io.NopCloser(bytes.NewReader(body))
+
+	var merge struct {
+		SourceId string `json:"sourceId"`
+	}
+	if err := json.Unmarshal(body, &merge); err != nil || merge.SourceId == "" {
+		return nil, nil
+	}
+	clinician, err := e.clinicians.Get(ctx, merge.SourceId, authData.SubjectId)
+	if err != nil && !errors.Is(err, internalErrs.NotFound) {
+		return nil, err
+	}
+
+	return clinician, nil
+}
+
+func clinicianInput(clinician *clinicians.Clinician) map[string]interface{} {
+	clinicianStruct := structs.New(*clinician)
+	clinicianStruct.TagName = "bson"
+	return clinicianStruct.Map()
 }
 
 func (e *embeddedOpaAuthorizer) getClinicRecord(ctx context.Context, input *openapi3filter.AuthenticationInput) (*clinics.Clinic, error) {

@@ -183,7 +183,10 @@ func (p *ClinicMergePlan) assignSourcePatients(options Options) error {
 		if tagName == "" {
 			return fmt.Errorf("source patient tag must not be empty: %w", errs.BadRequest)
 		}
-		if !slices.ContainsFunc(p.TagsPlans, func(plan TagPlan) bool { return plan.Name == tagName }) {
+		// Reuse a tag that creating this one would reject as a duplicate
+		if i := slices.IndexFunc(p.TagsPlans, func(plan TagPlan) bool { return clinics.PatientTagNamesMatch(plan.Name, tagName) }); i >= 0 {
+			tagName = p.TagsPlans[i].Name
+		} else {
 			p.TagsPlans = append(p.TagsPlans, TagPlan{Name: tagName, TagAction: TagActionCreate,
 				TargetClinicId: p.Target.Id, Workspaces: []string{*p.Target.Name}})
 		}
@@ -411,12 +414,11 @@ func (i *intermediatePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, e
 type ClinicPlanExecutor struct {
 	fx.In
 
-	Logger          *zap.SugaredLogger
-	ClinicsService  clinics.Service
-	PatientsService patients.Service
-	ClinicManager   manager.Manager
-	DBClient        *mongo.Client
-	DB              *mongo.Database
+	Logger         *zap.SugaredLogger
+	ClinicsService clinics.Service
+	ClinicManager  manager.Manager
+	DBClient       *mongo.Client
+	DB             *mongo.Database
 }
 
 func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) (primitive.ObjectID, error) {
@@ -441,7 +443,7 @@ func (c *ClinicPlanExecutor) Execute(ctx context.Context, plan ClinicMergePlan) 
 		}
 
 		logger.Info("starting sites migration")
-		spe := NewSitePlanExecutor(logger, c.ClinicsService, c.PatientsService)
+		spe := NewSitePlanExecutor(logger, c.ClinicsService)
 		for _, sitePlan := range plan.SitesPlans {
 			if err := spe.Execute(sessionContext, sitePlan); err != nil {
 				return nil, err

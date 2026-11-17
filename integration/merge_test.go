@@ -56,6 +56,13 @@ var _ = Describe("Merge Test", Ordered, func() {
 	report := func(clinicId primitive.ObjectID, body string) int {
 		return post(fmt.Sprintf("/v1/clinics/%s/reports/merge", clinicId.Hex()), body, asClinician)
 	}
+	duplicatesReport := func(clinicId primitive.ObjectID) int {
+		rec := httptest.NewRecorder()
+		req := prepareRequest(http.MethodGet, fmt.Sprintf("/v1/clinics/%s/reports/duplicates", clinicId.Hex()), "")
+		asClinician(req)
+		server.ServeHTTP(rec, req)
+		return rec.Result().StatusCode
+	}
 	mergeInto := func(clinicId primitive.ObjectID, body string, as func(*http.Request)) int {
 		return post(fmt.Sprintf("/v1/clinics/%s/merge", clinicId.Hex()), body, as)
 	}
@@ -106,8 +113,19 @@ var _ = Describe("Merge Test", Ordered, func() {
 		Expect(clinicExists(sourceWithoutMembership)).To(BeTrue())
 	})
 
+	It("denies a clinician and rejects a backend service asking for a merge report without a source clinic", func() {
+		endpoint := fmt.Sprintf("/v1/clinics/%s/reports/merge", target.Hex())
+		Expect(post(endpoint, `{}`, asClinician)).To(Equal(http.StatusForbidden))
+		Expect(post(endpoint, `{}`, asServer)).To(Equal(http.StatusBadRequest))
+	})
+
 	It("allows the admin of a single clinic to generate its duplicates report", func() {
-		Expect(report(lone, `{}`)).To(Equal(http.StatusOK))
+		Expect(duplicatesReport(lone)).To(Equal(http.StatusOK))
+	})
+
+	It("denies the duplicates report to clinic members and non-members", func() {
+		Expect(duplicatesReport(sourceAsMember)).To(Equal(http.StatusForbidden))
+		Expect(duplicatesReport(sourceWithoutMembership)).To(Equal(http.StatusForbidden))
 	})
 
 	It("rejects a clinician merge without confirmation and changes nothing", func() {

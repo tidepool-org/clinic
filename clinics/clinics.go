@@ -458,18 +458,18 @@ func AssertCanAddPatientTag(clinic Clinic, tag PatientTag) error {
 }
 
 func IsDuplicatePatientTag(clinic Clinic, tag PatientTag) bool {
-	trimmedNewTagName := strings.ToLower(strings.ReplaceAll(tag.Name, " ", ""))
-
 	for _, p := range clinic.PatientTags {
 		// We only check for duplication against other tags
-		if p.Id.Hex() != tag.Id.Hex() {
-			trimmedExistingTagName := strings.ToLower(strings.ReplaceAll(p.Name, " ", ""))
-
-			if trimmedExistingTagName == trimmedNewTagName {
-				return true
-			}
+		if p.Id.Hex() != tag.Id.Hex() && PatientTagNamesMatch(p.Name, tag.Name) {
+			return true
 		}
 	}
 
 	return false
+}
+
+// PatientTagNamesMatch reports whether two tag names count as duplicates, ignoring case and spaces.
+func PatientTagNamesMatch(a, b string) bool {
+	normalize := func(name string) string { return strings.ToLower(strings.ReplaceAll(name, " ", "")) }
+	return normalize(a) == normalize(b)
 }

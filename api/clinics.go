@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	stderrors "errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -477,12 +476,30 @@ func (h *Handler) RefreshPatientCount(ec echo.Context, clinicId ClinicId) error 
 	return ec.NoContent(http.StatusOK)
 }
 
+func (h *Handler) GenerateDuplicatesReport(ec echo.Context, clinicId ClinicId) (err error) {
+	ctx := ec.Request().Context()
+	format := reportFormat(ec)
+	defer func() {
+		h.logMergeAudit(ctx, "GenerateDuplicatesReport invoked", err, "clinicId", clinicId, "format", format)
+	}()
+
+	plan, err := merge.PlanDuplicatesReport(ctx, h.Clinics, h.Patients, clinicId)
+	if err != nil {
+		return err
+	}
+	if format == "json" {
+		return ec.JSON(http.StatusOK, plan)
+	}
+	file, err := merge.NewDuplicatesReport(plan).Generate()
+	if err != nil {
+		return err
+	}
+	return writeXLSX(ec, file, "duplicates-report")
+}
+
 func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) (err error) {
 	ctx := ec.Request().Context()
-	format := "xlsx"
-	if ec.Request().Header.Get("Accept") == "application/json" {
-		format = "json"
-	}
+	format := reportFormat(ec)
 	dto := GenerateMergeReportV1{}
 	defer func() {
 		h.logMergeAudit(ctx, "GenerateMergeReport invoked", err, "clinicId", clinicId, "sourceId", dto.SourceId, "format", format)
@@ -491,44 +508,35 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) (err e
 		return err
 	}
 
-	// Without a source clinic, report the path clinic's duplicates alone
-	var plan any
-	var generate func() (*xlsx.File, error)
-	filename := "merge-report"
-	if dto.SourceId == nil {
-		duplicatesPlan, err := merge.PlanDuplicatesReport(ctx, h.Clinics, h.Patients, clinicId)
-		if err != nil {
-			return err
-		}
-		plan, generate, filename = duplicatesPlan, merge.NewDuplicatesReport(duplicatesPlan).Generate, "duplicates-report"
-	} else {
-		if *dto.SourceId == "" || *dto.SourceId == clinicId {
-			return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
-		}
-		if err := h.authorizeMergeSource(ctx, *dto.SourceId); err != nil {
-			return err
-		}
-
-		planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
-		mergePlan, err := planner.Plan(ctx)
-		if err != nil {
-			return err
-		}
-		plan, generate = mergePlan, merge.NewReport(mergePlan).Generate
+	if dto.SourceId == "" || dto.SourceId == clinicId {
+		return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
 	}
 
-	if format == "json" {
-		return ec.JSON(http.StatusOK, plan)
-	}
-
-	file, err := generate()
+	plan, err := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, dto.SourceId, clinicId).Plan(ctx)
 	if err != nil {
 		return err
 	}
+	if format == "json" {
+		return ec.JSON(http.StatusOK, plan)
+	}
+	file, err := merge.NewReport(plan).Generate()
+	if err != nil {
+		return err
+	}
+	return writeXLSX(ec, file, "merge-report")
+}
 
+func reportFormat(ec echo.Context) string {
+	if ec.Request().Header.Get("Accept") == "application/json" {
+		return "json"
+	}
+	return "xlsx"
+}
+
+func writeXLSX(ec echo.Context, file *xlsx.File, filename string) error {
 	disposition := fmt.Sprintf("attachment; filename=%s-%d.xlsx", filename, time.Now().Unix())
 	ec.Response().Header().Set(echo.HeaderContentDisposition, disposition)
-	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.ms-excel")
+	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	ec.Response().WriteHeader(http.StatusOK)
 	return file.Write(ec.Response())
 }
@@ -543,11 +551,8 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) (err error) {
 		return err
 	}
 
-	if dto.SourceId == nil || *dto.SourceId == "" || *dto.SourceId == clinicId {
+	if dto.SourceId == "" || dto.SourceId == clinicId {
 		return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
-	}
-	if err := h.authorizeMergeSource(ctx, *dto.SourceId); err != nil {
-		return err
 	}
 
 	var consent *merge.Consent
@@ -556,19 +561,17 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) (err error) {
 		if dto.Confirmed == nil || !*dto.Confirmed {
 			return fmt.Errorf("merge confirmation is required: %w", errors.BadRequest)
 		}
+		// The authorization policy has already required an admin of both clinics
 		clinician, err := h.Clinicians.Get(ctx, clinicId, authData.SubjectId)
 		if err != nil {
 			return err
-		}
-		if clinician == nil || !clinician.IsAdmin() {
-			return errors.HttpError{Code: http.StatusForbidden, Err: auth.ErrUnauthorized}
 		}
 		consent = &merge.Consent{ConfirmingUserId: authData.SubjectId, ConfirmingName: pointer.ToString(clinician.Name),
 			ConfirmingEmail: pointer.ToString(clinician.Email), ConfirmedAt: time.Now().UTC(), Confirmed: *dto.Confirmed}
 	}
 
 	options := merge.Options{SourcePatientTag: dto.SourcePatientTag, SourcePatientSite: dto.SourcePatientSite}
-	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId, options)
+	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, dto.SourceId, clinicId, options)
 	plan, err := planner.Plan(ctx)
 	if err != nil {
 		return err
@@ -592,28 +595,6 @@ func (h *Handler) logMergeAudit(ctx context.Context, msg string, err error, args
 		args = append(args, "error", err)
 	}
 	h.Logger.Infow(msg, args...)
-}
-
-func (h *Handler) authorizeMergeSource(ctx context.Context, sourceId string) error {
-	authData := auth.GetAuthData(ctx)
-	if auth.IsServerAuth(authData) {
-		return nil
-	}
-	if authData == nil || authData.SubjectId == "" {
-		return errors.Unauthorized
-	}
-
-	clinician, err := h.Clinicians.Get(ctx, sourceId, authData.SubjectId)
-	if err != nil && !stderrors.Is(err, errors.NotFound) {
-		return err
-	}
-	if err != nil || clinician == nil || !clinician.IsAdmin() {
-		return fmt.Errorf("source clinic admin access required: %w", errors.HttpError{
-			Code: http.StatusForbidden,
-			Err:  auth.ErrUnauthorized,
-		})
-	}
-	return nil
 }
 
 func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {

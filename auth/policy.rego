@@ -35,6 +35,13 @@ clinician_has_write_access {
   count(clinician_roles & write_access_roles) > 0
 }
 
+# the user's roles in the source clinic of a merge
+source_clinician_roles := { x | x = input.sourceClinician.roles[_] }
+
+source_clinician_has_write_access {
+  count(source_clinician_roles & write_access_roles) > 0
+}
+
 clinic_tier_supports_patient_export {
   count(clinic_tier & patient_export_supported_tiers) > 0
 }
@@ -209,6 +216,23 @@ allow {
   input.path = ["v1", "clinics", _, "tier"]
 }
 
+# Allow backend services to generate duplicates reports
+# GET /v1/clinics/:clinicId/reports/duplicates
+allow {
+  is_backend_service
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "reports", "duplicates"]
+}
+
+# Allow clinic admins to generate duplicates reports
+# GET /v1/clinics/:clinicId/reports/duplicates
+allow {
+  is_authenticated_user
+  input.method == "GET"
+  input.path = ["v1", "clinics", _, "reports", "duplicates"]
+  clinician_has_write_access
+}
+
 # Allow backend services to generate merge reports
 # POST /v1/clinics/:clinicId/reports/merge
 allow {
@@ -217,13 +241,14 @@ allow {
   input.path = ["v1", "clinics", _, "reports", "merge"]
 }
 
-# Allow clinic admins to generate merge reports
+# Allow admins of both the target and the source clinic to generate merge reports
 # POST /v1/clinics/:clinicId/reports/merge
 allow {
   is_authenticated_user
   input.method == "POST"
   input.path = ["v1", "clinics", _, "reports", "merge"]
   clinician_has_write_access
+  source_clinician_has_write_access
 }
 
 # Allow currently authenticated clinician to suppress notifications
@@ -527,13 +552,14 @@ allow {
   input.path = ["v1", "clinics", _, "merge"]
 }
 
-# Allow clinic admins to merge clinics
+# Allow admins of both the target and the source clinic to merge clinics
 # POST /v1/clinics/:clinicId/merge
 allow {
   is_authenticated_user
   input.method == "POST"
   input.path = ["v1", "clinics", _, "merge"]
   clinician_has_write_access
+  source_clinician_has_write_access
 }
 
 # Allow backend services to access the list of migrations for a given clinic

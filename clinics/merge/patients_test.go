@@ -584,3 +584,45 @@ var _ = Describe("MRN suffixes", func() {
 		Expect(moved.RequireUniqueMrn).To(BeTrue())
 	})
 })
+
+var _ = Describe("Source patient site", func() {
+	It("assigns the site once and without the clinic's patient count", func() {
+		ctx := context.Background()
+		db := test.GetTestDatabase()
+		collection := db.Collection("patients")
+		source := clinics.Clinic{Id: pointer.FromAny(primitive.NewObjectID()), Name: pointer.FromAny("Source")}
+		site := sites.Site{Id: primitive.NewObjectID(), Name: "Main"}
+		target := clinics.Clinic{Id: pointer.FromAny(primitive.NewObjectID()), Name: pointer.FromAny("Target")}
+		// Clinics are fetched with a patient count on each site
+		target.Sites = []sites.Site{{Id: site.Id, Name: site.Name, Patients: 1}}
+		clinicsService := clinicsTest.NewMockService(gomock.NewController(GinkgoT()))
+		clinicsService.EXPECT().Get(gomock.Any(), target.Id.Hex()).Return(&target, nil).AnyTimes()
+		executor := merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), clinicsService, db)
+
+		newPatient := func(clinic clinics.Clinic, userId string, patientSites ...sites.Site) patients.Patient {
+			return patients.Patient{Id: pointer.FromAny(primitive.NewObjectID()), ClinicId: clinic.Id, UserId: &userId, Sites: &patientSites}
+		}
+		// "shared" is a duplicate account whose target record already has the site
+		sourcePatients := []patients.Patient{newPatient(source, "shared"), newPatient(source, "moved")}
+		targetPatients := []patients.Patient{newPatient(target, "shared", site)}
+		_, err := collection.InsertMany(ctx, []any{sourcePatients[0], sourcePatients[1], targetPatients[0]})
+		Expect(err).ToNot(HaveOccurred())
+
+		planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
+		Expect(err).ToNot(HaveOccurred())
+		plans, err := planner.Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		for _, p := range plans {
+			if p.SourcePatient != nil {
+				p.AssignedSiteName = &site.Name
+			}
+			Expect(executor.Execute(ctx, p, source, target)).To(Succeed())
+		}
+
+		for _, userId := range []string{"shared", "moved"} {
+			var patient patients.Patient
+			Expect(collection.FindOne(ctx, bson.M{"clinicId": target.Id, "userId": userId}).Decode(&patient)).To(Succeed())
+			Expect(patient.Sites).To(PointTo(Equal([]sites.Site{site})), userId)
+		}
+	})
+})

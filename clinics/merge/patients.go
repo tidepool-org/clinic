@@ -539,6 +539,9 @@ func (p *PatientPlanExecutor) mergeSites(ctx context.Context, plan PatientPlan,
 	return nil
 }
 
+// sourceSitesForTarget returns the source patient's sites as the target clinic names them, plus
+// the assigned site. Only ids and names are taken from the clinic's sites: they also carry a
+// patient count, which does not belong on a patient and would defeat $addToSet.
 func (p PatientPlan) sourceSitesForTarget(target clinics.Clinic) ([]sites.Site, error) {
 	var result []sites.Site
 	if p.SourcePatient.Sites != nil {
@@ -547,7 +550,7 @@ func (p PatientPlan) sourceSitesForTarget(target clinics.Clinic) ([]sites.Site, 
 	for i := range result {
 		for _, migrated := range target.Sites {
 			if migrated.Id == result[i].Id {
-				result[i] = migrated
+				result[i].Name = migrated.Name
 				break
 			}
 		}
@@ -556,7 +559,7 @@ func (p PatientPlan) sourceSitesForTarget(target clinics.Clinic) ([]sites.Site, 
 		for _, site := range target.Sites {
 			if site.Name == *p.AssignedSiteName {
 				if !slices.ContainsFunc(result, func(existing sites.Site) bool { return existing.Id == site.Id }) {
-					result = append(result, site)
+					result = append(result, sites.Site{Id: site.Id, Name: site.Name})
 				}
 				return result, nil
 			}

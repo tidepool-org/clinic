@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -295,6 +296,29 @@ var _ = Describe("New Clinic Merge Planner", Ordered, func() {
 		Expect(ids).To(ConsistOf(expected))
 	})
 
+	It("leaves every patient with sites as the target clinic names them", func() {
+		merged, err := t.clinicsService.Get(context.Background(), t.target.Id.Hex())
+		Expect(err).To(Succeed())
+		clinicSites := map[primitive.ObjectID]sites.Site{}
+		for _, site := range merged.Sites {
+			clinicSites[site.Id] = sites.Site{Id: site.Id, Name: site.Name}
+		}
+
+		clinicId := t.target.Id.Hex()
+		result, err := t.patientsService.List(context.Background(), &patients.Filter{ClinicId: &clinicId}, store.DefaultPagination().WithLimit(100000), nil)
+		Expect(err).ToNot(HaveOccurred())
+		for _, p := range result.Patients {
+			if p.Sites == nil {
+				continue
+			}
+			seen := mapset.NewSet[primitive.ObjectID]()
+			for _, site := range *p.Sites {
+				Expect(site).To(Equal(clinicSites[site.Id]), *p.UserId)
+				Expect(seen.Add(site.Id)).To(BeTrue(), *p.UserId)
+			}
+		}
+	})
+
 	It("moves the source clinician to the target clinic and retains the target clinic admin", func() {
 		clinicId := t.target.Id.Hex()
 		filter := clinicians.Filter{ClinicId: &clinicId}
@@ -556,6 +580,42 @@ var _ = Describe("Clinic Merge with source patient tag, site and consent", Order
 			Confirmed:        true,
 			SourceDeleted:    true,
 		}))
+	})
+})
+
+var _ = Describe("Clinic Merge with a source patient tag that nearly matches a target tag", func() {
+	It("reuses the target tag instead of failing to create a duplicate", func() {
+		ctx := context.Background()
+		t := NewClinicMergeTest()
+		t.Init(mergeTest.Params{UniquePatientCount: 1})
+		DeferCleanup(func() {
+			t.app.RequireStop()
+			_, err := dbTest.GetTestDatabase().Collection("patients").DeleteMany(ctx, bson.M{})
+			Expect(err).To(Succeed())
+		})
+
+		// Tags whose names differ only by case or spaces count as duplicates, e.g. "12 Acme Inc"
+		// and "12  ACME  INC"
+		existing := t.target.PatientTags[0]
+		requestedTag := strings.ToUpper(strings.ReplaceAll(existing.Name, " ", "  "))
+		Expect(requestedTag).ToNot(Equal(existing.Name))
+		planner := merge.NewClinicMergePlanner(t.clinicsService, t.patientsService, t.cliniciansService,
+			t.source.Id.Hex(), t.target.Id.Hex(), merge.Options{SourcePatientTag: &requestedTag})
+
+		plan, err := planner.Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		_, err = t.executor.Execute(ctx, plan)
+		Expect(err).ToNot(HaveOccurred())
+
+		target, err := t.clinicsService.Get(ctx, t.target.Id.Hex())
+		Expect(err).ToNot(HaveOccurred())
+		Expect(target.PatientTags).To(HaveLen(plan.TagsPlans.GetResultingTagsCount()))
+		for _, tag := range target.PatientTags {
+			Expect(tag.Name).ToNot(Equal(requestedTag))
+		}
+		moved, err := t.patientsService.Get(ctx, t.target.Id.Hex(), *t.sourcePatients[0].UserId)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(*moved.Tags).To(ContainElement(*existing.Id))
 	})
 })
 
