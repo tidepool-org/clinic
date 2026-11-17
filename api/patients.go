@@ -58,6 +58,11 @@ func (h *Handler) ListPatients(ec echo.Context, clinicId ClinicId, params ListPa
 	filter.OmitNonStandardRanges = params.OmitNonStandardRanges != nil &&
 		*params.OmitNonStandardRanges
 
+	filter.IncludeNullDeltas, err = ParseIncludeNullDeltas(params)
+	if err != nil {
+		return err
+	}
+
 	sorts, err = ParseSort(params.Sort, params.SortType, filter.Period)
 	if err != nil {
 		return err

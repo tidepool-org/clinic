@@ -2540,6 +2540,16 @@ type ListPatientsParams struct {
 	// the ADA standard ranges (e.g. as used by the TIDE report)
 	// should be omitted.
 	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
+
+	// IncludeNullDeltas Comma-separated list of delta filter parameter names, such as
+	// `cgm.timeInTargetPercentDelta`. Each listed delta filter also
+	// matches patients whose delta is null, provided the corresponding
+	// current-period value is present. A delta is null in that case when
+	// the previous period lacks sufficient data for comparison. Delta
+	// filters that aren't listed exclude patients whose delta is null.
+	// Names that aren't delta filter parameters of this endpoint are
+	// rejected.
+	IncludeNullDeltas *[]string `form:"includeNullDeltas,omitempty" json:"includeNullDeltas,omitempty"`
 }
 
 // TideReportParams defines parameters for TideReport.
