@@ -1349,46 +1349,6 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("prevents clinicians from generating merge reports", func() {
-		input := map[string]interface{}{
-			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "merge"},
-			"method": "POST",
-			"auth": map[string]interface{}{
-				"subjectId":    "1234567890",
-				"serverAccess": false,
-			},
-			"clinician": clinicAdmin,
-		}
-		err := authorizer.EvaluatePolicy(context.Background(), input)
-		Expect(err).To(Equal(auth.ErrUnauthorized))
-	})
-
-	It("prevents users from generating merge reports", func() {
-		input := map[string]interface{}{
-			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "merge"},
-			"method": "POST",
-			"auth": map[string]interface{}{
-				"subjectId":    "1234567890",
-				"serverAccess": false,
-			},
-		}
-		err := authorizer.EvaluatePolicy(context.Background(), input)
-		Expect(err).To(Equal(auth.ErrUnauthorized))
-	})
-
-	It("allows orca to generate merge reports", func() {
-		input := map[string]interface{}{
-			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "merge"},
-			"method": "POST",
-			"auth": map[string]interface{}{
-				"subjectId":    "orca",
-				"serverAccess": true,
-			},
-		}
-		err := authorizer.EvaluatePolicy(context.Background(), input)
-		Expect(err).ToNot(HaveOccurred())
-	})
-
 	It("allows backend services to send a provider connection request", func() {
 		input := map[string]interface{}{
 			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "patients", "1234567890", "connect", "dexcom"},
@@ -1454,26 +1414,45 @@ var _ = Describe("Request Authorizer", func() {
 		Expect(err).To(Equal(auth.ErrUnauthorized))
 	})
 
-	It("allows orca to merge clinics", func() {
-		input := map[string]interface{}{
-			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},
-			"method": "POST",
-			"auth": map[string]interface{}{
-				"subjectId":    "orca",
-				"serverAccess": true,
+	userAuth := map[string]interface{}{"subjectId": "1234567890", "serverAccess": false}
+	serverAuth := map[string]interface{}{"subjectId": "orca", "serverAccess": true}
+	for _, route := range []struct {
+		name   string
+		method string
+		path   []string
+		merges bool
+	}{
+		{"generating duplicates reports", "GET", []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "duplicates"}, false},
+		{"generating merge reports", "POST", []string{"v1", "clinics", "6066fbabc6f484277200ac64", "reports", "merge"}, true},
+		{"merging clinics", "POST", []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"}, true},
+	} {
+		DescribeTable("access to "+route.name,
+			func(authData, clinician, sourceClinician map[string]interface{}, allowed bool) {
+				input := map[string]interface{}{"path": route.path, "method": route.method}
+				if authData != nil {
+					input["auth"] = authData
+				}
+				if clinician != nil {
+					input["clinician"] = clinician
+				}
+				if sourceClinician != nil {
+					input["sourceClinician"] = sourceClinician
+				}
+				err := authorizer.EvaluatePolicy(context.Background(), input)
+				if allowed {
+					Expect(err).ToNot(HaveOccurred())
+				} else {
+					Expect(err).To(Equal(auth.ErrUnauthorized))
+				}
 			},
-		}
-		err := authorizer.EvaluatePolicy(context.Background(), input)
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	It("doesn't allow clinic admins to merge clinics", func() {
-		input := map[string]interface{}{
-			"path":   []string{"v1", "clinics", "6066fbabc6f484277200ac64", "merge"},
-			"method": "POST",
-			"auth":   clinicAdmin,
-		}
-		err := authorizer.EvaluatePolicy(context.Background(), input)
-		Expect(err).To(Equal(auth.ErrUnauthorized))
-	})
+			Entry("allows admins of the target and any source clinic", userAuth, clinicAdmin, clinicAdmin, true),
+			Entry("denies target clinic members", userAuth, clinicMember, clinicAdmin, false),
+			Entry("denies users who are not members of the target clinic", userAuth, nil, clinicAdmin, false),
+			Entry("denies unauthenticated requests", nil, nil, nil, false),
+			Entry("allows backend services", serverAuth, nil, nil, true),
+			// Only merging involves a source clinic
+			Entry("requires source clinic admins", userAuth, clinicAdmin, clinicMember, !route.merges),
+			Entry("requires source clinic membership", userAuth, clinicAdmin, nil, !route.merges),
+		)
+	}
 })

@@ -801,6 +801,26 @@ func (mr *MockClientInterfaceMockRecorder) FindPatients(ctx, params any, reqEdit
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPatients", reflect.TypeOf((*MockClientInterface)(nil).FindPatients), varargs...)
 }
 
+// GenerateDuplicatesReport mocks base method.
+func (m *MockClientInterface) GenerateDuplicatesReport(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GenerateDuplicatesReport", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GenerateDuplicatesReport indicates an expected call of GenerateDuplicatesReport.
+func (mr *MockClientInterfaceMockRecorder) GenerateDuplicatesReport(ctx, clinicId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateDuplicatesReport", reflect.TypeOf((*MockClientInterface)(nil).GenerateDuplicatesReport), varargs...)
+}
+
 // GenerateMergeReport mocks base method.
 func (m *MockClientInterface) GenerateMergeReport(ctx context.Context, clinicId ClinicId, body GenerateMergeReportJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3103,6 +3123,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) FindPatientsWithResponse
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, params}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPatientsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).FindPatientsWithResponse), varargs...)
+}
+
+// GenerateDuplicatesReportWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) GenerateDuplicatesReportWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GenerateDuplicatesReportResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, clinicId}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GenerateDuplicatesReportWithResponse", varargs...)
+	ret0, _ := ret[0].(*GenerateDuplicatesReportResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GenerateDuplicatesReportWithResponse indicates an expected call of GenerateDuplicatesReportWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) GenerateDuplicatesReportWithResponse(ctx, clinicId any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, clinicId}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateDuplicatesReportWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).GenerateDuplicatesReportWithResponse), varargs...)
 }
 
 // GenerateMergeReportWithBodyWithResponse mocks base method.

@@ -275,6 +275,9 @@ type ClientInterface interface {
 	// SendUploadReminder request
 	SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GenerateDuplicatesReport request
+	GenerateDuplicatesReport(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GenerateMergeReportWithBody request with any body
 	GenerateMergeReportWithBody(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1205,6 +1208,18 @@ func (c *Client) UpdatePatientReviews(ctx context.Context, clinicId ClinicId, pa
 
 func (c *Client) SendUploadReminder(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSendUploadReminderRequest(c.Server, clinicId, patientId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GenerateDuplicatesReport(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGenerateDuplicatesReportRequest(c.Server, clinicId)
 	if err != nil {
 		return nil, err
 	}
@@ -6194,6 +6209,40 @@ func NewSendUploadReminderRequest(server string, clinicId ClinicId, patientId Pa
 	return req, nil
 }
 
+// NewGenerateDuplicatesReportRequest generates requests for GenerateDuplicatesReport
+func NewGenerateDuplicatesReportRequest(server string, clinicId ClinicId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "clinicId", runtime.ParamLocationPath, clinicId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/clinics/%s/reports/duplicates", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGenerateMergeReportRequest calls the generic GenerateMergeReport builder with application/json body
 func NewGenerateMergeReportRequest(server string, clinicId ClinicId, body GenerateMergeReportJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7877,6 +7926,9 @@ type ClientWithResponsesInterface interface {
 	// SendUploadReminderWithResponse request
 	SendUploadReminderWithResponse(ctx context.Context, clinicId ClinicId, patientId PatientId, reqEditors ...RequestEditorFn) (*SendUploadReminderResponse, error)
 
+	// GenerateDuplicatesReportWithResponse request
+	GenerateDuplicatesReportWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GenerateDuplicatesReportResponse, error)
+
 	// GenerateMergeReportWithBodyWithResponse request with any body
 	GenerateMergeReportWithBodyWithResponse(ctx context.Context, clinicId ClinicId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GenerateMergeReportResponse, error)
 
@@ -9065,9 +9117,32 @@ func (r SendUploadReminderResponse) StatusCode() int {
 	return 0
 }
 
+type GenerateDuplicatesReportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GenerateDuplicatesReportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GenerateDuplicatesReportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GenerateMergeReportResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
 }
 
 // Status returns HTTPResponse.Status
@@ -10317,6 +10392,15 @@ func (c *ClientWithResponses) SendUploadReminderWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseSendUploadReminderResponse(rsp)
+}
+
+// GenerateDuplicatesReportWithResponse request returning *GenerateDuplicatesReportResponse
+func (c *ClientWithResponses) GenerateDuplicatesReportWithResponse(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*GenerateDuplicatesReportResponse, error) {
+	rsp, err := c.GenerateDuplicatesReport(ctx, clinicId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGenerateDuplicatesReportResponse(rsp)
 }
 
 // GenerateMergeReportWithBodyWithResponse request with arbitrary body returning *GenerateMergeReportResponse
@@ -11840,6 +11924,35 @@ func ParseSendUploadReminderResponse(rsp *http.Response) (*SendUploadReminderRes
 	return response, nil
 }
 
+// ParseGenerateDuplicatesReportResponse parses an HTTP response from a GenerateDuplicatesReportWithResponse call
+func ParseGenerateDuplicatesReportResponse(rsp *http.Response) (*GenerateDuplicatesReportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GenerateDuplicatesReportResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case rsp.StatusCode == 200:
+		// Content-type (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet) unsupported
+
+	}
+
+	return response, nil
+}
+
 // ParseGenerateMergeReportResponse parses an HTTP response from a GenerateMergeReportWithResponse call
 func ParseGenerateMergeReportResponse(rsp *http.Response) (*GenerateMergeReportResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -11851,6 +11964,19 @@ func ParseGenerateMergeReportResponse(rsp *http.Response) (*GenerateMergeReportR
 	response := &GenerateMergeReportResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case rsp.StatusCode == 200:
+		// Content-type (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet) unsupported
+
 	}
 
 	return response, nil

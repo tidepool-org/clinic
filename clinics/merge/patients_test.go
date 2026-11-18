@@ -2,6 +2,7 @@ package merge_test
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	mergeTest "github.com/tidepool-org/clinic/clinics/merge/test"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/pointer"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store/test"
 )
@@ -143,7 +145,7 @@ var _ = Describe("New Merge Planner", func() {
 			}
 		})
 
-		It("fails for merge plans with MRN conflicts when the target workspace requires unique MRNs", func() {
+		It("renames clashing source MRNs when the target workspace requires unique MRNs", func() {
 			target.MRNSettings = &clinics.MRNSettings{
 				Unique: true,
 			}
@@ -152,21 +154,17 @@ var _ = Describe("New Merge Planner", func() {
 
 			patientPlans, err := planner.Plan(context.Background())
 			Expect(err).ToNot(HaveOccurred())
+			Expect(patientPlans.PreventsMerge()).To(BeFalse())
 
-			Expect(patientPlans.PreventsMerge()).To(BeTrue())
-			Expect(patientPlans.Errors()).ToNot(BeEmpty())
-
+			renamed := 0
 			for _, plan := range patientPlans {
-				if plan.PatientAction != merge.PatientActionMerge {
+				if plan.PatientAction != merge.PatientActionMove || len(plan.Conflicts[merge.PatientConflictCategoryMRNOnlyMatch]) == 0 {
 					continue
 				}
-				if len(plan.Conflicts[merge.PatientConflictCategoryMRNOnlyMatch]) == 0 {
-					continue
-				}
-
-				Expect(plan.Error).To(Equal(merge.ErrorDuplicateMRNInTargetWorkspace))
-				Expect(plan.PreventsMerge()).To(BeTrue())
+				Expect(plan.PostMigrationMRN).To(PointTo(HavePrefix(*plan.SourcePatient.Mrn + "-dupe-")))
+				renamed++
 			}
+			Expect(renamed).To(BeNumerically(">", 0))
 		})
 	})
 
@@ -438,5 +436,193 @@ var _ = Describe("New Merge Planner", func() {
 				Expect(count).To(BeEquivalentTo(0))
 			}
 		})
+	})
+})
+
+var _ = Describe("MRN suffixes", func() {
+	var source clinics.Clinic
+	var target clinics.Clinic
+
+	newClinic := func() clinics.Clinic {
+		return clinics.Clinic{
+			Id:          pointer.FromAny(primitive.NewObjectID()),
+			Name:        pointer.FromAny("Workspace"),
+			MRNSettings: &clinics.MRNSettings{Unique: true},
+		}
+	}
+	newPatient := func(clinic clinics.Clinic, userId string, mrn *string) patients.Patient {
+		return patients.Patient{
+			Id:       pointer.FromAny(primitive.NewObjectID()),
+			ClinicId: clinic.Id,
+			UserId:   &userId,
+			Mrn:      mrn,
+		}
+	}
+	plan := func(sourcePatients, targetPatients []patients.Patient) merge.PatientPlans {
+		planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
+		Expect(err).ToNot(HaveOccurred())
+		plans, err := planner.Plan(context.Background())
+		Expect(err).ToNot(HaveOccurred())
+		return plans
+	}
+	plannedMRNs := func(sourcePatients, targetPatients []patients.Patient) map[string]string {
+		plans := plan(sourcePatients, targetPatients)
+		Expect(plans.PreventsMerge()).To(BeFalse())
+		result := map[string]string{}
+		for _, p := range plans {
+			if p.SourcePatient != nil && p.PostMigrationMRN != nil {
+				result[*p.SourcePatient.UserId] = *p.PostMigrationMRN
+			}
+		}
+		return result
+	}
+
+	BeforeEach(func() {
+		source = newClinic()
+		target = newClinic()
+	})
+
+	It("renames a source MRN that clashes with a target patient", func() {
+		Expect(plannedMRNs(
+			[]patients.Patient{newPatient(source, "source-1", pointer.FromAny("A100"))},
+			[]patients.Patient{newPatient(target, "target-1", pointer.FromAny("A100"))},
+		)).To(Equal(map[string]string{"source-1": "A100-dupe-01"}))
+	})
+
+	It("gives source patients that share an MRN distinct suffixes", func() {
+		Expect(plannedMRNs(
+			[]patients.Patient{
+				newPatient(source, "source-1", pointer.FromAny("B200")),
+				newPatient(source, "source-2", pointer.FromAny("b200 ")),
+			},
+			nil,
+		)).To(Equal(map[string]string{"source-1": "B200-dupe-01", "source-2": "b200-dupe-02"}))
+	})
+
+	It("skips suffixes already used in the target", func() {
+		Expect(plannedMRNs(
+			[]patients.Patient{newPatient(source, "source-1", pointer.FromAny("C300"))},
+			[]patients.Patient{
+				newPatient(target, "target-1", pointer.FromAny("C300")),
+				newPatient(target, "target-2", pointer.FromAny("C300-dupe-01")),
+			},
+		)).To(Equal(map[string]string{"source-1": "C300-dupe-02"}))
+	})
+
+	It("skips suffixes already used in the source", func() {
+		Expect(plannedMRNs(
+			[]patients.Patient{
+				newPatient(source, "source-1", pointer.FromAny("D400-dupe-01")),
+				newPatient(source, "source-2", pointer.FromAny("D400")),
+			},
+			[]patients.Patient{newPatient(target, "target-1", pointer.FromAny("D400"))},
+		)).To(Equal(map[string]string{"source-2": "D400-dupe-02"}))
+	})
+
+	It("keeps counting past 99", func() {
+		targetPatients := []patients.Patient{newPatient(target, "target-0", pointer.FromAny("E500"))}
+		for i := 1; i <= 99; i++ {
+			targetPatients = append(targetPatients, newPatient(target, fmt.Sprintf("target-%d", i), pointer.FromAny(fmt.Sprintf("E500-dupe-%02d", i))))
+		}
+		Expect(plannedMRNs(
+			[]patients.Patient{newPatient(source, "source-1", pointer.FromAny("E500"))},
+			targetPatients,
+		)).To(Equal(map[string]string{"source-1": "E500-dupe-100"}))
+	})
+
+	It("merges duplicate accounts into the target without renaming", func() {
+		plans := plan(
+			[]patients.Patient{newPatient(source, "shared", pointer.FromAny("F600"))},
+			[]patients.Patient{newPatient(target, "shared", pointer.FromAny("F600"))},
+		)
+		for _, p := range plans {
+			if p.SourcePatient != nil {
+				Expect(p.PatientAction).To(Equal(merge.PatientActionMerge))
+				Expect(p.PostMigrationMRN).To(BeNil())
+			}
+		}
+	})
+
+	It("still blocks source patients without an MRN when the target requires one", func() {
+		source.MRNSettings.Required = true
+		target.MRNSettings.Required = true
+		plans := plan([]patients.Patient{newPatient(source, "source-1", nil)}, nil)
+		Expect(plans.PreventsMerge()).To(BeTrue())
+		Expect(plans.Errors()).To(ConsistOf(merge.ErrorMRNRequiredInTargetWorkspace))
+	})
+
+	It("renames nothing when the target does not require unique MRNs", func() {
+		source.MRNSettings = nil
+		target.MRNSettings = nil
+		Expect(plannedMRNs(
+			[]patients.Patient{newPatient(source, "source-1", pointer.FromAny("G700"))},
+			[]patients.Patient{newPatient(target, "target-1", pointer.FromAny("G700"))},
+		)).To(BeEmpty())
+	})
+
+	It("writes the planned MRN when moving the patient", func() {
+		db := test.GetTestDatabase()
+		collection := db.Collection("patients")
+		clinicsService := clinicsTest.NewMockService(gomock.NewController(GinkgoT()))
+		clinicsService.EXPECT().Get(gomock.Any(), target.Id.Hex()).Return(&target, nil).AnyTimes()
+		executor := merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), clinicsService, db)
+
+		sourcePatient := newPatient(source, "source-1", pointer.FromAny("H800"))
+		targetPatient := newPatient(target, "target-1", pointer.FromAny("H800"))
+		targetPatient.RequireUniqueMrn = true
+		ctx := context.Background()
+		_, err := collection.InsertMany(ctx, []any{sourcePatient, targetPatient})
+		Expect(err).ToNot(HaveOccurred())
+
+		for _, p := range plan([]patients.Patient{sourcePatient}, []patients.Patient{targetPatient}) {
+			Expect(executor.Execute(ctx, p, source, target)).To(Succeed())
+		}
+
+		var moved patients.Patient
+		Expect(collection.FindOne(ctx, bson.M{"clinicId": target.Id, "userId": "source-1"}).Decode(&moved)).To(Succeed())
+		Expect(moved.Mrn).To(PointTo(Equal("H800-dupe-01")))
+		Expect(moved.RequireUniqueMrn).To(BeTrue())
+	})
+})
+
+var _ = Describe("Source patient site", func() {
+	It("assigns the site once and without the clinic's patient count", func() {
+		ctx := context.Background()
+		db := test.GetTestDatabase()
+		collection := db.Collection("patients")
+		source := clinics.Clinic{Id: pointer.FromAny(primitive.NewObjectID()), Name: pointer.FromAny("Source")}
+		site := sites.Site{Id: primitive.NewObjectID(), Name: "Main"}
+		target := clinics.Clinic{Id: pointer.FromAny(primitive.NewObjectID()), Name: pointer.FromAny("Target")}
+		// Clinics are fetched with a patient count on each site
+		target.Sites = []sites.Site{{Id: site.Id, Name: site.Name, Patients: 1}}
+		clinicsService := clinicsTest.NewMockService(gomock.NewController(GinkgoT()))
+		clinicsService.EXPECT().Get(gomock.Any(), target.Id.Hex()).Return(&target, nil).AnyTimes()
+		executor := merge.NewPatientPlanExecutor(zap.NewNop().Sugar(), clinicsService, db)
+
+		newPatient := func(clinic clinics.Clinic, userId string, patientSites ...sites.Site) patients.Patient {
+			return patients.Patient{Id: pointer.FromAny(primitive.NewObjectID()), ClinicId: clinic.Id, UserId: &userId, Sites: &patientSites}
+		}
+		// "shared" is a duplicate account whose target record already has the site
+		sourcePatients := []patients.Patient{newPatient(source, "shared"), newPatient(source, "moved")}
+		targetPatients := []patients.Patient{newPatient(target, "shared", site)}
+		_, err := collection.InsertMany(ctx, []any{sourcePatients[0], sourcePatients[1], targetPatients[0]})
+		Expect(err).ToNot(HaveOccurred())
+
+		planner, err := merge.NewPatientMergePlanner(source, target, sourcePatients, targetPatients)
+		Expect(err).ToNot(HaveOccurred())
+		plans, err := planner.Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		for _, p := range plans {
+			if p.SourcePatient != nil {
+				p.AssignedSiteName = &site.Name
+			}
+			Expect(executor.Execute(ctx, p, source, target)).To(Succeed())
+		}
+
+		for _, userId := range []string{"shared", "moved"} {
+			var patient patients.Patient
+			Expect(collection.FindOne(ctx, bson.M{"clinicId": target.Id, "userId": userId}).Decode(&patient)).To(Succeed())
+			Expect(patient.Sites).To(PointTo(Equal([]sites.Site{site})), userId)
+		}
 	})
 })

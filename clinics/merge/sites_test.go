@@ -17,7 +17,6 @@ import (
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/clinics/merge"
 	clinicsTest "github.com/tidepool-org/clinic/clinics/test"
-	patientsTest "github.com/tidepool-org/clinic/patients/test"
 	"github.com/tidepool-org/clinic/sites"
 	sitesTest "github.com/tidepool-org/clinic/sites/test"
 )
@@ -111,11 +110,19 @@ var _ = Describe("Sites", func() {
 	})
 
 	Describe("Executor", func() {
+		It("creates the source patient site without enforcing the site limit", func() {
+			ctx, th := newSitesTestHelper(GinkgoT())
+			plan := merge.SitePlan{Site: sites.Site{Name: "Merged from source"}, Action: merge.SiteActionCreate, TargetClinicId: th.Target.Id}
+
+			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), th.Target.Id.Hex(), &plan.Site)
+			Expect(merge.NewSitePlanExecutor(th.Logger, th.Clinics).Execute(ctx, plan)).To(Succeed())
+		})
+
 		It("creates sites in the target clinic that don't exist", func() {
 			ctx, th := newSitesTestHelper(GinkgoT())
 			srcSite := th.createSourceSites("src1")[0]
 			targetID := th.Target.Id.Hex()
-			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics, th.Patients)
+			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics)
 
 			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID, &srcSite)
 			for _, plan := range th.Plans() {
@@ -127,14 +134,12 @@ var _ = Describe("Sites", func() {
 			ctx, th := newSitesTestHelper(GinkgoT())
 			dups := th.createDuplicateSites("dup1")[0]
 			targetID := th.Target.Id.Hex()
-			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics, th.Patients)
+			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics)
 
 			th.Clinics.EXPECT().Get(gomock.Any(), targetID).
 				Return(th.Target, nil).AnyTimes()
 			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID,
 				incrementedSiteMatcher(dups.Target))
-			th.Patients.EXPECT().UpdateSites(gomock.Any(), targetID, dups.Source.Id.Hex(),
-				incrementedSiteMatcher(dups.Source))
 			for _, plan := range th.Plans() {
 				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
 			}
@@ -148,14 +153,12 @@ var _ = Describe("Sites", func() {
 				th.createTargetSites(fmt.Sprintf("%s (%d)", dups.Target.Name, i+2))
 			}
 			targetID := th.Target.Id.Hex()
-			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics, th.Patients)
+			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics)
 
 			th.Clinics.EXPECT().Get(gomock.Any(), targetID).
 				Return(th.Target, nil).AnyTimes()
 			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID,
 				incrementedSiteMatcherN(dups.Target, times+2))
-			th.Patients.EXPECT().UpdateSites(gomock.Any(), targetID, dups.Source.Id.Hex(),
-				incrementedSiteMatcherN(dups.Source, times+2))
 			for _, plan := range th.Plans() {
 				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
 			}
@@ -164,10 +167,9 @@ var _ = Describe("Sites", func() {
 })
 
 type sitesTestHelper struct {
-	Source   *clinics.Clinic
-	Target   *clinics.Clinic
-	Clinics  *clinicsTest.MockService
-	Patients *patientsTest.MockService
+	Source  *clinics.Clinic
+	Target  *clinics.Clinic
+	Clinics *clinicsTest.MockService
 
 	Logger *zap.SugaredLogger
 
@@ -189,12 +191,11 @@ func newSitesTestHelper(t FullGinkgoTInterface) (context.Context, *sitesTestHelp
 	targetClinic := clinicsTest.RandomClinic()
 	targetClinic.Sites = []sites.Site{}
 	return ctx, &sitesTestHelper{
-		Source:   sourceClinic,
-		Target:   targetClinic,
-		Clinics:  clinicsTest.NewMockService(ctrl),
-		Patients: patientsTest.NewMockService(ctrl),
-		Logger:   logger,
-		t:        t,
+		Source:  sourceClinic,
+		Target:  targetClinic,
+		Clinics: clinicsTest.NewMockService(ctrl),
+		Logger:  logger,
+		t:       t,
 	}
 }
 

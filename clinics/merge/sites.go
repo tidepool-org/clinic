@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/tidepool-org/clinic/clinics"
-	"github.com/tidepool-org/clinic/patients"
 	"github.com/tidepool-org/clinic/sites"
 )
 
@@ -16,6 +15,8 @@ type SiteAction string
 
 const (
 	SiteActionInvalid SiteAction = ""
+	// SiteActionCreate the site in the target clinic, for the source patient site option.
+	SiteActionCreate SiteAction = "CREATE"
 	// SiteActionMove the site from the source clinic to the target clinic.
 	SiteActionMove SiteAction = "MOVE"
 	// SiteActionRetain the site in the target clinic.
@@ -151,22 +152,23 @@ func (t *TargetSiteMergePlanner) Plan(ctx context.Context) (SitePlan, error) {
 }
 
 type SitePlanExecutor struct {
-	logger          *zap.SugaredLogger
-	clinicsService  clinics.Service
-	patientsService patients.Service
+	logger         *zap.SugaredLogger
+	clinicsService clinics.Service
 }
 
-func NewSitePlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Service, patientsService patients.Service) *SitePlanExecutor {
+func NewSitePlanExecutor(logger *zap.SugaredLogger, clinicsService clinics.Service) *SitePlanExecutor {
 	return &SitePlanExecutor{
-		logger:          logger,
-		clinicsService:  clinicsService,
-		patientsService: patientsService,
+		logger:         logger,
+		clinicsService: clinicsService,
 	}
 }
 
 func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 	logger := t.logger.With("site", plan.Site)
 	switch plan.Action {
+	case SiteActionCreate:
+		_, err := t.clinicsService.CreateSiteIgnoringLimit(ctx, plan.TargetClinicId.Hex(), &plan.Site)
+		return err
 	case SiteActionRetain:
 		logger.Debug("retaining existing target site")
 	case SiteActionMove:
@@ -192,13 +194,8 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 		}
 		prevName := plan.Site.Name
 		plan.Site.Name = newName
+		// Source patients pick up the new name when they are moved, after all sites
 		_, err = t.clinicsService.CreateSiteIgnoringLimit(ctx, plan.TargetClinicId.Hex(), &plan.Site)
-		if err != nil {
-			return err
-		}
-
-		err = t.patientsService.UpdateSites(ctx, plan.TargetClinicId.Hex(),
-			plan.Site.Id.Hex(), &plan.Site)
 		if err != nil {
 			return err
 		}

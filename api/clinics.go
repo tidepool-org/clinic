@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/tealeg/xlsx/v3"
 
 	"github.com/tidepool-org/clinic/auth"
 	"github.com/tidepool-org/clinic/clinicians"
@@ -14,6 +16,7 @@ import (
 	"github.com/tidepool-org/clinic/clinics/merge"
 	"github.com/tidepool-org/clinic/deletions"
 	"github.com/tidepool-org/clinic/errors"
+	"github.com/tidepool-org/clinic/pointer"
 	"github.com/tidepool-org/clinic/sites"
 	"github.com/tidepool-org/clinic/store"
 )
@@ -473,48 +476,107 @@ func (h *Handler) RefreshPatientCount(ec echo.Context, clinicId ClinicId) error 
 	return ec.NoContent(http.StatusOK)
 }
 
-func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) error {
+func (h *Handler) GenerateDuplicatesReport(ec echo.Context, clinicId ClinicId) (err error) {
 	ctx := ec.Request().Context()
+	format := reportFormat(ec)
+	defer func() {
+		h.logMergeAudit(ctx, "GenerateDuplicatesReport invoked", err, "clinicId", clinicId, "format", format)
+	}()
+
+	plan, err := merge.PlanDuplicatesReport(ctx, h.Clinics, h.Patients, clinicId)
+	if err != nil {
+		return err
+	}
+	if format == "json" {
+		return ec.JSON(http.StatusOK, plan)
+	}
+	file, err := merge.NewDuplicatesReport(plan).Generate()
+	if err != nil {
+		return err
+	}
+	return writeXLSX(ec, file, "duplicates-report")
+}
+
+func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) (err error) {
+	ctx := ec.Request().Context()
+	format := reportFormat(ec)
 	dto := GenerateMergeReportV1{}
+	defer func() {
+		h.logMergeAudit(ctx, "GenerateMergeReport invoked", err, "clinicId", clinicId, "sourceId", dto.SourceId, "format", format)
+	}()
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
-	plan, err := planner.Plan(ctx)
+	if dto.SourceId == "" || dto.SourceId == clinicId {
+		return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
+	}
+
+	plan, err := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, dto.SourceId, clinicId, merge.Options{}).Plan(ctx)
 	if err != nil {
 		return err
 	}
-
-	if ec.Request().Header.Get("Accept") == "application/json" {
+	if format == "json" {
 		return ec.JSON(http.StatusOK, plan)
 	}
-
-	report := merge.NewReport(plan)
-	file, err := report.Generate()
+	file, err := merge.NewReport(plan).Generate()
 	if err != nil {
 		return err
 	}
+	return writeXLSX(ec, file, "merge-report")
+}
 
-	disposition := fmt.Sprintf("attachment; filename=merge-report-%d.xlsx", time.Now().Unix())
+func reportFormat(ec echo.Context) string {
+	if ec.Request().Header.Get("Accept") == "application/json" {
+		return "json"
+	}
+	return "xlsx"
+}
+
+func writeXLSX(ec echo.Context, file *xlsx.File, filename string) error {
+	disposition := fmt.Sprintf("attachment; filename=%s-%d.xlsx", filename, time.Now().Unix())
 	ec.Response().Header().Set(echo.HeaderContentDisposition, disposition)
-	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.ms-excel")
+	ec.Response().Header().Set(echo.HeaderContentType, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	ec.Response().WriteHeader(http.StatusOK)
 	return file.Write(ec.Response())
 }
 
-func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
+func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) (err error) {
 	ctx := ec.Request().Context()
 	dto := MergeClinicV1{}
+	defer func() {
+		h.logMergeAudit(ctx, "MergeClinic invoked", err, "clinicId", clinicId, "sourceId", dto.SourceId)
+	}()
 	if err := ec.Bind(&dto); err != nil {
 		return err
 	}
 
-	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, *dto.SourceId, clinicId)
+	if dto.SourceId == "" || dto.SourceId == clinicId {
+		return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
+	}
+
+	var consent *merge.Consent
+	authData := auth.GetAuthData(ctx)
+	if !auth.IsServerAuth(authData) {
+		if dto.Confirmed == nil || !*dto.Confirmed {
+			return fmt.Errorf("merge confirmation is required: %w", errors.BadRequest)
+		}
+		// The authorization policy has already required an admin of both clinics
+		clinician, err := h.Clinicians.Get(ctx, clinicId, authData.SubjectId)
+		if err != nil {
+			return err
+		}
+		consent = &merge.Consent{ConfirmingUserId: authData.SubjectId, ConfirmingName: pointer.ToString(clinician.Name),
+			ConfirmingEmail: pointer.ToString(clinician.Email), ConfirmedAt: time.Now().UTC(), Confirmed: *dto.Confirmed}
+	}
+
+	options := merge.Options{SourcePatientTag: dto.SourcePatientTag, SourcePatientSite: dto.SourcePatientSite}
+	planner := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, dto.SourceId, clinicId, options)
 	plan, err := planner.Plan(ctx)
 	if err != nil {
 		return err
 	}
+	plan.Consent = consent
 
 	_, err = h.ClinicMergePlanExecutor.Execute(ctx, plan)
 	if err != nil {
@@ -522,6 +584,17 @@ func (h *Handler) MergeClinic(ec echo.Context, clinicId ClinicId) error {
 	}
 
 	return ec.NoContent(http.StatusOK)
+}
+
+// logMergeAudit writes one audit entry per merge report or merge request. Never add PHI here.
+func (h *Handler) logMergeAudit(ctx context.Context, msg string, err error, args ...any) {
+	if authData := auth.GetAuthData(ctx); authData != nil {
+		args = append(args, "clinicianId", authData.SubjectId, "serverAccess", authData.ServerAccess)
+	}
+	if err != nil {
+		args = append(args, "error", err)
+	}
+	h.Logger.Infow(msg, args...)
 }
 
 func (h *Handler) CreateSite(ec echo.Context, clinicId ClinicId) error {
