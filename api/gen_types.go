@@ -1531,7 +1531,7 @@ type GlycemicRangesCustomV1 struct {
 	// Name Display name of the custom glycemic ranges. Up to 32 characters: letters, digits, spaces, and the punctuation . , - ( ) / ' — the first character must be a letter or digit.
 	Name string `json:"name"`
 
-	// Thresholds Named thresholds dividing glucose readings into ranges, expressed in the parent's units. Values must not be negative. veryLow and veryHigh are optional. A reading exactly at a threshold belongs to the range nearer the target range: at veryLow it is low, at low or high it is in range, and at veryHigh it is high. Values must be whole numbers in mg/dL, or have at most one decimal place in mmol/L, and must be in ascending order (veryLow < low < high < veryHigh, for those that are set); otherwise the request is rejected as a bad request.
+	// Thresholds Named thresholds dividing glucose readings into ranges, expressed in the parent's units. Values must not be negative. veryLow and veryHigh are optional. A reading exactly at a threshold belongs to the range nearer the target range: at veryLow it is low, at low or high it is in range, and at veryHigh it is high. Values must be whole numbers in mg/dL, or have at most one decimal place in mmol/L, and must be in ascending order (veryLow < low < high < veryHigh, for those that are set). Values in mg/dL must also be at least 2 apart, so that they remain distinct when converted to mmol/L. Otherwise the request is rejected as a bad request. A reading recorded in the other unit is compared with the threshold converted to that unit at its resolution: a threshold in mg/dL becomes the nearest tenth of a mmol/L (180 mg/dL is 10.0 mmol/L), and a threshold in mmol/L becomes the smallest whole mg/dL that converts back to it (7.8 mmol/L is 140 mg/dL).
 	Thresholds GlycemicRangesThresholdsV1 `json:"thresholds"`
 
 	// Units Blood glucose units in which all threshold values are expressed.
@@ -1544,7 +1544,7 @@ type GlycemicRangesCustomV1Units string
 // GlycemicRangesPresetV1 Predefined glycemic ranges based on ADA guidelines. Used when the glycemic ranges type is preset.
 type GlycemicRangesPresetV1 string
 
-// GlycemicRangesThresholdsV1 Named thresholds dividing glucose readings into ranges, expressed in the parent's units. Values must not be negative. veryLow and veryHigh are optional. A reading exactly at a threshold belongs to the range nearer the target range: at veryLow it is low, at low or high it is in range, and at veryHigh it is high. Values must be whole numbers in mg/dL, or have at most one decimal place in mmol/L, and must be in ascending order (veryLow < low < high < veryHigh, for those that are set); otherwise the request is rejected as a bad request.
+// GlycemicRangesThresholdsV1 Named thresholds dividing glucose readings into ranges, expressed in the parent's units. Values must not be negative. veryLow and veryHigh are optional. A reading exactly at a threshold belongs to the range nearer the target range: at veryLow it is low, at low or high it is in range, and at veryHigh it is high. Values must be whole numbers in mg/dL, or have at most one decimal place in mmol/L, and must be in ascending order (veryLow < low < high < veryHigh, for those that are set). Values in mg/dL must also be at least 2 apart, so that they remain distinct when converted to mmol/L. Otherwise the request is rejected as a bad request. A reading recorded in the other unit is compared with the threshold converted to that unit at its resolution: a threshold in mg/dL becomes the nearest tenth of a mmol/L (180 mg/dL is 10.0 mmol/L), and a threshold in mmol/L becomes the smallest whole mg/dL that converts back to it (7.8 mmol/L is 140 mg/dL).
 type GlycemicRangesThresholdsV1 struct {
 	// High Readings above this value are high (or very high, if above veryHigh).
 	High float64 `json:"high"`
@@ -2528,8 +2528,9 @@ type ListPatientsParams struct {
 	Sites *[]string `form:"sites,omitempty" json:"sites,omitempty"`
 
 	// OmitNonStandardRanges Whether patients whose glycemic ranges selection is *not*
-	// the ADA standard ranges (e.g. as used by the TIDE report)
-	// should be omitted.
+	// the ADA standard ranges should be omitted. Patients without
+	// a selection use the standard ranges and are kept. The TIDE
+	// report always omits these patients.
 	OmitNonStandardRanges *bool `form:"omitNonStandardRanges,omitempty" json:"omitNonStandardRanges,omitempty"`
 }
 

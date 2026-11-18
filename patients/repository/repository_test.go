@@ -1410,6 +1410,42 @@ var _ = Describe("Patients Repository", func() {
 				Expect(count).To(Equal(10))
 			})
 
+			It("returns only patients with the standard glycemic ranges when the others "+
+				"are omitted", func() {
+
+				ctx := context.Background()
+				standardKey := patients.GlycemicRanges{}.Key()
+				custom := patientsTest.RandomGlycemicRangesCustom()
+				custom.Preset = patients.GlycemicRangesPresetDefault
+				for i, ranges := range []patients.GlycemicRanges{
+					{},
+					{
+						Type:   patients.GlycemicRangeTypePreset,
+						Preset: patients.GlycemicRangesPresetDefault,
+					},
+					{Type: patients.GlycemicRangeTypePreset, Preset: "adaHighRisk"},
+					custom,
+				} {
+					res, err := collection.UpdateOne(ctx, bson.M{"_id": allPatientIds[i]},
+						bson.M{"$set": bson.M{"glycemicRanges": ranges}})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(res.MatchedCount).To(Equal(int64(1)))
+					allPatients[i].GlycemicRanges = ranges
+				}
+				expected := 0
+				for _, patient := range allPatients {
+					if patient.GlycemicRanges.Key() == standardKey {
+						expected++
+					}
+				}
+				Expect(expected).To(BeNumerically(">=", 2))
+				Expect(expected).To(BeNumerically("<=", len(allPatients)-2))
+
+				count, err := repo.Count(ctx, &patients.Filter{OmitNonStandardRanges: true})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(count).To(Equal(expected))
+			})
+
 			When("there is a demo patient", func() {
 				var demoPatient patients.Patient
 
@@ -2641,6 +2677,68 @@ var _ = Describe("TideReport", func() {
 			database := dbTest.GetTestDatabase()
 			patients := database.Collection("patients")
 			_, err := patients.DeleteMany(context.Background(), primitive.M{})
+			Expect(err).To(Succeed())
+		})
+	})
+
+	Context("Glycemic ranges", func() {
+		// setGlycemicRanges gives every patient of the helper's clinic the ranges.
+		setGlycemicRanges := func(ctx context.Context, th *repoTestHelper,
+			ranges patients.GlycemicRanges) {
+
+			GinkgoHelper()
+			collection := dbTest.GetTestDatabase().Collection("patients")
+			_, err := collection.UpdateMany(ctx, primitive.M{"clinicId": th.clinicId},
+				primitive.M{"$set": primitive.M{"glycemicRanges": ranges}})
+			Expect(err).To(Succeed())
+		}
+
+		selected := func(ranges patients.GlycemicRanges) int {
+			GinkgoHelper()
+			counts := patientDataCounts{withVeryLow: 2, withMeetingTargets: 2}
+			ctx, th := newTestRepo(GinkgoT(), counts, 3)
+			if !ranges.IsZero() {
+				setGlycemicRanges(ctx, th, ranges)
+			}
+			params := th.params("7d", time.Now().Add(-7*24*time.Hour))
+
+			tide, err := th.repo.TideReport(ctx, th.clinicId.Hex(), params)
+			Expect(err).To(Succeed())
+			Expect(tide.Metadata.CandidatePatients).To(Equal(tide.Metadata.SelectedPatients))
+			return tide.Metadata.SelectedPatients
+		}
+
+		It("includes patients without glycemic ranges", func() {
+			Expect(selected(patients.GlycemicRanges{})).To(Equal(7))
+		})
+
+		It("includes patients with the standard preset", func() {
+			Expect(selected(patients.GlycemicRanges{
+				Type:   patients.GlycemicRangeTypePreset,
+				Preset: patients.GlycemicRangesPresetDefault,
+			})).To(Equal(7))
+		})
+
+		It("excludes patients with another preset, with or without data", func() {
+			Expect(selected(patients.GlycemicRanges{
+				Type:   patients.GlycemicRangeTypePreset,
+				Preset: "adaPregnancyType1",
+			})).To(Equal(0))
+		})
+
+		It("excludes patients with custom ranges, with or without data", func() {
+			Expect(selected(patientsTest.RandomGlycemicRangesCustom())).To(Equal(0))
+		})
+
+		It("excludes patients with custom ranges that also carry the standard preset", func() {
+			ranges := patientsTest.RandomGlycemicRangesCustom()
+			ranges.Preset = patients.GlycemicRangesPresetDefault
+			Expect(selected(ranges)).To(Equal(0))
+		})
+
+		AfterEach(func() {
+			collection := dbTest.GetTestDatabase().Collection("patients")
+			_, err := collection.DeleteMany(context.Background(), primitive.M{})
 			Expect(err).To(Succeed())
 		})
 	})
@@ -4112,6 +4210,7 @@ func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutDa
 	yesterday := time.Now().Add(-24 * time.Hour)
 	allPatients := []any{}
 	modelPatient := patientsTest.RandomPatient() // re-use patient to save a little time
+	modelPatient.GlycemicRanges = patients.GlycemicRanges{}
 	withData := dataCounts.Counts()
 	periods := genPeriods(dataCounts)
 	for i := range withData {
@@ -4137,6 +4236,7 @@ func newTestRepo(t FullGinkgoTInterface, dataCounts patientDataCounts, withoutDa
 	for range withoutData {
 		patient := patientsTest.RandomPatient()
 
+		patient.GlycemicRanges = patients.GlycemicRanges{}
 		patient.ClinicId = &clinicId
 		patient.Tags = &[]primitive.ObjectID{tagId}
 		allPatients = append(allPatients, patient)

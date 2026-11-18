@@ -1594,11 +1594,7 @@ func (r *repository) generateListFilterQuery(filter *patients.Filter) bson.M {
 	}
 
 	if filter.OmitNonStandardRanges {
-		orSelectors = append(orSelectors, bson.A{
-			bson.M{"glycemicRanges.preset": "adaStandard"},
-			// adaStandard is the default glycemicRanges---include patients with no setting
-			bson.M{"glycemicRanges": bson.M{"$exists": 0}},
-		})
+		orSelectors = append(orSelectors, standardGlycemicRangesSelectors())
 	}
 
 	if filter.LastReviewed != nil {
@@ -2088,6 +2084,23 @@ func categoriesByNames(names []string) []tideCategory {
 	return cats
 }
 
+// standardGlycemicRangesSelectors returns selectors, any one of which a patient matches
+// when the patient's glycemic ranges are the standard ones, that is, when
+// [patients.GlycemicRanges.Key] is the default preset's key: the ranges are unset or of
+// no known type, or they name the default preset.
+func standardGlycemicRangesSelectors() bson.A {
+	return bson.A{
+		bson.M{"glycemicRanges.type": bson.M{"$nin": bson.A{
+			patients.GlycemicRangeTypePreset,
+			patients.GlycemicRangeTypeCustom,
+		}}},
+		bson.M{
+			"glycemicRanges.type":   patients.GlycemicRangeTypePreset,
+			"glycemicRanges.preset": patients.GlycemicRangesPresetDefault,
+		},
+	}
+}
+
 func (r *repository) TideReport(ctx context.Context, clinicId string, params patients.TideReportParams) (*patients.Tide, error) {
 	if clinicId == "" {
 		return nil, fmt.Errorf("%w: empty clinicId provided", errors2.BadRequest)
@@ -2142,7 +2155,9 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		opts := options.Find()
 		opts.SetLimit(int64(remaining))
 
-		var exprs bson.A
+		// The categories and the thresholds in the report's config assume the standard
+		// glycemic ranges, while a patient's summary is computed for the patient's own.
+		exprs := bson.A{bson.M{"$or": standardGlycemicRangesSelectors()}}
 		parentFieldPath := "summary.cgmStats.periods." + params.Period
 		if category.Predicates != nil {
 			preds := category.Predicates(parentFieldPath)
@@ -2194,6 +2209,7 @@ func (r *repository) TideReport(ctx context.Context, clinicId string, params pat
 		selector := bson.M{
 			"clinicId": clinicObjId,
 			"tags":     bson.M{"$all": tags},
+			"$and":     bson.A{bson.M{"$or": standardGlycemicRangesSelectors()}},
 			"$or": bson.A{
 				bson.M{"summary.cgmStats.dates.lastData": nil},
 				bson.M{"$and": bson.A{
