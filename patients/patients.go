@@ -165,6 +165,13 @@ type Patient struct {
 	GlycemicRanges             GlycemicRanges             `bson:"glycemicRanges,omitempty"`
 	DiagnosisType              *DiagnosisType             `bson:"diagnosisType,omitempty"`
 
+	// SummaryGlycemicRangesChangedTime is when Summary was last replaced by one computed
+	// for another glycemic range set, that is, when a change of GlycemicRanges took effect
+	// in the summary. It is zero for a patient whose summary has always been for the same
+	// range set. The repository maintains it when it stores a summary; it isn't part of
+	// the API.
+	SummaryGlycemicRangesChangedTime time.Time `bson:"summaryGlycemicRangesChangedTime,omitempty"`
+
 	// DEPRECATED: Remove when Tidepool Web starts using provider connection requests
 	LastRequestedDexcomConnectTime time.Time `bson:"lastRequestedDexcomConnectTime,omitempty"`
 }

@@ -888,6 +888,171 @@ var _ = Describe("Patients Repository", func() {
 				Expect(stored.Summary.CGM.Id).To(Equal(summary.CGM.Id))
 			})
 
+			Describe("the time the summary's glycemic ranges changed", func() {
+				const field = "summaryGlycemicRangesChangedTime"
+
+				// changedTime returns the time recorded in the patient's record, or nil
+				changedTime := func(patient patients.Patient) *time.Time {
+					GinkgoHelper()
+					raw := bson.M{}
+					selector := bson.M{"userId": userId, "clinicId": patient.ClinicId}
+					Expect(collection.FindOne(context.Background(), selector).Decode(&raw)).To(Succeed())
+					value, ok := raw[field]
+					if !ok {
+						return nil
+					}
+					return pointer.FromAny(value.(primitive.DateTime).Time())
+				}
+
+				update := func(summary *patients.Summary, key *string) {
+					GinkgoHelper()
+					Expect(repo.UpdateSummaryInClinics(context.Background(), userId, summary, key)).To(Succeed())
+				}
+
+				It("isn't recorded when a record gets its first summary", func() {
+					update(newSummary(&calculated, customKey), &customKey)
+					update(newSummary(&calculated, standardKey), pointer.FromAny(standardKey))
+
+					for _, patient := range []patients.Patient{standard, unset, custom} {
+						Expect(changedTime(patient)).To(BeNil())
+					}
+				})
+
+				It("is recorded in the records whose stats are replaced by stats for other ranges", func() {
+					update(newSummary(&calculated, standardKey), nil)
+					update(newSummary(&calculated, customKey), &customKey)
+
+					Expect(changedTime(custom)).To(HaveValue(BeTemporally("~", time.Now(), 5*time.Second)))
+					Expect(get(custom).SummaryGlycemicRangesChangedTime).To(BeTemporally("==", *changedTime(custom)))
+					Expect(get(standard).SummaryGlycemicRangesChangedTime.IsZero()).To(BeTrue())
+					Expect(changedTime(standard)).To(BeNil())
+					Expect(changedTime(unset)).To(BeNil())
+				})
+
+				It("is recorded when the stats of only one type are replaced", func() {
+					update(newSummary(&calculated, standardKey), nil)
+					summary := newSummary(&calculated, customKey)
+					summary.BGM = nil
+					update(summary, &customKey)
+
+					Expect(changedTime(custom)).ToNot(BeNil())
+				})
+
+				It("isn't recorded when stats stored without a key are replaced by standard ones", func() {
+					update(newSummary(&calculated, ""), nil)
+					later := calculated.Add(time.Minute)
+					update(newSummary(&later, standardKey), pointer.FromAny(standardKey))
+
+					Expect(get(standard).Summary.CGM.Config.GlycemicRangesKey).To(Equal(standardKey))
+					Expect(changedTime(standard)).To(BeNil())
+					Expect(changedTime(unset)).To(BeNil())
+				})
+
+				It("isn't recorded when stats without a key replace standard ones", func() {
+					update(newSummary(&calculated, standardKey), nil)
+					update(newSummary(&calculated, ""), nil)
+
+					Expect(changedTime(standard)).To(BeNil())
+				})
+
+				It("is recorded when stats stored without a key are replaced by ones for other ranges", func() {
+					update(newSummary(&calculated, ""), nil)
+					update(newSummary(&calculated, customKey), &customKey)
+
+					Expect(changedTime(custom)).ToNot(BeNil())
+				})
+
+				It("isn't recorded when the stats for other ranges are stale and so not stored", func() {
+					update(newSummary(&calculated, standardKey), nil)
+					earlier := calculated.Add(-time.Minute)
+					update(newSummary(&earlier, customKey), &customKey)
+
+					Expect(get(custom).Summary.CGM.Config.GlycemicRangesKey).To(Equal(standardKey))
+					Expect(changedTime(custom)).To(BeNil())
+				})
+
+				It("stays as it is through later stats for the same ranges", func() {
+					update(newSummary(&calculated, standardKey), nil)
+					update(newSummary(&calculated, customKey), &customKey)
+					recorded := changedTime(custom)
+					Expect(recorded).ToNot(BeNil())
+
+					time.Sleep(5 * time.Millisecond)
+					later := calculated.Add(time.Minute)
+					update(newSummary(&calculated, customKey), &customKey)
+					update(newSummary(&later, customKey), &customKey)
+
+					Expect(changedTime(custom)).To(HaveValue(BeTemporally("==", *recorded)))
+				})
+
+				It("moves when the stats switch ranges again", func() {
+					update(newSummary(&calculated, standardKey), nil)
+					update(newSummary(&calculated, customKey), &customKey)
+					recorded := changedTime(custom)
+					Expect(recorded).ToNot(BeNil())
+
+					time.Sleep(5 * time.Millisecond)
+					update(newSummary(&calculated, standardKey), nil)
+
+					Expect(changedTime(custom)).To(HaveValue(BeTemporally(">", *recorded)))
+				})
+
+				It("survives an update of the patient", func() {
+					update(newSummary(&calculated, standardKey), nil)
+					update(newSummary(&calculated, customKey), &customKey)
+					recorded := changedTime(custom)
+					Expect(recorded).ToNot(BeNil())
+
+					// As an update built from an API request, which carries neither the
+					// summary nor this time
+					updated, err := repo.Update(context.Background(), patients.PatientUpdate{
+						ClinicId: custom.ClinicId.Hex(),
+						UserId:   userId,
+						Patient: patients.Patient{
+							FullName:       pointer.FromAny(test.Faker.Person().Name()),
+							GlycemicRanges: custom.GlycemicRanges,
+						},
+					})
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(changedTime(custom)).To(HaveValue(BeTemporally("==", *recorded)))
+					Expect(updated.SummaryGlycemicRangesChangedTime).To(BeTemporally("==", *recorded))
+					Expect(updated.Summary).ToNot(BeNil())
+				})
+
+				It("is copied into a rescheduled subscription order", func() {
+					const subscription = "summaryAndReports"
+					const target = "testRescheduledOrders"
+					targetCollection := database.Collection(target)
+					DeferCleanup(func() {
+						Expect(targetCollection.Drop(context.Background())).To(Succeed())
+					})
+					_, err := collection.UpdateMany(context.Background(), bson.M{"userId": userId}, bson.M{
+						"$set": bson.M{"ehrSubscriptions." + subscription + ".active": true},
+					})
+					Expect(err).ToNot(HaveOccurred())
+					update(newSummary(&calculated, standardKey), nil)
+					update(newSummary(&calculated, customKey), &customKey)
+					recorded := changedTime(custom)
+					Expect(recorded).ToNot(BeNil())
+
+					clinicIds := []string{custom.ClinicId.Hex(), standard.ClinicId.Hex()}
+					Expect(repo.RescheduleLastSubscriptionOrderForPatient(context.Background(),
+						clinicIds, userId, subscription, "testOrders", target)).To(Succeed())
+
+					rescheduled := func(patient patients.Patient) bson.M {
+						GinkgoHelper()
+						raw := bson.M{}
+						selector := bson.M{"userId": userId, "clinicId": patient.ClinicId}
+						Expect(targetCollection.FindOne(context.Background(), selector).Decode(&raw)).To(Succeed())
+						return raw
+					}
+					Expect(rescheduled(custom)).To(HaveKeyWithValue("glycemicRangesChangedTime",
+						primitive.NewDateTimeFromTime(*recorded)))
+					Expect(rescheduled(standard)).ToNot(HaveKey("glycemicRangesChangedTime"))
+				})
+			})
+
 			It("stores stats without an id without an id", func() {
 				summary := newSummary(&calculated, customKey)
 				summary.CGM.Id = ""

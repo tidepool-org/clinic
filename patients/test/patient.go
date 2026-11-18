@@ -265,5 +265,7 @@ func PatientFieldsMatcher(patient patients.Patient) types.GomegaMatcher {
 		"Sites":                          Equal(patient.Sites),
 		"GlycemicRanges":                 Equal(patient.GlycemicRanges),
 		"DiagnosisType":                  Equal(patient.DiagnosisType),
+
+		"SummaryGlycemicRangesChangedTime": Ignore(),
 	})
 }

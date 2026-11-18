@@ -794,6 +794,8 @@ func (r *repository) deleteMany(ctx context.Context, selector bson.M, metadata d
 // (see [patients.GlycemicRanges.Key]). The key is derived in Go rather than queried, so
 // the matching records are read first; a record whose ranges change in between keeps the
 // wrong stats until the next report for its ranges, which a change of ranges requests.
+// A record whose stats are replaced by stats for another range set also records when
+// (see [summaryGlycemicRangesChangedTimeField]).
 // It returns [patients.ErrSummaryNotFound] only when the user has no patient records,
 // and nil when none match the key.
 func (r *repository) UpdateSummaryInClinics(ctx context.Context, userId string,
@@ -826,15 +828,22 @@ func (r *repository) UpdateSummaryInClinics(ctx context.Context, userId string,
 
 	set := bson.M{}
 	changed := bson.A{}
+	switched := bson.A{}
 	if summary.CGM != nil {
 		set["summary.cgmStats"] = statsUnlessCalculatedAfter(summary.CGM, summary.CGM.Dates.LastUpdatedDate, "$summary.cgmStats")
 		changed = append(changed, statsChanged(summary.CGM.Dates.LastUpdatedDate,
 			summary.CGM.Config.GlycemicRangesKey, "$summary.cgmStats")...)
+		switched = append(switched, statsSwitchedGlycemicRanges(
+			summary.CGM.Dates.LastUpdatedDate, summary.CGM.Config.GlycemicRangesKey,
+			"$summary.cgmStats"))
 	}
 	if summary.BGM != nil {
 		set["summary.bgmStats"] = statsUnlessCalculatedAfter(summary.BGM, summary.BGM.Dates.LastUpdatedDate, "$summary.bgmStats")
 		changed = append(changed, statsChanged(summary.BGM.Dates.LastUpdatedDate,
 			summary.BGM.Config.GlycemicRangesKey, "$summary.bgmStats")...)
+		switched = append(switched, statsSwitchedGlycemicRanges(
+			summary.BGM.Dates.LastUpdatedDate, summary.BGM.Config.GlycemicRangesKey,
+			"$summary.bgmStats"))
 	}
 
 	// updatedTime moves only when stats calculated after those stored arrive, so neither a stale report nor
@@ -845,6 +854,11 @@ func (r *repository) UpdateSummaryInClinics(ctx context.Context, userId string,
 	// below null, so a report without one replacing them still moves it.
 	set["updatedTime"] = bson.M{
 		"$cond": bson.A{bson.M{"$or": changed}, time.Now(), "$updatedTime"},
+	}
+	set[summaryGlycemicRangesChangedTimeField] = bson.M{
+		"$cond": bson.A{
+			bson.M{"$or": switched}, time.Now(), "$" + summaryGlycemicRangesChangedTimeField,
+		},
 	}
 
 	res, err := r.collection.UpdateMany(ctx, selector, mongo.Pipeline{{{Key: "$set", Value: set}}})
@@ -899,6 +913,40 @@ func statsChanged(lastUpdatedDate *time.Time, glycemicRangesKey string,
 		bson.M{"$gt": bson.A{lastUpdatedDate, storedStatsPath + ".dates.lastUpdatedDate"}},
 		bson.M{"$ne": bson.A{glycemicRangesKey, storedKey}},
 	}
+}
+
+// summaryGlycemicRangesChangedTimeField is the field of a patient record holding
+// [patients.Patient.SummaryGlycemicRangesChangedTime].
+//
+// [repository.UpdateSummaryInClinics] maintains it, and the pipeline that reschedules
+// EHR subscription orders copies it into each rescheduled order, so that the consumer
+// of those can send the EHR the values for the new ranges though the patient has
+// uploaded nothing since. Like the summary, an update of the patient leaves it alone as
+// long as the update doesn't carry it, which one built from an API request never does.
+const summaryGlycemicRangesChangedTimeField = "summaryGlycemicRangesChangedTime"
+
+// statsSwitchedGlycemicRanges returns the condition under which the stats reported
+// replace stats stored for another glycemic range set: there are stats stored, they
+// aren't calculated after those reported (see [statsUnlessCalculatedAfter]), and their
+// key differs. A missing or empty key, as stats stored before keys existed have, is the
+// standard range set's, so those stats being replaced by ones tagged as standard is no
+// switch.
+func statsSwitchedGlycemicRanges(lastUpdatedDate *time.Time, glycemicRangesKey string,
+	storedStatsPath string) bson.M {
+
+	standardKey := patients.GlycemicRanges{}.Key()
+	if glycemicRangesKey == "" {
+		glycemicRangesKey = standardKey
+	}
+	storedKey := bson.M{"$ifNull": bson.A{storedStatsPath + ".config.glycemicRangesKey", ""}}
+	return bson.M{"$and": bson.A{
+		bson.M{"$eq": bson.A{bson.M{"$type": storedStatsPath}, "object"}},
+		bson.M{"$gte": bson.A{lastUpdatedDate, storedStatsPath + ".dates.lastUpdatedDate"}},
+		bson.M{"$ne": bson.A{
+			glycemicRangesKey,
+			bson.M{"$cond": bson.A{bson.M{"$eq": bson.A{storedKey, ""}}, standardKey, storedKey}},
+		}},
+	}}
 }
 
 // statsUnlessCalculatedAfter reports the stats given unless the stats stored were calculated after
@@ -2446,6 +2494,8 @@ func reschedulePipeline(params RescheduleOrderPipelineParams) []bson.M {
 					"userId":      "$userId",
 					"clinicId":    "$clinicId",
 					"createdTime": now,
+					// Absent when the patient's summary never switched glycemic ranges
+					"glycemicRangesChangedTime": "$" + summaryGlycemicRangesChangedTimeField,
 					"lastMatchedOrder": bson.M{
 						"$arrayElemAt": bson.A{"$lastMatchedOrder", 0},
 					},
