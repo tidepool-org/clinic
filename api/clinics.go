@@ -512,7 +512,7 @@ func (h *Handler) GenerateMergeReport(ec echo.Context, clinicId ClinicId) (err e
 		return fmt.Errorf("a distinct source clinic is required: %w", errors.BadRequest)
 	}
 
-	plan, err := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, dto.SourceId, clinicId).Plan(ctx)
+	plan, err := merge.NewClinicMergePlanner(h.Clinics, h.Patients, h.Clinicians, dto.SourceId, clinicId, merge.Options{}).Plan(ctx)
 	if err != nil {
 		return err
 	}

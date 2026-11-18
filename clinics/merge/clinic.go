@@ -102,18 +102,15 @@ type Options struct {
 	SourcePatientSite *string
 }
 
-func NewClinicMergePlanner(clinicsService clinics.Service, patientsService patients.Service, cliniciansService clinicians.Service, sourceId, targetId string, options ...Options) Planner[ClinicMergePlan] {
-	planner := &ClinicMergePlanner{
+func NewClinicMergePlanner(clinicsService clinics.Service, patientsService patients.Service, cliniciansService clinicians.Service, sourceId, targetId string, options Options) Planner[ClinicMergePlan] {
+	return &ClinicMergePlanner{
 		clinics:    clinicsService,
 		patients:   patientsService,
 		clinicians: cliniciansService,
 		sourceId:   sourceId,
 		targetId:   targetId,
+		options:    options,
 	}
-	if len(options) > 0 {
-		planner.options = options[0]
-	}
-	return planner
 }
 
 func (m *ClinicMergePlanner) Plan(ctx context.Context) (plan ClinicMergePlan, err error) {

@@ -167,7 +167,7 @@ func (t *ClinicMergeTest) Init(params mergeTest.Params) {
 	Expect(len(res.InsertedIDs)).To(Equal(len(t.sourcePatients) + len(t.targetPatients)))
 
 	t.planner = merge.NewClinicMergePlanner(t.clinicsService, t.patientsService,
-		t.cliniciansService, data.Source.Id.Hex(), data.Target.Id.Hex())
+		t.cliniciansService, data.Source.Id.Hex(), data.Target.Id.Hex(), merge.Options{})
 }
 
 var _ = Describe("New Clinic Merge Planner", Ordered, func() {
