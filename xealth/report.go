@@ -5,11 +5,13 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 )
 
 const (
@@ -84,6 +86,13 @@ func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, c
 		query.Add("glycemicRangePreset", string(patient.GlycemicRanges.Preset))
 	}
 
+	for _, name := range getPatientTagNames(patient, clinic) {
+		query.Add("patientTags", name)
+	}
+	for _, name := range getSiteNames(patient, clinic) {
+		query.Add("sites", name)
+	}
+
 	endDate := getReportEndDate(patient)
 	startDate := getReportStartDate(endDate, defaultReportingPeriod)
 	if !startDate.IsZero() {
@@ -117,4 +126,34 @@ func getReportStartDate(endDate time.Time, period time.Duration) (startDate time
 		startDate = endDate.Add(-period)
 	}
 	return
+}
+
+// getPatientTagNames returns all patient tag names, dropping any that no
+// longer exist on the clinic.
+func getPatientTagNames(patient patients.Patient, clinic clinics.Clinic) []string {
+	if patient.Tags == nil {
+		return nil
+	}
+	var names []string
+	for _, tag := range clinic.PatientTags {
+		if tag.Id != nil && tag.Name != "" && slices.Contains(*patient.Tags, *tag.Id) {
+			names = append(names, tag.Name)
+		}
+	}
+	return names
+}
+
+// getSiteNames returns all patient site names, dropping any that no longer
+// exist on the clinic.
+func getSiteNames(patient patients.Patient, clinic clinics.Clinic) []string {
+	if patient.Sites == nil {
+		return nil
+	}
+	var names []string
+	for _, site := range clinic.Sites {
+		if site.Name != "" && slices.ContainsFunc(*patient.Sites, func(s sites.Site) bool { return s.Id == site.Id }) {
+			names = append(names, site.Name)
+		}
+	}
+	return names
 }
