@@ -752,6 +752,10 @@ func (m *mockUserService) GetUserProfile(ctx context.Context, userId string) (*p
 	return &patients.Profile{}, nil
 }
 
+func (m *mockUserService) GetUserSettings(ctx context.Context, userId string) (*patients.UserSettings, error) {
+	return &patients.UserSettings{}, nil
+}
+
 func (m *mockUserService) UpdateCustodialAccount(ctx context.Context, patient patients.Patient) error {
 	panic("not implemented") // TODO: Implement
 }

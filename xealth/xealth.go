@@ -625,7 +625,15 @@ func (d *defaultHandler) GetPDFReport(ctx context.Context, request PDFReportRequ
 		return nil, fmt.Errorf("%w: patient doesn't have active subscriptions", errs.Unauthorized)
 	}
 
-	url, err := GenerateReportUrl(d.config.TidepoolApplicationUrl, token.ID, *patient, *clinic)
+	siteChangeSource := ""
+	settings, err := d.users.GetUserSettings(ctx, request.PatientId)
+	if err != nil {
+		d.logger.Errorw("unable to get user settings", "clinicId", clinic.Id.Hex(), "patientId", request.PatientId, "error", err)
+	} else if settings != nil {
+		siteChangeSource = settings.SiteChangeSource
+	}
+
+	url, err := GenerateReportUrl(d.config.TidepoolApplicationUrl, token.ID, *patient, *clinic, siteChangeSource)
 	if err != nil {
 		d.logger.Errorw("unable to generate report url", "clinicId", clinic.Id.Hex(), "error", err)
 		return nil, err

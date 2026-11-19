@@ -34,7 +34,7 @@ func GeneratePDFViewerUrl(baseUrl string, token string, patient patients.Patient
 	return u, nil
 }
 
-func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, clinic clinics.Clinic) (*url.URL, error) {
+func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, clinic clinics.Clinic, siteChangeSource string) (*url.URL, error) {
 	u, err := url.Parse(baseUrl)
 	if err != nil {
 		return nil, err
@@ -91,6 +91,11 @@ func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, c
 	}
 	for _, name := range getSiteNames(patient, clinic) {
 		query.Add("sites", name)
+	}
+
+	switch siteChangeSource {
+	case "cannulaPrime", "reservoirChange", "tubingPrime":
+		query.Add("siteChangeSource", siteChangeSource)
 	}
 
 	endDate := getReportEndDate(patient)

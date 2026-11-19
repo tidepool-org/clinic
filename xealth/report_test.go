@@ -18,6 +18,7 @@ var _ = Describe("GenerateReportUrl", func() {
 
 	var patient patients.Patient
 	var clinic clinics.Clinic
+	var siteChangeSource string
 
 	strp := func(s string) *string { return &s }
 
@@ -39,7 +40,7 @@ var _ = Describe("GenerateReportUrl", func() {
 	}
 
 	generateQuery := func() url.Values {
-		u, err := xealth.GenerateReportUrl(baseUrl, token, patient, clinic)
+		u, err := xealth.GenerateReportUrl(baseUrl, token, patient, clinic, siteChangeSource)
 		Expect(err).ToNot(HaveOccurred())
 		query, err := url.ParseQuery(u.RawQuery)
 		Expect(err).ToNot(HaveOccurred())
@@ -54,6 +55,7 @@ var _ = Describe("GenerateReportUrl", func() {
 			FullName:  strp("Test Patient"),
 		}
 		clinic = clinics.Clinic{}
+		siteChangeSource = ""
 	})
 
 	It("adds the patient's tags and sites as repeated params in the clinic's order", func() {
@@ -119,5 +121,40 @@ var _ = Describe("GenerateReportUrl", func() {
 			"fullName":         {"Test Patient"},
 			"restricted_token": {token},
 		}))
+	})
+
+	DescribeTable("adds an allowed site change type as a single param",
+		func(value string) {
+			siteChangeSource = value
+			Expect(generateQuery()["siteChangeSource"]).To(Equal([]string{value}))
+		},
+		Entry("cannulaPrime", "cannulaPrime"),
+		Entry("reservoirChange", "reservoirChange"),
+		Entry("tubingPrime", "tubingPrime"),
+	)
+
+	DescribeTable("omits a site change type that is not allowed and leaves the other params unchanged",
+		func(value string) {
+			expected := generateQuery()
+			siteChangeSource = value
+
+			query := generateQuery()
+			Expect(query).ToNot(HaveKey("siteChangeSource"))
+			Expect(query).To(Equal(expected))
+		},
+		Entry("an unknown value", "bogus"),
+		Entry("a wrong-case value", "TubingPrime"),
+	)
+
+	It("omits an empty site change type and still sends the tags and sites", func() {
+		clinic.PatientTags = []clinics.PatientTag{tag("alpha")}
+		clinic.Sites = []sites.Site{site("East")}
+		patient.Tags = tagIds(clinic.PatientTags[0])
+		patient.Sites = &clinic.Sites
+
+		query := generateQuery()
+		Expect(query).ToNot(HaveKey("siteChangeSource"))
+		Expect(query["patientTags"]).To(Equal([]string{"alpha"}))
+		Expect(query["sites"]).To(Equal([]string{"East"}))
 	})
 })
