@@ -87,6 +87,21 @@ func (mr *MockUserServiceMockRecorder) GetUserProfile(ctx, userId any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockUserService)(nil).GetUserProfile), ctx, userId)
 }
 
+// GetUserSettings mocks base method.
+func (m *MockUserService) GetUserSettings(ctx context.Context, userId string) (*patients.UserSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserSettings", ctx, userId)
+	ret0, _ := ret[0].(*patients.UserSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserSettings indicates an expected call of GetUserSettings.
+func (mr *MockUserServiceMockRecorder) GetUserSettings(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserSettings", reflect.TypeOf((*MockUserService)(nil).GetUserSettings), ctx, userId)
+}
+
 // PopulatePatientDetailsFromExistingUser mocks base method.
 func (m *MockUserService) PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *patients.Patient) error {
 	m.ctrl.T.Helper()

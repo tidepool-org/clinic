@@ -28,6 +28,7 @@ type UserService interface {
 	CreateCustodialAccount(ctx context.Context, patient Patient) (*shoreline.UserData, error)
 	GetUser(userId string) (*shoreline.UserData, error)
 	GetUserProfile(ctx context.Context, userId string) (*Profile, error)
+	GetUserSettings(ctx context.Context, userId string) (*UserSettings, error)
 	UpdateCustodialAccount(ctx context.Context, patient Patient) error
 	PopulatePatientDetailsFromExistingUser(ctx context.Context, patient *Patient) error
 }
@@ -121,6 +122,16 @@ func (s *userService) GetUserProfile(ctx context.Context, userId string) (*Profi
 		return nil, err
 	}
 	return &profile, nil
+}
+
+func (s *userService) GetUserSettings(ctx context.Context, userId string) (*UserSettings, error) {
+	settings := UserSettings{}
+	token := s.shorelineClient.TokenProvide()
+	err := s.seagull.GetCollection(userId, "settings", token, &settings)
+	if err != nil {
+		return nil, err
+	}
+	return &settings, nil
 }
 
 func PopulatePatientFromUserAndProfile(patient *Patient, user shoreline.UserData, profile Profile) {

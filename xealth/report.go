@@ -5,15 +5,23 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/tidepool-org/clinic/clinics"
 	"github.com/tidepool-org/clinic/patients"
+	"github.com/tidepool-org/clinic/sites"
 )
 
 const (
 	defaultReportingPeriod = time.Hour * 24 * 14
+
+	// maxTagsAndSitesQueryLength is the longest URL-encoded patientTags and
+	// sites query, in bytes, that is added to the report URL. It allows them
+	// up to half of Node.js's 16384-byte limit on a request's URL and headers.
+	// This should be more than sufficient for any real-world use case
+	maxTagsAndSitesQueryLength = 8192
 )
 
 func GeneratePDFViewerUrl(baseUrl string, token string, patient patients.Patient, clinic clinics.Clinic) (*url.URL, error) {
@@ -32,7 +40,7 @@ func GeneratePDFViewerUrl(baseUrl string, token string, patient patients.Patient
 	return u, nil
 }
 
-func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, clinic clinics.Clinic) (*url.URL, error) {
+func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, clinic clinics.Clinic, siteChangeSource string) (*url.URL, error) {
 	u, err := url.Parse(baseUrl)
 	if err != nil {
 		return nil, err
@@ -84,6 +92,28 @@ func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, c
 		query.Add("glycemicRangePreset", string(patient.GlycemicRanges.Preset))
 	}
 
+	// Each list is added whole, tags first, if it fits in what is left of
+	// the size limit.
+	remaining := maxTagsAndSitesQueryLength
+	for _, param := range []struct {
+		key   string
+		names []string
+	}{
+		{"patientTags", getPatientTagNames(patient, clinic)},
+		{"sites", getSiteNames(patient, clinic)},
+	} {
+		length := len(url.Values{param.key: param.names}.Encode())
+		if len(param.names) > 0 && length <= remaining {
+			query[param.key] = param.names
+			remaining -= length
+		}
+	}
+
+	switch siteChangeSource {
+	case "cannulaPrime", "reservoirChange", "tubingPrime":
+		query.Add("siteChangeSource", siteChangeSource)
+	}
+
 	endDate := getReportEndDate(patient)
 	startDate := getReportStartDate(endDate, defaultReportingPeriod)
 	if !startDate.IsZero() {
@@ -117,4 +147,34 @@ func getReportStartDate(endDate time.Time, period time.Duration) (startDate time
 		startDate = endDate.Add(-period)
 	}
 	return
+}
+
+// getPatientTagNames returns all patient tag names, dropping any that no
+// longer exist on the clinic.
+func getPatientTagNames(patient patients.Patient, clinic clinics.Clinic) []string {
+	if patient.Tags == nil {
+		return nil
+	}
+	var names []string
+	for _, tag := range clinic.PatientTags {
+		if tag.Id != nil && tag.Name != "" && slices.Contains(*patient.Tags, *tag.Id) {
+			names = append(names, tag.Name)
+		}
+	}
+	return names
+}
+
+// getSiteNames returns all patient site names, dropping any that no longer
+// exist on the clinic.
+func getSiteNames(patient patients.Patient, clinic clinics.Clinic) []string {
+	if patient.Sites == nil {
+		return nil
+	}
+	var names []string
+	for _, site := range clinic.Sites {
+		if site.Name != "" && slices.ContainsFunc(*patient.Sites, func(s sites.Site) bool { return s.Id == site.Id }) {
+			names = append(names, site.Name)
+		}
+	}
+	return names
 }

@@ -12,3 +12,7 @@ type PatientProfile struct {
 	Email         *string   `json:"email"`
 	FullName      *string   `json:"fullName"`
 }
+
+type UserSettings struct {
+	SiteChangeSource string `json:"siteChangeSource"`
+}

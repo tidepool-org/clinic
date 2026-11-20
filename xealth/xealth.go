@@ -34,12 +34,13 @@ type ModuleConfig struct {
 }
 
 type Config struct {
-	BearerToken            string `envconfig:"TIDEPOOL_XEALTH_BEARER_TOKEN" required:"true"`
-	ClientId               string `envconfig:"TIDEPOOL_XEALTH_CLIENT_ID" required:"true"`
-	ClientSecret           string `envconfig:"TIDEPOOL_XEALTH_CLIENT_SECRET" required:"true"`
-	TokenUrl               string `envconfig:"TIDEPOOL_XEALTH_TOKEN_URL" default:"https://auth-sandbox.xealth.io/oauth2/token"`
-	ServerBaseUrl          string `envconfig:"TIDEPOOL_XEALTH_SERVER_BASE_URL" default:"https://api-sandbox.xealth.io/v2"`
-	TidepoolApplicationUrl string `envconfig:"TIDEPOOL_APPLICATION_URL" required:"true"`
+	BearerToken            string        `envconfig:"TIDEPOOL_XEALTH_BEARER_TOKEN" required:"true"`
+	ClientId               string        `envconfig:"TIDEPOOL_XEALTH_CLIENT_ID" required:"true"`
+	ClientSecret           string        `envconfig:"TIDEPOOL_XEALTH_CLIENT_SECRET" required:"true"`
+	TokenUrl               string        `envconfig:"TIDEPOOL_XEALTH_TOKEN_URL" default:"https://auth-sandbox.xealth.io/oauth2/token"`
+	ServerBaseUrl          string        `envconfig:"TIDEPOOL_XEALTH_SERVER_BASE_URL" default:"https://api-sandbox.xealth.io/v2"`
+	TidepoolApplicationUrl string        `envconfig:"TIDEPOOL_APPLICATION_URL" required:"true"`
+	UserSettingsTimeout    time.Duration `envconfig:"TIDEPOOL_XEALTH_USER_SETTINGS_TIMEOUT" default:"3s"`
 }
 
 type Xealth interface {
@@ -625,13 +626,46 @@ func (d *defaultHandler) GetPDFReport(ctx context.Context, request PDFReportRequ
 		return nil, fmt.Errorf("%w: patient doesn't have active subscriptions", errs.Unauthorized)
 	}
 
-	url, err := GenerateReportUrl(d.config.TidepoolApplicationUrl, token.ID, *patient, *clinic)
+	siteChangeSource := d.getSiteChangeSource(ctx, clinic.Id.Hex(), request.PatientId)
+	url, err := GenerateReportUrl(d.config.TidepoolApplicationUrl, token.ID, *patient, *clinic, siteChangeSource)
 	if err != nil {
 		d.logger.Errorw("unable to generate report url", "clinicId", clinic.Id.Hex(), "error", err)
 		return nil, err
 	}
 
 	return &PDFReport{PdfUrl: url.String()}, nil
+}
+
+// getSiteChangeSource returns the patient's saved site change type. It returns
+// an empty string if the settings can't be read within the configured timeout.
+func (d *defaultHandler) getSiteChangeSource(ctx context.Context, clinicId string, patientId string) string {
+	ctx, cancel := context.WithTimeout(ctx, d.config.UserSettingsTimeout)
+	defer cancel()
+
+	type result struct {
+		settings *patients.UserSettings
+		err      error
+	}
+	results := make(chan result, 1)
+	go func() {
+		settings, err := d.users.GetUserSettings(ctx, patientId)
+		results <- result{settings, err}
+	}()
+
+	var res result
+	select {
+	case res = <-results:
+	case <-ctx.Done():
+		res.err = ctx.Err()
+	}
+	if res.err != nil {
+		d.logger.Errorw("unable to get user settings", "clinicId", clinicId, "patientId", patientId, "error", res.err)
+		return ""
+	}
+	if res.settings == nil {
+		return ""
+	}
+	return res.settings.SiteChangeSource
 }
 
 func getActiveSubscription(patient patients.Patient) *patients.EHRSubscription {
