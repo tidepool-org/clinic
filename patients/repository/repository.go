@@ -873,22 +873,35 @@ func (r *repository) UpdateSummaryInClinics(ctx context.Context, userId string,
 	return nil
 }
 
+// ListGlycemicRanges returns the glycemic ranges of the user's patient records, one item
+// per record, ordered by record id. A pagination with no limit returns them all.
+func (r *repository) ListGlycemicRanges(ctx context.Context, userId string,
+	pagination store.Pagination) ([]patients.PatientGlycemicRanges, error) {
+
+	opts := options.Find().
+		SetProjection(bson.M{"_id": 1, "clinicId": 1, "glycemicRanges": 1}).
+		SetSort(bson.D{{Key: "_id", Value: 1}}).
+		SetSkip(int64(pagination.Offset)).
+		SetLimit(int64(pagination.Limit))
+	cursor, err := r.collection.Find(ctx, bson.M{"userId": userId}, opts)
+	if err != nil {
+		return nil, fmt.Errorf("error listing patients: %w", err)
+	}
+	records := []patients.PatientGlycemicRanges{}
+	if err := cursor.All(ctx, &records); err != nil {
+		return nil, fmt.Errorf("error decoding patients: %w", err)
+	}
+	return records, nil
+}
+
 // patientIdsWithGlycemicRangesKey returns the ids of the user's patient records whose
 // glycemic ranges have the key, or [patients.ErrSummaryNotFound] when the user has none.
 func (r *repository) patientIdsWithGlycemicRangesKey(ctx context.Context, userId,
 	key string) ([]primitive.ObjectID, error) {
 
-	opts := options.Find().SetProjection(bson.M{"_id": 1, "glycemicRanges": 1})
-	cursor, err := r.collection.Find(ctx, bson.M{"userId": userId}, opts)
+	records, err := r.ListGlycemicRanges(ctx, userId, store.Pagination{})
 	if err != nil {
-		return nil, fmt.Errorf("error listing patients: %w", err)
-	}
-	var records []struct {
-		Id             primitive.ObjectID      `bson:"_id"`
-		GlycemicRanges patients.GlycemicRanges `bson:"glycemicRanges"`
-	}
-	if err := cursor.All(ctx, &records); err != nil {
-		return nil, fmt.Errorf("error decoding patients: %w", err)
+		return nil, err
 	}
 	if len(records) == 0 {
 		return nil, patients.ErrSummaryNotFound

@@ -103,6 +103,7 @@ type Service interface {
 	UpdateSummaryInClinics(ctx context.Context, userId string, summary *Summary, glycemicRangesKey *string) error
 	DeleteSummaryInAllClinics(ctx context.Context, summaryId string) error
 	DeleteSummaryOfType(ctx context.Context, userId string, summaryType SummaryType) error
+	ListGlycemicRanges(ctx context.Context, userId string, pagination store.Pagination) ([]PatientGlycemicRanges, error)
 	UpdateLastUploadReminderTime(ctx context.Context, update *UploadReminderUpdate) (*Patient, error)
 	AddProviderConnectionRequest(ctx context.Context, clinicId, userId string, request ConnectionRequest) error
 	AssignPatientTagToClinicPatients(ctx context.Context, clinicId, tagId string, patientIds []string) error
@@ -186,6 +187,14 @@ func (d *DiagnosisType) IsZero() bool {
 	// some (faulty, but still relevant) clients won't/don't specify a value, but in those
 	// cases, we must keep the existing value.
 	return d == nil
+}
+
+// PatientGlycemicRanges is the glycemic ranges of one patient record, with the ids of the
+// record and of its clinic. GlycemicRanges is the zero value for a record with none set.
+type PatientGlycemicRanges struct {
+	Id             primitive.ObjectID `bson:"_id"`
+	ClinicId       primitive.ObjectID `bson:"clinicId"`
+	GlycemicRanges GlycemicRanges     `bson:"glycemicRanges"`
 }
 
 type GlycemicRanges struct {

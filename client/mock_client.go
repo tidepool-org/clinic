@@ -1161,6 +1161,26 @@ func (mr *MockClientInterfaceMockRecorder) ListClinicsForPatient(ctx, userId, pa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClinicsForPatient", reflect.TypeOf((*MockClientInterface)(nil).ListClinicsForPatient), varargs...)
 }
 
+// ListGlycemicRangesForPatient mocks base method.
+func (m *MockClientInterface) ListGlycemicRangesForPatient(ctx context.Context, patientId PatientId, params *ListGlycemicRangesForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, patientId, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListGlycemicRangesForPatient", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListGlycemicRangesForPatient indicates an expected call of ListGlycemicRangesForPatient.
+func (mr *MockClientInterfaceMockRecorder) ListGlycemicRangesForPatient(ctx, patientId, params any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, patientId, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListGlycemicRangesForPatient", reflect.TypeOf((*MockClientInterface)(nil).ListGlycemicRangesForPatient), varargs...)
+}
+
 // ListMembershipRestrictions mocks base method.
 func (m *MockClientInterface) ListMembershipRestrictions(ctx context.Context, clinicId ClinicId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -3483,6 +3503,26 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) ListClinicsWithResponse(
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, params}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClinicsWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ListClinicsWithResponse), varargs...)
+}
+
+// ListGlycemicRangesForPatientWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) ListGlycemicRangesForPatientWithResponse(ctx context.Context, patientId PatientId, params *ListGlycemicRangesForPatientParams, reqEditors ...RequestEditorFn) (*ListGlycemicRangesForPatientResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, patientId, params}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListGlycemicRangesForPatientWithResponse", varargs...)
+	ret0, _ := ret[0].(*ListGlycemicRangesForPatientResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListGlycemicRangesForPatientWithResponse indicates an expected call of ListGlycemicRangesForPatientWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) ListGlycemicRangesForPatientWithResponse(ctx, patientId, params any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, patientId, params}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListGlycemicRangesForPatientWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).ListGlycemicRangesForPatientWithResponse), varargs...)
 }
 
 // ListMembershipRestrictionsWithResponse mocks base method.

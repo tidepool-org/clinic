@@ -346,6 +346,9 @@ type ClientInterface interface {
 	// SyncEHRDataForPatient request
 	SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListGlycemicRangesForPatient request
+	ListGlycemicRangesForPatient(ctx context.Context, patientId PatientId, params *ListGlycemicRangesForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UpdatePatientSummaryWithBody request with any body
 	UpdatePatientSummaryWithBody(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1532,6 +1535,18 @@ func (c *Client) FindPatients(ctx context.Context, params *FindPatientsParams, r
 
 func (c *Client) SyncEHRDataForPatient(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSyncEHRDataForPatientRequest(c.Server, patientId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListGlycemicRangesForPatient(ctx context.Context, patientId PatientId, params *ListGlycemicRangesForPatientParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListGlycemicRangesForPatientRequest(c.Server, patientId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -7003,6 +7018,78 @@ func NewSyncEHRDataForPatientRequest(server string, patientId PatientId) (*http.
 	return req, nil
 }
 
+// NewListGlycemicRangesForPatientRequest generates requests for ListGlycemicRangesForPatient
+func NewListGlycemicRangesForPatientRequest(server string, patientId PatientId, params *ListGlycemicRangesForPatientParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "patientId", runtime.ParamLocationPath, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/patients/%s/glycemic_ranges", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewUpdatePatientSummaryRequest calls the generic UpdatePatientSummary builder with application/json body
 func NewUpdatePatientSummaryRequest(server string, patientId PatientId, params *UpdatePatientSummaryParams, body UpdatePatientSummaryJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -7929,6 +8016,9 @@ type ClientWithResponsesInterface interface {
 
 	// SyncEHRDataForPatientWithResponse request
 	SyncEHRDataForPatientWithResponse(ctx context.Context, patientId PatientId, reqEditors ...RequestEditorFn) (*SyncEHRDataForPatientResponse, error)
+
+	// ListGlycemicRangesForPatientWithResponse request
+	ListGlycemicRangesForPatientWithResponse(ctx context.Context, patientId PatientId, params *ListGlycemicRangesForPatientParams, reqEditors ...RequestEditorFn) (*ListGlycemicRangesForPatientResponse, error)
 
 	// UpdatePatientSummaryWithBodyWithResponse request with any body
 	UpdatePatientSummaryWithBodyWithResponse(ctx context.Context, patientId PatientId, params *UpdatePatientSummaryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatePatientSummaryResponse, error)
@@ -9415,6 +9505,28 @@ func (r SyncEHRDataForPatientResponse) StatusCode() int {
 	return 0
 }
 
+type ListGlycemicRangesForPatientResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PatientGlycemicRangesListV1
+}
+
+// Status returns HTTPResponse.Status
+func (r ListGlycemicRangesForPatientResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListGlycemicRangesForPatientResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpdatePatientSummaryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -10556,6 +10668,15 @@ func (c *ClientWithResponses) SyncEHRDataForPatientWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseSyncEHRDataForPatientResponse(rsp)
+}
+
+// ListGlycemicRangesForPatientWithResponse request returning *ListGlycemicRangesForPatientResponse
+func (c *ClientWithResponses) ListGlycemicRangesForPatientWithResponse(ctx context.Context, patientId PatientId, params *ListGlycemicRangesForPatientParams, reqEditors ...RequestEditorFn) (*ListGlycemicRangesForPatientResponse, error) {
+	rsp, err := c.ListGlycemicRangesForPatient(ctx, patientId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListGlycemicRangesForPatientResponse(rsp)
 }
 
 // UpdatePatientSummaryWithBodyWithResponse request with arbitrary body returning *UpdatePatientSummaryResponse
@@ -12202,6 +12323,32 @@ func ParseSyncEHRDataForPatientResponse(rsp *http.Response) (*SyncEHRDataForPati
 	response := &SyncEHRDataForPatientResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseListGlycemicRangesForPatientResponse parses an HTTP response from a ListGlycemicRangesForPatientWithResponse call
+func ParseListGlycemicRangesForPatientResponse(rsp *http.Response) (*ListGlycemicRangesForPatientResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListGlycemicRangesForPatientResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PatientGlycemicRangesListV1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil

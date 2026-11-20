@@ -75,6 +75,14 @@ allow {
   input.path = ["v1", "patients", _, "clinics"]
 }
 
+# Allow backend services to fetch the glycemic ranges of a patient's clinic records
+# GET /v1/patients/:patientId/glycemic_ranges
+allow {
+  is_backend_service
+  input.method == "GET"
+  input.path = ["v1", "patients", _, "glycemic_ranges"]
+}
+
 # Allow backend services update patient summaries
 # POST /v1/patients/:patientId/summary
 allow {

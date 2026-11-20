@@ -111,4 +111,43 @@ var _ = Describe("Glycemic Ranges Integration Test", Ordered, func() {
 			Expect(fetched.GlycemicRanges.Key).To(Equal("custom:mg/dL:54,70,180,250"))
 		})
 	})
+
+	Describe("List the glycemic ranges of the user's patient records", func() {
+		// Other integration tests may give the user patient records in their own
+		// clinics, so only this clinic's item is examined.
+		It("Returns the ranges and the clinic of each record", func() {
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet,
+				fmt.Sprintf("/v1/patients/%s/glycemic_ranges?limit=100", *patient.Id), "")
+			asServer(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+			var items []json.RawMessage
+			Expect(json.Unmarshal(rec.Body.Bytes(), &items)).To(Succeed())
+			Expect(items).To(ContainElement(MatchJSON(fmt.Sprintf(`{
+			  "clinicId": %q,
+			  "glycemicRanges": {
+			    "type": "custom",
+			    "key": "custom:mg/dL:54,70,180,250",
+			    "custom": {
+			      "name": "Mine",
+			      "units": "mg/dL",
+			      "thresholds": {"veryLow": 54, "low": 70, "high": 180, "veryHigh": 250}
+			    }
+			  }
+			}`, *clinic.Id))))
+		})
+
+		It("Returns an empty list for a user who is not a patient", func() {
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet,
+				"/v1/patients/0123456789/glycemic_ranges", "")
+			asServer(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+			Expect(rec.Body.String()).To(MatchJSON(`[]`))
+		})
+	})
 })

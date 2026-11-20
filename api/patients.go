@@ -262,6 +262,21 @@ func (h *Handler) ListClinicsForPatient(ec echo.Context, patientId UserId, param
 	return ec.JSON(http.StatusOK, dtos)
 }
 
+// ListGlycemicRangesForPatient responds with the glycemic ranges of each of the user's
+// patient records.
+func (h *Handler) ListGlycemicRangesForPatient(ec echo.Context, patientId PatientId,
+	params ListGlycemicRangesForPatientParams) error {
+
+	ctx := ec.Request().Context()
+	page := pagination(params.Offset, params.Limit)
+	list, err := h.Patients.ListGlycemicRanges(ctx, patientId, page)
+	if err != nil {
+		return err
+	}
+
+	return ec.JSON(http.StatusOK, NewPatientGlycemicRangesListDto(list))
+}
+
 func (h *Handler) DeletePatient(ec echo.Context, clinicId ClinicId, patientId PatientId) error {
 	ctx := ec.Request().Context()
 

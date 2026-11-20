@@ -318,6 +318,21 @@ func NewDiagnosisTypeDto(diagnosisType string) *DiagnosisTypeV1 {
 	}
 }
 
+// NewPatientGlycemicRangesListDto returns the list as the API represents it, never nil,
+// so that an empty list is encoded as an empty array.
+func NewPatientGlycemicRangesListDto(
+	list []patients.PatientGlycemicRanges) PatientGlycemicRangesListV1 {
+
+	dtos := make(PatientGlycemicRangesListV1, 0, len(list))
+	for _, item := range list {
+		dtos = append(dtos, PatientGlycemicRangesV1{
+			ClinicId:       pointer.FromAny(item.ClinicId.Hex()),
+			GlycemicRanges: NewGlycemicRangesDto(item.GlycemicRanges),
+		})
+	}
+	return dtos
+}
+
 func NewGlycemicRangesDto(ranges patients.GlycemicRanges) *GlycemicRangesV1 {
 	v1Ranges, err := newGlycemicRangesDtoWithError(ranges)
 	if err != nil {

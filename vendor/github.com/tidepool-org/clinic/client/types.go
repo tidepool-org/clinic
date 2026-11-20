@@ -1728,6 +1728,16 @@ type PatientCountSettingsV1 struct {
 	SoftLimit *PatientCountLimitV1 `json:"softLimit,omitempty"`
 }
 
+// PatientGlycemicRangesV1 The glycemic ranges one patient record of a user is configured with, and the clinic the record belongs to.
+type PatientGlycemicRangesV1 struct {
+	// ClinicId Clinic identifier.
+	ClinicId       *ClinicIdV1       `json:"clinicId,omitempty"`
+	GlycemicRanges *GlycemicRangesV1 `json:"glycemicRanges,omitempty"`
+}
+
+// PatientGlycemicRangesListV1 defines model for patientGlycemicRangesList.v1.
+type PatientGlycemicRangesListV1 = []PatientGlycemicRangesV1
+
 // PatientPermissionsV1 defines model for patientPermissions.v1.
 type PatientPermissionsV1 struct {
 	Custodian *map[string]interface{} `json:"custodian,omitempty"`
@@ -2571,6 +2581,12 @@ type FindPatientsParams struct {
 
 // FindPatientsParamsWorkspaceIdType defines parameters for FindPatients.
 type FindPatientsParamsWorkspaceIdType string
+
+// ListGlycemicRangesForPatientParams defines parameters for ListGlycemicRangesForPatient.
+type ListGlycemicRangesForPatientParams struct {
+	Offset *Offset `form:"offset,omitempty" json:"offset,omitempty"`
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+}
 
 // UpdatePatientSummaryParams defines parameters for UpdatePatientSummary.
 type UpdatePatientSummaryParams struct {

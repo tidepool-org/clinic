@@ -75,6 +75,32 @@ var _ = Describe("Request Authorizer", func() {
 			Expect(err).To(Equal(auth.ErrUnauthorized))
 		})
 
+		It("allows backend services to list a patient's glycemic ranges", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "patients", "1234567890", "glycemic_ranges"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "platform",
+					"serverAccess": true,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("prevents users from listing their own glycemic ranges", func() {
+			input := map[string]interface{}{
+				"path":   []string{"v1", "patients", "1234567890", "glycemic_ranges"},
+				"method": "GET",
+				"auth": map[string]interface{}{
+					"subjectId":    "1234567890",
+					"serverAccess": false,
+				},
+			}
+			err := authorizer.EvaluatePolicy(context.Background(), input)
+			Expect(err).To(Equal(auth.ErrUnauthorized))
+		})
+
 		It("allows hydrophone to access /v1/clinics", func() {
 			input := map[string]interface{}{
 				"path":   []string{"v1", "clinics"},

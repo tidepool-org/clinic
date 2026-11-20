@@ -314,6 +314,12 @@ func (s *service) DeleteSummaryOfType(ctx context.Context, userId string,
 	return s.patientsRepo.DeleteSummaryOfType(ctx, userId, summaryType)
 }
 
+func (s *service) ListGlycemicRanges(ctx context.Context, userId string,
+	pagination store.Pagination) ([]patients.PatientGlycemicRanges, error) {
+
+	return s.patientsRepo.ListGlycemicRanges(ctx, userId, pagination)
+}
+
 func (s *service) UpdateLastUploadReminderTime(ctx context.Context, update *patients.UploadReminderUpdate) (*patients.Patient, error) {
 	s.logger.Infow("updating last upload reminder time for user", "clinicId", update.ClinicId, "userId", update.UserId)
 	return s.patientsRepo.UpdateLastUploadReminderTime(ctx, update)

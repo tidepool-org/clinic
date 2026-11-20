@@ -211,6 +211,9 @@ type ServerInterface interface {
 	// Sync EHR Data for Patient
 	// (POST /v1/patients/{patientId}/ehr/sync)
 	SyncEHRDataForPatient(ctx echo.Context, patientId PatientId) error
+	// List Glycemic Ranges for Patient
+	// (GET /v1/patients/{patientId}/glycemic_ranges)
+	ListGlycemicRangesForPatient(ctx echo.Context, patientId PatientId, params ListGlycemicRangesForPatientParams) error
 	// UpdatePatientSummary
 	// (POST /v1/patients/{patientId}/summary)
 	UpdatePatientSummary(ctx echo.Context, patientId PatientId, params UpdatePatientSummaryParams) error
@@ -2715,6 +2718,40 @@ func (w *ServerInterfaceWrapper) SyncEHRDataForPatient(ctx echo.Context) error {
 	return err
 }
 
+// ListGlycemicRangesForPatient converts echo context to params.
+func (w *ServerInterfaceWrapper) ListGlycemicRangesForPatient(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "patientId" -------------
+	var patientId PatientId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "patientId", ctx.Param("patientId"), &patientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter patientId: %s", err))
+	}
+
+	ctx.Set(SessionTokenScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListGlycemicRangesForPatientParams
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListGlycemicRangesForPatient(ctx, patientId, params)
+	return err
+}
+
 // UpdatePatientSummary converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdatePatientSummary(ctx echo.Context) error {
 	var err error
@@ -3079,6 +3116,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/clinics/:clinicId/tier", wrapper.UpdateTier)
 	router.GET(baseURL+"/v1/patients", wrapper.FindPatients)
 	router.POST(baseURL+"/v1/patients/:patientId/ehr/sync", wrapper.SyncEHRDataForPatient)
+	router.GET(baseURL+"/v1/patients/:patientId/glycemic_ranges", wrapper.ListGlycemicRangesForPatient)
 	router.POST(baseURL+"/v1/patients/:patientId/summary", wrapper.UpdatePatientSummary)
 	router.DELETE(baseURL+"/v1/patients/:patientId/summary/:summaryType", wrapper.DeletePatientSummaryOfType)
 	router.GET(baseURL+"/v1/patients/:userId/clinics", wrapper.ListClinicsForPatient)

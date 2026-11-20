@@ -291,6 +291,21 @@ func (mr *MockServiceMockRecorder) ListExportedPatients(ctx, params any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListExportedPatients", reflect.TypeOf((*MockService)(nil).ListExportedPatients), ctx, params)
 }
 
+// ListGlycemicRanges mocks base method.
+func (m *MockService) ListGlycemicRanges(ctx context.Context, userId string, pagination store.Pagination) ([]patients.PatientGlycemicRanges, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListGlycemicRanges", ctx, userId, pagination)
+	ret0, _ := ret[0].([]patients.PatientGlycemicRanges)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListGlycemicRanges indicates an expected call of ListGlycemicRanges.
+func (mr *MockServiceMockRecorder) ListGlycemicRanges(ctx, userId, pagination any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListGlycemicRanges", reflect.TypeOf((*MockService)(nil).ListGlycemicRanges), ctx, userId, pagination)
+}
+
 // MergeSites mocks base method.
 func (m *MockService) MergeSites(ctx context.Context, clinicId, sourceSiteId string, targetSite *sites.Site) error {
 	m.ctrl.T.Helper()
@@ -776,6 +791,21 @@ func (m *MockRepository) ListExportedPatients(ctx context.Context, params patien
 func (mr *MockRepositoryMockRecorder) ListExportedPatients(ctx, params any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListExportedPatients", reflect.TypeOf((*MockRepository)(nil).ListExportedPatients), ctx, params)
+}
+
+// ListGlycemicRanges mocks base method.
+func (m *MockRepository) ListGlycemicRanges(ctx context.Context, userId string, pagination store.Pagination) ([]patients.PatientGlycemicRanges, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListGlycemicRanges", ctx, userId, pagination)
+	ret0, _ := ret[0].([]patients.PatientGlycemicRanges)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListGlycemicRanges indicates an expected call of ListGlycemicRanges.
+func (mr *MockRepositoryMockRecorder) ListGlycemicRanges(ctx, userId, pagination any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListGlycemicRanges", reflect.TypeOf((*MockRepository)(nil).ListGlycemicRanges), ctx, userId, pagination)
 }
 
 // MergeSites mocks base method.

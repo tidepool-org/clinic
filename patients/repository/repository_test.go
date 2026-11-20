@@ -1069,6 +1069,98 @@ var _ = Describe("Patients Repository", func() {
 			})
 		})
 
+		Describe("ListGlycemicRanges", func() {
+			var userId string
+			var standard, unset, custom patients.Patient
+
+			// expected returns the items for the patients, ordered by record id
+			expected := func(records ...patients.Patient) []patients.PatientGlycemicRanges {
+				slices.SortFunc(records, func(a, b patients.Patient) int {
+					return strings.Compare(a.Id.Hex(), b.Id.Hex())
+				})
+				items := []patients.PatientGlycemicRanges{}
+				for _, record := range records {
+					items = append(items, patients.PatientGlycemicRanges{
+						Id:             *record.Id,
+						ClinicId:       *record.ClinicId,
+						GlycemicRanges: record.GlycemicRanges,
+					})
+				}
+				return items
+			}
+
+			BeforeEach(func() {
+				userId = test.Faker.UUID().V4()
+
+				standard = patientsTest.RandomPatient()
+				standard.UserId = &userId
+				standard.GlycemicRanges = patients.GlycemicRanges{
+					Type:   patients.GlycemicRangeTypePreset,
+					Preset: patients.GlycemicRangesPresetDefault,
+				}
+				unset = patientsTest.RandomPatient()
+				unset.UserId = &userId
+				unset.GlycemicRanges = patients.GlycemicRanges{}
+				custom = patientsTest.RandomPatient()
+				custom.UserId = &userId
+				custom.GlycemicRanges = patientsTest.RandomGlycemicRangesCustom()
+				for _, record := range []*patients.Patient{&standard, &unset, &custom} {
+					record.Id = pointer.FromAny(primitive.NewObjectID())
+				}
+
+				_, err := collection.InsertMany(context.Background(),
+					[]interface{}{standard, unset, custom})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				_, err := collection.DeleteMany(context.Background(), bson.M{"userId": userId})
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("returns an empty list for a user without patient records", func() {
+				items, err := repo.ListGlycemicRanges(context.Background(),
+					test.Faker.UUID().V4(), store.DefaultPagination())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(items).ToNot(BeNil())
+				Expect(items).To(BeEmpty())
+			})
+
+			It("returns the ranges of the user's records and of no other user's", func() {
+				// randomPatient belongs to another user
+				items, err := repo.ListGlycemicRanges(context.Background(), userId,
+					store.DefaultPagination())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(items).To(Equal(expected(standard, unset, custom)))
+			})
+
+			It("returns all the records when the pagination has no limit", func() {
+				items, err := repo.ListGlycemicRanges(context.Background(), userId,
+					store.Pagination{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(items).To(Equal(expected(standard, unset, custom)))
+			})
+
+			It("pages through the records in a stable order", func() {
+				all := expected(standard, unset, custom)
+
+				first, err := repo.ListGlycemicRanges(context.Background(), userId,
+					store.Pagination{Offset: 0, Limit: 2})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(first).To(Equal(all[:2]))
+
+				second, err := repo.ListGlycemicRanges(context.Background(), userId,
+					store.Pagination{Offset: 2, Limit: 2})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(second).To(Equal(all[2:]))
+
+				third, err := repo.ListGlycemicRanges(context.Background(), userId,
+					store.Pagination{Offset: 4, Limit: 2})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(third).To(BeEmpty())
+			})
+		})
+
 		Describe("DeleteSummaryOfType", func() {
 			var userId string
 			var records []patients.Patient
