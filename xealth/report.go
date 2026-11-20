@@ -16,6 +16,12 @@ import (
 
 const (
 	defaultReportingPeriod = time.Hour * 24 * 14
+
+	// maxTagsAndSitesQueryLength is the longest URL-encoded patientTags and
+	// sites query, in bytes, that is added to the report URL. It allows them
+	// up to half of Node.js's 16384-byte limit on a request's URL and headers.
+	// This should be more than sufficient for any real-world use case
+	maxTagsAndSitesQueryLength = 8192
 )
 
 func GeneratePDFViewerUrl(baseUrl string, token string, patient patients.Patient, clinic clinics.Clinic) (*url.URL, error) {
@@ -86,11 +92,21 @@ func GenerateReportUrl(baseUrl string, token string, patient patients.Patient, c
 		query.Add("glycemicRangePreset", string(patient.GlycemicRanges.Preset))
 	}
 
-	for _, name := range getPatientTagNames(patient, clinic) {
-		query.Add("patientTags", name)
-	}
-	for _, name := range getSiteNames(patient, clinic) {
-		query.Add("sites", name)
+	// Each list is added whole, tags first, if it fits in what is left of
+	// the size limit.
+	remaining := maxTagsAndSitesQueryLength
+	for _, param := range []struct {
+		key   string
+		names []string
+	}{
+		{"patientTags", getPatientTagNames(patient, clinic)},
+		{"sites", getSiteNames(patient, clinic)},
+	} {
+		length := len(url.Values{param.key: param.names}.Encode())
+		if len(param.names) > 0 && length <= remaining {
+			query[param.key] = param.names
+			remaining -= length
+		}
 	}
 
 	switch siteChangeSource {

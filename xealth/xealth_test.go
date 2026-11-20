@@ -40,6 +40,7 @@ var _ = Describe("GetPDFReport", func() {
 	var users *patientsTest.MockUserService
 	var handler xealth.Xealth
 	var request xealth.PDFReportRequest
+	var newHandler func()
 
 	strp := func(s string) *string { return &s }
 
@@ -91,9 +92,15 @@ var _ = Describe("GetPDFReport", func() {
 			ExpirationTime: time.Now().Add(time.Hour),
 		}}
 
-		var err error
-		handler, err = xealth.NewHandler(authClient, clinicsService, patientsService, users, nil, zap.NewNop().Sugar())
-		Expect(err).ToNot(HaveOccurred())
+		newHandler = func() {
+			var err error
+			handler, err = xealth.NewHandler(authClient, clinicsService, patientsService, users, nil, zap.NewNop().Sugar())
+			Expect(err).ToNot(HaveOccurred())
+		}
+	})
+
+	JustBeforeEach(func() {
+		newHandler()
 	})
 
 	It("adds the patient's saved site change type to the report url", func() {
@@ -112,5 +119,22 @@ var _ = Describe("GetPDFReport", func() {
 		users.EXPECT().GetUserSettings(gomock.Any(), patientId).Return(nil, errors.New("seagull unavailable"))
 
 		Expect(getReportUrl().Query()).ToNot(HaveKey("siteChangeSource"))
+	})
+
+	Context("when the settings lookup takes longer than the timeout", func() {
+		BeforeEach(func() {
+			GinkgoT().Setenv("TIDEPOOL_XEALTH_USER_SETTINGS_TIMEOUT", "10ms")
+		})
+
+		It("returns a report url without a site change type", func() {
+			release := make(chan struct{})
+			DeferCleanup(func() { close(release) })
+			users.EXPECT().GetUserSettings(gomock.Any(), patientId).DoAndReturn(func(context.Context, string) (*patients.UserSettings, error) {
+				<-release
+				return &patients.UserSettings{SiteChangeSource: "tubingPrime"}, nil
+			})
+
+			Expect(getReportUrl().Query()).ToNot(HaveKey("siteChangeSource"))
+		})
 	})
 })

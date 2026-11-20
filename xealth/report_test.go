@@ -2,6 +2,7 @@ package xealth_test
 
 import (
 	"net/url"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -121,6 +122,45 @@ var _ = Describe("GenerateReportUrl", func() {
 			"fullName":         {"Test Patient"},
 			"restricted_token": {token},
 		}))
+	})
+
+	It("omits sites that don't fit in what the tags leave of the size limit", func() {
+		for range 50 {
+			clinic.PatientTags = append(clinic.PatientTags, tag(strings.Repeat("a", 100)))
+			clinic.Sites = append(clinic.Sites, site(strings.Repeat("a", 100)))
+		}
+		patient.Tags = tagIds(clinic.PatientTags...)
+		patient.Sites = &clinic.Sites
+
+		query := generateQuery()
+		Expect(query["patientTags"]).To(HaveLen(50))
+		Expect(query).ToNot(HaveKey("sites"))
+	})
+
+	It("omits tags that are over the size limit and still sends the sites", func() {
+		for range 50 {
+			clinic.PatientTags = append(clinic.PatientTags, tag(strings.Repeat("é", 200)))
+		}
+		clinic.Sites = []sites.Site{site("East")}
+		patient.Tags = tagIds(clinic.PatientTags...)
+		patient.Sites = &clinic.Sites
+
+		query := generateQuery()
+		Expect(query).ToNot(HaveKey("patientTags"))
+		Expect(query["sites"]).To(Equal([]string{"East"}))
+	})
+
+	It("sends tags and sites that fit in the size limit together", func() {
+		for range 50 {
+			clinic.PatientTags = append(clinic.PatientTags, tag(strings.Repeat("a", 20)))
+			clinic.Sites = append(clinic.Sites, site(strings.Repeat("a", 120)))
+		}
+		patient.Tags = tagIds(clinic.PatientTags...)
+		patient.Sites = &clinic.Sites
+
+		query := generateQuery()
+		Expect(query["patientTags"]).To(HaveLen(50))
+		Expect(query["sites"]).To(HaveLen(50))
 	})
 
 	DescribeTable("adds an allowed site change type as a single param",
