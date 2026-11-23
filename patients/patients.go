@@ -36,6 +36,7 @@ var (
 	DexcomDataSourceProviderName = "dexcom"
 	TwiistDataSourceProviderName = "twiist"
 	AbbottDataSourceProviderName = "abbott"
+	TandemDataSourceProviderName = "tandem"
 
 	DataSourceStatePending          = "pending"
 	DataSourceStatePendingReconnect = "pendingReconnect"

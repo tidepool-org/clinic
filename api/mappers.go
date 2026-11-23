@@ -264,6 +264,7 @@ func NewPatientDto(patient *patients.Patient) PatientV1 {
 		ConnectionRequests: &ProviderConnectionRequestsV1{
 			Abbott: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Abbott),
 			Dexcom: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Dexcom),
+			Tandem: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Tandem),
 			Twiist: NewConnectionRequestDTO(patient.ProviderConnectionRequests, Twiist),
 		},
 		Sites:          NewSitesDto(patient.Sites),
@@ -2002,6 +2003,8 @@ func NewDataProvider(providerId ProviderId) (string, error) {
 		return patients.TwiistDataSourceProviderName, nil
 	case Abbott:
 		return patients.AbbottDataSourceProviderName, nil
+	case Tandem:
+		return patients.TandemDataSourceProviderName, nil
 	default:
 		return "", fmt.Errorf("%w: invalid provider id: %s", errors.BadRequest, string(providerId))
 	}
