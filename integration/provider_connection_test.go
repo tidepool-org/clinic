@@ -127,6 +127,46 @@ var _ = Describe("Provider Connection Integration Test", Ordered, func() {
 		})
 	})
 
+	Describe("Send Tandem Connection Request", func() {
+		It("Succeeds", func() {
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodPost, fmt.Sprintf("/v1/clinics/%s/patients/%s/connect/tandem", *clinic.Id, *patient.Id), "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusNoContent))
+		})
+
+		It("Get updated patient succeeds", func() {
+			endpoint := fmt.Sprintf("/v1/clinics/%v/patients/%s", *clinic.Id, *patient.Id)
+			rec := httptest.NewRecorder()
+			req := prepareRequest(http.MethodGet, endpoint, "")
+			asClinician(req)
+
+			server.ServeHTTP(rec, req)
+			Expect(rec.Result()).ToNot(BeNil())
+			Expect(rec.Result().StatusCode).To(Equal(http.StatusOK))
+
+			dec := json.NewDecoder(rec.Result().Body)
+			Expect(dec.Decode(&patient)).To(Succeed())
+			Expect(patient.Id).To(PointTo(Not(BeEmpty())))
+		})
+
+		It("Adds the connection request", func() {
+			Expect(patient.ConnectionRequests.Tandem).To(HaveLen(1))
+			Expect(patient.ConnectionRequests.Tandem[0].ProviderName).To(Equal(api.Tandem))
+		})
+
+		It("Sets the data source to pending", func() {
+			Expect(patient.DataSources).ToNot(BeNil())
+			Expect(*patient.DataSources).To(ContainElement(MatchFields(IgnoreExtras, Fields{
+				"ProviderName": Equal("tandem"),
+				"State":        Equal(api.Pending),
+			})))
+		})
+	})
+
 	Describe("Send a subsequent Dexom Connection Request", func() {
 		It("Succeeds", func() {
 			rec := httptest.NewRecorder()

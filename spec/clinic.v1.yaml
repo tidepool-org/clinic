@@ -2296,9 +2296,20 @@ paths:
           text/csv:
             schema:
               type: string
-              example: |-
-                John Doe,1999-11-20,11112222,john+doe@tidepool.org,type1,adaStandard
-                Jane Doe,1999-11-10,11112223,,,adaHighRisk
+              maxLength: 2000000
+            examples:
+              withMinimumRequiredFields:
+                summary: Minimum required columns CSV
+                description: CSV with the minimum required columns to create patients.
+                value: |-
+                  John Doe,1999-11-20,11112222
+                  Jane Doe,1975-05-10,44332211
+              withOptionalFields:
+                summary: Optional columns CSV
+                description: CSV with optional columns/fields in addition to the minimum required columns.
+                value: |-
+                  John Doe,1999-11-20,11112222,john+doe@tidepool.org,type1,adaStandard
+                  Jane Doe,1975-05-10,44332211,,,adaHighRisk
   /v1/clinics/{clinicId}/service_accounts:
     parameters:
       - $ref: '#/components/parameters/clinicId'
@@ -5019,6 +5030,7 @@ components:
         - dexcom
         - twiist
         - abbott
+        - tandem
     providerConnectionRequest.v1:
       title: Provider Connection Request
       x-stoplight:
@@ -5068,10 +5080,15 @@ components:
             $ref: '#/components/schemas/providerConnectionRequest.v1'
             x-stoplight:
               id: 47ez7wiccxdut
+        tandem:
+          type: array
+          items:
+            $ref: '#/components/schemas/providerConnectionRequest.v1'
       required:
         - twiist
         - dexcom
         - abbott
+        - tandem
     glycemicRangesThresholdUpperBound.v1:
       type: object
       properties:

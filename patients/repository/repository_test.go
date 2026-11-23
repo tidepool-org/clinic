@@ -2327,6 +2327,7 @@ var _ = Describe("Patients Repository", func() {
 			createdTime := time.Date(2025, time.July, 15, 19, 29, 32, 813_000_000, time.UTC)
 			cgmLastDataTime := time.Date(2025, time.June, 17, 3, 25, 46, 0, time.UTC)
 			bgmLastDataTime := time.Date(2025, time.June, 18, 9, 9, 58, 0, time.UTC)
+			tandemLatestDataTime := time.Date(2025, time.June, 20, 10, 0, 0, 0, time.UTC)
 			expectedPatient := patients.ExportedPatient{
 				FullName:             strp("Exported Patient"),
 				UserId:               strp("aaaaaaaa-bbbb-cccc-dddd-aaaaaaaaaaaa"),
@@ -2359,6 +2360,11 @@ var _ = Describe("Patients Repository", func() {
 				BgmTotalReadings:     intp(69),
 				BgmLowEvents:         intp(3),
 				BgmHighEvents:        intp(22),
+				TandemDataSource: &patients.DataSource{
+					ProviderName:   patients.TandemDataSourceProviderName,
+					State:          "connected",
+					LatestDataTime: &tandemLatestDataTime,
+				},
 			}
 			Expect(ps[0]).To(matchExportedPatient(expectedPatient))
 		})
@@ -4114,6 +4120,9 @@ func matchExportedPatient(result patients.ExportedPatient) types.GomegaMatcher {
 	}
 	if result.DiagnosisType != nil {
 		fields["DiagnosisType"] = PointTo(Equal(*result.DiagnosisType))
+	}
+	if result.TandemDataSource != nil {
+		fields["TandemDataSource"] = PointTo(Equal(*result.TandemDataSource))
 	}
 	if result.CgmLastDataDate != nil {
 		fields["CgmLastDataDate"] = PointTo(Equal(*result.CgmLastDataDate))

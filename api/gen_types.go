@@ -725,6 +725,7 @@ const (
 const (
 	Abbott ProviderIdV1 = "abbott"
 	Dexcom ProviderIdV1 = "dexcom"
+	Tandem ProviderIdV1 = "tandem"
 	Twiist ProviderIdV1 = "twiist"
 )
 
@@ -1827,6 +1828,7 @@ type ProviderConnectionRequestV1 struct {
 type ProviderConnectionRequestsV1 struct {
 	Abbott []ProviderConnectionRequestV1 `json:"abbott"`
 	Dexcom []ProviderConnectionRequestV1 `json:"dexcom"`
+	Tandem []ProviderConnectionRequestV1 `json:"tandem"`
 	Twiist []ProviderConnectionRequestV1 `json:"twiist"`
 }
 

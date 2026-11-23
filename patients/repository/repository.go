@@ -1240,6 +1240,17 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 					},
 				},
 			},
+			"tandemDataSource": bson.M{
+				"$first": bson.M{
+					"$filter": bson.M{
+						"input": "$dataSources",
+						"as":    "dataSource",
+						"cond": bson.M{
+							"$eq": bson.A{"$$dataSource.providerName", patients.TandemDataSourceProviderName},
+						},
+					},
+				},
+			},
 		}},
 	}
 
@@ -1262,6 +1273,7 @@ func (r *repository) ListExportedPatients(ctx context.Context, params patients.E
 			"dexcomDataSource":     1,
 			"abbottDataSource":     1,
 			"twiistDataSource":     1,
+			"tandemDataSource":     1,
 			"cgmLastData":          1,
 			"cgmActiveWearTime":    1,
 			"cgmDaysWithData":      1,

@@ -26,6 +26,7 @@ type ExportedPatient struct {
 	DexcomDataSource *DataSource `bson:"dexcomDataSource,omitempty"`
 	AbbottDataSource *DataSource `bson:"abbottDataSource,omitempty"`
 	TwiistDataSource *DataSource `bson:"twiistDataSource,omitempty"`
+	TandemDataSource *DataSource `bson:"tandemDataSource,omitempty"`
 
 	CgmLastDataDate      *time.Time `bson:"cgmLastData,omitempty"`
 	CgmActiveWearTime    *float64   `bson:"cgmActiveWearTime,omitempty"`

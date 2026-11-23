@@ -41,6 +41,7 @@ var _ = Describe("Export", func() {
 		var inactiveDataSource patients.DataSource
 		var expiredDataSource patients.DataSource
 		var connectedDataSource patients.DataSource
+		var errorDataSource patients.DataSource
 		var patientTags []clinics.PatientTag
 		var cs []*clinicians.Clinician
 		var params patients.ExportParams
@@ -69,6 +70,11 @@ var _ = Describe("Export", func() {
 				ProviderName:   "twiist",
 				State:          "connected",
 				LatestDataTime: timep(time.Date(2026, time.July, 12, 20, 0, 0, 0, time.UTC)),
+			}
+			errorDataSource = patients.DataSource{
+				ProviderName:   "tandem",
+				State:          "error",
+				LatestDataTime: timep(time.Date(2026, time.July, 11, 8, 0, 0, 0, time.UTC)),
 			}
 			patientTags = []clinics.PatientTag{
 				{
@@ -102,6 +108,7 @@ var _ = Describe("Export", func() {
 				DexcomDataSource: &inactiveDataSource,
 				AbbottDataSource: &expiredDataSource,
 				TwiistDataSource: &connectedDataSource,
+				TandemDataSource: &errorDataSource,
 				ClinicSiteNames:  []string{"Site1", "Site2"},
 				TagIds: &[]string{
 					patientTagID,
@@ -153,6 +160,8 @@ var _ = Describe("Export", func() {
 				"",
 				"connected",
 				"2026-07-12",
+				"error",
+				"2026-07-11",
 				"2026-07-13",         // cgm last data date
 				"71.428",             // cgm active wear time
 				"13",                 // cgm days w/ data
@@ -204,6 +213,8 @@ var _ = Describe("Export", func() {
 				"",
 				"connected",
 				"2026-07-12",
+				"error",
+				"2026-07-11",
 				"2026-07-13",         // cgm last data date
 				"71.428",             // cgm active wear time
 				"13",                 // cgm days w/ data
