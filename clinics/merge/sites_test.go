@@ -61,6 +61,42 @@ var _ = Describe("Sites", func() {
 			Expect(plans.GetRenamedSitesCount()).To(Equal(len(dups)))
 		})
 
+		DescribeTable("names source sites so that no two sites in the target match",
+			func(sourceNames, targetNames []string, expected ...plannedSite) {
+				_, th := newSitesTestHelper(GinkgoT())
+				sourceSites := th.createSourceSites(sourceNames...)
+				targetSites := th.createTargetSites(targetNames...)
+				plans := th.Plans()
+
+				matchers := []any{}
+				for i, site := range sourceSites {
+					matchers = append(matchers, SatisfyAll(HaveField("Site", site),
+						HaveField("Action", expected[i].action), HaveField("Name()", expected[i].name)))
+				}
+				for _, site := range targetSites {
+					matchers = append(matchers, SatisfyAll(HaveField("Site", site),
+						HaveField("Action", merge.SiteActionRetain), HaveField("Name()", site.Name)))
+				}
+				Expect(plans).To(ConsistOf(matchers...))
+
+				seen := map[string]bool{}
+				for _, plan := range plans {
+					name := strings.ToLower(plan.Name())
+					Expect(seen[name]).To(BeFalse(), name)
+					seen[name] = true
+				}
+			},
+			Entry("a source site that differs from a target site only in case",
+				[]string{"north"}, []string{"North"},
+				plannedSite{merge.SiteActionRename, "north (2)"}),
+			Entry("a rename that would take the name of another source site",
+				[]string{"North", "North (2)"}, []string{"North"},
+				plannedSite{merge.SiteActionRename, "North (3)"}, plannedSite{merge.SiteActionMove, "North (2)"}),
+			Entry("two source sites that both have the name of a target site",
+				[]string{"North", "North (2)"}, []string{"North", "North (2)"},
+				plannedSite{merge.SiteActionRename, "North (3)"}, plannedSite{merge.SiteActionRename, "North (4)"}),
+		)
+
 		It("counts resulting sites", func() {
 			_, th := newSitesTestHelper(GinkgoT())
 			src := th.createSourceSites("src1")
@@ -136,8 +172,6 @@ var _ = Describe("Sites", func() {
 			targetID := th.Target.Id.Hex()
 			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics)
 
-			th.Clinics.EXPECT().Get(gomock.Any(), targetID).
-				Return(th.Target, nil).AnyTimes()
 			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID,
 				incrementedSiteMatcher(dups.Target))
 			for _, plan := range th.Plans() {
@@ -155,16 +189,30 @@ var _ = Describe("Sites", func() {
 			targetID := th.Target.Id.Hex()
 			executor := merge.NewSitePlanExecutor(th.Logger, th.Clinics)
 
-			th.Clinics.EXPECT().Get(gomock.Any(), targetID).
-				Return(th.Target, nil).AnyTimes()
 			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), targetID,
 				incrementedSiteMatcherN(dups.Target, times+2))
 			for _, plan := range th.Plans() {
 				Expect(executor.Execute(ctx, plan)).To(Succeed(), plan.Name())
 			}
 		})
+
+		It("creates a renamed site under its planned name", func() {
+			ctx, th := newSitesTestHelper(GinkgoT())
+			site := sitesTest.Random()
+			planned := site.Name + " (7)"
+			plan := merge.SitePlan{Site: site, Action: merge.SiteActionRename, ExpectedRename: planned, TargetClinicId: th.Target.Id}
+
+			th.Clinics.EXPECT().CreateSiteIgnoringLimit(gomock.Any(), th.Target.Id.Hex(), &sites.Site{Id: site.Id, Name: planned})
+			Expect(merge.NewSitePlanExecutor(th.Logger, th.Clinics).Execute(ctx, plan)).To(Succeed())
+		})
 	})
 })
+
+// plannedSite is the action and post-merge name expected of a source site's plan.
+type plannedSite struct {
+	action merge.SiteAction
+	name   string
+}
 
 type sitesTestHelper struct {
 	Source  *clinics.Clinic

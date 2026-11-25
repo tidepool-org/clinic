@@ -2,6 +2,7 @@ package merge_test
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -100,6 +101,79 @@ var _ = Describe("Tags", func() {
 				Expect(plan.TagAction).To(Equal(expectedTagAction))
 				Expect(plan.Workspaces).To(ConsistOf(expectedWorkspaces))
 			}
+		})
+	})
+
+	Describe("Tag Plans", func() {
+		tagNames := func(prefix string, count int) []string {
+			names := make([]string, count)
+			for i := range names {
+				names[i] = fmt.Sprintf("%s %d", prefix, i)
+			}
+			return names
+		}
+
+		// plansFor gives the clinics the named tags and runs both tag planners over them.
+		plansFor := func(sourceNames, targetNames []string) merge.TagPlans {
+			tags := func(names []string) []clinics.PatientTag {
+				result := make([]clinics.PatientTag, len(names))
+				for i, name := range names {
+					result[i] = clinics.PatientTag{Id: pointer.FromAny(primitive.NewObjectID()), Name: name}
+				}
+				return result
+			}
+			source.PatientTags, target.PatientTags = tags(sourceNames), tags(targetNames)
+
+			plans := merge.TagPlans{}
+			for _, tag := range source.PatientTags {
+				plan, err := merge.NewSourceTagMergePlanner(tag, source, target).Plan(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				plans = append(plans, plan)
+			}
+			for _, tag := range target.PatientTags {
+				plan, err := merge.NewTargetTagMergePlanner(tag, source, target).Plan(context.Background())
+				Expect(err).ToNot(HaveOccurred())
+				plans = append(plans, plan)
+			}
+			return plans
+		}
+
+		It("allows a merge that results in the maximum number of tags", func() {
+			plans := plansFor(tagNames("source", 10), tagNames("target", clinics.MaximumPatientTags-10))
+
+			Expect(plans.GetResultingTagsCount()).To(Equal(clinics.MaximumPatientTags))
+			Expect(plans.PreventsMerge()).To(BeFalse())
+			Expect(plans.Errors()).To(BeEmpty())
+		})
+
+		It("prevents a merge that results in more than the maximum number of tags", func() {
+			plans := plansFor(tagNames("source", 11), tagNames("target", clinics.MaximumPatientTags-10))
+
+			Expect(plans.PreventsMerge()).To(BeTrue())
+			Expect(plans.Errors()).To(ConsistOf(HaveField("Message", SatisfyAll(
+				ContainSubstring(fmt.Sprint(clinics.MaximumPatientTags+1)),
+				ContainSubstring(fmt.Sprint(clinics.MaximumPatientTags)),
+			))))
+		})
+
+		It("prevents a merge with a source tag that differs from a target tag only in case", func() {
+			plans := plansFor([]string{"type 1"}, []string{"Type 1"})
+
+			Expect(plans).To(ContainElement(SatisfyAll(
+				HaveField("Name", "type 1"), HaveField("TagAction", merge.TagActionCreate))))
+			Expect(plans.PreventsMerge()).To(BeTrue())
+			Expect(plans.Errors()).To(ConsistOf(HaveField("Message", SatisfyAll(
+				ContainSubstring(`"type 1"`), ContainSubstring(`"Type 1"`),
+				ContainSubstring(*source.Name), ContainSubstring(*target.Name),
+			))))
+		})
+
+		It("skips a source tag that has the name of a target tag", func() {
+			plans := plansFor([]string{"Type 1"}, []string{"Type 1"})
+
+			Expect(plans).To(ContainElement(SatisfyAll(
+				HaveField("Workspaces", ContainElement(*source.Name)), HaveField("TagAction", merge.TagActionSkip))))
+			Expect(plans.PreventsMerge()).To(BeFalse())
 		})
 	})
 

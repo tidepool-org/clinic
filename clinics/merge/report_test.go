@@ -1,6 +1,7 @@
 package merge_test
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -58,6 +59,39 @@ var _ = Describe("merge reports", func() {
 			})
 		})
 	})
+
+	Context("where the tag plans prevent the merge", func() {
+		canExecute := func(tagPlans merge.TagPlans) (string, string) {
+			plan := newTestPlan(time.Now())
+			plan.TagsPlans = tagPlans
+			file, err := merge.NewReport(plan).Generate()
+			Expect(err).ToNot(HaveOccurred())
+			return xlsxCanExecute(file)
+		}
+
+		It("gives the resulting tag count and the maximum as the reason", func() {
+			tagPlans := merge.TagPlans{{Name: "one too many", TagAction: merge.TagActionCreate}}
+			for i := range clinics.MaximumPatientTags {
+				tagPlans = append(tagPlans, merge.TagPlan{Name: fmt.Sprintf("tag %d", i), TagAction: merge.TagActionRetain})
+			}
+
+			answer, reason := canExecute(tagPlans)
+			Expect(answer).To(Equal("No"))
+			Expect(reason).To(SatisfyAll(
+				ContainSubstring(fmt.Sprint(clinics.MaximumPatientTags+1)),
+				ContainSubstring(fmt.Sprint(clinics.MaximumPatientTags)),
+			))
+		})
+
+		It("names both tags as the reason when their names differ only in case", func() {
+			answer, reason := canExecute(merge.TagPlans{
+				{Name: "type 1", TagAction: merge.TagActionCreate, Workspaces: []string{"Test Source Clinic"}},
+				{Name: "Type 1", TagAction: merge.TagActionRetain, Workspaces: []string{"Test Target Clinic"}},
+			})
+			Expect(answer).To(Equal("No"))
+			Expect(reason).To(SatisfyAll(ContainSubstring(`"type 1"`), ContainSubstring(`"Type 1"`)))
+		})
+	})
 })
 
 func xlsxHasLatestUpload(f *xlsx.File, date time.Time) bool {
@@ -103,6 +137,18 @@ func xlsxSiteNames(f *xlsx.File) []string {
 		}
 	}
 	return siteNames
+}
+
+// xlsxCanExecute returns the answer and the reason from the summary's "Can execute merge plan?" row.
+func xlsxCanExecute(f *xlsx.File) (string, string) {
+	m, err := f.ToSlice()
+	Expect(err).To(Succeed())
+	for _, row := range m[summarySheetIdx] {
+		if len(row) > 2 && row[0] == "Can execute merge plan?" {
+			return row[1], row[2]
+		}
+	}
+	return "", ""
 }
 
 func xlsxSourcePatientSites(f *xlsx.File, patientIdx int) string {

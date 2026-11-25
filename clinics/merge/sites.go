@@ -3,6 +3,7 @@ package merge
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -88,6 +89,30 @@ func (s SitesPlans) GetRenamedSitesCount() int {
 	return count
 }
 
+// sourceSiteNames maps each source site's id to its name in the target clinic after a merge.
+// Site names are unique within a clinic, so a source site that has a target site's name is
+// renamed to one that no other site in the merged clinic has.
+func sourceSiteNames(sourceSites, targetSites []sites.Site) (map[primitive.ObjectID]string, error) {
+	reserved := slices.Clone(targetSites)
+	for _, site := range sourceSites {
+		if !sites.SiteExistsWithName(targetSites, site.Name) {
+			reserved = append(reserved, site)
+		}
+	}
+	names := make(map[primitive.ObjectID]string, len(sourceSites))
+	for _, site := range sourceSites {
+		name, err := sites.MaybeRenameSite(site, reserved)
+		if err != nil {
+			return nil, err
+		}
+		if name != site.Name {
+			reserved = append(reserved, sites.Site{Name: name})
+		}
+		names[site.Id] = name
+	}
+	return names, nil
+}
+
 type SourceSiteMergePlanner struct {
 	site sites.Site
 
@@ -112,16 +137,13 @@ func (s *SourceSiteMergePlanner) Plan(ctx context.Context) (SitePlan, error) {
 		TargetClinicId:  s.target.Id,
 	}
 
-	for _, tgtSite := range s.target.Sites {
-		if tgtSite.Name == s.site.Name {
-			plan.Action = SiteActionRename
-			newName, err := sites.MaybeRenameSite(plan.Site, s.target.Sites)
-			if err != nil {
-				return SitePlan{}, err
-			}
-			plan.ExpectedRename = newName
-			break
+	if sites.SiteExistsWithName(s.target.Sites, s.site.Name) {
+		names, err := sourceSiteNames(s.source.Sites, s.target.Sites)
+		if err != nil {
+			return SitePlan{}, err
 		}
+		plan.Action = SiteActionRename
+		plan.ExpectedRename = names[s.site.Id]
 	}
 
 	return plan, nil
@@ -179,23 +201,10 @@ func (t *SitePlanExecutor) Execute(ctx context.Context, plan SitePlan) error {
 		}
 		logger.Debug("created new target site")
 	case SiteActionRename:
-		targetClinic, err := t.clinicsService.Get(ctx, plan.TargetClinicId.Hex())
-		if err != nil {
-			return fmt.Errorf("unable to get target clinic for site %s: %s", plan.Name(), err)
-		}
-		targetSites := targetClinic.Sites
-		newName, err := sites.MaybeRenameSite(plan.Site, targetSites)
-		if err != nil {
-			return err
-		}
-		if newName == plan.Site.Name {
-			logger.Debug("a site marked RENAME didn't need a rename; strange")
-			return nil
-		}
 		prevName := plan.Site.Name
-		plan.Site.Name = newName
+		plan.Site.Name = plan.ExpectedRename
 		// Source patients pick up the new name when they are moved, after all sites
-		_, err = t.clinicsService.CreateSiteIgnoringLimit(ctx, plan.TargetClinicId.Hex(), &plan.Site)
+		_, err := t.clinicsService.CreateSiteIgnoringLimit(ctx, plan.TargetClinicId.Hex(), &plan.Site)
 		if err != nil {
 			return err
 		}

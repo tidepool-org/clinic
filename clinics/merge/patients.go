@@ -231,7 +231,25 @@ func siteNames(sourceSites *[]sites.Site, targetSites []sites.Site) []string {
 	return names
 }
 
+// plannedSiteNames returns the sorted names that a source patient's sites have in the target
+// clinic after a merge. planned maps a source site's id to that name.
+func plannedSiteNames(patientSites *[]sites.Site, planned map[primitive.ObjectID]string) []string {
+	if patientSites == nil {
+		return nil
+	}
+	names := make([]string, 0, len(*patientSites))
+	for _, site := range *patientSites {
+		names = append(names, planned[site.Id])
+	}
+	slices.Sort(names)
+	return names
+}
+
 func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
+	planned, err := sourceSiteNames(p.source.Sites, p.target.Sites)
+	if err != nil {
+		return nil, err
+	}
 	mergeTargetPatients := map[string]struct{}{}
 	reservedMRNs := map[string]struct{}{}
 	for _, patient := range slices.Concat(p.sourcePatients, p.targetPatients) {
@@ -249,11 +267,11 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 			SourcePatient:          &patient,
 			SourceTagNames:         getUniquePatientTagNames(patient, p.sourceTags),
 			SourceSiteNames:        siteNames(patient.Sites, []sites.Site{}),
-			RenamedSiteNames:       siteNames(patient.Sites, p.target.Sites),
+			RenamedSiteNames:       plannedSiteNames(patient.Sites, planned),
 			Conflicts:              make(map[string][]Conflict),
 			PatientAction:          PatientActionMove,
 			PostMigrationTagNames:  getUniquePatientTagNames(patient, p.sourceTags),
-			PostMigrationSiteNames: siteNames(patient.Sites, p.target.Sites),
+			PostMigrationSiteNames: plannedSiteNames(patient.Sites, planned),
 			CanExecuteAction:       true,
 		}
 
@@ -274,14 +292,9 @@ func (p *PatientMergePlanner) Plan(ctx context.Context) (PatientPlans, error) {
 				uniqueTags := mapset.NewSet(plan.SourceTagNames...)
 				uniqueTags.Append(plan.TargetTagNames...)
 				plan.PostMigrationTagNames = uniqueTags.ToSlice()
-				combinedSites := []sites.Site{}
-				if patient.Sites != nil {
-					combinedSites = slices.Concat(combinedSites, *patient.Sites)
-				}
-				if target.Sites != nil {
-					combinedSites = slices.Concat(combinedSites, *target.Sites)
-				}
-				plan.PostMigrationSiteNames = siteNames(&combinedSites, p.target.Sites)
+				names := append([]string{}, plannedSiteNames(patient.Sites, planned)...)
+				plan.PostMigrationSiteNames = append(names, plan.TargetSiteNames...)
+				slices.Sort(plan.PostMigrationSiteNames)
 			}
 			plan.Conflicts[conflictCategory] = append(plan.Conflicts[conflictCategory], Conflict{
 				Category: conflictCategory,
