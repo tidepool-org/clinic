@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -38,11 +39,31 @@ func (t TagPlan) Errors() []ReportError {
 type TagPlans []TagPlan
 
 func (t TagPlans) PreventsMerge() bool {
-	return PlansPreventMerge(t)
+	return len(t.Errors()) > 0
 }
 
+// Errors reports a resulting tag count over [clinics.MaximumPatientTags], and every tag to
+// create whose name matches a retained tag's name under [clinics.PatientTagNamesMatch].
 func (t TagPlans) Errors() []ReportError {
-	return PlansErrors(t)
+	errs := PlansErrors(t)
+	if count := t.GetResultingTagsCount(); count > clinics.MaximumPatientTags {
+		errs = append(errs, NewReportError(fmt.Sprintf(
+			"Merged workspace would have %d patient tags, the maximum is %d", count, clinics.MaximumPatientTags)))
+	}
+	for _, created := range t {
+		if created.TagAction != TagActionCreate {
+			continue
+		}
+		for _, retained := range t {
+			if retained.TagAction == TagActionRetain && clinics.PatientTagNamesMatch(created.Name, retained.Name) {
+				errs = append(errs, NewReportError(fmt.Sprintf(
+					"Patient tag %q in %s conflicts with %q in %s: rename or delete one of them",
+					created.Name, strings.Join(created.Workspaces, ", "),
+					retained.Name, strings.Join(retained.Workspaces, ", "))))
+			}
+		}
+	}
+	return errs
 }
 
 func (t TagPlans) GetResultingTagsCount() int {

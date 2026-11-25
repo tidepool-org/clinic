@@ -619,6 +619,177 @@ var _ = Describe("Clinic Merge with a source patient tag that nearly matches a t
 	})
 })
 
+var _ = Describe("Clinic Merge with colliding site names", func() {
+	var t *ClinicMergeTest
+	ctx := context.Background()
+
+	BeforeEach(func() {
+		t = NewClinicMergeTest()
+		t.Init(mergeTest.Params{UniquePatientCount: 1})
+		DeferCleanup(func() {
+			t.app.RequireStop()
+			_, err := dbTest.GetTestDatabase().Collection("patients").DeleteMany(ctx, bson.M{})
+			Expect(err).To(Succeed())
+		})
+	})
+
+	createSite := func(clinic clinics.Clinic, name string) sites.Site {
+		site, err := t.clinicsService.CreateSite(ctx, clinic.Id.Hex(), &sites.Site{Name: name})
+		Expect(err).ToNot(HaveOccurred())
+		return sites.Site{Id: site.Id, Name: site.Name}
+	}
+
+	havePlan := func(site sites.Site, action merge.SiteAction, name string) types.GomegaMatcher {
+		return ContainElement(SatisfyAll(HaveField("Site.Id", site.Id), HaveField("Action", action), HaveField("Name()", name)))
+	}
+
+	haveSite := func(id primitive.ObjectID, name string) types.GomegaMatcher {
+		return ContainElement(SatisfyAll(HaveField("Id", id), HaveField("Name", name)))
+	}
+
+	It("renames a source site that differs from a target site only in case", func() {
+		sourceSite := createSite(t.source, "north")
+		targetSite := createSite(t.target, "North")
+		patient := t.sourcePatients[0]
+		_, err := t.db.Collection("patients").UpdateOne(ctx,
+			bson.M{"clinicId": t.source.Id, "userId": patient.UserId},
+			bson.M{"$set": bson.M{"sites": []sites.Site{sourceSite}}})
+		Expect(err).ToNot(HaveOccurred())
+
+		plan, err := t.planner.Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(plan.SitesPlans).To(havePlan(sourceSite, merge.SiteActionRename, "north (2)"))
+		_, err = t.executor.Execute(ctx, plan)
+		Expect(err).ToNot(HaveOccurred())
+
+		target, err := t.clinicsService.Get(ctx, t.target.Id.Hex())
+		Expect(err).ToNot(HaveOccurred())
+		Expect(target.Sites).To(haveSite(targetSite.Id, "North"))
+		Expect(target.Sites).To(haveSite(sourceSite.Id, "north (2)"))
+		moved, err := t.patientsService.Get(ctx, t.target.Id.Hex(), *patient.UserId)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(*moved.Sites).To(ConsistOf(sites.Site{Id: sourceSite.Id, Name: "north (2)"}))
+	})
+
+	It("renames a source site past the name of another source site", func() {
+		north := createSite(t.source, "North")
+		north2 := createSite(t.source, "North (2)")
+		targetNorth := createSite(t.target, "North")
+
+		plan, err := t.planner.Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(plan.SitesPlans).To(havePlan(north, merge.SiteActionRename, "North (3)"))
+		Expect(plan.SitesPlans).To(havePlan(north2, merge.SiteActionMove, "North (2)"))
+		_, err = t.executor.Execute(ctx, plan)
+		Expect(err).ToNot(HaveOccurred())
+
+		target, err := t.clinicsService.Get(ctx, t.target.Id.Hex())
+		Expect(err).ToNot(HaveOccurred())
+		Expect(target.Sites).To(HaveLen(plan.SitesPlans.GetResultingSitesCount()))
+		Expect(target.Sites).To(haveSite(targetNorth.Id, "North"))
+		Expect(target.Sites).To(haveSite(north2.Id, "North (2)"))
+		Expect(target.Sites).To(haveSite(north.Id, "North (3)"))
+	})
+})
+
+var _ = Describe("Clinic Merge with a tag conflict", func() {
+	var t *ClinicMergeTest
+	ctx := context.Background()
+
+	BeforeEach(func() {
+		t = NewClinicMergeTest()
+		t.Init(mergeTest.Params{UniquePatientCount: 1})
+		DeferCleanup(func() {
+			t.app.RequireStop()
+			_, err := dbTest.GetTestDatabase().Collection("patients").DeleteMany(ctx, bson.M{})
+			Expect(err).To(Succeed())
+		})
+	})
+
+	getClinic := func(clinic clinics.Clinic) *clinics.Clinic {
+		result, err := t.clinicsService.Get(ctx, clinic.Id.Hex())
+		Expect(err).ToNot(HaveOccurred())
+		return result
+	}
+
+	// fillTargetTags adds tags to the target until a merge results in the maximum number of tags.
+	fillTargetTags := func() {
+		plan, err := t.planner.Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		for i := plan.TagsPlans.GetResultingTagsCount(); i < clinics.MaximumPatientTags; i++ {
+			_, err := t.clinicsService.CreatePatientTag(ctx, t.target.Id.Hex(), fmt.Sprintf("filler %d", i))
+			Expect(err).ToNot(HaveOccurred())
+		}
+	}
+
+	planWithSourcePatientTag := func(tag string) merge.ClinicMergePlan {
+		plan, err := merge.NewClinicMergePlanner(t.clinicsService, t.patientsService, t.cliniciansService,
+			t.source.Id.Hex(), t.target.Id.Hex(), merge.Options{SourcePatientTag: &tag}).Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		return plan
+	}
+
+	// expectPrevented executes the plan and expects a bad request that leaves both clinics with
+	// their tags and sites, and the source patient in the source clinic.
+	expectPrevented := func(plan merge.ClinicMergePlan) {
+		sourceBefore, targetBefore := getClinic(t.source), getClinic(t.target)
+
+		Expect(plan.PreventsMerge()).To(BeTrue())
+		_, err := t.executor.Execute(ctx, plan)
+		Expect(err).To(MatchError(errs.BadRequest))
+
+		source, target := getClinic(t.source), getClinic(t.target)
+		Expect(source.PatientTags).To(Equal(sourceBefore.PatientTags))
+		Expect(source.Sites).To(Equal(sourceBefore.Sites))
+		Expect(target.PatientTags).To(Equal(targetBefore.PatientTags))
+		Expect(target.Sites).To(Equal(targetBefore.Sites))
+		_, err = t.patientsService.Get(ctx, t.source.Id.Hex(), *t.sourcePatients[0].UserId)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	It("prevents a merge that results in more than the maximum number of tags", func() {
+		fillTargetTags()
+		_, err := t.clinicsService.CreatePatientTag(ctx, t.source.Id.Hex(), "one too many")
+		Expect(err).ToNot(HaveOccurred())
+		plan, err := t.planner.Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(plan.TagsPlans.GetResultingTagsCount()).To(Equal(clinics.MaximumPatientTags + 1))
+		expectPrevented(plan)
+	})
+
+	It("prevents a merge whose source patient tag exceeds the maximum number of tags", func() {
+		fillTargetTags()
+		plan := planWithSourcePatientTag("Merged from source")
+
+		Expect(plan.TagsPlans.GetResultingTagsCount()).To(Equal(clinics.MaximumPatientTags + 1))
+		expectPrevented(plan)
+	})
+
+	It("allows a source patient tag that matches an existing tag at the maximum number of tags", func() {
+		fillTargetTags()
+		existing := getClinic(t.target).PatientTags[0]
+		plan := planWithSourcePatientTag(existing.Name)
+
+		Expect(plan.PreventsMerge()).To(BeFalse())
+		_, err := t.executor.Execute(ctx, plan)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(getClinic(t.target).PatientTags).To(HaveLen(clinics.MaximumPatientTags))
+	})
+
+	It("prevents a merge with a source tag that differs from a target tag only in case", func() {
+		_, err := t.clinicsService.CreatePatientTag(ctx, t.source.Id.Hex(), "type 1")
+		Expect(err).ToNot(HaveOccurred())
+		_, err = t.clinicsService.CreatePatientTag(ctx, t.target.Id.Hex(), "Type 1")
+		Expect(err).ToNot(HaveOccurred())
+		plan, err := t.planner.Plan(ctx)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(plan.TagsPlans.PreventsMerge()).To(BeTrue())
+		expectPrevented(plan)
+	})
+})
+
 var _ = Describe("New Clinic Merge Planner (w/ Large patient populations)", Ordered, Label("slow"), func() {
 	var t *ClinicMergeTest
 	var params = mergeTest.Params{UniquePatientCount: 1025}
